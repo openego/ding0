@@ -1,2 +1,3 @@
-# dingo
+DINGO
+-------------------
 DIstribution Network GeneratOr
