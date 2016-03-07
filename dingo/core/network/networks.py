@@ -1,11 +1,20 @@
+from . import NetworkDingo
 
-class MVNetworkDingo():
-    """ DINGO network
+class MVNetworkDingo(NetworkDingo):
+    """ DINGO medium voltage network
     """
     def __init__(self, **kwargs):
-        for attribute in ['buses', 'branches', 'transformers', 'sources']:
-            setattr(self, attribute, kwargs.get(attribute, []))
+        super().__init__(**kwargs)
+        #more params
+        self.station = kwargs.get('station', None)
+        #self.id_db = kwargs.get('id_db', None)
 
-        Entity.registry = self
-        self.results = kwargs.get('results')
-        self.time_idx = kwargs.get('time_idx')
+class LVNetworkDingo(NetworkDingo):
+    """ DINGO low voltage network
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        #more params
+        self.stations = kwargs.get('stations', None)
+
+        #self.id_db = kwargs.get('id_db', None)
