@@ -1,4 +1,4 @@
-from dingo.core import NetworkDingo
+#from dingo.core import NetworkDingo
 from dingo.core.network import *
 from dingo.core.structure import *
 

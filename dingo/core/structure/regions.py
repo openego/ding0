@@ -34,7 +34,7 @@ class LVRegionDingo(RegionDingo):
 
         #more params
         self.geo_data = kwargs.get('geo_data', None)
-        self.mv_region = kwargs.get('lv_regions', None)
+        self.mv_region = kwargs.get('mv_region', None)
 
         # INSERT PARAMS FROM LUI
 

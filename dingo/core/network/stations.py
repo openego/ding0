@@ -1,5 +1,4 @@
 from . import StationDingo
-from . import TransformerDingo
 
 class MVStationDingo(StationDingo):
     """

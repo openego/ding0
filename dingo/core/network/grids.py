@@ -1,7 +1,7 @@
-from . import NetworkDingo
+from . import GridDingo
 
-class MVNetworkDingo(NetworkDingo):
-    """ DINGO medium voltage network
+class MVGridDingo(GridDingo):
+    """ DINGO medium voltage grid
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -9,8 +9,8 @@ class MVNetworkDingo(NetworkDingo):
         self.station = kwargs.get('station', None)
         #self.id_db = kwargs.get('id_db', None)
 
-class LVNetworkDingo(NetworkDingo):
-    """ DINGO low voltage network
+class LVGridDingo(GridDingo):
+    """ DINGO low voltage grid
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
