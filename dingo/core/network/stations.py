@@ -9,10 +9,8 @@ class MVStationDingo(StationDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.busbar = None
+        self.bla = None
 
-    def db_import(self, con):
-        # populate objects
 
 class LVStationDingo(StationDingo):
     """
@@ -22,7 +20,3 @@ class LVStationDingo(StationDingo):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-
-    def db_import(self, con):
-        # populate objects

@@ -1,8 +1,10 @@
-from dingo.tools import config as cfg
+from dingo.core.network import stations
+from dingo.tools import config as cfg_dingo
 from oemof import db
 
 import networkx as nx
 import pandas as pd
+import geopandas as gpd
 
 class NetworkDingo():
     """ DINGO Network, contains the NetworkX graph and associated attributes.
@@ -55,10 +57,28 @@ class NetworkDingo():
 #        if not nx.is_connected(g):
 #            raise ValueError("Graph is not connected")
 
-    def import_mv_stations():
-        # 1. get data using config
+    def import_mv_stations(self, conn):
+        schema, table = cfg_dingo.get('stations', 'mv_stations').split('.')
+        index_col = 'subst_id'
+        columns = ['subst_id', 'geom']
+
+        mv_stations = pd.read_sql_table(table, conn, schema=schema,
+                                        index_col=index_col, columns=columns)
+
+        sql = '''SELECT subst_id,
+                 geom
+                 FROM voronoi.substations_excldbahn;'''
+        mv_stations2 = gpd.read_postgis(sql,conn,crs=)
+        y = gpd.GeoDataFrame.from_postgis(sql,conn)
+        for idx, row in mv_stations.iterrows():
+            station_obj = stations.MVStationDingo(name='USW_'+str(idx), geo_data=row['geom'])
+            #bus_temp_in = BusDingo(uid='bus_trans_in'+str(idx),
+            #                       geo_data = geom.Point([row['lon'], row['lat']]))
+            self.graph.add_node(station_obj)
+        print('fsdf')
         # 2. create MV station objects
 
-    def import_load_areas():
+    def import_load_areas(self, conn):
+        print('bla')
         # 1. get data using config
         # 2. create LV region objects

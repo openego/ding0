@@ -35,7 +35,7 @@ cfg = cp.RawConfigParser()
 _loaded = False
 
 def load_config(filename):
-    FILE = path.join('config', filename)
+    FILE = path.join(path.dirname(path.realpath(__file__)), '..', 'config', filename)
 
     try:
         cfg.read(FILE)

@@ -27,23 +27,19 @@ class GridDingo():
         self.db_table = kwargs.get('db_table', None)
 
 
-class StationDingo(Entity):
+class StationDingo():
     """
     Defines a MV/LVstation in DINGO
     -------------------------------
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        #super().__init__(**kwargs)
 
         self.name = kwargs.get('name', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.transformers = kwargs.get('transformers', None)
         self.busbar = None
-
-    def db_import(self, con):
-        # populate objects
-        print('bla')
 
 class BusDingo(Bus):
     """ Create new pypower Bus class as child from oemof Bus used to define

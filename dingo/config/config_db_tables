@@ -13,5 +13,8 @@ lines = network_lines
 transformers = network_trans
 
 [regions]
-mv_regions = r
+mv_regions =
 lv_regions =
+
+[stations]
+mv_stations = voronoi.substations_excldbahn
