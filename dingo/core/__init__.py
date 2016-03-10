@@ -5,6 +5,7 @@ from oemof import db
 import networkx as nx
 import pandas as pd
 import geopandas as gpd
+from geopy.distance import vincenty
 
 class NetworkDingo():
     """ DINGO Network, contains the NetworkX graph and associated attributes.
@@ -57,28 +58,53 @@ class NetworkDingo():
 #        if not nx.is_connected(g):
 #            raise ValueError("Graph is not connected")
 
-    def import_mv_stations(self, conn):
-        schema, table = cfg_dingo.get('stations', 'mv_stations').split('.')
+    def import_mv_stations(self, conn, id=None):
+        """imports MV-stations from database"""
+
+        schema_table = cfg_dingo.get('stations', 'mv_stations')
+        #schema, table = cfg_dingo.get('stations', 'mv_stations').split('.')
         index_col = 'subst_id'
-        columns = ['subst_id', 'geom']
+        #columns = ['subst_id', 'geom']
+        srid = '4326'
 
-        mv_stations = pd.read_sql_table(table, conn, schema=schema,
-                                        index_col=index_col, columns=columns)
+        #mv_stations = pd.read_sql_table(table, conn, schema=schema,
+        #                                index_col=index_col, columns=columns)
 
-        sql = '''SELECT subst_id,
-                 geom
-                 FROM voronoi.substations_excldbahn;'''
-        mv_stations2 = gpd.read_postgis(sql,conn,crs=)
-        y = gpd.GeoDataFrame.from_postgis(sql,conn)
+        # build SQL query
+        where_clause = ''
+        if id:
+            where_clause =  'WHERE subst_id=' + str(id)
+        sql = """SELECT subst_id,
+                        ST_AsText(ST_TRANSFORM(geom, {})) as geom
+                        FROM {} {};""".format(srid, schema_table, where_clause)
+
+        # read data from db
+        mv_stations = pd.read_sql_query(sql, conn, index_col)
+
+        #sql2 = 'SELECT ' + ', '.join(columns) + ' FROM ' + schema + '.' + table + ';'
+        #sql = '''SELECT subst_id,
+        #         geom
+        #         FROM voronoi.substations_excldbahn;'''
+        #mv_stations2 = gpd.read_postgis(sql2,conn)
+        #y = gpd.GeoDataFrame.from_postgis(sql,conn)
+
+        # create objects from rows and add them to graph
         for idx, row in mv_stations.iterrows():
             station_obj = stations.MVStationDingo(name='USW_'+str(idx), geo_data=row['geom'])
-            #bus_temp_in = BusDingo(uid='bus_trans_in'+str(idx),
-            #                       geo_data = geom.Point([row['lon'], row['lat']]))
             self.graph.add_node(station_obj)
-        print('fsdf')
-        # 2. create MV station objects
 
-    def import_load_areas(self, conn):
-        print('bla')
-        # 1. get data using config
-        # 2. create LV region objects
+    def import_lv_regions(self, conn):
+        schema_table = cfg_dingo.get('regions', 'lv_regions')
+        index_col = 'subst_id'
+        srid = '4326'
+
+        # build SQL query
+        where_clause = ''
+        if id:
+            where_clause =  'WHERE subst_id=' + str(id)
+        sql = """SELECT subst_id,
+                        ST_AsText(ST_TRANSFORM(geom, {})) as geom
+                        FROM {} {};""".format(srid, schema_table, where_clause)
+
+        # read data from db
+        mv_stations = pd.read_sql_query(sql, conn, index_col)
