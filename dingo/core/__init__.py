@@ -4,7 +4,6 @@ from oemof import db
 
 import networkx as nx
 import pandas as pd
-import geopandas as gpd
 from geopy.distance import vincenty
 
 class NetworkDingo():
@@ -58,17 +57,17 @@ class NetworkDingo():
 #        if not nx.is_connected(g):
 #            raise ValueError("Graph is not connected")
 
-    def import_mv_stations(self, conn, id=None):
+    #def import_mv_stations(self, conn, id=None):
+    def import_mv_stations(self, id=None):
         """imports MV-stations from database"""
+
+        conn = db.connection(db_section='ontohub_wdb')
 
         schema_table = cfg_dingo.get('stations', 'mv_stations')
         #schema, table = cfg_dingo.get('stations', 'mv_stations').split('.')
         index_col = 'subst_id'
         #columns = ['subst_id', 'geom']
         srid = '4326'
-
-        #mv_stations = pd.read_sql_table(table, conn, schema=schema,
-        #                                index_col=index_col, columns=columns)
 
         # build SQL query
         where_clause = ''
@@ -81,19 +80,19 @@ class NetworkDingo():
         # read data from db
         mv_stations = pd.read_sql_query(sql, conn, index_col)
 
-        #sql2 = 'SELECT ' + ', '.join(columns) + ' FROM ' + schema + '.' + table + ';'
-        #sql = '''SELECT subst_id,
-        #         geom
-        #         FROM voronoi.substations_excldbahn;'''
-        #mv_stations2 = gpd.read_postgis(sql2,conn)
-        #y = gpd.GeoDataFrame.from_postgis(sql,conn)
-
         # create objects from rows and add them to graph
         for idx, row in mv_stations.iterrows():
             station_obj = stations.MVStationDingo(name='USW_'+str(idx), geo_data=row['geom'])
             self.graph.add_node(station_obj)
 
-    def import_lv_regions(self, conn):
+        conn.close()
+
+    #def import_lv_regions(self, conn):
+    def import_lv_regions(self):
+        """imports LV-regions (load ares) from database"""
+
+        conn = db.connection(db_section='ontohub_oedb')
+
         schema_table = cfg_dingo.get('regions', 'lv_regions')
         index_col = 'subst_id'
         srid = '4326'
@@ -102,9 +101,42 @@ class NetworkDingo():
         where_clause = ''
         if id:
             where_clause =  'WHERE subst_id=' + str(id)
-        sql = """SELECT subst_id,
-                        ST_AsText(ST_TRANSFORM(geom, {})) as geom
-                        FROM {} {};""".format(srid, schema_table, where_clause)
+
+        sql = """SELECT uid bigint,
+                        ST_AsText(ST_TRANSFORM(geom, {0})) as geom,
+                        zensus_sum integer,
+                        zensus_count integer,
+                        zensus_density numeric,
+                        ioer_sum numeric,
+                        ioer_count integer,
+                        ioer_density numeric,
+                        area_lg numeric,
+                        sector_area_residential numeric,
+                        sector_area_retail numeric,
+                        sector_area_industrial numeric,
+                        sector_area_agricultural numeric,
+                        sector_share_residential numeric,
+                        sector_share_retail numeric,
+                        sector_share_industrial numeric,
+                        sector_share_agricultural numeric,
+                        sector_count_residential integer,
+                        sector_count_retail integer,
+                        sector_count_industrial integer,
+                        sector_count_agricultural integer,
+                        sector_consumption_residential integer,
+                        sector_consumption_retail integer,
+                        sector_consumption_industrial integer,
+                        sector_consumption_agricultural integer,
+                        nuts character varying(5),
+                        rs character varying(12),
+                        ags_0 character varying(8),
+                        geom_centroid geometry(Point,3035),
+                        geom_surfacepoint geometry(Point,3035),
+                        geom_buffer geometry(Polygon,3035),
+                        lgid serial NOT NULL
+                 FROM {} {};""".format(srid, schema_table, where_clause)
 
         # read data from db
-        mv_stations = pd.read_sql_query(sql, conn, index_col)
+        lv_regions = pd.read_sql_query(sql, conn, index_col)
+
+        conn.close()
