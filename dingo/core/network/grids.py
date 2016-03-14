@@ -7,6 +7,7 @@ class MVGridDingo(GridDingo):
         super().__init__(**kwargs)
         #more params
         self.station = kwargs.get('station', None)
+        self.graph.add_node(self.station)
         #self.id_db = kwargs.get('id_db', None)
 
 class LVGridDingo(GridDingo):

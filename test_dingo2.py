@@ -13,5 +13,5 @@ cfg_dingo.load_config('config_db_tables')
 
 nd = NetworkDingo()
 
-nd.import_mv_stations()
+nd.import_mv_regions()
 nd.import_lv_regions()

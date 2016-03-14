@@ -12,7 +12,7 @@ class MVRegionDingo(RegionDingo):
         super().__init__(**kwargs)
 
         #more params
-        self.geo_data = kwargs.get('geo_data', None)
+        self.mv_grid = kwargs.get('mv_grid', None)
         self.lv_regions = kwargs.get('lv_regions', None) # method instead? (iterate over lv regions)
 
         # INSERT LOAD PARAMS
