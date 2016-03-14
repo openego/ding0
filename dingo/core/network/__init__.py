@@ -18,7 +18,7 @@ class GridDingo():
 
         self.name = kwargs.get('name', None)
         #self.id_db = kwargs.get('id_db', None)
-        self.geo_data = kwargs.get('geo_data', None)
+        #self.geo_data = kwargs.get('geo_data', None)
         self.region = kwargs.get('region', None)
 
         #self.db_table = kwargs.get('db_table', None)
@@ -72,6 +72,8 @@ class GridDingo():
 
     #def import_mv_stations(self, conn, id=None):
 
+    def __repr__(self):
+        return str(self.name)
 
 class StationDingo():
     """
@@ -84,8 +86,12 @@ class StationDingo():
 
         self.name = kwargs.get('name', None)
         self.geo_data = kwargs.get('geo_data', None)
+        self.grid = kwargs.get('grid', None)
         self.transformers = kwargs.get('transformers', None)
         self.busbar = None
+
+    def __repr__(self):
+        return str(self.name)
 
 class BusDingo(Bus):
     """ Create new pypower Bus class as child from oemof Bus used to define
@@ -187,8 +193,6 @@ class TransformerDingo(Transformer):
         self.s_max_c = kwargs.get('s_max_c', None)
         self.phase_angle = kwargs.get('phase_angle', None)
         self.tap_ratio = kwargs.get('tap_ratio', None)
-    def import_mv_trans(self):
-        print('import')
 
 class SourceDingo(Source):
     """

@@ -13,13 +13,20 @@ class MVRegionDingo(RegionDingo):
 
         #more params
         self.mv_grid = kwargs.get('mv_grid', None)
-        self.lv_regions = kwargs.get('lv_regions', None) # method instead? (iterate over lv regions)
+        self._lv_regions = []
 
         # INSERT LOAD PARAMS
         self.peak_load = kwargs.get('peak_load', None)
 
-    def db_import(self):
-        print('blabla')
+    def lv_regions(self):
+        """Returns a generator for iterating over LV regions"""
+        for region in self._lv_regions:
+            yield region
+
+    def add_lv_region(self, lv_region):
+        """Adds a LV region to _lv_regions if not already existing"""
+        if lv_region not in self.lv_regions():
+            self._lv_regions.append(lv_region)
 
 class LVRegionDingo(RegionDingo):
     """
@@ -33,9 +40,11 @@ class LVRegionDingo(RegionDingo):
         super().__init__(**kwargs)
 
         #more params
+        self.lv_grids = kwargs.get('lv_grids', [])
         self.mv_region = kwargs.get('mv_region', None)
 
         # TODO: too many params, use better structure (dict? classes from demand-lib?)
+        # init attributes
         for attribute in ['geo_area',
                           'geo_centroid',
                           'geo_surfacepnt',
@@ -59,6 +68,7 @@ class LVRegionDingo(RegionDingo):
                           'sector_count_agricultural']:
             setattr(self, attribute, kwargs.get(attribute, None))
 
+        # load values into attributes
         self.db_data = kwargs.get('db_data', None)
         if self.db_data is not None:
             for attribute in list(self.db_data.keys()):

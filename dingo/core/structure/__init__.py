@@ -7,10 +7,12 @@ class RegionDingo(Region):
 
     """
     def __init__(self, **kwargs):
-        #inherit branch parameters from oemof's Region
+        #inherit parameters from oemof's Region
         super().__init__(**kwargs)
 
         #more params
         self.name = kwargs.get('name', None)
-        self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
+
+    def __repr__(self):
+        return str(self.name)

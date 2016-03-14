@@ -9,8 +9,6 @@ class MVStationDingo(StationDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.bla = None
-
 
 class LVStationDingo(StationDingo):
     """

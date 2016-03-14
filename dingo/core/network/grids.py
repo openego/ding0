@@ -16,6 +16,6 @@ class LVGridDingo(GridDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         #more params
-        self.stations = kwargs.get('stations', None)
+        self.stations = kwargs.get('stations', [])
 
         #self.id_db = kwargs.get('id_db', None)
