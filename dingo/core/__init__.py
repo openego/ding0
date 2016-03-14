@@ -1,4 +1,5 @@
-from dingo.core.network import stations
+from dingo.core.network.stations import *
+from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
 from oemof import db
 
@@ -9,11 +10,13 @@ from geopy.distance import vincenty
 class NetworkDingo():
     """ DINGO Network, contains the NetworkX graph and associated attributes.
     """
+
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', None)
         self.mv_region = kwargs.get('mv_region', None)
 
         self.graph = nx.Graph()
+        self.graph
 
     def convert_to_networkx(self):
         #entities = self.entities
@@ -61,7 +64,7 @@ class NetworkDingo():
     def import_mv_stations(self, id=None):
         """imports MV-stations from database"""
 
-        conn = db.connection(db_section='ontohub_wdb')
+        conn = db.connection(section='ontohub_wdb_remote')
 
         schema_table = cfg_dingo.get('stations', 'mv_stations')
         #schema, table = cfg_dingo.get('stations', 'mv_stations').split('.')
@@ -74,69 +77,73 @@ class NetworkDingo():
         if id:
             where_clause =  'WHERE subst_id=' + str(id)
         sql = """SELECT subst_id,
-                        ST_AsText(ST_TRANSFORM(geom, {})) as geom
-                        FROM {} {};""".format(srid, schema_table, where_clause)
+                        ST_AsText(ST_TRANSFORM(geom, {0})) as geom
+                        FROM {1} {2};""".format(srid, schema_table, where_clause)
 
         # read data from db
         mv_stations = pd.read_sql_query(sql, conn, index_col)
 
-        # create objects from rows and add them to graph
+        # create station objects from rows and add them to graph
         for idx, row in mv_stations.iterrows():
-            station_obj = stations.MVStationDingo(name='USW_'+str(idx), geo_data=row['geom'])
+            station_obj = MVStationDingo(name='USW_'+str(idx), geo_data=row['geom'])
             self.graph.add_node(station_obj)
 
         conn.close()
 
     #def import_lv_regions(self, conn):
     def import_lv_regions(self):
-        """imports LV-regions (load ares) from database"""
+        """imports LV-regions (load ares) from database
 
-        conn = db.connection(db_section='ontohub_oedb')
+        Table definition for load areas can be found here:
+        http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/Methoden_AP_26_DataProc
+        """
+
+        conn = db.connection(section='ontohub_oedb_remote')
 
         schema_table = cfg_dingo.get('regions', 'lv_regions')
-        index_col = 'subst_id'
+        index_col = 'lgid'
         srid = '4326'
 
         # build SQL query
+        # TODO: insert WHERE-statement here according to Lui's upcoming table definition. Pseudo-Code: SELECT stuff FROM all LV-regions which are within MV-Region (Polygon) x
         where_clause = ''
-        if id:
-            where_clause =  'WHERE subst_id=' + str(id)
 
-        sql = """SELECT uid bigint,
-                        ST_AsText(ST_TRANSFORM(geom, {0})) as geom,
-                        zensus_sum integer,
-                        zensus_count integer,
-                        zensus_density numeric,
-                        ioer_sum numeric,
-                        ioer_count integer,
-                        ioer_density numeric,
-                        area_lg numeric,
-                        sector_area_residential numeric,
-                        sector_area_retail numeric,
-                        sector_area_industrial numeric,
-                        sector_area_agricultural numeric,
-                        sector_share_residential numeric,
-                        sector_share_retail numeric,
-                        sector_share_industrial numeric,
-                        sector_share_agricultural numeric,
-                        sector_count_residential integer,
-                        sector_count_retail integer,
-                        sector_count_industrial integer,
-                        sector_count_agricultural integer,
-                        sector_consumption_residential integer,
-                        sector_consumption_retail integer,
-                        sector_consumption_industrial integer,
-                        sector_consumption_agricultural integer,
-                        nuts character varying(5),
-                        rs character varying(12),
-                        ags_0 character varying(8),
-                        geom_centroid geometry(Point,3035),
-                        geom_surfacepoint geometry(Point,3035),
-                        geom_buffer geometry(Polygon,3035),
-                        lgid serial NOT NULL
-                 FROM {} {};""".format(srid, schema_table, where_clause)
+        sql = """SELECT lgid,
+                        zensus_sum,
+                        zensus_count,
+                        zensus_density,
+                        ioer_sum,
+                        ioer_count,
+                        ioer_density,
+                        area_lg,
+                        sector_area_residential,
+                        sector_area_retail,
+                        sector_area_industrial,
+                        sector_area_agricultural,
+                        sector_share_residential,
+                        sector_share_retail,
+                        sector_share_industrial,
+                        sector_share_agricultural,
+                        sector_count_residential,
+                        sector_count_retail,
+                        sector_count_industrial,
+                        sector_count_agricultural,
+                        sector_consumption_residential,
+                        sector_consumption_retail,
+                        sector_consumption_industrial,
+                        sector_consumption_agricultural,
+                        nuts,
+                        ST_AsText(ST_TRANSFORM(geom, {0})) as geom_area,
+                        ST_AsText(ST_TRANSFORM(geom_centroid, {0})) as geom_centroid,
+                        ST_AsText(ST_TRANSFORM(geom_surfacepoint, {0})) as geom_surfacepoint
+                 FROM {1} {2};""".format(srid, schema_table, where_clause)
 
         # read data from db
         lv_regions = pd.read_sql_query(sql, conn, index_col)
+
+        # create region objects from rows and add them to graph
+        for idx, row in lv_regions.iterrows():
+            region_obj = LVRegionDingo(db_data=row, mv_region=)#, db_cols=lv_regions.columns.values)
+            #self.graph.add_node(station_obj)
 
         conn.close()
