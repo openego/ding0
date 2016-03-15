@@ -13,5 +13,8 @@ cfg_dingo.load_config('config_db_tables')
 
 nd = NetworkDingo()
 
-nd.import_mv_regions()
-nd.import_lv_regions()
+conn = db.connection(db_section='ontohub_oedb')
+
+mv_regions=[1,2]
+
+nd.import_mv_regions(conn, mv_regions)

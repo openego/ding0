@@ -1,4 +1,5 @@
 from . import RegionDingo
+from dingo.core.network.grids import LVGridDingo
 
 class MVRegionDingo(RegionDingo):
     """
@@ -14,6 +15,7 @@ class MVRegionDingo(RegionDingo):
         #more params
         self.mv_grid = kwargs.get('mv_grid', None)
         self._lv_regions = []
+        self.geo_data = kwargs.get('geo_data', None)
 
         # INSERT LOAD PARAMS
         self.peak_load = kwargs.get('peak_load', None)
@@ -25,8 +27,12 @@ class MVRegionDingo(RegionDingo):
 
     def add_lv_region(self, lv_region):
         """Adds a LV region to _lv_regions if not already existing"""
-        if lv_region not in self.lv_regions():
+        # TODO: check arg
+        if lv_region not in self.lv_regions() and isinstance(lv_region, LVRegionDingo):
             self._lv_regions.append(lv_region)
+
+    def __repr__(self):
+        return 'mvregion_' + str(self.id_db)
 
 class LVRegionDingo(RegionDingo):
     """
@@ -40,39 +46,41 @@ class LVRegionDingo(RegionDingo):
         super().__init__(**kwargs)
 
         #more params
-        self.lv_grids = kwargs.get('lv_grids', [])
+        self._lv_grids = [] # add setter
         self.mv_region = kwargs.get('mv_region', None)
 
-        # TODO: too many params, use better structure (dict? classes from demand-lib?)
-        # init attributes
-        for attribute in ['geo_area',
-                          'geo_centroid',
-                          'geo_surfacepnt',
-                          'area',
-                          'nuts_code',
-                          'zensus_sum',
-                          'zensus_cnt',
-                          'ioer_sum',
-                          'ioer_cnt',
-                          'sector_area_residential',
-                          'sector_area_retail',
-                          'sector_area_industrial',
-                          'sector_area_agricultural',
-                          'sector_share_residential',
-                          'sector_share_retail',
-                          'sector_share_industrial',
-                          'sector_share_agricultural',
-                          'sector_count_residential',
-                          'sector_count_retail',
-                          'sector_count_industrial',
-                          'sector_count_agricultural']:
-            setattr(self, attribute, kwargs.get(attribute, None))
-
+        # TODO: dangerous: attributes are created for any passed argument -> check attributes
         # load values into attributes
-        self.db_data = kwargs.get('db_data', None)
-        if self.db_data is not None:
-            for attribute in list(self.db_data.keys()):
-                setattr(self, attribute, self.db_data[attribute])
+        db_data = kwargs.get('db_data', None)
+        if db_data is not None:
+            for attribute in list(db_data.keys()):
+                setattr(self, attribute, db_data[attribute])
+
+        # TODO: many params, use better structure (dict? classes from demand-lib?)
+        # init attributes
+
+        # for attribute in ['geo_area',
+        #                   'geo_centroid',
+        #                   'geo_surfacepnt',
+        #                   'area',
+        #                   'nuts_code',
+        #                   'zensus_sum',
+        #                   'zensus_cnt',
+        #                   'ioer_sum',
+        #                   'ioer_cnt',
+        #                   'sector_area_residential',
+        #                   'sector_area_retail',
+        #                   'sector_area_industrial',
+        #                   'sector_area_agricultural',
+        #                   'sector_share_residential',
+        #                   'sector_share_retail',
+        #                   'sector_share_industrial',
+        #                   'sector_share_agricultural',
+        #                   'sector_count_residential',
+        #                   'sector_count_retail',
+        #                   'sector_count_industrial',
+        #                   'sector_count_agricultural']:
+        #     setattr(self, attribute, kwargs.get(attribute, None))
 
         # self.geo_area = kwargs.get('geo_area', None)
         # self.geo_centroid = kwargs.get('geo_centroid', None)
@@ -104,5 +112,16 @@ class LVRegionDingo(RegionDingo):
         #self.sector_consumption_industrial =
         #self.sector_consumption_agricultural =
 
-    def db_import(self):
-        print('blabla')
+    def lv_grids(self):
+        """Returns a generator for iterating over LV grids"""
+        for grid in self._lv_grids:
+            yield grid
+
+    def add_lv_grid(self, lv_grid):
+        """Adds a LV region to _lv_regions if not already existing"""
+        # TODO: check arg
+        if lv_grid not in self.lv_grids() and isinstance(lv_grid, LVGridDingo):
+            self._lv_grids.append(lv_grid)
+
+    def __repr__(self):
+        return 'lvregion_' + str(self.id_db)

@@ -9,6 +9,9 @@ class MVStationDingo(StationDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    def __repr__(self):
+        return 'mvstation_' + str(self.id_db)
+
 
 class LVStationDingo(StationDingo):
     """
@@ -18,3 +21,6 @@ class LVStationDingo(StationDingo):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def __repr__(self):
+        return 'lvstation_' + str(self.id_db)

@@ -13,8 +13,11 @@ lines = network_lines
 transformers = network_trans
 
 [regions]
-mv_regions = calc_gridcells_znes.polygons
-lv_regions = orig_geo_rli_spf.rli_deu_lastgebiete_spf
+mv_regions = calc_gridcells_znes.znes_deu_gridcells_qgis
+lv_regions = orig_geo_rli.rli_deu_loadarea
 
 [stations]
 mv_stations = calc_gridcells_znes.znes_deu_substations_filtered
+
+[loads]
+lv_loads = orig_geo_rli_spf.rl_deu_peak_load_spf

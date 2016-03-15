@@ -4,6 +4,8 @@ from oemof.core.network.entities.components import Transport
 from oemof.core.network.entities.components import Source
 from oemof.core.network.entities.buses import Bus
 
+from dingo.core.structure.regions import LVRegionDingo
+
 #from oemof.core.network.entities.buses import BusPypo
 #from oemof.core.network.entities.components.transports import BranchPypo
 #from oemof.core.network.entities.components.sources import GenPypo
@@ -13,27 +15,61 @@ import matplotlib.pyplot as plt
 
 class GridDingo():
     """ DINGO grid
+
+    id_db: id according to database table
     """
     def __init__(self, **kwargs):
-
-        self.name = kwargs.get('name', None)
-        #self.id_db = kwargs.get('id_db', None)
+        self.id_db = kwargs.get('id_db', None)
         #self.geo_data = kwargs.get('geo_data', None)
         self.region = kwargs.get('region', None)
 
-        #self.db_table = kwargs.get('db_table', None)
-
         self.graph = nx.Graph()
 
-    def convert_to_networkx(self):
-        #entities = self.entities
-        #buses = [e for e in entities if isinstance(e, BusPypo)]
-        #generators = [e for e in entities if isinstance(e, GenPypo)]
-        #branches = [e for e in entities if isinstance(e, BranchPypo)]
-        self.graph.add_nodes_from(self.transformers)
-        #graph.add_nodes_from(self.transformers + self.buses)
-        #positions = nx.spectral_layout(graph)
-        return graph
+    # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and LV regions!
+    def draw(self):
+        """draws grid graph using networkx"""
+
+        g = self.graph
+
+        # get node positions
+        nodes_pos = {}
+        #x=nd._mv_regions[0].mv_grid.graph.nodes()
+        #x = self.graph.nodes()
+        #x = self.region._lv_regions
+
+        #lv_regions = [_ for _ in self.graph.nodes() if isinstance(_, LVRegionDingo)]
+
+        for node in self.region._lv_regions:
+            nodes_pos[node] = tuple(node.geo_surfacepnt)
+        for node in self.region.
+            nodes_pos[node] = tuple
+
+        ntemp = []
+        nodes_pos = {}
+        demands = {}
+        demands_pos = {}
+        for no, node in self._nodes.items():
+            g.add_node(node)
+            ntemp.append(node)
+            coord = self._problem._coord[no]
+            nodes_pos[node] = tuple(coord)
+            demands[node] = 'd=' + str(node.demand())
+            demands_pos[node] = tuple([a+b for a, b in zip(coord, [2.5]*len(coord))])
+
+        for r in self.routes():
+            #print(r)
+            n1 = r._nodes[0:len(r._nodes)-1]
+            n2 = r._nodes[1:len(r._nodes)]
+            e = list(zip(n1, n2))
+            depot = self._nodes[1]
+            e.append((depot, r._nodes[0]))
+            e.append((r._nodes[-1], depot))
+            g.add_edges_from(e)
+
+        plt.figure()
+        nx.draw_networkx(g, nodes_pos)
+        nx.draw_networkx_labels(g, demands_pos, labels=demands)
+        plt.show()
 
     def draw_networkx(self, graph):
         # TODO: add node-specific attributes (e.g. color) to ensure nice output when plotting (e.g. different colors for
@@ -72,26 +108,21 @@ class GridDingo():
 
     #def import_mv_stations(self, conn, id=None):
 
-    def __repr__(self):
-        return str(self.name)
 
 class StationDingo():
     """
     Defines a MV/LVstation in DINGO
     -------------------------------
+
+    id_db: id according to database table
     """
 
     def __init__(self, **kwargs):
-        #super().__init__(**kwargs)
-
-        self.name = kwargs.get('name', None)
+        self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self.transformers = kwargs.get('transformers', None)
         self.busbar = None
-
-    def __repr__(self):
-        return str(self.name)
 
 class BusDingo(Bus):
     """ Create new pypower Bus class as child from oemof Bus used to define

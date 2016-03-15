@@ -3,8 +3,7 @@ from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
 from oemof import db
-
-#import networkx as nx
+import pandas as pd
 import pandas as pd
 from geopy.distance import vincenty
 
@@ -28,68 +27,73 @@ class NetworkDingo():
 
     def add_mv_region(self, mv_region):
         """Adds a MV region to _mv_regions if not already existing"""
+        # TODO: use setter method here (make attribute '_mv_regions' private)
         if mv_region not in self.mv_regions():
             self._mv_regions.append(mv_region)
 
-    def build_mv_region(self, name, region_geo_data, station_geo_data):
+    def build_mv_region(self, id_db, region_geo_data, station_geo_data):
         """initiates single MV region including station and grid
 
         Parameters
         ----------
-        name: name of station, grid and region
+        id_db: id of station, grid and region according to database table
         region_geo_data: Polygon (shapely object) of region
         station_geo_data: Point (shapely object) of station
 
         """
-        # TODO: validate input params (try..except)
+        # TODO: validate input params
 
-        mv_station = MVStationDingo(name='mvstat'+str(name), geo_data=station_geo_data)
-        mv_grid = MVGridDingo(name='mvgrid'+str(name), station=mv_station)
-        mv_region = MVRegionDingo(name='mvreg'+str(name), mv_grid=mv_grid, geo_data=region_geo_data)
+        mv_station = MVStationDingo(id_db=id_db, geo_data=station_geo_data)
+        mv_grid = MVGridDingo(id_db=id_db, station=mv_station)
+        mv_region = MVRegionDingo(id_db=id_db, mv_grid=mv_grid, geo_data=region_geo_data)
 
         self.add_mv_region(mv_region)
 
         return mv_region
 
-    def import_mv_data(self, mv_regions=None):
+    def import_mv_regions(self, conn, mv_regions=None):
         """imports MV regions and MV stations from database
 
         Parameters
         ----------
-        mv_regions : List of MV regions/stations to be imported (if empty, all regions & stations are imported)
+        conn: Database connection
+        mv_regions : List of MV regions/stations (int) to be imported (if empty, all regions & stations are imported)
         """
 
-        conn = db.connection(section='ontohub_oedb')
+        # check arguments
+        if not all(isinstance(_, int) for _ in mv_regions):
+            raise Exception('Type error: `mv_regions` has to be a list of integers.')
 
+        # get database naming settings from config
         mv_regions_schema_table = cfg_dingo.get('regions', 'mv_regions')
         mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
-        mv_regions_index_col = 'id'
-        #mv_stations_index_col = 'id'
+
         srid = '4326' #WGS84: 4326, TODO: Move to global settings
 
         # build SQL query
         where_clause = ''
         if mv_regions is not None:
-            where_clause = 'WHERE subst_id in (' + ','.join(mv_regions) + ')'
+            where_clause = 'WHERE polys.subst_id in (' + ','.join(str(_) for _ in mv_regions) + ')'
 
-        sql = """SELECT ST_AsText(ST_TRANSFORM(polys.geom, {0})) as poly_geom,
+        sql = """SELECT polys.subst_id as id_db,
+                        ST_AsText(ST_TRANSFORM(polys.geom, {0})) as poly_geom,
                         ST_AsText(ST_TRANSFORM(subs.geom, {0})) as subs_geom
                  FROM {1} AS polys
                         INNER JOIN {2} AS subs
-	                    ON (polys.subst_id = subs.id) {3};""".format(srid,
-                                                                     mv_regions_schema_table,
-                                                                     mv_stations_schema_table,
-                                                                     where_clause)
+                        ON (polys.subst_id = subs.subst_id) {3};""".format(srid,
+                                                                           mv_regions_schema_table,
+                                                                           mv_stations_schema_table,
+                                                                           where_clause)
 
         # read data from db
-        mv_data = pd.read_sql_query(sql, conn, index_col=mv_regions_index_col)
+        mv_data = pd.read_sql_query(sql, conn, index_col='id_db')
 
         # iterate over region/station datasets and initiate objects
-        for idx, row in mv_data.iterrows():
+        for id_db, row in mv_data.iterrows():
             region_geo_data=row['poly_geom']
             station_geo_data=row['subs_geom']
 
-            mv_region = self.build_mv_region(idx, region_geo_data, station_geo_data)
+            mv_region = self.build_mv_region(id_db, region_geo_data, station_geo_data)
             self.import_lv_regions(conn, mv_region)
 
         conn.close()
@@ -102,27 +106,25 @@ class NetworkDingo():
 
         Parameters
         ----------
-        mv_region : MV region/station for which the import of load areas is performed
+        conn: Database connection
+        mv_region : MV region/station (instance of MVRegionDingo class) for which the import of load areas is performed
         """
 
-        #conn = db.connection(section='ontohub_oedb')
+        lv_regions_schema_table = cfg_dingo.get('regions', 'lv_regions')    # alias in sql statement: `regs`
+        lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')          # alias in sql statement: `ploads`
 
-        schema_table = cfg_dingo.get('regions', 'lv_regions')
-        index_col = 'la_id'
         srid = '4326' #WGS84: 4326, TODO: Move to global settings
 
         # build SQL query
-        where_clause = 'WHERE mv_poly_id=' + str(mv_region)
+        #where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
+        where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
 
-        # TODO: Update columns when db table is final
-        sql = """SELECT lgid,
+        sql = """SELECT la_id as id_db,
                         zensus_sum,
-                        zensus_count,
-                        zensus_density,
+                        zensus_count as zensus_cnt,
                         ioer_sum,
-                        ioer_count,
-                        ioer_density,
-                        area_lg,
+                        ioer_count as ioer_cnt,
+                        area_ha as area,
                         sector_area_residential,
                         sector_area_retail,
                         sector_area_industrial,
@@ -135,26 +137,54 @@ class NetworkDingo():
                         sector_count_retail,
                         sector_count_industrial,
                         sector_count_agricultural,
-                        sector_consumption_residential,
-                        sector_consumption_retail,
-                        sector_consumption_industrial,
-                        sector_consumption_agricultural,
-                        nuts,
+                        nuts as nuts_code,
                         ST_AsText(ST_TRANSFORM(geom, {0})) as geo_area,
                         ST_AsText(ST_TRANSFORM(geom_centroid, {0})) as geo_centroid,
-                        ST_AsText(ST_TRANSFORM(geom_surfacepoint, {0})) as geo_surfacepoint
-                 FROM {1} {2};""".format(srid, schema_table, where_clause)
+                        ST_AsText(ST_TRANSFORM(geom_surfacepoint, {0})) as geo_surfacepnt
+                 FROM {1} {2};""".format(srid, lv_regions_schema_table, where_clause)
+
+        # sql = """SELECT regs.la_id as id_db,
+        #                 regs.zensus_sum,
+        #                 regs.zensus_count as zensus_cnt,
+        #                 regs.ioer_sum,
+        #                 regs.ioer_count as ioer_cnt,
+        #                 regs.area_ha as area,
+        #                 regs.sector_area_residential,
+        #                 regs.sector_area_retail,
+        #                 regs.sector_area_industrial,
+        #                 regs.sector_area_agricultural,
+        #                 regs.sector_share_residential,
+        #                 regs.sector_share_retail,
+        #                 regs.sector_share_industrial,
+        #                 regs.sector_share_agricultural,
+        #                 regs.sector_count_residential,
+        #                 regs.sector_count_retail,
+        #                 regs.sector_count_industrial,
+        #                 regs.sector_count_agricultural,
+        #                 regs.nuts as nuts_code,
+        #                 ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
+        #                 ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
+        #                 ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
+        #                 ploads.residential as peak_load_residential,
+        #                 ploads.retail as peak_load_retail,
+        #                 ploads.industrial as peak_load_industrial
+        #          FROM {1} AS reg
+        #                 INNER JOIN {2} AS ploads
+        #                 ON (regs.la_id = ploads.la_id) {3};""".format(srid,
+        #                                                               lv_regions_schema_table,
+        #                                                               lv_loads_schema_table,
+        #                                                               where_clause)
 
         # read data from db
-        lv_regions = pd.read_sql_query(sql, conn, index_col)
+        lv_regions = pd.read_sql_query(sql, conn, index_col='id_db')
 
         # create region objects from rows and add them to graph
-        for idx, row in lv_regions.iterrows():
-            lv_region = LVRegionDingo(name='lvreg'+str(idx), db_data=row, mv_region=mv_region)#, db_cols=lv_regions.columns.values)
+        for id_db, row in lv_regions.iterrows():
+            lv_region = LVRegionDingo(id_db=id_db, db_data=row, mv_region=mv_region)#, db_cols=lv_regions.columns.values)
             mv_region.add_lv_region(lv_region)
             mv_region.mv_grid.graph.add_node(lv_region)
 
-        #conn.close()
+    #def import_lv_peak_loads(self, conn, mv_region):
 
     def __repr__(self):
         return str(self.name)
