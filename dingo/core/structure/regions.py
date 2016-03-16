@@ -1,6 +1,8 @@
 from . import RegionDingo
 from dingo.core.network.grids import LVGridDingo
 
+from shapely.wkt import loads as wkt_loads
+
 
 class MVRegionDingo(RegionDingo):
     """
@@ -44,23 +46,35 @@ class LVRegionDingo(RegionDingo):
     # TODO: add method remove_lv_grid()
 
     def __init__(self, **kwargs):
-        #inherit branch parameters from Region
+        # inherit branch parameters from Region
         super().__init__(**kwargs)
 
-        #more params
+        # more params
         self._lv_grids = [] # TODO: add setter
         self.mv_region = kwargs.get('mv_region', None)
 
-        # TODO: dangerous: attributes are created for any passed argument -> check attributes
-        # load values into attributes
         db_data = kwargs.get('db_data', None)
+
+        # TODO: Choose good argument handling (add any given attribute (OPTION 1) vs. list of args (OPTION 2), see below)
+
+        # OPTION 1
+        # dangerous: attributes are created for any passed argument in `db_data`
+        # load values into attributes
         if db_data is not None:
             for attribute in list(db_data.keys()):
                 setattr(self, attribute, db_data[attribute])
 
+        # convert geo attributes to to shapely objects
+        if hasattr(self, 'geo_area'):
+            self.geo_area = wkt_loads(self.geo_area)
+        if hasattr(self, 'geo_centroid'):
+            self.geo_centroid = wkt_loads(self.geo_centroid)
+        if hasattr(self, 'geo_surfacepnt'):
+            self.geo_surfacepnt = wkt_loads(self.geo_surfacepnt)
+
         # Alternative to version above:
-        # TODO: many params, use better structure (dict? classes from demand-lib?)
-        # init attributes
+        # many params, use better structure (dict? classes from demand-lib?)
+
 
         # for attribute in ['geo_area',
         #                   'geo_centroid',

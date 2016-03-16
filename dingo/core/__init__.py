@@ -5,8 +5,7 @@ from dingo.tools import config as cfg_dingo
 from oemof import db
 
 import pandas as pd
-import geopandas as gpd
-from shapely import geometry
+from shapely.wkt import loads as wkt_loads
 from geopy.distance import vincenty
 
 
@@ -80,8 +79,7 @@ class NetworkDingo:
 
         sql = """SELECT polys.subst_id as id_db,
                         ST_AsText(ST_TRANSFORM(polys.geom, {0})) as poly_geom,
-                        ST_AsText(ST_TRANSFORM(subs.geom, {0})) as subs_geom,
-                        ST_TRANSFORM(polys.geom, {0}) as pgeom
+                        ST_AsText(ST_TRANSFORM(subs.geom, {0})) as subs_geom
                  FROM {1} AS polys
                         INNER JOIN {2} AS subs
                         ON (polys.subst_id = subs.subst_id) {3};""".format(srid,
@@ -95,8 +93,8 @@ class NetworkDingo:
 
         # iterate over region/station datasets and initiate objects
         for id_db, row in mv_data.iterrows():
-            region_geo_data=row['poly_geom']
-            station_geo_data=row['subs_geom']
+            region_geo_data = wkt_loads(row['poly_geom'])
+            station_geo_data = wkt_loads(row['subs_geom'])
 
             mv_region = self.build_mv_region(id_db, region_geo_data, station_geo_data)
             self.import_lv_regions(conn, mv_region)
@@ -191,7 +189,7 @@ class NetworkDingo:
             # TODO: Following code is for testing purposes only! (create 1 LV grid and 1 station for every LV region)
             # === START TESTING ===
             # create LV station object
-            station_geo_data=row['geo_surfacepnt']
+            station_geo_data = wkt_loads(row['geo_surfacepnt'])
             lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data)
             lv_grid = LVGridDingo(region=lv_region, id_db=id_db, geo_data=station_geo_data)
             # add LV station to LV grid
