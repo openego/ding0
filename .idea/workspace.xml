@@ -2,211 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5fc4916d-73e3-4ac5-af65-d32a41678b0d" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/models/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/models/models.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/solvers/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/solvers/base.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/solvers/local_search.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/solvers/savings.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/ms-routing1.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/or-opt_test.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/run_test_case.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/A-n32-k5 - site.nvrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n32-k5.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n32-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n33-k6.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n33-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n36-k5.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n36-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n45-k7.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n45-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n63-k10.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/A-n63-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n31-k5.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n31-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n34-k5.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n34-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n38-k6.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n38-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n44-k7.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n44-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n66-k9.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/B-n66-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n16-k8.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n16-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n19-k2.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n19-k2.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n23-k8.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n23-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n40-k5.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n40-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n50-k10.opt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat-tcc/P-n50-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n32-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n33-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n33-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n34-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n36-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n37-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n37-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n38-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n39-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n39-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n44-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n45-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n45-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n46-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n48-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n53-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n54-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n55-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n60-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n61-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n62-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n63-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n63-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n64-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n65-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n69-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/A-n80-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n31-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n34-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n35-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n38-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n39-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n41-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n43-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n44-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n45-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n45-k6.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n50-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n50-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n51-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n52-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n56-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n57-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n57-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n63-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n64-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n66-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n67-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n68-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/B-n78-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n101-k4.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n16-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n19-k2.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n20-k2.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n21-k2.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n22-k2.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n22-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n23-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n40-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n45-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n50-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n50-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n50-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n51-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n55-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n55-k15.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n55-k7.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n55-k8.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n60-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n60-k15.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n65-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n70-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n76-k4.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Augerat/P-n76-k5.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Example-k2.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Example-k3.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Example-n5-k2.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/A-n65-k9.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/A-n80-k10.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E051-05e.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E072-04f.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E076-07s.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E076-10e.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E076-14u.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E101-08e.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E101-10c.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E101-14u.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E151-12c.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E200-17b.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Takes-tcc/E200-17c.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E016-03m.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E016-05m.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E021-04m.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E021-06m.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E022-04g.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E022-06m.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E023-03g.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E023-05S.DAT" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E026-08m.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E030-03g.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E030-04S.DAT" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E031-09h.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E033-03N.DAT" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E033-04g.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E033-05s.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E036-11h.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E041-14h.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E045-04f.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E048-04y.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E051-05e.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E072-04f.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076-07s.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076-07u.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076-08s.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076-08u.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076-10e.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076-14s.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076-14u.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076-15s.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076A10r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076B09r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076C09r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E076D09r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E101-08e.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E101-10c.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E101-14s.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E101-14u.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E101A11r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E101B11r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E101C11r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E101D11r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E121-07c.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E135-07f.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E151-12b.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E151-12c.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E151A15r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E151B14r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E151C14r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E151D14r.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E200-16b.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E200-16c.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E200-17b.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E200-17c.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E241-22k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E253-27k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E256-14k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E262-25j.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E301-28k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E321-30k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E324-16k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E361-33k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E386-47t.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E397-34k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E400-18k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E421-41k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E481-38k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/tests/testcases/Vigo/E484-19k.vrp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/util/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/util/data_input.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/network/routing/util/util.py" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/__init__.py" afterPath="$PROJECT_DIR$/dingo/core/__init__.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/network/__init__.py" afterPath="$PROJECT_DIR$/dingo/core/network/__init__.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/network/grids.py" afterPath="$PROJECT_DIR$/dingo/core/network/grids.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/network/stations.py" afterPath="$PROJECT_DIR$/dingo/core/network/stations.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/structure/__init__.py" afterPath="$PROJECT_DIR$/dingo/core/structure/__init__.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/structure/regions.py" afterPath="$PROJECT_DIR$/dingo/core/structure/regions.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test_dingo2.py" afterPath="$PROJECT_DIR$/test_dingo2.py" />
     </list>
@@ -229,11 +30,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/dingo/core/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-8.0">
-              <caret line="63" column="85" selection-start-line="63" selection-start-column="12" selection-end-line="63" selection-end-column="85" />
+            <state vertical-scroll-proportion="0.6318408">
+              <caret line="99" column="0" selection-start-line="99" selection-start-column="0" selection-end-line="99" selection-end-column="0" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -241,11 +42,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="create_grid.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/dingo/grid/lv_grid/create_grid.py">
+      <file leaf-file-name="sql.py" pinned="false" current-in-tab="false">
+        <entry file="file:///usr/local/lib/python3.4/dist-packages/geopandas/io/sql.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="4" column="23" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="23" />
+              <caret line="35" column="0" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -255,20 +56,10 @@
         <entry file="file://$PROJECT_DIR$/dingo/core/network/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="26" column="9" selection-start-line="26" selection-start-column="9" selection-end-line="26" selection-end-column="9" />
+              <caret line="5" column="0" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="transformers.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/dingo/core/network/transformers.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -277,20 +68,10 @@
         <entry file="file://$PROJECT_DIR$/dingo/core/network/grids.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="47" column="108" selection-start-line="47" selection-start-column="108" selection-end-line="47" selection-end-column="108" />
+              <caret line="78" column="0" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
               <folding>
-                <element signature="e#0#23#0" expanded="true" />
+                <element signature="e#42#65#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="stations.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/dingo/core/network/stations.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="2" column="20" selection-start-line="2" selection-start-column="6" selection-end-line="2" selection-end-column="20" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -299,17 +80,17 @@
         <entry file="file://$PROJECT_DIR$/dingo/core/structure/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+              <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="regions.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="regions.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dingo/core/structure/regions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.8035714">
-              <caret line="122" column="65" selection-start-line="122" selection-start-column="65" selection-end-line="122" selection-end-column="65" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="51" column="22" selection-start-line="51" selection-start-column="13" selection-end-line="51" selection-end-column="22" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
@@ -321,8 +102,10 @@
         <entry file="file://$PROJECT_DIR$/test_dingo2.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="2" column="30" selection-start-line="2" selection-start-column="30" selection-end-line="2" selection-end-column="30" />
-              <folding />
+              <caret line="18" column="38" selection-start-line="18" selection-start-column="38" selection-end-line="18" selection-end-column="38" />
+              <folding>
+                <element signature="e#0#35#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -352,23 +135,22 @@
         <option value="$PROJECT_DIR$/dingo/import_data.py" />
         <option value="$PROJECT_DIR$/dingo/tools/config.py" />
         <option value="$PROJECT_DIR$/dingo/routing/models/models.py" />
-        <option value="$PROJECT_DIR$/dingo/core/structure/__init__.py" />
         <option value="$PROJECT_DIR$/dingo/config/config_db_tables" />
-        <option value="$PROJECT_DIR$/dingo/core/network/stations.py" />
         <option value="$PROJECT_DIR$/dingo/grid/lv_grid/create_grid.py" />
         <option value="$PROJECT_DIR$/test_dingo2.py" />
-        <option value="$PROJECT_DIR$/dingo/core/__init__.py" />
-        <option value="$PROJECT_DIR$/dingo/core/network/__init__.py" />
         <option value="$PROJECT_DIR$/dingo/core/network/grids.py" />
+        <option value="$PROJECT_DIR$/dingo/core/network/stations.py" />
+        <option value="$PROJECT_DIR$/dingo/core/structure/__init__.py" />
         <option value="$PROJECT_DIR$/dingo/core/structure/regions.py" />
+        <option value="$PROJECT_DIR$/dingo/core/network/__init__.py" />
+        <option value="$PROJECT_DIR$/dingo/core/__init__.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-1" />
     <option name="y" value="24" />
-    <option name="width" value="1922" />
-    <option name="height" value="1033" />
+    <option name="width" value="1920" />
+    <option name="height" value="1032" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -395,6 +177,8 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
+      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -649,10 +433,66 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="core" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="core" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="network" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="dingo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="config" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
-      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -897,7 +737,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1" y="24" width="1922" height="1033" extended-state="6" />
+    <frame x="0" y="24" width="1920" height="1032" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15989584" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -905,18 +745,18 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27497315" sideWeight="0.503125" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2631579" sideWeight="0.49791667" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32902297" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28207964" sideWeight="0.496875" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2495238" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32902297" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30088496" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28207964" sideWeight="0.496875" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30088496" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
     <layout-to-restore>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32902297" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -951,6 +791,13 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/dingo/core/__init__.py</url>
+          <line>96</line>
+          <option name="timeStamp" value="62" />
+        </line-breakpoint>
+      </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
@@ -961,11 +808,55 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="54" />
+      <option name="time" value="63" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/dingo/core/network/stations.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="25" column="45" selection-start-line="25" selection-start-column="45" selection-end-line="25" selection-end-column="45" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/core/structure/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/core/structure/regions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="1" column="48" selection-start-line="1" selection-start-column="48" selection-end-line="1" selection-end-column="48" />
+          <folding>
+            <element signature="e#0#25#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/config/config_db_tables">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="22" column="48" selection-start-line="22" selection-start-column="48" selection-end-line="22" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_dingo2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#35#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/test1.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -1071,13 +962,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../oemof/oemof/oemof/core/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/test_dingo.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -1099,19 +983,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///usr/local/lib/python3.4/dist-packages/pandas/core/index.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.017142856">
-          <caret line="297" column="0" selection-start-line="297" selection-start-column="0" selection-end-line="297" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/lib/python3.4/dist-packages/pandas/core/generic.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.017142856">
           <caret line="730" column="0" selection-start-line="730" selection-start-column="0" selection-end-line="730" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1161,37 +1036,50 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.3084577">
           <caret line="1070" column="33" selection-start-line="1070" selection-start-column="33" selection-end-line="1070" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/tools/config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.022857143">
+          <caret line="42" column="0" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python3.4/dist-packages/networkx/classes/graph.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="10.3714285">
+          <caret line="608" column="8" selection-start-line="608" selection-start-column="8" selection-end-line="608" selection-end-column="8" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
+    <entry file="file://$PROJECT_DIR$/dingo/grid/lv_grid/create_grid.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.42288557">
-          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="4" column="23" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="23" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../oemof/oemof/oemof/core/network/__init__.py">
+    <entry file="file://$PROJECT_DIR$/dingo/grid/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-0.42857143">
-          <caret line="1" column="4" selection-start-line="1" selection-start-column="2" selection-end-line="1" selection-end-column="4" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/core/network/transformers.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../oemof/oemof/oemof/core/network/entities/__init__.py">
+    <entry file="file://$PROJECT_DIR$/dingo/core/network/stations.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-5.4">
-          <caret line="21" column="50" selection-start-line="21" selection-start-column="48" selection-end-line="21" selection-end-column="50" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../oemof/oemof/oemof/core/energy_system.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.8873239">
-          <caret line="257" column="58" selection-start-line="257" selection-start-column="57" selection-end-line="257" selection-end-column="58" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="3" column="0" selection-start-line="3" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -1204,39 +1092,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/tools/config.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.022857143">
-          <caret line="42" column="0" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.4/dist-packages/networkx/classes/graph.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="10.3714285">
-          <caret line="608" column="8" selection-start-line="608" selection-start-column="8" selection-end-line="608" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_dingo2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="2" column="30" selection-start-line="2" selection-start-column="30" selection-end-line="2" selection-end-column="30" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/core/network/stations.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="2" column="20" selection-start-line="2" selection-start-column="6" selection-end-line="2" selection-end-column="20" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/core/network/transformers.py">
+    <entry file="file://$PROJECT_DIR$/dingo/core/structure/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
@@ -1244,20 +1100,46 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/grid/lv_grid/create_grid.py">
+    <entry file="file://$PROJECT_DIR$/dingo/core/structure/regions.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="4" column="23" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="23" />
+          <caret line="51" column="22" selection-start-line="51" selection-start-column="13" selection-end-line="51" selection-end-column="22" />
+          <folding>
+            <element signature="e#0#25#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.42288557">
+          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/core/__init__.py">
+    <entry file="file://$PROJECT_DIR$/../../oemof/oemof/oemof/core/network/entities/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-8.0">
-          <caret line="63" column="85" selection-start-line="63" selection-start-column="12" selection-end-line="63" selection-end-column="85" />
+        <state vertical-scroll-proportion="0.3482587">
+          <caret line="14" column="48" selection-start-line="14" selection-start-column="48" selection-end-line="14" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../oemof/oemof/oemof/core/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_dingo2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="18" column="38" selection-start-line="18" selection-start-column="38" selection-end-line="18" selection-end-column="38" />
           <folding>
-            <element signature="e#0#38#0" expanded="true" />
+            <element signature="e#0#35#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1265,37 +1147,63 @@
     <entry file="file://$PROJECT_DIR$/dingo/core/network/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="26" column="9" selection-start-line="26" selection-start-column="9" selection-end-line="26" selection-end-column="9" />
+          <caret line="5" column="0" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/core/structure/__init__.py">
+    <entry file="file://$PROJECT_DIR$/../../oemof/oemof/oemof/core/energy_system.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
-          <folding />
+          <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
+          <folding>
+            <element signature="e#83#96#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/dingo/core/network/grids.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="47" column="108" selection-start-line="47" selection-start-column="108" selection-end-line="47" selection-end-column="108" />
+          <caret line="78" column="0" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
           <folding>
-            <element signature="e#0#23#0" expanded="true" />
+            <element signature="e#42#65#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/core/structure/regions.py">
+    <entry file="file:///usr/local/lib/python3.4/dist-packages/pandas/core/index.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.8035714">
-          <caret line="122" column="65" selection-start-line="122" selection-start-column="65" selection-end-line="122" selection-end-column="65" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="1118" column="0" selection-start-line="1118" selection-start-column="0" selection-end-line="1118" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../oemof/oemof/oemof/core/network/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.5721393">
+          <caret line="59" column="52" selection-start-line="59" selection-start-column="52" selection-end-line="59" selection-end-column="52" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python3.4/dist-packages/geopandas/io/sql.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="35" column="0" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/core/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.6318408">
+          <caret line="99" column="0" selection-start-line="99" selection-start-column="0" selection-end-line="99" selection-end-column="0" />
           <folding>
-            <element signature="e#0#25#0" expanded="true" />
+            <element signature="e#0#38#0" expanded="true" />
           </folding>
         </state>
       </provider>

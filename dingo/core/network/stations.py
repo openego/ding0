@@ -1,5 +1,6 @@
 from . import StationDingo
 
+
 class MVStationDingo(StationDingo):
     """
     Defines a MV station in DINGO

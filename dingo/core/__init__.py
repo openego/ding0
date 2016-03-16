@@ -3,10 +3,14 @@ from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
 from oemof import db
+
 import pandas as pd
+import geopandas as gpd
+from shapely import geometry
 from geopy.distance import vincenty
 
-class NetworkDingo():
+
+class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the MV-grids. Contains the NetworkX graph and
     associated attributes.
 
@@ -67,7 +71,7 @@ class NetworkDingo():
         mv_regions_schema_table = cfg_dingo.get('regions', 'mv_regions')
         mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
 
-        srid = '4326' #WGS84: 4326, TODO: Move to global settings
+        srid = '4326' # WGS84: 4326, TODO: Move to global settings
 
         # build SQL query
         where_clause = ''
@@ -76,7 +80,8 @@ class NetworkDingo():
 
         sql = """SELECT polys.subst_id as id_db,
                         ST_AsText(ST_TRANSFORM(polys.geom, {0})) as poly_geom,
-                        ST_AsText(ST_TRANSFORM(subs.geom, {0})) as subs_geom
+                        ST_AsText(ST_TRANSFORM(subs.geom, {0})) as subs_geom,
+                        ST_TRANSFORM(polys.geom, {0}) as pgeom
                  FROM {1} AS polys
                         INNER JOIN {2} AS subs
                         ON (polys.subst_id = subs.subst_id) {3};""".format(srid,
@@ -86,6 +91,7 @@ class NetworkDingo():
 
         # read data from db
         mv_data = pd.read_sql_query(sql, conn, index_col='id_db')
+        #mv_data2 = gpd.read_postgis(sql,conn,geom_col=['poly_geom', 'subs_geom', 'pgeom'], index_col='id_db')
 
         # iterate over region/station datasets and initiate objects
         for id_db, row in mv_data.iterrows():
@@ -112,7 +118,7 @@ class NetworkDingo():
         lv_regions_schema_table = cfg_dingo.get('regions', 'lv_regions')    # alias in sql statement: `regs`
         lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')          # alias in sql statement: `ploads`
 
-        srid = '4326' #WGS84: 4326, TODO: Move to global settings
+        srid = '4326' # WGS84: 4326, TODO: Move to global settings
 
         # build SQL query
         #where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
@@ -182,14 +188,25 @@ class NetworkDingo():
             # create LV region object
             lv_region = LVRegionDingo(id_db=id_db, db_data=row, mv_region=mv_region)#, db_cols=lv_regions.columns.values)
 
+            # TODO: Following code is for testing purposes only! (create 1 LV grid and 1 station for every LV region)
+            # === START TESTING ===
+            # create LV station object
+            station_geo_data=row['geo_surfacepnt']
+            lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data)
+            lv_grid = LVGridDingo(region=lv_region, id_db=id_db, geo_data=station_geo_data)
+            # add LV station to LV grid
+            lv_grid.add_station(lv_station)
+            # add LV grid to LV region
+            lv_region.add_lv_grid(lv_grid)
+            # === END TESTING ===
+
             # add LV region to MV region
             mv_region.add_lv_region(lv_region)
 
+            # OLD:
             # add LV region to MV grid graph
             # TODO: add LV station instead of LV region
             #mv_region.mv_grid.graph_add_node(lv_region)
-
-    #def import_lv_peak_loads(self, conn, mv_region):
 
     def __repr__(self):
         return str(self.name)

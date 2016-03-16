@@ -1,6 +1,7 @@
 from . import RegionDingo
 from dingo.core.network.grids import LVGridDingo
 
+
 class MVRegionDingo(RegionDingo):
     """
     Defines a MV-region in DINGO

@@ -1,5 +1,6 @@
 from oemof.core.energy_system import Region
 
+
 class RegionDingo(Region):
     """
     Defines a region in DINGO, derived from oemof

@@ -4,8 +4,6 @@ from oemof.core.network.entities.components import Transport
 from oemof.core.network.entities.components import Source
 from oemof.core.network.entities.buses import Bus
 
-from dingo.core.structure.regions import LVRegionDingo
-from dingo.core.network import StationDingo
 #from dingo.core.network.transformers import
 
 #from oemof.core.network.entities.buses import BusPypo
@@ -15,11 +13,13 @@ from dingo.core.network import StationDingo
 import networkx as nx
 import matplotlib.pyplot as plt
 
-class GridDingo():
+
+class GridDingo:
     """ DINGO grid
 
     id_db: id according to database table
     """
+
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
         #self.geo_data = kwargs.get('geo_data', None)
@@ -48,10 +48,10 @@ class GridDingo():
         #lv_regions = [_ for _ in self.graph.nodes() if isinstance(_, LVRegionDingo)]
         #lv_regions = [_ for _ in self.graph.nodes() if isinstance(_, LVRegionDingo)]
 
-        for node in self.region._lv_regions:
-            nodes_pos[node] = tuple(node.geo_surfacepnt)
-        for node in self.region.
-            nodes_pos[node] = tuple
+        # for node in self.region._lv_regions:
+        #     nodes_pos[node] = tuple(node.geo_surfacepnt)
+        # for node in self.region.
+        #     nodes_pos[node] = tuple
 
         ntemp = []
         nodes_pos = {}
@@ -145,6 +145,7 @@ class StationDingo():
         # TODO: check arg
         if transformer not in self.transformers() and isinstance(transformer, TransformerDingo):
             self._transformers.append(transformer)
+
 
 class BusDingo(Bus):
     """ Create new pypower Bus class as child from oemof Bus used to define
@@ -246,6 +247,7 @@ class TransformerDingo(Transformer):
         self.s_max_c = kwargs.get('s_max_c', None)
         self.phase_angle = kwargs.get('phase_angle', None)
         self.tap_ratio = kwargs.get('tap_ratio', None)
+
 
 class SourceDingo(Source):
     """

@@ -1,5 +1,7 @@
+#from dingo.core.network import GridDingo
 from . import GridDingo
 from dingo.core.network.stations import *
+
 
 class MVGridDingo(GridDingo):
     """ DINGO medium voltage grid
@@ -13,8 +15,6 @@ class MVGridDingo(GridDingo):
         self._station = None
 
         self.add_station(kwargs.get('station', None))
-
-        self.graph.add_node(self.station)
 
     def station(self):
         """Returns MV station"""
@@ -31,22 +31,27 @@ class MVGridDingo(GridDingo):
             raise Exception('Given MV station is not a MVStationDingo object.')
         if self._station is None:
             self._station = mv_station
+            self.graph_add_node(mv_station)
         else:
             if force:
                 self._station = mv_station
             else:
                 raise Exception('MV Station already set, use argument `force=True` to override.')
 
-    def graph_build(self):
-        """Builds/fills graph with objects (stations, ..)"""
-        # TODO: Add edges, loads etc. later on
-
-        # add MV station
-        self.graph_add_node(self._station)
-
-        # add LV stations
-        for lv_station in LV_STATIONS <-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-            self.graph_add_node(lv_station)
+    # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
+    # def graph_build(self):
+    #     """Builds/fills graph with objects (stations, ..)"""
+    #     # TODO: Add edges, loads etc. later on
+    #
+    #     # add MV station
+    #     self.graph_add_node(self._station)
+    #
+    #     # add LV stations
+    #     # TODO: to get LV stations, generator of generators is necessary
+    #     # TODO: see http://stackoverflow.com/questions/19033401/python-generator-of-generators
+    #     # TODO: not sure if the following works:
+    #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_regions()]]:
+    #         self.graph_add_node(lv_station)
 
     def __repr__(self):
         return 'mvgrid_' + str(self.id_db)
@@ -70,15 +75,19 @@ class LVGridDingo(GridDingo):
         if lv_station not in self.stations() and isinstance(lv_station, LVStationDingo):
             self._stations.append(lv_station)
 
-    def graph_build(self):
-        """Builds/fills graph with objects (stations, ..)"""
-        # TODO: Add edges, loads etc. later on
-
-        # add LV stations
-        for lv_station in LV_STATIONS <-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             self.graph_add_node(lv_station)
+            self.region.mv_region.mv_grid.graph_add_node(lv_station)
 
-        # TODO: add more nodes (loads etc.) here
+    # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
+    # def graph_build(self):
+    #     """Builds/fills graph with objects (stations, ..)"""
+    #     # TODO: Add edges, loads etc. later on
+    #
+    #     # add LV stations
+    #     for lv_station in self.stations():
+    #         self.graph_add_node(lv_station)
+    #
+    #     # TODO: add more nodes (loads etc.) here
 
     def __repr__(self):
         return 'lvgrid_' + str(self.id_db)
