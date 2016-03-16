@@ -4,7 +4,6 @@ from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
 from oemof import db
 import pandas as pd
-import pandas as pd
 from geopy.distance import vincenty
 
 class NetworkDingo():
@@ -180,9 +179,15 @@ class NetworkDingo():
 
         # create region objects from rows and add them to graph
         for id_db, row in lv_regions.iterrows():
+            # create LV region object
             lv_region = LVRegionDingo(id_db=id_db, db_data=row, mv_region=mv_region)#, db_cols=lv_regions.columns.values)
+
+            # add LV region to MV region
             mv_region.add_lv_region(lv_region)
-            mv_region.mv_grid.graph.add_node(lv_region)
+
+            # add LV region to MV grid graph
+            # TODO: add LV station instead of LV region
+            #mv_region.mv_grid.graph_add_node(lv_region)
 
     #def import_lv_peak_loads(self, conn, mv_region):
 

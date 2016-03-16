@@ -7,6 +7,7 @@ class MVRegionDingo(RegionDingo):
     ----------------------------
 
     """
+    # TODO: add method remove_lv_region()
 
     def __init__(self, **kwargs):
         #inherit branch parameters from Region
@@ -27,7 +28,6 @@ class MVRegionDingo(RegionDingo):
 
     def add_lv_region(self, lv_region):
         """Adds a LV region to _lv_regions if not already existing"""
-        # TODO: check arg
         if lv_region not in self.lv_regions() and isinstance(lv_region, LVRegionDingo):
             self._lv_regions.append(lv_region)
 
@@ -40,13 +40,14 @@ class LVRegionDingo(RegionDingo):
     ----------------------------
 
     """
+    # TODO: add method remove_lv_grid()
 
     def __init__(self, **kwargs):
         #inherit branch parameters from Region
         super().__init__(**kwargs)
 
         #more params
-        self._lv_grids = [] # add setter
+        self._lv_grids = [] # TODO: add setter
         self.mv_region = kwargs.get('mv_region', None)
 
         # TODO: dangerous: attributes are created for any passed argument -> check attributes
@@ -56,6 +57,7 @@ class LVRegionDingo(RegionDingo):
             for attribute in list(db_data.keys()):
                 setattr(self, attribute, db_data[attribute])
 
+        # Alternative to version above:
         # TODO: many params, use better structure (dict? classes from demand-lib?)
         # init attributes
 
@@ -118,8 +120,7 @@ class LVRegionDingo(RegionDingo):
             yield grid
 
     def add_lv_grid(self, lv_grid):
-        """Adds a LV region to _lv_regions if not already existing"""
-        # TODO: check arg
+        """Adds a LV grid to _lv_grids if not already existing"""
         if lv_grid not in self.lv_grids() and isinstance(lv_grid, LVGridDingo):
             self._lv_grids.append(lv_grid)
 

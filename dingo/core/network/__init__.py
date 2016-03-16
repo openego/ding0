@@ -5,6 +5,8 @@ from oemof.core.network.entities.components import Source
 from oemof.core.network.entities.buses import Bus
 
 from dingo.core.structure.regions import LVRegionDingo
+from dingo.core.network import StationDingo
+#from dingo.core.network.transformers import
 
 #from oemof.core.network.entities.buses import BusPypo
 #from oemof.core.network.entities.components.transports import BranchPypo
@@ -22,14 +24,20 @@ class GridDingo():
         self.id_db = kwargs.get('id_db', None)
         #self.geo_data = kwargs.get('geo_data', None)
         self.region = kwargs.get('region', None)
+        #self._stations = []
 
-        self.graph = nx.Graph()
+        self._graph = nx.Graph()
+
+    def graph_add_node(self, station):
+        """Adds a station object to grid graph if not already existing"""
+        if station not in self._graph.nodes() and isinstance(station, StationDingo):
+            self._graph.add_node(station)
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and LV regions!
-    def draw(self):
+    def graph_draw(self):
         """draws grid graph using networkx"""
 
-        g = self.graph
+        g = self._graph
 
         # get node positions
         nodes_pos = {}
@@ -37,6 +45,7 @@ class GridDingo():
         #x = self.graph.nodes()
         #x = self.region._lv_regions
 
+        #lv_regions = [_ for _ in self.graph.nodes() if isinstance(_, LVRegionDingo)]
         #lv_regions = [_ for _ in self.graph.nodes() if isinstance(_, LVRegionDingo)]
 
         for node in self.region._lv_regions:
@@ -88,6 +97,7 @@ class GridDingo():
         #                       node_size = 2
         plt.show()
 
+
 #        for e in entities:
 #            for e_in in e.inputs:
 #                g.add_edge(e_in, e)
@@ -116,13 +126,25 @@ class StationDingo():
 
     id_db: id according to database table
     """
+    # TODO: add method remove_transformer()
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
-        self.transformers = kwargs.get('transformers', None)
+        self._transformers = []
         self.busbar = None
+
+    def transformers(self):
+        """Returns a generator for iterating over transformers"""
+        for trans in self._transformers:
+            yield trans
+
+    def add_transformer(self, transformer):
+        """Adds a transformer to _transformers if not already existing"""
+        # TODO: check arg
+        if transformer not in self.transformers() and isinstance(transformer, TransformerDingo):
+            self._transformers.append(transformer)
 
 class BusDingo(Bus):
     """ Create new pypower Bus class as child from oemof Bus used to define

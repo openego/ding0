@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 # workaround: add dingo to sys.path to allow imports
 PACKAGE_PARENT = '../../..'
@@ -7,13 +7,11 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 import time
-import networkx as nx
 import matplotlib.pyplot as plt
 
-from sys import getsizeof
+from dingo.network.routing.util import util, data_input
+from dingo.network.routing.solvers import savings, local_search
 
-from dingo.routing.util import data_input, util
-from dingo.routing.solvers import savings, local_search
 
 def main():
     plt.close('all')
