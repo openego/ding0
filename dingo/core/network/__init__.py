@@ -42,11 +42,19 @@ class GridDingo:
 
         g = self._graph
 
-        # get node positions
-        nodes_pos = {}
+        # get draw params from nodes and edges (coordinates, colors, demands, etc.)
+        nodes_pos = {}; demands = {}; demands_pos = {}
+        nodes_color = []
         for node in g.nodes():
             if isinstance(node, StationDingo):
                 nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
+                # TODO: Add demand as label
+                #demands[node] = 'd=' + str(node.grid.region.peak_load_sum)
+                #demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [2.5]*len(nodes_pos[node]))])
+            if node == self.station():
+                nodes_color.append((1, 0.5, 0.5))
+            else:
+                nodes_color.append((0.5, 0.5, 1))
             #if isinstance(node, LVStationDingo)
 
         # get edges
@@ -55,86 +63,9 @@ class GridDingo:
         #         blablabla
 
         plt.figure()
-        nx.draw_networkx(g, nodes_pos)
+        nx.draw_networkx(g, nodes_pos, node_color=nodes_color)
         #nx.draw_networkx_labels(g, demands_pos, labels=demands)
         plt.show()
-
-        #x=nd._mv_regions[0].mv_grid.graph.nodes()
-        #x = self.graph.nodes()
-        #x = self.region._lv_regions
-
-        #lv_regions = [_ for _ in self.graph.nodes() if isinstance(_, LVRegionDingo)]
-        #lv_regions = [_ for _ in self.graph.nodes() if isinstance(_, LVRegionDingo)]
-
-        # for node in self.region._lv_regions:
-        #     nodes_pos[node] = tuple(node.geo_surfacepnt)
-        # for node in self.region.
-        #     nodes_pos[node] = tuple
-
-        ntemp = []
-        nodes_pos = {}
-        demands = {}
-        demands_pos = {}
-        for no, node in self._nodes.items():
-            g.add_node(node)
-            ntemp.append(node)
-            coord = self._problem._coord[no]
-            nodes_pos[node] = tuple(coord)
-            demands[node] = 'd=' + str(node.demand())
-            demands_pos[node] = tuple([a+b for a, b in zip(coord, [2.5]*len(coord))])
-
-        for r in self.routes():
-            #print(r)
-            n1 = r._nodes[0:len(r._nodes)-1]
-            n2 = r._nodes[1:len(r._nodes)]
-            e = list(zip(n1, n2))
-            depot = self._nodes[1]
-            e.append((depot, r._nodes[0]))
-            e.append((r._nodes[-1], depot))
-            g.add_edges_from(e)
-
-        plt.figure()
-        nx.draw_networkx(g, nodes_pos)
-        nx.draw_networkx_labels(g, demands_pos, labels=demands)
-        plt.show()
-
-    def draw_networkx(self, graph):
-        # TODO: add node-specific attributes (e.g. color) to ensure nice output when plotting (e.g. different colors for
-        # MV and LV stations
-
-        positions = {}
-        #positions_b = {}
-        for t in self.transformers:
-            positions[t] = [t.geo_data.x, t.geo_data.y]
-        #for b in self.buses:
-        #    positions_b[b] = [b.geo_data.x, b.geo_data.y]
-        #positions[] = [[t.geo_data.x, t.geo_data.y] for t in self.transformers]
-        nx.draw_networkx_nodes(graph, positions, self.transformers, node_shape="o", node_color="r",
-                               node_size = 5)
-        #nx.draw_networkx_nodes(graph, positions_b, self.buses, node_shape="o", node_color="b",
-        #                       node_size = 2
-        plt.show()
-
-
-#        for e in entities:
-#            for e_in in e.inputs:
-#                g.add_edge(e_in, e)
-#        if positions is None:
-#            positions = nx.spectral_layout(g)
-#        nx.draw_networkx_nodes(g, positions, buses, node_shape="o", node_color="r",
-#                               node_size = 600)
-#        nx.draw_networkx_nodes(g, positions, branches, node_shape="s",
-#                               node_color="b", node_size=200)
-#        nx.draw_networkx_nodes(g, positions, generators, node_shape="s",
-#                               node_color="g", node_size=200)
-#        nx.draw_networkx_edges(g, positions)
-#        if labels:
-#            nx.draw_networkx_labels(g, positions)
-#        plt.show()
-#        if not nx.is_connected(g):
-#            raise ValueError("Graph is not connected")
-
-    #def import_mv_stations(self, conn, id=None):
 
 
 class StationDingo():

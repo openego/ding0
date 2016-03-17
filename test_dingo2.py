@@ -12,8 +12,8 @@ cfg_dingo.load_config('config_db_tables')
 
 nd = NetworkDingo(name='network')
 
-conn = db.connection(db_section='ontohub_oedb')
-#conn = db.connection(section='ontohub_oedb_remote')
+#conn = db.connection(db_section='ontohub_oedb')
+conn = db.connection(section='ontohub_oedb_remote')
 
 mv_regions=[106, 125, 500, 722, 887, 1049] # some MV regions from SPF region
 

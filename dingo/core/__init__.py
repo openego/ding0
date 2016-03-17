@@ -33,21 +33,22 @@ class NetworkDingo:
         if mv_region not in self.mv_regions():
             self._mv_regions.append(mv_region)
 
-    def build_mv_region(self, id_db, region_geo_data, station_geo_data):
+    def build_mv_region(self, poly_id, subst_id, region_geo_data, station_geo_data):
         """initiates single MV region including station and grid
 
         Parameters
         ----------
-        id_db: id of station, grid and region according to database table
+        poly_id: ID of region according to database table. Also used as ID for created grid
+        subst_id: ID of station according to database table
         region_geo_data: Polygon (shapely object) of region
         station_geo_data: Point (shapely object) of station
 
         """
         # TODO: validate input params
 
-        mv_station = MVStationDingo(id_db=id_db, geo_data=station_geo_data)
-        mv_grid = MVGridDingo(id_db=id_db, station=mv_station)
-        mv_region = MVRegionDingo(id_db=id_db, mv_grid=mv_grid, geo_data=region_geo_data)
+        mv_station = MVStationDingo(id_db=subst_id, geo_data=station_geo_data)
+        mv_grid = MVGridDingo(id_db=poly_id, station=mv_station)
+        mv_region = MVRegionDingo(id_db=poly_id, mv_grid=mv_grid, geo_data=region_geo_data)
         mv_grid.region = mv_region
 
         self.add_mv_region(mv_region)
@@ -76,9 +77,10 @@ class NetworkDingo:
         # build SQL query
         where_clause = ''
         if mv_regions is not None:
-            where_clause = 'WHERE polys.subst_id in (' + ','.join(str(_) for _ in mv_regions) + ')'
+            where_clause = 'WHERE polys.id in (' + ','.join(str(_) for _ in mv_regions) + ')'
 
-        sql = """SELECT polys.subst_id as id_db,
+        sql = """SELECT polys.subst_id as subst_id,
+                        polys.id as poly_id,
                         ST_AsText(ST_TRANSFORM(polys.geom, {0})) as poly_geom,
                         ST_AsText(ST_TRANSFORM(subs.geom, {0})) as subs_geom
                  FROM {1} AS polys
@@ -89,15 +91,16 @@ class NetworkDingo:
                                                                            where_clause)
 
         # read data from db
-        mv_data = pd.read_sql_query(sql, conn, index_col='id_db')
+        mv_data = pd.read_sql_query(sql, conn, index_col='poly_id')
         #mv_data2 = gpd.read_postgis(sql,conn,geom_col=['poly_geom', 'subs_geom', 'pgeom'], index_col='id_db')
 
         # iterate over region/station datasets and initiate objects
-        for id_db, row in mv_data.iterrows():
+        for poly_id, row in mv_data.iterrows():
+            subst_id = row['subst_id']
             region_geo_data = wkt_loads(row['poly_geom'])
             station_geo_data = wkt_loads(row['subs_geom'])
 
-            mv_region = self.build_mv_region(id_db, region_geo_data, station_geo_data)
+            mv_region = self.build_mv_region(poly_id, subst_id, region_geo_data, station_geo_data)
             self.import_lv_regions(conn, mv_region)
 
     def import_lv_regions(self, conn, mv_region):
@@ -170,7 +173,8 @@ class NetworkDingo:
                         ploads.residential as peak_load_residential,
                         ploads.retail as peak_load_retail,
                         ploads.industrial as peak_load_industrial,
-                        ploads.agricultural as peak_load_agricultural
+                        ploads.agricultural as peak_load_agricultural,
+                        (ploads.residential + ploads.retail + ploads.industrial + ploads.agricultural) as peak_load_sum
                  FROM {1} AS regs
                         INNER JOIN {2} AS ploads
                         ON (regs.la_id = ploads.la_id) {3};""".format(srid,
@@ -192,6 +196,7 @@ class NetworkDingo:
             station_geo_data = wkt_loads(row['geo_surfacepnt'])
             lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data)
             lv_grid = LVGridDingo(region=lv_region, id_db=id_db, geo_data=station_geo_data)
+            lv_station.grid = lv_grid
             # add LV station to LV grid
             lv_grid.add_station(lv_station)
             # add LV grid to LV region
