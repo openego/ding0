@@ -48,6 +48,7 @@ class NetworkDingo:
         mv_station = MVStationDingo(id_db=id_db, geo_data=station_geo_data)
         mv_grid = MVGridDingo(id_db=id_db, station=mv_station)
         mv_region = MVRegionDingo(id_db=id_db, mv_grid=mv_grid, geo_data=region_geo_data)
+        mv_grid.region = mv_region
 
         self.add_mv_region(mv_region)
 
@@ -99,8 +100,6 @@ class NetworkDingo:
             mv_region = self.build_mv_region(id_db, region_geo_data, station_geo_data)
             self.import_lv_regions(conn, mv_region)
 
-        conn.close()
-
     def import_lv_regions(self, conn, mv_region):
         """imports LV regions (load areas) from database for a single MV region
 
@@ -122,61 +121,62 @@ class NetworkDingo:
         #where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
         where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
 
-        sql = """SELECT la_id as id_db,
-                        zensus_sum,
-                        zensus_count as zensus_cnt,
-                        ioer_sum,
-                        ioer_count as ioer_cnt,
-                        area_ha as area,
-                        sector_area_residential,
-                        sector_area_retail,
-                        sector_area_industrial,
-                        sector_area_agricultural,
-                        sector_share_residential,
-                        sector_share_retail,
-                        sector_share_industrial,
-                        sector_share_agricultural,
-                        sector_count_residential,
-                        sector_count_retail,
-                        sector_count_industrial,
-                        sector_count_agricultural,
-                        nuts as nuts_code,
-                        ST_AsText(ST_TRANSFORM(geom, {0})) as geo_area,
-                        ST_AsText(ST_TRANSFORM(geom_centroid, {0})) as geo_centroid,
-                        ST_AsText(ST_TRANSFORM(geom_surfacepoint, {0})) as geo_surfacepnt
-                 FROM {1} {2};""".format(srid, lv_regions_schema_table, where_clause)
+        # sql = """SELECT la_id as id_db,
+        #                 zensus_sum,
+        #                 zensus_count as zensus_cnt,
+        #                 ioer_sum,
+        #                 ioer_count as ioer_cnt,
+        #                 area_ha as area,
+        #                 sector_area_residential,
+        #                 sector_area_retail,
+        #                 sector_area_industrial,
+        #                 sector_area_agricultural,
+        #                 sector_share_residential,
+        #                 sector_share_retail,
+        #                 sector_share_industrial,
+        #                 sector_share_agricultural,
+        #                 sector_count_residential,
+        #                 sector_count_retail,
+        #                 sector_count_industrial,
+        #                 sector_count_agricultural,
+        #                 nuts as nuts_code,
+        #                 ST_AsText(ST_TRANSFORM(geom, {0})) as geo_area,
+        #                 ST_AsText(ST_TRANSFORM(geom_centroid, {0})) as geo_centroid,
+        #                 ST_AsText(ST_TRANSFORM(geom_surfacepoint, {0})) as geo_surfacepnt
+        #          FROM {1} {2};""".format(srid, lv_regions_schema_table, where_clause)
 
-        # sql = """SELECT regs.la_id as id_db,
-        #                 regs.zensus_sum,
-        #                 regs.zensus_count as zensus_cnt,
-        #                 regs.ioer_sum,
-        #                 regs.ioer_count as ioer_cnt,
-        #                 regs.area_ha as area,
-        #                 regs.sector_area_residential,
-        #                 regs.sector_area_retail,
-        #                 regs.sector_area_industrial,
-        #                 regs.sector_area_agricultural,
-        #                 regs.sector_share_residential,
-        #                 regs.sector_share_retail,
-        #                 regs.sector_share_industrial,
-        #                 regs.sector_share_agricultural,
-        #                 regs.sector_count_residential,
-        #                 regs.sector_count_retail,
-        #                 regs.sector_count_industrial,
-        #                 regs.sector_count_agricultural,
-        #                 regs.nuts as nuts_code,
-        #                 ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
-        #                 ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
-        #                 ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
-        #                 ploads.residential as peak_load_residential,
-        #                 ploads.retail as peak_load_retail,
-        #                 ploads.industrial as peak_load_industrial
-        #          FROM {1} AS reg
-        #                 INNER JOIN {2} AS ploads
-        #                 ON (regs.la_id = ploads.la_id) {3};""".format(srid,
-        #                                                               lv_regions_schema_table,
-        #                                                               lv_loads_schema_table,
-        #                                                               where_clause)
+        sql = """SELECT regs.la_id as id_db,
+                        regs.zensus_sum,
+                        regs.zensus_count as zensus_cnt,
+                        regs.ioer_sum,
+                        regs.ioer_count as ioer_cnt,
+                        regs.area_ha as area,
+                        regs.sector_area_residential,
+                        regs.sector_area_retail,
+                        regs.sector_area_industrial,
+                        regs.sector_area_agricultural,
+                        regs.sector_share_residential,
+                        regs.sector_share_retail,
+                        regs.sector_share_industrial,
+                        regs.sector_share_agricultural,
+                        regs.sector_count_residential,
+                        regs.sector_count_retail,
+                        regs.sector_count_industrial,
+                        regs.sector_count_agricultural,
+                        regs.nuts as nuts_code,
+                        ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
+                        ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
+                        ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
+                        ploads.residential as peak_load_residential,
+                        ploads.retail as peak_load_retail,
+                        ploads.industrial as peak_load_industrial,
+                        ploads.agricultural as peak_load_agricultural
+                 FROM {1} AS regs
+                        INNER JOIN {2} AS ploads
+                        ON (regs.la_id = ploads.la_id) {3};""".format(srid,
+                                                                      lv_regions_schema_table,
+                                                                      lv_loads_schema_table,
+                                                                      where_clause)
 
         # read data from db
         lv_regions = pd.read_sql_query(sql, conn, index_col='id_db')

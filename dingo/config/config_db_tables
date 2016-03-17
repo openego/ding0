@@ -20,4 +20,4 @@ lv_regions = orig_geo_rli.rli_deu_loadarea
 mv_stations = calc_gridcells_znes.znes_deu_substations_filtered
 
 [loads]
-lv_loads = orig_geo_rli_spf.rl_deu_peak_load_spf
+lv_loads = orig_geo_rli.rli_deu_peak_load_spf

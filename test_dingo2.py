@@ -12,12 +12,16 @@ cfg_dingo.load_config('config_db_tables')
 
 nd = NetworkDingo(name='network')
 
-conn = db.connection(section='ontohub_oedb')
+conn = db.connection(db_section='ontohub_oedb')
 #conn = db.connection(section='ontohub_oedb_remote')
 
-mv_regions=[1,2]
+mv_regions=[106, 125, 500, 722, 887, 1049] # some MV regions from SPF region
 
 nd.import_mv_regions(conn, mv_regions)
 
 # cre
 # create_lv_stations(network)
+
+conn.close()
+
+nd._mv_regions[0].mv_grid.graph_draw()

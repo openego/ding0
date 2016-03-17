@@ -4,8 +4,6 @@ from oemof.core.network.entities.components import Transport
 from oemof.core.network.entities.components import Source
 from oemof.core.network.entities.buses import Bus
 
-#from dingo.core.network.transformers import
-
 #from oemof.core.network.entities.buses import BusPypo
 #from oemof.core.network.entities.components.transports import BranchPypo
 #from oemof.core.network.entities.components.sources import GenPypo
@@ -35,12 +33,32 @@ class GridDingo:
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and LV regions!
     def graph_draw(self):
-        """draws grid graph using networkx"""
+        """draws grid graph using networkx
+
+        caution: The geo coords (for used crs see database import in class `NetworkDingo`) are used as positions for
+                 drawing but networkx uses cartesian crs. Since no coordinate transformation is performed, the drawn
+                 graph representation is falsified!
+        """
 
         g = self._graph
 
         # get node positions
         nodes_pos = {}
+        for node in g.nodes():
+            if isinstance(node, StationDingo):
+                nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
+            #if isinstance(node, LVStationDingo)
+
+        # get edges
+        # for edge in g.edges():
+        #     if isinstance(edge, ???)
+        #         blablabla
+
+        plt.figure()
+        nx.draw_networkx(g, nodes_pos)
+        #nx.draw_networkx_labels(g, demands_pos, labels=demands)
+        plt.show()
+
         #x=nd._mv_regions[0].mv_grid.graph.nodes()
         #x = self.graph.nodes()
         #x = self.region._lv_regions
