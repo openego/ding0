@@ -170,7 +170,6 @@ class Route(object):
         
     def tech_constraints_satisfied(self):
         """Check route validity according to technical constraints
-        TO BE COMPLETED
         
         Constraints:
             current rating of cable/line
@@ -178,6 +177,8 @@ class Route(object):
             cable/line losses?
         """
         ### CHECK WITH ROUTE CAPACITY (see also: solution.is_complete AND route.can_allocate)
+        # TODO: TO BE COMPLETED
+
         # check current rating of cable/line
         i_max_th = self._problem._cabletype.i_max_th
         voltage = self._problem._voltage

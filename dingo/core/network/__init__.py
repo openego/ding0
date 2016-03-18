@@ -49,8 +49,8 @@ class GridDingo:
             if isinstance(node, StationDingo):
                 nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
                 # TODO: Add demand as label
-                #demands[node] = 'd=' + str(node.grid.region.peak_load_sum)
-                #demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [2.5]*len(nodes_pos[node]))])
+                demands[node] = 'd=' + str(node.grid.region.peak_load_sum)
+                demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [2.5]*len(nodes_pos[node]))])
             if node == self.station():
                 nodes_color.append((1, 0.5, 0.5))
             else:
@@ -64,7 +64,7 @@ class GridDingo:
 
         plt.figure()
         nx.draw_networkx(g, nodes_pos, node_color=nodes_color)
-        #nx.draw_networkx_labels(g, demands_pos, labels=demands)
+        nx.draw_networkx_labels(g, demands_pos, labels=demands)
         plt.show()
 
 

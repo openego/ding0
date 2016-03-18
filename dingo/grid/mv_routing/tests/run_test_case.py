@@ -9,8 +9,8 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 import time
 import matplotlib.pyplot as plt
 
-from dingo.network.routing.util import util, data_input
-from dingo.network.routing.solvers import savings, local_search
+from dingo.grid.mv_routing.util import util, data_input
+from dingo.grid.mv_routing.solvers import savings, local_search
 
 
 def main():

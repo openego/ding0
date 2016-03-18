@@ -2,6 +2,9 @@
 from . import GridDingo
 from dingo.core.network.stations import *
 
+#from dingo.grid.mv_routing.solvers import savings, local_search
+from dingo.grid.mv_routing import mv_routing
+
 
 class MVGridDingo(GridDingo):
     """ DINGO medium voltage grid
@@ -52,6 +55,18 @@ class MVGridDingo(GridDingo):
     #     # TODO: not sure if the following works:
     #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_regions()]]:
     #         self.graph_add_node(lv_station)
+
+    def routing(self, debug=False):
+        """ Performs routing on grid graph nodes
+        Args:
+            debug:
+
+        Returns:
+
+        """
+
+        solution = mv_routing.solve(self._graph)
+
 
     def __repr__(self):
         return 'mvgrid_' + str(self.id_db)

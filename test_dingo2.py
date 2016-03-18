@@ -1,8 +1,11 @@
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
-#from dingo.grid.lv_grid import
 from oemof import db
 
+import matplotlib.pyplot as plt
+
+
+plt.close('all')
 
 cfg_dingo.load_config('config_db_tables')
 
@@ -12,8 +15,8 @@ cfg_dingo.load_config('config_db_tables')
 
 nd = NetworkDingo(name='network')
 
-#conn = db.connection(db_section='ontohub_oedb')
-conn = db.connection(section='ontohub_oedb_remote')
+conn = db.connection(db_section='ontohub_oedb')
+#conn = db.connection(section='ontohub_oedb_remote')
 
 mv_regions=[106, 125, 500, 722, 887, 1049] # some MV regions from SPF region
 

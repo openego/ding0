@@ -6,7 +6,6 @@ from oemof import db
 
 import pandas as pd
 from shapely.wkt import loads as wkt_loads
-from geopy.distance import vincenty
 
 
 class NetworkDingo:
@@ -184,6 +183,9 @@ class NetworkDingo:
 
         # read data from db
         lv_regions = pd.read_sql_query(sql, conn, index_col='id_db')
+
+        # replace NaN values with zero (necessary for peak load data)
+        #lv_regions = lv_regions.where((pd.notnull(lv_regions)), 0)
 
         # create region objects from rows and add them to graph
         for id_db, row in lv_regions.iterrows():

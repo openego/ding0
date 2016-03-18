@@ -14,8 +14,8 @@
 #import time
 import itertools as it
 
-from models import models
-from solvers.base import BaseSolution, BaseSolver
+from dingo.grid.mv_routing.models import models
+from dingo.grid.mv_routing.solvers.base import BaseSolution, BaseSolver
 
 
 
@@ -78,6 +78,7 @@ class LocalSearchSolver(BaseSolver):
        ToDo:
            * Cross (inter-route) - to remove crossing edges between two routes
     """
+    # TODO: Cross (inter-route), see above
     
     def operator_oropt(self, graph, solution):
         """applies Or-Opt intra-route operator to solution
@@ -314,7 +315,7 @@ class LocalSearchSolver(BaseSolver):
         Returns a solution (LocalSearchSolution class))
         """
         solution = LocalSearchSolution(graph, savings_solution)
-        #self.benchmark_operator_order(graph, savings_solution)
+        #self.benchmark_operator_order(graph, savings_solution) # <- FOR BENCHMARKING
         
         
 

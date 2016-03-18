@@ -14,7 +14,7 @@ import re
 import math
 
 from os import path
-from models.models import Graph
+from dingo.grid.mv_routing.models.models import Graph
 
 class ParseException(Exception):
     """Exception raised when something unexpected occurs in a TSPLIB file parsing"""

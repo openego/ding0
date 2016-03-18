@@ -13,8 +13,8 @@
 import operator
 import time
 
-from models import models
-from solvers.base import BaseSolution, BaseSolver
+from dingo.grid.mv_routing.models import models
+from dingo.grid.mv_routing.solvers.base import BaseSolution, BaseSolver
 
 class SavingsSolution(BaseSolution):
     """Solution class for a Clarke and Wright Savings parallel algorithm"""
