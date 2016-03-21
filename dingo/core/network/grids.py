@@ -65,7 +65,7 @@ class MVGridDingo(GridDingo):
 
         """
 
-        solution = mv_routing.solve(self._graph)
+        solution = mv_routing.solve(self._graph, debug)
 
 
     def __repr__(self):

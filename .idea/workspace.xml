@@ -2,16 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5fc4916d-73e3-4ac5-af65-d32a41678b0d" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/grid/mv_routing/tests/ms-routing1.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dingo/grid/mv_routing/tests/or-opt_test.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/test_dingo.py" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/__init__.py" afterPath="$PROJECT_DIR$/dingo/core/__init__.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/network/__init__.py" afterPath="$PROJECT_DIR$/dingo/core/network/__init__.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/core/network/grids.py" afterPath="$PROJECT_DIR$/dingo/core/network/grids.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/grid/mv_routing/models/models.py" afterPath="$PROJECT_DIR$/dingo/grid/mv_routing/models/models.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/grid/mv_routing/solvers/local_search.py" afterPath="$PROJECT_DIR$/dingo/grid/mv_routing/solvers/local_search.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/grid/mv_routing/solvers/savings.py" afterPath="$PROJECT_DIR$/dingo/grid/mv_routing/solvers/savings.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/grid/mv_routing/tests/run_test_case.py" afterPath="$PROJECT_DIR$/dingo/grid/mv_routing/tests/run_test_case.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dingo/grid/mv_routing/util/data_input.py" afterPath="$PROJECT_DIR$/dingo/grid/mv_routing/util/data_input.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test_dingo2.py" afterPath="$PROJECT_DIR$/test_dingo2.py" />
     </list>
     <ignored path="dingo.iws" />
@@ -37,7 +34,7 @@
         <entry file="file://$PROJECT_DIR$/dingo/core/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="7" column="42" selection-start-line="7" selection-start-column="42" selection-end-line="7" selection-end-column="42" />
+              <caret line="185" column="112" selection-start-line="185" selection-start-column="112" selection-end-line="185" selection-end-column="112" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -49,7 +46,7 @@
         <entry file="file://$PROJECT_DIR$/dingo/core/network/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="49" column="68" selection-start-line="49" selection-start-column="16" selection-end-line="49" selection-end-column="68" />
+              <caret line="51" column="38" selection-start-line="51" selection-start-column="38" selection-end-line="51" selection-end-column="38" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -61,7 +58,7 @@
         <entry file="file://$PROJECT_DIR$/dingo/core/network/grids.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="68" column="0" selection-start-line="68" selection-start-column="0" selection-end-line="68" selection-end-column="0" />
+              <caret line="67" column="0" selection-start-line="67" selection-start-column="0" selection-end-line="67" selection-end-column="0" />
               <folding>
                 <element signature="e#42#65#0" expanded="true" />
               </folding>
@@ -72,22 +69,10 @@
       <file leaf-file-name="mv_routing.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/mv_routing.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.8677686">
-              <caret line="35" column="40" selection-start-line="35" selection-start-column="40" selection-end-line="35" selection-end-column="40" />
+            <state vertical-scroll-proportion="0.7714286">
+              <caret line="63" column="4" selection-start-line="63" selection-start-column="4" selection-end-line="63" selection-end-column="4" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="local_search.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/local_search.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="317" column="85" selection-start-line="317" selection-start-column="85" selection-end-line="317" selection-end-column="85" />
-              <folding>
-                <element signature="e#554#576#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -97,7 +82,7 @@
         <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/models/models.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="179" column="31" selection-start-line="179" selection-start-column="31" selection-end-line="179" selection-end-column="31" />
+              <caret line="137" column="51" selection-start-line="137" selection-start-column="42" selection-end-line="137" selection-end-column="55" />
               <folding />
             </state>
           </provider>
@@ -115,21 +100,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="base.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/base.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="123" column="18" selection-start-line="123" selection-start-column="18" selection-end-line="123" selection-end-column="18" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="data_input.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/util/data_input.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-3.7142856">
-              <caret line="155" column="43" selection-start-line="155" selection-start-column="4" selection-end-line="155" selection-end-column="43" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="324" column="0" selection-start-line="324" selection-start-column="0" selection-end-line="324" selection-end-column="0" />
               <folding>
                 <element signature="e#524#533#0" expanded="true" />
               </folding>
@@ -141,7 +116,27 @@
         <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/util/distance.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="14" column="45" selection-start-line="14" selection-start-column="23" selection-end-line="14" selection-end-column="45" />
+              <caret line="7" column="89" selection-start-line="7" selection-start-column="89" selection-end-line="7" selection-end-column="89" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="test_dingo2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/test_dingo2.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="21" column="15" selection-start-line="21" selection-start-column="15" selection-end-line="21" selection-end-column="15" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="savings.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/savings.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="171" column="13" selection-start-line="171" selection-start-column="13" selection-end-line="171" selection-end-column="13" />
               <folding />
             </state>
           </provider>
@@ -177,17 +172,17 @@
         <option value="$PROJECT_DIR$/dingo/core/structure/__init__.py" />
         <option value="$PROJECT_DIR$/dingo/core/structure/regions.py" />
         <option value="$PROJECT_DIR$/dingo/config/config_db_tables" />
-        <option value="$PROJECT_DIR$/dingo/core/network/__init__.py" />
         <option value="$PROJECT_DIR$/dingo/grid/mv_routing/tests/run_test_case.py" />
         <option value="$PROJECT_DIR$/dingo/grid/mv_routing/util/data_input.py" />
-        <option value="$PROJECT_DIR$/dingo/grid/mv_routing/solvers/savings.py" />
-        <option value="$PROJECT_DIR$/test_dingo2.py" />
+        <option value="$PROJECT_DIR$/dingo/grid/mv_routing/solvers/local_search.py" />
+        <option value="$PROJECT_DIR$/dingo/core/network/__init__.py" />
         <option value="$PROJECT_DIR$/dingo/core/network/grids.py" />
+        <option value="$PROJECT_DIR$/dingo/grid/mv_routing/util/distance.py" />
+        <option value="$PROJECT_DIR$/test_dingo2.py" />
+        <option value="$PROJECT_DIR$/dingo/grid/mv_routing/models/models.py" />
         <option value="$PROJECT_DIR$/dingo/core/__init__.py" />
         <option value="$PROJECT_DIR$/dingo/grid/mv_routing/mv_routing.py" />
-        <option value="$PROJECT_DIR$/dingo/grid/mv_routing/util/distance.py" />
-        <option value="$PROJECT_DIR$/dingo/grid/mv_routing/solvers/local_search.py" />
-        <option value="$PROJECT_DIR$/dingo/grid/mv_routing/models/models.py" />
+        <option value="$PROJECT_DIR$/dingo/grid/mv_routing/solvers/savings.py" />
       </list>
     </option>
   </component>
@@ -222,8 +217,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -664,6 +657,8 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -679,7 +674,7 @@
       <recent name="$PROJECT_DIR$/dingo/core/network" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.run_test_case">
+  <component name="RunManager" selected="Python.test_dingo2">
     <configuration default="false" name="test_dingo" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -896,8 +891,8 @@
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.run_test_case" />
-        <item index="1" class="java.lang.String" itemvalue="Python.test_dingo2" />
+        <item index="0" class="java.lang.String" itemvalue="Python.test_dingo2" />
+        <item index="1" class="java.lang.String" itemvalue="Python.run_test_case" />
         <item index="2" class="java.lang.String" itemvalue="Python.feedinlib_example_coastdat" />
         <item index="3" class="java.lang.String" itemvalue="Python.test_dingo" />
         <item index="4" class="java.lang.String" itemvalue="Python.test2" />
@@ -935,18 +930,18 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27497315" sideWeight="0.503125" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2631579" sideWeight="0.49791667" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32902297" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28097346" sideWeight="0.496875" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2495238" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32902297" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29867256" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28097346" sideWeight="0.496875" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32964602" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29867256" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
     <layout-to-restore>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32902297" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -983,14 +978,29 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/dingo/core/network/grids.py</url>
-          <line>1</line>
-          <option name="timeStamp" value="89" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="python-line">
           <url>file://$PROJECT_DIR$/dingo/grid/mv_routing/tests/run_test_case.py</url>
           <line>18</line>
           <option name="timeStamp" value="90" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/dingo/grid/mv_routing/util/data_input.py</url>
+          <line>324</line>
+          <option name="timeStamp" value="104" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/dingo/grid/mv_routing/mv_routing.py</url>
+          <line>63</line>
+          <option name="timeStamp" value="128" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/dingo/grid/mv_routing/models/models.py</url>
+          <line>142</line>
+          <option name="timeStamp" value="141" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/dingo/grid/mv_routing/mv_routing.py</url>
+          <line>53</line>
+          <option name="timeStamp" value="146" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
@@ -1003,11 +1013,19 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="91" />
+      <option name="time" value="147" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/savings.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="171" column="13" selection-start-line="171" selection-start-column="13" selection-end-line="171" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/dingo/test2.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -1096,13 +1114,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_dingo.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="14" column="0" selection-start-line="13" selection-start-column="0" selection-end-line="16" selection-end-column="41" />
         </state>
       </provider>
     </entry>
@@ -1232,19 +1243,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.42218542">
-          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/dingo/config/config_db_tables">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="15" column="56" selection-start-line="15" selection-start-column="13" selection-end-line="15" selection-end-column="56" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1252,7 +1254,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="3" column="0" selection-start-line="3" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1260,15 +1261,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="19" column="20" selection-start-line="19" selection-start-column="13" selection-end-line="19" selection-end-column="20" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/core/network/stations.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1276,7 +1268,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1284,37 +1275,27 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/savings.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.3327645">
-          <caret line="153" column="19" selection-start-line="153" selection-start-column="18" selection-end-line="153" selection-end-column="19" />
-          <folding>
-            <element signature="e#524#539#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_dingo2.py">
+    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/local_search.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="7" column="16" selection-start-line="7" selection-start-column="16" selection-end-line="7" selection-end-column="16" />
-          <folding>
-            <element signature="e#0#35#0" expanded="true" />
-          </folding>
+          <caret line="317" column="85" selection-start-line="317" selection-start-column="85" selection-end-line="317" selection-end-column="85" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/core/network/grids.py">
+    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/base.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="68" column="0" selection-start-line="68" selection-start-column="0" selection-end-line="68" selection-end-column="0" />
-          <folding>
-            <element signature="e#42#65#0" expanded="true" />
-          </folding>
+          <caret line="123" column="18" selection-start-line="123" selection-start-column="18" selection-end-line="123" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/core/network/stations.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="13" column="45" selection-start-line="13" selection-start-column="45" selection-end-line="13" selection-end-column="45" />
         </state>
       </provider>
     </entry>
@@ -1328,10 +1309,53 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/util/data_input.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="324" column="0" selection-start-line="324" selection-start-column="0" selection-end-line="324" selection-end-column="0" />
+          <folding>
+            <element signature="e#524#533#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/util/distance.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="7" column="89" selection-start-line="7" selection-start-column="89" selection-end-line="7" selection-end-column="89" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_dingo2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="21" column="15" selection-start-line="21" selection-start-column="15" selection-end-line="21" selection-end-column="15" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dingo/core/network/grids.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="67" column="0" selection-start-line="67" selection-start-column="0" selection-end-line="67" selection-end-column="0" />
+          <folding>
+            <element signature="e#42#65#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/dingo/core/network/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="49" column="68" selection-start-line="49" selection-start-column="16" selection-end-line="49" selection-end-column="68" />
+          <caret line="51" column="38" selection-start-line="51" selection-start-column="38" selection-end-line="51" selection-end-column="38" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
@@ -1341,61 +1365,33 @@
     <entry file="file://$PROJECT_DIR$/dingo/core/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="7" column="42" selection-start-line="7" selection-start-column="42" selection-end-line="7" selection-end-column="42" />
+          <caret line="185" column="112" selection-start-line="185" selection-start-column="112" selection-end-line="185" selection-end-column="112" />
           <folding>
             <element signature="e#0#38#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/util/data_input.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-3.7142856">
-          <caret line="155" column="43" selection-start-line="155" selection-start-column="4" selection-end-line="155" selection-end-column="43" />
-          <folding>
-            <element signature="e#524#533#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/util/distance.py">
+    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/savings.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="14" column="45" selection-start-line="14" selection-start-column="23" selection-end-line="14" selection-end-column="45" />
+          <caret line="171" column="13" selection-start-line="171" selection-start-column="13" selection-end-line="171" selection-end-column="13" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/base.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="123" column="18" selection-start-line="123" selection-start-column="18" selection-end-line="123" selection-end-column="18" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/solvers/local_search.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="317" column="85" selection-start-line="317" selection-start-column="85" selection-end-line="317" selection-end-column="85" />
-          <folding>
-            <element signature="e#554#576#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/models/models.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="179" column="31" selection-start-line="179" selection-start-column="31" selection-end-line="179" selection-end-column="31" />
+          <caret line="137" column="51" selection-start-line="137" selection-start-column="42" selection-end-line="137" selection-end-column="55" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/dingo/grid/mv_routing/mv_routing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.8677686">
-          <caret line="35" column="40" selection-start-line="35" selection-start-column="40" selection-end-line="35" selection-end-column="40" />
+        <state vertical-scroll-proportion="0.7714286">
+          <caret line="63" column="4" selection-start-line="63" selection-start-column="4" selection-end-line="63" selection-end-column="4" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>

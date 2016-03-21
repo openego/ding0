@@ -169,8 +169,7 @@ class ClarkeWrightSolver(BaseSolver):
         start = time.time()
 
         for i, j in savings_list[:]:
-            #if i.name() == 28 or j.name() == 28:
-            #    print('xxx')
+            #print(i, j)
             if solution.is_complete():
                 break
 
@@ -179,6 +178,7 @@ class ClarkeWrightSolver(BaseSolver):
 
                 if inserted:
                     savings_list.remove((i, j))
+                    savings_list.remove((j, i))
 
             if time.time() - start > timeout:
                 break

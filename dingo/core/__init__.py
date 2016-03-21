@@ -123,29 +123,39 @@ class NetworkDingo:
         #where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
         where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
 
-        # sql = """SELECT la_id as id_db,
-        #                 zensus_sum,
-        #                 zensus_count as zensus_cnt,
-        #                 ioer_sum,
-        #                 ioer_count as ioer_cnt,
-        #                 area_ha as area,
-        #                 sector_area_residential,
-        #                 sector_area_retail,
-        #                 sector_area_industrial,
-        #                 sector_area_agricultural,
-        #                 sector_share_residential,
-        #                 sector_share_retail,
-        #                 sector_share_industrial,
-        #                 sector_share_agricultural,
-        #                 sector_count_residential,
-        #                 sector_count_retail,
-        #                 sector_count_industrial,
-        #                 sector_count_agricultural,
-        #                 nuts as nuts_code,
-        #                 ST_AsText(ST_TRANSFORM(geom, {0})) as geo_area,
-        #                 ST_AsText(ST_TRANSFORM(geom_centroid, {0})) as geo_centroid,
-        #                 ST_AsText(ST_TRANSFORM(geom_surfacepoint, {0})) as geo_surfacepnt
-        #          FROM {1} {2};""".format(srid, lv_regions_schema_table, where_clause)
+        # sql = """SELECT regs.la_id as id_db,
+        #                 regs.zensus_sum,
+        #                 regs.zensus_count as zensus_cnt,
+        #                 regs.ioer_sum,
+        #                 regs.ioer_count as ioer_cnt,
+        #                 regs.area_ha as area,
+        #                 regs.sector_area_residential,
+        #                 regs.sector_area_retail,
+        #                 regs.sector_area_industrial,
+        #                 regs.sector_area_agricultural,
+        #                 regs.sector_share_residential,
+        #                 regs.sector_share_retail,
+        #                 regs.sector_share_industrial,
+        #                 regs.sector_share_agricultural,
+        #                 regs.sector_count_residential,
+        #                 regs.sector_count_retail,
+        #                 regs.sector_count_industrial,
+        #                 regs.sector_count_agricultural,
+        #                 regs.nuts as nuts_code,
+        #                 ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
+        #                 ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
+        #                 ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
+        #                 ploads.residential as peak_load_residential,
+        #                 ploads.retail as peak_load_retail,
+        #                 ploads.industrial as peak_load_industrial,
+        #                 ploads.agricultural as peak_load_agricultural,
+        #                 (ploads.residential + ploads.retail + ploads.industrial + ploads.agricultural) as peak_load_sum
+        #          FROM {1} AS regs
+        #                 INNER JOIN {2} AS ploads
+        #                 ON (regs.la_id = ploads.la_id) {3};""".format(srid,
+        #                                                               lv_regions_schema_table,
+        #                                                               lv_loads_schema_table,
+        #                                                               where_clause)
 
         sql = """SELECT regs.la_id as id_db,
                         regs.zensus_sum,
@@ -169,11 +179,11 @@ class NetworkDingo:
                         ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
                         ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
                         ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
-                        ploads.residential as peak_load_residential,
-                        ploads.retail as peak_load_retail,
-                        ploads.industrial as peak_load_industrial,
-                        ploads.agricultural as peak_load_agricultural,
-                        (ploads.residential + ploads.retail + ploads.industrial + ploads.agricultural) as peak_load_sum
+                        round(ploads.h0::numeric * 1000, 3) as peak_load_residential,
+                        round(ploads.g0::numeric * 1000, 3) as peak_load_retail,
+                        round(ploads.i0::numeric * 1000, 3) as peak_load_industrial,
+                        round(ploads.l0::numeric * 1000, 3) as peak_load_agricultural,
+                        round((ploads.h0::numeric + ploads.g0::numeric + ploads.i0::numeric + ploads.l0::numeric) * 1000, 3) as peak_load_sum
                  FROM {1} AS regs
                         INNER JOIN {2} AS ploads
                         ON (regs.la_id = ploads.la_id) {3};""".format(srid,
@@ -184,15 +194,13 @@ class NetworkDingo:
         # read data from db
         lv_regions = pd.read_sql_query(sql, conn, index_col='id_db')
 
-        # replace NaN values with zero (necessary for peak load data)
-        #lv_regions = lv_regions.where((pd.notnull(lv_regions)), 0)
-
         # create region objects from rows and add them to graph
         for id_db, row in lv_regions.iterrows():
             # create LV region object
             lv_region = LVRegionDingo(id_db=id_db, db_data=row, mv_region=mv_region)#, db_cols=lv_regions.columns.values)
 
             # TODO: Following code is for testing purposes only! (create 1 LV grid and 1 station for every LV region)
+            # TODO: The objective is to create stations according to kind of loads (e.g. 1 station for residential, 1 for retail etc.)
             # === START TESTING ===
             # create LV station object
             station_geo_data = wkt_loads(row['geo_surfacepnt'])
