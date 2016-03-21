@@ -130,6 +130,7 @@ class Route(object):
 
     def deallocate(self, nodes):
         """Deallocates all nodes from `nodes` list from this route"""
+
         nodes_demand = 0
         for node in nodes:
             self._nodes.remove(node)
@@ -144,7 +145,7 @@ class Route(object):
     def insert(self, nodes, pos):
         """Inserts all nodes from `nodes` list into this route at position `pos`"""
         
-        # TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
+        # TODO: TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
         #if not self.can_allocate(nodes):
         #    raise Exception('Trying to allocate more than route capacity')
         
@@ -268,8 +269,8 @@ class Graph(object):
         self._matrix = {}
         self._capacity = data['CAPACITY']
         self._depot = None
-        self._voltage = data['VOLTAGE']
-        self._cabletype = CableType(data['CABLETYPE'])
+        #self._voltage = data['VOLTAGE']
+        #self._cabletype = CableType(data['CABLETYPE'])
 
         for i in data['MATRIX']:
 
