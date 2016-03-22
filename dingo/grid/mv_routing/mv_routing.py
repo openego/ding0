@@ -16,18 +16,16 @@ from dingo.grid.mv_routing.util.distance import calc_geo_distance_vincenty
 from dingo.core.network.stations import *
 
 
-def solve(graph, debug):
-    """ Do MV routing for given nodes in `graph`. Translate data from node objects to appropriate format before.
+def dingo_graph_to_routing_specs(graph):
+    """ Build data dictionary from graph nodes for routing (translation)
 
     Args:
-        graph:
-        debug:
+        graph: NetworkX graph object with nodes
 
     Returns:
-
+        specs: Data dictionary for routing, See class `Graph()` in routing's model definition for keys
     """
 
-    # build data dictionary from graph nodes for routing
     specs = {}
     nodes_demands = {}
     nodes_pos = {}
@@ -43,36 +41,85 @@ def solve(graph, debug):
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands
-    specs['CAPACITY'] = 1000  # TEMP
-
     specs['MATRIX'] = calc_geo_distance_vincenty(nodes_pos)
 
+    # TODO: capacity per MV ring (TEMP) -> Later tech. constraints are used for limitation of ring length
+    specs['CAPACITY'] = 500000
+
+    return specs
 
 
-    #node_demands =
-    #specs['DEMAND'] =
+def routing_solution_to_dingo_graph(graph, solution):
+    """ Insert `solution` from routing into `graph`
+
+    Args:
+        graph: NetworkX graph object with nodes
+        solution: Instance of `BaseSolution` or child class (e.g. `LocalSearchSolution`) (=solution from routing)
+
+    Returns:
+        graph: NetworkX graph object with nodes and edges
+    """
+
+    # TODO: 1) check nodes from solution with nodes from graph, 2) map it!, 3) add edges to graph
+
+    depot = solution._nodes[solution._problem._depot._name]
+    for r in solution.routes():
+        n1 = r._nodes[0:len(r._nodes)-1]
+        n2 = r._nodes[1:len(r._nodes)]
+        e = list(zip(n1, n2))
+        e.append((depot, r._nodes[0]))
+        e.append((r._nodes[-1], depot))
+        g.add_edges_from(e)
+
+    return graph
+
+def solve(graph, debug=False):
+    """ Do MV routing for given nodes in `graph`. Translate data from node objects to appropriate format before.
+
+    Args:
+        graph: NetworkX graph object with nodes
+        debug: If True, information is printed while routing
+
+    Returns:
+        graph: NetworkX graph object with nodes and edges
+    """
+
+    # TODO: Implement debug mode (pass to solver) to get more information while routing (print routes, draw network, ..)
+
+    # translate DINGO graph to routing specs
+    specs = dingo_graph_to_routing_specs(graph)
+
+    # create routing graph using specs
     RoutingGraph = Graph(specs)
 
     timeout = 30000
 
+    # create solver objects
     savings_solver = savings.ClarkeWrightSolver()
     local_search_solver = local_search.LocalSearchSolver()
 
     start = time.time()
 
+    # create initial solution using Clarke and Wright Savings methods
     savings_solution = savings_solver.solve(RoutingGraph, timeout)
-    elapsed = time.time() - start
 
+    # OLD, MAY BE USED LATER - Guido, please don't declare a variable later=now() :) :
     #if not savings_solution.is_complete():
     #    print('=== Solution is not a complete solution! ===')
 
-    print('ClarkeWrightSolver solution:')
-    util.print_solution(savings_solution)
-    #print('Elapsed time (seconds): {}'.format(elapsed))
+    if debug:
+        print('ClarkeWrightSolver solution:')
+        util.print_solution(savings_solution)
+        print('Elapsed time (seconds): {}'.format(time.time() - start))
+        #savings_solution.draw_network()
 
-    savings_solution.draw_network()
+    # improve initial solution using local search
+    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout)
 
-    local_search_solution = local_search_solver.solve(graph, savings_solution, timeout)
-    print('Local Search solution:')
-    util.print_solution(local_search_solution)
-    local_search_solution.draw_network()
+    if debug:
+        print('Local Search solution:')
+        util.print_solution(local_search_solution)
+        print('Elapsed time (seconds): {}'.format(time.time() - start))
+        local_search_solution.draw_network()
+
+    return routing_solution_to_dingo_graph(graph, local_search_solution)

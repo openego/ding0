@@ -72,6 +72,18 @@ class LVRegionDingo(RegionDingo):
         if hasattr(self, 'geo_surfacepnt'):
             self.geo_surfacepnt = wkt_loads(self.geo_surfacepnt)
 
+        # convert load values (rounded floats) to int
+        if hasattr(self, 'peak_load_residential'):
+            self.peak_load_residential = int(self.peak_load_residential)
+        if hasattr(self, 'peak_load_retail'):
+            self.peak_load_retail = int(self.peak_load_retail)
+        if hasattr(self, 'peak_load_industrial'):
+            self.peak_load_industrial = int(self.peak_load_industrial)
+        if hasattr(self, 'peak_load_agricultural'):
+            self.peak_load_agricultural = int(self.peak_load_agricultural)
+        if hasattr(self, 'peak_load_sum'):
+            self.peak_load_sum = int(self.peak_load_sum)
+
         # Alternative to version above:
         # many params, use better structure (dict? classes from demand-lib?)
 

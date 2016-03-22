@@ -17,7 +17,7 @@ import itertools as it
 from dingo.grid.mv_routing.models import models
 from dingo.grid.mv_routing.solvers.base import BaseSolution, BaseSolver
 
-
+from dingo.tools import config as cfg_dingo
 
 class LocalSearchSolution(BaseSolution):
     """Solution class for Local Search metaheuristic"""
@@ -80,7 +80,7 @@ class LocalSearchSolver(BaseSolver):
     """
     # TODO: Cross (inter-route), see above
     
-    def operator_oropt(self, graph, solution):
+    def operator_oropt(self, graph, solution, op_diff_round_digits):
         """applies Or-Opt intra-route operator to solution
         
         Takes chains of nodes (length=3..1 consecutive nodes) from a given
@@ -89,6 +89,16 @@ class LocalSearchSolver(BaseSolver):
         and starts over again with new route until no improvement is found.
         
         Returns a solution (LocalSearchSolution class))
+
+        Args:
+            op_diff_round_digits: Precision (floating point digits) for rounding route length differences.
+                                  Details: In some cases when an exchange is performed on two routes with one node each,
+                                  the difference between the both solutions (before and after the exchange) is not zero.
+                                  This is due to internal rounding errors of float type. So the loop won't break
+                                  (alternating between these two solutions), we need an additional criterion to avoid
+                                  this behaviour: A threshold to handle values very close to zero as if they were zero
+                                  (for a more detailed description of the matter see http://floating-point-gui.de or
+                                  https://docs.python.org/3.5/tutorial/floatingpoint.html)
 
         (Inner) Loop variables:
             s: length (count of consecutive nodes) of the chain that is moved. Values: 3..1
@@ -146,7 +156,7 @@ class LocalSearchSolver(BaseSolver):
         #solution = LocalSearchSolution(solution, graph, new_routes)
         return solution
     
-    def operator_relocate(self, graph, solution):
+    def operator_relocate(self, graph, solution, op_diff_round_digits):
         """applies Relocate inter-route operator to solution
         
         Takes every node from every route and calculates savings when inserted
@@ -155,6 +165,16 @@ class LocalSearchSolver(BaseSolver):
         created graph as input. Stops when no improvement is found.
         
         Returns a solution (LocalSearchSolution class))
+
+        Args:
+            op_diff_round_digits: Precision (floating point digits) for rounding route length differences.
+                                  Details: In some cases when an exchange is performed on two routes with one node each,
+                                  the difference between the both solutions (before and after the exchange) is not zero.
+                                  This is due to internal rounding errors of float type. So the loop won't break
+                                  (alternating between these two solutions), we need an additional criterion to avoid
+                                  this behaviour: A threshold to handle values very close to zero as if they were zero
+                                  (for a more detailed description of the matter see http://floating-point-gui.de or
+                                  https://docs.python.org/3.5/tutorial/floatingpoint.html)
         
         (Inner) Loop variables:
             i: node that is checked for possible moves (position in the route `tour`, not node name)
@@ -210,13 +230,13 @@ class LocalSearchSolver(BaseSolver):
                 #print('Bessere Loesung gefunden:', node_best, target_node_best, target_route_best, length_diff_best)
             
             # no improvement found
-            if length_diff_best == 0:
+            if round(length_diff_best, op_diff_round_digits) == 0:
                 break
 
             
         return solution
         
-    def operator_exchange(self, graph, solution):
+    def operator_exchange(self, graph, solution, op_diff_round_digits):
         """applies Exchange inter-route operator to solution
         
         Takes every node from every route and calculates savings when inserted
@@ -225,6 +245,16 @@ class LocalSearchSolver(BaseSolver):
         created graph as input. Stops when no improvement is found.
         
         Returns a solution (LocalSearchSolution class))
+
+        Args:
+            op_diff_round_digits: Precision (floating point digits) for rounding route length differences.
+                                  Details: In some cases when an exchange is performed on two routes with one node each,
+                                  the difference between the both solutions (before and after the exchange) is not zero.
+                                  This is due to internal rounding errors of float type. So the loop won't break
+                                  (alternating between these two solutions), we need an additional criterion to avoid
+                                  this behaviour: A threshold to handle values very close to zero as if they were zero
+                                  (for a more detailed description of the matter see http://floating-point-gui.de or
+                                  https://docs.python.org/3.5/tutorial/floatingpoint.html)
         
         (Inner) Loop variables:
             i: node that is checked for possible moves (position in the route `tour`, not node name)
@@ -234,6 +264,7 @@ class LocalSearchSolver(BaseSolver):
             * allow moves of a 2-node chain
             * Remove ugly nested loops, convert to more efficient matrix operations
         """
+
         # shorter var names for loop
         dm = graph._matrix
         dn = graph._nodes        
@@ -283,15 +314,14 @@ class LocalSearchSolver(BaseSolver):
                 solution._routes = [route for route in solution._routes if route._nodes]
             
             # no improvement found
-            if length_diff_best == 0:
+            if round(length_diff_best, op_diff_round_digits) == 0:
                 break
 
             
         return solution
 
-    def benchmark_operator_order(self, graph, solution):
-        """performes all possible permutations of route improvement and prints
-        graph length"""
+    def benchmark_operator_order(self, graph, solution, op_diff_round_digits):
+        """performs all possible permutations of route improvement and prints graph length"""
         
         operators = {self.operator_exchange: 'exchange',
                      self.operator_relocate: 'relocate',
@@ -299,43 +329,33 @@ class LocalSearchSolver(BaseSolver):
                      
         for op in it.permutations(operators):
             solution = solution.clone()
-            solution = op[0](graph, solution)
-            solution = op[1](graph, solution)
-            solution = op[2](graph, solution)
+            solution = op[0](graph, solution, op_diff_round_digits)
+            solution = op[1](graph, solution, op_diff_round_digits)
+            solution = op[2](graph, solution, op_diff_round_digits)
             print(operators[op[0]], '+', operators[op[1]], '+', operators[op[2]], '=> Length:', solution.length())
-        
-        
+
     def solve(self, graph, savings_solution, timeout):
         """Improve initial savings solution using local search
 
         Parameters:
             graph: Graph instance
-            savings_solution: initial solution of CVRP problem
+            savings_solution: initial solution of CVRP problem (instance of `SavingsSolution` class)
+            timeout: max processing time in seconds
 
         Returns a solution (LocalSearchSolution class))
         """
-        solution = LocalSearchSolution(graph, savings_solution)
-        #self.benchmark_operator_order(graph, savings_solution) # <- FOR BENCHMARKING
-        
-        
+        # TODO: If necessary, use timeout to set max processing time of local search
 
-        solution = self.operator_exchange(graph, solution)
-        solution = self.operator_relocate(graph, solution)
-        solution = self.operator_oropt(graph, solution)
-        
-#        start = time.time()
-#
-#        for i, j in savings_list[:]:
-#            if solution.is_complete():
-#                break
-#
-#            if solution.can_process((i, j)):
-#                solution, inserted = solution.process((i, j))
-#
-#                if inserted:
-#                    savings_list.remove((i, j))
-#
-#            if time.time() - start > timeout:
-#                break
+        # load threshold for operator (see exchange or relocate operator's description for more information)
+        op_diff_round_digits = int(cfg_dingo.get('mv_routing', 'operator_diff_round_digits'))
+
+        solution = LocalSearchSolution(graph, savings_solution)
+
+        # FOR BENCHMARKING:
+        #self.benchmark_operator_order(graph, savings_solution, op_diff_round_digits)
+
+        solution = self.operator_exchange(graph, solution, op_diff_round_digits)
+        solution = self.operator_relocate(graph, solution, op_diff_round_digits)
+        solution = self.operator_oropt(graph, solution, op_diff_round_digits)
 
         return solution
