@@ -56,12 +56,6 @@ class GridDingo:
                 demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [0.002]*len(nodes_pos[node]))])
                 nodes_color.append((0.5, 0.5, 1))
 
-        # TODO: Add edges
-        # get edges
-        # for edge in g.edges():
-        #     if isinstance(edge, ???)
-        #         blablabla
-
         plt.figure()
         nx.draw_networkx(g, nodes_pos, node_color=nodes_color, font_size=10)
         nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
@@ -125,7 +119,7 @@ class BusDingo(Bus):
         # Bus Data parameters
         
 
-class BranchDingo(Transport):
+class BranchDingo():
     """
     Cables and lines
     ----------------
@@ -142,9 +136,12 @@ class BranchDingo(Transport):
 
 
     def __init__(self, **kwargs):
-        #inherit parameters from oemof's Transport
-        super().__init__(**kwargs)
-        #more params
+        # inherit parameters from oemof's Transport
+        #super().__init__(**kwargs)
+
+        #
+
+        # more params (OLD)
         self.equip_line_id = kwargs.get('equip_line_id', None)
         self.v_level = kwargs.get('v_level', None)
         self.type = kwargs.get('type', None)

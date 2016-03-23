@@ -222,5 +222,28 @@ class NetworkDingo:
             # TODO: add LV station instead of LV region
             #mv_region.mv_grid.graph_add_node(lv_region)
 
+    def export_mv_grid(self, mv_regions):
+        """ Exports MV grids to database
+
+        Args:
+            mv_regions: List of MV regions (instances of MVRegionDingo class) whose MV grids are exported.
+        """
+
+        mv_grids_schema_table = cfg_dingo.get('grids', 'mv_grids')
+
+        srid = '4326'  # WGS84: 4326, TODO: Move to global settings
+
+        # TODO: Breath life into this method :). Prior to this the table structure has to be defined
+
+    def mv_routing(self, debug=False):
+        """ Performs routing on all MV grids, see method `routing` in class `MVGridDingo` for details
+
+        Args:
+            debug: If True, information is printed while routing
+        """
+
+        for region in self.mv_regions():
+            region.mv_grid.routing(debug)
+
     def __repr__(self):
         return str(self.name)

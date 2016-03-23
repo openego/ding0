@@ -1,9 +1,10 @@
 #from dingo.core.network import GridDingo
 from . import GridDingo
 from dingo.core.network.stations import *
-
-#from dingo.grid.mv_routing.solvers import savings, local_search
+from dingo.core.network import BranchDingo
 from dingo.grid.mv_routing import mv_routing
+
+import networkx as nx
 
 
 class MVGridDingo(GridDingo):
@@ -58,14 +59,21 @@ class MVGridDingo(GridDingo):
 
     def routing(self, debug=False):
         """ Performs routing on grid graph nodes, adds resulting edges
+
         Args:
-            debug:
-
-        Returns:
-
+            debug: If True, information is printed while routing
         """
 
+        # do the routing
         self._graph = mv_routing.solve(self._graph, debug)
+
+        # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
+        # TODO:
+        # mv_branches = {}
+        # for edge in self._graph.edges():
+        #     mv_branch = BranchDingo()
+        #     mv_branches[edge] = mv_branch
+        # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
 
 
     def __repr__(self):
@@ -77,7 +85,6 @@ class LVGridDingo(GridDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        #more params
         self._stations = []
 
     def stations(self):

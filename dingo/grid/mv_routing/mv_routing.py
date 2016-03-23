@@ -1,19 +1,19 @@
 import os
 import sys
+import time
 
+# TODO: Check if the following workaround is still necessary:
 # workaround: add dingo to sys.path to allow imports
 PACKAGE_PARENT = '../../..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
-
-import time
-import matplotlib.pyplot as plt
 
 from dingo.grid.mv_routing.models.models import Graph
 from dingo.grid.mv_routing.util import util, data_input
 from dingo.grid.mv_routing.solvers import savings, local_search
 from dingo.grid.mv_routing.util.distance import calc_geo_distance_vincenty
 from dingo.core.network.stations import *
+from dingo.core.network import BranchDingo
 
 
 def dingo_graph_to_routing_specs(graph):
@@ -74,8 +74,13 @@ def routing_solution_to_dingo_graph(graph, solution):
             edges.append((depot, r._nodes[0]))
             edges.append((r._nodes[-1], depot))
 
+            # create MV Branch object for every edge in `edges`
+            mv_branches = [BranchDingo() for _ in edges]
+            edges_with_branches = list(zip(edges, mv_branches))
+
             # translate solution's node names to graph node objects using dict created before
-            edges_graph = [(node_list[n1.name()], node_list[n2.name()]) for (n1, n2) in edges]
+            # TODO: BUG HERE :) HARHRAHRHAR
+            edges_graph = [(node_list[n1.name()], node_list[n2.name()], dict(branch=b)) for (n1, n2, b) in edges_with_branches]
             graph.add_edges_from(edges_graph)
 
     except:

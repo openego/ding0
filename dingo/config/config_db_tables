@@ -1,3 +1,7 @@
+# This config file is part of DINGO
+# It defines schemas and tables in the database where data is read from or written to.
+# Refer to documentation at [URL] for more information.
+
 [equipment]
 lines = equip_lines
 transformers = equip_trans
@@ -21,3 +25,6 @@ mv_stations = calc_gridcells_znes.znes_deu_substations_filtered
 
 [loads]
 lv_loads = orig_geo_rli.rli_deu_peak_load_spf
+
+[grids]
+mv_grids = app_dingo_res.mv_grids
