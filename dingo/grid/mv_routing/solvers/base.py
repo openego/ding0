@@ -107,13 +107,12 @@ class BaseSolution(object):
             nodes_pos[node] = tuple(coord)
             demands[node] = 'd=' + str(node.demand())
             demands_pos[node] = tuple([a+b for a, b in zip(coord, [2.5]*len(coord))])
-    
+
+        depot = self._nodes[self._problem._depot._name]
         for r in self.routes():
-            #print(r)
             n1 = r._nodes[0:len(r._nodes)-1]
             n2 = r._nodes[1:len(r._nodes)]
             e = list(zip(n1, n2))
-            depot = self._nodes[1]
             e.append((depot, r._nodes[0]))
             e.append((r._nodes[-1], depot))
             g.add_edges_from(e)

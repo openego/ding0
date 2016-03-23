@@ -169,7 +169,6 @@ class ClarkeWrightSolver(BaseSolver):
         start = time.time()
 
         for i, j in savings_list[:]:
-            #print(i, j)
             if solution.is_complete():
                 break
 

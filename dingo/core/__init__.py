@@ -2,7 +2,6 @@ from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
-from oemof import db
 
 import pandas as pd
 from shapely.wkt import loads as wkt_loads
@@ -71,7 +70,7 @@ class NetworkDingo:
         mv_regions_schema_table = cfg_dingo.get('regions', 'mv_regions')
         mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
 
-        srid = '4326' # WGS84: 4326, TODO: Move to global settings
+        srid = '4326'  # WGS84: 4326, TODO: Move to global settings
 
         # build SQL query
         where_clause = ''
@@ -117,7 +116,8 @@ class NetworkDingo:
         lv_regions_schema_table = cfg_dingo.get('regions', 'lv_regions')    # alias in sql statement: `regs`
         lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')          # alias in sql statement: `ploads`
 
-        srid = '4326' # WGS84: 4326, TODO: Move to global settings
+        srid = '4326'  # WGS84: 4326, TODO: Move to global settings
+        load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
 
         # build SQL query
         #where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
@@ -179,14 +179,15 @@ class NetworkDingo:
                         ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
                         ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
                         ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
-                        round(ploads.h0::numeric * 1000, 3) as peak_load_residential,
-                        round(ploads.g0::numeric * 1000, 3) as peak_load_retail,
-                        round(ploads.i0::numeric * 1000, 3) as peak_load_industrial,
-                        round(ploads.l0::numeric * 1000, 3) as peak_load_agricultural,
-                        round((ploads.h0::numeric + ploads.g0::numeric + ploads.i0::numeric + ploads.l0::numeric) * 1000, 3) as peak_load_sum
-                 FROM {1} AS regs
-                        INNER JOIN {2} AS ploads
-                        ON (regs.la_id = ploads.la_id) {3};""".format(srid,
+                        round(ploads.h0::numeric * {1}) as peak_load_residential,
+                        round(ploads.g0::numeric * {1}) as peak_load_retail,
+                        round(ploads.i0::numeric * {1}) as peak_load_industrial,
+                        round(ploads.l0::numeric * {1}) as peak_load_agricultural,
+                        round((ploads.h0::numeric + ploads.g0::numeric + ploads.i0::numeric + ploads.l0::numeric) * {1}) as peak_load_sum
+                 FROM {2} AS regs
+                        INNER JOIN {3} AS ploads
+                        ON (regs.la_id = ploads.la_id) {4};""".format(srid,
+                                                                      load_scaling_factor,
                                                                       lv_regions_schema_table,
                                                                       lv_loads_schema_table,
                                                                       where_clause)
