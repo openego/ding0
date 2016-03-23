@@ -60,16 +60,26 @@ def routing_solution_to_dingo_graph(graph, solution):
         graph: NetworkX graph object with nodes and edges
     """
 
-    # TODO: 1) check nodes from solution with nodes from graph, 2) map it!, 3) add edges to graph
+    # build node dict (name: obj) from graph nodes to map node names on node objects
+    node_list = {str(n): n for n in graph.nodes()}
 
-    depot = solution._nodes[solution._problem._depot._name]
-    for r in solution.routes():
-        n1 = r._nodes[0:len(r._nodes)-1]
-        n2 = r._nodes[1:len(r._nodes)]
-        e = list(zip(n1, n2))
-        e.append((depot, r._nodes[0]))
-        e.append((r._nodes[-1], depot))
-        g.add_edges_from(e)
+    # add edges from solution to graph
+    try:
+        depot = solution._nodes[solution._problem._depot.name()]
+        for r in solution.routes():
+            # build edge list
+            n1 = r._nodes[0:len(r._nodes)-1]
+            n2 = r._nodes[1:len(r._nodes)]
+            edges = list(zip(n1, n2))
+            edges.append((depot, r._nodes[0]))
+            edges.append((r._nodes[-1], depot))
+
+            # translate solution's node names to graph node objects using dict created before
+            edges_graph = [(node_list[n1.name()], node_list[n2.name()]) for (n1, n2) in edges]
+            graph.add_edges_from(edges_graph)
+
+    except:
+        print('')
 
     return graph
 

@@ -57,7 +57,7 @@ class MVGridDingo(GridDingo):
     #         self.graph_add_node(lv_station)
 
     def routing(self, debug=False):
-        """ Performs routing on grid graph nodes
+        """ Performs routing on grid graph nodes, adds resulting edges
         Args:
             debug:
 
@@ -65,7 +65,7 @@ class MVGridDingo(GridDingo):
 
         """
 
-        solution = mv_routing.solve(self._graph, debug)
+        self._graph = mv_routing.solve(self._graph, debug)
 
 
     def __repr__(self):
