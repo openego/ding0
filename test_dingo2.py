@@ -32,6 +32,7 @@ nd.import_mv_regions(conn, mv_regions)
 conn.close()
 
 nd.mv_routing()
-#nd._mv_regions[0].mv_grid.routing()
+
 #df = nx.to_pandas_dataframe(nd._mv_regions[0].mv_grid._graph)
+
 nd._mv_regions[0].mv_grid.graph_draw()

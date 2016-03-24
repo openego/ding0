@@ -59,6 +59,8 @@ def routing_solution_to_dingo_graph(graph, solution):
     Returns:
         graph: NetworkX graph object with nodes and edges
     """
+    # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Ruuting erstellt um die Funktionsfähigkeit
+    # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
 
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}
@@ -79,8 +81,8 @@ def routing_solution_to_dingo_graph(graph, solution):
             edges_with_branches = list(zip(edges, mv_branches))
 
             # translate solution's node names to graph node objects using dict created before
-            # TODO: BUG HERE :) HARHRAHRHAR
-            edges_graph = [(node_list[n1.name()], node_list[n2.name()], dict(branch=b)) for (n1, n2, b) in edges_with_branches]
+            edges_graph = [(node_list[n1.name()], node_list[n2.name()], dict(branch=b))
+                           for ((n1, n2), b) in edges_with_branches]
             graph.add_edges_from(edges_graph)
 
     except:

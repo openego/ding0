@@ -33,7 +33,7 @@ class GridDingo:
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and LV regions!
     def graph_draw(self):
-        """draws grid graph using networkx
+        """ Draws grid graph using networkx
 
         caution: The geo coords (for used crs see database import in class `NetworkDingo`) are used as positions for
                  drawing but networkx uses cartesian crs. Since no coordinate transformation is performed, the drawn
@@ -60,6 +60,15 @@ class GridDingo:
         nx.draw_networkx(g, nodes_pos, node_color=nodes_color, font_size=10)
         nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
         plt.show()
+
+    def graph_edges(self):
+        """ Returns a generator for iterating over graph edges including branch objects (tuple).
+        Note: There are generator functions for nodes (`Graph.nodes()`) and edges (`Graph.edges()`) in NetworkX but
+        unlike graph nodes, which can be represented by objects, branch objects can only be accessed by using an edge
+        attribute ('branch' is used here)
+        """
+        for edge in nx.get_edge_attributes(self._graph, 'branch').items():
+            yield edge
 
 
 class StationDingo():
