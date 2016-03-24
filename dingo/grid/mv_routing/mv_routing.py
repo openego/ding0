@@ -81,6 +81,8 @@ def routing_solution_to_dingo_graph(graph, solution):
             edges_with_branches = list(zip(edges, mv_branches))
 
             # translate solution's node names to graph node objects using dict created before
+            # note: branch object is assigned to edge using an attribute ('branch' is used here), it can be accessed
+            # using the method `graph_edges()` of class `GridDingo`
             edges_graph = [(node_list[n1.name()], node_list[n2.name()], dict(branch=b))
                            for ((n1, n2), b) in edges_with_branches]
             graph.add_edges_from(edges_graph)
