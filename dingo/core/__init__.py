@@ -123,40 +123,6 @@ class NetworkDingo:
         #where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
         where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
 
-        # sql = """SELECT regs.la_id as id_db,
-        #                 regs.zensus_sum,
-        #                 regs.zensus_count as zensus_cnt,
-        #                 regs.ioer_sum,
-        #                 regs.ioer_count as ioer_cnt,
-        #                 regs.area_ha as area,
-        #                 regs.sector_area_residential,
-        #                 regs.sector_area_retail,
-        #                 regs.sector_area_industrial,
-        #                 regs.sector_area_agricultural,
-        #                 regs.sector_share_residential,
-        #                 regs.sector_share_retail,
-        #                 regs.sector_share_industrial,
-        #                 regs.sector_share_agricultural,
-        #                 regs.sector_count_residential,
-        #                 regs.sector_count_retail,
-        #                 regs.sector_count_industrial,
-        #                 regs.sector_count_agricultural,
-        #                 regs.nuts as nuts_code,
-        #                 ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
-        #                 ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
-        #                 ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
-        #                 ploads.residential as peak_load_residential,
-        #                 ploads.retail as peak_load_retail,
-        #                 ploads.industrial as peak_load_industrial,
-        #                 ploads.agricultural as peak_load_agricultural,
-        #                 (ploads.residential + ploads.retail + ploads.industrial + ploads.agricultural) as peak_load_sum
-        #          FROM {1} AS regs
-        #                 INNER JOIN {2} AS ploads
-        #                 ON (regs.la_id = ploads.la_id) {3};""".format(srid,
-        #                                                               lv_regions_schema_table,
-        #                                                               lv_loads_schema_table,
-        #                                                               where_clause)
-
         sql = """SELECT regs.la_id as id_db,
                         regs.zensus_sum,
                         regs.zensus_count as zensus_cnt,
@@ -179,11 +145,11 @@ class NetworkDingo:
                         ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
                         ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
                         ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
-                        round(ploads.h0::numeric * {1}) as peak_load_residential,
-                        round(ploads.g0::numeric * {1}) as peak_load_retail,
-                        round(ploads.i0::numeric * {1}) as peak_load_industrial,
-                        round(ploads.l0::numeric * {1}) as peak_load_agricultural,
-                        round((ploads.h0::numeric + ploads.g0::numeric + ploads.i0::numeric + ploads.l0::numeric) * {1}) as peak_load_sum
+                        round(ploads.residential::numeric * {1}) as peak_load_residential,
+                        round(ploads.retail::numeric * {1}) as peak_load_retail,
+                        round(ploads.industrial::numeric * {1}) as peak_load_industrial,
+                        round(ploads.agricultural::numeric * {1}) as peak_load_agricultural,
+                        round((ploads.residential::numeric + ploads.retail::numeric + ploads.industrial::numeric + ploads.agricultural::numeric) * {1}) as peak_load_sum
                  FROM {2} AS regs
                         INNER JOIN {3} AS ploads
                         ON (regs.la_id = ploads.la_id) {4};""".format(srid,
