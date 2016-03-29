@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
 from oemof import db
