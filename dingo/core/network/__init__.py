@@ -167,7 +167,7 @@ class BranchDingo():
 
 
 
-class TransformerDingo(Transformer):
+class TransformerDingo():
     """
     Transformers
     ------------
