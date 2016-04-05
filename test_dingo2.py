@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-from dingo.core import NetworkDingo
-from dingo.tools import config as cfg_dingo
+import matplotlib.pyplot as plt
 from oemof import db
 
-import networkx as nx
-import matplotlib.pyplot as plt
-
+from dingo.core import NetworkDingo
+from dingo.tools import config as cfg_dingo
 
 plt.close('all')
 
