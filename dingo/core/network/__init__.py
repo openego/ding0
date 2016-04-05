@@ -194,7 +194,7 @@ class TransformerDingo():
 
     def __init__(self, **kwargs):
         #inherit parameters from oemof's Transformer
-        super().__init__(**kwargs)
+        # super().__init__(**kwargs)
         #more params
         self.equip_trans_id = kwargs.get('equip_trans_id', None)
         self.v_level = kwargs.get('v_level', None)
