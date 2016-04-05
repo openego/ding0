@@ -15,10 +15,11 @@ cfg_dingo.load_config('config_calc')
 #conn = db.connection(db_section='ontohub_wdb', cfg_file='~/.dingo/config') # <-- TODO: include custom config file from given path (+input for oemof)
 #conn = db.connection(db_section='ontohub_wdb')
 
+# instantiate dingo network object
 nd = NetworkDingo(name='network')
 
-conn = db.connection(section='ontohub_oedb')
-# conn = db.connection(section='ontohub_oedb_remote')
+# get database connection info from config file
+conn = db.connection(section='oedb')
 
 #mv_regions=[106, 125, 500, 722, 887, 1049] # some MV regions from SPF region
 mv_regions=[106] # some MV regions from SPF region
