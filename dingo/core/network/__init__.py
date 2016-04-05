@@ -86,6 +86,7 @@ class StationDingo():
         self.grid = kwargs.get('grid', None)
         self._transformers = []
         self.busbar = None
+        self.peak_load = kwargs.get('peak_load', None)
 
     def transformers(self):
         """Returns a generator for iterating over transformers"""

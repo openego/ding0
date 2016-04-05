@@ -34,6 +34,13 @@ class MVRegionDingo(RegionDingo):
         if lv_region not in self.lv_regions() and isinstance(lv_region, LVRegionDingo):
             self._lv_regions.append(lv_region)
 
+    def add_peak_demand(self):
+        """Summarizes peak loads of underlying LV regions"""
+        peak_load = 0
+        for lv_region in self._lv_regions:
+            peak_load += lv_region.peak_load_sum
+        self.peak_load = peak_load
+
     def __repr__(self):
         return 'mvregion_' + str(self.id_db)
 

@@ -101,6 +101,8 @@ class NetworkDingo:
             mv_region = self.build_mv_region(poly_id, subst_id, region_geo_data, station_geo_data)
             self.import_lv_regions(conn, mv_region)
 
+            # add sum of peak loads of underlying lv regions to mv_region
+            mv_region.add_peak_demand()
     def import_lv_regions(self, conn, mv_region):
         """imports LV regions (load areas) from database for a single MV region
 
@@ -171,7 +173,7 @@ class NetworkDingo:
             # === START TESTING ===
             # create LV station object
             station_geo_data = wkt_loads(row['geo_surfacepnt'])
-            lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data)
+            lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data, peak_load=row['peak_load_sum'])
             lv_grid = LVGridDingo(region=lv_region, id_db=id_db, geo_data=station_geo_data)
             lv_station.grid = lv_grid
             # add LV station to LV grid
