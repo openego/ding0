@@ -1,5 +1,5 @@
 from . import StationDingo
-
+from dingo.core.network import TransformerDingo
 
 class MVStationDingo(StationDingo):
     """
