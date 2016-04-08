@@ -198,9 +198,9 @@ class TransformerDingo():
         #more params
         self.equip_trans_id = kwargs.get('equip_trans_id', None)
         self.v_level = kwargs.get('v_level', None)
-        self.s_max_a = kwargs.get('s_max_a', None)
-        self.s_max_b = kwargs.get('s_max_b', None)
-        self.s_max_c = kwargs.get('s_max_c', None)
+        self.s_max_a = kwargs.get('s_max_longterm', None)
+        self.s_max_b = kwargs.get('s_max_shortterm', None)
+        self.s_max_c = kwargs.get('s_max_emergency', None)
         self.phase_angle = kwargs.get('phase_angle', None)
         self.tap_ratio = kwargs.get('tap_ratio', None)
 
