@@ -26,6 +26,8 @@ mv_regions=[106] # some MV regions from SPF region
 
 nd.import_mv_regions(conn, mv_regions)
 
+nd.parametrize_grid()
+
 
 # cre
 # create_lv_stations(network)

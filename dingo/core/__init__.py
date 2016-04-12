@@ -45,6 +45,7 @@ class NetworkDingo:
         # TODO: validate input params
 
         mv_station = MVStationDingo(id_db=subst_id, geo_data=station_geo_data)
+
         mv_grid = MVGridDingo(id_db=poly_id, station=mv_station)
         mv_region = MVRegionDingo(id_db=poly_id, mv_grid=mv_grid, geo_data=region_geo_data)
         mv_grid.region = mv_region
@@ -103,6 +104,7 @@ class NetworkDingo:
 
             # add sum of peak loads of underlying lv regions to mv_region
             mv_region.add_peak_demand()
+
     def import_lv_regions(self, conn, mv_region):
         """imports LV regions (load areas) from database for a single MV region
 
@@ -212,6 +214,26 @@ class NetworkDingo:
 
         for region in self.mv_regions():
             region.mv_grid.routing(debug)
+
+    def parametrize_grid(self):
+        """Paramtrization of grid equipment"""
+
+        # Parameters of possible transformers
+        # TODO: move to database of config file
+        transformers = {
+            20000: {
+                'voltage_level': 10,
+                'apparent_power': 20000},
+            31500: {
+                'voltage_level': 20,
+                'apparent_power': 31500},
+            40000: {
+                'voltage_level': 20,
+                'apparent_power': 40000}}
+
+        for mv_region in self._mv_regions:
+            mv_region.mv_grid._station.choose_transformers(transformers,
+                **{'peak_load': mv_region.peak_load})
 
     def __repr__(self):
         return str(self.name)
