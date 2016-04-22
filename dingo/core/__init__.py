@@ -232,8 +232,10 @@ class NetworkDingo:
                 'apparent_power': 40000}}
 
         for mv_region in self._mv_regions:
+
+            # choose appropriate transformers for each sub-station
             mv_region.mv_grid._station.choose_transformers(transformers,
-                **{'peak_load': mv_region.peak_load})
+               **{'peak_load': mv_region.peak_load})
 
     def __repr__(self):
         return str(self.name)
