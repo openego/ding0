@@ -3,8 +3,11 @@ from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
 from dingo.grid.mv_routing import mv_routing
+import dingo
 
 import networkx as nx
+import pandas as pd
+import os
 
 
 class MVGridDingo(GridDingo):
@@ -76,8 +79,128 @@ class MVGridDingo(GridDingo):
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
 
 
+    def parametrize_lines(self, peak_load, mv_region_area):
+        """Chooses line/cable type and defines parameters
+
+        Adds relevant parameters to medium voltage lines of routed grids. It is
+        assumed that for each MV circuit same type of overhead lines/cables are
+        used. Furthermore, within each circuit no mix of overhead lines/ cables
+        is applied.
+
+        Parameters
+        ----------
+        peak_load : numeric
+            peak load in the according mv_regiom
+        mv_region_area : numeric
+            mv_region's area
+
+        Notes
+        -----
+        Parameter values are take from [1]_.
+
+        Lines are chosen to have 60 % load relative to their nominal capacity
+        according to [2]_.
+
+        Decision on usage of overhead lines vs. cables is determined by load
+        density of the considered region. Urban areas (load density of
+        >= 1 MW/km2 according to [3]_) usually are equipped with underground
+        cables whereas rural areas often have overhead lines as MV distribution
+        system [4]_.
+
+        References
+        ----------
+        .. [1] Helmut Alt, "Vorlesung Elektrische Energieerzeugung und
+            -verteilung"
+            http://www.alt.fh-aachen.de/downloads//Vorlesung%20EV/Hilfsb%2044%
+            20Netzdaten%20Leitung%20Kabel.pdf, 2010
+        .. [2] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie.
+            Ausbau- und Innovationsbedarf der Stromverteilnetze in Deutschland
+            bis 2030.", 2012
+        .. [3] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger
+            Referenznetze im Verteilnetzsektor zur Überprüfung der
+            Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
+        .. [4] Tao, X., "Automatisierte Grundsatzplanung von
+            Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
+        """
+
+        # load cable/line parameters
+        package_path = dingo.__path__[0]
+        line_parameter = pd.read_csv(os.path.join(package_path, 'data',
+            'equipment-parameters_overhead_lines.csv'),
+                                     converters={'i_max_th': lambda x: int(x)})
+        cable_parameter = pd.read_csv(os.path.join(package_path, 'data',
+            'equipment-parameters_cables.csv'),
+                                     converters={'I_n': lambda x: int(x)})
+
+        # iterate over edges (lines) of graph
+        for lv_station in self._graph.edge.keys():
+
+            # iterate over adjacent lv_stations to access connecting lines
+            for adj_lv_station in (
+                    self._graph.edge[lv_station]):
+
+                # calculate load density
+                load_density = peak_load / (mv_region_area * 1e6)
+
+                # identify voltage level
+                # identify type: line or cable
+                # TODO: is this simple approach valuable?
+                # see: dena Verteilnetzstudie
+                if load_density < 1:
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].v_level = 20
+                    branch_type = 'cable'
+                elif load_density >= 1:
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].v_level = 10
+                    branch_type = 'line'
+                else:
+                    raise ValueError('load_density has to be greater than 0!')
+
+                peak_current = (peak_load / self._graph.edge[lv_station]
+                [adj_lv_station]['branch'].v_level)
+
+                # choose line/cable type according to peak load of mv_grid
+                if branch_type is 'line':
+                    # TODO: cross-check is multiplication by 3 is right
+                    line_name = line_parameter.ix[line_parameter[
+                        line_parameter['i_max_th'] * 3 * 0.6 >= peak_current]
+                    ['i_max_th'].idxmin()]['name']
+
+                    # set parameters to branch object
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].x = float(line_parameter.loc[
+                                                line_parameter['name'] == line_name, 'x'])
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].r = float(line_parameter.loc[
+                                                line_parameter['name'] == line_name, 'r'])
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].i_max_th = float(line_parameter.loc[
+                                                       line_parameter['name'] == line_name, 'i_max_th'])
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].type = branch_type
+                elif branch_type is 'cable':
+                    cable_name = cable_parameter.ix[cable_parameter[
+                        cable_parameter['I_n'] * 3 * 0.6 >= peak_current]
+                    ['I_n'].idxmin()]['name']
+
+                    # set parameters to branch object
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].x = float(cable_parameter.loc[
+                                                cable_parameter['name'] == cable_name, 'x_L'])
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].r = float(cable_parameter.loc[
+                                                cable_parameter['name'] == cable_name, 'r'])
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].i_max_th = float(cable_parameter.loc[
+                                                       cable_parameter['name'] == cable_name, 'I_n'])
+                    self._graph.edge[lv_station][adj_lv_station][
+                        'branch'].type = branch_type
+
     def __repr__(self):
         return 'mvgrid_' + str(self.id_db)
+
+
 
 class LVGridDingo(GridDingo):
     """ DINGO low voltage grid

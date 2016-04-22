@@ -250,5 +250,9 @@ class NetworkDingo:
             mv_region.mv_grid._station.choose_transformers(transformers,
                **{'peak_load': mv_region.peak_load})
 
+            # choose appropriate type of line/cable for each edge
+            mv_region.mv_grid.parametrize_lines(mv_region.peak_load,
+                                                mv_region.mv_grid.region.geo_data.area)
+
     def __repr__(self):
         return str(self.name)
