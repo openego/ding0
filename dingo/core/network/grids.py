@@ -4,6 +4,7 @@ from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
 from dingo.grid.mv_routing import mv_routing
 import dingo
+from dingo.tools import config as cfg_dingo
 
 import networkx as nx
 import pandas as pd
@@ -132,6 +133,9 @@ class MVGridDingo(GridDingo):
             'equipment-parameters_cables.csv'),
                                      converters={'I_n': lambda x: int(x)})
 
+        load_density_threshhold= float(cfg_dingo.get('assumptions',
+                                                     'load_density_threshhold'))
+
         # iterate over edges (lines) of graph
         for lv_station in self._graph.edge.keys():
 
@@ -146,11 +150,11 @@ class MVGridDingo(GridDingo):
                 # identify type: line or cable
                 # TODO: is this simple approach valuable?
                 # see: dena Verteilnetzstudie
-                if load_density < 1:
+                if load_density < load_density_threshhold:
                     self._graph.edge[lv_station][adj_lv_station][
                         'branch'].v_level = 20
                     branch_type = 'cable'
-                elif load_density >= 1:
+                elif load_density >= load_density_threshhold:
                     self._graph.edge[lv_station][adj_lv_station][
                         'branch'].v_level = 10
                     branch_type = 'line'
