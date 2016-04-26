@@ -1,23 +1,16 @@
 DINGO
 =====
-DIstribution Network GeneratOr -- A tool to generate synthetic medium and low
-voltage power distribution grids based on open (or at least accessible) data.
+DIstribution Network GeneratOr
 
-Obtaining dingo
----------------
+Required packages
+-----------------
 
-Dingo is still under heavy development. Currently there is no release available.
-If you are still interested, feel free to work with the developing version.
+* networkx
+* geopy
+* pyproj
 
-Clone the repository by 
-
-```
-git clone git@github.com:openego/dingo.git
-```
-
-and install the package (with system-wide propagation and under consideration of
-package dependencies) by
+To install all above listed required package use
 
 ```
-sudo pip3 install -e <path-to-dingo-repo>
+sudo pip3 install networkx geopy
 ```
