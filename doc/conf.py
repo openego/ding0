@@ -53,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'dingo'
-copyright = u'2015, open_eGo-Team'
+copyright = u'2015-2016, open_eGo-Team'
 author = u'open_eGo-Team'
 
 # The version info for the project you're documenting, acts as replacement for
