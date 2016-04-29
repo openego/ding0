@@ -5,6 +5,9 @@ from dingo.tools import config as cfg_dingo
 
 import pandas as pd
 from shapely.wkt import loads as wkt_loads
+from functools import partial
+import pyproj
+from shapely.ops import transform
 
 
 class NetworkDingo:
@@ -97,7 +100,17 @@ class NetworkDingo:
         for poly_id, row in mv_data.iterrows():
             subst_id = row['subst_id']
             region_geo_data = wkt_loads(row['poly_geom'])
+
+            # transform `region_geo_data` to epsg 3035 (from originally 4326)
+            # to achieve correct area calculation of mv_region
+            # TODO: consider to generally switch to 3035 representation
             station_geo_data = wkt_loads(row['subs_geom'])
+            projection = partial(
+                pyproj.transform,
+                pyproj.Proj(init='epsg:4326'), # source coordinate system
+                pyproj.Proj(init='epsg:3035')) # destination coordinate system
+
+            region_geo_data = transform(projection, region_geo_data)  # apply projection
 
             mv_region = self.build_mv_region(poly_id, subst_id, region_geo_data, station_geo_data)
             self.import_lv_regions(conn, mv_region)
@@ -232,8 +245,14 @@ class NetworkDingo:
                 'apparent_power': 40000}}
 
         for mv_region in self._mv_regions:
+
+            # choose appropriate transformers for each sub-station
             mv_region.mv_grid._station.choose_transformers(transformers,
-                **{'peak_load': mv_region.peak_load})
+               **{'peak_load': mv_region.peak_load})
+
+            # choose appropriate type of line/cable for each edge
+            mv_region.mv_grid.parametrize_lines(mv_region.peak_load,
+                                                mv_region.mv_grid.region.geo_data.area)
 
     def __repr__(self):
         return str(self.name)

@@ -1,30 +1,22 @@
 DINGO
 =====
-DIstribution Network GeneratOr
-
-Required packages
------------------
-
-* networkx
-* geopy
-* psycopg2
-
-To install all above listed required package use
-
+DIstribution Network GeneratOr -- A tool to generate synthetic medium and low
+voltage power distribution grids based on open (or at least accessible) data.
+ 
+Obtaining dingo
+---------------
+Dingo is still under heavy development. Currently there is no release available.
+If you are still interested, feel free to work with the developing version.
+ 
+Clone the repository by 
+ 
 ```
-sudo pip3 install networkx geopy
-```
-
-The package `psycopg2` maybe requires postgresql-server-dev-<verion>.<number> to
-be installed. If so, first install this via package management system. If you
-have Ubuntu as OS just issue
-
-```
-sudo apt-g  install postgresql-server-dev-<verion>.<number>
+git clone git@github.com:openego/dingo.git
 ```
 
-and afterwards
+and install the package (with system-wide propagation and under consideration of
+package dependencies) by
 
 ```
-sudo pip3 install psycopg2
+sudo pip3 install -e <path-to-dingo-repo>
 ```

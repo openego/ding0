@@ -1,0 +1,4 @@
+name,old_name,diameter_cable_core,diameter_conductor,r,x,i_max_th
+48-AL1/8-ST1A,50/8-Al/St,3.2,9.6,0.5939,0.37,210
+94-AL1/15-ST1A,95/15-Al/St,5.01,13.6,0.306,0.35,350
+122-AL1/20-ST1A,120/20-Al/St,5.7,15.5,0.2376,0.34,410

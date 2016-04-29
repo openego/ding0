@@ -26,7 +26,6 @@ mv_regions=[106] # some MV regions from SPF region
 
 nd.import_mv_regions(conn, mv_regions)
 
-nd.parametrize_grid()
 
 
 # cre
@@ -36,6 +35,12 @@ conn.close()
 
 nd.mv_routing()
 
-#df = nx.to_pandas_dataframe(nd._mv_regions[0].mv_grid._graph)
+nd.parametrize_grid()
 
+#df = nx.to_pandas_dataframe(nd._mv_regions[0].mv_grid._graph)
+# import pprint
+# for edge in nd._mv_regions[0].mv_grid._graph.edge.keys():
+#     # print(edge, type(edge))
+#     pprint.pprint(edge)
+#     pprint.pprint(nd._mv_regions[0].mv_grid._graph.edge[edge])
 nd._mv_regions[0].mv_grid.graph_draw()
