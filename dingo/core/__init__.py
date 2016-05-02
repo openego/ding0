@@ -140,7 +140,7 @@ class NetworkDingo:
         #where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
         where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
 
-        sql = """SELECT regs.la_id as id_db,
+        sql = """SELECT regs.id as id_db,
                         regs.zensus_sum,
                         regs.zensus_count as zensus_cnt,
                         regs.ioer_sum,
@@ -169,7 +169,7 @@ class NetworkDingo:
                         round((ploads.residential::numeric + ploads.retail::numeric + ploads.industrial::numeric + ploads.agricultural::numeric) * {1}) as peak_load_sum
                  FROM {2} AS regs
                         INNER JOIN {3} AS ploads
-                        ON (regs.la_id = ploads.la_id) {4};""".format(srid,
+                        ON (regs.id = ploads.id) {4};""".format(srid,
                                                                       load_scaling_factor,
                                                                       lv_regions_schema_table,
                                                                       lv_loads_schema_table,
