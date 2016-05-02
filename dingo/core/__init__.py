@@ -235,13 +235,13 @@ class NetworkDingo:
         # TODO: move to database of config file
         transformers = {
             20000: {
-                'voltage_level': 10,
+                'voltage_level': 20,
                 'apparent_power': 20000},
             31500: {
-                'voltage_level': 20,
+                'voltage_level': 10,
                 'apparent_power': 31500},
             40000: {
-                'voltage_level': 20,
+                'voltage_level': 10,
                 'apparent_power': 40000}}
 
         for mv_region in self._mv_regions:
