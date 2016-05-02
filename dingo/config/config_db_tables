@@ -1,6 +1,6 @@
 # This config file is part of DINGO
 # It defines schemas and tables in the database where data is read from or written to.
-# Refer to documentation at [URL] for more information.
+# Refer to documentation at http://dingo.readthedocs.io/en/dev/index.html for more information.
 
 [equipment]
 lines = equip_lines
