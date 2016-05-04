@@ -137,8 +137,9 @@ class NetworkDingo:
         load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
 
         # build SQL query
-        #where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
-        where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
+        # where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
+        # where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
+        where_clause = 'WHERE subst_id=' + str(mv_region.id_db)
 
         sql = """SELECT regs.id as id_db,
                         regs.zensus_sum,
