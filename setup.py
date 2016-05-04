@@ -9,5 +9,6 @@ setup(name='dingo',
       install_requires=['networkx >= 1.11',
                         'geopy >= 1.11.0',
                         'pandas >= 0.17.0',
-                        'pyomo >= 1.9.5.1']
+                        'pyomo >= 1.9.5.1',
+                        'pyproj']
      )
