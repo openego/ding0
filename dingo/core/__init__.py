@@ -79,7 +79,7 @@ class NetworkDingo:
         # build SQL query
         where_clause = ''
         if mv_regions is not None:
-            where_clause = 'WHERE polys.id in (' + ','.join(str(_) for _ in mv_regions) + ')'
+            where_clause = 'WHERE polys.subst_id in (' + ','.join(str(_) for _ in mv_regions) + ')'
 
         sql = """SELECT polys.subst_id as subst_id,
                         polys.id as poly_id,
@@ -139,7 +139,7 @@ class NetworkDingo:
         # build SQL query
         # where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
         # where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
-        where_clause = 'WHERE subst_id=' + str(mv_region.id_db)
+        where_clause = 'WHERE subst_id=' + str(mv_region.mv_grid._station.id_db)
 
         sql = """SELECT regs.id as id_db,
                         regs.zensus_sum,
