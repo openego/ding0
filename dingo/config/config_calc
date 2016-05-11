@@ -6,5 +6,5 @@
 operator_diff_round_digits = 3
 
 [assumptions]
-load_density_threshhold = 1
+load_density_threshold = 1
 # unit MVA/km^2

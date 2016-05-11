@@ -133,8 +133,8 @@ class MVGridDingo(GridDingo):
             'equipment-parameters_cables.csv'),
                                      converters={'I_n': lambda x: int(x)})
 
-        load_density_threshhold= float(cfg_dingo.get('assumptions',
-                                                     'load_density_threshhold'))
+        load_density_threshold= float(cfg_dingo.get('assumptions',
+                                                     'load_density_threshold'))
 
         # iterate over edges (lines) of graph
         for lv_station in self._graph.edge.keys():
@@ -150,11 +150,11 @@ class MVGridDingo(GridDingo):
                 # identify type: line or cable
                 # TODO: is this simple approach valuable?
                 # see: dena Verteilnetzstudie
-                if load_density < load_density_threshhold:
+                if load_density < load_density_threshold:
                     self._graph.edge[lv_station][adj_lv_station][
                         'branch'].v_level = 20
                     branch_type = 'cable'
-                elif load_density >= load_density_threshhold:
+                elif load_density >= load_density_threshold:
                     self._graph.edge[lv_station][adj_lv_station][
                         'branch'].v_level = 10
                     branch_type = 'line'

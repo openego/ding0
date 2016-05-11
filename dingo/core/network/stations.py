@@ -18,7 +18,7 @@ class MVStationDingo(StationDingo):
         """Chooses appropriate transformers for the MV sub-station
 
         Choice bases on voltage level (depends on load density), apparent power
-        and general Planungsgrundsätze.
+        and general planning principles for MV distribution grids.
 
         Parameters
         ----------
@@ -61,6 +61,7 @@ class MVStationDingo(StationDingo):
                                for x in possible_tranformers]
 
         while residual_apparent_power > 0:
+            # TODO: move constant value 0.6 (load factor) to config file
             if residual_apparent_power > 0.6 * max(possible_tranformers):
                 selected_app_power = max(possible_tranformers)
             else:
@@ -79,9 +80,6 @@ class MVStationDingo(StationDingo):
                       's_max_longterm': s_max_max}
 
         self.add_transformer(TransformerDingo(**int_kwargs))
-
-
-
 
 
 class LVStationDingo(StationDingo):

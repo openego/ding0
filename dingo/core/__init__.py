@@ -230,7 +230,7 @@ class NetworkDingo:
             region.mv_grid.routing(debug)
 
     def parametrize_grid(self):
-        """Paramtrization of grid equipment"""
+        """Parametrization of grid equipment"""
 
         # Parameters of possible transformers
         # TODO: move to database of config file
@@ -257,3 +257,4 @@ class NetworkDingo:
 
     def __repr__(self):
         return str(self.name)
+    
