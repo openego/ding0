@@ -98,7 +98,7 @@ class StationDingo():
         # TODO: check arg
         if transformer not in self.transformers() and isinstance(transformer, TransformerDingo):
             self._transformers.append(transformer)
-
+        # TODO: what if it exists? -> error message
 
 class BusDingo(Bus):
     """ Create new pypower Bus class as child from oemof Bus used to define

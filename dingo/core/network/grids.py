@@ -79,6 +79,36 @@ class MVGridDingo(GridDingo):
         #     mv_branches[edge] = mv_branch
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
 
+    def parametrize_grid(self, debug=False):
+        """ Performs Parametrization of grid equipment.
+
+        Args:
+            debug: If True, information is printed while routing
+        """
+        # TODO: Add more detailed description
+
+        # Parameters of possible transformers
+        # TODO: move to database of config file
+        transformers = {
+            20000: {
+                'voltage_level': 20,
+                'apparent_power': 20000},
+            31500: {
+                'voltage_level': 10,
+                'apparent_power': 31500},
+            40000: {
+                'voltage_level': 10,
+                'apparent_power': 40000}}
+
+
+        # choose appropriate transformers for each sub-station
+        self._station.choose_transformers(transformers,
+                                          **{'peak_load': self.region.peak_load})
+
+        # choose appropriate type of line/cable for each edge
+        self.parametrize_lines(self.region.peak_load,
+                               self.region.geo_data.area)
+
 
     def parametrize_lines(self, peak_load, mv_region_area):
         """Chooses line/cable type and defines parameters
@@ -91,7 +121,7 @@ class MVGridDingo(GridDingo):
         Parameters
         ----------
         peak_load : numeric
-            peak load in the according mv_regiom
+            peak load in the according mv_region
         mv_region_area : numeric
             mv_region's area
 
@@ -125,6 +155,7 @@ class MVGridDingo(GridDingo):
         """
 
         # load cable/line parameters
+        # TODO: Move filenames to dingo config file
         package_path = dingo.__path__[0]
         line_parameter = pd.read_csv(os.path.join(package_path, 'data',
             'equipment-parameters_overhead_lines.csv'),
@@ -167,6 +198,7 @@ class MVGridDingo(GridDingo):
                 # choose line/cable type according to peak load of mv_grid
                 if branch_type is 'line':
                     # TODO: cross-check is multiplication by 3 is right
+                    # TODO: move constant value 0.6 (load factor) to config file
                     line_name = line_parameter.ix[line_parameter[
                         line_parameter['i_max_th'] * 3 * 0.6 >= peak_current]
                     ['i_max_th'].idxmin()]['name']

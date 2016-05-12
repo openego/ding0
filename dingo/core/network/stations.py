@@ -66,7 +66,7 @@ class MVStationDingo(StationDingo):
                 selected_app_power = max(possible_tranformers)
             else:
                 selected_app_power = min(list(compress(possible_tranformers,
-                    [residual_apparent_power<=k
+                    [residual_apparent_power <= k
                      for k in possible_tranformers])))
 
             # add tranformer on determined size with according parameters
@@ -74,7 +74,7 @@ class MVStationDingo(StationDingo):
                 's_max_longterm': selected_app_power}))
             residual_apparent_power -= selected_app_power
 
-        # add redundant transformer of the size of the largest tranformer
+        # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))
         int_kwargs = {'v_level': voltage_level,
                       's_max_longterm': s_max_max}
