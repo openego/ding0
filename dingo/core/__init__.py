@@ -220,7 +220,7 @@ class NetworkDingo:
         # TODO: Breath life into this method :). Prior to this the table structure has to be defined
 
     def mv_routing(self, debug=False):
-        """ Performs routing on all MV grids, see method `routing` in class `MVGridDingo` for details
+        """ Performs routing on all MV grids, see method `routing` in class `MVGridDingo` for details.
 
         Args:
             debug: If True, information is printed while routing
@@ -229,32 +229,16 @@ class NetworkDingo:
         for region in self.mv_regions():
             region.mv_grid.routing(debug)
 
-    def parametrize_grid(self):
-        """Parametrization of grid equipment"""
+    def mv_parametrize_grid(self, debug=False):
+        """ Performs Parametrization of grid equipment of all MV grids, see method `parametrize_grid` in class
+            `MVGridDingo` for details.
 
-        # Parameters of possible transformers
-        # TODO: move to database of config file
-        transformers = {
-            20000: {
-                'voltage_level': 20,
-                'apparent_power': 20000},
-            31500: {
-                'voltage_level': 10,
-                'apparent_power': 31500},
-            40000: {
-                'voltage_level': 10,
-                'apparent_power': 40000}}
+        Args:
+            debug: If True, information is printed while parametrization
+        """
 
-        for mv_region in self._mv_regions:
-
-            # choose appropriate transformers for each sub-station
-            mv_region.mv_grid._station.choose_transformers(transformers,
-               **{'peak_load': mv_region.peak_load})
-
-            # choose appropriate type of line/cable for each edge
-            mv_region.mv_grid.parametrize_lines(mv_region.peak_load,
-                                                mv_region.mv_grid.region.geo_data.area)
+        for region in self.mv_regions():
+            region.mv_grid.parametrize_grid(debug)
 
     def __repr__(self):
         return str(self.name)
-    

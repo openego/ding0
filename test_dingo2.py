@@ -35,7 +35,7 @@ conn.close()
 
 nd.mv_routing()
 
-nd.parametrize_grid()
+nd.mv_parametrize_grid()
 
 #df = nx.to_pandas_dataframe(nd._mv_regions[0].mv_grid._graph)
 # import pprint
