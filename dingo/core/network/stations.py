@@ -52,7 +52,7 @@ class MVStationDingo(StationDingo):
         voltage_level = 10 # in kV
 
         apparent_power = peak_load  # kW
-        possible_transformers = []   # keys of above dict
+        possible_transformers = []  # keys of above dict
 
         # put all keys of suitable transformers (based on voltage) to list
         for trans in transformers:

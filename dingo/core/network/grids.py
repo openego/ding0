@@ -86,9 +86,10 @@ class MVGridDingo(GridDingo):
             debug: If True, information is printed while routing
         """
         # TODO: Add more detailed description
+        # TODO: Pass debug flag to functions
 
         # Parameters of possible transformers
-        # TODO: move to database of config file
+        # TODO: move to database of config file, move loading to method 'choose_transformers'
         transformers = {
             20000: {
                 'voltage_level': 20,
@@ -185,6 +186,7 @@ class MVGridDingo(GridDingo):
                     self._graph.edge[lv_station]):
 
                 # calculate load density
+                # TODO: Move constant 1e6 to config file
                 load_density = peak_load / (mv_region_area * 1e6)
 
                 # identify voltage level

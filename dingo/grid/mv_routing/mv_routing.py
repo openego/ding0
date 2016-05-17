@@ -53,7 +53,7 @@ def routing_solution_to_dingo_graph(graph, solution):
     Returns:
         graph: NetworkX graph object with nodes and edges
     """
-    # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Ruuting erstellt um die Funktionsfähigkeit
+    # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
     # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
 
     # build node dict (name: obj) from graph nodes to map node names on node objects
