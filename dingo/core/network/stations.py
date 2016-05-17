@@ -1,5 +1,7 @@
 from . import StationDingo
 from dingo.core.network import TransformerDingo
+from dingo.tools import config as cfg_dingo
+
 from itertools import compress
 
 class MVStationDingo(StationDingo):
@@ -42,6 +44,9 @@ class MVStationDingo(StationDingo):
 
         """
 
+        load_factor_transformer = float(cfg_dingo.get('assumptions',
+                                                      'load_factor_transformer'))
+
         # step 1: identify possible transformers by voltage level
         # TODO: derive voltage level by load density of mv_region
         voltage_level = 10 # in kV
@@ -61,8 +66,7 @@ class MVStationDingo(StationDingo):
                                for _ in possible_transformers]
 
         while residual_apparent_power > 0:
-            # TODO: move constant value 0.6 (load factor) to config file
-            if residual_apparent_power > 0.6 * max(possible_transformers):
+            if residual_apparent_power > load_factor_transformer * max(possible_transformers):
                 selected_app_power = max(possible_transformers)
             else:
                 selected_app_power = min(list(compress(possible_transformers,

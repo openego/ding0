@@ -13,7 +13,6 @@ cfg_dingo.load_config('config_calc')
 
 # get engine for database connection
 #conn = db.connection(db_section='ontohub_wdb', cfg_file='~/.dingo/config') # <-- TODO: include custom config file from given path (+input for oemof)
-#conn = db.connection(db_section='ontohub_wdb')
 
 # instantiate dingo network object
 nd = NetworkDingo(name='network')

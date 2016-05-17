@@ -166,6 +166,10 @@ class MVGridDingo(GridDingo):
 
         load_density_threshold= float(cfg_dingo.get('assumptions',
                                                      'load_density_threshold'))
+        load_factor_line = float(cfg_dingo.get('assumptions',
+                                               'load_factor_line'))
+        load_factor_cable = float(cfg_dingo.get('assumptions',
+                                                'load_factor_cable'))
 
         # iterate over edges (lines) of graph
         for lv_station in self._graph.edge.keys():
@@ -198,9 +202,8 @@ class MVGridDingo(GridDingo):
                 # choose line/cable type according to peak load of mv_grid
                 if branch_type is 'line':
                     # TODO: cross-check is multiplication by 3 is right
-                    # TODO: move constant value 0.6 (load factor) to config file
                     line_name = line_parameter.ix[line_parameter[
-                        line_parameter['i_max_th'] * 3 * 0.6 >= peak_current]
+                        line_parameter['i_max_th'] * 3 * load_factor_line >= peak_current]
                     ['i_max_th'].idxmin()]['name']
 
                     # set parameters to branch object
@@ -217,7 +220,7 @@ class MVGridDingo(GridDingo):
                         'branch'].type = branch_type
                 elif branch_type is 'cable':
                     cable_name = cable_parameter.ix[cable_parameter[
-                        cable_parameter['I_n'] * 3 * 0.6 >= peak_current]
+                        cable_parameter['I_n'] * 3 * load_factor_cable >= peak_current]
                     ['I_n'].idxmin()]['name']
 
                     # set parameters to branch object
