@@ -48,12 +48,12 @@ class GridDingo:
         for node in g.nodes():
             if isinstance(node, StationDingo):
                 nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
-                # TODO: Add demand as label
+                # TODO: MOVE draw/color settings to config
             if node == self.station():
                 nodes_color.append((1, 0.5, 0.5))
             else:
                 demands[node] = 'd=' + '{:.3f}'.format(node.grid.region.peak_load_sum)
-                demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [0.002]*len(nodes_pos[node]))])
+                demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [0.003]*len(nodes_pos[node]))])
                 nodes_color.append((0.5, 0.5, 1))
 
         plt.figure()
