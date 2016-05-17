@@ -154,22 +154,28 @@ class MVGridDingo(GridDingo):
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
 
-        # load cable/line parameters
-        # TODO: Move filenames to dingo config file
-        package_path = dingo.__path__[0]
-        line_parameter = pd.read_csv(os.path.join(package_path, 'data',
-            'equipment-parameters_overhead_lines.csv'),
-                                     converters={'i_max_th': lambda x: int(x)})
-        cable_parameter = pd.read_csv(os.path.join(package_path, 'data',
-            'equipment-parameters_cables.csv'),
-                                     converters={'I_n': lambda x: int(x)})
-
+        # load assumptions
         load_density_threshold= float(cfg_dingo.get('assumptions',
-                                                     'load_density_threshold'))
+                                                    'load_density_threshold'))
         load_factor_line = float(cfg_dingo.get('assumptions',
                                                'load_factor_line'))
         load_factor_cable = float(cfg_dingo.get('assumptions',
                                                 'load_factor_cable'))
+
+        # load cable/line parameters (after loading corresponding file names)
+        package_path = dingo.__path__[0]
+        equipment_parameters_lines = cfg_dingo.get('equipment',
+                                                   'equipment_parameters_lines')
+        equipment_parameters_cables = cfg_dingo.get('equipment',
+                                                    'equipment_parameters_cables')
+
+        line_parameter = pd.read_csv(os.path.join(package_path, 'data',
+                                     equipment_parameters_lines),
+                                     converters={'i_max_th': lambda x: int(x)})
+        cable_parameter = pd.read_csv(os.path.join(package_path, 'data',
+                                      equipment_parameters_cables),
+                                      converters={'I_n': lambda x: int(x)})
+
 
         # iterate over edges (lines) of graph
         for lv_station in self._graph.edge.keys():

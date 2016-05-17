@@ -1,0 +1,7 @@
+# This config file is part of DINGO
+# It defines the file naming in the data dir where data is read from.
+# Refer to documentation at http://dingo.readthedocs.io/en/dev/index.html for more information.
+
+[equipment]
+equipment_parameters_cables = equipment-parameters_cables.csv
+equipment_parameters_lines = equipment-parameters_overhead_lines.csv
