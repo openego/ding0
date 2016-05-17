@@ -107,9 +107,9 @@ class MVGridDingo(GridDingo):
         Parameters
         ----------
         peak_load : numeric
-            peak load in the according mv_region
+            peak load in the according mv_region in kVA
         mv_region_area : numeric
-            mv_region's area
+            mv_region's area in m^2
 
         Notes
         -----
@@ -133,7 +133,7 @@ class MVGridDingo(GridDingo):
         .. [2] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie.
             Ausbau- und Innovationsbedarf der Stromverteilnetze in Deutschland
             bis 2030.", 2012
-        .. [3] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger
+        .. [3] Falk Schaller et al., "Modellierung_lv_regions realitätsnaher zukünftiger
             Referenznetze im Verteilnetzsektor zur Überprüfung der
             Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
         .. [4] Tao, X., "Automatisierte Grundsatzplanung von
@@ -172,7 +172,7 @@ class MVGridDingo(GridDingo):
 
                 # calculate load density
                 # TODO: Move constant 1e6 to config file
-                load_density = peak_load / (mv_region_area * 1e6)
+                load_density = (peak_load / 1e3) / (mv_region_area / 1e6) # unit MVA/km^2
 
                 # identify voltage level
                 # identify type: line or cable

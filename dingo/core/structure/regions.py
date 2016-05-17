@@ -35,7 +35,7 @@ class MVRegionDingo(RegionDingo):
             self._lv_regions.append(lv_region)
 
     def add_peak_demand(self):
-        """Summarizes peak loads of underlying LV regions"""
+        """Summarizes peak loads of underlying LV regions in kVA"""
         peak_load = 0
         for lv_region in self._lv_regions:
             peak_load += lv_region.peak_load_sum
