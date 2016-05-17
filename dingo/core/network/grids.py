@@ -88,23 +88,8 @@ class MVGridDingo(GridDingo):
         # TODO: Add more detailed description
         # TODO: Pass debug flag to functions
 
-        # Parameters of possible transformers
-        # TODO: move to database of config file, move loading to method 'choose_transformers'
-        transformers = {
-            20000: {
-                'voltage_level': 20,
-                'apparent_power': 20000},
-            31500: {
-                'voltage_level': 10,
-                'apparent_power': 31500},
-            40000: {
-                'voltage_level': 10,
-                'apparent_power': 40000}}
-
-
-        # choose appropriate transformers for each sub-station
-        self._station.choose_transformers(transformers,
-                                          **{'peak_load': self.region.peak_load})
+        # choose appropriate transformers for each MV sub-station
+        self._station.choose_transformers()
 
         # choose appropriate type of line/cable for each edge
         self.parametrize_lines(self.region.peak_load,

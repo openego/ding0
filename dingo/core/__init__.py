@@ -52,6 +52,7 @@ class NetworkDingo:
         mv_grid = MVGridDingo(id_db=poly_id, station=mv_station)
         mv_region = MVRegionDingo(id_db=poly_id, mv_grid=mv_grid, geo_data=region_geo_data)
         mv_grid.region = mv_region
+        mv_station.grid = mv_grid
 
         self.add_mv_region(mv_region)
 

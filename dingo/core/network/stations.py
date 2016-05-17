@@ -16,7 +16,7 @@ class MVStationDingo(StationDingo):
     def __repr__(self):
         return 'mvstation_' + str(self.id_db)
 
-    def choose_transformers(self, transformers, peak_load=None, **kwargs):
+    def choose_transformers(self):
         """Chooses appropriate transformers for the MV sub-station
 
         Choice bases on voltage level (depends on load density), apparent power
@@ -44,6 +44,19 @@ class MVStationDingo(StationDingo):
 
         """
 
+        # Parameters of possible transformers
+        # TODO: move to database of config file
+        transformers = {
+            20000: {
+                'voltage_level': 20,
+                'apparent_power': 20000},
+            31500: {
+                'voltage_level': 10,
+                'apparent_power': 31500},
+            40000: {
+                'voltage_level': 10,
+                'apparent_power': 40000}}
+
         load_factor_transformer = float(cfg_dingo.get('assumptions',
                                                       'load_factor_transformer'))
 
@@ -51,7 +64,7 @@ class MVStationDingo(StationDingo):
         # TODO: derive voltage level by load density of mv_region
         voltage_level = 10 # in kV
 
-        apparent_power = peak_load  # kW
+        apparent_power = self.grid.region.peak_load  # kW
         possible_transformers = []  # keys of above dict
 
         # put all keys of suitable transformers (based on voltage) to list
