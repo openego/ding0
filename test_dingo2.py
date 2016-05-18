@@ -19,7 +19,7 @@ cfg_dingo.load_config('config_files')
 nd = NetworkDingo(name='network')
 
 # get database connection info from config file
-conn = db.connection(db_section='oedb')
+conn = db.connection(section='oedb')
 
 #mv_regions=[106, 125, 500, 722, 887, 1049] # some MV regions from SPF region
 mv_regions=[217] # some MV regions from SPF region
