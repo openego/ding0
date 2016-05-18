@@ -155,70 +155,56 @@ class MVGridDingo(GridDingo):
 
 
         # iterate over edges (lines) of graph
-        for lv_station in self._graph.edge.keys():
+        for edge in self.graph_edges():
 
-            # iterate over adjacent lv_stations to access connecting lines
-            for adj_lv_station in (
-                    self._graph.edge[lv_station]):
+            # calculate load density
+            # TODO: Move constant 1e6 to config file
+            load_density = ((self.region.peak_load / 1e3) /
+                            (self.region.geo_data.area / 1e6)) # unit MVA/km^2
 
-                # calculate load density
-                # TODO: Move constant 1e6 to config file
-                load_density = (self.region.peak_load / 1e3) / (self.region.geo_data.area / 1e6) # unit MVA/km^2
+            # identify voltage level
+            # identify type: line or cable
+            # TODO: is this simple approach valuable?
+            # see: dena Verteilnetzstudie
+            if load_density < load_density_threshold:
+                edge['branch'].v_level = 20
+                branch_type = 'cable'
+            elif load_density >= load_density_threshold:
+                edge['branch'].v_level = 10
+                branch_type = 'line'
+            else:
+                raise ValueError('load_density has to be greater than 0!')
 
-                # identify voltage level
-                # identify type: line or cable
-                # TODO: is this simple approach valuable?
-                # see: dena Verteilnetzstudie
-                if load_density < load_density_threshold:
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].v_level = 20
-                    branch_type = 'cable'
-                elif load_density >= load_density_threshold:
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].v_level = 10
-                    branch_type = 'line'
-                else:
-                    raise ValueError('load_density has to be greater than 0!')
+            peak_current = self.region.peak_load / edge['branch'].v_level
 
-                peak_current = (self.region.peak_load / self._graph.edge[lv_station]
-                [adj_lv_station]['branch'].v_level)
+            # choose line/cable type according to peak load of mv_grid
+            if branch_type is 'line':
+                # TODO: cross-check is multiplication by 3 is right
+                line_name = line_parameter.ix[line_parameter[
+                    line_parameter['i_max_th'] * 3 * load_factor_line >= peak_current]
+                ['i_max_th'].idxmin()]['name']
 
-                # choose line/cable type according to peak load of mv_grid
-                if branch_type is 'line':
-                    # TODO: cross-check is multiplication by 3 is right
-                    line_name = line_parameter.ix[line_parameter[
-                        line_parameter['i_max_th'] * 3 * load_factor_line >= peak_current]
-                    ['i_max_th'].idxmin()]['name']
+                # set parameters to branch object
+                edge['branch'].x = float(line_parameter.loc[
+                                        line_parameter['name'] == line_name, 'x'])
+                edge['branch'].r = float(line_parameter.loc[
+                                            line_parameter['name'] == line_name, 'r'])
+                edge['branch'].i_max_th = float(line_parameter.loc[
+                                                   line_parameter['name'] == line_name, 'i_max_th'])
+                edge['branch'].type = branch_type
+            elif branch_type is 'cable':
+                cable_name = cable_parameter.ix[cable_parameter[
+                    cable_parameter['I_n'] * 3 * load_factor_cable >= peak_current]
+                ['I_n'].idxmin()]['name']
 
-                    # set parameters to branch object
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].x = float(line_parameter.loc[
-                                                line_parameter['name'] == line_name, 'x'])
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].r = float(line_parameter.loc[
-                                                line_parameter['name'] == line_name, 'r'])
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].i_max_th = float(line_parameter.loc[
-                                                       line_parameter['name'] == line_name, 'i_max_th'])
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].type = branch_type
-                elif branch_type is 'cable':
-                    cable_name = cable_parameter.ix[cable_parameter[
-                        cable_parameter['I_n'] * 3 * load_factor_cable >= peak_current]
-                    ['I_n'].idxmin()]['name']
-
-                    # set parameters to branch object
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].x = float(cable_parameter.loc[
-                                                cable_parameter['name'] == cable_name, 'x_L'])
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].r = float(cable_parameter.loc[
-                                                cable_parameter['name'] == cable_name, 'r'])
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].i_max_th = float(cable_parameter.loc[
-                                                       cable_parameter['name'] == cable_name, 'I_n'])
-                    self._graph.edge[lv_station][adj_lv_station][
-                        'branch'].type = branch_type
+                # set parameters to branch object
+                edge['branch'].x = float(cable_parameter.loc[
+                                            cable_parameter['name'] == cable_name, 'x_L'])
+                edge['branch'].r = float(cable_parameter.loc[
+                                            cable_parameter['name'] == cable_name, 'r'])
+                edge['branch'].i_max_th = float(cable_parameter.loc[
+                                                   cable_parameter['name'] == cable_name, 'I_n'])
+                edge['branch'].type = branch_type
 
     def __repr__(self):
         return 'mvgrid_' + str(self.id_db)

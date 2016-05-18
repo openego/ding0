@@ -62,13 +62,30 @@ class GridDingo:
         plt.show()
 
     def graph_edges(self):
-        """ Returns a generator for iterating over graph edges including branch objects (tuple).
-        Note: There are generator functions for nodes (`Graph.nodes()`) and edges (`Graph.edges()`) in NetworkX but
-        unlike graph nodes, which can be represented by objects, branch objects can only be accessed by using an edge
-        attribute ('branch' is used here)
+        """ Returns a generator for iterating over graph edges
+
+        The edge of a graph is described by the to adjacent node and the branch
+        object itself. Whereas the branch object is used to hold all relevant
+        power system parameters.
+
+        Note
+        ----
+
+        There are generator functions for nodes (`Graph.nodes()`) and edges
+        (`Graph.edges()`) in NetworkX but unlike graph nodes, which can be
+        represented by objects, branch objects can only be accessed by using an
+        edge attribute ('branch' is used here)
+
+        To make access to attributes of the branch objects simplier and more
+        intuitive for the user, this generator yields a dictionary for each edge
+        that contains information about adjacent nodes and the branch object.
+
+        Note, the construction of the dictionary highly depends on the structure
+        of the in-going tuple (which is defined by the needs of networkX). If
+        this changes, the code will break.
         """
         for edge in nx.get_edge_attributes(self._graph, 'branch').items():
-            yield edge
+            yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
 
 class StationDingo():
