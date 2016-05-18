@@ -92,24 +92,15 @@ class MVGridDingo(GridDingo):
         self._station.choose_transformers()
 
         # choose appropriate type of line/cable for each edge
-        self.parametrize_lines(self.region.peak_load,
-                               self.region.geo_data.area)
+        self.parametrize_lines()
 
-
-    def parametrize_lines(self, peak_load, mv_region_area):
+    def parametrize_lines(self):
         """Chooses line/cable type and defines parameters
 
         Adds relevant parameters to medium voltage lines of routed grids. It is
         assumed that for each MV circuit same type of overhead lines/cables are
         used. Furthermore, within each circuit no mix of overhead lines/ cables
         is applied.
-
-        Parameters
-        ----------
-        peak_load : numeric
-            peak load in the according mv_region in kVA
-        mv_region_area : numeric
-            mv_region's area in m^2
 
         Notes
         -----
@@ -172,7 +163,7 @@ class MVGridDingo(GridDingo):
 
                 # calculate load density
                 # TODO: Move constant 1e6 to config file
-                load_density = (peak_load / 1e3) / (mv_region_area / 1e6) # unit MVA/km^2
+                load_density = (self.region.peak_load / 1e3) / (self.region.geo_data.area / 1e6) # unit MVA/km^2
 
                 # identify voltage level
                 # identify type: line or cable
@@ -189,7 +180,7 @@ class MVGridDingo(GridDingo):
                 else:
                     raise ValueError('load_density has to be greater than 0!')
 
-                peak_current = (peak_load / self._graph.edge[lv_station]
+                peak_current = (self.region.peak_load / self._graph.edge[lv_station]
                 [adj_lv_station]['branch'].v_level)
 
                 # choose line/cable type according to peak load of mv_grid
