@@ -59,21 +59,36 @@ class NetworkDingo:
         return mv_region
 
     def import_mv_regions(self, conn, mv_regions=None):
-        """imports MV regions and MV stations from database
+        """Imports MV regions and MV stations from database, reprojects geo data and and initiates objects.
 
         Parameters
         ----------
-        conn: Database connection
+        conn : sqlalchemy.engine.base.Connection object
+            Database connection
         mv_regions : List of MV regions/stations (int) to be imported (if empty, all regions & stations are imported)
+
+        Returns
+        -------
+        Nothing
+
+        See Also
+        --------
+        build_mv_region : used to instantiate MV region objects
+        import_lv_regions : used to import LV regions for every single MV region
+        add_peak_demand : used to summarize peak loads of underlying LV regions
         """
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_regions):
-            raise Exception('Type error: `mv_regions` has to be a list of integers.')
+            raise TypeError('`mv_regions` has to be a list of integers.')
 
         # get database naming settings from config
-        mv_regions_schema_table = cfg_dingo.get('regions', 'mv_regions')
-        mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
+        try:
+            mv_regions_schema_table = cfg_dingo.get('regions', 'mv_regions')
+            mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
+        except OSError:
+            print('cannot open config file.')
+
 
         srid = '4326'  # WGS84: 4326, TODO: Move to global settings
 
@@ -95,29 +110,32 @@ class NetworkDingo:
 
         # read data from db
         mv_data = pd.read_sql_query(sql, conn, index_col='poly_id')
-        #mv_data2 = gpd.read_postgis(sql,conn,geom_col=['poly_geom', 'subs_geom', 'pgeom'], index_col='id_db')
+        #mv_data2 = gpd.read_postgis(sql,conn,geom_col=['poly_geom', 'subs_geom', 'pgeom'], index_col='id_db')  # testing geopandas
 
         # iterate over region/station datasets and initiate objects
-        for poly_id, row in mv_data.iterrows():
-            subst_id = row['subst_id']
-            region_geo_data = wkt_loads(row['poly_geom'])
+        try:
+            for poly_id, row in mv_data.iterrows():
+                subst_id = row['subst_id']
+                region_geo_data = wkt_loads(row['poly_geom'])
 
-            # transform `region_geo_data` to epsg 3035 (from originally 4326)
-            # to achieve correct area calculation of mv_region
-            # TODO: consider to generally switch to 3035 representation
-            station_geo_data = wkt_loads(row['subs_geom'])
-            projection = partial(
-                pyproj.transform,
-                pyproj.Proj(init='epsg:4326'), # source coordinate system
-                pyproj.Proj(init='epsg:3035')) # destination coordinate system
+                # transform `region_geo_data` to epsg 3035 (from originally 4326)
+                # to achieve correct area calculation of mv_region
+                # TODO: consider to generally switch to 3035 representation
+                station_geo_data = wkt_loads(row['subs_geom'])
+                projection = partial(
+                    pyproj.transform,
+                    pyproj.Proj(init='epsg:4326'),  # source coordinate system
+                    pyproj.Proj(init='epsg:3035'))  # destination coordinate system
 
-            region_geo_data = transform(projection, region_geo_data)  # apply projection
+                region_geo_data = transform(projection, region_geo_data)  # apply projection
 
-            mv_region = self.build_mv_region(poly_id, subst_id, region_geo_data, station_geo_data)
-            self.import_lv_regions(conn, mv_region)
+                mv_region = self.build_mv_region(poly_id, subst_id, region_geo_data, station_geo_data)
+                self.import_lv_regions(conn, mv_region)
 
-            # add sum of peak loads of underlying lv regions to mv_region
-            mv_region.add_peak_demand()
+                # add sum of peak loads of underlying lv regions to mv_region
+                mv_region.add_peak_demand()
+        except:
+            print('unexpected error while initiating MV regions from DB dataset.')
 
     def import_lv_regions(self, conn, mv_region):
         """imports LV regions (load areas) from database for a single MV region

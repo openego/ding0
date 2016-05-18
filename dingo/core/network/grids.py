@@ -128,6 +128,11 @@ class MVGridDingo(GridDingo):
             Referenznetze im Verteilnetzsektor zur Überprüfung der
             Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
         .. [4] Tao, X., "Automatisierte Grundsatzplanung von
+
+
+
+
+
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
 
