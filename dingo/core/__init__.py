@@ -98,24 +98,23 @@ class NetworkDingo:
             where_clause = 'WHERE polys.subst_id in (' + ','.join(str(_) for _ in mv_regions) + ')'
 
         sql = """SELECT polys.subst_id as subst_id,
-                        polys.id as poly_id,
                         ST_AsText(ST_TRANSFORM(polys.geom, {0})) as poly_geom,
                         ST_AsText(ST_TRANSFORM(subs.geom, {0})) as subs_geom
                  FROM {1} AS polys
                         INNER JOIN {2} AS subs
-                        ON (polys.subst_id = subs.subst_id) {3};""".format(srid,
+                        ON (polys.subst_id = subs.id) {3};""".format(srid,
                                                                            mv_regions_schema_table,
                                                                            mv_stations_schema_table,
                                                                            where_clause)
 
         # read data from db
-        mv_data = pd.read_sql_query(sql, conn, index_col='poly_id')
+        mv_data = pd.read_sql_query(sql, conn, index_col='subst_id')
         #mv_data2 = gpd.read_postgis(sql,conn,geom_col=['poly_geom', 'subs_geom', 'pgeom'], index_col='id_db')  # testing geopandas
 
         # iterate over region/station datasets and initiate objects
         try:
             for poly_id, row in mv_data.iterrows():
-                subst_id = row['subst_id']
+                subst_id = poly_id
                 region_geo_data = wkt_loads(row['poly_geom'])
 
                 # transform `region_geo_data` to epsg 3035 (from originally 4326)
