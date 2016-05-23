@@ -92,7 +92,8 @@ class MVGridDingo(GridDingo):
         self._station.choose_transformers()
 
         # choose appropriate type of line/cable for each edge
-        self.parametrize_lines()
+        # TODO: move line parametrization to routing process
+        #self.parametrize_lines()
 
     def parametrize_lines(self):
         """Chooses line/cable type and defines parameters
