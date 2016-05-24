@@ -11,6 +11,7 @@ plt.close('all')
 cfg_dingo.load_config('config_db_tables')
 cfg_dingo.load_config('config_calc')
 cfg_dingo.load_config('config_files')
+cfg_dingo.load_config('config_misc')
 
 # get engine for database connection
 #conn = db.connection(db_section='ontohub_wdb', cfg_file='~/.dingo/config') # <-- TODO: include custom config file from given path (+input for oemof)

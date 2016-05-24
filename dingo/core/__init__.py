@@ -82,15 +82,14 @@ class NetworkDingo:
         if not all(isinstance(_, int) for _ in mv_regions):
             raise TypeError('`mv_regions` has to be a list of integers.')
 
-        # get database naming settings from config
+        # get database naming and srid settings from config
         try:
             mv_regions_schema_table = cfg_dingo.get('regions', 'mv_regions')
             mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
+            srid = str(int(cfg_dingo.get('geo', 'srid')))
         except OSError:
             print('cannot open config file.')
 
-
-        srid = '4326'  # WGS84: 4326, TODO: Move to global settings
 
         # build SQL query
         where_clause = ''
@@ -150,8 +149,9 @@ class NetworkDingo:
 
         lv_regions_schema_table = cfg_dingo.get('regions', 'lv_regions')    # alias in sql statement: `regs`
         lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')          # alias in sql statement: `ploads`
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
 
-        srid = '4326'  # WGS84: 4326, TODO: Move to global settings
+
         load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
 
         # build SQL query
@@ -232,8 +232,8 @@ class NetworkDingo:
         """
 
         mv_grids_schema_table = cfg_dingo.get('grids', 'mv_grids')
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
 
-        srid = '4326'  # WGS84: 4326, TODO: Move to global settings
 
         # TODO: Breath life into this method :). Prior to this the table structure has to be defined
 
