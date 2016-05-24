@@ -18,14 +18,12 @@ transformers = network_trans
 
 [regions]
 mv_regions = calc_ego_grid_district.grid_district
-#lv_regions = orig_geo_rli.rli_deu_loadarea
 lv_regions = calc_ego_loads.ego_deu_load_area_ta
 
 [stations]
 mv_stations = calc_ego_substation.ego_deu_substations
 
 [loads]
-#lv_loads = orig_geo_rli.rli_deu_peak_load_spf
 lv_loads = calc_ego_loads.calc_ego_peak_load_ta
 
 [grids]
