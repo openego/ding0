@@ -23,7 +23,7 @@ nd = NetworkDingo(name='network')
 conn = db.connection(section='oedb')
 
 #mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV regions from SPF region
-mv_regions=[571]
+mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482]
 
 nd.import_mv_regions(conn, mv_regions)
 
@@ -33,10 +33,16 @@ nd.mv_routing()
 
 nd.mv_parametrize_grid()
 
+conn = db.connection(section='oedb')
+nd.export_mv_grid(conn, mv_regions)
+conn.close()
+
+
 #df = nx.to_pandas_dataframe(nd._mv_regions[0].mv_grid._graph)
 # import pprint
 # for edge in nd._mv_regions[0].mv_grid._graph.edge.keys():
 #     # print(edge, type(edge))
 #     pprint.pprint(edge)
 #     pprint.pprint(nd._mv_regions[0].mv_grid._graph.edge[edge])
-nd._mv_regions[0].mv_grid.graph_draw()
+
+#nd._mv_regions[0].mv_grid.graph_draw()

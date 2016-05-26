@@ -2,9 +2,15 @@ from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
+from dingo.config import config_db_interfaces as db_int
 
 import pandas as pd
-from shapely.wkt import loads as wkt_loads
+
+from sqlalchemy.orm import sessionmaker
+from geoalchemy2.shape import from_shape
+from shapely.wkt import loads as wkt_loads, dumps as wkt_dumps
+from shapely.geometry import MultiPoint, MultiLineString
+
 from functools import partial
 import pyproj
 from shapely.ops import transform
@@ -64,7 +70,7 @@ class NetworkDingo:
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
-            Database connection
+               Database connection
         mv_regions : List of MV regions/stations (int) to be imported (if empty, all regions & stations are imported)
 
         Returns
@@ -224,18 +230,60 @@ class NetworkDingo:
             # TODO: add LV station instead of LV region
             #mv_region.mv_grid.graph_add_node(lv_region)
 
-    def export_mv_grid(self, mv_regions):
-        """ Exports MV grids to database
+    def export_mv_grid(self, conn, mv_regions):
+        """ Exports MV grids to database for visualization purposes
 
-        Args:
-            mv_regions: List of MV regions (instances of MVRegionDingo class) whose MV grids are exported.
+        Parameters
+        ----------
+        conn : sqlalchemy.engine.base.Connection object
+               Database connection
+        mv_regions : List of MV regions (instances of MVRegionDingo class) whose MV grids are exported.
+
         """
+        # TODO: currently only station- & line-positions are exported (no further electric data)
+        # TODO: method has to be extended to cover more data
+
+        # check arguments
+        if not all(isinstance(_, int) for _ in mv_regions):
+            raise TypeError('`mv_regions` has to be a list of integers.')
 
         mv_grids_schema_table = cfg_dingo.get('grids', 'mv_grids')
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
+        Session = sessionmaker(bind=conn)
+        session = Session()
 
-        # TODO: Breath life into this method :). Prior to this the table structure has to be defined
+        # delete all existing datasets
+        session.query(db_int.sqla_mv_grid_viz).delete()
+        session.commit()
+
+        # build data array from grids (nodes and branches)
+        for region in self.mv_regions():
+            grid_id = region.mv_grid.id_db
+            stations = []
+            lines = []
+
+
+            for node in region.mv_grid._graph.nodes():
+                stations.append((node.geo_data.x, node.geo_data.y))
+
+            # create shapely obj from stations and convert to geoalchemy2.types.WKBElement
+            stations_wkb = from_shape(MultiPoint(stations), srid=srid)
+
+            for branch in region.mv_grid.graph_edges():
+                line = branch['adj_nodes']
+                lines.append(((line[0].geo_data.x, line[0].geo_data.y), (line[1].geo_data.x, line[1].geo_data.y)))
+
+            # create shapely obj from lines and convert to geoalchemy2.types.WKBElement
+            lines_wkb = from_shape(MultiLineString(lines), srid=srid)
+
+            # add dataset to session
+            dataset = db_int.sqla_mv_grid_viz(grid_id=int(grid_id), geom_stations=stations_wkb, geom_lines=lines_wkb)
+            session.add(dataset)
+
+        # commit changes to db
+        session.commit()
+
 
     def mv_routing(self, debug=False):
         """ Performs routing on all MV grids, see method `routing` in class `MVGridDingo` for details.

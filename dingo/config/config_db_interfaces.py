@@ -71,7 +71,7 @@ class sqla_lv_peakload(Base):
     __tablename__ = 'calc_ego_peak_load_ta'
     __table_args__ = {'schema': 'calc_ego_loads'}
 
-    id              = sa.Column('id', sa.BigInteger())
+    id              = sa.Column('id', sa.BigInteger(), primary_key=True)
     residential     = sa.Column('residential', sa.Numeric())
     retail          = sa.Column('retail', sa.Numeric())
     industrial      = sa.Column('industrial', sa.Numeric())
@@ -79,13 +79,13 @@ class sqla_lv_peakload(Base):
 
 
 # ================ DEFINITIONS FOR EXPORTED DATA ===============
-class sqla_mv_grid_export(Base):
-    """ SQLAlchemy table definition for the export of MV grids
+class sqla_mv_grid_viz(Base):
+    """ SQLAlchemy table definition for the export of MV grids for visualization purposes
     """
 
     __tablename__ = 'ego_deu_mv_grids_vis'
     __table_args__ = {'schema': 'calc_ego_grid'}
 
-    grid_id         = sa.Column('grid_id', sa.Integer())
+    grid_id         = sa.Column('grid_id', sa.Integer(), primary_key=True)
     geom_stations   = sa.Column('geom_stations', Geometry(geometry_type='MULTIPOINT', srid=4326))
     geom_lines      = sa.Column('geom_lines', Geometry(geometry_type='MULTILINESTRING', srid=4326))
