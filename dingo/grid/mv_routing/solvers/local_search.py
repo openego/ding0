@@ -11,7 +11,7 @@
 """
 
 #import operator
-#import time
+import time
 import itertools as it
 
 from dingo.grid.mv_routing.models import models
@@ -320,6 +320,40 @@ class LocalSearchSolver(BaseSolver):
             
         return solution
 
+    def operator_cross(self, graph, solution, op_diff_round_digits):
+        """applies Cross inter-route operator to solution
+
+        Takes every node from every route and calculates savings when inserted
+        into all possible positions in other routes. Insertion is done at
+        position with max. saving and procedure starts over again with newly
+        created graph as input. Stops when no improvement is found.
+
+        Returns a solution (LocalSearchSolution class))
+
+        Args:
+            op_diff_round_digits: Precision (floating point digits) for rounding route length differences.
+                                  Details: In some cases when an exchange is performed on two routes with one node each,
+                                  the difference between the both solutions (before and after the exchange) is not zero.
+                                  This is due to internal rounding errors of float type. So the loop won't break
+                                  (alternating between these two solutions), we need an additional criterion to avoid
+                                  this behaviour: A threshold to handle values very close to zero as if they were zero
+                                  (for a more detailed description of the matter see http://floating-point-gui.de or
+                                  https://docs.python.org/3.5/tutorial/floatingpoint.html)
+
+        (Inner) Loop variables:
+            i: node that is checked for possible moves (position in the route `tour`, not node name)
+            j: node that precedes the insert position in target route (position in the route `target_tour`, not node name)
+
+        ToDo:
+            * allow moves of a 2-node chain
+            * Remove ugly nested loops, convert to more efficient matrix operations
+        """
+
+        # shorter var names for loop
+        dm = graph._matrix
+        dn = graph._nodes
+
+
     def benchmark_operator_order(self, graph, solution, op_diff_round_digits):
         """performs all possible permutations of route improvement and prints graph length"""
         
@@ -354,8 +388,18 @@ class LocalSearchSolver(BaseSolver):
         # FOR BENCHMARKING:
         #self.benchmark_operator_order(graph, savings_solution, op_diff_round_digits)
 
+        start = time.time()
+
         solution = self.operator_exchange(graph, solution, op_diff_round_digits)
+        time1 = time.time()
+        print('Elapsed time (exchange): {}'.format(time1 - start))
+
         solution = self.operator_relocate(graph, solution, op_diff_round_digits)
+        time2 = time.time()
+        print('Elapsed time (relocate): {}'.format(time2 - time1))
+
         solution = self.operator_oropt(graph, solution, op_diff_round_digits)
+        time3 = time.time()
+        print('Elapsed time (oropt): {}'.format(time3 - time2))
 
         return solution

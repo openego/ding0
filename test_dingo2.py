@@ -23,7 +23,7 @@ nd = NetworkDingo(name='network')
 conn = db.connection(section='oedb')
 
 #mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV regions from SPF region
-mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482]
+mv_regions=[571]
 
 nd.import_mv_regions(conn, mv_regions)
 
