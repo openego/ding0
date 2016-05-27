@@ -89,7 +89,8 @@ class MVStationDingo(StationDingo):
             # add transformer on determined size with according parameters
             self.add_transformer(TransformerDingo(**{'v_level': voltage_level,
                 's_max_longterm': selected_app_power}))
-            residual_apparent_power -= selected_app_power
+            residual_apparent_power -= (load_factor_transformer *
+                                        selected_app_power)
 
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))
