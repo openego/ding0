@@ -68,15 +68,27 @@ class LocalSearchSolution(BaseSolution):
         return 0
 
 class LocalSearchSolver(BaseSolver):
-    """Improve initial savings solution using local search
+    """ Improve initial savings solution using local search
     
-       Graph operators:
-           Or-Opt (intra-route)
-           Relocate (inter-route)
-           Exchange (inter-route)
+        Graph operators:
+            Or-Opt (intra-route)
+            Relocate (inter-route)
+            Exchange (inter-route)
            
-       ToDo:
-           * Cross (inter-route) - to remove crossing edges between two routes
+        ToDo:
+        -----
+            * Cross (inter-route) - to remove crossing edges between two routes
+
+        References
+        ----------
+        .. [1] W. Wenger, "Multikriterielle Tourenplanung", Dissertation, 2009
+        .. [2] M. Kämpf, "Probleme der Tourenbildung", Chemnitzer Informatik-Berichte, 2006
+        .. [3] O. Bräysy, M. Gendreau, "Vehicle Routing Problem with Time Windows,
+            Part I: Route Construction and Local Search Algorithms",
+            Transportation Science, vol. 39, Issue 1, pp. 104-118, 2005
+        .. [4] C. Boomgaarden, "Dynamische Tourenplanung und -steuerung",
+            Dissertation, 2007
+
     """
     # TODO: Cross (inter-route), see above
     
@@ -340,9 +352,6 @@ class LocalSearchSolver(BaseSolver):
                                   (for a more detailed description of the matter see http://floating-point-gui.de or
                                   https://docs.python.org/3.5/tutorial/floatingpoint.html)
 
-        (Inner) Loop variables:
-            i: node that is checked for possible moves (position in the route `tour`, not node name)
-            j: node that precedes the insert position in target route (position in the route `target_tour`, not node name)
 
         ToDo:
             * allow moves of a 2-node chain
@@ -352,6 +361,8 @@ class LocalSearchSolver(BaseSolver):
         # shorter var names for loop
         dm = graph._matrix
         dn = graph._nodes
+
+
 
 
     def benchmark_operator_order(self, graph, solution, op_diff_round_digits):
