@@ -13,9 +13,6 @@ class MVStationDingo(StationDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def __repr__(self):
-        return 'mvstation_' + str(self.id_db)
-
     def choose_transformers(self):
         """Chooses appropriate transformers for the MV sub-station
 
@@ -98,6 +95,9 @@ class MVStationDingo(StationDingo):
                       's_max_longterm': s_max_max}
 
         self.add_transformer(TransformerDingo(**int_kwargs))
+
+    def __repr__(self):
+        return 'mvstation_' + str(self.id_db)
 
 
 class LVStationDingo(StationDingo):

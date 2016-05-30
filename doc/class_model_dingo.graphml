@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java" xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0" xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
-  <!--Created by yEd 3.14.4-->
-  <key for="graphml" id="d0" yfiles.type="resources"/>
+  <!--Created by yEd 3.14.3-->
+  <key attr.name="Beschreibung" attr.type="string" for="graph" id="d0"/>
   <key for="port" id="d1" yfiles.type="portgraphics"/>
   <key for="port" id="d2" yfiles.type="portgeometry"/>
   <key for="port" id="d3" yfiles.type="portuserdata"/>
   <key attr.name="url" attr.type="string" for="node" id="d4"/>
   <key attr.name="description" attr.type="string" for="node" id="d5"/>
   <key for="node" id="d6" yfiles.type="nodegraphics"/>
-  <key attr.name="Beschreibung" attr.type="string" for="graph" id="d7"/>
+  <key for="graphml" id="d7" yfiles.type="resources"/>
   <key attr.name="url" attr.type="string" for="edge" id="d8"/>
   <key attr.name="description" attr.type="string" for="edge" id="d9"/>
   <key for="edge" id="d10" yfiles.type="edgegraphics"/>
   <graph edgedefault="directed" id="G">
-    <data key="d7"/>
+    <data key="d0"/>
     <node id="n0">
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="128.61529657643314" width="130.51123046875" x="159.744384765625" y="385.69235171178343"/>
+          <y:Geometry height="128.61529657643314" width="175.0" x="262.5" y="60.69235171178343"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="120.51123046875" x="5.0" y="3.0">MVRegionDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="120.51123046875" x="27.244384765625" y="3.0">MVRegionDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -29,12 +29,11 @@
             </y:ModelParameter>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
-            <y:AttributeLabel>geo_data
-mv_grid
-pak_load</y:AttributeLabel>
-            <y:MethodLabel>add_lv_region()
-add_peak_demand()
-lv_regions()</y:MethodLabel>
+            <y:AttributeLabel>geo_data: shapely.geos
+peak_load: float</y:AttributeLabel>
+            <y:MethodLabel>lv_regions()
+add_lv_region()
+add_peak_demand()</y:MethodLabel>
           </y:UML>
         </y:UMLClassNode>
       </data>
@@ -43,10 +42,10 @@ lv_regions()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="67.54523288216558" width="147.5546875" x="301.22265625" y="91.22738355891715"/>
+          <y:Geometry height="67.54523288216558" width="175.0" x="1162.5" y="291.22738355891715"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="122.9423828125" x="12.30615234375" y="3.0">MVStationDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="122.9423828125" x="26.02880859375" y="3.0">MVStationDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -64,10 +63,10 @@ lv_regions()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="160.66625199044586" width="128.28955078125" x="485.855224609375" y="44.66687400477713"/>
+          <y:Geometry height="160.66625199044586" width="175.0" x="1162.5" y="444.66687400477707"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="99.94482421875" x="14.17236328125" y="3.0">StationDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="99.94482421875" x="37.527587890625" y="3.0">StationDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -76,10 +75,9 @@ lv_regions()</y:MethodLabel>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
             <y:AttributeLabel>id_db: int
-geo_data
-grid
-busbar
-peak_load</y:AttributeLabel>
+geo_data: shapely.geos
+busbar: ???
+peak_load: float</y:AttributeLabel>
             <y:MethodLabel>transformers()
 add_transformer()</y:MethodLabel>
           </y:UML>
@@ -90,10 +88,10 @@ add_transformer()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="29.1328125" width="128.28955078125" x="485.855224609375" y="260.43359375"/>
-          <y:Fill color="#FF0000" transparent="false"/>
+          <y:Geometry height="29.1328125" width="175.0" x="1387.5" y="510.43359375"/>
+          <y:Fill color="#FFFF99" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="118.28955078125" x="5.0" y="3.0">LVStationDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="118.28955078125" x="28.355224609375" y="3.0">LVStationDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -111,10 +109,10 @@ add_transformer()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="144.37007364649685" width="147.5546875" x="250.22265625" y="202.81496317675158"/>
+          <y:Geometry height="144.37007364649685" width="175.0" x="1162.5" y="652.8149631767516"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="137.5546875" x="5.0" y="3.0">TransformerDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="137.5546875" x="18.72265625" y="3.0">TransformerDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -122,13 +120,13 @@ add_transformer()</y:MethodLabel>
             </y:ModelParameter>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
-            <y:AttributeLabel>equip_trans_id
-v_level
-s_max_a
-s_max_b
-s_max_c
-phase_angle
-tap_ratio</y:AttributeLabel>
+            <y:AttributeLabel>equip_trans_id: int
+v_level: int
+s_max_a: float
+s_max_b: float
+s_max_c: float
+phase_angle: float
+tap_ratio: float</y:AttributeLabel>
             <y:MethodLabel/>
           </y:UML>
         </y:UMLClassNode>
@@ -138,10 +136,10 @@ tap_ratio</y:AttributeLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="114.33822651273886" width="122.5478515625" x="663.72607421875" y="42.83088674363057"/>
+          <y:Geometry height="162.5022392515924" width="175.0" x="937.5" y="443.7488803742038"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="77.58203125" x="22.48291015625" y="3.0">GridDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="77.58203125" x="48.708984375" y="3.0">GridDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -149,10 +147,10 @@ tap_ratio</y:AttributeLabel>
             </y:ModelParameter>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
-            <y:AttributeLabel>id_db
-region
-_graph</y:AttributeLabel>
+            <y:AttributeLabel>id_db: int
+_graph: networkx.Graph</y:AttributeLabel>
             <y:MethodLabel>graph_add_node()
+graph_draw()
 graph_edges()</y:MethodLabel>
           </y:UML>
         </y:UMLClassNode>
@@ -162,10 +160,10 @@ graph_edges()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="135.34778065286628" width="129.067138671875" x="835.4664306640625" y="32.32610967356686"/>
+          <y:Geometry height="135.34778065286628" width="175.0" x="937.5" y="257.32610967356686"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="100.57958984375" x="14.2437744140625" y="3.0">MVGridDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="100.57958984375" x="37.210205078125" y="3.0">MVGridDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -177,6 +175,7 @@ graph_edges()</y:MethodLabel>
             <y:MethodLabel>station()
 add_station()
 routing()
+parametrize_grid()
 parametrize_lines()</y:MethodLabel>
           </y:UML>
         </y:UMLClassNode>
@@ -186,10 +185,10 @@ parametrize_lines()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="67.54523288216555" width="105.9267578125" x="672.03662109375" y="241.2273835589172"/>
-          <y:Fill color="#FF0000" transparent="false"/>
+          <y:Geometry height="97.54523288216555" width="175.0" x="687.5" y="476.2273835589172"/>
+          <y:Fill color="#FFFF99" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="95.9267578125" x="5.0" y="3.0">LVGridDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="95.9267578125" x="39.53662109375" y="3.0">LVGridDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -208,10 +207,10 @@ add_station()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="58.31434116242038" width="107.513671875" x="496.2431640625" y="620.8428294187898"/>
+          <y:Geometry height="58.31434116242038" width="175.0" x="262.5" y="295.84282941878985"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="97.513671875" x="5.0" y="3.0">RegionDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="97.513671875" x="38.7431640625" y="3.0">RegionDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -219,7 +218,7 @@ add_station()</y:MethodLabel>
             </y:ModelParameter>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
-            <y:AttributeLabel>id_db</y:AttributeLabel>
+            <y:AttributeLabel>id_db: int</y:AttributeLabel>
             <y:MethodLabel/>
           </y:UML>
         </y:UMLClassNode>
@@ -229,10 +228,10 @@ add_station()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="202.89555135350315" width="147.5546875" x="476.22265625" y="348.5522243232484"/>
+          <y:Geometry height="216.89555135350315" width="175.0" x="462.5" y="416.5522243232484"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="115.8583984375" x="15.84814453125" y="3.0">LVRegionDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="115.8583984375" x="29.57080078125" y="3.0">LVRegionDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -240,15 +239,15 @@ add_station()</y:MethodLabel>
             </y:ModelParameter>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
-            <y:AttributeLabel>geo_area
-geo_centroid
-geo_surfacepnt
-mv_region
-peak_load_agricultural
-peak_load_industrial
-peak_load_residential
-peak_load_retail
-peak_load_sum</y:AttributeLabel>
+            <y:AttributeLabel>db_data: pandas.Series
+geo_area: shapely.geos
+geo_centroid: shapely.geos
+geo_surfacepnt: shapely.geos
+peak_load_agricultural: float
+peak_load_industrial: float
+peak_load_residential: float
+peak_load_retail: float
+peak_load_sum: float</y:AttributeLabel>
             <y:MethodLabel>add_lv_grid()
 lv_grids()</y:MethodLabel>
           </y:UML>
@@ -259,10 +258,10 @@ lv_grids()</y:MethodLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="144.37007364649685" width="98.046875" x="850.9765625" y="202.81496317675158"/>
+          <y:Geometry height="144.37007364649685" width="175.0" x="687.5" y="252.81496317675158"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="98.046875" x="0.0" y="3.0">BranchDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="98.046875" x="38.4765625" y="3.0">BranchDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -270,13 +269,13 @@ lv_grids()</y:MethodLabel>
             </y:ModelParameter>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
-            <y:AttributeLabel>equip_line_id
-v_level
-type
-r
-x
-i_max_therm
-s_max_a</y:AttributeLabel>
+            <y:AttributeLabel>equip_line_id: int
+v_level: int
+type: ???
+r: float
+x: float
+i_max_therm: float
+s_max_a: float</y:AttributeLabel>
             <y:MethodLabel/>
           </y:UML>
         </y:UMLClassNode>
@@ -286,10 +285,10 @@ s_max_a</y:AttributeLabel>
       <data key="d4"/>
       <data key="d6">
         <y:UMLClassNode>
-          <y:Geometry height="176.366888933121" width="139.7914821357484" x="-19.895741067874198" y="361.8165555334395"/>
+          <y:Geometry height="176.366888933121" width="175.0" x="37.5" y="36.81655553343944"/>
           <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="108.6474609375" x="15.572010599124198" y="3.0">NetworkDingo<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="108.6474609375" x="33.17626953125" y="3.0">NetworkDingo<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -297,145 +296,93 @@ s_max_a</y:AttributeLabel>
             </y:ModelParameter>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
-            <y:AttributeLabel>name</y:AttributeLabel>
-            <y:MethodLabel>add_mv_region()
+            <y:AttributeLabel>name: str</y:AttributeLabel>
+            <y:MethodLabel>mv_regions()
+add_mv_region()
 build_mv_region()
-export_mv_grid()
 import_lv_regions()
 import_mv_regions()
-mv_regions()
+export_mv_grid()
 mv_routing()
 parametrize_grid()</y:MethodLabel>
           </y:UML>
         </y:UMLClassNode>
       </data>
     </node>
-    <edge id="e0" source="n0" target="n1">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="-64.30764828821657" tx="-73.77734375" ty="-0.0">
-            <y:Point x="225.0" y="125.0"/>
-          </y:Path>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="diamond" target="none"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
+    <node id="n12">
+      <data key="d4"/>
+      <data key="d5"/>
+      <data key="d6">
+        <y:UMLNoteNode>
+          <y:Geometry height="160.66625199044597" width="326.51747276688457" x="37.5" y="712.2016172071939"/>
+          <y:Fill color="#FF0000" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="45.90625" modelName="custom" textColor="#000000" visible="true" width="235.134765625" x="45.69135357094228" y="57.380000995222986">Check References (issue martin):
+1) StationDIngo-&gt;GridDingo
+2) LVStation/MVStation-&gt; Transformer<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+        </y:UMLNoteNode>
       </data>
-    </edge>
-    <edge id="e1" source="n3" target="n2">
+    </node>
+    <edge id="e0" source="n3" target="n2">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="-14.56640625" tx="0.0" ty="80.33312599522287"/>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="none" target="white_delta"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e2" source="n1" target="n2">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="73.77734375" sy="-0.0" tx="-64.144775390625" ty="-0.0"/>
+          <y:Path sx="-87.5" sy="-0.0" tx="87.5" ty="-0.0"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="white_delta"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e3" source="n6" target="n5">
+    <edge id="e1" source="n1" target="n2">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="-64.5335693359375" sy="-0.0" tx="61.27392578125" ty="-0.0"/>
+          <y:Path sx="0.0" sy="33.77261644108279" tx="0.0" ty="-80.33312599522293"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="white_delta"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e4" source="n7" target="n5">
+    <edge id="e2" source="n6" target="n5">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="-33.77261644108273" tx="0.0" ty="57.16911325636943"/>
+          <y:Path sx="0.0" sy="67.67389032643314" tx="0.0" ty="-81.2511196257962"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="white_delta"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e5" source="n6" target="n0">
+    <edge id="e3" source="n7" target="n5">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="64.5335693359375" sy="-0.0" tx="0.0" ty="64.30764828821657">
-            <y:Point x="1000.0" y="100.0"/>
-            <y:Point x="1000.0" y="725.0"/>
-            <y:Point x="225.0" y="725.0"/>
-          </y:Path>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="diamond" target="none"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e6" source="n9" target="n8">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="101.44777567675158" tx="0.0" ty="-29.15717058121018"/>
+          <y:Path sx="87.5" sy="-0.0" tx="-87.5" ty="-0.0"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="white_delta"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e7" source="n0" target="n8">
+    <edge id="e4" source="n6" target="n0">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="25.0" sy="64.30764828821657" tx="-53.7568359375" ty="-0.0">
-            <y:Point x="250.0" y="650.0"/>
-          </y:Path>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="none" target="white_delta"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e8" source="n0" target="n9">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="65.255615234375" sy="-0.0" tx="-73.77734375" ty="-0.0"/>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="diamond" target="none"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e9" source="n9" target="n7">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="73.77734375" sy="-0.0" tx="0.0" ty="33.77261644108279">
-            <y:Point x="725.0" y="450.0"/>
-          </y:Path>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="diamond" target="none"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e10" source="n6" target="n1">
-      <data key="d9"><![CDATA[1..1]]></data>
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="-67.67389032643314" tx="0.0" ty="-9.999999999999943">
-            <y:Point x="900.0" y="0.0"/>
-            <y:Point x="375.0" y="0.0"/>
+          <y:Path sx="0.0" sy="-67.67389032643314" tx="87.5" ty="-0.0">
+            <y:Point x="1025.0" y="125.0"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="diamond" target="plain"/>
-          <y:EdgeLabel alignment="right" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="61.3515625" x="-593.67578125" y="22.99534325364371">#_station
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="52.26953125" x="-539.4562400045955" y="-148.26254272460938">#region
 1<y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>
             <y:ModelParameter>
-              <y:SmartEdgeLabelModelParameter angle="6.283185307179586" distance="38.000000000000014" distanceToCenter="true" position="right" ratio="1.0000001" segment="-1"/>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="center" ratio="0.9226339869281045" segment="1"/>
             </y:ModelParameter>
             <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
           </y:EdgeLabel>
@@ -443,60 +390,42 @@ parametrize_grid()</y:MethodLabel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e11" source="n7" target="n3">
+    <edge id="e5" source="n9" target="n8">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="-52.96337890625" sy="-0.0" tx="64.144775390625" ty="-0.0"/>
+          <y:Path sx="-87.5" sy="-25.0" tx="0.0" ty="29.15717058121021">
+            <y:Point x="350.0" y="500.0"/>
+          </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="diamond" target="none"/>
+          <y:Arrows source="none" target="white_delta"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e12" source="n9" target="n3">
+    <edge id="e6" source="n0" target="n8">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="-101.44777567675158" tx="0.0" ty="14.56640625"/>
+          <y:Path sx="0.0" sy="64.30764828821657" tx="0.0" ty="-29.157170581210153"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="diamond" target="none"/>
+          <y:Arrows source="none" target="white_delta"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e13" source="n6" target="n10">
+    <edge id="e7" source="n0" target="n9">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="67.67389032643314" tx="0.0" ty="-72.18503682324842"/>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="diamond" target="none"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e14" source="n7" target="n10">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="52.96337890625" sy="-0.0" tx="-49.0234375" ty="-0.0"/>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="diamond" target="none"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e15" source="n2" target="n4">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="-30.5" sy="55.99999999999994" tx="10.5" ty="-35.0">
-            <y:Point x="519.5" y="240.0"/>
+          <y:Path sx="87.5" sy="50.0" tx="0.0" ty="-108.44777567675158">
+            <y:Point x="550.0" y="175.0"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="diamond" target="plain"/>
-          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="91.41015625" x="-116.72265625" y="18.68798828125">#_transformer
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="80.95703125" x="71.9940185546875" y="157.99859755173497">#_lv_regions
 0..*<y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>
             <y:ModelParameter>
-              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="center" ratio="1.0" segment="-1"/>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="center" ratio="0.7886689974644202" segment="-1"/>
             </y:ModelParameter>
             <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
           </y:EdgeLabel>
@@ -504,29 +433,222 @@ parametrize_grid()</y:MethodLabel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e16" source="n3" target="n4">
+    <edge id="e8" source="n9" target="n7">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="-64.144775390625" sy="-0.0" tx="73.77734375" ty="-0.0"/>
+          <y:Path sx="0.0" sy="108.44777567675158" tx="-25.0" ty="48.77261644108279">
+            <y:Point x="550.0" y="675.0"/>
+            <y:Point x="750.0" y="675.0"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="66.244140625" x="196.8779296875" y="-54.71572584407352">#_lv_grids
+0..*<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="right" ratio="1.0" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e9" source="n6" target="n1">
+      <data key="d9"><![CDATA[1..1]]></data>
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="87.5" sy="-0.0" tx="-87.5" ty="-0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="61.3515625" x="-4.724609375" y="-15.96875">#_station
+1<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="6.283185307179586" distance="38.000000000000014" distanceToCenter="true" position="center" ratio="1.0" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e10" source="n7" target="n3">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="48.77261644108279" tx="0.0" ty="14.56640625">
+            <y:Point x="775.0" y="825.0"/>
+            <y:Point x="1475.0" y="825.0"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="67.603515625" x="666.1982421875" y="-13.242158887417304">#_stations
+0..*<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="center" ratio="0.9396362908612447" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e11" source="n6" target="n10">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="-87.5" sy="-0.0" tx="87.5" ty="-0.0"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="diamond" target="none"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e17" source="n0" target="n11">
-      <data key="d8"/>
+    <edge id="e12" source="n7" target="n10">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="-65.255615234375" sy="-0.0" tx="69.89574106787421" ty="-0.0"/>
+          <y:Path sx="0.0" sy="-48.77261644108273" tx="0.0" ty="72.18503682324842"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="diamond" target="none"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e13" source="n2" target="n4">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="80.33312599522293" tx="0.0" ty="-72.18503682324842"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="97.662109375" x="-78.8310546875" y="10.497946575189076">#_transformers
+0..*<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="right" ratio="1.0" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e14" source="n0" target="n6">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="87.5" sy="25.0" tx="-87.5" ty="-25.0">
+            <y:Point x="900.0" y="150.0"/>
+            <y:Point x="900.0" y="300.0"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="62.34765625" x="449.2191450826506" y="134.03125">#mv_grid
+1<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="27.031918371463856" distanceToCenter="false" position="center" ratio="0.9557974382621953" segment="3"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e15" source="n7" target="n9">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="-87.5" sy="-0.0" tx="87.5" ty="-0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="4.0" x="-41.39837372262161" y="28.0">
+            <y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="left" ratio="0.9013111624339327" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="52.26953125" x="-51.82955824990552" y="-15.96875">#region
+1<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="center" ratio="0.7436207499055222" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e16" source="n9" target="n0">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="-87.5" sy="-0.0" tx="0.0" ty="-64.30764828821657">
+            <y:Point x="0.0" y="525.0"/>
+            <y:Point x="0.0" y="0.0"/>
+            <y:Point x="350.0" y="0.0"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="77.060546875" x="-151.00204467773438" y="-503.30796645433804">#mv_region
+1<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="center" ratio="0.9480707167218033" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e17" source="n2" target="n5">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="-87.5" sy="-0.0" tx="87.5" ty="-0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="37.556640625" x="-44.951171875" y="14.03125">#grid
+1<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="left" ratio="1.0" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e18" source="n11" target="n0">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="87.5" sy="-0.0" tx="-87.5" ty="-0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="diamond" target="plain"/>
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="89.3125" x="-18.803766962566044" y="-45.96875000000004">#_mv_regions
+0..*<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="left" ratio="0.9013111624339327" segment="-1"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
     </edge>
   </graph>
-  <data key="d0">
+  <data key="d7">
     <y:Resources/>
   </data>
 </graphml>
