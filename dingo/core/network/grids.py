@@ -22,8 +22,6 @@ class MVGridDingo(GridDingo):
         #more params
         self._station = None
 
-        self.add_station(kwargs.get('station', None))
-
     def station(self):
         """Returns MV station"""
         return self._station
