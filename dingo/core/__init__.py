@@ -9,7 +9,7 @@ import pandas as pd
 from sqlalchemy.orm import sessionmaker
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads, dumps as wkt_dumps
-from shapely.geometry import MultiPoint, MultiLineString
+from shapely.geometry import Point, MultiPoint, MultiLineString
 
 from functools import partial
 import pyproj
@@ -260,25 +260,30 @@ class NetworkDingo:
         # build data array from grids (nodes and branches)
         for region in self.mv_regions():
             grid_id = region.mv_grid.id_db
-            stations = []
+            mv_stations = []
+            lv_stations = []
             lines = []
 
 
             for node in region.mv_grid._graph.nodes():
-                stations.append((node.geo_data.x, node.geo_data.y))
+                if isinstance(node, LVStationDingo):
+                    lv_stations.append((node.geo_data.x, node.geo_data.y))
+                elif isinstance(node, MVStationDingo):
+                    mv_stations.append((node.geo_data.x, node.geo_data.y))
 
             # create shapely obj from stations and convert to geoalchemy2.types.WKBElement
-            stations_wkb = from_shape(MultiPoint(stations), srid=srid)
+            lv_stations_wkb = from_shape(MultiPoint(lv_stations), srid=srid)
+            mv_stations_wkb = from_shape(MultiPoint(mv_stations), srid=srid)
 
             for branch in region.mv_grid.graph_edges():
                 line = branch['adj_nodes']
                 lines.append(((line[0].geo_data.x, line[0].geo_data.y), (line[1].geo_data.x, line[1].geo_data.y)))
 
             # create shapely obj from lines and convert to geoalchemy2.types.WKBElement
-            lines_wkb = from_shape(MultiLineString(lines), srid=srid)
+            mv_lines_wkb = from_shape(MultiLineString(lines), srid=srid)
 
             # add dataset to session
-            dataset = db_int.sqla_mv_grid_viz(grid_id=int(grid_id), geom_stations=stations_wkb, geom_lines=lines_wkb)
+            dataset = db_int.sqla_mv_grid_viz(grid_id=int(grid_id), geom_mv_station=mv_stations_wkb, geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
             session.add(dataset)
 
         # commit changes to db
