@@ -15,14 +15,14 @@ import matplotlib.pyplot as plt
 class GridDingo:
     """ DINGO grid
 
-    id_db: id according to database table
+    Parameters
+    ----------
+    id_db : id according to database table
     """
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
         #self.geo_data = kwargs.get('geo_data', None)
-        self.region = kwargs.get('region', None)
-        #self._stations = []
 
         self._graph = nx.Graph()
 

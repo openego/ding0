@@ -13,6 +13,10 @@ import os
 
 class MVGridDingo(GridDingo):
     """ DINGO medium voltage grid
+
+    Parameters
+    ----------
+    region : MV region (instance of MVRegionDingo class) that is associated with grid
     """
     # TODO: Add method to join MV graph with LV graphs to have one graph that covers whole grid (MV and LV)
 
@@ -20,7 +24,10 @@ class MVGridDingo(GridDingo):
         super().__init__(**kwargs)
 
         #more params
+        self.region = kwargs.get('region', None)
         self._station = None
+
+        self.add_station(kwargs.get('station', None))
 
     def station(self):
         """Returns MV station"""
@@ -217,10 +224,15 @@ class MVGridDingo(GridDingo):
 
 class LVGridDingo(GridDingo):
     """ DINGO low voltage grid
+
+    Parameters
+    ----------
+    region : LV region (instance of LVRegionDingo class) that is associated with grid
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.region = kwargs.get('region', None)
         self._stations = []
 
     def stations(self):
