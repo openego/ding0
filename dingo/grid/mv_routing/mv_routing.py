@@ -24,14 +24,18 @@ def dingo_graph_to_routing_specs(graph):
     nodes_demands = {}
     nodes_pos = {}
     for node in graph.nodes():
-        if isinstance(node, StationDingo):
-            nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
 
-            if isinstance(node, LVStationDingo):
+        # station is LV station
+        if isinstance(node, LVStationDingo):
+            if not node.grid.region.is_satellite:
                 nodes_demands[str(node)] = node.grid.region.peak_load_sum
-            elif isinstance(node, MVStationDingo):
-                nodes_demands[str(node)] = 0
-                specs['DEPOT'] = str(node)
+                nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
+
+        # station is MV station
+        elif isinstance(node, MVStationDingo):
+            nodes_demands[str(node)] = 0
+            nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
+            specs['DEPOT'] = str(node)
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands

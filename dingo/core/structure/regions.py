@@ -1,5 +1,6 @@
 from . import RegionDingo
 from dingo.core.network.grids import LVGridDingo
+from dingo.tools import config as cfg_dingo
 
 from shapely.wkt import loads as wkt_loads
 
@@ -59,6 +60,9 @@ class LVRegionDingo(RegionDingo):
         # more params
         self._lv_grids = [] # TODO: add setter
         self.mv_region = kwargs.get('mv_region', None)
+        self.is_satellite = kwargs.get('is_satellite', False)
+
+        load_area_sat_threshold = cfg_dingo.get('assumptions', 'load_area_sat_threshold')    # threshold: load area peak load
 
         db_data = kwargs.get('db_data', None)
 
@@ -90,6 +94,10 @@ class LVRegionDingo(RegionDingo):
             self.peak_load_agricultural = int(self.peak_load_agricultural)
         if hasattr(self, 'peak_load_sum'):
             self.peak_load_sum = int(self.peak_load_sum)
+
+            # if load area has got a peak load less than load_area_sat_threshold, it's a satellite
+            if self.peak_load_sum < load_area_sat_threshold:
+                self.is_satellite = True
 
         # Alternative to version above:
         # many params, use better structure (dict? classes from demand-lib?)

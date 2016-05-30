@@ -6,8 +6,16 @@
 operator_diff_round_digits = 3
 
 [assumptions]
+
+#load_density_threshold: unit MVA/km^2
 load_density_threshold = 1
-# unit MVA/km^2
+
+#load_threshold: unit kW
+load_area_threshold = 1
+
+#load_area_sat_threshold: unit kW
+load_area_sat_threshold = 10
+
 load_factor_transformer = 0.6
 load_factor_line = 0.6
 load_factor_cable = 0.6

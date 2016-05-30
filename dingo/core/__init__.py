@@ -153,9 +153,11 @@ class NetworkDingo:
         mv_region : MV region/station (instance of MVRegionDingo class) for which the import of load areas is performed
         """
 
-        lv_regions_schema_table = cfg_dingo.get('regions', 'lv_regions')    # alias in sql statement: `regs`
-        lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')          # alias in sql statement: `ploads`
+        lv_regions_schema_table = cfg_dingo.get('regions', 'lv_regions')            # alias in sql statement: `regs`
+        lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')                  # alias in sql statement: `ploads`
         srid = str(int(cfg_dingo.get('geo', 'srid')))
+
+        lv_loads_threshold = cfg_dingo.get('assumptions', 'load_area_threshold')    # threshold: load area peak load
 
 
         load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
@@ -205,30 +207,34 @@ class NetworkDingo:
 
         # create region objects from rows and add them to graph
         for id_db, row in lv_regions.iterrows():
-            # create LV region object
-            lv_region = LVRegionDingo(id_db=id_db, db_data=row, mv_region=mv_region)#, db_cols=lv_regions.columns.values)
 
-            # TODO: Following code is for testing purposes only! (create 1 LV grid and 1 station for every LV region)
-            # TODO: The objective is to create stations according to kind of loads (e.g. 1 station for residential, 1 for retail etc.)
-            # === START TESTING ===
-            # create LV station object
-            station_geo_data = wkt_loads(row['geo_surfacepnt'])
-            lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data, peak_load=row['peak_load_sum'])
-            lv_grid = LVGridDingo(region=lv_region, id_db=id_db, geo_data=station_geo_data)
-            lv_station.grid = lv_grid
-            # add LV station to LV grid
-            lv_grid.add_station(lv_station)
-            # add LV grid to LV region
-            lv_region.add_lv_grid(lv_grid)
-            # === END TESTING ===
+            # only pick load areas with peak load greater than lv_loads_threshold
+            # TODO: When migrating to SQLAlchemy, move condition to query
+            if row['peak_load_sum'] >= lv_loads_threshold:
+                # create LV region object
+                lv_region = LVRegionDingo(id_db=id_db, db_data=row, mv_region=mv_region)#, db_cols=lv_regions.columns.values)
 
-            # add LV region to MV region
-            mv_region.add_lv_region(lv_region)
+                # TODO: Following code is for testing purposes only! (create 1 LV grid and 1 station for every LV region)
+                # TODO: The objective is to create stations according to kind of loads (e.g. 1 station for residential, 1 for retail etc.)
+                # === START TESTING ===
+                # create LV station object
+                station_geo_data = wkt_loads(row['geo_surfacepnt'])
+                lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data, peak_load=row['peak_load_sum'])
+                lv_grid = LVGridDingo(region=lv_region, id_db=id_db, geo_data=station_geo_data)
+                lv_station.grid = lv_grid
+                # add LV station to LV grid
+                lv_grid.add_station(lv_station)
+                # add LV grid to LV region
+                lv_region.add_lv_grid(lv_grid)
+                # === END TESTING ===
 
-            # OLD:
-            # add LV region to MV grid graph
-            # TODO: add LV station instead of LV region
-            #mv_region.mv_grid.graph_add_node(lv_region)
+                # add LV region to MV region
+                mv_region.add_lv_region(lv_region)
+
+                # OLD:
+                # add LV region to MV grid graph
+                # TODO: add LV station instead of LV region
+                #mv_region.mv_grid.graph_add_node(lv_region)
 
     def export_mv_grid(self, conn, mv_regions):
         """ Exports MV grids to database for visualization purposes
