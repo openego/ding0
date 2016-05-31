@@ -22,6 +22,7 @@ class GridDingo:
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
+        self.region = kwargs.get('region', None)
         #self.geo_data = kwargs.get('geo_data', None)
 
         self._graph = nx.Graph()

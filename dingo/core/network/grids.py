@@ -24,7 +24,6 @@ class MVGridDingo(GridDingo):
         super().__init__(**kwargs)
 
         #more params
-        self.region = kwargs.get('region', None)
         self._station = None
 
         self.add_station(kwargs.get('station', None))
@@ -232,7 +231,6 @@ class LVGridDingo(GridDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.region = kwargs.get('region', None)
         self._stations = []
 
     def stations(self):
