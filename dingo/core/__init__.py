@@ -14,7 +14,8 @@ from shapely.geometry import Point, MultiPoint, MultiLineString
 from functools import partial
 import pyproj
 from shapely.ops import transform
-
+import numpy
+from psycopg2.extensions import register_adapter, AsIs
 
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the MV-grids. Contains the NetworkX graph and
@@ -236,6 +237,17 @@ class NetworkDingo:
                 # TODO: add LV station instead of LV region
                 #mv_region.mv_grid.graph_add_node(lv_region)
 
+    def adapt_numpy_int64(self, numpy_int64):
+        """ Adapting numpy.int64 type to SQL-conform int type using psycopg extension, see [1]_ for more info.
+
+        References
+        ----------
+        .. [1] http://initd.org/psycopg/docs/advanced.html#adapting-new-python-types-to-sql-syntax
+        """
+        return AsIs(numpy_int64)
+
+    # TODO: Move to more general place
+
     def export_mv_grid(self, conn, mv_regions):
         """ Exports MV grids to database for visualization purposes
 
@@ -248,6 +260,8 @@ class NetworkDingo:
         """
         # TODO: currently only station- & line-positions are exported (no further electric data)
         # TODO: method has to be extended to cover more data
+
+        register_adapter(numpy.int64, self.adapt_numpy_int64)
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_regions):
@@ -270,7 +284,6 @@ class NetworkDingo:
             lv_stations = []
             lines = []
 
-
             for node in region.mv_grid._graph.nodes():
                 if isinstance(node, LVStationDingo):
                     lv_stations.append((node.geo_data.x, node.geo_data.y))
@@ -289,7 +302,7 @@ class NetworkDingo:
             mv_lines_wkb = from_shape(MultiLineString(lines), srid=srid)
 
             # add dataset to session
-            dataset = db_int.sqla_mv_grid_viz(grid_id=int(grid_id), geom_mv_station=mv_stations_wkb, geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
+            dataset = db_int.sqla_mv_grid_viz(grid_id=grid_id, geom_mv_station=mv_stations_wkb, geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
             session.add(dataset)
 
         # commit changes to db
