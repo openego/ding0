@@ -42,7 +42,7 @@ def dingo_graph_to_routing_specs(graph):
     specs['MATRIX'] = calc_geo_distance_vincenty(nodes_pos)
 
     # TODO: capacity per MV ring (TEMP) -> Later tech. constraints are used for limitation of ring length
-    specs['CAPACITY'] = 500000
+    specs['CAPACITY'] = 5000
 
     return specs
 

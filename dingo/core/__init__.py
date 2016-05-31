@@ -188,8 +188,7 @@ class NetworkDingo:
                         regs.sector_count_agricultural,
                         regs.nuts as nuts_code,
                         ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
-                        ST_AsText(ST_TRANSFORM(regs.geom_centroid, {0})) as geo_centroid,
-                        ST_AsText(ST_TRANSFORM(regs.geom_surfacepoint, {0})) as geo_surfacepnt,
+                        ST_AsText(ST_TRANSFORM(regs.geom_centre, {0})) as geo_centre,
                         round(ploads.residential::numeric * {1}) as peak_load_residential,
                         round(ploads.retail::numeric * {1}) as peak_load_retail,
                         round(ploads.industrial::numeric * {1}) as peak_load_industrial,
@@ -261,13 +260,13 @@ class NetworkDingo:
         # TODO: currently only station- & line-positions are exported (no further electric data)
         # TODO: method has to be extended to cover more data
 
+        # register adapter
         register_adapter(numpy.int64, self.adapt_numpy_int64)
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_regions):
             raise TypeError('`mv_regions` has to be a list of integers.')
 
-        mv_grids_schema_table = cfg_dingo.get('grids', 'mv_grids')
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
         Session = sessionmaker(bind=conn)

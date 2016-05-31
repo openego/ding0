@@ -78,10 +78,8 @@ class LVRegionDingo(RegionDingo):
         # convert geo attributes to to shapely objects
         if hasattr(self, 'geo_area'):
             self.geo_area = wkt_loads(self.geo_area)
-        if hasattr(self, 'geo_centroid'):
-            self.geo_centroid = wkt_loads(self.geo_centroid)
-        if hasattr(self, 'geo_surfacepnt'):
-            self.geo_surfacepnt = wkt_loads(self.geo_surfacepnt)
+        if hasattr(self, 'geo_centre'):
+            self.geo_centre = wkt_loads(self.geo_centre)
 
         # convert load values (rounded floats) to int
         if hasattr(self, 'peak_load_residential'):
@@ -104,8 +102,7 @@ class LVRegionDingo(RegionDingo):
 
 
         # for attribute in ['geo_area',
-        #                   'geo_centroid',
-        #                   'geo_surfacepnt',
+        #                   'geo_centre',
         #                   'area',
         #                   'nuts_code',
         #                   'zensus_sum',
@@ -127,8 +124,7 @@ class LVRegionDingo(RegionDingo):
         #     setattr(self, attribute, kwargs.get(attribute, None))
 
         # self.geo_area = kwargs.get('geo_area', None)
-        # self.geo_centroid = kwargs.get('geo_centroid', None)
-        # self.geo_surfacepnt = kwargs.get('geo_surfacepnt', None)
+        # self.geo_centre= kwargs.get('geo_centroid', None)
         #
         # self.area = kwargs.get('area', None)
         # self.nuts_code = kwargs.get('nuts_code', None)
