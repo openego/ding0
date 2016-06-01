@@ -401,16 +401,19 @@ class LocalSearchSolver(BaseSolver):
 
         start = time.time()
 
-        solution = self.operator_exchange(graph, solution, op_diff_round_digits)
-        time1 = time.time()
-        print('Elapsed time (exchange): {}'.format(time1 - start))
+        #solution = self.operator_oropt(graph, solution, op_diff_round_digits)
 
-        solution = self.operator_relocate(graph, solution, op_diff_round_digits)
-        time2 = time.time()
-        print('Elapsed time (relocate): {}'.format(time2 - time1))
+        for i in range(10):
+            solution = self.operator_exchange(graph, solution, op_diff_round_digits)
+            time1 = time.time()
+            print('Elapsed time (exchange): {}'.format(time1 - start))
 
-        solution = self.operator_oropt(graph, solution, op_diff_round_digits)
-        time3 = time.time()
-        print('Elapsed time (oropt): {}'.format(time3 - time2))
+            solution = self.operator_relocate(graph, solution, op_diff_round_digits)
+            time2 = time.time()
+            print('Elapsed time (relocate): {}'.format(time2 - time1))
+
+            solution = self.operator_oropt(graph, solution, op_diff_round_digits)
+            time3 = time.time()
+            print('Elapsed time (oropt): {}'.format(time3 - time2))
 
         return solution

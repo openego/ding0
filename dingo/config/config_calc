@@ -14,7 +14,7 @@ load_density_threshold = 1
 load_area_threshold = 1
 
 #load_area_sat_threshold: unit kW
-load_area_sat_threshold = 10
+load_area_sat_threshold = 30
 
 load_factor_transformer = 0.6
 load_factor_line = 0.6
