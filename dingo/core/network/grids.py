@@ -2,7 +2,7 @@
 from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
-from dingo.grid.mv_routing import mv_routing
+from dingo.grid.mv_grid import mv_routing
 import dingo
 from dingo.tools import config as cfg_dingo
 

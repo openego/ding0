@@ -218,7 +218,7 @@ class NetworkDingo:
                 # TODO: The objective is to create stations according to kind of loads (e.g. 1 station for residential, 1 for retail etc.)
                 # === START TESTING ===
                 # create LV station object
-                station_geo_data = wkt_loads(row['geo_surfacepnt'])
+                station_geo_data = wkt_loads(row['geo_centre'])
                 lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data, peak_load=row['peak_load_sum'])
                 lv_grid = LVGridDingo(region=lv_region, id_db=id_db, geo_data=station_geo_data)
                 lv_station.grid = lv_grid
