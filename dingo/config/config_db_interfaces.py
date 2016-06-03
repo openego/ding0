@@ -87,6 +87,7 @@ class sqla_mv_grid_viz(Base):
     __table_args__ = {'schema': 'calc_ego_grid'}
 
     grid_id             = sa.Column('grid_id', sa.Integer(), primary_key=True)
+    timestamp           = sa.Column('timestamp', sa.TIMESTAMP())
     geom_mv_station     = sa.Column('geom_mv_station', Geometry(geometry_type='MULTIPOINT', srid=4326))
     geom_lv_stations    = sa.Column('geom_lv_stations', Geometry(geometry_type='MULTIPOINT', srid=4326))
     geom_mv_lines       = sa.Column('geom_mv_lines', Geometry(geometry_type='MULTILINESTRING', srid=4326))

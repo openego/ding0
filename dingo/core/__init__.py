@@ -17,6 +17,8 @@ from shapely.ops import transform
 import numpy
 from psycopg2.extensions import register_adapter, AsIs
 
+from datetime import datetime
+
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the MV-grids. Contains the NetworkX graph and
     associated attributes.
@@ -301,7 +303,7 @@ class NetworkDingo:
             mv_lines_wkb = from_shape(MultiLineString(lines), srid=srid)
 
             # add dataset to session
-            dataset = db_int.sqla_mv_grid_viz(grid_id=grid_id, geom_mv_station=mv_stations_wkb, geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
+            dataset = db_int.sqla_mv_grid_viz(grid_id=grid_id, timestamp=datetime.now(), geom_mv_station=mv_stations_wkb, geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
             session.add(dataset)
 
         # commit changes to db
