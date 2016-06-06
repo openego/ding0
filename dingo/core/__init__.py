@@ -293,7 +293,7 @@ class NetworkDingo:
 
             # create shapely obj from stations and convert to geoalchemy2.types.WKBElement
             lv_stations_wkb = from_shape(MultiPoint(lv_stations), srid=srid)
-            mv_stations_wkb = from_shape(MultiPoint(mv_stations), srid=srid)
+            mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
 
             for branch in region.mv_grid.graph_edges():
                 line = branch['adj_nodes']
