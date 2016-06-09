@@ -403,7 +403,7 @@ class LocalSearchSolver(BaseSolver):
 
         #solution = self.operator_oropt(graph, solution, op_diff_round_digits)
 
-        for i in range(10):
+        for i in range(1):
             solution = self.operator_exchange(graph, solution, op_diff_round_digits)
             time1 = time.time()
             print('Elapsed time (exchange): {}'.format(time1 - start))

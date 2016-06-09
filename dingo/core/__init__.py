@@ -247,7 +247,7 @@ class NetworkDingo:
         """
         return AsIs(numpy_int64)
 
-    # TODO: Move to more general place
+    # TODO: Move to more general place (ego.io repo)
 
     def export_mv_grid(self, conn, mv_regions):
         """ Exports MV grids to database for visualization purposes

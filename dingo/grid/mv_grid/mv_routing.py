@@ -27,6 +27,7 @@ def dingo_graph_to_routing_specs(graph):
 
         # station is LV station
         if isinstance(node, LVStationDingo):
+            # only major stations are connected via MV ring
             if not node.grid.region.is_satellite:
                 nodes_demands[str(node)] = node.grid.region.peak_load_sum
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
@@ -86,7 +87,7 @@ def routing_solution_to_dingo_graph(graph, solution):
             graph.add_edges_from(edges_graph)
 
     except:
-        print('')
+        print('unexpected error while converting routing solution to DINGO graph (NetworkX).')
 
     return graph
 
@@ -140,3 +141,32 @@ def solve(graph, debug=False):
         local_search_solution.draw_network()
 
     return routing_solution_to_dingo_graph(graph, local_search_solution)
+
+def solve_satellites(graph, debug=False):
+    """ Connects load areas of type `satellite` (that are not incorporated in cvrp mv routing)
+
+    Args:
+        graph: NetworkX graph object with nodes
+        debug: If True, information is printed while routing
+
+    Returns:
+
+    """
+    # TODO: change method's name and put to adequate location
+
+    sat = []
+
+    for node in graph.nodes():
+
+        # station is LV station
+        if isinstance(node, LVStationDingo):
+            # filter major load areas
+            #if not node.grid.region.is_satellite:
+
+            # filter satellites
+            if node.grid.region.is_satellite:
+                sat.append(node)
+
+
+    sat2 = sat
+

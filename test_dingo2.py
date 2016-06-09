@@ -22,8 +22,8 @@ nd = NetworkDingo(name='network')
 # get database connection info from config file
 conn = db.connection(section='oedb')
 
-mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV regions from SPF region
-#mv_regions=[482]
+#mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV regions from SPF region
+mv_regions=[482]
 
 nd.import_mv_regions(conn, mv_regions)
 
