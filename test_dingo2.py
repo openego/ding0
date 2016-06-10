@@ -45,4 +45,4 @@ conn.close()
 #     pprint.pprint(edge)
 #     pprint.pprint(nd._mv_regions[0].mv_grid._graph.edge[edge])
 
-#nd._mv_regions[0].mv_grid.graph_draw()
+nd._mv_regions[0].mv_grid.graph_draw()

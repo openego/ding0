@@ -1,5 +1,3 @@
-import os
-import sys
 import time
 
 from dingo.grid.mv_grid.models.models import Graph
@@ -7,7 +5,12 @@ from dingo.grid.mv_grid.util import util, data_input
 from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.grid.mv_grid.util.distance import calc_geo_distance_vincenty
 from dingo.core.network.stations import *
-from dingo.core.network import BranchDingo
+from dingo.core.network import BranchDingo, CableDistributorDingo
+
+from shapely.geometry import LineString, Point
+from shapely.ops import transform
+import pyproj
+from functools import partial
 
 
 def dingo_graph_to_routing_specs(graph):
@@ -145,6 +148,10 @@ def solve(graph, debug=False):
 def solve_satellites(graph, debug=False):
     """ Connects load areas of type `satellite` (that are not incorporated in cvrp mv routing)
 
+    method:
+        1. find nearest line for every satellite using shapely distance
+        2.
+
     Args:
         graph: NetworkX graph object with nodes
         debug: If True, information is printed while routing
@@ -153,11 +160,22 @@ def solve_satellites(graph, debug=False):
 
     """
     # TODO: change method's name and put to adequate location
+    # TODO: method is gonna be used in connection of DES too!
 
-    sat = []
+    # WGS84 (conformal) to ETRS (equidistant) projection
+    proj1 = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),  # source coordinate system
+            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+
+    # ETRS (equidistant) to WGS84 (conformal) projection
+    proj2 = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:3035'),  # source coordinate system
+            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+
 
     for node in graph.nodes():
-
         # station is LV station
         if isinstance(node, LVStationDingo):
             # filter major load areas
@@ -165,8 +183,41 @@ def solve_satellites(graph, debug=False):
 
             # filter satellites
             if node.grid.region.is_satellite:
-                sat.append(node)
+                #print('node', node)
 
+                satellite_shp = Point(node.geo_data.x, node.geo_data.y)
+                satellite_shp = transform(proj1, satellite_shp)
+                dist_min = 10**6  # initial distance value
 
-    sat2 = sat
+                # calc distance between node and grid's lines -> find nearest line
+                for branch in node.grid.region.mv_region.mv_grid.graph_edges():
+                    line = branch['adj_nodes']
+                    line_shp = LineString([(line[0].geo_data.x, line[0].geo_data.y),
+                                           (line[1].geo_data.x, line[1].geo_data.y)])
+                    line_shp = transform(proj1, line_shp)
 
+                    dist = satellite_shp.distance(line_shp)
+                    if dist < dist_min:
+                        dist_min = dist
+                        branch_dist_min = branch
+                        line_shp_dist_min = line_shp
+
+                # find nearest point on nearest line
+                conn_point_shp = line_shp_dist_min.interpolate(line_shp_dist_min.project(satellite_shp))
+                conn_point_shp = transform(proj2, conn_point_shp)
+
+                # create cable distributor and add it to grid
+                cable_dist = CableDistributorDingo(geo_data=conn_point_shp)
+                node.grid.region.mv_region.mv_grid.add_cable_distributor(cable_dist)
+
+                # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
+                graph.remove_edge(branch_dist_min['adj_nodes'][0], branch_dist_min['adj_nodes'][1])
+                graph.add_edge(branch_dist_min['adj_nodes'][0], cable_dist, branch=BranchDingo())
+                graph.add_edge(branch_dist_min['adj_nodes'][1], cable_dist, branch=BranchDingo())
+
+                # add new branch for satellite
+                graph.add_edge(node, cable_dist, branch=BranchDingo())
+
+                # TODO: Parametrize new lines!
+
+    return graph

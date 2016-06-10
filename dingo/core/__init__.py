@@ -282,17 +282,21 @@ class NetworkDingo:
         for region in self.mv_regions():
             grid_id = region.mv_grid.id_db
             mv_stations = []
+            mv_cable_distributors = []
             lv_stations = []
             lines = []
 
             for node in region.mv_grid._graph.nodes():
                 if isinstance(node, LVStationDingo):
                     lv_stations.append((node.geo_data.x, node.geo_data.y))
+                elif isinstance(node, CableDistributorDingo):
+                    mv_cable_distributors.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, MVStationDingo):
                     mv_stations.append((node.geo_data.x, node.geo_data.y))
 
             # create shapely obj from stations and convert to geoalchemy2.types.WKBElement
             lv_stations_wkb = from_shape(MultiPoint(lv_stations), srid=srid)
+            mv_cable_distributors_wkb = from_shape(MultiPoint(mv_cable_distributors), srid=srid)
             mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
 
             for branch in region.mv_grid.graph_edges():
@@ -303,7 +307,7 @@ class NetworkDingo:
             mv_lines_wkb = from_shape(MultiLineString(lines), srid=srid)
 
             # add dataset to session
-            dataset = db_int.sqla_mv_grid_viz(grid_id=grid_id, timestamp=datetime.now(), geom_mv_station=mv_stations_wkb, geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
+            dataset = db_int.sqla_mv_grid_viz(grid_id=grid_id, timestamp=datetime.now(), geom_mv_station=mv_stations_wkb, geom_mv_cable_dist=mv_cable_distributors_wkb , geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
             session.add(dataset)
 
         # commit changes to db
