@@ -2,6 +2,7 @@
 from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
+from dingo.core.network import CableDistributorDingo
 from dingo.grid.mv_grid import mv_routing
 import dingo
 from dingo.tools import config as cfg_dingo
@@ -25,12 +26,18 @@ class MVGridDingo(GridDingo):
 
         #more params
         self._station = None
+        self._cable_distributors = []
 
         self.add_station(kwargs.get('station', None))
 
     def station(self):
         """Returns MV station"""
         return self._station
+
+    def cable_distributors(self):
+        """Returns a generator for iterating over cable distributors"""
+        for cable_dist in self._cable_distributors:
+            yield cable_dist
 
     def add_station(self, mv_station, force=False):
         """Adds MV station if not already existing
@@ -64,6 +71,12 @@ class MVGridDingo(GridDingo):
     #     # TODO: not sure if the following works:
     #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_regions()]]:
     #         self.graph_add_node(lv_station)
+
+    def add_cable_distributor(self, cable_dist):
+        """Adds a cable distributor to _cable_distributors if not already existing"""
+        if cable_dist not in self.cable_distributors() and isinstance(cable_dist, CableDistributorDingo):
+            self._cable_distributors.append(cable_dist)
+            self.graph_add_node(cable_dist)
 
     def routing(self, debug=False):
         """ Performs routing on grid graph nodes, adds resulting edges

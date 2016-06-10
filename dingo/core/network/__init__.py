@@ -27,10 +27,11 @@ class GridDingo:
 
         self._graph = nx.Graph()
 
-    def graph_add_node(self, station):
-        """Adds a station object to grid graph if not already existing"""
-        if station not in self._graph.nodes() and isinstance(station, StationDingo):
-            self._graph.add_node(station)
+    def graph_add_node(self, node_object):
+        """Adds a station or cable distributor object to grid graph if not already existing"""
+        if node_object not in self._graph.nodes()\
+                and (isinstance(node_object, StationDingo) or isinstance(node_object, CableDistributorDingo)):
+            self._graph.add_node(node_object)
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and LV regions!
     def graph_draw(self):
@@ -231,3 +232,9 @@ class SourceDingo(Source):
     def __init__(self, **kwargs):
         #inherit parameters from oemof's Transformer
         super().__init__(**kwargs)
+
+class CableDistributorDingo():
+    """ Cable distributor (connection point) """
+
+    def __init__(self, **kwargs):
+        self.geo_data = kwargs.get('geo_data', None)
