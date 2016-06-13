@@ -4,6 +4,7 @@ from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
 from dingo.core.network import CableDistributorDingo
 from dingo.grid.mv_grid import mv_routing
+from dingo.grid.mv_grid import mv_connect
 import dingo
 from dingo.tools import config as cfg_dingo
 
@@ -87,7 +88,7 @@ class MVGridDingo(GridDingo):
 
         # do the routing
         self._graph = mv_routing.solve(self._graph, debug)
-        self._graph = mv_routing.solve_satellites(self._graph, debug)
+        self._graph = mv_connect.mv_connect(self._graph, LVStationDingo(), debug)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:
