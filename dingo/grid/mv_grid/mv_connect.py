@@ -1,7 +1,7 @@
 
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CableDistributorDingo
-from dingo.grid.mv_grid.util.distance import calc_geo_distance_vincenty
+from dingo.tools import config as cfg_dingo
 
 from shapely.geometry import LineString, Point, MultiPoint
 from shapely.ops import transform
@@ -30,8 +30,13 @@ def mv_connect(graph, dingo_object, debug=False):
     """
     start = time.time()
 
-    # TODO: Move constant to config
-    station_dist_thres = 0.75
+    # conn_dist_threshold: The satellites are connected to line (new terminal is created) or to one station where the
+    # line ends, depending on the distance from satellite to the objects. This threshold is a length weighting to prefer
+    # stations instead of direct line connection to respect grid planning principles.
+    # Example: The distance from satellite to line is 1km, to station1 1.2km, to station2 2km.
+    # With conn_dist_threshold=0.75, the 'virtual' distance to station1 would be 1.2km * 0.75 = 0.9km, so this conn.
+    # point would be preferred.
+    conn_dist_threshold = cfg_dingo.get('assumptions', 'load_area_sat_conn_dist_threshold')
 
     # check if dingo_object is valid object
     # TODO: Add RES to isinstance check
@@ -78,9 +83,15 @@ def mv_connect(graph, dingo_object, debug=False):
                             station2_shp = transform(proj1, station2_shp)
 
                             # create dict with DINGO objects, shapely objects and distances
-                            conn_objects = {'s1': {'obj': stations[0], 'shp': station1_shp, 'dist': satellite_shp.distance(station1_shp) * station_dist_thres},
-                                            's2': {'obj': stations[1], 'shp': station2_shp, 'dist': satellite_shp.distance(station2_shp) * station_dist_thres},
-                                            'b': {'obj': branch, 'shp': line_shp, 'dist': satellite_shp.distance(line_shp)}}
+                            conn_objects = {'s1': {'obj': stations[0],
+                                                   'shp': station1_shp,
+                                                   'dist': satellite_shp.distance(station1_shp) * conn_dist_threshold},
+                                            's2': {'obj': stations[1],
+                                                   'shp': station2_shp,
+                                                   'dist': satellite_shp.distance(station2_shp) * conn_dist_threshold},
+                                            'b': {'obj': branch,
+                                                  'shp': line_shp,
+                                                  'dist': satellite_shp.distance(line_shp)}}
 
                             # find nearest connection point on given triple dict
                             conn_objects_min = min(conn_objects.values(), key=lambda v: v['dist'])
