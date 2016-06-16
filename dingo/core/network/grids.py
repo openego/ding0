@@ -76,8 +76,13 @@ class MVGridDingo(GridDingo):
     def add_cable_distributor(self, cable_dist):
         """Adds a cable distributor to _cable_distributors if not already existing"""
         if cable_dist not in self.cable_distributors() and isinstance(cable_dist, CableDistributorDingo):
+            # add to array and graph
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
+
+            # set id
+            cable_dist_count = len(self._cable_distributors)
+            cable_dist.id_db = cable_dist_count + 1
 
     def routing(self, debug=False):
         """ Performs routing on grid graph nodes, adds resulting edges
@@ -88,7 +93,7 @@ class MVGridDingo(GridDingo):
 
         # do the routing
         self._graph = mv_routing.solve(self._graph, debug)
-        self._graph = mv_connect.mv_connect(self._graph, LVStationDingo(), debug)
+        self._graph = mv_connect.mv_connect(self._graph, LVStationDingo(), debug=True)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:

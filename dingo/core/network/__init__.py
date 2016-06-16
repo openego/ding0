@@ -237,4 +237,8 @@ class CableDistributorDingo():
     """ Cable distributor (connection point) """
 
     def __init__(self, **kwargs):
+        self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
+
+    def __repr__(self):
+        return 'cable_dist_' + str(self.id_db)
