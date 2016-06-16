@@ -1,11 +1,13 @@
 
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CableDistributorDingo
+from dingo.grid.mv_grid.util.distance import calc_geo_distance_vincenty
 
 from shapely.geometry import LineString, Point, MultiPoint
 from shapely.ops import transform
 import pyproj
 from functools import partial
+import pandas as pd
 
 import time
 
@@ -29,10 +31,23 @@ def mv_connect(graph, dingo_object, debug=False):
     """
     start = time.time()
 
+    # TEMP
+    nodes_pos = {}
+    for node in graph.nodes():
+
+        # station is LV station
+        if isinstance(node, LVStationDingo):
+            # only major stations are connected via MV ring
+            if node.grid.region.is_satellite:
+                nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
+
+    dist_dict = calc_geo_distance_vincenty(nodes_pos)
+
     # TODO: Move constant to config
     station_dist_thres = 0.75
 
     # check if dingo_object is valid object
+    # TODO: Add RES to isinstance check
     if isinstance(dingo_object, (LVStationDingo, LVStationDingo)):
 
         # WGS84 (conformal) to ETRS (equidistant) projection
@@ -70,33 +85,27 @@ def mv_connect(graph, dingo_object, debug=False):
                             station2_shp = Point((stations[1].geo_data.x, stations[1].geo_data.y))
                             line_shp = LineString([station1_shp, station2_shp])
 
-                            # transform
+                            # transform to equidistant CRS
                             line_shp = transform(proj1, line_shp)
                             station1_shp = transform(proj1, station1_shp)
                             station2_shp = transform(proj1, station2_shp)
 
-                            # calc distances to stations and line
-                            dist = {line_shp: satellite_shp.distance(line_shp),
-                                    station1_shp: satellite_shp.distance(station1_shp) * station_dist_thres,
-                                    station2_shp: satellite_shp.distance(station2_shp) * station_dist_thres}
+                            # create data frame with DINGO objects, shapely objects and distances
+                            # TODO: pd is too slow!
+                            conn_objects = pd.DataFrame({'obj': [stations[0], stations[1], branch],
+                                                         'shp': [station1_shp, station2_shp, line_shp],
+                                                         'dist': [satellite_shp.distance(station1_shp) * station_dist_thres,
+                                                                  satellite_shp.distance(station2_shp) * station_dist_thres,
+                                                                  satellite_shp.distance(line_shp)]})
 
-                            # # TODO: to be completed
-                            # # create dict with possible connection points (objects)
-                            # conn_objects = {stations[0]: {'shp': transform(proj1, station1_shp)},
-                            #                 stations[1]: {'shp': transform(proj1, station2_shp)},
-                            #                 branch: {'shp': transform(proj1, LineString([station1_shp, station2_shp]))}}
-
-                            if min(dist.values()) < dist_min:
-                                dist_min = min(dist.values())
-                                dist_min_obj = dist
-                                branch_dist_min = branch
-                                #station_dist_min = line[0]
-                                line_shp_dist_min = line_shp
+                            if conn_objects['dist'].min() < dist_min:
+                                dist_min = conn_objects['dist'].min()
+                                dist_min_obj = conn_objects.loc[conn_objects['dist'].idxmin()]
 
                         # MV line is nearest connection point
-                        if isinstance(min(dist_min_obj, key=dist_min_obj.get), LineString):
+                        if isinstance(dist_min_obj['shp'], LineString):
                             # find nearest point on MV line
-                            conn_point_shp = line_shp_dist_min.interpolate(line_shp_dist_min.project(satellite_shp))
+                            conn_point_shp = dist_min_obj['shp'].interpolate(dist_min_obj['shp'].project(satellite_shp))
                             conn_point_shp = transform(proj2, conn_point_shp)
 
                             # create cable distributor and add it to grid
@@ -104,9 +113,9 @@ def mv_connect(graph, dingo_object, debug=False):
                             node.grid.region.mv_region.mv_grid.add_cable_distributor(cable_dist)
 
                             # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
-                            graph.remove_edge(branch_dist_min['adj_nodes'][0], branch_dist_min['adj_nodes'][1])
-                            graph.add_edge(branch_dist_min['adj_nodes'][0], cable_dist, branch=BranchDingo())
-                            graph.add_edge(branch_dist_min['adj_nodes'][1], cable_dist, branch=BranchDingo())
+                            graph.remove_edge(dist_min_obj['obj']['adj_nodes'][0], dist_min_obj['obj']['adj_nodes'][1])
+                            graph.add_edge(dist_min_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo())
+                            graph.add_edge(dist_min_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo())
 
                             # add new branch for satellite (station to cable distributor)
                             graph.add_edge(node, cable_dist, branch=BranchDingo())
@@ -114,8 +123,7 @@ def mv_connect(graph, dingo_object, debug=False):
                         # MV/LV station ist nearest connection point
                         else:
                             # add new branch for satellite (station to station)
-                            graph.add_edge(node, dist_min_obj, branch=BranchDingo())
-                            #graph.add_edge(node, branch_dist_min['adj_nodes'][1], branch=BranchDingo())
+                            graph.add_edge(node, dist_min_obj['obj'], branch=BranchDingo())
 
 
                         # line = branch_dist_min['adj_nodes']
