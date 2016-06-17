@@ -92,7 +92,7 @@ class BaseSolution(object):
         """
         raise NotImplementedError()
         
-    def draw_network(self):
+    def draw_network(self, img_no=1):
         """draws solution's graph using networkx"""
         
         g = nx.Graph()
@@ -118,9 +118,12 @@ class BaseSolution(object):
             g.add_edges_from(e)
     
         plt.figure()
-        nx.draw_networkx(g, nodes_pos)
-        nx.draw_networkx_labels(g, demands_pos, labels=demands)
-        plt.show()
+        #nx.draw_networkx(g, nodes_pos)
+        nx.draw_networkx(g, nodes_pos, with_labels=False, node_size=50)
+        #nx.draw_networkx_labels(g, demands_pos, labels=demands)
+        #plt.show()
+        plt.savefig('/home/jonathan/Bilder/nx_figtest/img' + (4 - len(str(img_no))) * '0' + str(img_no) + '.png')
+        plt.close()
 
 
 class BaseSolver(object):
