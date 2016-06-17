@@ -36,7 +36,7 @@ def mv_connect(graph, dingo_object, debug=False):
     # Example: The distance from satellite to line is 1km, to station1 1.2km, to station2 2km.
     # With conn_dist_threshold=0.75, the 'virtual' distance to station1 would be 1.2km * 0.75 = 0.9km, so this conn.
     # point would be preferred.
-    conn_dist_threshold = cfg_dingo.get('assumptions', 'load_area_sat_conn_dist_threshold')
+    conn_dist_weight = cfg_dingo.get('assumptions', 'load_area_sat_conn_dist_weight')
 
     # check if dingo_object is valid object
     # TODO: Add RES to isinstance check
@@ -85,10 +85,10 @@ def mv_connect(graph, dingo_object, debug=False):
                             # create dict with DINGO objects, shapely objects and distances
                             conn_objects = {'s1': {'obj': stations[0],
                                                    'shp': station1_shp,
-                                                   'dist': satellite_shp.distance(station1_shp) * conn_dist_threshold},
+                                                   'dist': satellite_shp.distance(station1_shp) * conn_dist_weight},
                                             's2': {'obj': stations[1],
                                                    'shp': station2_shp,
-                                                   'dist': satellite_shp.distance(station2_shp) * conn_dist_threshold},
+                                                   'dist': satellite_shp.distance(station2_shp) * conn_dist_weight},
                                             'b': {'obj': branch,
                                                   'shp': line_shp,
                                                   'dist': satellite_shp.distance(line_shp)}}

@@ -17,7 +17,7 @@ load_area_threshold = 1
 load_area_sat_threshold = 30
 
 #load_area_sat_line_dist_threshold: unit %
-load_area_sat_conn_dist_threshold = 0.75
+load_area_sat_conn_dist_weight = 0.75
 
 load_factor_transformer = 0.6
 load_factor_line = 0.6
