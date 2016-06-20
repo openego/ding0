@@ -89,7 +89,7 @@ def routing_solution_to_dingo_graph(graph, solution):
 
     return graph
 
-def solve(graph, debug=False):
+def solve(graph, debug=False, anim=None):
     """ Do MV routing for given nodes in `graph`. Translate data from node objects to appropriate format before.
 
     Args:
@@ -117,7 +117,7 @@ def solve(graph, debug=False):
     start = time.time()
 
     # create initial solution using Clarke and Wright Savings methods
-    savings_solution = savings_solver.solve(RoutingGraph, timeout)
+    savings_solution = savings_solver.solve(RoutingGraph, timeout, anim)
 
     # OLD, MAY BE USED LATER - Guido, please don't declare a variable later=now() :) :
     #if not savings_solution.is_complete():
@@ -130,7 +130,7 @@ def solve(graph, debug=False):
         #savings_solution.draw_network()
 
     # improve initial solution using local search
-    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout)
+    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, anim)
 
     if debug:
         print('Local Search solution:')

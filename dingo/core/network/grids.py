@@ -84,7 +84,7 @@ class MVGridDingo(GridDingo):
             cable_dist_count = len(self._cable_distributors)
             cable_dist.id_db = cable_dist_count + 1
 
-    def routing(self, debug=False):
+    def routing(self, debug=False, anim=None):
         """ Performs routing on grid graph nodes, adds resulting edges
 
         Args:
@@ -92,7 +92,7 @@ class MVGridDingo(GridDingo):
         """
 
         # do the routing
-        self._graph = mv_routing.solve(self._graph, debug)
+        self._graph = mv_routing.solve(self._graph, debug, anim)
         self._graph = mv_connect.mv_connect(self._graph, LVStationDingo(), debug)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges

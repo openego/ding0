@@ -29,7 +29,7 @@ nd.import_mv_regions(conn, mv_regions)
 
 conn.close()
 
-nd.mv_routing(debug=False)
+nd.mv_routing(debug=False, animation=True)
 
 nd.mv_parametrize_grid()
 

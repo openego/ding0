@@ -2,6 +2,7 @@ from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
+from dingo.tools.animation import AnimationDingo
 from dingo.config import config_db_interfaces as db_int
 
 import pandas as pd
@@ -314,15 +315,20 @@ class NetworkDingo:
         session.commit()
 
 
-    def mv_routing(self, debug=False):
+    def mv_routing(self, debug=False, animation=False):
         """ Performs routing on all MV grids, see method `routing` in class `MVGridDingo` for details.
 
         Args:
             debug: If True, information is printed while routing
         """
 
+        if animation:
+            anim = AnimationDingo()
+        else:
+            anim = None
+
         for region in self.mv_regions():
-            region.mv_grid.routing(debug)
+            region.mv_grid.routing(debug, anim)
 
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see method `parametrize_grid` in class
