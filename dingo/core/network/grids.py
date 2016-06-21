@@ -149,7 +149,7 @@ class MVGridDingo(GridDingo):
         .. [2] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie.
             Ausbau- und Innovationsbedarf der Stromverteilnetze in Deutschland
             bis 2030.", 2012
-        .. [3] Falk Schaller et al., "Modellierung_lv_regions realitätsnaher zukünftiger
+        .. [3] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger
             Referenznetze im Verteilnetzsektor zur Überprüfung der
             Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
         .. [4] Tao, X., "Automatisierte Grundsatzplanung von
