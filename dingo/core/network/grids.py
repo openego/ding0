@@ -254,7 +254,7 @@ class LVGridDingo(GridDingo):
             yield station
 
     def add_station(self, lv_station):
-        """Adds a LV station to _stations if not already existing"""
+        """Adds a LV station to _stations and grid graph if not already existing"""
         if lv_station not in self.stations() and isinstance(lv_station, LVStationDingo):
             self._stations.append(lv_station)
 
