@@ -62,7 +62,8 @@ class LVRegionDingo(RegionDingo):
         self.mv_region = kwargs.get('mv_region', None)
         self.is_satellite = kwargs.get('is_satellite', False)
 
-        load_area_sat_threshold = cfg_dingo.get('assumptions', 'load_area_sat_threshold')    # threshold: load area peak load
+        # threshold: load area peak load, if peak load < threshold => treat load area as satellite
+        load_area_sat_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_threshold')
 
         db_data = kwargs.get('db_data', None)
 

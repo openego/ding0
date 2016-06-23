@@ -36,10 +36,10 @@ def mv_connect(graph, dingo_object, debug=False):
     # Example: The distance from satellite to line is 1km, to station1 1.2km, to station2 2km.
     # With conn_dist_threshold=0.75, the 'virtual' distance to station1 would be 1.2km * 0.75 = 0.9km, so this conn.
     # point would be preferred.
-    conn_dist_weight = cfg_dingo.get('assumptions', 'load_area_sat_conn_dist_weight')
+    conn_dist_weight = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_weight')
 
     # conn_dist_ring_mod: Allow re-routing of ring main route if node is closer than this threshold (in m) to ring.
-    conn_dist_ring_mod = cfg_dingo.get('assumptions', 'load_area_sat_conn_dist_ring_mod')
+    conn_dist_ring_mod = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_ring_mod')
 
     # check if dingo_object is valid object
     # TODO: Add RES to isinstance check
@@ -122,7 +122,7 @@ def mv_connect(graph, dingo_object, debug=False):
                                 graph.add_edge(dist_min_obj['obj']['adj_nodes'][1], node, branch=BranchDingo())
 
                                 if debug:
-                                    print('Ring main Route modified to include', node)
+                                    print('Ring main Route modified to include node', node)
 
                             # Node is too far away from ring main route
                             # -> keep main route and create new line from node to ring
@@ -158,7 +158,9 @@ def mv_connect(graph, dingo_object, debug=False):
 
                         # TODO: Parametrize new lines!
 
-        print('Elapsed time (mv_connect): {}'.format(time.time() - start))
+        if debug:
+            print('Elapsed time (mv_connect): {}'.format(time.time() - start))
+
         return graph
 
     else:

@@ -161,7 +161,8 @@ class NetworkDingo:
         lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')                  # alias in sql statement: `ploads`
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
-        lv_loads_threshold = cfg_dingo.get('assumptions', 'load_area_threshold')    # threshold: load area peak load
+        # threshold: load area peak load, if peak load < threshold => disregard load area
+        lv_loads_threshold = cfg_dingo.get('mv_routing', 'load_area_threshold')
 
 
         load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
