@@ -10,13 +10,14 @@ from functools import partial
 
 import time
 
+
 def mv_connect(graph, dingo_object, debug=False):
     """ Connects DINGO objects to MV grid, e.g. load areas of type `satellite`, DER etc.
 
     Method:
         1. Find nearest line for every satellite using shapely distance:
             Transform  to equidistant CRS
-        2.
+        2. ...
 
     Args:
         graph: NetworkX graph object with nodes
@@ -28,6 +29,8 @@ def mv_connect(graph, dingo_object, debug=False):
     Returns:
         graph: NetworkX graph object with nodes and newly created branches
     """
+    # TODO: Complete docstring
+
     start = time.time()
 
     # conn_dist_weight: The satellites can be connected to line (new terminal is created) or to one station where the
@@ -165,3 +168,5 @@ def mv_connect(graph, dingo_object, debug=False):
 
     else:
         print('argument `node` has invalid value, see method for valid inputs.')
+
+def mv_satellite_load()
