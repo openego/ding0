@@ -30,13 +30,16 @@ def mv_connect(graph, dingo_object, debug=False):
     """
     start = time.time()
 
-    # conn_dist_threshold: The satellites are connected to line (new terminal is created) or to one station where the
+    # conn_dist_weight: The satellites can be connected to line (new terminal is created) or to one station where the
     # line ends, depending on the distance from satellite to the objects. This threshold is a length weighting to prefer
     # stations instead of direct line connection to respect grid planning principles.
     # Example: The distance from satellite to line is 1km, to station1 1.2km, to station2 2km.
     # With conn_dist_threshold=0.75, the 'virtual' distance to station1 would be 1.2km * 0.75 = 0.9km, so this conn.
     # point would be preferred.
     conn_dist_weight = cfg_dingo.get('assumptions', 'load_area_sat_conn_dist_weight')
+
+    # conn_dist_ring_mod: Allow re-routing of ring main route if node is closer than this threshold (in m) to ring.
+    conn_dist_ring_mod = cfg_dingo.get('assumptions', 'load_area_sat_conn_dist_ring_mod')
 
     # check if dingo_object is valid object
     # TODO: Add RES to isinstance check
@@ -68,7 +71,7 @@ def mv_connect(graph, dingo_object, debug=False):
                         dist_min = 10**6  # initial distance value in m
 
                         # calc distance between node and grid's lines -> find nearest line
-                        # TODO: don't calc distance for all edges, only surrounding ones (but how?)
+                        # TODO: performance: don't calc distance for all edges, only surrounding ones (but how?)
                         for branch in node.grid.region.mv_region.mv_grid.graph_edges():
                             stations = branch['adj_nodes']
 
@@ -103,26 +106,45 @@ def mv_connect(graph, dingo_object, debug=False):
 
                         # MV line is nearest connection point
                         if isinstance(dist_min_obj['shp'], LineString):
+
                             # find nearest point on MV line
                             conn_point_shp = dist_min_obj['shp'].interpolate(dist_min_obj['shp'].project(satellite_shp))
                             conn_point_shp = transform(proj2, conn_point_shp)
 
-                            # create cable distributor and add it to grid
-                            cable_dist = CableDistributorDingo(geo_data=conn_point_shp)
-                            node.grid.region.mv_region.mv_grid.add_cable_distributor(cable_dist)
+                            # Node is close to line
+                            # -> insert node into ring -> change ring main route
+                            if dist_min_obj['dist'] < conn_dist_ring_mod:
 
-                            # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
-                            graph.remove_edge(dist_min_obj['obj']['adj_nodes'][0], dist_min_obj['obj']['adj_nodes'][1])
-                            graph.add_edge(dist_min_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo())
-                            graph.add_edge(dist_min_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo())
+                                # split old ring main route into 2 segments (delete old branch and create 2 new ones
+                                # along node)
+                                graph.remove_edge(dist_min_obj['obj']['adj_nodes'][0], dist_min_obj['obj']['adj_nodes'][1])
+                                graph.add_edge(dist_min_obj['obj']['adj_nodes'][0], node, branch=BranchDingo())
+                                graph.add_edge(dist_min_obj['obj']['adj_nodes'][1], node, branch=BranchDingo())
 
-                            # add new branch for satellite (station to cable distributor)
-                            graph.add_edge(node, cable_dist, branch=BranchDingo())
+                                if debug:
+                                    print('Ring main Route modified to include', node)
 
-                            # debug info
-                            if debug:
-                                print('Nearest connection point for object', node, 'is branch',
-                                      dist_min_obj['obj']['adj_nodes'], '(distance=', dist_min_obj['dist'], 'm)')
+                            # Node is too far away from ring main route
+                            # -> keep main route and create new line from node to ring
+                            else:
+
+                                # create cable distributor and add it to grid
+                                cable_dist = CableDistributorDingo(geo_data=conn_point_shp)
+                                node.grid.region.mv_region.mv_grid.add_cable_distributor(cable_dist)
+
+                                # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
+                                graph.remove_edge(dist_min_obj['obj']['adj_nodes'][0], dist_min_obj['obj']['adj_nodes'][1])
+                                graph.add_edge(dist_min_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo())
+                                graph.add_edge(dist_min_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo())
+
+                                # add new branch for satellite (station to cable distributor)
+                                # TODO: hier nur T-Muffe, Einschleifung muss rein
+                                graph.add_edge(node, cable_dist, branch=BranchDingo())
+
+                                # debug info
+                                if debug:
+                                    print('Nearest connection point for object', node, 'is branch',
+                                          dist_min_obj['obj']['adj_nodes'], '(distance=', dist_min_obj['dist'], 'm)')
 
                         # MV/LV station ist nearest connection point
                         else:

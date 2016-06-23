@@ -16,8 +16,11 @@ load_area_threshold = 1
 #load_area_sat_threshold: unit kW
 load_area_sat_threshold = 30
 
-#load_area_sat_line_dist_threshold: unit %
-load_area_sat_conn_dist_weight = 0.75
+#load_area_sat_line_dist_threshold: valid range: 0..1
+load_area_sat_conn_dist_weight = 1
+
+#load_area_sat_conn_dist_ring: unit m
+load_area_sat_conn_dist_ring_mod = 100
 
 load_factor_transformer = 0.6
 load_factor_line = 0.6
