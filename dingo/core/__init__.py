@@ -320,6 +320,8 @@ class NetworkDingo:
 
         Args:
             debug: If True, information is printed while routing
+            animation: If True, images of route modification steps are exported during routing process - a new animation
+                        object is created, refer to class 'AnimationDingo()' for a more detailed description.
         """
 
         if animation:

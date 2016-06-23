@@ -389,13 +389,15 @@ class LocalSearchSolver(BaseSolver):
             solution = op[2](graph, solution, op_diff_round_digits)
             print(operators[op[0]], '+', operators[op[1]], '+', operators[op[2]], '=> Length:', solution.length())
 
-    def solve(self, graph, savings_solution, timeout, anim=None):
+    def solve(self, graph, savings_solution, timeout, debug=False, anim=None):
         """Improve initial savings solution using local search
 
         Parameters:
             graph: Graph instance
             savings_solution: initial solution of CVRP problem (instance of `SavingsSolution` class)
             timeout: max processing time in seconds
+            debug: If True, information is printed while routing
+            anim: AnimationDingo object (refer to class 'AnimationDingo()' for a more detailed description)
 
         Returns a solution (LocalSearchSolution class))
         """
@@ -416,14 +418,17 @@ class LocalSearchSolver(BaseSolver):
         for i in range(10):
             solution = self.operator_exchange(graph, solution, op_diff_round_digits, anim)
             time1 = time.time()
-            print('Elapsed time (exchange): {}'.format(time1 - start))
+            if debug:
+                print('Elapsed time (exchange): {}'.format(time1 - start))
 
             solution = self.operator_relocate(graph, solution, op_diff_round_digits, anim)
             time2 = time.time()
-            print('Elapsed time (relocate): {}'.format(time2 - time1))
+            if debug:
+                print('Elapsed time (relocate): {}'.format(time2 - time1))
 
             solution = self.operator_oropt(graph, solution, op_diff_round_digits, anim)
             time3 = time.time()
-            print('Elapsed time (oropt): {}'.format(time3 - time2))
+            if debug:
+                print('Elapsed time (oropt): {}'.format(time3 - time2))
 
         return solution

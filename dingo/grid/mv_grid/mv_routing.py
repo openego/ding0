@@ -95,6 +95,7 @@ def solve(graph, debug=False, anim=None):
     Args:
         graph: NetworkX graph object with nodes
         debug: If True, information is printed while routing
+        anim: AnimationDingo object (refer to class 'AnimationDingo()' for a more detailed description)
 
     Returns:
         graph: NetworkX graph object with nodes and edges
@@ -117,7 +118,7 @@ def solve(graph, debug=False, anim=None):
     start = time.time()
 
     # create initial solution using Clarke and Wright Savings methods
-    savings_solution = savings_solver.solve(RoutingGraph, timeout, anim)
+    savings_solution = savings_solver.solve(RoutingGraph, timeout, debug, anim)
 
     # OLD, MAY BE USED LATER - Guido, please don't declare a variable later=now() :) :
     #if not savings_solution.is_complete():
@@ -130,7 +131,7 @@ def solve(graph, debug=False, anim=None):
         #savings_solution.draw_network()
 
     # improve initial solution using local search
-    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, anim)
+    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, debug, anim)
 
     if debug:
         print('Local Search solution:')
