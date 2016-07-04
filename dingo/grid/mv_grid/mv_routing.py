@@ -1,5 +1,3 @@
-import os
-import sys
 import time
 
 from dingo.grid.mv_grid.models.models import Graph
@@ -27,6 +25,7 @@ def dingo_graph_to_routing_specs(graph):
 
         # station is LV station
         if isinstance(node, LVStationDingo):
+            # only major stations are connected via MV ring
             if not node.grid.region.is_satellite:
                 nodes_demands[str(node)] = node.grid.region.peak_load_sum
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
@@ -86,16 +85,17 @@ def routing_solution_to_dingo_graph(graph, solution):
             graph.add_edges_from(edges_graph)
 
     except:
-        print('')
+        print('unexpected error while converting routing solution to DINGO graph (NetworkX).')
 
     return graph
 
-def solve(graph, debug=False):
+def solve(graph, debug=False, anim=None):
     """ Do MV routing for given nodes in `graph`. Translate data from node objects to appropriate format before.
 
     Args:
         graph: NetworkX graph object with nodes
         debug: If True, information is printed while routing
+        anim: AnimationDingo object (refer to class 'AnimationDingo()' for a more detailed description)
 
     Returns:
         graph: NetworkX graph object with nodes and edges
@@ -118,7 +118,7 @@ def solve(graph, debug=False):
     start = time.time()
 
     # create initial solution using Clarke and Wright Savings methods
-    savings_solution = savings_solver.solve(RoutingGraph, timeout)
+    savings_solution = savings_solver.solve(RoutingGraph, timeout, debug, anim)
 
     # OLD, MAY BE USED LATER - Guido, please don't declare a variable later=now() :) :
     #if not savings_solution.is_complete():
@@ -131,7 +131,7 @@ def solve(graph, debug=False):
         #savings_solution.draw_network()
 
     # improve initial solution using local search
-    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout)
+    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, debug, anim)
 
     if debug:
         print('Local Search solution:')

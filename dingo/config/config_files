@@ -5,3 +5,6 @@
 [equipment]
 equipment_parameters_cables = equipment-parameters_cables.csv
 equipment_parameters_lines = equipment-parameters_overhead_lines.csv
+
+[output]
+animation_file_prefix = mv-routing_ani_

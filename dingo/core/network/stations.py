@@ -99,7 +99,6 @@ class MVStationDingo(StationDingo):
     def __repr__(self):
         return 'mvstation_' + str(self.id_db)
 
-
 class LVStationDingo(StationDingo):
     """
     Defines a LV station in DINGO

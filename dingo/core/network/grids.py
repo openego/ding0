@@ -2,7 +2,9 @@
 from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
+from dingo.core.network import CableDistributorDingo
 from dingo.grid.mv_grid import mv_routing
+from dingo.grid.mv_grid import mv_connect
 import dingo
 from dingo.tools import config as cfg_dingo
 
@@ -25,12 +27,18 @@ class MVGridDingo(GridDingo):
 
         #more params
         self._station = None
+        self._cable_distributors = []
 
         self.add_station(kwargs.get('station', None))
 
     def station(self):
         """Returns MV station"""
         return self._station
+
+    def cable_distributors(self):
+        """Returns a generator for iterating over cable distributors"""
+        for cable_dist in self._cable_distributors:
+            yield cable_dist
 
     def add_station(self, mv_station, force=False):
         """Adds MV station if not already existing
@@ -65,7 +73,18 @@ class MVGridDingo(GridDingo):
     #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_regions()]]:
     #         self.graph_add_node(lv_station)
 
-    def routing(self, debug=False):
+    def add_cable_distributor(self, cable_dist):
+        """Adds a cable distributor to _cable_distributors if not already existing"""
+        if cable_dist not in self.cable_distributors() and isinstance(cable_dist, CableDistributorDingo):
+            # add to array and graph
+            self._cable_distributors.append(cable_dist)
+            self.graph_add_node(cable_dist)
+
+            # set id
+            cable_dist_count = len(self._cable_distributors)
+            cable_dist.id_db = cable_dist_count + 1
+
+    def routing(self, debug=False, anim=None):
         """ Performs routing on grid graph nodes, adds resulting edges
 
         Args:
@@ -73,7 +92,8 @@ class MVGridDingo(GridDingo):
         """
 
         # do the routing
-        self._graph = mv_routing.solve(self._graph, debug)
+        self._graph = mv_routing.solve(self._graph, debug, anim)
+        self._graph = mv_connect.mv_connect(self._graph, LVStationDingo(), debug)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:
@@ -129,15 +149,10 @@ class MVGridDingo(GridDingo):
         .. [2] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie.
             Ausbau- und Innovationsbedarf der Stromverteilnetze in Deutschland
             bis 2030.", 2012
-        .. [3] Falk Schaller et al., "Modellierung_lv_regions realitätsnaher zukünftiger
+        .. [3] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger
             Referenznetze im Verteilnetzsektor zur Überprüfung der
             Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
         .. [4] Tao, X., "Automatisierte Grundsatzplanung von
-
-
-
-
-
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
 
@@ -239,7 +254,7 @@ class LVGridDingo(GridDingo):
             yield station
 
     def add_station(self, lv_station):
-        """Adds a LV station to _stations if not already existing"""
+        """Adds a LV station to _stations and grid graph if not already existing"""
         if lv_station not in self.stations() and isinstance(lv_station, LVStationDingo):
             self._stations.append(lv_station)
 

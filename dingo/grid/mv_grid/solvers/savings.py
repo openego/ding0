@@ -153,12 +153,14 @@ class ClarkeWrightSolver(BaseSolver):
 
         return [nodes for nodes, saving in sorted_savings_list]
 
-    def solve(self, graph, timeout):
+    def solve(self, graph, timeout, debug=False, anim=None):
         """Solves the CVRP problem using Clarke and Wright Savings methods
 
         Parameters:
             graph: Graph instance
             timeout: max processing time in seconds
+            debug: If True, information is printed while routing
+            anim: AnimationDingo object (refer to class 'AnimationDingo()' for a more detailed description)
 
         Returns a solution (SavingsSolution class))
         """
@@ -167,7 +169,6 @@ class ClarkeWrightSolver(BaseSolver):
         solution = SavingsSolution(graph)
 
         start = time.time()
-
         for i, j in savings_list[:]:
             if solution.is_complete():
                 break
@@ -178,6 +179,9 @@ class ClarkeWrightSolver(BaseSolver):
                 if inserted:
                     savings_list.remove((i, j))
                     savings_list.remove((j, i))
+
+                    if anim is not None:
+                        solution.draw_network(anim)
 
             if time.time() - start > timeout:
                 break

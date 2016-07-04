@@ -27,10 +27,11 @@ class GridDingo:
 
         self._graph = nx.Graph()
 
-    def graph_add_node(self, station):
-        """Adds a station object to grid graph if not already existing"""
-        if station not in self._graph.nodes() and isinstance(station, StationDingo):
-            self._graph.add_node(station)
+    def graph_add_node(self, node_object):
+        """Adds a station or cable distributor object to grid graph if not already existing"""
+        if node_object not in self._graph.nodes()\
+                and (isinstance(node_object, StationDingo) or isinstance(node_object, CableDistributorDingo)):
+            self._graph.add_node(node_object)
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and LV regions!
     def graph_draw(self):
@@ -47,14 +48,14 @@ class GridDingo:
         nodes_pos = {}; demands = {}; demands_pos = {}
         nodes_color = []
         for node in g.nodes():
-            if isinstance(node, StationDingo):
+            if isinstance(node, StationDingo) or isinstance(node, CableDistributorDingo):
                 nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
                 # TODO: MOVE draw/color settings to config
             if node == self.station():
                 nodes_color.append((1, 0.5, 0.5))
             else:
-                demands[node] = 'd=' + '{:.3f}'.format(node.grid.region.peak_load_sum)
-                demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [0.003]*len(nodes_pos[node]))])
+                #demands[node] = 'd=' + '{:.3f}'.format(node.grid.region.peak_load_sum)
+                #demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [0.003]*len(nodes_pos[node]))])
                 nodes_color.append((0.5, 0.5, 1))
 
         plt.figure()
@@ -231,3 +232,13 @@ class SourceDingo(Source):
     def __init__(self, **kwargs):
         #inherit parameters from oemof's Transformer
         super().__init__(**kwargs)
+
+class CableDistributorDingo():
+    """ Cable distributor (connection point) """
+
+    def __init__(self, **kwargs):
+        self.id_db = kwargs.get('id_db', None)
+        self.geo_data = kwargs.get('geo_data', None)
+
+    def __repr__(self):
+        return 'cable_dist_' + str(self.id_db)

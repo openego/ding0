@@ -5,16 +5,27 @@
 [mv_routing]
 operator_diff_round_digits = 3
 
+#load_threshold: unit kW
+load_area_threshold = 1
+
+[mv_connect]
+
+#load_area_sat_load_threshold: unit kW
+load_area_sat_load_threshold = 30
+
+#load_area_sat_string_load_threshold: unit kW
+load_area_sat_string_load_threshold = 1000
+
+#load_area_sat_line_dist_threshold: valid range: 0..1
+load_area_sat_conn_dist_weight = 1
+
+#load_area_sat_conn_dist_ring: unit m
+load_area_sat_conn_dist_ring_mod = 100
+
 [assumptions]
 
 #load_density_threshold: unit MVA/km^2
 load_density_threshold = 1
-
-#load_threshold: unit kW
-load_area_threshold = 1
-
-#load_area_sat_threshold: unit kW
-load_area_sat_threshold = 30
 
 load_factor_transformer = 0.6
 load_factor_line = 0.6

@@ -60,9 +60,12 @@ class LVRegionDingo(RegionDingo):
         # more params
         self._lv_grids = [] # TODO: add setter
         self.mv_region = kwargs.get('mv_region', None)
+        self.lv_region_group = kwargs.get('lv_region_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
 
-        load_area_sat_threshold = cfg_dingo.get('assumptions', 'load_area_sat_threshold')    # threshold: load area peak load
+        # threshold: load area peak load, if peak load < threshold => treat load area as satellite
+        load_area_sat_load_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_load_threshold')
+        # TODO: Value is read from file every time a LV region is created -> move to associated NetworkDingo class?
 
         db_data = kwargs.get('db_data', None)
 
@@ -94,7 +97,7 @@ class LVRegionDingo(RegionDingo):
             self.peak_load_sum = int(self.peak_load_sum)
 
             # if load area has got a peak load less than load_area_sat_threshold, it's a satellite
-            if self.peak_load_sum < load_area_sat_threshold:
+            if self.peak_load_sum < load_area_sat_load_threshold:
                 self.is_satellite = True
 
         # Alternative to version above:
@@ -164,3 +167,38 @@ class LVRegionDingo(RegionDingo):
 
     def __repr__(self):
         return 'lvregion_' + str(self.id_db)
+
+class LVRegionGroupDingo:
+    """ Container for small LV regions / load areas (satellites) = a group of stations which are within the same
+        satellite string. It is required to check whether a satellite string has got more load than allowed, hence new
+        nodes cannot be added to it.
+    """
+
+    def __init__(self, **kwargs):
+        self.id_db = kwargs.get('id_db', None)
+        self._lv_regions = []
+        self.peak_load_sum = 0
+        # threshold: max. allowed peak load of satellite string
+        self.peak_load_max = cfg_dingo.get('mv_connect', 'load_area_sat_string_load_threshold')
+        # TODO: Value is read from file every time a LV region is created -> move to associated NetworkDingo class?
+
+    def lv_regions(self):
+        """Returns a generator for iterating over LV regions"""
+        for region in self._lv_regions:
+            yield region
+
+    def add_lv_region(self, lv_region):
+        """Adds a LV region to _lv_regions if not already existing"""
+        self._lv_regions.append(lv_region)
+        self.peak_load_sum += lv_region.peak_load_sum
+
+    def can_add_lv_region(self, lv_region):
+        """Sums up peak load of LV stations = total peak load for satellite string"""
+        if lv_region not in self.lv_regions() and isinstance(lv_region, LVRegionDingo):
+            if (lv_region.peak_load_sum + self.peak_load_sum) <= self.peak_load_max:
+                return True
+            else:
+                return False
+
+    def __repr__(self):
+        return 'mvstationgroup_' + str(self.id_db)

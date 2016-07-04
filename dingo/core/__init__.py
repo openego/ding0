@@ -2,6 +2,7 @@ from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
+from dingo.tools.animation import AnimationDingo
 from dingo.config import config_db_interfaces as db_int
 
 import pandas as pd
@@ -160,7 +161,8 @@ class NetworkDingo:
         lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')                  # alias in sql statement: `ploads`
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
-        lv_loads_threshold = cfg_dingo.get('assumptions', 'load_area_threshold')    # threshold: load area peak load
+        # threshold: load area peak load, if peak load < threshold => disregard load area
+        lv_loads_threshold = cfg_dingo.get('mv_routing', 'load_area_threshold')
 
 
         load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
@@ -247,7 +249,7 @@ class NetworkDingo:
         """
         return AsIs(numpy_int64)
 
-    # TODO: Move to more general place
+    # TODO: Move to more general place (ego.io repo)
 
     def export_mv_grid(self, conn, mv_regions):
         """ Exports MV grids to database for visualization purposes
@@ -282,18 +284,22 @@ class NetworkDingo:
         for region in self.mv_regions():
             grid_id = region.mv_grid.id_db
             mv_stations = []
+            mv_cable_distributors = []
             lv_stations = []
             lines = []
 
             for node in region.mv_grid._graph.nodes():
                 if isinstance(node, LVStationDingo):
                     lv_stations.append((node.geo_data.x, node.geo_data.y))
+                elif isinstance(node, CableDistributorDingo):
+                    mv_cable_distributors.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, MVStationDingo):
                     mv_stations.append((node.geo_data.x, node.geo_data.y))
 
             # create shapely obj from stations and convert to geoalchemy2.types.WKBElement
             lv_stations_wkb = from_shape(MultiPoint(lv_stations), srid=srid)
-            mv_stations_wkb = from_shape(MultiPoint(mv_stations), srid=srid)
+            mv_cable_distributors_wkb = from_shape(MultiPoint(mv_cable_distributors), srid=srid)
+            mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
 
             for branch in region.mv_grid.graph_edges():
                 line = branch['adj_nodes']
@@ -303,22 +309,29 @@ class NetworkDingo:
             mv_lines_wkb = from_shape(MultiLineString(lines), srid=srid)
 
             # add dataset to session
-            dataset = db_int.sqla_mv_grid_viz(grid_id=grid_id, timestamp=datetime.now(), geom_mv_station=mv_stations_wkb, geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
+            dataset = db_int.sqla_mv_grid_viz(grid_id=grid_id, timestamp=datetime.now(), geom_mv_station=mv_stations_wkb, geom_mv_cable_dist=mv_cable_distributors_wkb , geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
             session.add(dataset)
 
         # commit changes to db
         session.commit()
 
 
-    def mv_routing(self, debug=False):
+    def mv_routing(self, debug=False, animation=False):
         """ Performs routing on all MV grids, see method `routing` in class `MVGridDingo` for details.
 
         Args:
             debug: If True, information is printed while routing
+            animation: If True, images of route modification steps are exported during routing process - a new animation
+                        object is created, refer to class 'AnimationDingo()' for a more detailed description.
         """
 
+        if animation:
+            anim = AnimationDingo()
+        else:
+            anim = None
+
         for region in self.mv_regions():
-            region.mv_grid.routing(debug)
+            region.mv_grid.routing(debug, anim)
 
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see method `parametrize_grid` in class

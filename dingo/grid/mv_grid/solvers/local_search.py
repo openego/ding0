@@ -92,7 +92,7 @@ class LocalSearchSolver(BaseSolver):
     """
     # TODO: Cross (inter-route), see above
     
-    def operator_oropt(self, graph, solution, op_diff_round_digits):
+    def operator_oropt(self, graph, solution, op_diff_round_digits, anim=None):
         """applies Or-Opt intra-route operator to solution
         
         Takes chains of nodes (length=3..1 consecutive nodes) from a given
@@ -121,7 +121,7 @@ class LocalSearchSolver(BaseSolver):
             * insert literature reference for Or-algorithm here
             * Remove ugly nested loops, convert to more efficient matrix operations
         """
-        
+        no_ctr = 100
         # shorter var names for loop
         dm = graph._matrix
         dn = graph._nodes
@@ -157,6 +157,10 @@ class LocalSearchSolver(BaseSolver):
                                 s_best, i_best, j_best = s, i, j
                 if length_best < length:
                     tour = tour[0:i_best] + tour[i_best+s_best:j_best] + tour[i_best:i_best+s_best] + tour[j_best:n+1]
+
+                    if anim is not None:
+                        solution.draw_network(anim)
+
                 # no improvement found
                 if length_best == length:
                     # replace old route by new (same arg for allocation and deallocation since node order is considered at allocation)
@@ -168,7 +172,7 @@ class LocalSearchSolver(BaseSolver):
         #solution = LocalSearchSolution(solution, graph, new_routes)
         return solution
     
-    def operator_relocate(self, graph, solution, op_diff_round_digits):
+    def operator_relocate(self, graph, solution, op_diff_round_digits, anim):
         """applies Relocate inter-route operator to solution
         
         Takes every node from every route and calculates savings when inserted
@@ -238,6 +242,9 @@ class LocalSearchSolver(BaseSolver):
                 target_route_best.insert([node_best], j_best)
                 # remove empty routes from solution
                 solution._routes = [route for route in solution._routes if route._nodes]
+
+                if anim is not None:
+                    solution.draw_network(anim)
                 
                 #print('Bessere Loesung gefunden:', node_best, target_node_best, target_route_best, length_diff_best)
             
@@ -248,7 +255,7 @@ class LocalSearchSolver(BaseSolver):
             
         return solution
         
-    def operator_exchange(self, graph, solution, op_diff_round_digits):
+    def operator_exchange(self, graph, solution, op_diff_round_digits, anim):
         """applies Exchange inter-route operator to solution
         
         Takes every node from every route and calculates savings when inserted
@@ -324,6 +331,9 @@ class LocalSearchSolver(BaseSolver):
                 route_best.insert([target_node_best], i_best)
                 # remove empty routes from solution
                 solution._routes = [route for route in solution._routes if route._nodes]
+
+                if anim is not None:
+                    solution.draw_network(anim)
             
             # no improvement found
             if round(length_diff_best, op_diff_round_digits) == 0:
@@ -379,13 +389,15 @@ class LocalSearchSolver(BaseSolver):
             solution = op[2](graph, solution, op_diff_round_digits)
             print(operators[op[0]], '+', operators[op[1]], '+', operators[op[2]], '=> Length:', solution.length())
 
-    def solve(self, graph, savings_solution, timeout):
+    def solve(self, graph, savings_solution, timeout, debug=False, anim=None):
         """Improve initial savings solution using local search
 
         Parameters:
             graph: Graph instance
             savings_solution: initial solution of CVRP problem (instance of `SavingsSolution` class)
             timeout: max processing time in seconds
+            debug: If True, information is printed while routing
+            anim: AnimationDingo object (refer to class 'AnimationDingo()' for a more detailed description)
 
         Returns a solution (LocalSearchSolution class))
         """
@@ -404,16 +416,19 @@ class LocalSearchSolver(BaseSolver):
         #solution = self.operator_oropt(graph, solution, op_diff_round_digits)
 
         for i in range(10):
-            solution = self.operator_exchange(graph, solution, op_diff_round_digits)
+            solution = self.operator_exchange(graph, solution, op_diff_round_digits, anim)
             time1 = time.time()
-            print('Elapsed time (exchange): {}'.format(time1 - start))
+            if debug:
+                print('Elapsed time (exchange): {}'.format(time1 - start))
 
-            solution = self.operator_relocate(graph, solution, op_diff_round_digits)
+            solution = self.operator_relocate(graph, solution, op_diff_round_digits, anim)
             time2 = time.time()
-            print('Elapsed time (relocate): {}'.format(time2 - time1))
+            if debug:
+                print('Elapsed time (relocate): {}'.format(time2 - time1))
 
-            solution = self.operator_oropt(graph, solution, op_diff_round_digits)
+            solution = self.operator_oropt(graph, solution, op_diff_round_digits, anim)
             time3 = time.time()
-            print('Elapsed time (oropt): {}'.format(time3 - time2))
+            if debug:
+                print('Elapsed time (oropt): {}'.format(time3 - time2))
 
         return solution
