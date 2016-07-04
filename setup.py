@@ -11,5 +11,8 @@ setup(name='dingo',
                         'pandas >= 0.17.0',
                         'pyomo >= 1.9.5.1',
                         'pyproj',
-                        'geoalchemy2']
+                        'geoalchemy2',
+                        #'matplotlib', #should be included but fails via pip3
+                        'oemof',
+                        #'oemof.db'] # TODO: re-add when oemof.db is released
      )
