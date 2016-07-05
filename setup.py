@@ -15,4 +15,5 @@ setup(name='dingo',
                         #'matplotlib', #should be included but fails via pip3
                         'oemof']
                         #'oemof.db'] # TODO: re-add when oemof.db is released
+                        # egoio # TODO: add this when egoio is released
      )
