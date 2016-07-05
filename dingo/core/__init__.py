@@ -5,9 +5,14 @@ from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.config import config_db_interfaces as db_int
 
+from sqlalchemy.orm import sessionmaker
+from egoio.calc_ego_substation import EgoDeuSubstation
+from egoio.calc_ego_grid_district import GridDistrict
+
 import pandas as pd
 
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads, dumps as wkt_dumps
 from shapely.geometry import Point, MultiPoint, MultiLineString
@@ -102,23 +107,18 @@ class NetworkDingo:
 
 
         # build SQL query
-        where_clause = ''
-        if mv_regions is not None:
-            where_clause = 'WHERE polys.subst_id in (' + ','.join(str(_) for _ in mv_regions) + ')'
-
-        sql = """SELECT polys.subst_id as subst_id,
-                        ST_AsText(ST_TRANSFORM(polys.geom, {0})) as poly_geom,
-                        ST_AsText(ST_TRANSFORM(subs.geom, {0})) as subs_geom
-                 FROM {1} AS polys
-                        INNER JOIN {2} AS subs
-                        ON (polys.subst_id = subs.id) {3};""".format(srid,
-                                                                           mv_regions_schema_table,
-                                                                           mv_stations_schema_table,
-                                                                           where_clause)
+        Session = sessionmaker(bind=conn)
+        session = Session()
+        grid_districts = session.query(GridDistrict.subst_id,
+                                       func.ST_AsText(func.ST_Transform(GridDistrict.geom, srid)).label('poly_geom'),
+                                       func.ST_AsText(func.ST_Transform(EgoDeuSubstation.geom, srid)).\
+                                       label('subs_geom')).\
+            join(EgoDeuSubstation, GridDistrict.subst_id==EgoDeuSubstation.id).\
+            filter(GridDistrict.subst_id.in_(mv_regions))
 
         # read data from db
-        mv_data = pd.read_sql_query(sql, conn, index_col='subst_id')
-        #mv_data2 = gpd.read_postgis(sql,conn,geom_col=['poly_geom', 'subs_geom', 'pgeom'], index_col='id_db')  # testing geopandas
+        mv_data = pd.read_sql_query(grid_districts.statement, session.bind, index_col='subst_id')
+
 
         # iterate over region/station datasets and initiate objects
         try:
