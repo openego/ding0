@@ -13,6 +13,6 @@ setup(name='dingo',
                         'pyproj',
                         'geoalchemy2',
                         #'matplotlib', #should be included but fails via pip3
-                        'oemof',
+                        'oemof']
                         #'oemof.db'] # TODO: re-add when oemof.db is released
      )
