@@ -7,11 +7,12 @@ from dingo.config import config_db_interfaces as db_int
 
 from egoio.calc_ego_substation import EgoDeuSubstation
 from egoio.calc_ego_grid_district import GridDistrict
+from egoio.calc_ego_loads import EgoDeuLoadAreaTa, CalcEgoPeakLoadTa
 
 import pandas as pd
 
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func
+from sqlalchemy import func, Numeric
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads, dumps as wkt_dumps
 from shapely.geometry import Point, MultiPoint, MultiLineString
@@ -142,7 +143,7 @@ class NetworkDingo:
                 # add sum of peak loads of underlying lv regions to mv_region
                 mv_region.add_peak_demand()
         except:
-            print('unexpected error while initiating MV regions from DB dataset.')
+            raise ValueError('unexpected error while initiating MV regions from DB dataset.')
 
     def import_lv_regions(self, conn, mv_region):
         """imports LV regions (load areas) from database for a single MV region
@@ -167,46 +168,43 @@ class NetworkDingo:
         load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
 
         # build SQL query
-        # where_clause = 'WHERE areas.mv_poly_id=' + str(mv_region.id_db)
-        # where_clause = 'WHERE mv_poly_id=' + str(mv_region.id_db)
-        where_clause = 'WHERE subst_id=' + str(mv_region.mv_grid._station.id_db)
+        Session = sessionmaker(bind=conn)
+        session = Session()
 
-        sql = """SELECT regs.id as id_db,
-                        regs.zensus_sum,
-                        regs.zensus_count as zensus_cnt,
-                        regs.ioer_sum,
-                        regs.ioer_count as ioer_cnt,
-                        regs.area_ha as area,
-                        regs.sector_area_residential,
-                        regs.sector_area_retail,
-                        regs.sector_area_industrial,
-                        regs.sector_area_agricultural,
-                        regs.sector_share_residential,
-                        regs.sector_share_retail,
-                        regs.sector_share_industrial,
-                        regs.sector_share_agricultural,
-                        regs.sector_count_residential,
-                        regs.sector_count_retail,
-                        regs.sector_count_industrial,
-                        regs.sector_count_agricultural,
-                        regs.nuts as nuts_code,
-                        ST_AsText(ST_TRANSFORM(regs.geom, {0})) as geo_area,
-                        ST_AsText(ST_TRANSFORM(regs.geom_centre, {0})) as geo_centre,
-                        round(ploads.residential::numeric * {1}) as peak_load_residential,
-                        round(ploads.retail::numeric * {1}) as peak_load_retail,
-                        round(ploads.industrial::numeric * {1}) as peak_load_industrial,
-                        round(ploads.agricultural::numeric * {1}) as peak_load_agricultural,
-                        round((ploads.residential::numeric + ploads.retail::numeric + ploads.industrial::numeric + ploads.agricultural::numeric) * {1}) as peak_load_sum
-                 FROM {2} AS regs
-                        INNER JOIN {3} AS ploads
-                        ON (regs.id = ploads.id) {4};""".format(srid,
-                                                                      load_scaling_factor,
-                                                                      lv_regions_schema_table,
-                                                                      lv_loads_schema_table,
-                                                                      where_clause)
+        # TODO: future wish: make it possible to have this adapter called only once in Dingo
+        register_adapter(numpy.int64, self.adapt_numpy_int64)
+
+        lv_regions_sqla = session.query(EgoDeuLoadAreaTa.id.label('id_db'),
+                                        EgoDeuLoadAreaTa.zensus_sum,
+                                        EgoDeuLoadAreaTa.zensus_count.label('zensus_cnt'),
+                                        EgoDeuLoadAreaTa.ioer_sum,
+                                        EgoDeuLoadAreaTa.ioer_count.label('ioer_cnt'),
+                                        EgoDeuLoadAreaTa.area_ha.label('area'),
+                                        EgoDeuLoadAreaTa.sector_area_residential,
+                                        EgoDeuLoadAreaTa.sector_area_retail,
+                                        EgoDeuLoadAreaTa.sector_area_industrial,
+                                        EgoDeuLoadAreaTa.sector_area_agricultural,
+                                        EgoDeuLoadAreaTa.sector_share_residential,
+                                        EgoDeuLoadAreaTa.sector_share_retail,
+                                        EgoDeuLoadAreaTa.sector_share_industrial,
+                                        EgoDeuLoadAreaTa.sector_share_agricultural,
+                                        EgoDeuLoadAreaTa.sector_count_residential,
+                                        EgoDeuLoadAreaTa.sector_count_retail,
+                                        EgoDeuLoadAreaTa.sector_count_industrial,
+                                        EgoDeuLoadAreaTa.sector_count_agricultural,
+                                        EgoDeuLoadAreaTa.nuts.label('nuts_code'),
+                                        func.ST_AsText(func.ST_Transform(EgoDeuLoadAreaTa.geom, srid)).label('geo_area'),
+                                        func.ST_AsText(func.ST_Transform(EgoDeuLoadAreaTa.geom_centre, srid)).label('geo_centre'),
+                                        func.round(CalcEgoPeakLoadTa.residential * load_scaling_factor).label('peak_load_residential'),
+                                        func.round(CalcEgoPeakLoadTa.retail * load_scaling_factor).label('peak_load_retail'),
+                                        func.round(CalcEgoPeakLoadTa.industrial * load_scaling_factor).label('peak_load_industrial'),
+                                        func.round(CalcEgoPeakLoadTa.agricultural * load_scaling_factor).label('peak_load_agricultural'),
+                                        func.round((CalcEgoPeakLoadTa.residential + CalcEgoPeakLoadTa.retail + CalcEgoPeakLoadTa.industrial + CalcEgoPeakLoadTa.agricultural) * load_scaling_factor).label('peak_load_sum')). \
+            join(CalcEgoPeakLoadTa, EgoDeuLoadAreaTa.id == CalcEgoPeakLoadTa.id).\
+            filter(EgoDeuLoadAreaTa.subst_id == mv_region.mv_grid._station.id_db)
 
         # read data from db
-        lv_regions = pd.read_sql_query(sql, conn, index_col='id_db')
+        lv_regions = pd.read_sql_query(lv_regions_sqla.statement, session.bind, index_col='id_db')
 
         # create region objects from rows and add them to graph
         for id_db, row in lv_regions.iterrows():
