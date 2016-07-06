@@ -5,7 +5,6 @@ from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.config import config_db_interfaces as db_int
 
-from sqlalchemy.orm import sessionmaker
 from egoio.calc_ego_substation import EgoDeuSubstation
 from egoio.calc_ego_grid_district import GridDistrict
 
