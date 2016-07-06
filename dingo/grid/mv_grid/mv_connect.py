@@ -1,7 +1,7 @@
 
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CableDistributorDingo
-from dingo.core.structure.regions import LVRegionGroupDingo
+#from dingo.core.structure.regions import LVRegionGroupDingo
 from dingo.tools import config as cfg_dingo
 
 from shapely.geometry import LineString, Point, MultiPoint
@@ -22,9 +22,11 @@ def mv_connect(graph, dingo_object, debug=False):
 
     Args:
         graph: NetworkX graph object with nodes
-        dingo_object: component (Dingo object) to be connected
+        dingo_object: component (instance(!) of Dingo class) to be connected
             Valid objects:  LVStationDingo (small load areas that are not incorporated in cvrp MV routing)
                             MVDEA (MV renewable energy plants) (not existent yet)
+            CAUTION: `dingo_object` is not connected but it specifies the types of objects that are to be connected,
+                     e.g. if LVStationDingo() is passed, all objects of this type within `graph` are connected.
         debug: If True, information is printed during process
 
     Returns:
@@ -48,6 +50,8 @@ def mv_connect(graph, dingo_object, debug=False):
     # check if dingo_object is valid object
     # TODO: Add RES to isinstance check
     if isinstance(dingo_object, (LVStationDingo, LVStationDingo)):
+
+
 
         # WGS84 (conformal) to ETRS (equidistant) projection
         proj1 = partial(
@@ -201,4 +205,4 @@ def mv_connect(graph, dingo_object, debug=False):
         return graph
 
     else:
-        print('argument `node` has invalid value, see method for valid inputs.')
+        print('argument `dingo_object` has invalid value, see method for valid inputs.')
