@@ -171,9 +171,6 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        # TODO: future wish: make it possible to have this adapter called only once in Dingo
-        register_adapter(numpy.int64, self.adapt_numpy_int64)
-
         lv_regions_sqla = session.query(EgoDeuLoadAreaTa.id.label('id_db'),
                                         EgoDeuLoadAreaTa.zensus_sum,
                                         EgoDeuLoadAreaTa.zensus_count.label('zensus_cnt'),
@@ -237,16 +234,6 @@ class NetworkDingo:
                 # TODO: add LV station instead of LV region
                 #mv_region.mv_grid.graph_add_node(lv_region)
 
-    def adapt_numpy_int64(self, numpy_int64):
-        """ Adapting numpy.int64 type to SQL-conform int type using psycopg extension, see [1]_ for more info.
-
-        References
-        ----------
-        .. [1] http://initd.org/psycopg/docs/advanced.html#adapting-new-python-types-to-sql-syntax
-        """
-        return AsIs(numpy_int64)
-
-    # TODO: Move to more general place (ego.io repo)
 
     def export_mv_grid(self, conn, mv_regions):
         """ Exports MV grids to database for visualization purposes
@@ -260,9 +247,6 @@ class NetworkDingo:
         """
         # TODO: currently only station- & line-positions are exported (no further electric data)
         # TODO: method has to be extended to cover more data
-
-        # register adapter
-        register_adapter(numpy.int64, self.adapt_numpy_int64)
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_regions):
