@@ -5,9 +5,21 @@ from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.config import config_db_interfaces as db_int
 
-from egoio.calc_ego_substation import EgoDeuSubstation
-from egoio.calc_ego_grid_district import GridDistrict
-from egoio.calc_ego_loads import EgoDeuLoadAreaTa, CalcEgoPeakLoadTa
+# import ORM classes for oedb access depending on input in config file
+cfg_dingo.load_config('config_db_tables')
+GridDistrict_name = cfg_dingo.get('regions', 'grid_district')
+EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
+EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_regions')
+CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
+
+from egoio import calc_ego_substation as orm_mod_calc_ego_substation
+from egoio import calc_ego_grid_district as orm_calc_ego_grid_district
+from egoio import calc_ego_loads as orm_calc_ego_loads
+
+orm_EgoDeuSubstation = orm_mod_calc_ego_substation.__getattribute__(EgoDeuSubstation_name)
+orm_GridDistrict = orm_calc_ego_grid_district.__getattribute__(GridDistrict_name)
+orm_EgoDeuLoadArea = orm_calc_ego_loads.__getattribute__(EgoDeuLoadArea_name)
+orm_CalcEgoPeakLoad = orm_calc_ego_loads.__getattribute__(CalcEgoPeakLoad_name)
 
 import pandas as pd
 
@@ -20,8 +32,6 @@ from shapely.geometry import Point, MultiPoint, MultiLineString
 from functools import partial
 import pyproj
 from shapely.ops import transform
-import numpy
-from psycopg2.extensions import register_adapter, AsIs
 
 from datetime import datetime
 
@@ -109,12 +119,12 @@ class NetworkDingo:
         # build SQL query
         Session = sessionmaker(bind=conn)
         session = Session()
-        grid_districts = session.query(GridDistrict.subst_id,
-                                       func.ST_AsText(func.ST_Transform(GridDistrict.geom, srid)).label('poly_geom'),
-                                       func.ST_AsText(func.ST_Transform(EgoDeuSubstation.geom, srid)).\
+        grid_districts = session.query(orm_GridDistrict.subst_id,
+                                       func.ST_AsText(func.ST_Transform(orm_GridDistrict.geom, srid)).label('poly_geom'),
+                                       func.ST_AsText(func.ST_Transform(orm_EgoDeuSubstation.geom, srid)).\
                                        label('subs_geom')).\
-            join(EgoDeuSubstation, GridDistrict.subst_id==EgoDeuSubstation.id).\
-            filter(GridDistrict.subst_id.in_(mv_regions))
+            join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id==orm_EgoDeuSubstation.id).\
+            filter(orm_GridDistrict.subst_id.in_(mv_regions))
 
         # read data from db
         mv_data = pd.read_sql_query(grid_districts.statement, session.bind, index_col='subst_id')
@@ -171,34 +181,34 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        lv_regions_sqla = session.query(EgoDeuLoadAreaTa.id.label('id_db'),
-                                        EgoDeuLoadAreaTa.zensus_sum,
-                                        EgoDeuLoadAreaTa.zensus_count.label('zensus_cnt'),
-                                        EgoDeuLoadAreaTa.ioer_sum,
-                                        EgoDeuLoadAreaTa.ioer_count.label('ioer_cnt'),
-                                        EgoDeuLoadAreaTa.area_ha.label('area'),
-                                        EgoDeuLoadAreaTa.sector_area_residential,
-                                        EgoDeuLoadAreaTa.sector_area_retail,
-                                        EgoDeuLoadAreaTa.sector_area_industrial,
-                                        EgoDeuLoadAreaTa.sector_area_agricultural,
-                                        EgoDeuLoadAreaTa.sector_share_residential,
-                                        EgoDeuLoadAreaTa.sector_share_retail,
-                                        EgoDeuLoadAreaTa.sector_share_industrial,
-                                        EgoDeuLoadAreaTa.sector_share_agricultural,
-                                        EgoDeuLoadAreaTa.sector_count_residential,
-                                        EgoDeuLoadAreaTa.sector_count_retail,
-                                        EgoDeuLoadAreaTa.sector_count_industrial,
-                                        EgoDeuLoadAreaTa.sector_count_agricultural,
-                                        EgoDeuLoadAreaTa.nuts.label('nuts_code'),
-                                        func.ST_AsText(func.ST_Transform(EgoDeuLoadAreaTa.geom, srid)).label('geo_area'),
-                                        func.ST_AsText(func.ST_Transform(EgoDeuLoadAreaTa.geom_centre, srid)).label('geo_centre'),
-                                        func.round(CalcEgoPeakLoadTa.residential * load_scaling_factor).label('peak_load_residential'),
-                                        func.round(CalcEgoPeakLoadTa.retail * load_scaling_factor).label('peak_load_retail'),
-                                        func.round(CalcEgoPeakLoadTa.industrial * load_scaling_factor).label('peak_load_industrial'),
-                                        func.round(CalcEgoPeakLoadTa.agricultural * load_scaling_factor).label('peak_load_agricultural'),
-                                        func.round((CalcEgoPeakLoadTa.residential + CalcEgoPeakLoadTa.retail + CalcEgoPeakLoadTa.industrial + CalcEgoPeakLoadTa.agricultural) * load_scaling_factor).label('peak_load_sum')). \
-            join(CalcEgoPeakLoadTa, EgoDeuLoadAreaTa.id == CalcEgoPeakLoadTa.id).\
-            filter(EgoDeuLoadAreaTa.subst_id == mv_region.mv_grid._station.id_db)
+        lv_regions_sqla = session.query(orm_EgoDeuLoadArea.id.label('id_db'),
+                                        orm_EgoDeuLoadArea.zensus_sum,
+                                        orm_EgoDeuLoadArea.zensus_count.label('zensus_cnt'),
+                                        orm_EgoDeuLoadArea.ioer_sum,
+                                        orm_EgoDeuLoadArea.ioer_count.label('ioer_cnt'),
+                                        orm_EgoDeuLoadArea.area_ha.label('area'),
+                                        orm_EgoDeuLoadArea.sector_area_residential,
+                                        orm_EgoDeuLoadArea.sector_area_retail,
+                                        orm_EgoDeuLoadArea.sector_area_industrial,
+                                        orm_EgoDeuLoadArea.sector_area_agricultural,
+                                        orm_EgoDeuLoadArea.sector_share_residential,
+                                        orm_EgoDeuLoadArea.sector_share_retail,
+                                        orm_EgoDeuLoadArea.sector_share_industrial,
+                                        orm_EgoDeuLoadArea.sector_share_agricultural,
+                                        orm_EgoDeuLoadArea.sector_count_residential,
+                                        orm_EgoDeuLoadArea.sector_count_retail,
+                                        orm_EgoDeuLoadArea.sector_count_industrial,
+                                        orm_EgoDeuLoadArea.sector_count_agricultural,
+                                        orm_EgoDeuLoadArea.nuts.label('nuts_code'),
+                                        func.ST_AsText(func.ST_Transform(orm_EgoDeuLoadArea.geom, srid)).label('geo_area'),
+                                        func.ST_AsText(func.ST_Transform(orm_EgoDeuLoadArea.geom_centre, srid)).label('geo_centre'),
+                                        func.round(orm_CalcEgoPeakLoad.residential * load_scaling_factor).label('peak_load_residential'),
+                                        func.round(orm_CalcEgoPeakLoad.retail * load_scaling_factor).label('peak_load_retail'),
+                                        func.round(orm_CalcEgoPeakLoad.industrial * load_scaling_factor).label('peak_load_industrial'),
+                                        func.round(orm_CalcEgoPeakLoad.agricultural * load_scaling_factor).label('peak_load_agricultural'),
+                                        func.round((orm_CalcEgoPeakLoad.residential + orm_CalcEgoPeakLoad.retail + orm_CalcEgoPeakLoad.industrial + orm_CalcEgoPeakLoad.agricultural) * load_scaling_factor).label('peak_load_sum')). \
+            join(orm_CalcEgoPeakLoad, orm_EgoDeuLoadArea.id == orm_CalcEgoPeakLoad.id).\
+            filter(orm_EgoDeuLoadArea.subst_id == mv_region.mv_grid._station.id_db)
 
         # read data from db
         lv_regions = pd.read_sql_query(lv_regions_sqla.statement, session.bind, index_col='id_db')
