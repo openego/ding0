@@ -20,8 +20,6 @@ from shapely.geometry import Point, MultiPoint, MultiLineString
 from functools import partial
 import pyproj
 from shapely.ops import transform
-import numpy
-from psycopg2.extensions import register_adapter, AsIs
 
 from datetime import datetime
 
