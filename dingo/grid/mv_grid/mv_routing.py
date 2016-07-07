@@ -3,7 +3,7 @@ import time
 from dingo.grid.mv_grid.models.models import Graph
 from dingo.grid.mv_grid.util import util, data_input
 from dingo.grid.mv_grid.solvers import savings, local_search
-from dingo.grid.mv_grid.util.distance import calc_geo_distance_vincenty
+from dingo.tools.geo import calc_geo_dist_matrix_vincenty
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
 
@@ -38,7 +38,7 @@ def dingo_graph_to_routing_specs(graph):
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands
-    specs['MATRIX'] = calc_geo_distance_vincenty(nodes_pos)
+    specs['MATRIX'] = calc_geo_dist_matrix_vincenty(nodes_pos)
 
     # TODO: capacity per MV ring (TEMP) -> Later tech. constraints are used for limitation of ring length
     specs['CAPACITY'] = 3000    # in kW
