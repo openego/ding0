@@ -2,6 +2,7 @@
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CableDistributorDingo
 #from dingo.core.structure.regions import LVRegionGroupDingo
+from dingo.tools.geo import calc_geo_dist_vincenty
 from dingo.tools import config as cfg_dingo
 
 from shapely.geometry import LineString, Point, MultiPoint
@@ -50,6 +51,15 @@ def mv_connect(graph, dingo_object, debug=False):
     # check if dingo_object is valid object
     # TODO: Add RES to isinstance check
     if isinstance(dingo_object, (LVStationDingo, LVStationDingo)):
+
+        # startx = time.time()
+        # nodes_pos = {}
+        # for node in graph.nodes():
+        #     if isinstance(node, LVStationDingo):
+        #         if node.grid.region.is_satellite:
+        #             nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
+        # matrix = calc_geo_dist_vincenty(nodes_pos)
+        # print('Elapsed time (vincenty): {}'.format(time.time() - startx))
 
 
 
