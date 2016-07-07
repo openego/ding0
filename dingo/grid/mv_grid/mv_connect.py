@@ -75,7 +75,7 @@ def mv_connect(graph, dingo_object, debug=False):
                     # satellites only
                     if node.grid.region.is_satellite:
 
-                        satellite_shp = Point(node.geo_data.x, node.geo_data.y)
+                        satellite_shp = node.geo_data
                         satellite_shp = transform(proj1, satellite_shp)
 
                         dist_min = 10**6  # initial distance value in m
@@ -87,8 +87,8 @@ def mv_connect(graph, dingo_object, debug=False):
                             stations = branch['adj_nodes']
 
                             # shapely objects for 2 stations and line between them
-                            station1_shp = Point((stations[0].geo_data.x, stations[0].geo_data.y))
-                            station2_shp = Point((stations[1].geo_data.x, stations[1].geo_data.y))
+                            station1_shp = stations[0].geo_data
+                            station2_shp = stations[1].geo_data
                             line_shp = LineString([station1_shp, station2_shp])
 
                             # transform to equidistant CRS
