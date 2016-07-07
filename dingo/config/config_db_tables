@@ -17,14 +17,15 @@ lines = network_lines
 transformers = network_trans
 
 [regions]
+grid_district = GridDistrict
 mv_regions = calc_ego_grid_district.grid_district
-lv_regions = calc_ego_loads.ego_deu_load_area_ta
+lv_regions = EgoDeuLoadAreaTa
 
 [stations]
-mv_stations = calc_ego_substation.ego_deu_substations
+mv_stations = EgoDeuSubstation
 
 [loads]
-lv_loads = calc_ego_loads.calc_ego_peak_load_ta
+lv_loads = CalcEgoPeakLoadTa
 
 [grids]
 mv_grids = app_dingo_res.mv_grids
