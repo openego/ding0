@@ -22,8 +22,8 @@ nd = NetworkDingo(name='network')
 # get database connection info from config file
 conn = db.connection(section='oedb')
 
-#mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV regions from SPF region
-mv_regions=[482]
+mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV regions from SPF region
+#mv_regions=[482]
 
 nd.import_mv_regions(conn, mv_regions)
 
@@ -36,6 +36,18 @@ nd.mv_parametrize_grid()
 conn = db.connection(section='oedb')
 nd.export_mv_grid(conn, mv_regions)
 conn.close()
+
+# lvrg = []
+# for mv_region in nd.mv_regions():
+#     #print(mv_region._lv_region_groups)
+#     #print(type(mv_region._lv_region_groups))
+#     for lv_region_group in iter(mv_region._lv_region_groups):
+#         lvrg.append([str(lv_region_group), lv_region_group.peak_load_sum])
+# lvrg = sorted(lvrg, key=lambda x: x[1])
+#
+# for lvrg_name, lvrg_load in lvrg:
+#     print(lvrg_name, lvrg_load)
+
 
 
 #df = nx.to_pandas_dataframe(nd._mv_regions[0].mv_grid._graph)

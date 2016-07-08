@@ -1,17 +1,20 @@
 from geopy.distance import vincenty
+from shapely.geometry import LineString
 
 
-def calc_geo_dist_point_buffer(node_orig, nodes_dest, radius):
-    """ Determines nodes in `nodes_dest` that are within buffer of `radius` from `node_orig`, sorted ascending
-        by distance.
+def calc_geo_branches_in_buffer(node_orig, branches_dest, radius, radius_inc):
+    """ Determines nodes in `nodes_dest` that are within buffer of `radius` from `node_orig`, sorted ascending by distance. If there are no nodes,
+        the buffer is successively extended by `radius_increment` until nodes are found.
 
     Args:
-        node_orig: origin node (shapely Point object)
-        nodes_dest: destination nodes (shapely MultiPoint object)
+        node_orig: origin node (shapely Point object) in equidistant CRS (e.g. ETRS)
+        nodes_dest: destination nodes (shapely MultiPoint object) in same CRS as `node_orig`
         radius: buffer radius in m
+        radius_inc: radius increment in m
 
     Returns:
-        shapely MultiPoint object
+        shapely MultiPoint object in same CRS as input nodes
+
         OLD:
         dictionary with origin nodes and nodes that are within buffer of `radius`, sorted ascending by distance.
         Format: {node_orig_1: {node_dest_x, ..., node_dest_y},
@@ -19,9 +22,20 @@ def calc_geo_dist_point_buffer(node_orig, nodes_dest, radius):
                  node_orig_n: {node_dest_x, ..., node_dest_y}
                 }
     """
+    # TODO: Update docstring
 
-    buffer_zone = node_orig.buffer(radius)
-    return nodes_dest.intersection(buffer_zone)
+    branches = {}
+
+    while not branches:
+        buffer_zone_shp = node_orig.geo_data.buffer(radius)
+        for branch in branches_dest:
+            nodes = branch['adj_nodes']
+            branch_shp = LineString([nodes[0].geo_data, nodes[0].geo_data])
+            if buffer_zone_shp.intersects(branch_shp):
+                branches[branch] = node_orig.distance(branch_shp)
+        radius += radius_inc
+
+    return sorted(branches, key=branches.__getitem__)
 
 
 def calc_geo_dist_vincenty(nodes_orig_pos, nodes_dest_pos):
