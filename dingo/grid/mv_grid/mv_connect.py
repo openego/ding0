@@ -2,7 +2,6 @@
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CableDistributorDingo
 #from dingo.core.structure.regions import LVRegionGroupDingo
-from dingo.tools.geo import calc_geo_dist_vincenty
 from dingo.tools import config as cfg_dingo
 
 from shapely.geometry import LineString, Point, MultiPoint
