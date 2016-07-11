@@ -16,8 +16,10 @@ from egoio import calc_ego_substation as orm_mod_calc_ego_substation
 from egoio import calc_ego_grid_district as orm_calc_ego_grid_district
 from egoio import calc_ego_loads as orm_calc_ego_loads
 
-orm_EgoDeuSubstation = orm_mod_calc_ego_substation.__getattribute__(EgoDeuSubstation_name)
-orm_GridDistrict = orm_calc_ego_grid_district.__getattribute__(GridDistrict_name)
+orm_EgoDeuSubstation = orm_mod_calc_ego_substation.\
+    __getattribute__(EgoDeuSubstation_name)
+orm_GridDistrict = orm_calc_ego_grid_district.\
+    __getattribute__(GridDistrict_name)
 orm_EgoDeuLoadArea = orm_calc_ego_loads.__getattribute__(EgoDeuLoadArea_name)
 orm_CalcEgoPeakLoad = orm_calc_ego_loads.__getattribute__(CalcEgoPeakLoad_name)
 
@@ -36,8 +38,8 @@ from shapely.ops import transform
 from datetime import datetime
 
 class NetworkDingo:
-    """ Defines the DINGO Network - not a real grid but a container for the MV-grids. Contains the NetworkX graph and
-    associated attributes.
+    """ Defines the DINGO Network - not a real grid but a container for the
+    MV-grids. Contains the NetworkX graph and associated attributes.
 
     Parameters
     ----------
@@ -59,12 +61,14 @@ class NetworkDingo:
         if mv_region not in self.mv_regions():
             self._mv_regions.append(mv_region)
 
-    def build_mv_region(self, poly_id, subst_id, region_geo_data, station_geo_data):
+    def build_mv_region(self, poly_id, subst_id, region_geo_data,
+                        station_geo_data):
         """initiates single MV region including station and grid
 
         Parameters
         ----------
-        poly_id: ID of region according to database table. Also used as ID for created grid
+        poly_id: ID of region according to database table. Also used as ID for
+            created grid
         subst_id: ID of station according to database table
         region_geo_data: Polygon (shapely object) of region
         station_geo_data: Point (shapely object) of station
@@ -74,8 +78,11 @@ class NetworkDingo:
 
         mv_station = MVStationDingo(id_db=subst_id, geo_data=station_geo_data)
 
-        mv_grid = MVGridDingo(id_db=poly_id, station=mv_station)
-        mv_region = MVRegionDingo(id_db=poly_id, mv_grid=mv_grid, geo_data=region_geo_data)
+        mv_grid = MVGridDingo(id_db=poly_id,
+                              station=mv_station)
+        mv_region = MVRegionDingo(id_db=poly_id,
+                                  mv_grid=mv_grid,
+                                  geo_data=region_geo_data)
         mv_grid.region = mv_region
         mv_station.grid = mv_grid
 
@@ -84,13 +91,15 @@ class NetworkDingo:
         return mv_region
 
     def import_mv_regions(self, conn, mv_regions=None):
-        """Imports MV regions and MV stations from database, reprojects geo data and and initiates objects.
+        """Imports MV regions and MV stations from database, reprojects geodata
+        and and initiates objects.
 
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_regions : List of MV regions/stations (int) to be imported (if empty, all regions & stations are imported)
+        mv_regions : List of MV regions/stations (int) to be imported (if empty,
+            all regions & stations are imported)
 
         Returns
         -------
@@ -120,14 +129,20 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
         grid_districts = session.query(orm_GridDistrict.subst_id,
-                                       func.ST_AsText(func.ST_Transform(orm_GridDistrict.geom, srid)).label('poly_geom'),
-                                       func.ST_AsText(func.ST_Transform(orm_EgoDeuSubstation.geom, srid)).\
+                                       func.ST_AsText(func.ST_Transform(
+                                           orm_GridDistrict.geom, srid)).\
+                                        label('poly_geom'),
+                                       func.ST_AsText(func.ST_Transform(
+                                           orm_EgoDeuSubstation.geom, srid)).\
                                        label('subs_geom')).\
-            join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id==orm_EgoDeuSubstation.id).\
+            join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id==
+                 orm_EgoDeuSubstation.id).\
             filter(orm_GridDistrict.subst_id.in_(mv_regions))
 
         # read data from db
-        mv_data = pd.read_sql_query(grid_districts.statement, session.bind, index_col='subst_id')
+        mv_data = pd.read_sql_query(grid_districts.statement,
+                                    session.bind,
+                                    index_col='subst_id')
 
 
         # iterate over region/station datasets and initiate objects
@@ -136,42 +151,46 @@ class NetworkDingo:
                 subst_id = poly_id
                 region_geo_data = wkt_loads(row['poly_geom'])
 
-                # transform `region_geo_data` to epsg 3035 (from originally 4326)
+                # transform `region_geo_data` to epsg 3035
                 # to achieve correct area calculation of mv_region
-                # TODO: consider to generally switch to 3035 representation
                 station_geo_data = wkt_loads(row['subs_geom'])
                 projection = partial(
                     pyproj.transform,
                     pyproj.Proj(init='epsg:4326'),  # source coordinate system
                     pyproj.Proj(init='epsg:3035'))  # destination coordinate system
 
-                region_geo_data = transform(projection, region_geo_data)  # apply projection
+                region_geo_data = transform(projection, region_geo_data)
 
-                mv_region = self.build_mv_region(poly_id, subst_id, region_geo_data, station_geo_data)
+                mv_region = self.build_mv_region(poly_id,
+                                                 subst_id,
+                                                 region_geo_data,
+                                                 station_geo_data)
                 self.import_lv_regions(conn, mv_region)
 
                 # add sum of peak loads of underlying lv regions to mv_region
                 mv_region.add_peak_demand()
         except:
-            raise ValueError('unexpected error while initiating MV regions from DB dataset.')
+            raise ValueError('unexpected error while initiating MV regions' \
+                             'from DB dataset.')
 
     def import_lv_regions(self, conn, mv_region):
         """imports LV regions (load areas) from database for a single MV region
 
         Table definition for load areas can be found here:
-        http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/Methoden_AP_26_DataProc
+        http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/
+        Methoden_AP_26_DataProc
 
         Parameters
         ----------
         conn: Database connection
-        mv_region : MV region/station (instance of MVRegionDingo class) for which the import of load areas is performed
+        mv_region : MV region/station (instance of MVRegionDingo class) for
+            which the import of load areas is performed
         """
 
-        lv_regions_schema_table = cfg_dingo.get('regions', 'lv_regions')            # alias in sql statement: `regs`
-        lv_loads_schema_table = cfg_dingo.get('loads', 'lv_loads')                  # alias in sql statement: `ploads`
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
-        # threshold: load area peak load, if peak load < threshold => disregard load area
+        # threshold: load area peak load, if peak load < threshold => disregard
+        # load area
         lv_loads_threshold = cfg_dingo.get('mv_routing', 'load_area_threshold')
 
 
@@ -181,57 +200,85 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        lv_regions_sqla = session.query(orm_EgoDeuLoadArea.id.label('id_db'),
-                                        orm_EgoDeuLoadArea.zensus_sum,
-                                        orm_EgoDeuLoadArea.zensus_count.label('zensus_cnt'),
-                                        orm_EgoDeuLoadArea.ioer_sum,
-                                        orm_EgoDeuLoadArea.ioer_count.label('ioer_cnt'),
-                                        orm_EgoDeuLoadArea.area_ha.label('area'),
-                                        orm_EgoDeuLoadArea.sector_area_residential,
-                                        orm_EgoDeuLoadArea.sector_area_retail,
-                                        orm_EgoDeuLoadArea.sector_area_industrial,
-                                        orm_EgoDeuLoadArea.sector_area_agricultural,
-                                        orm_EgoDeuLoadArea.sector_share_residential,
-                                        orm_EgoDeuLoadArea.sector_share_retail,
-                                        orm_EgoDeuLoadArea.sector_share_industrial,
-                                        orm_EgoDeuLoadArea.sector_share_agricultural,
-                                        orm_EgoDeuLoadArea.sector_count_residential,
-                                        orm_EgoDeuLoadArea.sector_count_retail,
-                                        orm_EgoDeuLoadArea.sector_count_industrial,
-                                        orm_EgoDeuLoadArea.sector_count_agricultural,
-                                        orm_EgoDeuLoadArea.nuts.label('nuts_code'),
-                                        func.ST_AsText(func.ST_Transform(orm_EgoDeuLoadArea.geom, srid)).label('geo_area'),
-                                        func.ST_AsText(func.ST_Transform(orm_EgoDeuLoadArea.geom_centre, srid)).label('geo_centre'),
-                                        func.round(orm_CalcEgoPeakLoad.residential * load_scaling_factor).label('peak_load_residential'),
-                                        func.round(orm_CalcEgoPeakLoad.retail * load_scaling_factor).label('peak_load_retail'),
-                                        func.round(orm_CalcEgoPeakLoad.industrial * load_scaling_factor).label('peak_load_industrial'),
-                                        func.round(orm_CalcEgoPeakLoad.agricultural * load_scaling_factor).label('peak_load_agricultural'),
-                                        func.round((orm_CalcEgoPeakLoad.residential + orm_CalcEgoPeakLoad.retail + orm_CalcEgoPeakLoad.industrial + orm_CalcEgoPeakLoad.agricultural) * load_scaling_factor).label('peak_load_sum')). \
-            join(orm_CalcEgoPeakLoad, orm_EgoDeuLoadArea.id == orm_CalcEgoPeakLoad.id).\
-            filter(orm_EgoDeuLoadArea.subst_id == mv_region.mv_grid._station.id_db)
+        lv_regions_sqla = session.query(
+            orm_EgoDeuLoadArea.id.label('id_db'),
+            orm_EgoDeuLoadArea.zensus_sum,
+            orm_EgoDeuLoadArea.zensus_count.label('zensus_cnt'),
+            orm_EgoDeuLoadArea.ioer_sum,
+            orm_EgoDeuLoadArea.ioer_count.label('ioer_cnt'),
+            orm_EgoDeuLoadArea.area_ha.label('area'),
+            orm_EgoDeuLoadArea.sector_area_residential,
+            orm_EgoDeuLoadArea.sector_area_retail,
+            orm_EgoDeuLoadArea.sector_area_industrial,
+            orm_EgoDeuLoadArea.sector_area_agricultural,
+            orm_EgoDeuLoadArea.sector_share_residential,
+            orm_EgoDeuLoadArea.sector_share_retail,
+            orm_EgoDeuLoadArea.sector_share_industrial,
+            orm_EgoDeuLoadArea.sector_share_agricultural,
+            orm_EgoDeuLoadArea.sector_count_residential,
+            orm_EgoDeuLoadArea.sector_count_retail,
+            orm_EgoDeuLoadArea.sector_count_industrial,
+            orm_EgoDeuLoadArea.sector_count_agricultural,
+            orm_EgoDeuLoadArea.nuts.label('nuts_code'),
+            func.ST_AsText(func.ST_Transform(orm_EgoDeuLoadArea.geom, srid)).\
+                label('geo_area'),
+            func.ST_AsText(func.ST_Transform(orm_EgoDeuLoadArea.geom_centre, srid)).\
+                label('geo_centre'),
+            func.round(orm_CalcEgoPeakLoad.residential * load_scaling_factor).\
+                label('peak_load_residential'),
+            func.round(orm_CalcEgoPeakLoad.retail * load_scaling_factor).\
+                label('peak_load_retail'),
+            func.round(orm_CalcEgoPeakLoad.industrial * load_scaling_factor).\
+                label('peak_load_industrial'),
+            func.round(orm_CalcEgoPeakLoad.agricultural * load_scaling_factor).\
+                label('peak_load_agricultural'),
+            func.round((orm_CalcEgoPeakLoad.residential
+                        + orm_CalcEgoPeakLoad.retail
+                        + orm_CalcEgoPeakLoad.industrial
+                        + orm_CalcEgoPeakLoad.agricultural)
+                       * load_scaling_factor).label('peak_load_sum')). \
+            join(orm_CalcEgoPeakLoad, orm_EgoDeuLoadArea.id
+                 == orm_CalcEgoPeakLoad.id).\
+            filter(orm_EgoDeuLoadArea.subst_id == mv_region.\
+                   mv_grid._station.id_db)
 
         # read data from db
-        lv_regions = pd.read_sql_query(lv_regions_sqla.statement, session.bind, index_col='id_db')
+        lv_regions = pd.read_sql_query(lv_regions_sqla.statement,
+                                       session.bind,
+                                       index_col='id_db')
 
         # create region objects from rows and add them to graph
         for id_db, row in lv_regions.iterrows():
 
-            # only pick load areas with peak load greater than lv_loads_threshold
+            # only pick load areas with peak load greater than
+            # lv_loads_threshold
             # TODO: When migrating to SQLAlchemy, move condition to query
             if row['peak_load_sum'] >= lv_loads_threshold:
                 # create LV region object
-                lv_region = LVRegionDingo(id_db=id_db, db_data=row, mv_region=mv_region)#, db_cols=lv_regions.columns.values)
+                lv_region = LVRegionDingo(id_db=id_db,
+                                          db_data=row,
+                                          mv_region=mv_region)
 
-                # TODO: Following code is for testing purposes only! (create 1 LV grid and 1 station for every LV region)
-                # TODO: The objective is to create stations according to kind of loads (e.g. 1 station for residential, 1 for retail etc.)
+                # TODO: Following code is for testing purposes only!
+                # TODO: (create 1 LV grid and 1 station for every LV region)
+
+                # TODO: The objective is to create stations according to kind
+                # TODO: of loads (e.g. 1 station for residential, 1 for retail
+                # TODO: etc.)
                 # === START TESTING ===
                 # create LV station object
                 station_geo_data = wkt_loads(row['geo_centre'])
-                lv_station = LVStationDingo(id_db=id_db, geo_data=station_geo_data, peak_load=row['peak_load_sum'])
-                lv_grid = LVGridDingo(region=lv_region, id_db=id_db, geo_data=station_geo_data)
+                lv_station = LVStationDingo(id_db=id_db,
+                                            geo_data=station_geo_data,
+                                            peak_load=row['peak_load_sum'])
+                lv_grid = LVGridDingo(region=lv_region,
+                                      id_db=id_db,
+                                      geo_data=station_geo_data)
                 lv_station.grid = lv_grid
+
                 # add LV station to LV grid
                 lv_grid.add_station(lv_station)
+
                 # add LV grid to LV region
                 lv_region.add_lv_grid(lv_grid)
                 # === END TESTING ===
@@ -252,10 +299,13 @@ class NetworkDingo:
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_regions : List of MV regions (instances of MVRegionDingo class) whose MV grids are exported.
+        mv_regions : List of MV regions (instances of MVRegionDingo class)
+            whose MV grids are exported.
 
         """
-        # TODO: currently only station- & line-positions are exported (no further electric data)
+        # TODO: currently only station- & line-positions are exported
+        # TODO: (no further electric data)
+
         # TODO: method has to be extended to cover more data
 
         # check arguments
@@ -283,24 +333,37 @@ class NetworkDingo:
                 if isinstance(node, LVStationDingo):
                     lv_stations.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, CableDistributorDingo):
-                    mv_cable_distributors.append((node.geo_data.x, node.geo_data.y))
+                    mv_cable_distributors.append((node.geo_data.x,
+                                                  node.geo_data.y))
                 elif isinstance(node, MVStationDingo):
                     mv_stations.append((node.geo_data.x, node.geo_data.y))
 
-            # create shapely obj from stations and convert to geoalchemy2.types.WKBElement
+            # create shapely obj from stations and convert to
+            # geoalchemy2.types.WKBElement
             lv_stations_wkb = from_shape(MultiPoint(lv_stations), srid=srid)
-            mv_cable_distributors_wkb = from_shape(MultiPoint(mv_cable_distributors), srid=srid)
+            mv_cable_distributors_wkb = from_shape(
+                MultiPoint(mv_cable_distributors), srid=srid)
             mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
 
             for branch in region.mv_grid.graph_edges():
                 line = branch['adj_nodes']
-                lines.append(((line[0].geo_data.x, line[0].geo_data.y), (line[1].geo_data.x, line[1].geo_data.y)))
+                lines.append(((line[0].geo_data.x,
+                               line[0].geo_data.y),
+                              (line[1].geo_data.x,
+                               line[1].geo_data.y)))
 
-            # create shapely obj from lines and convert to geoalchemy2.types.WKBElement
+            # create shapely obj from lines and convert to
+            # geoalchemy2.types.WKBElement
             mv_lines_wkb = from_shape(MultiLineString(lines), srid=srid)
 
             # add dataset to session
-            dataset = db_int.sqla_mv_grid_viz(grid_id=grid_id, timestamp=datetime.now(), geom_mv_station=mv_stations_wkb, geom_mv_cable_dist=mv_cable_distributors_wkb , geom_lv_stations=lv_stations_wkb, geom_mv_lines=mv_lines_wkb)
+            dataset = db_int.sqla_mv_grid_viz(
+                grid_id=grid_id,
+                timestamp=datetime.now(),
+                geom_mv_station=mv_stations_wkb,
+                geom_mv_cable_dist=mv_cable_distributors_wkb ,
+                geom_lv_stations=lv_stations_wkb,
+                geom_mv_lines=mv_lines_wkb)
             session.add(dataset)
 
         # commit changes to db
@@ -308,12 +371,16 @@ class NetworkDingo:
 
 
     def mv_routing(self, debug=False, animation=False):
-        """ Performs routing on all MV grids, see method `routing` in class `MVGridDingo` for details.
+        """ Performs routing on all MV grids, see method `routing` in class
+        `MVGridDingo` for details.
 
-        Args:
+        Parameters
+        ----------
             debug: If True, information is printed while routing
-            animation: If True, images of route modification steps are exported during routing process - a new animation
-                        object is created, refer to class 'AnimationDingo()' for a more detailed description.
+            animation: If True, images of route modification steps are exported
+                during routing process - a new animation
+                object is created, refer to class 'AnimationDingo()' for a more
+                detailed description.
         """
 
         if animation:
@@ -325,11 +392,13 @@ class NetworkDingo:
             region.mv_grid.routing(debug, anim)
 
     def mv_parametrize_grid(self, debug=False):
-        """ Performs Parametrization of grid equipment of all MV grids, see method `parametrize_grid` in class
-            `MVGridDingo` for details.
+        """ Performs Parametrization of grid equipment of all MV grids, see
+        method `parametrize_grid` in class
+        `MVGridDingo` for details.
 
-        Args:
-            debug: If True, information is printed while parametrization
+        Parameters
+        ----------
+        debug: If True, information is printed while parametrization
         """
 
         for region in self.mv_regions():
