@@ -6,6 +6,9 @@ from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.grid.mv_grid.util.distance import calc_geo_distance_vincenty
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
+from dingo.tools import config as cfg_dingo
+
+from geopy.distance import vincenty
 
 
 def dingo_graph_to_routing_specs(graph):
@@ -59,6 +62,8 @@ def routing_solution_to_dingo_graph(graph, solution):
     # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
     # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
 
+    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}
 
@@ -80,8 +85,18 @@ def routing_solution_to_dingo_graph(graph, solution):
             # translate solution's node names to graph node objects using dict created before
             # note: branch object is assigned to edge using an attribute ('branch' is used here), it can be accessed
             # using the method `graph_edges()` of class `GridDingo`
-            edges_graph = [(node_list[n1.name()], node_list[n2.name()], dict(branch=b))
-                           for ((n1, n2), b) in edges_with_branches]
+            edges_graph = []
+            for ((n1, n2), b) in edges_with_branches:
+                # get node objects
+                node1 = node_list[n1.name()]
+                node2 = node_list[n2.name()]
+                # set branch length
+                b.length = branch_detour_factor *\
+                           vincenty((node1.geo_data.x, node1.geo_data.y), (node2.geo_data.x, node2.geo_data.y)).m
+                # append to branch list
+                edges_graph.append((node1, node2, dict(branch=b)))
+
+            # add branches to graph
             graph.add_edges_from(edges_graph)
 
     except:
