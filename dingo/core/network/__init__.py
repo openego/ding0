@@ -89,6 +89,25 @@ class GridDingo:
         for edge in nx.get_edge_attributes(self._graph, 'branch').items():
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
+    def graph_path_length(self, node_source, node_target):
+        """ Calculates the absolute distance between `node_source` and `node_target` in meters.
+        Args:
+            node_source:
+            node_target:
+
+        Returns:
+
+        """
+
+        length = 0
+        path = nx.shortest_path(self._graph, node_source, node_target)
+        node_pairs = list(zip(path[0:len(path)-1], path[1:len(path)]))
+
+        for n1, n2 in node_pairs:
+            length += self._graph.edge[n1][n2]['branch'].length
+
+        return length
+
 
 class StationDingo():
     """
