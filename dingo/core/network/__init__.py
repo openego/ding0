@@ -90,13 +90,14 @@ class GridDingo:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
     def graph_path_length(self, node_source, node_target):
-        """ Calculates the absolute distance between `node_source` and `node_target` in meters.
+        """ Calculates the absolute distance between `node_source` and `node_target` in meters using networkx' shortest
+            path algorithm and branche's length atrtribute.
         Args:
-            node_source:
-            node_target:
+            node_source: source node (Dingo object) in _graph
+            node_target: target node (Dingo object) in _graph
 
         Returns:
-
+            path length in m
         """
 
         length = 0
