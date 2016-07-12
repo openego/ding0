@@ -1,71 +1,40 @@
 from geopy.distance import vincenty
 from shapely.geometry import LineString
+from shapely.ops import transform
 
 
-def calc_geo_branches_in_buffer(node_orig, branches_dest, radius, radius_inc):
-    """ Determines nodes in `nodes_dest` that are within buffer of `radius` from `node_orig`, sorted ascending by distance. If there are no nodes,
-        the buffer is successively extended by `radius_increment` until nodes are found.
+def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
+    """ Determines branches in nodes' associated graph that are at least partly within buffer of `radius` from `node`.
+        If there are no nodes, the buffer is successively extended by `radius_inc` until nodes are found.
 
     Args:
-        node_orig: origin node (shapely Point object) in equidistant CRS (e.g. ETRS)
-        nodes_dest: destination nodes (shapely MultiPoint object) in same CRS as `node_orig`
+        node: origin node (e.g. LVStationDingo object) with associated shapely object (attribute `geo_data`) in any CRS
+              (e.g. WGS84)
         radius: buffer radius in m
         radius_inc: radius increment in m
+        proj: pyproj projection object: nodes' CRS to equidistant CRS (e.g. WGS84 -> ETRS)
 
     Returns:
-        shapely MultiPoint object in same CRS as input nodes
+        list of branches (NetworkX branch objects)
 
-        OLD:
-        dictionary with origin nodes and nodes that are within buffer of `radius`, sorted ascending by distance.
-        Format: {node_orig_1: {node_dest_x, ..., node_dest_y},
-                 ...,
-                 node_orig_n: {node_dest_x, ..., node_dest_y}
-                }
     """
-    # TODO: Update docstring
+    # TODO: check if this is the right place for this function!
 
-    branches = {}
+    branches = []
 
     while not branches:
-        buffer_zone_shp = node_orig.geo_data.buffer(radius)
-        for branch in branches_dest:
+        node_shp = transform(proj, node.geo_data)
+        buffer_zone_shp = node_shp.buffer(radius)
+        for branch in node.grid.region.mv_region.mv_grid.graph_edges():
             nodes = branch['adj_nodes']
-            branch_shp = LineString([nodes[0].geo_data, nodes[0].geo_data])
+            branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
             if buffer_zone_shp.intersects(branch_shp):
-                branches[branch] = node_orig.distance(branch_shp)
+                branches.append(branch)
         radius += radius_inc
 
-    return sorted(branches, key=branches.__getitem__)
+    #branches = [_[0] for _ in sorted(branches, key=lambda x: x[1])]
 
-
-def calc_geo_dist_vincenty(nodes_orig_pos, nodes_dest_pos):
-    """ Calculates the geodesic distance between all nodes in `nodes_orig_pos` to nodes in `nodes_dest_pos`. For every
-    two points/coord it uses geopy's vincenty function (formula devised by Thaddeus Vincenty, with an accurate
-    ellipsoidal model of the earth). As default ellipsoidal model of the earth WGS-84 is used. For more options see
-    https://geopy.readthedocs.org/en/1.10.0/index.html?highlight=vincenty#geopy.distance.vincenty
-
-    Args:
-        nodes_orig_pos: dictionary of origin nodes with positions
-        nodes_dest_pos: dictionary of destination nodes with positions
-
-    Returns:
-        dictionary with distances between origin nodes to destination nodes
-    """
-    # TODO: REVISE!
-
-    matrix = {}
-
-    for i in nodes_orig_pos:
-        pos_origin = tuple(nodes_orig_pos[i])
-
-        matrix[i] = {}
-
-        for j in nodes_dest_pos:
-            pos_dest = tuple(nodes_dest_pos[j])
-            distance = vincenty(pos_origin, pos_dest).km
-            matrix[i][j] = distance
-
-    return matrix
+    return branches
 
 
 def calc_geo_dist_matrix_vincenty(nodes_pos):
