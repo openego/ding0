@@ -39,3 +39,6 @@ load_density_threshold = 1
 load_factor_transformer = 0.6
 load_factor_line = 0.6
 load_factor_cable = 0.6
+
+#branch_detour_factor: unit: -
+branch_detour_factor = 1.4

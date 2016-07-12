@@ -168,7 +168,7 @@ class BusDingo(Bus):
         # Bus Data parameters
         
 
-class BranchDingo():
+class BranchDingo:
     """
     Cables and lines
     ----------------
@@ -188,7 +188,8 @@ class BranchDingo():
         # inherit parameters from oemof's Transport
         #super().__init__(**kwargs)
 
-        #
+        # branch (line/cable) length in m
+        self.length = kwargs.get('length', None)
 
         # more params (OLD)
         self.equip_line_id = kwargs.get('equip_line_id', None)
