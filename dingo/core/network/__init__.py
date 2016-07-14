@@ -93,8 +93,8 @@ class GridDingo:
         """ Calculates the absolute distance between `node_source` and `node_target` in meters using networkx' shortest
             path algorithm and branche's length atrtribute.
         Args:
-            node_source: source node (Dingo object) in _graph
-            node_target: target node (Dingo object) in _graph
+            node_source: source node (Dingo object), member of _graph
+            node_target: target node (Dingo object), member of _graph
 
         Returns:
             path length in m
@@ -261,6 +261,7 @@ class CableDistributorDingo():
         self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
+        self.lv_region_group = kwargs.get('lv_region_group', None)
 
     def __repr__(self):
         return 'cable_dist_' + str(self.id_db)
