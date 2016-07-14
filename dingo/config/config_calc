@@ -20,7 +20,7 @@ load_area_sat_string_load_threshold = 500
 load_area_sat_conn_dist_weight = 1
 
 #load_area_sat_string_length_threshold: unit m
-load_area_sat_string_length_threshold = 2000
+load_area_sat_string_length_threshold = 3000
 
 #load_area_sat_conn_dist_ring: unit m
 load_area_sat_conn_dist_ring_mod = 100
