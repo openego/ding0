@@ -255,7 +255,7 @@ class NetworkDingo:
             # TODO: When migrating to SQLAlchemy, move condition to query
             if row['peak_load_sum'] >= lv_loads_threshold:
                 # create LV region object
-                lv_region = LVLoadAreaDingo(id_db=id_db,
+                lv_load_area = LVLoadAreaDingo(id_db=id_db,
                                             db_data=row,
                                             mv_grid_district=mv_grid_district)
 
@@ -271,7 +271,7 @@ class NetworkDingo:
                 lv_station = LVStationDingo(id_db=id_db,
                                             geo_data=station_geo_data,
                                             peak_load=row['peak_load_sum'])
-                lv_grid = LVGridDingo(region=lv_region,
+                lv_grid = LVGridDingo(region=lv_load_area,
                                       id_db=id_db,
                                       geo_data=station_geo_data)
                 lv_station.grid = lv_grid
@@ -280,16 +280,16 @@ class NetworkDingo:
                 lv_grid.add_station(lv_station)
 
                 # add LV grid to LV region
-                lv_region.add_lv_grid(lv_grid)
+                lv_load_area.add_lv_grid(lv_grid)
                 # === END TESTING ===
 
                 # add LV region to MV region
-                mv_grid_district.add_lv_region(lv_region)
+                mv_grid_district.add_lv_load_area(lv_load_area)
 
                 # OLD:
                 # add LV region to MV grid graph
                 # TODO: add LV station instead of LV region
-                #mv_grid_district.mv_grid.graph_add_node(lv_region)
+                #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
 
 
     def export_mv_grid(self, conn, mv_grid_districts):

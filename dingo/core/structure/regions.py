@@ -11,7 +11,7 @@ class MVGridDistrictDingo(RegionDingo):
     ----------------------------
 
     """
-    # TODO: add method remove_lv_region()
+    # TODO: add method remove_lv_load_area()
 
     def __init__(self, **kwargs):
         #inherit branch parameters from Region
@@ -20,7 +20,7 @@ class MVGridDistrictDingo(RegionDingo):
         #more params
         self.mv_grid = kwargs.get('mv_grid', None)
         self._lv_load_areas = []
-        self._lv_region_groups = []
+        self._lv_load_area_groups = []
         self.geo_data = kwargs.get('geo_data', None)
 
         # INSERT LOAD PARAMS
@@ -31,30 +31,30 @@ class MVGridDistrictDingo(RegionDingo):
         for region in self._lv_load_areas:
             yield region
 
-    def add_lv_region(self, lv_region):
+    def add_lv_load_area(self, lv_load_area):
         """Adds a LV region to _lv_load_areas if not already existing"""
-        if lv_region not in self.lv_load_areas() and isinstance(lv_region, LVLoadAreaDingo):
-            self._lv_load_areas.append(lv_region)
+        if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDingo):
+            self._lv_load_areas.append(lv_load_area)
 
-    def lv_region_groups(self):
+    def lv_load_area_groups(self):
         """Returns a generator for iterating over LV region groups"""
-        for lv_region_group in self._lv_region_groups:
-            yield lv_region_group
+        for lv_load_area_group in self._lv_load_area_groups:
+            yield lv_load_area_group
 
-    def lv_region_groups_count(self):
+    def lv_load_area_groups_count(self):
         """Returns the count of LV region groups in MV region"""
-        return len(self._lv_region_groups)
+        return len(self._lv_load_area_groups)
 
-    def add_lv_region_group(self, lv_region_group):
+    def add_lv_load_area_group(self, lv_load_area_group):
         """Adds a LV region to _lv_load_areas if not already existing"""
-        if lv_region_group not in self.lv_region_groups():  # and isinstance(lv_region_group, LVRe):
-            self._lv_region_groups.append(lv_region_group)
+        if lv_load_area_group not in self.lv_load_area_groups():  # and isinstance(lv_load_area_group, LVRe):
+            self._lv_load_area_groups.append(lv_load_area_group)
 
     def add_peak_demand(self):
         """Summarizes peak loads of underlying LV regions in kVA"""
         peak_load = 0
-        for lv_region in self.lv_load_areas():
-            peak_load += lv_region.peak_load_sum
+        for lv_load_area in self.lv_load_areas():
+            peak_load += lv_load_area.peak_load_sum
         self.peak_load = peak_load
 
     def __repr__(self):
@@ -75,7 +75,7 @@ class LVLoadAreaDingo(RegionDingo):
         # more params
         self._lv_grids = []     # TODO: add setter
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
-        self.lv_region_group = kwargs.get('lv_region_group', None)
+        self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
 
         # threshold: load area peak load, if peak load < threshold => treat load area as satellite
@@ -203,15 +203,15 @@ class LVLoadAreaDingo(RegionDingo):
 #         for region in self._lv_load_areas:
 #             yield region
 #
-#     def add_lv_region(self, lv_region):
+#     def add_lv_load_area(self, lv_load_area):
 #         """Adds a LV region to _lv_load_areas if not already existing"""
-#         self._lv_load_areas.append(lv_region)
-#         self.peak_load_sum += lv_region.peak_load_sum
+#         self._lv_load_areas.append(lv_load_area)
+#         self.peak_load_sum += lv_load_area.peak_load_sum
 #
-#     def can_add_lv_region(self, lv_region):
+#     def can_add_lv_load_area(self, lv_load_area):
 #         """Sums up peak load of LV stations = total peak load for satellite string"""
-#         if lv_region not in self.lv_load_areas() and isinstance(lv_region, LVLoadAreaDingo):
-#             if (lv_region.peak_load_sum + self.peak_load_sum) <= self.peak_load_max:
+#         if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDingo):
+#             if (lv_load_area.peak_load_sum + self.peak_load_sum) <= self.peak_load_max:
 #                 return True
 #             else:
 #                 return False

@@ -39,10 +39,10 @@ conn.close()
 
 # lvrg = []
 # for mv_grid_district in nd.mv_grid_districts():
-#     #print(mv_grid_district._lv_region_groups)
-#     #print(type(mv_grid_district._lv_region_groups))
-#     for lv_region_group in iter(mv_grid_district._lv_region_groups):
-#         lvrg.append([str(lv_region_group), lv_region_group.peak_load_sum, lv_region_group.branch_length_sum])
+#     #print(mv_grid_district._lv_load_area_groups)
+#     #print(type(mv_grid_district._lv_load_area_groups))
+#     for lv_load_area_group in iter(mv_grid_district._lv_load_area_groups):
+#         lvrg.append([str(lv_load_area_group), lv_load_area_group.peak_load_sum, lv_load_area_group.branch_length_sum])
 # lvrg = sorted(lvrg, key=lambda x: x[1])
 #
 # for lvrg_name, lvrg_load, lvrg_length in lvrg:

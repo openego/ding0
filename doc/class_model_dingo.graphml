@@ -32,7 +32,7 @@
             <y:AttributeLabel>geo_data: shapely.geos
 peak_load: float</y:AttributeLabel>
             <y:MethodLabel>lv_load_areas()
-add_lv_region()
+add_lv_load_area()
 add_peak_demand()</y:MethodLabel>
           </y:UML>
         </y:UMLClassNode>

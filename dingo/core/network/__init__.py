@@ -258,7 +258,7 @@ class CableDistributorDingo():
         self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
-        self.lv_region_group = kwargs.get('lv_region_group', None)
+        self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
 
     def __repr__(self):
         return 'cable_dist_' + str(self.id_db)

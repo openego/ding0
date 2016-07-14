@@ -24,19 +24,19 @@ class LVRegionGroupDingo:
         for region in self._lv_load_areas:
             yield region
 
-    def add_lv_region(self, lv_region):
+    def add_lv_load_area(self, lv_load_area):
         """Adds a LV region to _lv_load_areas if not already existing"""
-        self._lv_load_areas.append(lv_region)
-        if not isinstance(lv_region, CableDistributorDingo):
-            self.peak_load_sum += lv_region.peak_load_sum
+        self._lv_load_areas.append(lv_load_area)
+        if not isinstance(lv_load_area, CableDistributorDingo):
+            self.peak_load_sum += lv_load_area.peak_load_sum
 
-    def can_add_lv_region(self, node):
+    def can_add_lv_load_area(self, node):
         """Sums up peak load of LV stations = total peak load for satellite string"""
-        lv_region = node.grid.region
-        if lv_region not in self.lv_load_areas():  # and isinstance(lv_region, LVLoadAreaDingo):
-            path_length_to_root = lv_region.mv_grid_district.mv_grid.graph_path_length(self.root_node, node)
+        lv_load_area = node.grid.region
+        if lv_load_area not in self.lv_load_areas():  # and isinstance(lv_load_area, LVLoadAreaDingo):
+            path_length_to_root = lv_load_area.mv_grid_district.mv_grid.graph_path_length(self.root_node, node)
             if ((path_length_to_root <= self.branch_length_max) and
-                (lv_region.peak_load_sum + self.peak_load_sum) <= self.peak_load_max):
+                (lv_load_area.peak_load_sum + self.peak_load_sum) <= self.peak_load_max):
                 return True
             else:
                 return False
