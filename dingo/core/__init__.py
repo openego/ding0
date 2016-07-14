@@ -48,18 +48,18 @@ class NetworkDingo:
 
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', None)
-        self._mv_regions = []
+        self._mv_grid_districts = []
 
-    def mv_regions(self):
+    def mv_grid_districts(self):
         """Returns a generator for iterating over MV regions"""
-        for region in self._mv_regions:
+        for region in self._mv_grid_districts:
             yield region
 
     def add_mv_region(self, mv_region):
-        """Adds a MV region to _mv_regions if not already existing"""
-        # TODO: use setter method here (make attribute '_mv_regions' private)
-        if mv_region not in self.mv_regions():
-            self._mv_regions.append(mv_region)
+        """Adds a MV region to _mv_grid_districts if not already existing"""
+        # TODO: use setter method here (make attribute '_mv_grid_districts' private)
+        if mv_region not in self.mv_grid_districts():
+            self._mv_grid_districts.append(mv_region)
 
     def build_mv_region(self, poly_id, subst_id, region_geo_data,
                         station_geo_data):
@@ -80,17 +80,17 @@ class NetworkDingo:
 
         mv_grid = MVGridDingo(id_db=poly_id,
                               station=mv_station)
-        mv_region = MVGridDistrictDingo(id_db=poly_id,
-                                        mv_grid=mv_grid,
-                                        geo_data=region_geo_data)
-        mv_grid.region = mv_region
+        mv_grid_district = MVGridDistrictDingo(id_db=poly_id,
+                                               mv_grid=mv_grid,
+                                               geo_data=region_geo_data)
+        mv_grid.region = mv_grid_district
         mv_station.grid = mv_grid
 
-        self.add_mv_region(mv_region)
+        self.add_mv_region(mv_grid_district)
 
-        return mv_region
+        return mv_grid_district
 
-    def import_mv_regions(self, conn, mv_regions=None):
+    def import_mv_grid_districts(self, conn, mv_grid_districts=None):
         """Imports MV regions and MV stations from database, reprojects geodata
         and and initiates objects.
 
@@ -98,7 +98,7 @@ class NetworkDingo:
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_regions : List of MV regions/stations (int) to be imported (if empty,
+        mv_grid_districts : List of MV regions/stations (int) to be imported (if empty,
             all regions & stations are imported)
 
         Returns
@@ -113,12 +113,12 @@ class NetworkDingo:
         """
 
         # check arguments
-        if not all(isinstance(_, int) for _ in mv_regions):
-            raise TypeError('`mv_regions` has to be a list of integers.')
+        if not all(isinstance(_, int) for _ in mv_grid_districts):
+            raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
         # get database naming and srid settings from config
         try:
-            mv_regions_schema_table = cfg_dingo.get('regions', 'mv_regions')
+            mv_grid_districts_schema_table = cfg_dingo.get('regions', 'mv_grid_districts')
             mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
             srid = str(int(cfg_dingo.get('geo', 'srid')))
         except OSError:
@@ -137,7 +137,7 @@ class NetworkDingo:
                                        label('subs_geom')).\
             join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id==
                  orm_EgoDeuSubstation.id).\
-            filter(orm_GridDistrict.subst_id.in_(mv_regions))
+            filter(orm_GridDistrict.subst_id.in_(mv_grid_districts))
 
         # read data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
@@ -292,14 +292,14 @@ class NetworkDingo:
                 #mv_region.mv_grid.graph_add_node(lv_region)
 
 
-    def export_mv_grid(self, conn, mv_regions):
+    def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_regions : List of MV regions (instances of MVGridDistrictDingo class)
+        mv_grid_districts : List of MV regions (instances of MVGridDistrictDingo class)
             whose MV grids are exported.
 
         """
@@ -309,8 +309,8 @@ class NetworkDingo:
         # TODO: method has to be extended to cover more data
 
         # check arguments
-        if not all(isinstance(_, int) for _ in mv_regions):
-            raise TypeError('`mv_regions` has to be a list of integers.')
+        if not all(isinstance(_, int) for _ in mv_grid_districts):
+            raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
@@ -322,7 +322,7 @@ class NetworkDingo:
         session.commit()
 
         # build data array from grids (nodes and branches)
-        for region in self.mv_regions():
+        for region in self.mv_grid_districts():
             grid_id = region.mv_grid.id_db
             mv_stations = []
             mv_cable_distributors = []
@@ -388,7 +388,7 @@ class NetworkDingo:
         else:
             anim = None
 
-        for region in self.mv_regions():
+        for region in self.mv_grid_districts():
             region.mv_grid.routing(debug, anim)
 
     def mv_parametrize_grid(self, debug=False):
@@ -401,7 +401,7 @@ class NetworkDingo:
         debug: If True, information is printed while parametrization
         """
 
-        for region in self.mv_regions():
+        for region in self.mv_grid_districts():
             region.mv_grid.parametrize_grid(debug)
 
     def __repr__(self):

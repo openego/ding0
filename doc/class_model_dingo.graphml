@@ -296,11 +296,11 @@ s_max_a: float</y:AttributeLabel>
           </y:NodeLabel>
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
             <y:AttributeLabel>name: str</y:AttributeLabel>
-            <y:MethodLabel>mv_regions()
+            <y:MethodLabel>mv_grid_districts()
 add_mv_region()
 build_mv_region()
 import_lv_regions()
-import_mv_regions()
+import_mv_grid_districts()
 export_mv_grid()
 mv_routing()
 parametrize_grid()</y:MethodLabel>
@@ -614,7 +614,7 @@ parametrize_grid()</y:MethodLabel>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="diamond" target="plain"/>
-          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="89.3125" x="11.985523364207438" y="40.847808837890625">#_mv_regions
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="89.3125" x="11.985523364207438" y="40.847808837890625">#_mv_grid_districts
 0..*<y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>
