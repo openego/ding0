@@ -30,7 +30,7 @@ class GridDingo:
                 and (isinstance(node_object, StationDingo) or isinstance(node_object, CableDistributorDingo)):
             self._graph.add_node(node_object)
 
-    # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and LV grid_districts!
+    # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and load_areas!
     def graph_draw(self):
         """ Draws grid graph using networkx
 

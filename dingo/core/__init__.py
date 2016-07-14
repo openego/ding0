@@ -108,8 +108,8 @@ class NetworkDingo:
         See Also
         --------
         build_mv_grid_district : used to instantiate MV grid_district objects
-        import_lv_load_areas : used to import LV grid_districts for every single MV grid_district
-        add_peak_demand : used to summarize peak loads of underlying LV grid_districts
+        import_lv_load_areas : used to import load_areas for every single MV grid_district
+        add_peak_demand : used to summarize peak loads of underlying load_areas
         """
 
         # check arguments
@@ -174,7 +174,7 @@ class NetworkDingo:
                              'from DB dataset.')
 
     def import_lv_load_areas(self, conn, mv_grid_district):
-        """imports LV grid_districts (load areas) from database for a single MV grid_district
+        """imports load_areas (load areas) from database for a single MV grid_district
 
         Table definition for load areas can be found here:
         http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/
