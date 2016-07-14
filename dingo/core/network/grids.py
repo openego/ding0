@@ -259,7 +259,7 @@ class LVGridDingo(GridDingo):
             self._stations.append(lv_station)
 
             self.graph_add_node(lv_station)
-            self.region.mv_grid_district.mv_grid.graph_add_node(lv_station)
+            self.grid_district.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
     # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
     # def graph_build(self):

@@ -26,8 +26,8 @@ def dingo_graph_to_routing_specs(graph):
         # station is LV station
         if isinstance(node, LVStationDingo):
             # only major stations are connected via MV ring
-            if not node.grid.region.is_satellite:
-                nodes_demands[str(node)] = node.grid.region.peak_load_sum
+            if not node.grid.grid_district.is_satellite:
+                nodes_demands[str(node)] = node.grid.grid_district.peak_load_sum
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
 
         # station is MV station
