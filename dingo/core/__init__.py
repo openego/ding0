@@ -51,9 +51,9 @@ class NetworkDingo:
         self._mv_grid_districts = []
 
     def mv_grid_districts(self):
-            yield region
         """Returns a generator for iterating over MV grid_districts"""
         for grid_district in self._mv_grid_districts:
+            yield grid_district
 
     def add_mv_grid_district(self, mv_grid_district):
         """Adds a MV region to _mv_grid_districts if not already existing"""
