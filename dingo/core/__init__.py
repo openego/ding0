@@ -56,18 +56,18 @@ class NetworkDingo:
             yield grid_district
 
     def add_mv_grid_district(self, mv_grid_district):
-        """Adds a MV region to _mv_grid_districts if not already existing"""
+        """Adds a MV grid_district to _mv_grid_districts if not already existing"""
         # TODO: use setter method here (make attribute '_mv_grid_districts' private)
         if mv_grid_district not in self.mv_grid_districts():
             self._mv_grid_districts.append(mv_grid_district)
 
     def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
                         station_geo_data):
-        """initiates single MV region including station and grid
+        """initiates single MV grid_district including station and grid
 
         Parameters
         ----------
-        poly_id: ID of region according to database table. Also used as ID for
+        poly_id: ID of grid_district according to database table. Also used as ID for
             created grid
         subst_id: ID of station according to database table
         grid_district_geo_data: Polygon (shapely object) of grid district
@@ -107,8 +107,8 @@ class NetworkDingo:
 
         See Also
         --------
-        build_mv_grid_district : used to instantiate MV region objects
-        import_lv_load_areas : used to import LV grid_districts for every single MV region
+        build_mv_grid_district : used to instantiate MV grid_district objects
+        import_lv_load_areas : used to import LV grid_districts for every single MV grid_district
         add_peak_demand : used to summarize peak loads of underlying LV grid_districts
         """
 
@@ -145,7 +145,7 @@ class NetworkDingo:
                                     index_col='subst_id')
 
 
-        # iterate over region/station datasets and initiate objects
+        # iterate over grid_district/station datasets and initiate objects
         try:
             for poly_id, row in mv_data.iterrows():
                 subst_id = poly_id
@@ -174,7 +174,7 @@ class NetworkDingo:
                              'from DB dataset.')
 
     def import_lv_load_areas(self, conn, mv_grid_district):
-        """imports LV grid_districts (load areas) from database for a single MV region
+        """imports LV grid_districts (load areas) from database for a single MV grid_district
 
         Table definition for load areas can be found here:
         http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/
@@ -183,7 +183,7 @@ class NetworkDingo:
         Parameters
         ----------
         conn: Database connection
-        mv_grid_district : MV region/station (instance of MVGridDistrictDingo class) for
+        mv_grid_district : MV grid_district/station (instance of MVGridDistrictDingo class) for
             which the import of load areas is performed
         """
 
@@ -283,7 +283,7 @@ class NetworkDingo:
                 lv_load_area.add_lv_grid(lv_grid)
                 # === END TESTING ===
 
-                # add LV region to MV region
+                # add LV region to MV grid_district
                 mv_grid_district.add_lv_load_area(lv_load_area)
 
                 # OLD:
@@ -322,14 +322,14 @@ class NetworkDingo:
         session.commit()
 
         # build data array from grids (nodes and branches)
-        for region in self.mv_grid_districts():
-            grid_id = region.mv_grid.id_db
+        for grid_district in self.mv_grid_districts():
+            grid_id = grid_district.mv_grid.id_db
             mv_stations = []
             mv_cable_distributors = []
             lv_stations = []
             lines = []
 
-            for node in region.mv_grid._graph.nodes():
+            for node in grid_district.mv_grid._graph.nodes():
                 if isinstance(node, LVStationDingo):
                     lv_stations.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, CableDistributorDingo):
@@ -345,7 +345,7 @@ class NetworkDingo:
                 MultiPoint(mv_cable_distributors), srid=srid)
             mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
 
-            for branch in region.mv_grid.graph_edges():
+            for branch in grid_district.mv_grid.graph_edges():
                 line = branch['adj_nodes']
                 lines.append(((line[0].geo_data.x,
                                line[0].geo_data.y),
@@ -388,8 +388,8 @@ class NetworkDingo:
         else:
             anim = None
 
-        for region in self.mv_grid_districts():
-            region.mv_grid.routing(debug, anim)
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.routing(debug, anim)
 
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see
@@ -401,8 +401,8 @@ class NetworkDingo:
         debug: If True, information is printed while parametrization
         """
 
-        for region in self.mv_grid_districts():
-            region.mv_grid.parametrize_grid(debug)
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.parametrize_grid(debug)
 
     def __repr__(self):
         return str(self.name)

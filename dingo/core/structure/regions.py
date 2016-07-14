@@ -7,7 +7,7 @@ from shapely.wkt import loads as wkt_loads
 
 class MVGridDistrictDingo(RegionDingo):
     """
-    Defines a MV-region in DINGO
+    Defines a MV-grid_district in DINGO
     ----------------------------
 
     """
