@@ -80,9 +80,9 @@ class NetworkDingo:
 
         mv_grid = MVGridDingo(id_db=poly_id,
                               station=mv_station)
-        mv_region = MVRegionDingo(id_db=poly_id,
-                                  mv_grid=mv_grid,
-                                  geo_data=region_geo_data)
+        mv_region = MVGridDistrictDingo(id_db=poly_id,
+                                        mv_grid=mv_grid,
+                                        geo_data=region_geo_data)
         mv_grid.region = mv_region
         mv_station.grid = mv_grid
 
@@ -183,7 +183,7 @@ class NetworkDingo:
         Parameters
         ----------
         conn: Database connection
-        mv_region : MV region/station (instance of MVRegionDingo class) for
+        mv_region : MV region/station (instance of MVGridDistrictDingo class) for
             which the import of load areas is performed
         """
 
@@ -299,7 +299,7 @@ class NetworkDingo:
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_regions : List of MV regions (instances of MVRegionDingo class)
+        mv_regions : List of MV regions (instances of MVGridDistrictDingo class)
             whose MV grids are exported.
 
         """

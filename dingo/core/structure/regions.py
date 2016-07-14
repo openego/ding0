@@ -5,7 +5,7 @@ from dingo.tools import config as cfg_dingo
 from shapely.wkt import loads as wkt_loads
 
 
-class MVRegionDingo(RegionDingo):
+class MVGridDistrictDingo(RegionDingo):
     """
     Defines a MV-region in DINGO
     ----------------------------

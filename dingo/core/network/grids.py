@@ -18,7 +18,7 @@ class MVGridDingo(GridDingo):
 
     Parameters
     ----------
-    region : MV region (instance of MVRegionDingo class) that is associated with grid
+    region : MV region (instance of MVGridDistrictDingo class) that is associated with grid
     """
     # TODO: Add method to join MV graph with LV graphs to have one graph that covers whole grid (MV and LV)
 
