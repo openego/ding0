@@ -3,9 +3,9 @@ from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CableDistributorDingo
 from dingo.core.structure.groups import LVRegionGroupDingo
 from dingo.tools import config as cfg_dingo
-from dingo.tools.geo import calc_geo_branches_in_buffer
+from dingo.tools.geo import calc_geo_branches_in_buffer, calc_geo_dist_vincenty
 
-from shapely.geometry import LineString, Point, MultiPoint
+from shapely.geometry import LineString
 from shapely.ops import transform
 import pyproj
 from functools import partial
@@ -19,13 +19,16 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug)
         (perpendicular projection)). The resulting stack (list) is sorted ascending by distance from node.
 
     Args:
-        node_shp:
-        branches:
-        proj:
-        conn_dist_weight:
-        debug:
+        node_shp: Shapely Point object of node
+        branches: BranchDingo objects of MV region
+        proj: pyproj projection object: nodes' CRS to equidistant CRS (e.g. WGS84 -> ETRS)
+        conn_dist_weight: length weighting to prefer stations instead of direct line connection, see mv_connect() for
+                          details.
+        debug: If True, information is printed during process
 
     Returns:
+        conn_objects_min_stack: List of connection objects (each object is represented by dict with Dingo object,
+                                shapely object and distance to node.
 
     """
 
@@ -34,7 +37,7 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug)
     for branch in branches:
         stations = branch['adj_nodes']
 
-        # cshapely objects for 2 stations and line between them, transform to equidistant CRS
+        # create shapely objects for 2 stations and line between them, transform to equidistant CRS
         station1_shp = transform(proj, stations[0].geo_data)
         station2_shp = transform(proj, stations[1].geo_data)
         line_shp = LineString([station1_shp, station2_shp])
@@ -42,10 +45,10 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug)
         # create dict with DINGO objects (line & 2 adjacent stations), shapely objects and distances
         conn_objects = {'s1': {'obj': stations[0],
                                'shp': station1_shp,
-                               'dist': node_shp.distance(station1_shp) * conn_dist_weight},
+                               'dist': node_shp.distance(station1_shp) * conn_dist_weight * 0.999},
                         's2': {'obj': stations[1],
                                'shp': station2_shp,
-                               'dist': node_shp.distance(station2_shp) * conn_dist_weight},
+                               'dist': node_shp.distance(station2_shp) * conn_dist_weight * 0.999},
                         'b': {'obj': branch,
                               'shp': line_shp,
                               'dist': node_shp.distance(line_shp)}}
@@ -70,21 +73,27 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug)
 
 
 def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, conn_dist_ring_mod, debug):
-    """
+    """ Goes through the possible target connection objects in `conn_objects_min_stack` (from nearest to most far
+        object) and tries to connect `node` to one of them.
 
     Args:
-        node:
-        node_shp:
-        graph:
-        proj:
-        conn_objects_min_stack:
-        conn_dist_ring_mod:
-        debug:
+        node: origin node - Dingo object (e.g. LVStationDingo)
+        node_shp: Shapely Point object of node
+        graph: NetworkX graph object with nodes
+        proj: pyproj projection object: equidistant CRS to conformal CRS (e.g. ETRS -> WGS84)
+        conn_objects_min_stack: List of connection objects (each object is represented by dict with Dingo object,
+                                shapely object and distance to node), sorted ascending by distance.
+        conn_dist_ring_mod: Max. distance when nodes are included into route instead of creating a new line,
+                            see mv_connect() for details.
+        debug: If True, information is printed during process
 
     Returns:
-
+        nothing
     """
 
+    node_connected = False
+
+    # go through the stack (from nearest to most far connection target object)
     for dist_min_obj in conn_objects_min_stack:
 
         # target object is branch
@@ -118,82 +127,133 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
         # target object is node
         else:
-            if not isinstance(dist_min_obj['obj'], CableDistributorDingo):
-                lv_region_group = dist_min_obj['obj'].grid.region.lv_region_group
+            if isinstance(dist_min_obj['obj'], CableDistributorDingo):
+                lv_region_group = dist_min_obj['obj'].lv_region_group
             else:
-                lv_region_group = None
+                lv_region_group = dist_min_obj['obj'].grid.region.lv_region_group
 
         # target object doesn't belong to a satellite string (is member of a LV region group)
         if lv_region_group is None:
 
-            branch_created = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
+            # connect node
+            target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
-            # if node was connected via branch: create new LV region group for current node
-            if branch_created:
-                lv_region_group = LVRegionGroupDingo(id_db=node.grid.region.mv_region.lv_region_groups_count() + 1)
-                lv_region_group.add_lv_region(node.grid.region, dist_min_obj['dist'])
+            # if node was connected via branch (ring not re-routed): create new LV region group for current node
+            if target_obj_result:
+                lv_region_group = LVRegionGroupDingo(id_db=node.grid.region.mv_region.lv_region_groups_count() + 1,
+                                                     root_node=target_obj_result)
+                lv_region_group.add_lv_region(lv_region=node.grid.region)
                 node.grid.region.lv_region_group = lv_region_group
                 node.grid.region.mv_region.add_lv_region_group(lv_region_group)
 
             if debug:
-                print('New LV region created!')
+                print('New LV region group', lv_region_group, 'created!')
+
+            # node connected, stop connection for current node
+            node_connected = True
             break
 
         # target object is member of a LV region group
         else:
-            if lv_region_group.can_add_lv_region(lv_region=node.grid.region, branch_length=dist_min_obj['dist']):
 
-                branch_created = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
+            # save current graph object for possible rollback
+            #graph_backup = graph
 
-                # if node was connected via branch: create new LV region group for current node
-                if branch_created:
-                    lv_region_group.add_lv_region(node.grid.region, dist_min_obj['dist'])
+            # connect node
+            target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
+
+            # calc shortest path between node and root node (start of string on MV main route)
+            #path_length_to_root = node.grid.region.mv_region.mv_grid.graph_path_length(lv_region_group.root_node, node)
+
+            # if node was connected via branch (ring not re-routed): create new LV region group for current node
+            if target_obj_result:
+                # node can join LV region group
+                if lv_region_group.can_add_lv_region(node=node):
+
+                    # add node to LV region group
+                    lv_region_group.add_lv_region(lv_region=node.grid.region)
                     node.grid.region.lv_region_group = lv_region_group
 
-                if debug:
-                    print('LV region joined!')
-                break
+                    if isinstance(target_obj_result, CableDistributorDingo):
+                        lv_region_group.add_lv_region(lv_region=target_obj_result)
+                        target_obj_result.lv_region_group = lv_region_group
+
+                    if debug:
+                        print('LV region group', lv_region_group, 'joined!')
+
+                    # node connected, stop connection for current node
+                    node_connected = True
+                    break
+
+                # cannot join LV region group
+                else:
+                    if debug:
+                        print('Node', node, 'could not be added to region group', lv_region_group)
+
+                    # rollback changes in graph
+                    disconnect_node(node, target_obj_result, graph, debug)
+
+                    # continue with next possible connection point
+                    continue
+
+            # node was inserted into line (re-routed)
             else:
-                if debug:
-                    print('Node', node, 'could not be added to group:')
-                    print('distance(node)=', dist_min_obj['dist'], ', distance_sum(group)=', lv_region_group.branch_length_sum)
-                    print('load(node)=', node.grid.region.peak_load_sum, ', load_sum(group)=', lv_region_group.peak_load_sum)
-                continue
+                # add node to LV region group
+                lv_region_group.add_lv_region(lv_region=node.grid.region)
+                node.grid.region.lv_region_group = lv_region_group
+
+                # node inserted into existing route, stop connection for current node
+                node_connected = True
+                break
+
+    if not node_connected:
+        print('Node', node, 'could not be connected, try to increase the parameter `load_area_sat_buffer_radius` in',
+              'config file `config_calc` to gain more possible connection points.')
 
 
-def connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug):
-    """
+def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, debug):
+    """ Connects `node` to `target_obj`
+
     Args:
-        node: origin node
-        node_shp:
-        dist_min_obj:
-        proj:
-        graph:
-        conn_dist_ring_mod:
-        debug:
+        node: origin node - Dingo object (e.g. LVStationDingo)
+        node_shp: Shapely Point object of origin node
+        target_obj: object that node shall be connected to
+        proj: pyproj projection object: equidistant CRS to conformal CRS (e.g. ETRS -> WGS84)
+        graph: NetworkX graph object with nodes and newly created branches
+        conn_dist_ring_mod: Max. distance when nodes are included into route instead of creating a new line,
+                            see mv_connect() for details.
+        debug: If True, information is printed during process
 
     Returns:
-        branch_length: length of newly created branch
+        target_obj_result: object that node was connected to (instance of LVStationDingo or CableDistributorDingo). If
+                           node is included into line instead of creating a new line (see arg `conn_dist_ring_mod`),
+                           `target_obj_result` is None.
     """
 
-    branch_created = False
+    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+
+    target_obj_result = None
 
     # MV line is nearest connection point
-    if isinstance(dist_min_obj['shp'], LineString):
+    if isinstance(target_obj['shp'], LineString):
 
         # find nearest point on MV line
-        conn_point_shp = dist_min_obj['shp'].interpolate(dist_min_obj['shp'].project(node_shp))
+        conn_point_shp = target_obj['shp'].interpolate(target_obj['shp'].project(node_shp))
         conn_point_shp = transform(proj, conn_point_shp)
 
         # Node is close to line
         # -> insert node into route (change existing route)
-        if dist_min_obj['dist'] < conn_dist_ring_mod:
+        if target_obj['dist'] < conn_dist_ring_mod:
 
             # split old ring main route into 2 segments (delete old branch and create 2 new ones
             # along node)
-            graph.remove_edge(dist_min_obj['obj']['adj_nodes'][0], dist_min_obj['obj']['adj_nodes'][1])
-            graph.add_edge(dist_min_obj['obj']['adj_nodes'][0], node, branch=BranchDingo())
-            graph.add_edge(dist_min_obj['obj']['adj_nodes'][1], node, branch=BranchDingo())
+            graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
+
+            branch_length = branch_detour_factor * calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], node)
+            graph.add_edge(target_obj['obj']['adj_nodes'][0], node, branch=BranchDingo(length=branch_length))
+
+            branch_length = branch_detour_factor * calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], node)
+            graph.add_edge(target_obj['obj']['adj_nodes'][1], node, branch=BranchDingo(length=branch_length))
 
             if debug:
                 print('Ring main route modified to include node', node)
@@ -207,31 +267,68 @@ def connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, 
             node.grid.region.mv_region.mv_grid.add_cable_distributor(cable_dist)
 
             # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
-            graph.remove_edge(dist_min_obj['obj']['adj_nodes'][0], dist_min_obj['obj']['adj_nodes'][1])
-            graph.add_edge(dist_min_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo())
-            graph.add_edge(dist_min_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo())
+            graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
+
+            branch_length = branch_detour_factor * calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], cable_dist)
+            graph.add_edge(target_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo(length=branch_length))
+
+            branch_length = branch_detour_factor * calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], cable_dist)
+            graph.add_edge(target_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo(length=branch_length))
 
             # add new branch for satellite (station to cable distributor)
-            graph.add_edge(node, cable_dist, branch=BranchDingo())
-            branch_created = True
+            branch_length = branch_detour_factor * calc_geo_dist_vincenty(node, cable_dist)
+            graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length))
+            target_obj_result = cable_dist
 
             # debug info
             if debug:
                 print('Nearest connection point for object', node, 'is branch',
-                      dist_min_obj['obj']['adj_nodes'], '(distance=', dist_min_obj['dist'], 'm)')
+                      target_obj['obj']['adj_nodes'], '(distance=', target_obj['dist'], 'm)')
 
     # node ist nearest connection point
     else:
         # add new branch for satellite (station to station)
-        graph.add_edge(node, dist_min_obj['obj'], branch=BranchDingo())
-        branch_created = True
+        branch_length = branch_detour_factor * calc_geo_dist_vincenty(node, target_obj['obj'])
+        graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length))
+        target_obj_result = target_obj['obj']
 
         # debug info
         if debug:
             print('Nearest connection point for object', node, 'is station',
-                  dist_min_obj['obj'], '(distance=', dist_min_obj['dist'], 'm)')
+                  target_obj['obj'], '(distance=', target_obj['dist'], 'm)')
 
-    return branch_created
+    return target_obj_result
+
+
+def disconnect_node(node, target_obj_result, graph, debug):
+    """ Disconnects `node` from `target_obj`
+
+    Args:
+        node: node - Dingo object (e.g. LVStationDingo)
+        target_obj_result:
+        graph: NetworkX graph object with nodes and newly created branches
+        debug: If True, information is printed during process
+
+    Returns:
+        nothing
+    """
+
+    graph.remove_edge(node, target_obj_result)
+
+    if isinstance(target_obj_result, CableDistributorDingo):
+
+        neighbor_nodes = graph.neighbors(target_obj_result)
+
+        if len(neighbor_nodes) == 2:
+            branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+
+            graph.remove_node(target_obj_result)
+
+            branch_length = branch_detour_factor * calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
+            graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDingo(length=branch_length))
+
+    if debug:
+        print('disconnect edge', node, '-', target_obj_result)
 
 
 def mv_connect(graph, dingo_object, debug=False):
@@ -254,9 +351,6 @@ def mv_connect(graph, dingo_object, debug=False):
     Returns:
         graph: NetworkX graph object with nodes and newly created branches
     """
-    # TODO: Complete docstring
-
-    start = time.time()
 
     # conn_dist_weight: The satellites can be connected to line (new terminal is created) or to one station where the
     # line ends, depending on the distance from satellite to the objects. This threshold is a length weighting to prefer
@@ -271,6 +365,8 @@ def mv_connect(graph, dingo_object, debug=False):
 
     load_area_sat_buffer_radius = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius')
     load_area_sat_buffer_radius_inc = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius_inc')
+
+    start = time.time()
 
     # check if dingo_object is valid object
     # TODO: Add RES to isinstance check
@@ -317,7 +413,7 @@ def mv_connect(graph, dingo_object, debug=False):
 
 
                         # TODO: Parametrize new lines!
-        print('Elapsed time (mv_connect): {}'.format(time.time() - start))
+
         if debug:
             print('Elapsed time (mv_connect): {}'.format(time.time() - start))
 
