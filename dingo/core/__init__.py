@@ -51,9 +51,9 @@ class NetworkDingo:
         self._mv_grid_districts = []
 
     def mv_grid_districts(self):
-        """Returns a generator for iterating over MV regions"""
-        for region in self._mv_grid_districts:
             yield region
+        """Returns a generator for iterating over MV grid_districts"""
+        for grid_district in self._mv_grid_districts:
 
     def add_mv_grid_district(self, mv_grid_district):
         """Adds a MV region to _mv_grid_districts if not already existing"""
@@ -61,7 +61,7 @@ class NetworkDingo:
         if mv_grid_district not in self.mv_grid_districts():
             self._mv_grid_districts.append(mv_grid_district)
 
-    def build_mv_grid_district(self, poly_id, subst_id, region_geo_data,
+    def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
                         station_geo_data):
         """initiates single MV region including station and grid
 
@@ -70,7 +70,7 @@ class NetworkDingo:
         poly_id: ID of region according to database table. Also used as ID for
             created grid
         subst_id: ID of station according to database table
-        region_geo_data: Polygon (shapely object) of region
+        grid_district_geo_data: Polygon (shapely object) of grid district
         station_geo_data: Point (shapely object) of station
 
         """
@@ -82,7 +82,7 @@ class NetworkDingo:
                               station=mv_station)
         mv_grid_district = MVGridDistrictDingo(id_db=poly_id,
                                                mv_grid=mv_grid,
-                                               geo_data=region_geo_data)
+                                               geo_data=grid_district_geo_data)
         mv_grid.region = mv_grid_district
         mv_station.grid = mv_grid
 
@@ -91,15 +91,15 @@ class NetworkDingo:
         return mv_grid_district
 
     def import_mv_grid_districts(self, conn, mv_grid_districts=None):
-        """Imports MV regions and MV stations from database, reprojects geodata
+        """Imports MV grid_districts and MV stations from database, reprojects geodata
         and and initiates objects.
 
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_grid_districts : List of MV regions/stations (int) to be imported (if empty,
-            all regions & stations are imported)
+        mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
+            all grid_districts & stations are imported)
 
         Returns
         -------
@@ -108,8 +108,8 @@ class NetworkDingo:
         See Also
         --------
         build_mv_grid_district : used to instantiate MV region objects
-        import_lv_load_areas : used to import LV regions for every single MV region
-        add_peak_demand : used to summarize peak loads of underlying LV regions
+        import_lv_load_areas : used to import LV grid_districts for every single MV region
+        add_peak_demand : used to summarize peak loads of underlying LV grid_districts
         """
 
         # check arguments
@@ -167,14 +167,14 @@ class NetworkDingo:
                                                  station_geo_data)
                 self.import_lv_load_areas(conn, mv_grid_district)
 
-                # add sum of peak loads of underlying lv regions to mv_grid_district
+                # add sum of peak loads of underlying lv grid_districts to mv_grid_district
                 mv_grid_district.add_peak_demand()
         except:
-            raise ValueError('unexpected error while initiating MV regions' \
+            raise ValueError('unexpected error while initiating MV grid_districts' \
                              'from DB dataset.')
 
     def import_lv_load_areas(self, conn, mv_grid_district):
-        """imports LV regions (load areas) from database for a single MV region
+        """imports LV grid_districts (load areas) from database for a single MV region
 
         Table definition for load areas can be found here:
         http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/
@@ -299,7 +299,7 @@ class NetworkDingo:
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_grid_districts : List of MV regions (instances of MVGridDistrictDingo class)
+        mv_grid_districts : List of MV grid_districts (instances of MVGridDistrictDingo class)
             whose MV grids are exported.
 
         """

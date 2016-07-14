@@ -27,7 +27,7 @@ class MVGridDistrictDingo(RegionDingo):
         self.peak_load = kwargs.get('peak_load', None)
 
     def lv_load_areas(self):
-        """Returns a generator for iterating over LV regions"""
+        """Returns a generator for iterating over LV grid_districts"""
         for region in self._lv_load_areas:
             yield region
 
@@ -51,7 +51,7 @@ class MVGridDistrictDingo(RegionDingo):
             self._lv_load_area_groups.append(lv_load_area_group)
 
     def add_peak_demand(self):
-        """Summarizes peak loads of underlying LV regions in kVA"""
+        """Summarizes peak loads of underlying LV grid_districts in kVA"""
         peak_load = 0
         for lv_load_area in self.lv_load_areas():
             peak_load += lv_load_area.peak_load_sum
@@ -185,7 +185,7 @@ class LVLoadAreaDingo(RegionDingo):
 
 
 # class LVRegionGroupDingo:
-#     """ Container for small LV regions / load areas (satellites) = a group of stations which are within the same
+#     """ Container for small LV grid_districts / load areas (satellites) = a group of stations which are within the same
 #         satellite string. It is required to check whether a satellite string has got more load than allowed, hence new
 #         nodes cannot be added to it.
 #     """
@@ -199,7 +199,7 @@ class LVLoadAreaDingo(RegionDingo):
 #         # TODO: Value is read from file every time a LV region is created -> move to associated NetworkDingo class?
 #
 #     def lv_load_areas(self):
-#         """Returns a generator for iterating over LV regions"""
+#         """Returns a generator for iterating over LV grid_districts"""
 #         for region in self._lv_load_areas:
 #             yield region
 #

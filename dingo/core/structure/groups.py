@@ -3,7 +3,7 @@ from dingo.tools import config as cfg_dingo
 
 
 class LVRegionGroupDingo:
-    """ Container for small LV regions / load areas (satellites) = a group of stations which are within the same
+    """ Container for small LV grid_districts / load areas (satellites) = a group of stations which are within the same
         satellite string. It is required to check whether a satellite string has got more load than allowed, hence new
         nodes cannot be added to it.
     """
@@ -20,7 +20,7 @@ class LVRegionGroupDingo:
         # TODO: Value is read from file every time a LV region is created -> move to associated NetworkDingo class?
 
     def lv_load_areas(self):
-        """Returns a generator for iterating over LV regions"""
+        """Returns a generator for iterating over LV grid_districts"""
         for region in self._lv_load_areas:
             yield region
 
