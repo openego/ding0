@@ -33,7 +33,7 @@ class MVGridDistrictDingo(RegionDingo):
 
     def add_lv_region(self, lv_region):
         """Adds a LV region to _lv_regions if not already existing"""
-        if lv_region not in self.lv_regions() and isinstance(lv_region, LVRegionDingo):
+        if lv_region not in self.lv_regions() and isinstance(lv_region, LVLoadAreaDingo):
             self._lv_regions.append(lv_region)
 
     def lv_region_groups(self):
@@ -60,7 +60,7 @@ class MVGridDistrictDingo(RegionDingo):
     def __repr__(self):
         return 'mvregion_' + str(self.id_db)
 
-class LVRegionDingo(RegionDingo):
+class LVLoadAreaDingo(RegionDingo):
     """
     Defines a LV-region in DINGO
     ----------------------------
@@ -210,7 +210,7 @@ class LVRegionDingo(RegionDingo):
 #
 #     def can_add_lv_region(self, lv_region):
 #         """Sums up peak load of LV stations = total peak load for satellite string"""
-#         if lv_region not in self.lv_regions() and isinstance(lv_region, LVRegionDingo):
+#         if lv_region not in self.lv_regions() and isinstance(lv_region, LVLoadAreaDingo):
 #             if (lv_region.peak_load_sum + self.peak_load_sum) <= self.peak_load_max:
 #                 return True
 #             else:

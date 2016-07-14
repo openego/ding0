@@ -241,7 +241,7 @@ class LVGridDingo(GridDingo):
 
     Parameters
     ----------
-    region : LV region (instance of LVRegionDingo class) that is associated with grid
+    region : LV region (instance of LVLoadAreaDingo class) that is associated with grid
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
