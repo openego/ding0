@@ -31,7 +31,7 @@
           <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
             <y:AttributeLabel>geo_data: shapely.geos
 peak_load: float</y:AttributeLabel>
-            <y:MethodLabel>lv_regions()
+            <y:MethodLabel>lv_load_areas()
 add_lv_region()
 add_peak_demand()</y:MethodLabel>
           </y:UML>
@@ -299,7 +299,7 @@ s_max_a: float</y:AttributeLabel>
             <y:MethodLabel>mv_grid_districts()
 add_mv_grid_district()
 build_mv_grid_district()
-import_lv_regions()
+import_lv_load_areas()
 import_mv_grid_districts()
 export_mv_grid()
 mv_routing()
@@ -399,7 +399,7 @@ parametrize_grid()</y:MethodLabel>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="diamond" target="plain"/>
-          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="80.95703125" x="-294.1970365558939" y="-315.96875">#_lv_regions
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" visible="true" width="80.95703125" x="-294.1970365558939" y="-315.96875">#_lv_load_areas
 0..*<y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>

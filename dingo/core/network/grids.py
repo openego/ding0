@@ -70,7 +70,7 @@ class MVGridDingo(GridDingo):
     #     # TODO: to get LV stations, generator of generators is necessary
     #     # TODO: see http://stackoverflow.com/questions/19033401/python-generator-of-generators
     #     # TODO: not sure if the following works:
-    #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_regions()]]:
+    #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_load_areas()]]:
     #         self.graph_add_node(lv_station)
 
     def add_cable_distributor(self, cable_dist):

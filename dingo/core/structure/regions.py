@@ -19,22 +19,22 @@ class MVGridDistrictDingo(RegionDingo):
 
         #more params
         self.mv_grid = kwargs.get('mv_grid', None)
-        self._lv_regions = []
+        self._lv_load_areas = []
         self._lv_region_groups = []
         self.geo_data = kwargs.get('geo_data', None)
 
         # INSERT LOAD PARAMS
         self.peak_load = kwargs.get('peak_load', None)
 
-    def lv_regions(self):
+    def lv_load_areas(self):
         """Returns a generator for iterating over LV regions"""
-        for region in self._lv_regions:
+        for region in self._lv_load_areas:
             yield region
 
     def add_lv_region(self, lv_region):
-        """Adds a LV region to _lv_regions if not already existing"""
-        if lv_region not in self.lv_regions() and isinstance(lv_region, LVLoadAreaDingo):
-            self._lv_regions.append(lv_region)
+        """Adds a LV region to _lv_load_areas if not already existing"""
+        if lv_region not in self.lv_load_areas() and isinstance(lv_region, LVLoadAreaDingo):
+            self._lv_load_areas.append(lv_region)
 
     def lv_region_groups(self):
         """Returns a generator for iterating over LV region groups"""
@@ -46,14 +46,14 @@ class MVGridDistrictDingo(RegionDingo):
         return len(self._lv_region_groups)
 
     def add_lv_region_group(self, lv_region_group):
-        """Adds a LV region to _lv_regions if not already existing"""
+        """Adds a LV region to _lv_load_areas if not already existing"""
         if lv_region_group not in self.lv_region_groups():  # and isinstance(lv_region_group, LVRe):
             self._lv_region_groups.append(lv_region_group)
 
     def add_peak_demand(self):
         """Summarizes peak loads of underlying LV regions in kVA"""
         peak_load = 0
-        for lv_region in self.lv_regions():
+        for lv_region in self.lv_load_areas():
             peak_load += lv_region.peak_load_sum
         self.peak_load = peak_load
 
@@ -192,25 +192,25 @@ class LVLoadAreaDingo(RegionDingo):
 #
 #     def __init__(self, **kwargs):
 #         self.id_db = kwargs.get('id_db', None)
-#         self._lv_regions = []
+#         self._lv_load_areas = []
 #         self.peak_load_sum = 0
 #         # threshold: max. allowed peak load of satellite string
 #         self.peak_load_max = cfg_dingo.get('mv_connect', 'load_area_sat_string_load_threshold')
 #         # TODO: Value is read from file every time a LV region is created -> move to associated NetworkDingo class?
 #
-#     def lv_regions(self):
+#     def lv_load_areas(self):
 #         """Returns a generator for iterating over LV regions"""
-#         for region in self._lv_regions:
+#         for region in self._lv_load_areas:
 #             yield region
 #
 #     def add_lv_region(self, lv_region):
-#         """Adds a LV region to _lv_regions if not already existing"""
-#         self._lv_regions.append(lv_region)
+#         """Adds a LV region to _lv_load_areas if not already existing"""
+#         self._lv_load_areas.append(lv_region)
 #         self.peak_load_sum += lv_region.peak_load_sum
 #
 #     def can_add_lv_region(self, lv_region):
 #         """Sums up peak load of LV stations = total peak load for satellite string"""
-#         if lv_region not in self.lv_regions() and isinstance(lv_region, LVLoadAreaDingo):
+#         if lv_region not in self.lv_load_areas() and isinstance(lv_region, LVLoadAreaDingo):
 #             if (lv_region.peak_load_sum + self.peak_load_sum) <= self.peak_load_max:
 #                 return True
 #             else:

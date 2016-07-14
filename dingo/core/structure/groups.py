@@ -10,7 +10,7 @@ class LVRegionGroupDingo:
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
-        self._lv_regions = []
+        self._lv_load_areas = []
         self.peak_load_sum = 0
         self.branch_length_sum = 0
         # threshold: max. allowed peak load of satellite string
@@ -19,21 +19,21 @@ class LVRegionGroupDingo:
         self.root_node = kwargs.get('root_node', None)  # root node (Dingo object) = start of string on MV main route
         # TODO: Value is read from file every time a LV region is created -> move to associated NetworkDingo class?
 
-    def lv_regions(self):
+    def lv_load_areas(self):
         """Returns a generator for iterating over LV regions"""
-        for region in self._lv_regions:
+        for region in self._lv_load_areas:
             yield region
 
     def add_lv_region(self, lv_region):
-        """Adds a LV region to _lv_regions if not already existing"""
-        self._lv_regions.append(lv_region)
+        """Adds a LV region to _lv_load_areas if not already existing"""
+        self._lv_load_areas.append(lv_region)
         if not isinstance(lv_region, CableDistributorDingo):
             self.peak_load_sum += lv_region.peak_load_sum
 
     def can_add_lv_region(self, node):
         """Sums up peak load of LV stations = total peak load for satellite string"""
         lv_region = node.grid.region
-        if lv_region not in self.lv_regions():  # and isinstance(lv_region, LVLoadAreaDingo):
+        if lv_region not in self.lv_load_areas():  # and isinstance(lv_region, LVLoadAreaDingo):
             path_length_to_root = lv_region.mv_grid_district.mv_grid.graph_path_length(self.root_node, node)
             if ((path_length_to_root <= self.branch_length_max) and
                 (lv_region.peak_load_sum + self.peak_load_sum) <= self.peak_load_max):

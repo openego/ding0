@@ -9,7 +9,7 @@ from dingo.config import config_db_interfaces as db_int
 cfg_dingo.load_config('config_db_tables')
 GridDistrict_name = cfg_dingo.get('regions', 'grid_district')
 EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
-EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_regions')
+EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
 CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
 
 from egoio import calc_ego_substation as orm_mod_calc_ego_substation
@@ -108,7 +108,7 @@ class NetworkDingo:
         See Also
         --------
         build_mv_grid_district : used to instantiate MV region objects
-        import_lv_regions : used to import LV regions for every single MV region
+        import_lv_load_areas : used to import LV regions for every single MV region
         add_peak_demand : used to summarize peak loads of underlying LV regions
         """
 
@@ -165,7 +165,7 @@ class NetworkDingo:
                                                  subst_id,
                                                  region_geo_data,
                                                  station_geo_data)
-                self.import_lv_regions(conn, mv_grid_district)
+                self.import_lv_load_areas(conn, mv_grid_district)
 
                 # add sum of peak loads of underlying lv regions to mv_grid_district
                 mv_grid_district.add_peak_demand()
@@ -173,7 +173,7 @@ class NetworkDingo:
             raise ValueError('unexpected error while initiating MV regions' \
                              'from DB dataset.')
 
-    def import_lv_regions(self, conn, mv_grid_district):
+    def import_lv_load_areas(self, conn, mv_grid_district):
         """imports LV regions (load areas) from database for a single MV region
 
         Table definition for load areas can be found here:
@@ -200,7 +200,7 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        lv_regions_sqla = session.query(
+        lv_load_areas_sqla = session.query(
             orm_EgoDeuLoadArea.id.label('id_db'),
             orm_EgoDeuLoadArea.zensus_sum,
             orm_EgoDeuLoadArea.zensus_count.label('zensus_cnt'),
@@ -243,12 +243,12 @@ class NetworkDingo:
                    mv_grid._station.id_db)
 
         # read data from db
-        lv_regions = pd.read_sql_query(lv_regions_sqla.statement,
+        lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
                                        session.bind,
                                        index_col='id_db')
 
         # create region objects from rows and add them to graph
-        for id_db, row in lv_regions.iterrows():
+        for id_db, row in lv_load_areas.iterrows():
 
             # only pick load areas with peak load greater than
             # lv_loads_threshold
