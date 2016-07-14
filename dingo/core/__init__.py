@@ -55,13 +55,13 @@ class NetworkDingo:
         for region in self._mv_grid_districts:
             yield region
 
-    def add_mv_region(self, mv_region):
+    def add_mv_grid_district(self, mv_grid_district):
         """Adds a MV region to _mv_grid_districts if not already existing"""
         # TODO: use setter method here (make attribute '_mv_grid_districts' private)
-        if mv_region not in self.mv_grid_districts():
-            self._mv_grid_districts.append(mv_region)
+        if mv_grid_district not in self.mv_grid_districts():
+            self._mv_grid_districts.append(mv_grid_district)
 
-    def build_mv_region(self, poly_id, subst_id, region_geo_data,
+    def build_mv_grid_district(self, poly_id, subst_id, region_geo_data,
                         station_geo_data):
         """initiates single MV region including station and grid
 
@@ -86,7 +86,7 @@ class NetworkDingo:
         mv_grid.region = mv_grid_district
         mv_station.grid = mv_grid
 
-        self.add_mv_region(mv_grid_district)
+        self.add_mv_grid_district(mv_grid_district)
 
         return mv_grid_district
 
@@ -107,7 +107,7 @@ class NetworkDingo:
 
         See Also
         --------
-        build_mv_region : used to instantiate MV region objects
+        build_mv_grid_district : used to instantiate MV region objects
         import_lv_regions : used to import LV regions for every single MV region
         add_peak_demand : used to summarize peak loads of underlying LV regions
         """
@@ -152,7 +152,7 @@ class NetworkDingo:
                 region_geo_data = wkt_loads(row['poly_geom'])
 
                 # transform `region_geo_data` to epsg 3035
-                # to achieve correct area calculation of mv_region
+                # to achieve correct area calculation of mv_grid_district
                 station_geo_data = wkt_loads(row['subs_geom'])
                 projection = partial(
                     pyproj.transform,
@@ -161,19 +161,19 @@ class NetworkDingo:
 
                 region_geo_data = transform(projection, region_geo_data)
 
-                mv_region = self.build_mv_region(poly_id,
+                mv_grid_district = self.build_mv_grid_district(poly_id,
                                                  subst_id,
                                                  region_geo_data,
                                                  station_geo_data)
-                self.import_lv_regions(conn, mv_region)
+                self.import_lv_regions(conn, mv_grid_district)
 
-                # add sum of peak loads of underlying lv regions to mv_region
-                mv_region.add_peak_demand()
+                # add sum of peak loads of underlying lv regions to mv_grid_district
+                mv_grid_district.add_peak_demand()
         except:
             raise ValueError('unexpected error while initiating MV regions' \
                              'from DB dataset.')
 
-    def import_lv_regions(self, conn, mv_region):
+    def import_lv_regions(self, conn, mv_grid_district):
         """imports LV regions (load areas) from database for a single MV region
 
         Table definition for load areas can be found here:
@@ -183,7 +183,7 @@ class NetworkDingo:
         Parameters
         ----------
         conn: Database connection
-        mv_region : MV region/station (instance of MVGridDistrictDingo class) for
+        mv_grid_district : MV region/station (instance of MVGridDistrictDingo class) for
             which the import of load areas is performed
         """
 
@@ -239,7 +239,7 @@ class NetworkDingo:
                        * load_scaling_factor).label('peak_load_sum')). \
             join(orm_CalcEgoPeakLoad, orm_EgoDeuLoadArea.id
                  == orm_CalcEgoPeakLoad.id).\
-            filter(orm_EgoDeuLoadArea.subst_id == mv_region.\
+            filter(orm_EgoDeuLoadArea.subst_id == mv_grid_district.\
                    mv_grid._station.id_db)
 
         # read data from db
@@ -255,9 +255,9 @@ class NetworkDingo:
             # TODO: When migrating to SQLAlchemy, move condition to query
             if row['peak_load_sum'] >= lv_loads_threshold:
                 # create LV region object
-                lv_region = LVRegionDingo(id_db=id_db,
-                                          db_data=row,
-                                          mv_region=mv_region)
+                lv_region = LVLoadAreaDingo(id_db=id_db,
+                                            db_data=row,
+                                            mv_grid_district=mv_grid_district)
 
                 # TODO: Following code is for testing purposes only!
                 # TODO: (create 1 LV grid and 1 station for every LV region)
@@ -284,12 +284,12 @@ class NetworkDingo:
                 # === END TESTING ===
 
                 # add LV region to MV region
-                mv_region.add_lv_region(lv_region)
+                mv_grid_district.add_lv_region(lv_region)
 
                 # OLD:
                 # add LV region to MV grid graph
                 # TODO: add LV station instead of LV region
-                #mv_region.mv_grid.graph_add_node(lv_region)
+                #mv_grid_district.mv_grid.graph_add_node(lv_region)
 
 
     def export_mv_grid(self, conn, mv_grid_districts):

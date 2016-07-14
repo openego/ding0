@@ -38,10 +38,10 @@ nd.export_mv_grid(conn, mv_grid_districts)
 conn.close()
 
 # lvrg = []
-# for mv_region in nd.mv_grid_districts():
-#     #print(mv_region._lv_region_groups)
-#     #print(type(mv_region._lv_region_groups))
-#     for lv_region_group in iter(mv_region._lv_region_groups):
+# for mv_grid_district in nd.mv_grid_districts():
+#     #print(mv_grid_district._lv_region_groups)
+#     #print(type(mv_grid_district._lv_region_groups))
+#     for lv_region_group in iter(mv_grid_district._lv_region_groups):
 #         lvrg.append([str(lv_region_group), lv_region_group.peak_load_sum, lv_region_group.branch_length_sum])
 # lvrg = sorted(lvrg, key=lambda x: x[1])
 #

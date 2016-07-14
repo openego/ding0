@@ -140,11 +140,11 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
             # if node was connected via branch (ring not re-routed): create new LV region group for current node
             if target_obj_result:
-                lv_region_group = LVRegionGroupDingo(id_db=node.grid.region.mv_region.lv_region_groups_count() + 1,
+                lv_region_group = LVRegionGroupDingo(id_db=node.grid.region.mv_grid_district.lv_region_groups_count() + 1,
                                                      root_node=target_obj_result)
                 lv_region_group.add_lv_region(lv_region=node.grid.region)
                 node.grid.region.lv_region_group = lv_region_group
-                node.grid.region.mv_region.add_lv_region_group(lv_region_group)
+                node.grid.region.mv_grid_district.add_lv_region_group(lv_region_group)
 
             if debug:
                 print('New LV region group', lv_region_group, 'created!')
@@ -163,7 +163,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
             # calc shortest path between node and root node (start of string on MV main route)
-            #path_length_to_root = node.grid.region.mv_region.mv_grid.graph_path_length(lv_region_group.root_node, node)
+            #path_length_to_root = node.grid.region.mv_grid_district.mv_grid.graph_path_length(lv_region_group.root_node, node)
 
             # if node was connected via branch (ring not re-routed): create new LV region group for current node
             if target_obj_result:
@@ -264,7 +264,7 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
 
             # create cable distributor and add it to grid
             cable_dist = CableDistributorDingo(geo_data=conn_point_shp, grid=node.grid)
-            node.grid.region.mv_region.mv_grid.add_cable_distributor(cable_dist)
+            node.grid.region.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
             # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
             graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])

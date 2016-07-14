@@ -74,7 +74,7 @@ class LVRegionDingo(RegionDingo):
 
         # more params
         self._lv_grids = []     # TODO: add setter
-        self.mv_region = kwargs.get('mv_region', None)
+        self.mv_grid_district = kwargs.get('mv_grid_district', None)
         self.lv_region_group = kwargs.get('lv_region_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
 

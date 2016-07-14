@@ -34,7 +34,7 @@ class LVRegionGroupDingo:
         """Sums up peak load of LV stations = total peak load for satellite string"""
         lv_region = node.grid.region
         if lv_region not in self.lv_regions():  # and isinstance(lv_region, LVRegionDingo):
-            path_length_to_root = lv_region.mv_region.mv_grid.graph_path_length(self.root_node, node)
+            path_length_to_root = lv_region.mv_grid_district.mv_grid.graph_path_length(self.root_node, node)
             if ((path_length_to_root <= self.branch_length_max) and
                 (lv_region.peak_load_sum + self.peak_load_sum) <= self.peak_load_max):
                 return True

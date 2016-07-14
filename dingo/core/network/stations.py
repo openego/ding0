@@ -58,7 +58,7 @@ class MVStationDingo(StationDingo):
                                                       'load_factor_transformer'))
 
         # step 1: identify possible transformers by voltage level
-        # TODO: derive voltage level by load density of mv_region
+        # TODO: derive voltage level by load density of mv_grid_district
         voltage_level = 10 # in kV
 
         apparent_power = self.grid.region.peak_load  # kW
