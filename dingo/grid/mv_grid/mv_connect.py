@@ -138,7 +138,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # connect node
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
-            # if node was connected via branch (ring not re-routed): create new LV region group for current node
+            # if node was connected via branch (ring not re-routed): create new LV load_area group for current node
             if target_obj_result:
                 lv_load_area_group = LVRegionGroupDingo(id_db=node.grid.region.mv_grid_district.lv_load_area_groups_count() + 1,
                                                      root_node=target_obj_result)
@@ -147,13 +147,13 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                 node.grid.region.mv_grid_district.add_lv_load_area_group(lv_load_area_group)
 
             if debug:
-                print('New LV region group', lv_load_area_group, 'created!')
+                print('New LV load_area group', lv_load_area_group, 'created!')
 
             # node connected, stop connection for current node
             node_connected = True
             break
 
-        # target object is member of a LV region group
+        # target object is member of a LV load_area group
         else:
 
             # save current graph object for possible rollback
@@ -165,12 +165,12 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # calc shortest path between node and root node (start of string on MV main route)
             #path_length_to_root = node.grid.region.mv_grid_district.mv_grid.graph_path_length(lv_load_area_group.root_node, node)
 
-            # if node was connected via branch (ring not re-routed): create new LV region group for current node
+            # if node was connected via branch (ring not re-routed): create new LV load_area group for current node
             if target_obj_result:
-                # node can join LV region group
+                # node can join LV load_area group
                 if lv_load_area_group.can_add_lv_load_area(node=node):
 
-                    # add node to LV region group
+                    # add node to LV load_area group
                     lv_load_area_group.add_lv_load_area(lv_load_area=node.grid.region)
                     node.grid.region.lv_load_area_group = lv_load_area_group
 
@@ -179,16 +179,16 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                         target_obj_result.lv_load_area_group = lv_load_area_group
 
                     if debug:
-                        print('LV region group', lv_load_area_group, 'joined!')
+                        print('LV load_area group', lv_load_area_group, 'joined!')
 
                     # node connected, stop connection for current node
                     node_connected = True
                     break
 
-                # cannot join LV region group
+                # cannot join LV load_area group
                 else:
                     if debug:
-                        print('Node', node, 'could not be added to region group', lv_load_area_group)
+                        print('Node', node, 'could not be added to load_area group', lv_load_area_group)
 
                     # rollback changes in graph
                     disconnect_node(node, target_obj_result, graph, debug)
@@ -198,7 +198,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
             # node was inserted into line (re-routed)
             else:
-                # add node to LV region group
+                # add node to LV load_area group
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.grid.region)
                 node.grid.region.lv_load_area_group = lv_load_area_group
 

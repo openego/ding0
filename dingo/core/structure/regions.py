@@ -28,25 +28,25 @@ class MVGridDistrictDingo(RegionDingo):
 
     def lv_load_areas(self):
         """Returns a generator for iterating over LV grid_districts"""
-        for region in self._lv_load_areas:
-            yield region
+        for load_area in self._lv_load_areas:
+            yield load_area
 
     def add_lv_load_area(self, lv_load_area):
-        """Adds a LV region to _lv_load_areas if not already existing"""
+        """Adds a LV load_area to _lv_load_areas if not already existing"""
         if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDingo):
             self._lv_load_areas.append(lv_load_area)
 
     def lv_load_area_groups(self):
-        """Returns a generator for iterating over LV region groups"""
+        """Returns a generator for iterating over LV load_area groups"""
         for lv_load_area_group in self._lv_load_area_groups:
             yield lv_load_area_group
 
     def lv_load_area_groups_count(self):
-        """Returns the count of LV region groups in MV region"""
+        """Returns the count of LV load_area groups in MV region"""
         return len(self._lv_load_area_groups)
 
     def add_lv_load_area_group(self, lv_load_area_group):
-        """Adds a LV region to _lv_load_areas if not already existing"""
+        """Adds a LV load_area to _lv_load_areas if not already existing"""
         if lv_load_area_group not in self.lv_load_area_groups():  # and isinstance(lv_load_area_group, LVRe):
             self._lv_load_area_groups.append(lv_load_area_group)
 
@@ -62,7 +62,7 @@ class MVGridDistrictDingo(RegionDingo):
 
 class LVLoadAreaDingo(RegionDingo):
     """
-    Defines a LV-region in DINGO
+    Defines a LV-load_area in DINGO
     ----------------------------
 
     """
@@ -80,7 +80,7 @@ class LVLoadAreaDingo(RegionDingo):
 
         # threshold: load area peak load, if peak load < threshold => treat load area as satellite
         load_area_sat_load_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_load_threshold')
-        # TODO: Value is read from file every time a LV region is created -> move to associated NetworkDingo class?
+        # TODO: Value is read from file every time a LV load_area is created -> move to associated NetworkDingo class?
 
         db_data = kwargs.get('db_data', None)
 
@@ -196,15 +196,15 @@ class LVLoadAreaDingo(RegionDingo):
 #         self.peak_load_sum = 0
 #         # threshold: max. allowed peak load of satellite string
 #         self.peak_load_max = cfg_dingo.get('mv_connect', 'load_area_sat_string_load_threshold')
-#         # TODO: Value is read from file every time a LV region is created -> move to associated NetworkDingo class?
+#         # TODO: Value is read from file every time a LV load_area is created -> move to associated NetworkDingo class?
 #
 #     def lv_load_areas(self):
 #         """Returns a generator for iterating over LV grid_districts"""
-#         for region in self._lv_load_areas:
-#             yield region
+#         for load_area in self._lv_load_areas:
+#             yield load_area
 #
 #     def add_lv_load_area(self, lv_load_area):
-#         """Adds a LV region to _lv_load_areas if not already existing"""
+#         """Adds a LV load_area to _lv_load_areas if not already existing"""
 #         self._lv_load_areas.append(lv_load_area)
 #         self.peak_load_sum += lv_load_area.peak_load_sum
 #

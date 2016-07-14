@@ -21,11 +21,11 @@ class LVRegionGroupDingo:
 
     def lv_load_areas(self):
         """Returns a generator for iterating over LV grid_districts"""
-        for region in self._lv_load_areas:
-            yield region
+        for load_area in self._lv_load_areas:
+            yield load_area
 
     def add_lv_load_area(self, lv_load_area):
-        """Adds a LV region to _lv_load_areas if not already existing"""
+        """Adds a LV load_area to _lv_load_areas if not already existing"""
         self._lv_load_areas.append(lv_load_area)
         if not isinstance(lv_load_area, CableDistributorDingo):
             self.peak_load_sum += lv_load_area.peak_load_sum

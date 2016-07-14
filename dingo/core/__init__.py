@@ -247,20 +247,20 @@ class NetworkDingo:
                                        session.bind,
                                        index_col='id_db')
 
-        # create region objects from rows and add them to graph
+        # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
             # only pick load areas with peak load greater than
             # lv_loads_threshold
             # TODO: When migrating to SQLAlchemy, move condition to query
             if row['peak_load_sum'] >= lv_loads_threshold:
-                # create LV region object
+                # create LV load_area object
                 lv_load_area = LVLoadAreaDingo(id_db=id_db,
                                             db_data=row,
                                             mv_grid_district=mv_grid_district)
 
                 # TODO: Following code is for testing purposes only!
-                # TODO: (create 1 LV grid and 1 station for every LV region)
+                # TODO: (create 1 LV grid and 1 station for every LV load_area)
 
                 # TODO: The objective is to create stations according to kind
                 # TODO: of loads (e.g. 1 station for residential, 1 for retail
@@ -279,16 +279,16 @@ class NetworkDingo:
                 # add LV station to LV grid
                 lv_grid.add_station(lv_station)
 
-                # add LV grid to LV region
+                # add LV grid to LV load_area
                 lv_load_area.add_lv_grid(lv_grid)
                 # === END TESTING ===
 
-                # add LV region to MV grid_district
+                # add LV load_area to MV grid_district
                 mv_grid_district.add_lv_load_area(lv_load_area)
 
                 # OLD:
-                # add LV region to MV grid graph
-                # TODO: add LV station instead of LV region
+                # add LV load_area to MV grid graph
+                # TODO: add LV station instead of LV load_area
                 #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
 
 
