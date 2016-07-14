@@ -37,6 +37,21 @@ def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
     return branches
 
 
+def calc_geo_dist_vincenty(node_source, node_target):
+    """ Calculates the geodesic distance between `node_source` and `node_target`.
+    Args:
+        node_source: source node (Dingo object), member of _graph
+        node_target: target node (Dingo object), member of _graph
+
+    Returns:
+        Distance in m
+    """
+
+    # notice: vincenty takes (lat,lon)
+    return vincenty((node_source.geo_data.y, node_source.geo_data.x),
+                    (node_target.geo_data.y, node_target.geo_data.x)).m
+
+
 def calc_geo_dist_matrix_vincenty(nodes_pos):
     """ Calculates the geodesic distance between all nodes in `nodes_pos`. For every two points/coord it uses geopy's
     vincenty function (formula devised by Thaddeus Vincenty, with an accurate ellipsoidal model of the earth). As
@@ -56,6 +71,9 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
                  ...,
                  'node_n': {'node_1': dist_n1, ..., 'node_n': dist_nn
                 }
+
+    Notice:
+        x=longitude, y=latitude
     """
 
     matrix = {}
@@ -67,7 +85,8 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
 
         for j in nodes_pos:
             pos_dest = tuple(nodes_pos[j])
-            distance = vincenty(pos_origin, pos_dest).km
+            # notice: vincenty takes (lat,lon), thus the (x,y)/(lon,lat) tuple is reversed
+            distance = vincenty(tuple(reversed(pos_origin)), tuple(reversed(pos_dest))).km
             matrix[i][j] = distance
 
     return matrix
