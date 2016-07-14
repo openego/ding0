@@ -83,7 +83,7 @@ class NetworkDingo:
         mv_grid_district = MVGridDistrictDingo(id_db=poly_id,
                                                mv_grid=mv_grid,
                                                geo_data=grid_district_geo_data)
-        mv_grid.region = mv_grid_district
+        mv_grid.grid_district = mv_grid_district
         mv_station.grid = mv_grid
 
         self.add_mv_grid_district(mv_grid_district)
