@@ -3,12 +3,9 @@ import time
 from dingo.grid.mv_grid.models.models import Graph
 from dingo.grid.mv_grid.util import util, data_input
 from dingo.grid.mv_grid.solvers import savings, local_search
-from dingo.grid.mv_grid.util.distance import calc_geo_distance_vincenty
+from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
-from dingo.tools import config as cfg_dingo
-
-from geopy.distance import vincenty
 
 
 def dingo_graph_to_routing_specs(graph):
@@ -41,7 +38,7 @@ def dingo_graph_to_routing_specs(graph):
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands
-    specs['MATRIX'] = calc_geo_distance_vincenty(nodes_pos)
+    specs['MATRIX'] = calc_geo_dist_matrix_vincenty(nodes_pos)
 
     # TODO: capacity per MV ring (TEMP) -> Later tech. constraints are used for limitation of ring length
     specs['CAPACITY'] = 3000    # in kW
@@ -91,8 +88,7 @@ def routing_solution_to_dingo_graph(graph, solution):
                 node1 = node_list[n1.name()]
                 node2 = node_list[n2.name()]
                 # set branch length
-                b.length = branch_detour_factor *\
-                           vincenty((node1.geo_data.x, node1.geo_data.y), (node2.geo_data.x, node2.geo_data.y)).m
+                b.length = branch_detour_factor * calc_geo_dist_vincenty(node1, node2)
                 # append to branch list
                 edges_graph.append((node1, node2, dict(branch=b)))
 

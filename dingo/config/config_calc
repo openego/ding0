@@ -11,16 +11,25 @@ load_area_threshold = 1
 [mv_connect]
 
 #load_area_sat_load_threshold: unit kW
-load_area_sat_load_threshold = 30
+load_area_sat_load_threshold = 100
 
 #load_area_sat_string_load_threshold: unit kW
-load_area_sat_string_load_threshold = 1000
+load_area_sat_string_load_threshold = 500
 
 #load_area_sat_line_dist_threshold: valid range: 0..1
 load_area_sat_conn_dist_weight = 1
 
+#load_area_sat_string_length_threshold: unit m
+load_area_sat_string_length_threshold = 3000
+
 #load_area_sat_conn_dist_ring: unit m
 load_area_sat_conn_dist_ring_mod = 100
+
+#load_area_sat_buffer_radius: unit m
+load_area_sat_buffer_radius = 2000
+
+#load_area_sat_buffer_radius_inc: unit m
+load_area_sat_buffer_radius_inc = 1000
 
 [assumptions]
 

@@ -37,6 +37,18 @@ conn = db.connection(section='oedb')
 nd.export_mv_grid(conn, mv_regions)
 conn.close()
 
+# lvrg = []
+# for mv_region in nd.mv_regions():
+#     #print(mv_region._lv_region_groups)
+#     #print(type(mv_region._lv_region_groups))
+#     for lv_region_group in iter(mv_region._lv_region_groups):
+#         lvrg.append([str(lv_region_group), lv_region_group.peak_load_sum, lv_region_group.branch_length_sum])
+# lvrg = sorted(lvrg, key=lambda x: x[1])
+#
+# for lvrg_name, lvrg_load, lvrg_length in lvrg:
+#     print(lvrg_name, lvrg_load, lvrg_length)
+
+
 
 #df = nx.to_pandas_dataframe(nd._mv_regions[0].mv_grid._graph)
 # import pprint
