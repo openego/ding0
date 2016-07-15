@@ -18,7 +18,7 @@ class MVGridDingo(GridDingo):
 
     Parameters
     ----------
-    region : MV region (instance of MVRegionDingo class) that is associated with grid
+    region : MV region (instance of MVGridDistrictDingo class) that is associated with grid
     """
     # TODO: Add method to join MV graph with LV graphs to have one graph that covers whole grid (MV and LV)
 
@@ -70,7 +70,7 @@ class MVGridDingo(GridDingo):
     #     # TODO: to get LV stations, generator of generators is necessary
     #     # TODO: see http://stackoverflow.com/questions/19033401/python-generator-of-generators
     #     # TODO: not sure if the following works:
-    #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_regions()]]:
+    #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_load_areas()]]:
     #         self.graph_add_node(lv_station)
 
     def add_cable_distributor(self, cable_dist):
@@ -241,7 +241,7 @@ class LVGridDingo(GridDingo):
 
     Parameters
     ----------
-    region : LV region (instance of LVRegionDingo class) that is associated with grid
+    region : LV region (instance of LVLoadAreaDingo class) that is associated with grid
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -259,7 +259,7 @@ class LVGridDingo(GridDingo):
             self._stations.append(lv_station)
 
             self.graph_add_node(lv_station)
-            self.region.mv_region.mv_grid.graph_add_node(lv_station)
+            self.grid_district.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
     # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
     # def graph_build(self):

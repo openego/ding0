@@ -22,10 +22,10 @@ nd = NetworkDingo(name='network')
 # get database connection info from config file
 conn = db.connection(section='oedb')
 
-#mv_regions=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV regions from SPF region
-mv_regions=[482]
+# mv_grid_districts=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
+mv_grid_districts=[482]
 
-nd.import_mv_regions(conn, mv_regions)
+nd.import_mv_grid_districts(conn, mv_grid_districts)
 
 conn.close()
 
@@ -34,15 +34,15 @@ nd.mv_routing(debug=False, animation=False)
 nd.mv_parametrize_grid()
 
 conn = db.connection(section='oedb')
-nd.export_mv_grid(conn, mv_regions)
+nd.export_mv_grid(conn, mv_grid_districts)
 conn.close()
 
 # lvrg = []
-# for mv_region in nd.mv_regions():
-#     #print(mv_region._lv_region_groups)
-#     #print(type(mv_region._lv_region_groups))
-#     for lv_region_group in iter(mv_region._lv_region_groups):
-#         lvrg.append([str(lv_region_group), lv_region_group.peak_load_sum, lv_region_group.branch_length_sum])
+# for mv_grid_district in nd.mv_grid_districts():
+#     #print(mv_grid_district._lv_load_area_groups)
+#     #print(type(mv_grid_district._lv_load_area_groups))
+#     for lv_load_area_group in iter(mv_grid_district._lv_load_area_groups):
+#         lvrg.append([str(lv_load_area_group), lv_load_area_group.peak_load_sum, lv_load_area_group.branch_length_sum])
 # lvrg = sorted(lvrg, key=lambda x: x[1])
 #
 # for lvrg_name, lvrg_load, lvrg_length in lvrg:
@@ -50,11 +50,11 @@ conn.close()
 
 
 
-#df = nx.to_pandas_dataframe(nd._mv_regions[0].mv_grid._graph)
+#df = nx.to_pandas_dataframe(nd._mv_grid_districts[0].mv_grid._graph)
 # import pprint
-# for edge in nd._mv_regions[0].mv_grid._graph.edge.keys():
+# for edge in nd._mv_grid_districts[0].mv_grid._graph.edge.keys():
 #     # print(edge, type(edge))
 #     pprint.pprint(edge)
-#     pprint.pprint(nd._mv_regions[0].mv_grid._graph.edge[edge])
+#     pprint.pprint(nd._mv_grid_districts[0].mv_grid._graph.edge[edge])
 
-#nd._mv_regions[0].mv_grid.graph_draw()
+#nd._mv_grid_districts[0].mv_grid.graph_draw()

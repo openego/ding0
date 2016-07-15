@@ -9,7 +9,7 @@ from dingo.config import config_db_interfaces as db_int
 cfg_dingo.load_config('config_db_tables')
 GridDistrict_name = cfg_dingo.get('regions', 'grid_district')
 EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
-EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_regions')
+EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
 CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
 
 from egoio import calc_ego_substation as orm_mod_calc_ego_substation
@@ -48,29 +48,29 @@ class NetworkDingo:
 
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', None)
-        self._mv_regions = []
+        self._mv_grid_districts = []
 
-    def mv_regions(self):
-        """Returns a generator for iterating over MV regions"""
-        for region in self._mv_regions:
-            yield region
+    def mv_grid_districts(self):
+        """Returns a generator for iterating over MV grid_districts"""
+        for grid_district in self._mv_grid_districts:
+            yield grid_district
 
-    def add_mv_region(self, mv_region):
-        """Adds a MV region to _mv_regions if not already existing"""
-        # TODO: use setter method here (make attribute '_mv_regions' private)
-        if mv_region not in self.mv_regions():
-            self._mv_regions.append(mv_region)
+    def add_mv_grid_district(self, mv_grid_district):
+        """Adds a MV grid_district to _mv_grid_districts if not already existing"""
+        # TODO: use setter method here (make attribute '_mv_grid_districts' private)
+        if mv_grid_district not in self.mv_grid_districts():
+            self._mv_grid_districts.append(mv_grid_district)
 
-    def build_mv_region(self, poly_id, subst_id, region_geo_data,
+    def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
                         station_geo_data):
-        """initiates single MV region including station and grid
+        """initiates single MV grid_district including station and grid
 
         Parameters
         ----------
-        poly_id: ID of region according to database table. Also used as ID for
+        poly_id: ID of grid_district according to database table. Also used as ID for
             created grid
         subst_id: ID of station according to database table
-        region_geo_data: Polygon (shapely object) of region
+        grid_district_geo_data: Polygon (shapely object) of grid district
         station_geo_data: Point (shapely object) of station
 
         """
@@ -80,26 +80,26 @@ class NetworkDingo:
 
         mv_grid = MVGridDingo(id_db=poly_id,
                               station=mv_station)
-        mv_region = MVRegionDingo(id_db=poly_id,
-                                  mv_grid=mv_grid,
-                                  geo_data=region_geo_data)
-        mv_grid.region = mv_region
+        mv_grid_district = MVGridDistrictDingo(id_db=poly_id,
+                                               mv_grid=mv_grid,
+                                               geo_data=grid_district_geo_data)
+        mv_grid.grid_district = mv_grid_district
         mv_station.grid = mv_grid
 
-        self.add_mv_region(mv_region)
+        self.add_mv_grid_district(mv_grid_district)
 
-        return mv_region
+        return mv_grid_district
 
-    def import_mv_regions(self, conn, mv_regions=None):
-        """Imports MV regions and MV stations from database, reprojects geodata
+    def import_mv_grid_districts(self, conn, mv_grid_districts=None):
+        """Imports MV grid_districts and MV stations from database, reprojects geodata
         and and initiates objects.
 
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_regions : List of MV regions/stations (int) to be imported (if empty,
-            all regions & stations are imported)
+        mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
+            all grid_districts & stations are imported)
 
         Returns
         -------
@@ -107,18 +107,18 @@ class NetworkDingo:
 
         See Also
         --------
-        build_mv_region : used to instantiate MV region objects
-        import_lv_regions : used to import LV regions for every single MV region
-        add_peak_demand : used to summarize peak loads of underlying LV regions
+        build_mv_grid_district : used to instantiate MV grid_district objects
+        import_lv_load_areas : used to import load_areas for every single MV grid_district
+        add_peak_demand : used to summarize peak loads of underlying load_areas
         """
 
         # check arguments
-        if not all(isinstance(_, int) for _ in mv_regions):
-            raise TypeError('`mv_regions` has to be a list of integers.')
+        if not all(isinstance(_, int) for _ in mv_grid_districts):
+            raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
         # get database naming and srid settings from config
         try:
-            mv_regions_schema_table = cfg_dingo.get('regions', 'mv_regions')
+            mv_grid_districts_schema_table = cfg_dingo.get('regions', 'mv_grid_districts')
             mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
             srid = str(int(cfg_dingo.get('geo', 'srid')))
         except OSError:
@@ -137,7 +137,7 @@ class NetworkDingo:
                                        label('subs_geom')).\
             join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id==
                  orm_EgoDeuSubstation.id).\
-            filter(orm_GridDistrict.subst_id.in_(mv_regions))
+            filter(orm_GridDistrict.subst_id.in_(mv_grid_districts))
 
         # read data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
@@ -145,14 +145,14 @@ class NetworkDingo:
                                     index_col='subst_id')
 
 
-        # iterate over region/station datasets and initiate objects
+        # iterate over grid_district/station datasets and initiate objects
         try:
             for poly_id, row in mv_data.iterrows():
                 subst_id = poly_id
                 region_geo_data = wkt_loads(row['poly_geom'])
 
                 # transform `region_geo_data` to epsg 3035
-                # to achieve correct area calculation of mv_region
+                # to achieve correct area calculation of mv_grid_district
                 station_geo_data = wkt_loads(row['subs_geom'])
                 projection = partial(
                     pyproj.transform,
@@ -161,20 +161,20 @@ class NetworkDingo:
 
                 region_geo_data = transform(projection, region_geo_data)
 
-                mv_region = self.build_mv_region(poly_id,
+                mv_grid_district = self.build_mv_grid_district(poly_id,
                                                  subst_id,
                                                  region_geo_data,
                                                  station_geo_data)
-                self.import_lv_regions(conn, mv_region)
+                self.import_lv_load_areas(conn, mv_grid_district)
 
-                # add sum of peak loads of underlying lv regions to mv_region
-                mv_region.add_peak_demand()
+                # add sum of peak loads of underlying lv grid_districts to mv_grid_district
+                mv_grid_district.add_peak_demand()
         except:
-            raise ValueError('unexpected error while initiating MV regions' \
+            raise ValueError('unexpected error while initiating MV grid_districts' \
                              'from DB dataset.')
 
-    def import_lv_regions(self, conn, mv_region):
-        """imports LV regions (load areas) from database for a single MV region
+    def import_lv_load_areas(self, conn, mv_grid_district):
+        """imports load_areas (load areas) from database for a single MV grid_district
 
         Table definition for load areas can be found here:
         http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/
@@ -183,7 +183,7 @@ class NetworkDingo:
         Parameters
         ----------
         conn: Database connection
-        mv_region : MV region/station (instance of MVRegionDingo class) for
+        mv_grid_district : MV grid_district/station (instance of MVGridDistrictDingo class) for
             which the import of load areas is performed
         """
 
@@ -200,7 +200,7 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        lv_regions_sqla = session.query(
+        lv_load_areas_sqla = session.query(
             orm_EgoDeuLoadArea.id.label('id_db'),
             orm_EgoDeuLoadArea.zensus_sum,
             orm_EgoDeuLoadArea.zensus_count.label('zensus_cnt'),
@@ -239,28 +239,28 @@ class NetworkDingo:
                        * load_scaling_factor).label('peak_load_sum')). \
             join(orm_CalcEgoPeakLoad, orm_EgoDeuLoadArea.id
                  == orm_CalcEgoPeakLoad.id).\
-            filter(orm_EgoDeuLoadArea.subst_id == mv_region.\
+            filter(orm_EgoDeuLoadArea.subst_id == mv_grid_district.\
                    mv_grid._station.id_db)
 
         # read data from db
-        lv_regions = pd.read_sql_query(lv_regions_sqla.statement,
+        lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
                                        session.bind,
                                        index_col='id_db')
 
-        # create region objects from rows and add them to graph
-        for id_db, row in lv_regions.iterrows():
+        # create load_area objects from rows and add them to graph
+        for id_db, row in lv_load_areas.iterrows():
 
             # only pick load areas with peak load greater than
             # lv_loads_threshold
             # TODO: When migrating to SQLAlchemy, move condition to query
             if row['peak_load_sum'] >= lv_loads_threshold:
-                # create LV region object
-                lv_region = LVRegionDingo(id_db=id_db,
-                                          db_data=row,
-                                          mv_region=mv_region)
+                # create LV load_area object
+                lv_load_area = LVLoadAreaDingo(id_db=id_db,
+                                            db_data=row,
+                                            mv_grid_district=mv_grid_district)
 
                 # TODO: Following code is for testing purposes only!
-                # TODO: (create 1 LV grid and 1 station for every LV region)
+                # TODO: (create 1 LV grid and 1 station for every LV load_area)
 
                 # TODO: The objective is to create stations according to kind
                 # TODO: of loads (e.g. 1 station for residential, 1 for retail
@@ -271,7 +271,7 @@ class NetworkDingo:
                 lv_station = LVStationDingo(id_db=id_db,
                                             geo_data=station_geo_data,
                                             peak_load=row['peak_load_sum'])
-                lv_grid = LVGridDingo(region=lv_region,
+                lv_grid = LVGridDingo(region=lv_load_area,
                                       id_db=id_db,
                                       geo_data=station_geo_data)
                 lv_station.grid = lv_grid
@@ -279,27 +279,27 @@ class NetworkDingo:
                 # add LV station to LV grid
                 lv_grid.add_station(lv_station)
 
-                # add LV grid to LV region
-                lv_region.add_lv_grid(lv_grid)
+                # add LV grid to LV load_area
+                lv_load_area.add_lv_grid(lv_grid)
                 # === END TESTING ===
 
-                # add LV region to MV region
-                mv_region.add_lv_region(lv_region)
+                # add LV load_area to MV grid_district
+                mv_grid_district.add_lv_load_area(lv_load_area)
 
                 # OLD:
-                # add LV region to MV grid graph
-                # TODO: add LV station instead of LV region
-                #mv_region.mv_grid.graph_add_node(lv_region)
+                # add LV load_area to MV grid graph
+                # TODO: add LV station instead of LV load_area
+                #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
 
 
-    def export_mv_grid(self, conn, mv_regions):
+    def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_regions : List of MV regions (instances of MVRegionDingo class)
+        mv_grid_districts : List of MV grid_districts (instances of MVGridDistrictDingo class)
             whose MV grids are exported.
 
         """
@@ -309,8 +309,8 @@ class NetworkDingo:
         # TODO: method has to be extended to cover more data
 
         # check arguments
-        if not all(isinstance(_, int) for _ in mv_regions):
-            raise TypeError('`mv_regions` has to be a list of integers.')
+        if not all(isinstance(_, int) for _ in mv_grid_districts):
+            raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
@@ -322,14 +322,14 @@ class NetworkDingo:
         session.commit()
 
         # build data array from grids (nodes and branches)
-        for region in self.mv_regions():
-            grid_id = region.mv_grid.id_db
+        for grid_district in self.mv_grid_districts():
+            grid_id = grid_district.mv_grid.id_db
             mv_stations = []
             mv_cable_distributors = []
             lv_stations = []
             lines = []
 
-            for node in region.mv_grid._graph.nodes():
+            for node in grid_district.mv_grid._graph.nodes():
                 if isinstance(node, LVStationDingo):
                     lv_stations.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, CableDistributorDingo):
@@ -345,7 +345,7 @@ class NetworkDingo:
                 MultiPoint(mv_cable_distributors), srid=srid)
             mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
 
-            for branch in region.mv_grid.graph_edges():
+            for branch in grid_district.mv_grid.graph_edges():
                 line = branch['adj_nodes']
                 lines.append(((line[0].geo_data.x,
                                line[0].geo_data.y),
@@ -388,8 +388,8 @@ class NetworkDingo:
         else:
             anim = None
 
-        for region in self.mv_regions():
-            region.mv_grid.routing(debug, anim)
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.routing(debug, anim)
 
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see
@@ -401,8 +401,8 @@ class NetworkDingo:
         debug: If True, information is printed while parametrization
         """
 
-        for region in self.mv_regions():
-            region.mv_grid.parametrize_grid(debug)
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.parametrize_grid(debug)
 
     def __repr__(self):
         return str(self.name)

@@ -19,7 +19,7 @@ class GridDingo:
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
-        self.region = kwargs.get('region', None)
+        self.grid_district = kwargs.get('region', None)
         #self.geo_data = kwargs.get('geo_data', None)
 
         self._graph = nx.Graph()
@@ -30,7 +30,7 @@ class GridDingo:
                 and (isinstance(node_object, StationDingo) or isinstance(node_object, CableDistributorDingo)):
             self._graph.add_node(node_object)
 
-    # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and LV regions!
+    # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and load_areas!
     def graph_draw(self):
         """ Draws grid graph using networkx
 
@@ -275,7 +275,7 @@ class CableDistributorDingo():
         self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
-        self.lv_region_group = kwargs.get('lv_region_group', None)
+        self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
 
     def __repr__(self):
         return 'cable_dist_' + str(self.id_db)
