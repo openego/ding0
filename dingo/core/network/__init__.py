@@ -86,9 +86,26 @@ class GridDingo:
         for edge in nx.get_edge_attributes(self._graph, 'branch').items():
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
+    def find_path(self, node_source, node_target):
+        """ Determines the shortest path from `node_source` to `node_target` in _graph using networkx' shortest path
+            algorithm.
+        Args:
+            node_source: source node (Dingo object), member of _graph
+            node_target: target node (Dingo object), member of _graph
+
+        Returns:
+            path: shortest path from `node_source` to `node_target` (list of nodes in _graph)
+        """
+        if (node_source in self._graph.nodes()) and (node_target in self._graph.nodes()):
+            path = nx.shortest_path(self._graph, node_source, node_target)
+        else:
+            raise Exception('At least one of the nodes is not a member of graph.')
+
+        return path
+
     def graph_path_length(self, node_source, node_target):
-        """ Calculates the absolute distance between `node_source` and `node_target` in meters using networkx' shortest
-            path algorithm and branche's length atrtribute.
+        """ Calculates the absolute distance between `node_source` and `node_target` in meters using find_path() and
+            branches' length attribute.
         Args:
             node_source: source node (Dingo object), member of _graph
             node_target: target node (Dingo object), member of _graph
@@ -98,7 +115,7 @@ class GridDingo:
         """
 
         length = 0
-        path = nx.shortest_path(self._graph, node_source, node_target)
+        path = self.find_path(node_source, node_target)
         node_pairs = list(zip(path[0:len(path)-1], path[1:len(path)]))
 
         for n1, n2 in node_pairs:
