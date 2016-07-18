@@ -153,6 +153,7 @@ class StationDingo():
             self._transformers.append(transformer)
         # TODO: what if it exists? -> error message
 
+
 class BusDingo(Bus):
     """ Create new pypower Bus class as child from oemof Bus used to define
     busses and generators data
