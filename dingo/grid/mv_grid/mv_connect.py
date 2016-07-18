@@ -2,6 +2,7 @@
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CableDistributorDingo
 from dingo.core.structure.groups import LVRegionGroupDingo
+from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.tools import config as cfg_dingo
 from dingo.tools.geo import calc_geo_branches_in_buffer, calc_geo_dist_vincenty
 
@@ -77,7 +78,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
         object) and tries to connect `node` to one of them.
 
     Args:
-        node: origin node - Dingo object (e.g. LVStationDingo)
+        node: origin node - Dingo object (e.g. LVLoadAreaCentreDingo)
         node_shp: Shapely Point object of node
         graph: NetworkX graph object with nodes
         proj: pyproj projection object: equidistant CRS to conformal CRS (e.g. ETRS -> WGS84)
@@ -103,22 +104,22 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             node2 = dist_min_obj['obj']['adj_nodes'][1]
 
             # both nodes are LV stations -> get group from 1 or 2
-            if (isinstance(node1, LVStationDingo) and
-               isinstance(node2, LVStationDingo)):
-                if not node1.grid.grid_district.lv_load_area_group:
-                    lv_load_area_group = node2.grid.grid_district.lv_load_area_group
+            if (isinstance(node1, LVLoadAreaCentreDingo) and
+               isinstance(node2, LVLoadAreaCentreDingo)):
+                if not node1.lv_load_area.lv_load_area_group:
+                    lv_load_area_group = node2.lv_load_area.lv_load_area_group
                 else:
-                    lv_load_area_group = node1.grid.grid_district.lv_load_area_group
+                    lv_load_area_group = node1.lv_load_area.lv_load_area_group
 
             # node 1 is LV station and node 2 not -> get group from node 1
-            elif (isinstance(node1, LVStationDingo) and
+            elif (isinstance(node1, LVLoadAreaCentreDingo) and
                   isinstance(node2, (MVStationDingo, CableDistributorDingo))):
-                lv_load_area_group = node1.grid.grid_district.lv_load_area_group
+                lv_load_area_group = node1.lv_load_area.lv_load_area_group
 
             # node 2 is LV station and node 1 not -> get group from node 2
             elif (isinstance(node1, (MVStationDingo, CableDistributorDingo)) and
-                  isinstance(node2, LVStationDingo)):
-                lv_load_area_group = node2.grid.grid_district.lv_load_area_group
+                  isinstance(node2, LVLoadAreaCentreDingo)):
+                lv_load_area_group = node2.lv_load_area.lv_load_area_group
 
             # both nodes are not a LV station -> no group
             elif (isinstance(node1, (MVStationDingo, CableDistributorDingo)) and
@@ -130,7 +131,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             if isinstance(dist_min_obj['obj'], CableDistributorDingo):
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area_group
             else:
-                lv_load_area_group = dist_min_obj['obj'].grid.grid_district.lv_load_area_group
+                lv_load_area_group = dist_min_obj['obj'].lv_load_area.lv_load_area_group
 
         # target object doesn't belong to a satellite string (is member of a LV load_area group)
         if lv_load_area_group is None:
@@ -140,11 +141,11 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
             # if node was connected via branch (ring not re-routed): create new LV load_area group for current node
             if target_obj_result:
-                lv_load_area_group = LVRegionGroupDingo(id_db=node.grid.grid_district.mv_grid_district.lv_load_area_groups_count() + 1,
+                lv_load_area_group = LVRegionGroupDingo(id_db=node.lv_load_area.mv_grid_district.lv_load_area_groups_count() + 1,
                                                      root_node=target_obj_result)
-                lv_load_area_group.add_lv_load_area(lv_load_area=node.grid.grid_district)
-                node.grid.grid_district.lv_load_area_group = lv_load_area_group
-                node.grid.grid_district.mv_grid_district.add_lv_load_area_group(lv_load_area_group)
+                lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
+                node.lv_load_area.lv_load_area_group = lv_load_area_group
+                node.lv_load_area.mv_grid_district.add_lv_load_area_group(lv_load_area_group)
 
             if debug:
                 print('New LV load_area group', lv_load_area_group, 'created!')
@@ -171,8 +172,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                 if lv_load_area_group.can_add_lv_load_area(node=node):
 
                     # add node to LV load_area group
-                    lv_load_area_group.add_lv_load_area(lv_load_area=node.grid.grid_district)
-                    node.grid.grid_district.lv_load_area_group = lv_load_area_group
+                    lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
+                    node.lv_load_area.lv_load_area_group = lv_load_area_group
 
                     if isinstance(target_obj_result, CableDistributorDingo):
                         lv_load_area_group.add_lv_load_area(lv_load_area=target_obj_result)
@@ -199,8 +200,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # node was inserted into line (re-routed)
             else:
                 # add node to LV load_area group
-                lv_load_area_group.add_lv_load_area(lv_load_area=node.grid.grid_district)
-                node.grid.grid_district.lv_load_area_group = lv_load_area_group
+                lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
+                node.lv_load_area.lv_load_area_group = lv_load_area_group
 
                 # node inserted into existing route, stop connection for current node
                 node_connected = True
@@ -215,7 +216,7 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
     """ Connects `node` to `target_obj`
 
     Args:
-        node: origin node - Dingo object (e.g. LVStationDingo)
+        node: origin node - Dingo object (e.g. LVLoadAreaCentreDingo)
         node_shp: Shapely Point object of origin node
         target_obj: object that node shall be connected to
         proj: pyproj projection object: equidistant CRS to conformal CRS (e.g. ETRS -> WGS84)
@@ -225,9 +226,9 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
         debug: If True, information is printed during process
 
     Returns:
-        target_obj_result: object that node was connected to (instance of LVStationDingo or CableDistributorDingo). If
-                           node is included into line instead of creating a new line (see arg `conn_dist_ring_mod`),
-                           `target_obj_result` is None.
+        target_obj_result: object that node was connected to (instance of LVLoadAreaCentreDingo or
+                           CableDistributorDingo). If node is included into line instead of creating a new line (see arg
+                           `conn_dist_ring_mod`), `target_obj_result` is None.
     """
 
     branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
@@ -263,8 +264,8 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
         else:
 
             # create cable distributor and add it to grid
-            cable_dist = CableDistributorDingo(geo_data=conn_point_shp, grid=node.grid)
-            node.grid.grid_district.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
+            cable_dist = CableDistributorDingo(geo_data=conn_point_shp, grid=node.lv_load_area.mv_grid_district.mv_grid)
+            node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
             # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
             graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
@@ -304,7 +305,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
     """ Disconnects `node` from `target_obj`
 
     Args:
-        node: node - Dingo object (e.g. LVStationDingo)
+        node: node - Dingo object (e.g. LVLoadAreaCentreDingo)
         target_obj_result:
         graph: NetworkX graph object with nodes and newly created branches
         debug: If True, information is printed during process
@@ -370,7 +371,7 @@ def mv_connect(graph, dingo_object, debug=False):
 
     # check if dingo_object is valid object
     # TODO: Add RES to isinstance check
-    if isinstance(dingo_object, (LVStationDingo, LVStationDingo)):
+    if isinstance(dingo_object, (LVLoadAreaCentreDingo, LVLoadAreaCentreDingo)):
 
         # startx = time.time()
         # nodes_pos = {}
@@ -398,13 +399,13 @@ def mv_connect(graph, dingo_object, debug=False):
         # check all nodes
         # TODO: create generators in grid class for iterating over satellites and non-satellites
         for node in graph.nodes():
-            if isinstance(dingo_object, LVStationDingo):
+            if isinstance(dingo_object, LVLoadAreaCentreDingo):
 
                 # station is LV station
-                if isinstance(node, LVStationDingo):
+                if isinstance(node, LVLoadAreaCentreDingo):
 
                     # satellites only
-                    if node.grid.grid_district.is_satellite:
+                    if node.lv_load_area.is_satellite:
 
                         node_shp = transform(proj1, node.geo_data)
 
