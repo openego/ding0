@@ -256,32 +256,34 @@ class NetworkDingo:
             if row['peak_load_sum'] >= lv_loads_threshold:
                 # create LV load_area object
                 lv_load_area = LVLoadAreaDingo(id_db=id_db,
-                                            db_data=row,
-                                            mv_grid_district=mv_grid_district)
+                                               db_data=row,
+                                               mv_grid_district=mv_grid_district,
+                                               peak_load_sum=row['peak_load_sum'])
 
-                # TODO: Following code is for testing purposes only!
-                # TODO: (create 1 LV grid and 1 station for every LV load_area)
+                # # TODO: Modify following commented-out part when LVGridDistrict (Input Jonas) is implemented
+                # # === START TESTING ===
+                # # create LV station object
+                # station_geo_data = wkt_loads(row['geo_centre'])
+                # lv_station = LVStationDingo(id_db=id_db,
+                #                             geo_data=station_geo_data,
+                #                             peak_load=row['peak_load_sum'])
+                # lv_grid = LVGridDingo(region=lv_load_area,
+                #                       id_db=id_db,
+                #                       geo_data=station_geo_data)
+                # lv_station.grid = lv_grid
+                #
+                # # add LV station to LV grid
+                # lv_grid.add_station(lv_station)
+                #
+                # # add LV grid to LV load_area
+                # lv_load_area.add_lv_grid(lv_grid)
+                # # === END TESTING ===
 
-                # TODO: The objective is to create stations according to kind
-                # TODO: of loads (e.g. 1 station for residential, 1 for retail
-                # TODO: etc.)
-                # === START TESTING ===
-                # create LV station object
-                station_geo_data = wkt_loads(row['geo_centre'])
-                lv_station = LVStationDingo(id_db=id_db,
-                                            geo_data=station_geo_data,
-                                            peak_load=row['peak_load_sum'])
-                lv_grid = LVGridDingo(region=lv_load_area,
-                                      id_db=id_db,
-                                      geo_data=station_geo_data)
-                lv_station.grid = lv_grid
-
-                # add LV station to LV grid
-                lv_grid.add_station(lv_station)
-
-                # add LV grid to LV load_area
-                lv_load_area.add_lv_grid(lv_grid)
-                # === END TESTING ===
+                centre_geo_data = wkt_loads(row['geo_centre'])
+                lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
+                                                            geo_data=centre_geo_data,
+                                                            lv_load_area=lv_load_area)
+                lv_load_area.set_lv_load_area_centre(lv_load_area_centre)
 
                 # add LV load_area to MV grid_district
                 mv_grid_district.add_lv_load_area(lv_load_area)
@@ -330,7 +332,7 @@ class NetworkDingo:
             lines = []
 
             for node in grid_district.mv_grid._graph.nodes():
-                if isinstance(node, LVStationDingo):
+                if isinstance(node, LVLoadAreaCentreDingo):
                     lv_stations.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, CableDistributorDingo):
                     mv_cable_distributors.append((node.geo_data.x,
