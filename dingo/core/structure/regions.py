@@ -1,5 +1,5 @@
 from . import RegionDingo
-from dingo.core.network.grids import LVGridDingo
+#from dingo.core.network.grids import LVGridDingo
 from dingo.tools import config as cfg_dingo
 
 from shapely.wkt import loads as wkt_loads
@@ -60,6 +60,7 @@ class MVGridDistrictDingo(RegionDingo):
     def __repr__(self):
         return 'mvregion_' + str(self.id_db)
 
+
 class LVLoadAreaDingo(RegionDingo):
     """
     Defines a LV-load_area in DINGO
@@ -75,6 +76,7 @@ class LVLoadAreaDingo(RegionDingo):
         # more params
         self._lv_grids = []     # TODO: add setter
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
+        self._lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
 
@@ -177,8 +179,14 @@ class LVLoadAreaDingo(RegionDingo):
 
     def add_lv_grid(self, lv_grid):
         """Adds a LV grid to _lv_grids if not already existing"""
-        if lv_grid not in self.lv_grids() and isinstance(lv_grid, LVGridDingo):
+        if lv_grid not in self.lv_grids():  # and isinstance(lv_grid, LVGridDingo):
             self._lv_grids.append(lv_grid)
+
+    def set_lv_load_area_centre(self, lv_load_area_centre):
+        """Adds a LV station to _stations and grid graph if not already existing"""
+        if isinstance(lv_load_area_centre, LVLoadAreaCentreDingo):
+            self._lv_load_area_centre = lv_load_area_centre
+            self.mv_grid_district.mv_grid.graph_add_node(lv_load_area_centre)
 
     def __repr__(self):
         return 'lvregion_' + str(self.id_db)
@@ -218,3 +226,24 @@ class LVLoadAreaDingo(RegionDingo):
 #
 #     def __repr__(self):
 #         return 'lvregiongroup_' + str(self.id_db)
+
+
+class LVLoadAreaCentreDingo:
+    """
+    Defines a region centre in Dingo
+    --------------------------------
+    The centres are used in the MV routing as nodes.
+    Note: Centre is a point within a region's polygon that is located most central (e.g. in a simple region shape like a
+    circle it's the geometric center).
+
+    Parameters
+    ----------
+    id_db: unique ID in database (=id of associated load area)
+    """
+    def __init__(self, **kwargs):
+        self.id_db = kwargs.get('id_db', None)
+        self.geo_data = kwargs.get('geo_data', None)
+        self.lv_load_area = kwargs.get('lv_load_area', None)
+
+    def __repr__(self):
+        return 'regioncentre_' + str(self.id_db)
