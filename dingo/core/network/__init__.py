@@ -1,6 +1,8 @@
 from oemof.core.network.entities.components import Source
 from oemof.core.network.entities.buses import Bus
 
+from dingo.core.structure.regions import LVLoadAreaCentreDingo
+
 #from oemof.core.network.entities.buses import BusPypo
 #from oemof.core.network.entities.components.transports import BranchPypo
 #from oemof.core.network.entities.components.sources import GenPypo
@@ -26,8 +28,8 @@ class GridDingo:
 
     def graph_add_node(self, node_object):
         """Adds a station or cable distributor object to grid graph if not already existing"""
-        if node_object not in self._graph.nodes()\
-                and (isinstance(node_object, StationDingo) or isinstance(node_object, CableDistributorDingo)):
+        if ((node_object not in self._graph.nodes()) and
+            (isinstance(node_object, (StationDingo, CableDistributorDingo, LVLoadAreaCentreDingo)))):
             self._graph.add_node(node_object)
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and load_areas!
