@@ -56,7 +56,7 @@ class MVGridDistrictDingo(RegionDingo):
 
     def add_lv_load_area_group(self, lv_load_area_group):
         """Adds a LV load_area to _lv_load_areas if not already existing"""
-        if lv_load_area_group not in self.lv_load_area_groups():  # and isinstance(lv_load_area_group, LVRe):
+        if lv_load_area_group not in self.lv_load_area_groups():
             self._lv_load_area_groups.append(lv_load_area_group)
 
     def add_peak_demand(self):

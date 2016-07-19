@@ -271,6 +271,7 @@ class SourceDingo(Source):
         #inherit parameters from oemof's Transformer
         super().__init__(**kwargs)
 
+
 class CableDistributorDingo():
     """ Cable distributor (connection point) """
 

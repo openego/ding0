@@ -134,7 +134,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area.lv_load_area_group
 
         # target object doesn't belong to a satellite string (is member of a LV load_area group)
-        if lv_load_area_group is None:
+        if not lv_load_area_group:
 
             # connect node
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
@@ -261,7 +261,9 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
         else:
 
             # create cable distributor and add it to grid
-            cable_dist = CableDistributorDingo(geo_data=conn_point_shp, grid=node.lv_load_area.mv_grid_district.mv_grid)
+            cable_dist = CableDistributorDingo(id_db=node.lv_load_area.mv_grid_district.mv_grid.cable_distributors_count() + 1,
+                                               geo_data=conn_point_shp,
+                                               grid=node.lv_load_area.mv_grid_district.mv_grid)
             node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
             # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
