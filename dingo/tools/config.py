@@ -24,6 +24,7 @@ Option2 = value2 \n
 """
 
 import os.path as path
+import dingo
 
 try:
     import configparser as cp
@@ -35,7 +36,8 @@ cfg = cp.RawConfigParser()
 _loaded = False
 
 def load_config(filename):
-    FILE = path.join(path.dirname(path.realpath(__file__)), '..', 'config', filename)
+    package_path = dingo.__path__[0]
+    FILE = path.join(package_path, 'config', filename)
 
     try:
         cfg.read(FILE)
