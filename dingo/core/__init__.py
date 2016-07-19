@@ -177,8 +177,7 @@ class NetworkDingo:
         """imports load_areas (load areas) from database for a single MV grid_district
 
         Table definition for load areas can be found here:
-        http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/
-        Methoden_AP_26_DataProc
+        http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/Methoden_AP_26_DataProc
 
         Parameters
         ----------
@@ -250,47 +249,45 @@ class NetworkDingo:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
-            # only pick load areas with peak load greater than
-            # lv_loads_threshold
+            # only pick load areas with peak load greater than lv_loads_threshold
             # TODO: When migrating to SQLAlchemy, move condition to query
             if row['peak_load_sum'] >= lv_loads_threshold:
                 # create LV load_area object
                 lv_load_area = LVLoadAreaDingo(id_db=id_db,
-                                            db_data=row,
-                                            mv_grid_district=mv_grid_district)
+                                               db_data=row,
+                                               mv_grid_district=mv_grid_district,
+                                               peak_load_sum=row['peak_load_sum'])
 
-                # TODO: Following code is for testing purposes only!
-                # TODO: (create 1 LV grid and 1 station for every LV load_area)
+                # # TODO: Modify following commented-out part when LVGridDistrict (Input Jonas) is implemented
+                # # === START TESTING ===
+                # # create LV station object
+                # station_geo_data = wkt_loads(row['geo_centre'])
+                # lv_station = LVStationDingo(id_db=id_db,
+                #                             geo_data=station_geo_data,
+                #                             peak_load=row['peak_load_sum'])
+                # lv_grid = LVGridDingo(region=lv_load_area,
+                #                       id_db=id_db,
+                #                       geo_data=station_geo_data)
+                # lv_station.grid = lv_grid
+                #
+                # # add LV station to LV grid
+                # lv_grid.add_station(lv_station)
+                #
+                # # add LV grid to LV load_area
+                # lv_load_area.add_lv_grid(lv_grid)
+                # # === END TESTING ===
 
-                # TODO: The objective is to create stations according to kind
-                # TODO: of loads (e.g. 1 station for residential, 1 for retail
-                # TODO: etc.)
-                # === START TESTING ===
-                # create LV station object
-                station_geo_data = wkt_loads(row['geo_centre'])
-                lv_station = LVStationDingo(id_db=id_db,
-                                            geo_data=station_geo_data,
-                                            peak_load=row['peak_load_sum'])
-                lv_grid = LVGridDingo(region=lv_load_area,
-                                      id_db=id_db,
-                                      geo_data=station_geo_data)
-                lv_station.grid = lv_grid
+                centre_geo_data = wkt_loads(row['geo_centre'])
 
-                # add LV station to LV grid
-                lv_grid.add_station(lv_station)
+                # create new centre object for LV load area
+                lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
+                                                            geo_data=centre_geo_data,
+                                                            lv_load_area=lv_load_area)
+                # links the centre object to LV load area
+                lv_load_area.lv_load_area_centre = lv_load_area_centre
 
-                # add LV grid to LV load_area
-                lv_load_area.add_lv_grid(lv_grid)
-                # === END TESTING ===
-
-                # add LV load_area to MV grid_district
+                # add LV load area to MV grid district (and add centre object to MV gris district's graph)
                 mv_grid_district.add_lv_load_area(lv_load_area)
-
-                # OLD:
-                # add LV load_area to MV grid graph
-                # TODO: add LV station instead of LV load_area
-                #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
-
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
@@ -330,7 +327,7 @@ class NetworkDingo:
             lines = []
 
             for node in grid_district.mv_grid._graph.nodes():
-                if isinstance(node, LVStationDingo):
+                if isinstance(node, LVLoadAreaCentreDingo):
                     lv_stations.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, CableDistributorDingo):
                     mv_cable_distributors.append((node.geo_data.x,

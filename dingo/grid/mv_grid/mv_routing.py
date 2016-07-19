@@ -5,6 +5,7 @@ from dingo.grid.mv_grid.util import util, data_input
 from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty
 from dingo.core.network.stations import *
+from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.core.network import BranchDingo
 
 
@@ -24,10 +25,12 @@ def dingo_graph_to_routing_specs(graph):
     for node in graph.nodes():
 
         # station is LV station
-        if isinstance(node, LVStationDingo):
+        if isinstance(node, LVLoadAreaCentreDingo):
             # only major stations are connected via MV ring
-            if not node.grid.grid_district.is_satellite:
-                nodes_demands[str(node)] = node.grid.grid_district.peak_load_sum
+            if not node.lv_load_area.is_satellite:
+                # OLD: prior issue #51
+                # nodes_demands[str(node)] = node.grid.grid_district.peak_load_sum
+                nodes_demands[str(node)] = node.lv_load_area.peak_load_sum
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
 
         # station is MV station

@@ -25,7 +25,7 @@ def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
     while not branches:
         node_shp = transform(proj, node.geo_data)
         buffer_zone_shp = node_shp.buffer(radius)
-        for branch in node.grid.grid_district.mv_grid_district.mv_grid.graph_edges():
+        for branch in node.lv_load_area.mv_grid_district.mv_grid.graph_edges():
             nodes = branch['adj_nodes']
             branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
             if buffer_zone_shp.intersects(branch_shp):
