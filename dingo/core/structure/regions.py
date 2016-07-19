@@ -195,42 +195,6 @@ class LVLoadAreaDingo(RegionDingo):
         return 'lvregion_' + str(self.id_db)
 
 
-# class LVRegionGroupDingo:
-#     """ Container for small load_areas / load areas (satellites) = a group of stations which are within the same
-#         satellite string. It is required to check whether a satellite string has got more load than allowed, hence new
-#         nodes cannot be added to it.
-#     """
-#
-#     def __init__(self, **kwargs):
-#         self.id_db = kwargs.get('id_db', None)
-#         self._lv_load_areas = []
-#         self.peak_load_sum = 0
-#         # threshold: max. allowed peak load of satellite string
-#         self.peak_load_max = cfg_dingo.get('mv_connect', 'load_area_sat_string_load_threshold')
-#         # TODO: Value is read from file every time a LV load_area is created -> move to associated NetworkDingo class?
-#
-#     def lv_load_areas(self):
-#         """Returns a generator for iterating over load_areas"""
-#         for load_area in self._lv_load_areas:
-#             yield load_area
-#
-#     def add_lv_load_area(self, lv_load_area):
-#         """Adds a LV load_area to _lv_load_areas if not already existing"""
-#         self._lv_load_areas.append(lv_load_area)
-#         self.peak_load_sum += lv_load_area.peak_load_sum
-#
-#     def can_add_lv_load_area(self, lv_load_area):
-#         """Sums up peak load of LV stations = total peak load for satellite string"""
-#         if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDingo):
-#             if (lv_load_area.peak_load_sum + self.peak_load_sum) <= self.peak_load_max:
-#                 return True
-#             else:
-#                 return False
-#
-#     def __repr__(self):
-#         return 'lvregiongroup_' + str(self.id_db)
-
-
 class LVLoadAreaCentreDingo:
     """
     Defines a region centre in Dingo

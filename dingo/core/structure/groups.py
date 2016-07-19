@@ -2,10 +2,10 @@ from dingo.core.network import CableDistributorDingo
 from dingo.tools import config as cfg_dingo
 
 
-class LVRegionGroupDingo:
+class LoadAreaGroupDingo:
     """ Container for small load_areas / load areas (satellites) = a group of stations which are within the same
-        satellite string. It is required to check whether a satellite string has got more load than allowed, hence new
-        nodes cannot be added to it.
+        satellite string. It is required to check whether a satellite string has got more load or string length than
+        allowed, hence new nodes cannot be added to it.
     """
 
     def __init__(self, **kwargs):
