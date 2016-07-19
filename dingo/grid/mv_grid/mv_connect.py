@@ -139,9 +139,10 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # connect node
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
-            # if node was connected via branch (target line not re-routed): create new LV load_area group for current node
+            # if node was connected via branch (target line not re-routed):
+            # create new LV load_area group for current node
             if target_obj_result:
-                lv_load_area_group = LoadAreaGroupDingo(id_db=node.lv_load_area.mv_grid_district.lv_load_area_groups_count() + 1,
+                lv_load_area_group = LoadAreaGroupDingo(mv_grid_district=node.lv_load_area.mv_grid_district,
                                                         root_node=target_obj_result)
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                 node.lv_load_area.lv_load_area_group = lv_load_area_group
@@ -163,7 +164,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # connect node
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
-            # if node was connected via branch (target line not re-routed): create new LV load_area group for current node
+            # if node was connected via branch (target line not re-routed):
+            # create new LV load_area group for current node
             if target_obj_result:
                 # node can join LV load_area group
                 if lv_load_area_group.can_add_lv_load_area(node=node):
@@ -261,8 +263,7 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
         else:
 
             # create cable distributor and add it to grid
-            cable_dist = CableDistributorDingo(id_db=node.lv_load_area.mv_grid_district.mv_grid.cable_distributors_count() + 1,
-                                               geo_data=conn_point_shp,
+            cable_dist = CableDistributorDingo(geo_data=conn_point_shp,
                                                grid=node.lv_load_area.mv_grid_district.mv_grid)
             node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 

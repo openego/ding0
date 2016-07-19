@@ -281,5 +281,8 @@ class CableDistributorDingo():
         self.grid = kwargs.get('grid', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
 
+        # get id from count of cable distributors in associated MV grid
+        self.id_db = self.grid.cable_distributors_count() + 1
+
     def __repr__(self):
         return 'cable_dist_' + str(self.id_db)
