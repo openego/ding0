@@ -177,8 +177,7 @@ class NetworkDingo:
         """imports load_areas (load areas) from database for a single MV grid_district
 
         Table definition for load areas can be found here:
-        http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/
-        Methoden_AP_26_DataProc
+        http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/Methoden_AP_26_DataProc
 
         Parameters
         ----------
@@ -250,8 +249,7 @@ class NetworkDingo:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
-            # only pick load areas with peak load greater than
-            # lv_loads_threshold
+            # only pick load areas with peak load greater than lv_loads_threshold
             # TODO: When migrating to SQLAlchemy, move condition to query
             if row['peak_load_sum'] >= lv_loads_threshold:
                 # create LV load_area object
@@ -280,19 +278,16 @@ class NetworkDingo:
                 # # === END TESTING ===
 
                 centre_geo_data = wkt_loads(row['geo_centre'])
+
+                # create new centre object for LV load area
                 lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
                                                             geo_data=centre_geo_data,
                                                             lv_load_area=lv_load_area)
-                lv_load_area.set_lv_load_area_centre(lv_load_area_centre)
+                # links the centre object to LV load area
+                lv_load_area.lv_load_area_centre = lv_load_area_centre
 
-                # add LV load_area to MV grid_district
+                # add LV load area to MV grid district (and add centre object to MV gris district's graph)
                 mv_grid_district.add_lv_load_area(lv_load_area)
-
-                # OLD:
-                # add LV load_area to MV grid graph
-                # TODO: add LV station instead of LV load_area
-                #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
-
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes

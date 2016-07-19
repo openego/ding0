@@ -32,9 +32,18 @@ class MVGridDistrictDingo(RegionDingo):
             yield load_area
 
     def add_lv_load_area(self, lv_load_area):
-        """Adds a LV load_area to _lv_load_areas if not already existing"""
+        """ Adds a LV load area `lv_load_area` to _lv_load_areas if not already existing, and adds the associated centre
+            object to MV grid's _graph as node.
+
+        Args:
+            lv_load_area: instance of class LVLoadAreaDingo
+
+        Returns:
+            nothing
+        """
         if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDingo):
             self._lv_load_areas.append(lv_load_area)
+            self.mv_grid.graph_add_node(lv_load_area.lv_load_area_centre)
 
     def lv_load_area_groups(self):
         """Returns a generator for iterating over LV load_area groups"""
@@ -76,7 +85,7 @@ class LVLoadAreaDingo(RegionDingo):
         # more params
         self._lv_grids = []     # TODO: add setter
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
-        self._lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
+        self.lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
 
@@ -181,12 +190,6 @@ class LVLoadAreaDingo(RegionDingo):
         """Adds a LV grid to _lv_grids if not already existing"""
         if lv_grid not in self.lv_grids():  # and isinstance(lv_grid, LVGridDingo):
             self._lv_grids.append(lv_grid)
-
-    def set_lv_load_area_centre(self, lv_load_area_centre):
-        """Adds a LV station to _stations and grid graph if not already existing"""
-        if isinstance(lv_load_area_centre, LVLoadAreaCentreDingo):
-            self._lv_load_area_centre = lv_load_area_centre
-            self.mv_grid_district.mv_grid.graph_add_node(lv_load_area_centre)
 
     def __repr__(self):
         return 'lvregion_' + str(self.id_db)
