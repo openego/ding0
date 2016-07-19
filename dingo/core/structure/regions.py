@@ -67,7 +67,7 @@ class MVGridDistrictDingo(RegionDingo):
         self.peak_load = peak_load
 
     def __repr__(self):
-        return 'mvregion_' + str(self.id_db)
+        return 'mv_grid_district_' + str(self.id_db)
 
 
 class LVLoadAreaDingo(RegionDingo):
@@ -192,7 +192,7 @@ class LVLoadAreaDingo(RegionDingo):
             self._lv_grids.append(lv_grid)
 
     def __repr__(self):
-        return 'lvregion_' + str(self.id_db)
+        return 'lv_load_area_' + str(self.id_db)
 
 
 class LVLoadAreaCentreDingo:
@@ -213,4 +213,4 @@ class LVLoadAreaCentreDingo:
         self.lv_load_area = kwargs.get('lv_load_area', None)
 
     def __repr__(self):
-        return 'regioncentre_' + str(self.id_db)
+        return 'lv_load_area_centre_' + str(self.id_db)

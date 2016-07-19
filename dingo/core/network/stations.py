@@ -97,7 +97,7 @@ class MVStationDingo(StationDingo):
         self.add_transformer(TransformerDingo(**int_kwargs))
 
     def __repr__(self):
-        return 'mvstation_' + str(self.id_db)
+        return 'mv_station_' + str(self.id_db)
 
 class LVStationDingo(StationDingo):
     """
@@ -109,4 +109,4 @@ class LVStationDingo(StationDingo):
         super().__init__(**kwargs)
 
     def __repr__(self):
-        return 'lvstation_' + str(self.id_db)
+        return 'lv_station_' + str(self.id_db)

@@ -42,4 +42,4 @@ class LoadAreaGroupDingo:
                 return False
 
     def __repr__(self):
-        return 'lvregiongroup_' + str(self.id_db)
+        return 'load_area_group_' + str(self.id_db)

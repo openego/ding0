@@ -142,7 +142,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # if node was connected via branch (ring not re-routed): create new LV load_area group for current node
             if target_obj_result:
                 lv_load_area_group = LoadAreaGroupDingo(id_db=node.lv_load_area.mv_grid_district.lv_load_area_groups_count() + 1,
-                                                     root_node=target_obj_result)
+                                                        root_node=target_obj_result)
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                 node.lv_load_area.lv_load_area_group = lv_load_area_group
                 node.lv_load_area.mv_grid_district.add_lv_load_area_group(lv_load_area_group)

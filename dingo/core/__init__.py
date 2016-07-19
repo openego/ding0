@@ -37,6 +37,7 @@ from shapely.ops import transform
 
 from datetime import datetime
 
+
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.

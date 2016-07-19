@@ -233,7 +233,7 @@ class MVGridDingo(GridDingo):
                 edge['branch'].type = branch_type
 
     def __repr__(self):
-        return 'mvgrid_' + str(self.id_db)
+        return 'mv_grid_' + str(self.id_db)
 
 
 class LVGridDingo(GridDingo):
@@ -273,4 +273,4 @@ class LVGridDingo(GridDingo):
     #     # TODO: add more nodes (loads etc.) here
 
     def __repr__(self):
-        return 'lvgrid_' + str(self.id_db)
+        return 'lv_grid_' + str(self.id_db)
