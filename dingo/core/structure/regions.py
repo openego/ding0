@@ -247,3 +247,22 @@ class LVLoadAreaCentreDingo:
 
     def __repr__(self):
         return 'regioncentre_' + str(self.id_db)
+
+
+class LVGridDistrictDingo(RegionDingo):
+    """
+    Describes region that is covered by a single LV grid
+
+    Parameters
+    ----------
+    RegionDingo: class
+        Dingo's region base class
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._geo_data = kwargs.get('geo_data', None)
+        self._peak_load = kwargs.get('peak_load', None)
+
+    def __repr__(self):
+        return 'lv_grid_district_' + str(self.id_db)
