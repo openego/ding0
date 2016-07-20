@@ -117,60 +117,60 @@ class LVLoadAreaDingo(RegionDingo):
             if self.peak_load_sum < load_area_sat_load_threshold:
                 self.is_satellite = True
 
-        # Alternative to version above:
-        # many params, use better structure (dict? classes from demand-lib?)
+                # Alternative to version above:
+                # many params, use better structure (dict? classes from demand-lib?)
 
 
-        # for attribute in ['geo_area',
-        #                   'geo_centre',
-        #                   'area',
-        #                   'nuts_code',
-        #                   'zensus_sum',
-        #                   'zensus_cnt',
-        #                   'ioer_sum',
-        #                   'ioer_cnt',
-        #                   'sector_area_residential',
-        #                   'sector_area_retail',
-        #                   'sector_area_industrial',
-        #                   'sector_area_agricultural',
-        #                   'sector_share_residential',
-        #                   'sector_share_retail',
-        #                   'sector_share_industrial',
-        #                   'sector_share_agricultural',
-        #                   'sector_count_residential',
-        #                   'sector_count_retail',
-        #                   'sector_count_industrial',
-        #                   'sector_count_agricultural']:
-        #     setattr(self, attribute, kwargs.get(attribute, None))
+                # for attribute in ['geo_area',
+                #                   'geo_centre',
+                #                   'area',
+                #                   'nuts_code',
+                #                   'zensus_sum',
+                #                   'zensus_cnt',
+                #                   'ioer_sum',
+                #                   'ioer_cnt',
+                #                   'sector_area_residential',
+                #                   'sector_area_retail',
+                #                   'sector_area_industrial',
+                #                   'sector_area_agricultural',
+                #                   'sector_share_residential',
+                #                   'sector_share_retail',
+                #                   'sector_share_industrial',
+                #                   'sector_share_agricultural',
+                #                   'sector_count_residential',
+                #                   'sector_count_retail',
+                #                   'sector_count_industrial',
+                #                   'sector_count_agricultural']:
+                #     setattr(self, attribute, kwargs.get(attribute, None))
 
-        # self.geo_area = kwargs.get('geo_area', None)
-        # self.geo_centre= kwargs.get('geo_centroid', None)
-        #
-        # self.area = kwargs.get('area', None)
-        # self.nuts_code = kwargs.get('nuts_code', None)
-        #
-        # self.zensus_sum = kwargs.get('zensus_sum', None)
-        # self.zensus_cnt = kwargs.get('zensus_cnt', None)
-        # self.ioer_sum = kwargs.get('ioer_sum', None)
-        # self.ioer_cnt = kwargs.get('ioer_cnt', None)
+                # self.geo_area = kwargs.get('geo_area', None)
+                # self.geo_centre= kwargs.get('geo_centroid', None)
+                #
+                # self.area = kwargs.get('area', None)
+                # self.nuts_code = kwargs.get('nuts_code', None)
+                #
+                # self.zensus_sum = kwargs.get('zensus_sum', None)
+                # self.zensus_cnt = kwargs.get('zensus_cnt', None)
+                # self.ioer_sum = kwargs.get('ioer_sum', None)
+                # self.ioer_cnt = kwargs.get('ioer_cnt', None)
 
-        # self.sector_area_residential =
-        # self.sector_area_retail =
-        # self.sector_area_industrial =
-        # self.sector_area_agricultural =
-        # self.sector_share_residential =
-        # self.sector_share_retail =
-        # self.sector_share_industrial =
-        # self.sector_share_agricultural =
-        # self.sector_count_residential =
-        # self.sector_count_retail =
-        # self.sector_count_industrial =
-        # self.sector_count_agricultural =
+                # self.sector_area_residential =
+                # self.sector_area_retail =
+                # self.sector_area_industrial =
+                # self.sector_area_agricultural =
+                # self.sector_share_residential =
+                # self.sector_share_retail =
+                # self.sector_share_industrial =
+                # self.sector_share_agricultural =
+                # self.sector_count_residential =
+                # self.sector_count_retail =
+                # self.sector_count_industrial =
+                # self.sector_count_agricultural =
 
-        #self.sector_consumption_residential =
-        #self.sector_consumption_retail =
-        #self.sector_consumption_industrial =
-        #self.sector_consumption_agricultural =
+                #self.sector_consumption_residential =
+                #self.sector_consumption_retail =
+                #self.sector_consumption_industrial =
+                #self.sector_consumption_agricultural =
 
     def lv_grids(self):
         """Returns a generator for iterating over LV grids"""
