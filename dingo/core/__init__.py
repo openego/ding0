@@ -293,6 +293,18 @@ class NetworkDingo:
                 # TODO: add LV station instead of LV load_area
                 #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
 
+    def import_lv_grid_districts(self, conn):
+        """Imports all lv grid districts within this load area
+
+        Parameters
+        ----------
+        conn: SQLalchemy connection
+        """
+
+        # TODO: build sql query
+
+        # TODO: execute query and assign data to attributes
+
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes

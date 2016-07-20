@@ -20,6 +20,7 @@ transformers = network_trans
 grid_district = GridDistrict
 mv_grid_districts = calc_ego_grid_district.grid_district
 lv_load_areas = EgoDeuLoadAreaTa
+lv_grid_distric = LVGridDistrictTa
 
 [stations]
 mv_stations = EgoDeuSubstation
