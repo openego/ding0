@@ -1,7 +1,7 @@
 
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CableDistributorDingo
-from dingo.core.structure.groups import LVRegionGroupDingo
+from dingo.core.structure.groups import LoadAreaGroupDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.tools import config as cfg_dingo
 from dingo.tools.geo import calc_geo_branches_in_buffer, calc_geo_dist_vincenty
@@ -134,15 +134,16 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area.lv_load_area_group
 
         # target object doesn't belong to a satellite string (is member of a LV load_area group)
-        if lv_load_area_group is None:
+        if not lv_load_area_group:
 
             # connect node
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
-            # if node was connected via branch (ring not re-routed): create new LV load_area group for current node
+            # if node was connected via branch (target line not re-routed):
+            # create new LV load_area group for current node
             if target_obj_result:
-                lv_load_area_group = LVRegionGroupDingo(id_db=node.lv_load_area.mv_grid_district.lv_load_area_groups_count() + 1,
-                                                     root_node=target_obj_result)
+                lv_load_area_group = LoadAreaGroupDingo(mv_grid_district=node.lv_load_area.mv_grid_district,
+                                                        root_node=target_obj_result)
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                 node.lv_load_area.lv_load_area_group = lv_load_area_group
                 node.lv_load_area.mv_grid_district.add_lv_load_area_group(lv_load_area_group)
@@ -163,10 +164,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # connect node
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
-            # calc shortest path between node and root node (start of string on MV main route)
-            #path_length_to_root = node.grid.grid_district.mv_grid_district.mv_grid.graph_path_length(lv_load_area_group.root_node, node)
-
-            # if node was connected via branch (ring not re-routed): create new LV load_area group for current node
+            # if node was connected via branch (target line not re-routed):
+            # create new LV load_area group for current node
             if target_obj_result:
                 # node can join LV load_area group
                 if lv_load_area_group.can_add_lv_load_area(node=node):
@@ -197,7 +196,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                     # continue with next possible connection point
                     continue
 
-            # node was inserted into line (re-routed)
+            # node was inserted into line (target line was re-routed)
             else:
                 # add node to LV load_area group
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
@@ -264,7 +263,8 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
         else:
 
             # create cable distributor and add it to grid
-            cable_dist = CableDistributorDingo(geo_data=conn_point_shp, grid=node.lv_load_area.mv_grid_district.mv_grid)
+            cable_dist = CableDistributorDingo(geo_data=conn_point_shp,
+                                               grid=node.lv_load_area.mv_grid_district.mv_grid)
             node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
             # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)

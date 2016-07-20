@@ -2,14 +2,15 @@ from dingo.core.network import CableDistributorDingo
 from dingo.tools import config as cfg_dingo
 
 
-class LVRegionGroupDingo:
+class LoadAreaGroupDingo:
     """ Container for small load_areas / load areas (satellites) = a group of stations which are within the same
-        satellite string. It is required to check whether a satellite string has got more load than allowed, hence new
-        nodes cannot be added to it.
+        satellite string. It is required to check whether a satellite string has got more load or string length than
+        allowed, hence new nodes cannot be added to it.
     """
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
+        self.mv_grid_district = kwargs.get('mv_grid_district', None)
         self._lv_load_areas = []
         self.peak_load_sum = 0
         self.branch_length_sum = 0
@@ -18,6 +19,9 @@ class LVRegionGroupDingo:
         self.branch_length_max = cfg_dingo.get('mv_connect', 'load_area_sat_string_length_threshold')
         self.root_node = kwargs.get('root_node', None)  # root node (Dingo object) = start of string on MV main route
         # TODO: Value is read from file every time a LV load_area is created -> move to associated NetworkDingo class?
+
+        # get id from count of load area groups in associated MV grid district
+        self.id_db = self.mv_grid_district.lv_load_area_groups_count() + 1
 
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""
@@ -42,4 +46,4 @@ class LVRegionGroupDingo:
                 return False
 
     def __repr__(self):
-        return 'lvregiongroup_' + str(self.id_db)
+        return 'load_area_group_' + str(self.id_db)

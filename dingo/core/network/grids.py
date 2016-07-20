@@ -41,6 +41,10 @@ class MVGridDingo(GridDingo):
         for cable_dist in self._cable_distributors:
             yield cable_dist
 
+    def cable_distributors_count(self):
+        """Returns the count of cable distributors in MV grid"""
+        return len(self._cable_distributors)
+
     def add_station(self, mv_station, force=False):
         """Adds MV station if not already existing
 
@@ -80,10 +84,6 @@ class MVGridDingo(GridDingo):
             # add to array and graph
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
-
-            # set id
-            cable_dist_count = len(self._cable_distributors)
-            cable_dist.id_db = cable_dist_count + 1
 
     def routing(self, debug=False, anim=None):
         """ Performs routing on grid graph nodes, adds resulting edges
@@ -233,7 +233,7 @@ class MVGridDingo(GridDingo):
                 edge['branch'].type = branch_type
 
     def __repr__(self):
-        return 'mvgrid_' + str(self.id_db)
+        return 'mv_grid_' + str(self.id_db)
 
 
 class LVGridDingo(GridDingo):
@@ -273,4 +273,4 @@ class LVGridDingo(GridDingo):
     #     # TODO: add more nodes (loads etc.) here
 
     def __repr__(self):
-        return 'lvgrid_' + str(self.id_db)
+        return 'lv_grid_' + str(self.id_db)

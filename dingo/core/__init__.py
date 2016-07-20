@@ -37,6 +37,7 @@ from shapely.ops import transform
 
 from datetime import datetime
 
+
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.
@@ -280,12 +281,15 @@ class NetworkDingo:
                 # # === END TESTING ===
 
                 centre_geo_data = wkt_loads(row['geo_centre'])
+
+                # create new centre object for LV load area
                 lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
                                                             geo_data=centre_geo_data,
                                                             lv_load_area=lv_load_area)
-                lv_load_area.set_lv_load_area_centre(lv_load_area_centre)
+                # links the centre object to LV load area
+                lv_load_area.lv_load_area_centre = lv_load_area_centre
 
-                # add LV load_area to MV grid_district
+                # add LV load area to MV grid district (and add centre object to MV gris district's graph)
                 mv_grid_district.add_lv_load_area(lv_load_area)
 
                 # OLD:
