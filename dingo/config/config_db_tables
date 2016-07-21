@@ -24,6 +24,7 @@ lv_grid_distric = LVGridDistrictTa
 
 [stations]
 mv_stations = EgoDeuSubstation
+lv_stations = EgoDeuOntsTa
 
 [loads]
 lv_loads = CalcEgoPeakLoadTa

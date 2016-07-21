@@ -11,6 +11,7 @@ GridDistrict_name = cfg_dingo.get('regions', 'grid_district')
 EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
 EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
 CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
+EgoDeuOnts_name = cfg_dingo.get('stations', 'lv_stations')
 
 from egoio.db_tables import calc_ego_substation as orm_mod_calc_ego_substation
 from egoio.db_tables import calc_ego_grid_district as orm_calc_ego_grid_district
@@ -22,6 +23,7 @@ orm_GridDistrict = orm_calc_ego_grid_district.\
     __getattribute__(GridDistrict_name)
 orm_EgoDeuLoadArea = orm_calc_ego_loads.__getattribute__(EgoDeuLoadArea_name)
 orm_CalcEgoPeakLoad = orm_calc_ego_loads.__getattribute__(CalcEgoPeakLoad_name)
+orm_EgoDeuOnts = orm_mod_calc_ego_substation.__getattribute__(EgoDeuOnts_name)
 
 import pandas as pd
 
@@ -263,6 +265,16 @@ class NetworkDingo:
 
                 # # TODO: Modify following commented-out part when LVGridDistrict (Input Jonas) is implemented
                 # # === START TESTING ===
+                lv_grid_districts = self.import_lv_grid_districts(conn, lv_load_area)
+
+                for id_grid_distric, geom_grid_district in lv_grid_districts.iterrows():
+
+                    # TODO: add geom to lv_grid_district
+                    lv_grid_district = LVGridDistrictDingo(
+                        id_db=id_grid_distric)
+                    lv_load_area.add_lv_grid_district(lv_grid_district)
+
+
                 # # create LV station object
                 # station_geo_data = wkt_loads(row['geo_centre'])
                 # lv_station = LVStationDingo(id_db=id_db,
@@ -297,17 +309,40 @@ class NetworkDingo:
                 # TODO: add LV station instead of LV load_area
                 #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
 
-    def import_lv_grid_districts(self, conn):
-        """Imports all lv grid districts within this load area
+    def import_lv_grid_districts(self, conn, lv_load_area):
+        """Imports all lv grid districts within given load area
 
         Parameters
         ----------
-        conn: SQLalchemy connection
+        conn: SQLalchemy database connection
+        lv_load_areas: LVLoadAreaDingo instance
+            Load area for which LV grid districts should be imported
         """
 
         # TODO: build sql query
 
+        # 1. filter grid districts of relevant load area
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        # TODO: replace ST_Within statement with select by load are id in grid district/ONS table
+        # TODO: select grid districts instead of load areas
+        lv_grid_districs_sqla = session.query(orm_EgoDeuOnts.id,
+                                       orm_EgoDeuOnts.geom).\
+            filter(func.ST_Within(orm_EgoDeuOnts.geom,
+                                  orm_EgoDeuLoadArea.geom) == True).\
+            filter(orm_EgoDeuLoadArea.id == lv_load_area.id_db)
+
+
+
+
         # TODO: execute query and assign data to attributes
+        # read data from db
+        lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
+                                             session.bind,
+                                             index_col='id')
+
+        return lv_grid_districs
 
 
     def export_mv_grid(self, conn, mv_grid_districts):
