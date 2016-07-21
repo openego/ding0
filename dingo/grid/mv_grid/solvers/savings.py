@@ -142,7 +142,11 @@ class ClarkeWrightSolver(BaseSolver):
         savings_list = {}
 
         for i, j in graph.edges():
-            t = (i, j)
+            # t = (i, j)
+            if repr(i) < repr(j):
+                t = (i, j)
+            else:
+                t = (j, i)
 
             if i == graph.depot() or j == graph.depot():
                 continue
@@ -169,6 +173,7 @@ class ClarkeWrightSolver(BaseSolver):
         solution = SavingsSolution(graph)
 
         start = time.time()
+
         for i, j in savings_list[:]:
             if solution.is_complete():
                 break
@@ -178,9 +183,9 @@ class ClarkeWrightSolver(BaseSolver):
 
                 if inserted:
                     savings_list.remove((i, j))
-                    savings_list.remove((j, i))
+                    #savings_list.remove((j, i))
 
-                    if anim is not None:
+                    if anim:
                         solution.draw_network(anim)
 
             if time.time() - start > timeout:
