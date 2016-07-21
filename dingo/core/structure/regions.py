@@ -83,7 +83,7 @@ class LVLoadAreaDingo(RegionDingo):
         super().__init__(**kwargs)
 
         # more params
-        self._lv_grids = []     # TODO: add setter
+        self._lv_grid_districts = []
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
         self.lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
@@ -181,15 +181,19 @@ class LVLoadAreaDingo(RegionDingo):
                 #self.sector_consumption_industrial =
                 #self.sector_consumption_agricultural =
 
-    def lv_grids(self):
+    def lv_grid_districts(self):
         """Returns a generator for iterating over LV grids"""
-        for grid in self._lv_grids:
-            yield grid
+        for lv_grid_district in self._lv_grid_districts:
+            yield lv_grid_district
 
-    def add_lv_grid(self, lv_grid):
-        """Adds a LV grid to _lv_grids if not already existing"""
-        if lv_grid not in self.lv_grids():  # and isinstance(lv_grid, LVGridDingo):
-            self._lv_grids.append(lv_grid)
+    def add_lv_grid_district(self, lv_grid_district):
+        """
+        Adds a LV grid district to _lv_grid_districts if not already existing
+        """
+
+        if lv_grid_district not in self._lv_grid_districts and \
+                isinstance(lv_grid_district, LVGridDistrictDingo):
+            self._lv_grid_districts.append(lv_grid_district)
 
     def __repr__(self):
         return 'lv_load_area_' + str(self.id_db)
