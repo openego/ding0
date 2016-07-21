@@ -62,6 +62,12 @@ class GridDingo:
         nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
         plt.show()
 
+    def graph_nodes_sorted(self):
+        """ Returns an (ascending) sorted list of graph's nodes (name is used as key).
+
+        """
+        return sorted(self._graph.nodes(), key=lambda _: repr(_))
+
     def graph_edges(self):
         """ Returns a generator for iterating over graph edges
 
