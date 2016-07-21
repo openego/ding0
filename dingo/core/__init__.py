@@ -12,9 +12,9 @@ EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
 EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
 CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
 
-from egoio import calc_ego_substation as orm_mod_calc_ego_substation
-from egoio import calc_ego_grid_district as orm_calc_ego_grid_district
-from egoio import calc_ego_loads as orm_calc_ego_loads
+from egoio.db_tables import calc_ego_substation as orm_mod_calc_ego_substation
+from egoio.db_tables import calc_ego_grid_district as orm_calc_ego_grid_district
+from egoio.db_tables import calc_ego_loads as orm_calc_ego_loads
 
 orm_EgoDeuSubstation = orm_mod_calc_ego_substation.\
     __getattribute__(EgoDeuSubstation_name)
