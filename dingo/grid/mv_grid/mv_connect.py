@@ -398,7 +398,7 @@ def mv_connect(graph, dingo_object, debug=False):
 
         # check all nodes
         # TODO: create generators in grid class for iterating over satellites and non-satellites
-        for node in graph.nodes():
+        for node in sorted(graph.nodes(), key=lambda x: repr(x)):
             if isinstance(dingo_object, LVLoadAreaCentreDingo):
 
                 # station is LV station
