@@ -138,6 +138,10 @@ class StationDingo():
     -------------------------------
 
     id_db: id according to database table
+    v_level_operation: operation voltage level at station (the station's voltage level differs from the nominal voltage
+                       level of the grid (see attribute `v_level` in class MVGridDingo) due to grid losses. It is
+                       usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids.
+
     """
     # TODO: add method remove_transformer()
 
@@ -148,6 +152,7 @@ class StationDingo():
         self._transformers = []
         self.busbar = None
         self.peak_load = kwargs.get('peak_load', None)
+        self.v_level_operation = kwargs.get('v_level_operation', None)
 
     def transformers(self):
         """Returns a generator for iterating over transformers"""
