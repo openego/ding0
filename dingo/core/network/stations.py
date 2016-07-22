@@ -13,6 +13,14 @@ class MVStationDingo(StationDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    def set_operation_voltage_level(self):
+
+        mv_station_v_level_operation = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                           'mv_station_v_level_operation'))
+
+        self.v_level_operation = mv_station_v_level_operation * self.grid.v_level
+
+
     def choose_transformers(self):
         """Chooses appropriate transformers for the MV sub-station
 
