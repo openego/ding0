@@ -145,7 +145,8 @@ def solve(graph, debug=False, anim=None):
         #savings_solution.draw_network()
 
     # improve initial solution using local search
-    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, debug, anim)
+    #local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, debug, anim)
+    local_search_solution = savings_solution
 
     if debug:
         print('Local Search solution:')

@@ -191,4 +191,5 @@ class ClarkeWrightSolver(BaseSolver):
             if time.time() - start > timeout:
                 break
 
+        #solution._routes[0].calc_circuit_breaker_position()
         return solution

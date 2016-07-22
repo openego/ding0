@@ -10,6 +10,9 @@
     copy of the license at http://www.apache.org/licenses/LICENSE-2.0
 """
 
+from dingo.tools import config as cfg_dingo
+
+
 class CableType(object):
     def __init__(self, cabletype_id):
         #for cable_no in range(1,2)
@@ -173,7 +176,7 @@ class Route(object):
         """ Calculates the optimal position of a circuit breaker on route.
 
         Returns:
-            2-tuple of nodes (instances of Node class) = route segment 
+            2-tuple of nodes (instances of Node class) = route segment
 
         Notes
         -----
@@ -217,6 +220,10 @@ class Route(object):
         """
         ### CHECK WITH ROUTE CAPACITY (see also: solution.is_complete AND route.can_allocate)
         # TODO: TO BE COMPLETED
+
+        # load parameters
+        load_factor_transformer = float(cfg_dingo.get('assumptions',
+                                                      'load_factor_transformer'))
 
         # check current rating of cable/line
         i_max_th = self._problem._cabletype.i_max_th
