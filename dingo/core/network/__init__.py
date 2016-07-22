@@ -23,7 +23,7 @@ class GridDingo:
         self.id_db = kwargs.get('id_db', None)
         self.grid_district = kwargs.get('region', None)
         #self.geo_data = kwargs.get('geo_data', None)
-
+        self.v_level = kwargs.get('v_level', None)
         self._graph = nx.Graph()
 
     def graph_add_node(self, node_object):
