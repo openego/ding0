@@ -124,13 +124,13 @@ class MVGridDingo(GridDingo):
         """
         # TODO: more references!
 
-        load_density_threshold= float(cfg_dingo.get('assumptions'
-                                                    'load_density_threshold'))
+        load_density_threshold = float(cfg_dingo.get('assumptions',
+                                                     'load_density_threshold'))
 
         # calculate load density
         # TODO: Move constant 1e6 to config file
-        load_density = ((self.region.peak_load / 1e3) /
-                        (self.region.geo_data.area / 1e6)) # unit MVA/km^2
+        load_density = ((self.grid_district.peak_load / 1e3) /
+                        (self.grid_district.geo_data.area / 1e6)) # unit MVA/km^2
 
         # identify voltage level
         if load_density < load_density_threshold:
