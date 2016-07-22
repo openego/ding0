@@ -104,14 +104,34 @@ class MVGridDingo(GridDingo):
         #     mv_branches[edge] = mv_branch
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
 
+    def set_voltage_level(self):
+        load_density_threshold= float(cfg_dingo.get('assumptions',
+                                                    'load_density_threshold'))
+
+        # calculate load density
+        # TODO: Move constant 1e6 to config file
+        load_density = ((self.region.peak_load / 1e3) /
+                        (self.region.geo_data.area / 1e6)) # unit MVA/km^2
+
+        # identify voltage level
+        if load_density < load_density_threshold:
+            self.v_level = 20
+        elif load_density >= load_density_threshold:
+            self.v_level = 10
+        else:
+            raise ValueError('load_density is invalid!')
+
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment.
 
         Args:
-            debug: If True, information is printed while routing
+            debug: If True, information is printed during process
         """
         # TODO: Add more detailed description
         # TODO: Pass debug flag to functions
+
+        # set voltage level
+        self.set_voltage_level()
 
         # choose appropriate transformers for each MV sub-station
         self._station.choose_transformers()
