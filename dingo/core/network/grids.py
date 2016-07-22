@@ -155,12 +155,55 @@ class MVGridDingo(GridDingo):
         # set MV station's voltage level
         self._station.set_operation_voltage_level()
 
+        # set default branch type
+        self.set_default_branch_type()
+
         # choose appropriate transformers for each MV sub-station
         self._station.choose_transformers()
 
         # choose appropriate type of line/cable for each edge
         # TODO: move line parametrization to routing process
         #self.parametrize_lines()
+
+    def set_default_branch_type(self):
+
+        # decide weather cable or line is used (initially for entire grid) and set grid's attribute
+        if self.v_level == 20:
+            self.branch_type = 'line'
+        elif self.v_level == 10:
+            self.branch_type = 'cable'
+
+        package_path = dingo.__path__[0]
+
+        # load cable/line assumptions, file_names and parameter
+        if self.branch_type == 'line':
+            load_factor = float(cfg_dingo.get('assumptions',
+                                              'load_factor_line'))
+            equipment_parameters = cfg_dingo.get('equipment',
+                                                 'equipment_parameters_lines')
+            line_parameter = pd.read_csv(os.path.join(package_path, 'data',
+                                         equipment_parameters_lines),
+                                         converters={'i_max_th': lambda x: int(x)})
+
+        elif self.branch_type == 'cable':
+            load_factor = float(cfg_dingo.get('assumptions',
+                                              'load_factor_cable'))
+            equipment_parameters_cables = cfg_dingo.get('equipment',
+                                                        'equipment_parameters_cables')
+        else:
+            raise ValueError('Grid\'s branch_type is invalid, could not set branch parameters.')
+
+
+        line_parameter = pd.read_csv(os.path.join(package_path, 'data',
+                                     equipment_parameters_lines),
+                                     converters={'i_max_th': lambda x: int(x)})
+        cable_parameter = pd.read_csv(os.path.join(package_path, 'data',
+                                      equipment_parameters_cables),
+                                      converters={'I_n': lambda x: int(x)})
+
+        # get peak load of grid district
+
+        # calc number of required rings
 
     def parametrize_lines(self):
         """Chooses line/cable type and defines parameters
