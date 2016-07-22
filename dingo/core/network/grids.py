@@ -105,7 +105,26 @@ class MVGridDingo(GridDingo):
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
 
     def set_voltage_level(self):
-        load_density_threshold= float(cfg_dingo.get('assumptions',
+        """ Sets voltage level of MV grid according to load density.
+
+        Args:
+            none
+        Returns:
+            nothing
+
+        Notes
+        -----
+        Decision on voltage level is determined by load density of the considered region. Urban areas (load density of
+        >= 1 MW/km2 according to [1]_) usually got a voltage of 10 kV whereas rural areas mostly use 20 kV.
+
+        References
+        ----------
+        .. [1] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger Referenznetze im Verteilnetzsektor zur
+            Überprüfung der Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
+        """
+        # TODO: more references!
+
+        load_density_threshold= float(cfg_dingo.get('assumptions'
                                                     'load_density_threshold'))
 
         # calculate load density
