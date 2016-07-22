@@ -45,11 +45,11 @@ branch_detour_factor = 1.4
 
 [mv_routing_tech_constraints]
 
-#mv_station_voltage_nom: unit: -
-mv_station_voltage_nom = 1.04
+#mv_station_v_level_operation: unit: -
+mv_station_v_level_operation = 1.04
 
-#mv_max_voltage_normal: unit: -
-mv_max_voltage_normal = 0.05
+#mv_max_v_level_normal: unit: -
+mv_max_v_level_normal = 0.05
 
-#mv_max_voltage_malfunc: unit: -
-mv_max_voltage_malfunc = 0.12
+#mv_max_v_level_malfunc: unit: -
+mv_max_v_level_malfunc = 0.12
