@@ -149,8 +149,11 @@ class MVGridDingo(GridDingo):
         # TODO: Add more detailed description
         # TODO: Pass debug flag to functions
 
-        # set voltage level
+        # set grid's voltage level
         self.set_voltage_level()
+
+        # set MV station's voltage level
+        self._station.set_operation_voltage_level()
 
         # choose appropriate transformers for each MV sub-station
         self._station.choose_transformers()
