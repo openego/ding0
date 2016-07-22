@@ -168,9 +168,47 @@ class Route(object):
     def last(self, node):
         """Returns True if node is the last node in the route"""
         return self._nodes.index(node) == len(self._nodes) - 1
+
+    def calc_circuit_breaker_position(self):
+        """ Calculates the optimal position of a circuit breaker on route.
+
+        Returns:
+            2-tuple of nodes (instances of Node class) = route segment 
+
+        Notes
+        -----
+        Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
+        breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
+        the route.
+
+        References
+        ----------
+
+        """
+        # TODO: add references (Tao)
+
+        # set init value
+        demand_diff_min = 10e6
+
+        # check possible positions in route
+        for ctr in range(len(self._nodes)):
+            # split route and calc demand difference
+            route_demand_part1 = sum([node.demand() for node in self._nodes[0:ctr]])
+            route_demand_part2 = sum([node.demand() for node in self._nodes[ctr:len(self._nodes)]])
+            demand_diff = abs(route_demand_part1 - route_demand_part2)
+
+            if demand_diff < demand_diff_min:
+                demand_diff_min = demand_diff
+                position = ctr
+
+        print('sum 1=', sum([node.demand() for node in self._nodes[0:position]]))
+        print('sum 2=', sum([node.demand() for node in self._nodes[position:len(self._nodes)]]))
+        print('Position of circuit breaker: ', self._nodes[position-1], '-', self._nodes[position], '(sumdiff=', demand_diff_min, ')')
+
+        return self._nodes[position-1], self._nodes[position]
         
     def tech_constraints_satisfied(self):
-        """Check route validity according to technical constraints
+        """ Check route validity according to technical constraints
         
         Constraints:
             current rating of cable/line
@@ -199,6 +237,7 @@ class Route(object):
 
     def __repr__(self):
         return str(self._nodes)
+
 
 class Node(object):
     """
