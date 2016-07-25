@@ -317,6 +317,11 @@ class NetworkDingo:
         conn: SQLalchemy database connection
         lv_load_area: LVLoadAreaDingo instance
             Load area for which LV grid districts should be imported
+
+        Returns
+        -------
+        lv_grid_districts: pandas Dataframe
+            Table of lv_grid_districts
         """
 
         # TODO: build sql query
@@ -326,12 +331,6 @@ class NetworkDingo:
         session = Session()
 
         # TODO: select grid districts instead of load areas
-        # lv_grid_districs_sqla = session.query(orm_EgoDeuOnts.id,
-        #                                orm_EgoDeuOnts.geom).\
-        #     filter(func.ST_Within(orm_EgoDeuOnts.geom,
-        #                           orm_EgoDeuLoadArea.geom) == True).\
-        #     filter(orm_EgoDeuLoadArea.id == lv_load_area.id_db)
-
         lv_grid_districs_sqla = session.query(orm_EgoDeuOnts.load_area_id,
                                               orm_EgoDeuOnts.geom). \
             filter(orm_EgoDeuOnts.load_area_id == lv_load_area.id_db)
