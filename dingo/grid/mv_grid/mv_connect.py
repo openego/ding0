@@ -397,7 +397,7 @@ def mv_connect(graph, dingo_object, debug=False):
                 pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
         # check all nodes
-        # TODO: create generators in grid class for iterating over satellites and non-satellites
+        # TODO: create generators in grid class for iterating over satellites and non-satellites (nice-to-have)
         for node in sorted(graph.nodes(), key=lambda x: repr(x)):
             if isinstance(dingo_object, LVLoadAreaCentreDingo):
 
@@ -416,7 +416,6 @@ def mv_connect(graph, dingo_object, debug=False):
                         # === FIND ===
                         # calc distance between node and grid's lines -> find nearest line
                         conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1, conn_dist_weight, debug)
-                        #print('length stack:', len(conn_objects_min_stack))
 
                         # === iterate over object stack ===
                         find_connection_point(node, node_shp, graph, proj2, conn_objects_min_stack, conn_dist_ring_mod, debug)

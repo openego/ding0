@@ -24,7 +24,7 @@ class MVGridDistrictDingo(RegionDingo):
         self.geo_data = kwargs.get('geo_data', None)
 
         # INSERT LOAD PARAMS
-        self.peak_load = kwargs.get('peak_load', None)
+        self.peak_load = kwargs.get('peak_load', None)  # in kVA
 
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""
