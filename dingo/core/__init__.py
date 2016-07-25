@@ -344,6 +344,32 @@ class NetworkDingo:
         return lv_grid_districs
 
 
+    def import_lv_stations(self, conn, lv_load_area):
+        """
+        Import lv_stations within the given load_area
+        Parameters
+        ----------
+        conn: SQLalchemy database connection
+        lv_load_area: LVLoadAreaDingo instance
+            Load area for which LV grid districts should be imported
+
+        Returns
+        -------
+        lv_stations: pandas Dataframe
+            Table of lv_stations
+        """
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        lv_stations_sqla = session.query(orm_EgoDeuOnts.load_area_id,
+                                              orm_EgoDeuOnts.geom). \
+            filter(orm_EgoDeuOnts.load_area_id == lv_load_area.id_db)
+
+        # read data from db
+        lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
+                                             session.bind,
+                                             index_col='load_area_id')
+        return lv_grid_stations
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
