@@ -93,6 +93,41 @@ class NetworkDingo:
 
         return mv_grid_district
 
+    def build_lv_grid_district(self, conn, lv_load_area):
+        """
+        Instantiates and associates lv_grid_district incl grid and station
+
+        Parameters
+        ----------
+        conn:
+        load_area:
+
+        """
+        lv_grid_districts = self.import_lv_grid_districts(conn, lv_load_area)
+        lv_stations = self.import_lv_stations(conn, lv_load_area)
+
+        # Associate lv_grid_district to load_area
+        for id_grid_district, geom_grid_district in lv_grid_districts.iterrows():
+            # TODO: add geom to lv_grid_district
+            lv_grid_district = LVGridDistrictDingo(
+                id_db=id_grid_district)
+
+            # be aware, lv_grid takes grid district's geom!
+            lv_grid = LVGridDingo(grid_district=lv_grid_district,
+                                  id_db=id_grid_district,
+                                  geo_data=lv_grid_district.geom)
+
+            lv_station = LVStationDingo(
+                id_db=id_grid_district,  # is equal to station id
+                grid=lv_grid,
+                geo_data=lv_stations.loc[id_grid_district, 'geom'])
+
+            lv_grid.add_station(lv_station)
+
+            lv_grid_district.lv_grid = lv_grid
+
+            lv_load_area.add_lv_grid_district(lv_grid_district)
+
     def import_mv_grid_districts(self, conn, mv_grid_districts=None):
         """Imports MV grid_districts and MV stations from database, reprojects geodata
         and and initiates objects.
@@ -263,33 +298,7 @@ class NetworkDingo:
                                                mv_grid_district=mv_grid_district,
                                                peak_load_sum=row['peak_load_sum'])
 
-                # # TODO: Modify following commented-out part when LVGridDistrict (Input Jonas) is implemented
-                # # === START TESTING ===
-                lv_grid_districts = self.import_lv_grid_districts(conn, lv_load_area)
-                lv_stations = self.import_lv_stations(conn, lv_load_area)
-
-                # Associate lv_grid_district to load_area
-                for id_grid_district, geom_grid_district in lv_grid_districts.iterrows():
-
-                    # TODO: add geom to lv_grid_district
-                    lv_grid_district = LVGridDistrictDingo(
-                        id_db=id_grid_district)
-
-                    # be aware, lv_grid takes grid district's geom!
-                    lv_grid = LVGridDingo(grid_district=lv_grid_district,
-                                          id_db=id_grid_district,
-                                          geo_data=lv_grid_district.geom)
-
-                    lv_station = LVStationDingo(
-                        id_db=id_grid_district, # is equal to station id
-                        grid=lv_grid,
-                        geo_data=lv_stations.loc[id_grid_district, 'geom'])
-
-                    lv_grid.add_station(lv_station)
-
-                    lv_grid_district.lv_grid = lv_grid
-
-                    lv_load_area.add_lv_grid_district(lv_grid_district)
+                self.build_lv_grid_district(conn, lv_load_area)
 
                 centre_geo_data = wkt_loads(row['geo_centre'])
 
