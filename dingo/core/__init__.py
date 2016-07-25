@@ -291,24 +291,6 @@ class NetworkDingo:
 
                     lv_load_area.add_lv_grid_district(lv_grid_district)
 
-
-                # # create LV station object
-                # station_geo_data = wkt_loads(row['geo_centre'])
-                # lv_station = LVStationDingo(id_db=id_db,
-                #                             geo_data=station_geo_data,
-                #                             peak_load=row['peak_load_sum'])
-                # lv_grid = LVGridDingo(region=lv_load_area,
-                #                       id_db=id_db,
-                #                       geo_data=station_geo_data)
-                # lv_station.grid = lv_grid
-                #
-                # # add LV station to LV grid
-                # lv_grid.add_station(lv_station)
-                #
-                # # add LV grid to LV load_area
-                # lv_load_area.add_lv_grid(lv_grid)
-                # # === END TESTING ===
-
                 centre_geo_data = wkt_loads(row['geo_centre'])
 
                 # create new centre object for LV load area
