@@ -38,6 +38,8 @@ def dingo_graph_to_routing_specs(graph):
             nodes_demands[str(node)] = 0
             nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
             specs['DEPOT'] = str(node)
+            specs['BRANCH_TYPE'] = node.grid.default_branch_type
+            specs['V_LEVEL_OP'] = node.v_level_operation
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands

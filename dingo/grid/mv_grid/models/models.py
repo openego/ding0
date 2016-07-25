@@ -35,6 +35,7 @@ class CableType(object):
 #    def __init__(self, route):
 #        self._routes = []
 
+
 class Route(object):
     """
     CVRP route, consists of consecutive nodes
@@ -54,7 +55,6 @@ class Route(object):
         self._capacity = capacity
         self._demand = 0
         self._nodes = []
-
 
     def capacity(self):
         """Returns the route capacity"""
@@ -293,6 +293,7 @@ class Node(object):
     def __hash__(self):
         return self._name.__hash__()
 
+
 class Graph(object):
     """Class for modelling a CVRP problem data"""
     """
@@ -315,6 +316,8 @@ class Graph(object):
         self._matrix = {}
         self._capacity = data['CAPACITY']
         self._depot = None
+        self._branch_type = data['BRANCH_TYPE']
+        self._v_level_operation = data['V_LEVEL_OP']
         #self._voltage = data['VOLTAGE']
         #self._cabletype = CableType(data['CABLETYPE'])
 
