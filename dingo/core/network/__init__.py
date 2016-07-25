@@ -17,11 +17,12 @@ class GridDingo:
     Parameters
     ----------
     id_db : id according to database table
+    grid_district: class, area that is covered by the lv grid
     """
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
-        self.grid_district = kwargs.get('region', None)
+        self.grid_district = kwargs.get('grid_district', None)
         #self.geo_data = kwargs.get('geo_data', None)
 
         self._graph = nx.Graph()
