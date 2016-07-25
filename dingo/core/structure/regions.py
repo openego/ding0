@@ -234,6 +234,7 @@ class LVGridDistrictDingo(RegionDingo):
         super().__init__(**kwargs)
         self._geo_data = kwargs.get('geo_data', None)
         self._peak_load = kwargs.get('peak_load', None)
+        self.lv_grid = kwargs.get('lv_grid', None)
 
     def __repr__(self):
         return 'lv_grid_district_' + str(self.id_db)

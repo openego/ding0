@@ -257,9 +257,7 @@ class LVGridDingo(GridDingo):
         """Adds a LV station to _stations and grid graph if not already existing"""
         if lv_station not in self.stations() and isinstance(lv_station, LVStationDingo):
             self._stations.append(lv_station)
-
             self.graph_add_node(lv_station)
-            self.grid_district.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
     # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
     # def graph_build(self):

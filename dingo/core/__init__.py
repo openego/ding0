@@ -266,12 +266,29 @@ class NetworkDingo:
                 # # TODO: Modify following commented-out part when LVGridDistrict (Input Jonas) is implemented
                 # # === START TESTING ===
                 lv_grid_districts = self.import_lv_grid_districts(conn, lv_load_area)
+                lv_stations = self.import_lv_stations(conn, lv_load_area)
 
-                for id_grid_distric, geom_grid_district in lv_grid_districts.iterrows():
+                # Associate lv_grid_district to load_area
+                for id_grid_district, geom_grid_district in lv_grid_districts.iterrows():
 
                     # TODO: add geom to lv_grid_district
                     lv_grid_district = LVGridDistrictDingo(
-                        id_db=id_grid_distric)
+                        id_db=id_grid_district)
+
+                    # be aware, lv_grid takes grid district's geom!
+                    lv_grid = LVGridDingo(grid_district=lv_grid_district,
+                                          id_db=id_grid_district,
+                                          geo_data=lv_grid_district.geom)
+
+                    lv_station = LVStationDingo(
+                        id_db=id_grid_district, # is equal to station id
+                        grid=lv_grid,
+                        geo_data=lv_stations.loc[id_grid_district, 'geom'])
+
+                    lv_grid.add_station(lv_station)
+
+                    lv_grid_district.lv_grid = lv_grid
+
                     lv_load_area.add_lv_grid_district(lv_grid_district)
 
 
@@ -370,6 +387,8 @@ class NetworkDingo:
                                              session.bind,
                                              index_col='load_area_id')
         return lv_grid_stations
+
+
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
