@@ -129,8 +129,10 @@ class SavingsSolution(BaseSolution):
 
         return False
 
+
 class ClarkeWrightSolver(BaseSolver):
     """Clark and Wright Savings algorithm solver class"""
+
     def compute_savings_list(self, graph):
         """Compute Clarke and Wright savings list
 

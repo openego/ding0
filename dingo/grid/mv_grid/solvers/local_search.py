@@ -19,6 +19,7 @@ from dingo.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
 
 from dingo.tools import config as cfg_dingo
 
+
 class LocalSearchSolution(BaseSolution):
     """Solution class for Local Search metaheuristic"""
 
@@ -43,7 +44,7 @@ class LocalSearchSolution(BaseSolution):
         for index, r in enumerate(self._routes):
             new_route = new_solution._routes[index] = models.Route(self._problem, self._problem.capacity())
             for node in r.nodes():
-                # Insere new node on new route
+                # Insert new node on new route
                 new_node = new_solution._nodes[node.name()]
                 new_route.allocate([new_node])
 
@@ -54,7 +55,7 @@ class LocalSearchSolution(BaseSolution):
 
     def is_complete(self):
         """Returns True if this is a complete solution, i.e, all nodes are allocated
-        TO BE REVIEWED, CURRENTY NOT IN USE        
+        TO BE REVIEWED, CURRENT NOT IN USE
         """
         allocated = all(
             [node.route_allocation() is not None for node in list(self._nodes.values()) if node.name() != self._problem.depot().name()]
@@ -66,6 +67,7 @@ class LocalSearchSolution(BaseSolution):
 
         #return allocated and valid_routes and valid_demands
         return 0
+
 
 class LocalSearchSolver(BaseSolver):
     """ Improve initial savings solution using local search
