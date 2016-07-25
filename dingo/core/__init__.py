@@ -315,7 +315,7 @@ class NetworkDingo:
         Parameters
         ----------
         conn: SQLalchemy database connection
-        lv_load_areas: LVLoadAreaDingo instance
+        lv_load_area: LVLoadAreaDingo instance
             Load area for which LV grid districts should be imported
         """
 
@@ -325,22 +325,22 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        # TODO: replace ST_Within statement with select by load are id in grid district/ONS table
         # TODO: select grid districts instead of load areas
-        lv_grid_districs_sqla = session.query(orm_EgoDeuOnts.id,
-                                       orm_EgoDeuOnts.geom).\
-            filter(func.ST_Within(orm_EgoDeuOnts.geom,
-                                  orm_EgoDeuLoadArea.geom) == True).\
-            filter(orm_EgoDeuLoadArea.id == lv_load_area.id_db)
+        # lv_grid_districs_sqla = session.query(orm_EgoDeuOnts.id,
+        #                                orm_EgoDeuOnts.geom).\
+        #     filter(func.ST_Within(orm_EgoDeuOnts.geom,
+        #                           orm_EgoDeuLoadArea.geom) == True).\
+        #     filter(orm_EgoDeuLoadArea.id == lv_load_area.id_db)
+
+        lv_grid_districs_sqla = session.query(orm_EgoDeuOnts.load_area_id,
+                                              orm_EgoDeuOnts.geom). \
+            filter(orm_EgoDeuOnts.load_area_id == lv_load_area.id_db)
 
 
-
-
-        # TODO: execute query and assign data to attributes
         # read data from db
         lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
                                              session.bind,
-                                             index_col='id')
+                                             index_col='load_area_id')
 
         return lv_grid_districs
 
