@@ -260,6 +260,44 @@ class LVGridDingo(GridDingo):
             self._station.append(lv_station)
             self.graph_add_node(lv_station)
 
+    def select_typified_grid_model(self,
+                                   string_properties,
+                                   apartment_string,
+                                   apartment_trafo,
+                                   population):
+        """
+
+        Parameters
+        ----------
+        string_properties:
+        apartment_trafo:
+        apartment_string:
+        population:
+
+        """
+
+        apartment_house_branch_ratio = cfg_dingo.get("assumptions",
+            "apartment_house_branch_ratio")
+        population_per_apartment = cfg_dingo.get("assumptions",
+            "population_per_apartment")
+
+        apartments = round(population / population_per_apartment)
+        if apartments < 1:
+            apartments = 1
+
+        # select set of strings that represent one type of model grid
+        print(population, apartments)
+        strings = apartment_string.loc[apartments]
+        selected_strings = [int(s) for s in strings[strings >= 1].index.tolist()]
+
+        # slice dataframe of string parameters
+        selected_strings_df = string_properties.loc[selected_strings]
+
+        # add number of occurences of each branch to df
+        occurence_selector = [str(i) for i in selected_strings]
+        selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
+
+        return selected_strings_df
     # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
     # def graph_build(self):
     #     """Builds/fills graph with objects (stations, ..)"""

@@ -33,6 +33,7 @@ from sqlalchemy import func, Numeric
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads, dumps as wkt_dumps
 from shapely.geometry import Point, MultiPoint, MultiLineString
+import random
 
 from functools import partial
 import pyproj
@@ -94,7 +95,8 @@ class NetworkDingo:
 
         return mv_grid_district
 
-    def build_lv_grid_district(self, conn, lv_load_area):
+    def build_lv_grid_district(self, conn, lv_load_area, string_properties,
+                               apartment_string, apartment_trafo):
         """
         Instantiates and associates lv_grid_district incl grid and station
 
@@ -113,6 +115,9 @@ class NetworkDingo:
             lv_grid_district = LVGridDistrictDingo(
                 id_db=id_grid_district)
 
+            # TODO: replace population by less random data
+            lv_grid_district.population = random.randrange(1, 196)
+
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(grid_district=lv_grid_district,
                                   id_db=id_grid_district,
@@ -125,6 +130,10 @@ class NetworkDingo:
 
             lv_grid.add_station(lv_station)
 
+            model_grid = lv_grid.select_typified_grid_model(string_properties,
+                                               apartment_string,
+                                               apartment_trafo,
+                                               lv_grid_district.population)
             lv_grid_district.lv_grid = lv_grid
 
             lv_load_area.add_lv_grid_district(lv_grid_district)
@@ -182,11 +191,6 @@ class NetworkDingo:
         mv_data = pd.read_sql_query(grid_districts.statement,
                                     session.bind,
                                     index_col='subst_id')
-
-        # read LV model grid data from CSV file
-        string_properties, apartment_string, apartment_trafo = self.import_lv_model_grids()
-        print(string_properties, apartment_string, apartment_trafo)
-
 
         # iterate over grid_district/station datasets and initiate objects
         try:
@@ -290,6 +294,9 @@ class NetworkDingo:
                                        session.bind,
                                        index_col='id_db')
 
+        # read LV model grid data from CSV file
+        string_properties, apartment_string, apartment_trafo = self.import_lv_model_grids()
+
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
@@ -303,7 +310,11 @@ class NetworkDingo:
                                                mv_grid_district=mv_grid_district,
                                                peak_load_sum=row['peak_load_sum'])
 
-                self.build_lv_grid_district(conn, lv_load_area)
+                self.build_lv_grid_district(conn,
+                                            lv_load_area,
+                                            string_properties,
+                                            apartment_string,
+                                            apartment_trafo)
 
                 centre_geo_data = wkt_loads(row['geo_centre'])
 
