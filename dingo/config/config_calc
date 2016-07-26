@@ -55,8 +55,8 @@ mv_half_ring_count_max = 8
 #mv_station_v_level_operation: unit: -
 mv_station_v_level_operation = 1.04
 
-#mv_max_v_level_normal: unit: -
-mv_max_v_level_normal = 0.05
+#mv_max_v_level_diff_normal: unit: -
+mv_max_v_level_diff_normal = 0.05
 
-#mv_max_v_level_malfunc: unit: -
-mv_max_v_level_malfunc = 0.12
+#mv_max_v_level_diff_malfunc: unit: -
+mv_max_v_level_diff_malfunc = 0.12
