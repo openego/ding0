@@ -176,10 +176,13 @@ class Route(object):
         """ Calculates the optimal position of a circuit breaker on route.
 
         Returns:
-            2-tuple of nodes (instances of Node class) = route segment
+            OLD: 2-tuple of nodes (instances of Node class) = route segment
+            position of circuit breaker on route (index of last node on 1st half-ring preceding the circuit breaker)
 
         Notes
         -----
+        According to planning principles of MV grids, a MV ring is run as two strings (half-rings) separated by a
+        circuit breaker which is open at normal operation.
         Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
         breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
         the route.
@@ -209,7 +212,8 @@ class Route(object):
             print('sum 2=', sum([node.demand() for node in self._nodes[position:len(self._nodes)]]))
             print('Position of circuit breaker: ', self._nodes[position-1], '-', self._nodes[position], '(sumdiff=', demand_diff_min, ')')
 
-        return self._nodes[position-1], self._nodes[position]
+        #return self._nodes[position-1], self._nodes[position]
+        return position
         
     def tech_constraints_satisfied(self):
         """ Check route validity according to technical constraints
@@ -223,8 +227,19 @@ class Route(object):
         # TODO: TO BE COMPLETED
 
         # load parameters
-        load_factor_transformer = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_transformer'))
+        load_factor_line_normal = float(cfg_dingo.get('assumptions',
+                                                      'load_factor_line_normal'))
+        load_factor_cable_normal = float(cfg_dingo.get('assumptions',
+                                                       'load_factor_cable_normal'))
+        load_factor_line_malfunc = float(cfg_dingo.get('assumptions',
+                                                       'load_factor_line_malfunc'))
+        load_factor_cable_malfunc = float(cfg_dingo.get('assumptions',
+                                                        'load_factor_cable_malfunc'))
+        mv_max_v_level_diff_normal = float(cfg_dingo.get('assumptions',
+                                                         'mv_max_v_level_diff_normal'))
+        mv_max_v_level_diff_malfunc = float(cfg_dingo.get('assumptions',
+                                                          'mv_max_v_level_diff_malfunc'))
+
 
         # check current rating of cable/line
         i_max_th = self._problem._cabletype.i_max_th
@@ -239,6 +254,42 @@ class Route(object):
         valid_voltage_stability = 1
         #print('bla')
         return valid_current_rating and valid_voltage_stability
+
+        # step 1: calc circuit breaker position
+        position = self.calc_circuit_breaker_position()
+
+        # step 2: get nodes of half-rings
+        nodes_hring1 = self._nodes[0:position]
+        nodes_hring2 = self._nodes[position:len(self._nodes)]
+
+        # step 3a: check if current rating of default cable/line is violated
+        # (for every of the 2 half-rings using load factor for normal operation)
+        demand_hring_1 = sum([node.demand() for node in nodes_hring1])
+        demand_hring_2 = sum([node.demand() for node in nodes_hring2])
+        peak_current_sum_hring1 = demand_hring_1 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_hring2 = demand_hring_2 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+
+        if (peak_current_sum_hring1 > (self._problem._branch_type['I_max_th'] * load_factor_line_normal) or
+            peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_line_normal)):
+            return False
+
+        # step 3b: check if current rating of default cable/line is violated
+        # (for full ring using load factor for malfunction operation)
+        peak_current_sum_ring = self._demand * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_line_malfunc):
+            return False
+
+        # step 4a: check voltage stability at all nodes
+        # (for every of the 2 half-rings using max. voltage difference for normal operation)
+        v_level_hring1 = v_level_hring2 = self._problem._v_level_operation
+        for node_hring1, node_hring2 in zip(nodes_hring1, reversed(nodes_hring2)):
+            v = v_level_hring1 - (self._problem._branch_type['R'] * demand_hring_1
+
+        # step 4b: check voltage stability at all nodes
+        # (for full ring using max. voltage difference for malfunction operation)
+
+        return True
+
 
     def __str__(self):
         return str(self._nodes)
@@ -318,6 +369,7 @@ class Graph(object):
         self._capacity = data['CAPACITY']
         self._depot = None
         self._branch_type = data['BRANCH_TYPE']
+        self._v_level = data['V_LEVEL']
         self._v_level_operation = data['V_LEVEL_OP']
         #self._voltage = data['VOLTAGE']
         #self._cabletype = CableType(data['CABLETYPE'])
