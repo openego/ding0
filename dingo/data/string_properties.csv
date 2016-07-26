@@ -1,4 +1,5 @@
-Strang-ID;Typnetz 1=Land 2=Dorf 3=Vorstadt;Kerber Orginal;Anz. Haus-abgänge (HA);Abstand HA [m];Kabeltyp;Kabel-QS Kabel [mm^2] ;Stranglänge [m];Länge HA A [m];Länge HA B [m];Kabeltyp HA A;Kabeltyp HA B;Kabel-QS HA A [mm^2] ;Kabel-QS HA B [mm^2] ;Häufigkeit je Netztyp
+string_id;type;Kerber Orginal;count house branch;distance house branch;cable type;cabel width;string length;length house branch A;length house branch B;cabel type A;cabel type B;cable width A;cable width B;occurence per typified model grid
+#-;(1=rural, 2=village, 3=suburb);-;m;mm^2;m;m;m;-;-;mm^2;mm^2;-
 1;1;1;1;78;NAYY;150;78;18;33;NAYY;NAYY;50;50;
 2;1;0;1;135;NAYY;150;135;18;33;NAYY;NAYY;50;50;
 3;1;0;2;78;NAYY;150;156;18;33;NAYY;NAYY;50;50;
