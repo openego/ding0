@@ -2,7 +2,8 @@
 from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo
-from dingo.core.network import CableDistributorDingo
+from dingo.core.network import CableDistributorDingo, LVLoadDingo, \
+LVCableDistributorDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
@@ -247,6 +248,8 @@ class LVGridDingo(GridDingo):
         super().__init__(**kwargs)
 
         self._station = []
+        self._loads = []
+        self._cable_dists = []
         self.population = kwargs.get('population', None)
 
     def station(self):
@@ -259,6 +262,30 @@ class LVGridDingo(GridDingo):
         if lv_station not in self.station() and isinstance(lv_station, LVStationDingo):
             self._station.append(lv_station)
             self.graph_add_node(lv_station)
+
+    def add_load(self, lv_load):
+        """Adds a LV load to _loads and grid graph if not already existing"""
+        if lv_load not in self._loads and isinstance(lv_load,
+                                                           LVLoadDingo):
+            self._loads.append(lv_load)
+            self._graph.add_node(lv_load)
+
+    def add_cable_dist(self, lv_cable_dist):
+        """Adds a LV cable_dist to _cable_dists and grid graph if not already existing"""
+        if lv_cable_dist not in self._cable_dists and isinstance(lv_cable_dist,
+                                                       LVCableDistributorDingo):
+            self._cable_dists.append(lv_cable_dist)
+            self._graph.add_node(lv_cable_dist)
+
+    def cable_dists(self):
+        """Returns a generator for iterating over LV _cable_dist"""
+        for cable_dist in self._cable_dists:
+            yield cable_dist
+
+    def loads(self):
+        """Returns a generator for iterating over LV _load"""
+        for load in self._loads:
+            yield load
 
     def select_typified_grid_model(self,
                                    string_properties,
@@ -298,6 +325,62 @@ class LVGridDingo(GridDingo):
         selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
 
         return selected_strings_df
+
+
+    def build_lv_graph(self, selected_string_df):
+        """
+        Builds nxGraph based on the LV grid model
+
+        Parameter
+        ---------
+        selected_string_df: Dataframe
+            Table of strings of the selected grid model
+        """
+
+        # iterate over each type of branch
+        for i, row in selected_string_df.iterrows():
+            # iterate over it's occurences
+            for branch_no in range(1, int(row['occurence']) + 1):
+                # iterate over house branches
+                for house_branch in range(1, row['count house branch'] + 1):
+                    lv_cable_dist = LVCableDistributorDingo(
+                        id=self.grid_district.id_db,
+                        string_id=i,
+                        branch_no=branch_no,
+                        load_no=house_branch)
+
+                    lv_load = LVLoadDingo(id=self.grid_district.id_db,
+                                          string_id=i,
+                                          branch_no=branch_no,
+                                          load_no=house_branch)
+
+                    # add lv_load and lv_cable_dist to graph
+                    self.add_load(lv_load)
+                    self.add_cable_dist(lv_cable_dist)
+
+
+                    # connect current lv_cable_dist to last one
+                    if house_branch == 1:
+                        # edge connect first house branch in branch with the station
+                        self._graph.add_edge(
+                            self._station[0],
+                            lv_cable_dist,
+                            branch=BranchDingo(
+                                length=row['distance house branch']))
+                    else:
+                        self._graph.add_edge(
+                            self._cable_dists[-2],
+                            lv_cable_dist,
+                            branch=BranchDingo(
+                                length=row['distance house branch']))
+
+                    # connect house to cable distributor
+                    self._graph.add_edge(
+                        lv_cable_dist,
+                        lv_load,
+                        branch=BranchDingo(
+                            length=row['length house branch A']))
+
     # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
     # def graph_build(self):
     #     """Builds/fills graph with objects (stations, ..)"""

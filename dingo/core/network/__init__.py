@@ -287,3 +287,36 @@ class CableDistributorDingo():
 
     def __repr__(self):
         return 'cable_dist_' + str(self.id_db)
+
+class LVCableDistributorDingo():
+    """LV Cable distributor (connection point) """
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id', None)
+        string_id = kwargs.get('string_id', None)
+        branch_no = kwargs.get('branch_no', None)
+        load_no = kwargs.get('load_no', None)
+
+    def __repr__(self):
+        return ('lv_cable_dist_' + str(self.id) + '_' + str(string_id) + '-'
+            + str(branch_no) + '_' + str(load_no))
+
+class LVLoadDingo():
+    """
+    Load in LV grids
+
+    Notes
+    -----
+    Current attributes and __repr__ is designed to fulfill requirements of
+    typified model grids.
+    """
+
+    def __init__(self, **kwargs):
+        id = kwargs.get('id', None)
+        string_id = kwargs.get('string_id', None)
+        branch_no = kwargs.get('branch_no', None)
+        load_no = kwargs.get('load_no', None)
+
+    def __repr__(self):
+        return ('lv_load_' + str(self.id) + '_' + str(string_id) + '-'
+            + str(branch_no) + '_' + str(load_no))

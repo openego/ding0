@@ -134,6 +134,9 @@ class NetworkDingo:
                                                apartment_string,
                                                apartment_trafo,
                                                lv_grid_district.population)
+
+            lv_grid.build_lv_graph(model_grid)
+
             lv_grid_district.lv_grid = lv_grid
 
             lv_load_area.add_lv_grid_district(lv_grid_district)
