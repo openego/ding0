@@ -234,7 +234,7 @@ class MVGridDingo(GridDingo):
         branch_parameters = branch_parameters[branch_parameters['U_n'] == self.v_level].sort_values('I_max_th')
 
         # calc peak current sum (= "virtual" current) of whole grid (I = S * sqrt(3) / U)
-        peak_current_sum = self.grid_district.peak_load * pow(3, 0.5) / self.v_level  # units: kVA / kV = A
+        peak_current_sum = self.grid_district.peak_load * (3**0.5) / self.v_level  # units: kVA / kV = A
 
         # search the smallest possible line/cable for MV grid district in equipment datasets
         for idx, row in branch_parameters.iterrows():
