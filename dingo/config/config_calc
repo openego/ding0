@@ -36,9 +36,9 @@ load_area_sat_buffer_radius_inc = 1000
 #load_density_threshold: unit MVA/km^2
 load_density_threshold = 1
 
-load_factor_transformer = 0.6
-load_factor_line = 0.6
-load_factor_cable = 0.6
+load_factor_transformer_normal = 0.6
+load_factor_line_normal = 0.6
+load_factor_cable_normal = 0.6
 
 #branch_detour_factor: unit: -
 branch_detour_factor = 1.4
