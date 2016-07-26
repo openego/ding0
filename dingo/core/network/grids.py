@@ -246,17 +246,18 @@ class LVGridDingo(GridDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self._stations = []
+        self._station = []
+        self.population = kwargs.get('population', None)
 
-    def stations(self):
-        """Returns a generator for iterating over LV stations"""
-        for station in self._stations:
+    def station(self):
+        """Returns a generator for iterating over LV station"""
+        for station in self._station:
             yield station
 
     def add_station(self, lv_station):
-        """Adds a LV station to _stations and grid graph if not already existing"""
-        if lv_station not in self.stations() and isinstance(lv_station, LVStationDingo):
-            self._stations.append(lv_station)
+        """Adds a LV station to _station and grid graph if not already existing"""
+        if lv_station not in self.station() and isinstance(lv_station, LVStationDingo):
+            self._station.append(lv_station)
             self.graph_add_node(lv_station)
 
     # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
