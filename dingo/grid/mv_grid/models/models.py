@@ -172,7 +172,7 @@ class Route(object):
         """Returns True if node is the last node in the route"""
         return self._nodes.index(node) == len(self._nodes) - 1
 
-    def calc_circuit_breaker_position(self):
+    def calc_circuit_breaker_position(self, debug=False):
         """ Calculates the optimal position of a circuit breaker on route.
 
         Returns:
@@ -204,9 +204,10 @@ class Route(object):
                 demand_diff_min = demand_diff
                 position = ctr
 
-        print('sum 1=', sum([node.demand() for node in self._nodes[0:position]]))
-        print('sum 2=', sum([node.demand() for node in self._nodes[position:len(self._nodes)]]))
-        print('Position of circuit breaker: ', self._nodes[position-1], '-', self._nodes[position], '(sumdiff=', demand_diff_min, ')')
+        if debug:
+            print('sum 1=', sum([node.demand() for node in self._nodes[0:position]]))
+            print('sum 2=', sum([node.demand() for node in self._nodes[position:len(self._nodes)]]))
+            print('Position of circuit breaker: ', self._nodes[position-1], '-', self._nodes[position], '(sumdiff=', demand_diff_min, ')')
 
         return self._nodes[position-1], self._nodes[position]
         
