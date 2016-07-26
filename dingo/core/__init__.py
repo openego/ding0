@@ -4,6 +4,7 @@ from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.config import config_db_interfaces as db_int
+import dingo
 
 # import ORM classes for oedb access depending on input in config file
 cfg_dingo.load_config('config_db_tables')
@@ -177,10 +178,14 @@ class NetworkDingo:
                  orm_EgoDeuSubstation.id).\
             filter(orm_GridDistrict.subst_id.in_(mv_grid_districts))
 
-        # read data from db
+        # read MV data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
                                     session.bind,
                                     index_col='subst_id')
+
+        # read LV model grid data from CSV file
+        string_properties, apartment_string, apartment_trafo = self.import_lv_model_grids()
+        print(string_properties, apartment_string, apartment_trafo)
 
 
         # iterate over grid_district/station datasets and initiate objects
@@ -379,6 +384,43 @@ class NetworkDingo:
                                              index_col='load_area_id')
         return lv_grid_stations
 
+    def import_lv_model_grids(self):
+        """
+        Import typified model grids
+
+        Returns
+        -------
+        string_properties: Pandas Dataframe
+            Table describing each string
+        apartment_string: Pandas Dataframe
+            Relational table of apartments and strings
+        apartment_trafo: Pandas Dataframe
+            Relational table assigning trafos to apartments
+        """
+
+        string_properties_file = cfg_dingo.get("model_grids",
+                                               "string_properties")
+        apartment_string_file = cfg_dingo.get("model_grids",
+                                               "apartment_string")
+        apartment_trafo_file = cfg_dingo.get("model_grids",
+                                               "apartment_trafo")
+
+        package_path = dingo.__path__[0]
+
+        string_properties = pd.read_csv(os.path.join(
+            package_path, 'data', string_properties_file),
+            comment='#', delimiter=';', decimal=',',
+            index_col='string_id')
+        apartment_string = pd.read_csv(os.path.join(
+            package_path, 'data', apartment_string_file),
+            comment='#', delimiter=';', decimal=',',
+            index_col='apartment_count')
+        apartment_trafo = pd.read_csv(os.path.join(
+            package_path, 'data', apartment_trafo_file),
+            comment='#', delimiter=';', decimal=',',
+            index_col='apartment_count')
+
+        return string_properties, apartment_string, apartment_trafo
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
