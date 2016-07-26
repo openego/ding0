@@ -20,7 +20,6 @@ class MVStationDingo(StationDingo):
 
         self.v_level_operation = mv_station_v_level_operation * self.grid.v_level
 
-
     def choose_transformers(self):
         """Chooses appropriate transformers for the MV sub-station
 
@@ -66,15 +65,12 @@ class MVStationDingo(StationDingo):
                                                       'load_factor_transformer'))
 
         # step 1: identify possible transformers by voltage level
-        # TODO: derive voltage level by load density of mv_grid_district
-        voltage_level = 10 # in kV
-
         apparent_power = self.grid.grid_district.peak_load  # kW
         possible_transformers = []  # keys of above dict
 
         # put all keys of suitable transformers (based on voltage) to list
         for trans in transformers:
-            if voltage_level == transformers[trans]['voltage_level']:
+            if self.grid.v_level == transformers[trans]['voltage_level']:
                 possible_transformers.append(trans)
 
         # step 2: determine number and size of required transformers
@@ -92,14 +88,14 @@ class MVStationDingo(StationDingo):
                      for k in possible_transformers])))
 
             # add transformer on determined size with according parameters
-            self.add_transformer(TransformerDingo(**{'v_level': voltage_level,
+            self.add_transformer(TransformerDingo(**{'v_level': self.grid.v_level,
                 's_max_longterm': selected_app_power}))
             residual_apparent_power -= (load_factor_transformer *
                                         selected_app_power)
 
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))
-        int_kwargs = {'v_level': voltage_level,
+        int_kwargs = {'v_level': self.grid.v_level,
                       's_max_longterm': s_max_max}
 
         self.add_transformer(TransformerDingo(**int_kwargs))
