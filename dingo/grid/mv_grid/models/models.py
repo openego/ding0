@@ -215,7 +215,8 @@ class Route(object):
         if debug:
             print('sum 1=', sum([node.demand() for node in self._nodes[0:position]]))
             print('sum 2=', sum([node.demand() for node in self._nodes[position:len(self._nodes)]]))
-            print('Position of circuit breaker: ', self._nodes[position-1], '-', self._nodes[position], '(sumdiff=', demand_diff_min, ')')
+            print('Position of circuit breaker: ', self._nodes[position-1], '-', self._nodes[position],
+                  '(sumdiff=', demand_diff_min, ')')
 
         #return self._nodes[position-1], self._nodes[position]
         return position
@@ -229,7 +230,6 @@ class Route(object):
             cable/line losses?
         """
         ### CHECK WITH ROUTE CAPACITY (see also: solution.is_complete AND route.can_allocate)
-        # TODO: TO BE COMPLETED
 
         # load parameters
         load_factor_line_normal = float(cfg_dingo.get('assumptions',
@@ -257,7 +257,6 @@ class Route(object):
         # get all nodes of full ring for both directions
         nodes_ring1 = [self._problem._depot] + self._nodes
         nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
-
         # factor to calc reactive from active power
         Q_factor = tan(acos(mv_routing_loads_cos_phi))
         # line/cable params per km
@@ -285,7 +284,12 @@ class Route(object):
         # (for every of the 2 half-rings using max. voltage difference for normal operation)
 
         # get operation voltage level from station
-        v_level_hring1 = v_level_hring2 = v_level_ring_dir1 = v_level_ring_dir2 = v_level_op = self._problem._v_level_operation * 1e3
+        v_level_hring1 =\
+            v_level_hring2 =\
+            v_level_ring_dir1 =\
+            v_level_ring_dir2 =\
+            v_level_op =\
+            self._problem._v_level_operation * 1e3
 
         for n1, n2 in zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]):
             v_level_hring1 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring1
@@ -298,19 +302,16 @@ class Route(object):
                 return False
 
         # step 4b: check voltage stability at all nodes
-        # (for full ring using max. voltage difference for malfunction operation)
+        # (for full ring calculating both directions simultaneously using max. voltage diff. for malfunction operation)
         for (n1, n2), (n3, n4) in zip(zip(nodes_ring1[0:len(nodes_ring1)-1], nodes_ring1[1:len(nodes_ring1)]),
                                       zip(nodes_ring2[0:len(nodes_ring2)-1], nodes_ring2[1:len(nodes_ring2)])):
-            v_level_ring_dir1 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_ring_dir1
-            v_level_ring_dir2 -= n4.demand() * 1e3 * self._problem.distance(n3, n4) * (r + x*Q_factor) / v_level_ring_dir2
+            v_level_ring_dir1 -= (n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) /
+                                  v_level_ring_dir1)
+            v_level_ring_dir2 -= (n4.demand() * 1e3 * self._problem.distance(n3, n4) * (r + x*Q_factor) /
+                                  v_level_ring_dir2)
             if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_diff_malfunc) or
                 (v_level_op - v_level_ring_dir2) > (v_level_op * mv_max_v_level_diff_malfunc)):
                 return False
-
-        #for node1, node2 in zip(self._nodes[0:len(self._nodes)-1], self._nodes[1:len(self._nodes)]):
-        #    v_level_ring -= node2.demand() * self._problem.distance(node1, node2) * (r + x*Q_factor) / v_level_ring
-        #    if (v_level_op - v_level_ring) > (v_level_op * mv_max_v_level_diff_malfunc):
-        #       return False
 
         return True
 
