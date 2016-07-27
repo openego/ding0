@@ -244,6 +244,8 @@ class Route(object):
                                                          'mv_max_v_level_diff_normal'))
         mv_max_v_level_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                           'mv_max_v_level_diff_malfunc'))
+        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                       'mv_routing_loads_cos_phi'))
 
         # step 1: calc circuit breaker position
         position = self.calc_circuit_breaker_position()
@@ -254,8 +256,7 @@ class Route(object):
         nodes_hring2 = list(reversed(self._nodes[position:len(self._nodes)] + [self._problem._depot]))
 
         # factor to calc reactive from active power
-        # TODO: move cos_phi to config
-        Q_factor = tan(acos(0.95))
+        Q_factor = tan(acos(mv_routing_loads_cos_phi))
 
         # line/cable params per km
         r = self._problem._branch_type['R']  # unit: ohm/km
