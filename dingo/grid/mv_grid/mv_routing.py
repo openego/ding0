@@ -65,8 +65,6 @@ def routing_solution_to_dingo_graph(graph, solution):
     # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
     # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
 
-    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
-
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}
 
@@ -94,7 +92,7 @@ def routing_solution_to_dingo_graph(graph, solution):
                 node1 = node_list[n1.name()]
                 node2 = node_list[n2.name()]
                 # set branch length
-                b.length = branch_detour_factor * calc_geo_dist_vincenty(node1, node2)
+                b.length = calc_geo_dist_vincenty(node1, node2)
                 # append to branch list
                 edges_graph.append((node1, node2, dict(branch=b)))
 

@@ -2,6 +2,8 @@ from geopy.distance import vincenty
 from shapely.geometry import LineString
 from shapely.ops import transform
 
+from dingo.tools import config as cfg_dingo
+
 
 def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
     """ Determines branches in nodes' associated graph that are at least partly within buffer of `radius` from `node`.
@@ -38,7 +40,8 @@ def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
 
 
 def calc_geo_dist_vincenty(node_source, node_target):
-    """ Calculates the geodesic distance between `node_source` and `node_target`.
+    """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
+        config_calc.
     Args:
         node_source: source node (Dingo object), member of _graph
         node_target: target node (Dingo object), member of _graph
@@ -47,16 +50,19 @@ def calc_geo_dist_vincenty(node_source, node_target):
         Distance in m
     """
 
+    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+
     # notice: vincenty takes (lat,lon)
-    return vincenty((node_source.geo_data.y, node_source.geo_data.x),
-                    (node_target.geo_data.y, node_target.geo_data.x)).m
+    return branch_detour_factor * vincenty((node_source.geo_data.y, node_source.geo_data.x),
+                                           (node_target.geo_data.y, node_target.geo_data.x)).m
 
 
 def calc_geo_dist_matrix_vincenty(nodes_pos):
-    """ Calculates the geodesic distance between all nodes in `nodes_pos`. For every two points/coord it uses geopy's
-    vincenty function (formula devised by Thaddeus Vincenty, with an accurate ellipsoidal model of the earth). As
-    default ellipsoidal model of the earth WGS-84 is used. For more options see
-    https://geopy.readthedocs.org/en/1.10.0/index.html?highlight=vincenty#geopy.distance.vincenty
+    """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor in
+        config_calc. For every two points/coord it uses geopy's vincenty function (formula devised by Thaddeus Vincenty,
+        with an accurate ellipsoidal model of the earth). As default ellipsoidal model of the earth WGS-84 is used.
+        For more options see
+        https://geopy.readthedocs.org/en/1.10.0/index.html?highlight=vincenty#geopy.distance.vincenty
 
     Args:
         nodes_pos: dictionary of nodes with positions,
@@ -76,6 +82,8 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
         x=longitude, y=latitude
     """
 
+    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+
     matrix = {}
 
     for i in nodes_pos:
@@ -86,7 +94,7 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
         for j in nodes_pos:
             pos_dest = tuple(nodes_pos[j])
             # notice: vincenty takes (lat,lon), thus the (x,y)/(lon,lat) tuple is reversed
-            distance = vincenty(tuple(reversed(pos_origin)), tuple(reversed(pos_dest))).km
+            distance = branch_detour_factor * vincenty(tuple(reversed(pos_origin)), tuple(reversed(pos_dest))).km
             matrix[i][j] = distance
 
     return matrix

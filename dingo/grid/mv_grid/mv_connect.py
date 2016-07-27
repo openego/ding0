@@ -230,8 +230,6 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
                            `conn_dist_ring_mod`), `target_obj_result` is None.
     """
 
-    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
-
     target_obj_result = None
 
     # MV line is nearest connection point
@@ -249,10 +247,10 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
             # along node)
             graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
 
-            branch_length = branch_detour_factor * calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], node)
+            branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], node)
             graph.add_edge(target_obj['obj']['adj_nodes'][0], node, branch=BranchDingo(length=branch_length))
 
-            branch_length = branch_detour_factor * calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], node)
+            branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], node)
             graph.add_edge(target_obj['obj']['adj_nodes'][1], node, branch=BranchDingo(length=branch_length))
 
             if debug:
@@ -270,14 +268,14 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
             # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
             graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
 
-            branch_length = branch_detour_factor * calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], cable_dist)
+            branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], cable_dist)
             graph.add_edge(target_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo(length=branch_length))
 
-            branch_length = branch_detour_factor * calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], cable_dist)
+            branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], cable_dist)
             graph.add_edge(target_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo(length=branch_length))
 
             # add new branch for satellite (station to cable distributor)
-            branch_length = branch_detour_factor * calc_geo_dist_vincenty(node, cable_dist)
+            branch_length = calc_geo_dist_vincenty(node, cable_dist)
             graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length))
             target_obj_result = cable_dist
 
@@ -289,7 +287,7 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
     # node ist nearest connection point
     else:
         # add new branch for satellite (station to station)
-        branch_length = branch_detour_factor * calc_geo_dist_vincenty(node, target_obj['obj'])
+        branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
         graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length))
         target_obj_result = target_obj['obj']
 
@@ -321,11 +319,9 @@ def disconnect_node(node, target_obj_result, graph, debug):
         neighbor_nodes = graph.neighbors(target_obj_result)
 
         if len(neighbor_nodes) == 2:
-            branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
-
             graph.remove_node(target_obj_result)
 
-            branch_length = branch_detour_factor * calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
+            branch_length = calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
             graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDingo(length=branch_length))
 
     if debug:

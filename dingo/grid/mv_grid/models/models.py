@@ -283,7 +283,6 @@ class Route(object):
 
         # step 4a: check voltage stability at all nodes
         # (for every of the 2 half-rings using max. voltage difference for normal operation)
-        # TODO: MOVE DETOUR FACTOR TO PLACE PRIOR TO ROUTING TO GET REAL DISTANCES HERE! (see mv_routing)
 
         # get operation voltage level from station
         v_level_hring1 = v_level_hring2 = v_level_ring_dir1 = v_level_ring_dir2 = v_level_op = self._problem._v_level_operation * 1e3
