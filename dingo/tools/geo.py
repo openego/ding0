@@ -66,7 +66,7 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
                            }
 
     Returns:
-        dictionary with distances between all nodes,
+        dictionary with distances between all nodes (in km),
         Format: {'node_1': {'node_1': dist_11, ..., 'node_n': dist_1n},
                  ...,
                  'node_n': {'node_1': dist_n1, ..., 'node_n': dist_nn

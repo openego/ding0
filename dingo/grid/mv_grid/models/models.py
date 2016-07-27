@@ -12,6 +12,8 @@
 
 from dingo.tools import config as cfg_dingo
 
+from math import pi, tan, acos
+
 
 class CableType(object):
     def __init__(self, cabletype_id):
@@ -91,8 +93,11 @@ class Route(object):
         """Returns True if this route can allocate nodes in `nodes` list"""
         nodes_demand = sum([node.demand() for node in nodes])
 
-        if self._demand + nodes_demand <= self._capacity:
+        if self.tech_constraints_satisfied():
             return True
+
+        #if self._demand + nodes_demand <= self._capacity:
+        #    return True
 
         return False
         
@@ -235,37 +240,31 @@ class Route(object):
                                                        'load_factor_line_malfunc'))
         load_factor_cable_malfunc = float(cfg_dingo.get('assumptions',
                                                         'load_factor_cable_malfunc'))
-        mv_max_v_level_diff_normal = float(cfg_dingo.get('assumptions',
+        mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                          'mv_max_v_level_diff_normal'))
-        mv_max_v_level_diff_malfunc = float(cfg_dingo.get('assumptions',
+        mv_max_v_level_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                           'mv_max_v_level_diff_malfunc'))
-
-
-        # check current rating of cable/line
-        i_max_th = self._problem._cabletype.i_max_th
-        voltage = self._problem._voltage
-        power_factor = 0.95
-        valid_current_rating = (self.demand / (3*voltage*power_factor)) <= i_max_th
-        
-        # check voltage stability at all nodes
-        v_max_diff = 0.03
-        for node in self.nodes():
-            print('xxx')
-        valid_voltage_stability = 1
-        #print('bla')
-        return valid_current_rating and valid_voltage_stability
 
         # step 1: calc circuit breaker position
         position = self.calc_circuit_breaker_position()
 
-        # step 2: get nodes of half-rings
-        nodes_hring1 = self._nodes[0:position]
-        nodes_hring2 = self._nodes[position:len(self._nodes)]
+        # step 2: calc required values for checking current & voltage
+        # get nodes of half-rings
+        nodes_hring1 = [self._problem._depot] + self._nodes[0:position]
+        nodes_hring2 = list(reversed(self._nodes[position:len(self._nodes)] + [self._problem._depot]))
+
+        # factor to calc reactive from active power
+        # TODO: move cos_phi to config
+        Q_factor = tan(acos(0.95))
+
+        # line/cable params per km
+        r = self._problem._branch_type['R']  # unit: ohm/km
+        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit: ohm/km
 
         # step 3a: check if current rating of default cable/line is violated
         # (for every of the 2 half-rings using load factor for normal operation)
-        demand_hring_1 = sum([node.demand() for node in nodes_hring1])
-        demand_hring_2 = sum([node.demand() for node in nodes_hring2])
+        demand_hring_1 = sum([node.demand() for node in self._nodes[0:position]])
+        demand_hring_2 = sum([node.demand() for node in self._nodes[position:len(self._nodes)]])
         peak_current_sum_hring1 = demand_hring_1 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
         peak_current_sum_hring2 = demand_hring_2 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
 
@@ -281,12 +280,35 @@ class Route(object):
 
         # step 4a: check voltage stability at all nodes
         # (for every of the 2 half-rings using max. voltage difference for normal operation)
-        v_level_hring1 = v_level_hring2 = self._problem._v_level_operation
-        for node_hring1, node_hring2 in zip(nodes_hring1, reversed(nodes_hring2)):
-            v = v_level_hring1 - (self._problem._branch_type['R'] * demand_hring_1
+        # TODO: MOVE DETOUR FACTOR TO PLACE PRIOR TO ROUTING TO GET REAL DISTANCES HERE! (see mv_routing)
+
+        # get operation voltage level from station
+        v_level_hring1 = v_level_hring2 = v_level_ring_dir1 = v_level_ring_dir2 = v_level_op = self._problem._v_level_operation * 1e3
+
+        for n1, n2 in zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]):
+            v_level_hring1 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring1
+            if (v_level_op - v_level_hring1) > (v_level_op * mv_max_v_level_diff_normal):
+                return False
+
+        for n1, n2 in zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)]):
+            v_level_hring2 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring2
+            if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_diff_normal):
+                return False
 
         # step 4b: check voltage stability at all nodes
         # (for full ring using max. voltage difference for malfunction operation)
+        for (n1, n2), (n3, n4) in zip(zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]),
+                                      zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)])):
+            v_level_ring_dir1 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_ring_dir1
+            v_level_ring_dir2 -= n4.demand() * 1e3 * self._problem.distance(n3, n4) * (r + x*Q_factor) / v_level_ring_dir2
+            if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_diff_malfunc) or
+                (v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_diff_malfunc)):
+                return False
+
+        #for node1, node2 in zip(self._nodes[0:len(self._nodes)-1], self._nodes[1:len(self._nodes)]):
+        #    v_level_ring -= node2.demand() * self._problem.distance(node1, node2) * (r + x*Q_factor) / v_level_ring
+        #    if (v_level_op - v_level_ring) > (v_level_op * mv_max_v_level_diff_malfunc):
+        #       return False
 
         return True
 
