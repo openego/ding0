@@ -63,14 +63,15 @@ class SavingsSolution(BaseSolution):
         #valid_routes = len(self._routes) == self._vehicles
         valid_routes = len(self._routes) == 1 #workaround: try to use only one route (otherwise process will stop if no of vehicles is reached)
 
-        valid_demands = all([route.demand() <= route.capacity() for route in self._routes])
+        #valid_demands = all([route.demand() <= route.capacity() for route in self._routes])
         ##### NEW CAPACITY DEFINITION / CHECK CONSTRAINTS HERE
         #valid_tech_constraints = all([route.tech_constraints_satisfied() for route in self._routes])
         
         #if allocated and valid_routes and valid_demands:
         #    print('xxx')
-        return allocated and valid_routes and valid_demands
+        #return allocated and valid_routes and valid_demands
         #return allocated and valid_demands
+        return allocated and valid_routes
 
     def process(self, pair):
         """Processes a pair of nodes into the current solution

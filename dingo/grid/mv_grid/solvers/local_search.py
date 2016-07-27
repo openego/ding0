@@ -63,7 +63,7 @@ class LocalSearchSolution(BaseSolution):
 
         valid_routes = len(self._routes) == self._vehicles
 
-        valid_demands = all([route.demand() <= route.capacity() for route in self._routes])
+        #valid_demands = all([route.demand() <= route.capacity() for route in self._routes])
 
         #return allocated and valid_routes and valid_demands
         return 0
