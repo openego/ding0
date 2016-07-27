@@ -254,10 +254,12 @@ class Route(object):
         # get nodes of half-rings
         nodes_hring1 = [self._problem._depot] + self._nodes[0:position]
         nodes_hring2 = list(reversed(self._nodes[position:len(self._nodes)] + [self._problem._depot]))
+        # get all nodes of full ring for both directions
+        nodes_ring1 = [self._problem._depot] + self._nodes
+        nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
 
         # factor to calc reactive from active power
         Q_factor = tan(acos(mv_routing_loads_cos_phi))
-
         # line/cable params per km
         r = self._problem._branch_type['R']  # unit: ohm/km
         x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit: ohm/km
@@ -298,12 +300,12 @@ class Route(object):
 
         # step 4b: check voltage stability at all nodes
         # (for full ring using max. voltage difference for malfunction operation)
-        for (n1, n2), (n3, n4) in zip(zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]),
-                                      zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)])):
+        for (n1, n2), (n3, n4) in zip(zip(nodes_ring1[0:len(nodes_ring1)-1], nodes_ring1[1:len(nodes_ring1)]),
+                                      zip(nodes_ring2[0:len(nodes_ring2)-1], nodes_ring2[1:len(nodes_ring2)])):
             v_level_ring_dir1 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_ring_dir1
             v_level_ring_dir2 -= n4.demand() * 1e3 * self._problem.distance(n3, n4) * (r + x*Q_factor) / v_level_ring_dir2
             if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_diff_malfunc) or
-                (v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_diff_malfunc)):
+                (v_level_op - v_level_ring_dir2) > (v_level_op * mv_max_v_level_diff_malfunc)):
                 return False
 
         #for node1, node2 in zip(self._nodes[0:len(self._nodes)-1], self._nodes[1:len(self._nodes)]):
@@ -312,6 +314,8 @@ class Route(object):
         #       return False
 
         return True
+
+        # TODO (mv_routing): create circuit breaker object, open ring after routing
 
 
     def __str__(self):
