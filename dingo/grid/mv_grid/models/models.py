@@ -89,11 +89,15 @@ class Route(object):
 
         return cost
 
-    def can_allocate(self, nodes):
+    def can_allocate(self, node):
         """Returns True if this route can allocate nodes in `nodes` list"""
-        nodes_demand = sum([node.demand() for node in nodes])
 
-        if self.tech_constraints_satisfied():
+        #nodes_demand = sum([node.demand() for node in nodes])
+
+        new_route = self
+        new_route.insert(node, )
+
+        if new_route.tech_constraints_satisfied():
             return True
 
         #if self._demand + nodes_demand <= self._capacity:
@@ -101,16 +105,28 @@ class Route(object):
 
         return False
         
-    def can_exchange_nodes(self, target_route, nodes, target_nodes):
+    def can_exchange_nodes(self, target_route, node, target_node, position, target_position):
         """Returns True if this route can insert `nodes` (list) into route
         `target_route` and insert `target_nodes` into self regarding `routes`'
         and `target_routes`' capacities."""
         
-        nodes_demand = sum([node.demand() for node in nodes])
-        target_nodes_demand = sum([node.demand() for node in target_nodes])
+        # nodes_demand = sum([node.demand() for node in nodes])
+        # target_nodes_demand = sum([node.demand() for node in target_nodes])
+        #
+        # if (self._demand - nodes_demand + target_nodes_demand <= self._capacity and
+        #     target_route._demand - target_nodes_demand + nodes_demand <= target_route._capacity):
+        #     return True
+        #
+        # return False
 
-        if (self._demand - nodes_demand + target_nodes_demand <= self._capacity and
-            target_route._demand - target_nodes_demand + nodes_demand <= target_route._capacity):
+        if self.tech_constraints_satisfied() and target_route.tech_constraints_satisfied():
+            return True
+
+        return False
+
+    def valid_routes(self, route):
+
+        if self.tech_constraints_satisfied() and route.tech_constraints_satisfied():
             return True
 
         return False
