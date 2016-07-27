@@ -232,14 +232,19 @@ class Route(object):
         ### CHECK WITH ROUTE CAPACITY (see also: solution.is_complete AND route.can_allocate)
 
         # load parameters
-        load_factor_line_normal = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_line_normal'))
-        load_factor_cable_normal = float(cfg_dingo.get('assumptions',
-                                                       'load_factor_cable_normal'))
-        load_factor_line_malfunc = float(cfg_dingo.get('assumptions',
-                                                       'load_factor_line_malfunc'))
-        load_factor_cable_malfunc = float(cfg_dingo.get('assumptions',
-                                                        'load_factor_cable_malfunc'))
+        if self._problem._branch_kind == 'line':
+            load_factor_normal = float(cfg_dingo.get('assumptions',
+                                                     'load_factor_line_normal'))
+            load_factor_malfunc = float(cfg_dingo.get('assumptions',
+                                                      'load_factor_line_malfunc'))
+        elif self._problem._branch_kind == 'cable':
+            load_factor_normal = float(cfg_dingo.get('assumptions',
+                                                     'load_factor_cable_normal'))
+            load_factor_malfunc = float(cfg_dingo.get('assumptions',
+                                                      'load_factor_cable_malfunc'))
+        else:
+            raise ValueError('Grid\'s _branch_kind is invalid, could not use branch parameters.')
+
         mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                          'mv_max_v_level_diff_normal'))
         mv_max_v_level_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
@@ -270,14 +275,14 @@ class Route(object):
         peak_current_sum_hring1 = demand_hring_1 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
         peak_current_sum_hring2 = demand_hring_2 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
 
-        if (peak_current_sum_hring1 > (self._problem._branch_type['I_max_th'] * load_factor_line_normal) or
-            peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_line_normal)):
+        if (peak_current_sum_hring1 > (self._problem._branch_type['I_max_th'] * load_factor_normal) or
+            peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_normal)):
             return False
 
         # step 3b: check if current rating of default cable/line is violated
         # (for full ring using load factor for malfunction operation)
         peak_current_sum_ring = self._demand * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
-        if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_line_malfunc):
+        if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_malfunc):
             return False
 
         # step 4a: check voltage stability at all nodes
@@ -395,6 +400,7 @@ class Graph(object):
         self._matrix = {}
         self._capacity = data['CAPACITY']
         self._depot = None
+        self._branch_kind = data['BRANCH_KIND']
         self._branch_type = data['BRANCH_TYPE']
         self._v_level = data['V_LEVEL']
         self._v_level_operation = data['V_LEVEL_OP']
