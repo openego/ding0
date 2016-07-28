@@ -328,15 +328,15 @@ class LocalSearchSolver(BaseSolver):
                                 node_best, target_node_best, route_best, target_route_best = node, target_node, route, target_route
                                         
             if length_diff_best < 0:
-                if route_best.can_exchange_nodes(target_route_best, [node_best], [target_node_best]):
-                    # insert new node
-                    target_route_best.insert([node_best], j_best)
-                    route_best.insert([target_node_best], i_best)
-                    # remove empty routes from solution
-                    solution._routes = [route for route in solution._routes if route._nodes]
+                #if route_best.can_allocate([target_node_best], i_best) and target_route_best.can_allocate([node_best], j_best):
+                # insert new node
+                target_route_best.insert([node_best], j_best)
+                route_best.insert([target_node_best], i_best)
+                # remove empty routes from solution
+                solution._routes = [route for route in solution._routes if route._nodes]
 
-                    if anim is not None:
-                        solution.draw_network(anim)
+                if anim is not None:
+                    solution.draw_network(anim)
             
             # no improvement found
             if round(length_diff_best, op_diff_round_digits) == 0:
