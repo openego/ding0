@@ -184,7 +184,7 @@ class NetworkDingo:
                                            orm_GridDistrict.geom, srid)).\
                                         label('poly_geom'),
                                        func.ST_AsText(func.ST_Transform(
-                                           orm_EgoDeuSubstation.geom, srid)).\
+                                           orm_EgoDeuSubstation.point, srid)).\
                                        label('subs_geom')).\
             join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id==
                  orm_EgoDeuSubstation.id).\
