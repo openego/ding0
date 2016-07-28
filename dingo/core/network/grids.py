@@ -253,9 +253,8 @@ class MVGridDingo(GridDingo):
             if half_ring_count <= mv_half_ring_count_max:
                 return row
 
-        raise ValueError('No appropriate line/cable type could be found, please check equipment in ' +
-                         equipment_parameters_file +
-                         ' .')
+        raise ValueError('No appropriate line/cable type could be found for ' + str(self) +
+                         '. Please check equipment in ' + equipment_parameters_file + '.')
 
     def parametrize_lines(self):
         """Chooses line/cable type and defines parameters
