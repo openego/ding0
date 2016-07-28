@@ -58,6 +58,22 @@ class Route(object):
         self._demand = 0
         self._nodes = []
 
+    def clone(self):
+        """Returns a deep copy of self
+
+        Clones:
+            allocation
+            nodes
+        """
+
+        new_route = self.__class__(self._problem, capacity=self._capacity)
+        for node in self.nodes():
+            # Insere new node on new route
+            new_node = node.__class__(node._name, node._demand)
+            new_route.allocate([new_node])
+
+        return new_route
+
     def capacity(self):
         """Returns the route capacity"""
         return self._capacity
@@ -89,13 +105,18 @@ class Route(object):
 
         return cost
 
-    def can_allocate(self, node):
+    def can_allocate(self, nodes, pos=None):
         """Returns True if this route can allocate nodes in `nodes` list"""
 
         #nodes_demand = sum([node.demand() for node in nodes])
 
-        new_route = self
-        new_route.insert(node, )
+        # clone route and nodes
+        new_route = self.clone()
+        new_nodes = [node.clone() for node in nodes]
+        #new_route.allocate(new_nodes, append=True)
+        if pos is None:
+            pos = len(self._nodes)
+        new_route._nodes = new_route._nodes[:pos] + new_nodes + new_route._nodes[pos:]
 
         if new_route.tech_constraints_satisfied():
             return True
@@ -120,13 +141,6 @@ class Route(object):
         # return False
 
         if self.tech_constraints_satisfied() and target_route.tech_constraints_satisfied():
-            return True
-
-        return False
-
-    def valid_routes(self, route):
-
-        if self.tech_constraints_satisfied() and route.tech_constraints_satisfied():
             return True
 
         return False
@@ -365,6 +379,18 @@ class Node(object):
         self._name = name
         self._demand = demand
         self._allocation = None
+
+    def clone(self):
+        """Returns a deep copy of self
+
+        Clones:
+            allocation
+            nodes
+        """
+
+        new_node = self.__class__(self._name, self._demand)
+
+        return new_node
 
     def name(self):
         """Returns node name"""
