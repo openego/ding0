@@ -117,7 +117,7 @@ class LocalSearchSolver(BaseSolver):
 
             # exclude routes with single high-demand nodes (LV load areas)
             if len(route._nodes) == 1:
-                if solution._problem._aggregated[str(route._nodes[0])]:
+                if solution._problem._is_aggregated[str(route._nodes[0])]:
                     continue
 
             n = len(route._nodes)+1
@@ -204,7 +204,7 @@ class LocalSearchSolver(BaseSolver):
 
                 # exclude origin routes with single high-demand nodes (LV load areas)
                 if len(route._nodes) == 1:
-                    if solution._problem._aggregated[str(route._nodes[0])]:
+                    if solution._problem._is_aggregated[str(route._nodes[0])]:
                         continue
 
                 # create tour by adding depot at start and end
@@ -214,7 +214,7 @@ class LocalSearchSolver(BaseSolver):
 
                     # exclude (origin+target) routes with single high-demand nodes (LV load areas)
                     if len(target_route._nodes) == 1:
-                        if solution._problem._aggregated[str(target_route._nodes[0])]:
+                        if solution._problem._is_aggregated[str(target_route._nodes[0])]:
                             continue
 
                     target_tour = [graph._depot] + target_route._nodes + [graph._depot]
@@ -301,7 +301,7 @@ class LocalSearchSolver(BaseSolver):
 
                 # exclude origin routes with single high-demand nodes (LV load areas)
                 if len(route._nodes) == 1:
-                    if solution._problem._aggregated[str(route._nodes[0])]:
+                    if solution._problem._is_aggregated[str(route._nodes[0])]:
                         continue
 
                 # create tour by adding depot at start and end
@@ -314,7 +314,7 @@ class LocalSearchSolver(BaseSolver):
 
                     # exclude (origin+target) routes with single high-demand nodes (LV load areas)
                     if len(target_route._nodes) == 1:
-                        if solution._problem._aggregated[str(target_route._nodes[0])]:
+                        if solution._problem._is_aggregated[str(target_route._nodes[0])]:
                             continue
 
                     target_tour = [graph._depot] + target_route._nodes + [graph._depot]

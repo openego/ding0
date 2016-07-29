@@ -122,10 +122,10 @@ class Route(object):
         """Allocates all nodes from `nodes` list in this route"""
 
         # TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        if not self.can_allocate(nodes):
-            if len(self._nodes) == 0:
-                x = self.can_allocate(nodes)
-                raise Exception('Trying to allocate more than route capacity')
+        # if not self.can_allocate(nodes):
+        #     if len(self._nodes) == 0:
+        #         x = self.can_allocate(nodes)
+        #         raise Exception('Trying to allocate more than route capacity')
 
         nodes_demand = 0
         for node in [node for node in nodes]:
@@ -158,9 +158,9 @@ class Route(object):
     def insert(self, nodes, pos):
         """Inserts all nodes from `nodes` list into this route at position `pos`"""
         
-        # TODO: TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        if not self.can_allocate(nodes):
-            raise Exception('Trying to allocate more than route capacity')
+        # # TODO: TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
+        # if not self.can_allocate(nodes):
+        #     raise Exception('Trying to allocate more than route capacity')
         
         node_list = []
         nodes_demand = 0
@@ -419,7 +419,7 @@ class Graph(object):
         self._branch_type = data['BRANCH_TYPE']
         self._v_level = data['V_LEVEL']
         self._v_level_operation = data['V_LEVEL_OP']
-        self._aggregated = data['AGGREGATED']
+        self._is_aggregated = data['IS_AGGREGATED']
         #self._voltage = data['VOLTAGE']
         #self._cabletype = CableType(data['CABLETYPE'])
 

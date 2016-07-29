@@ -34,7 +34,7 @@ def dingo_graph_to_routing_specs(graph):
                 nodes_demands[str(node)] = node.lv_load_area.peak_load_sum
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
                 # get aggregation flag
-                if node.lv_load_area.aggregated:
+                if node.lv_load_area.is_aggregated:
                     nodes_agg[str(node)] = True
                 else:
                     nodes_agg[str(node)] = False
@@ -52,7 +52,7 @@ def dingo_graph_to_routing_specs(graph):
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands
     specs['MATRIX'] = calc_geo_dist_matrix_vincenty(nodes_pos)
-    specs['AGGREGATED'] = nodes_agg
+    specs['IS_AGGREGATED'] = nodes_agg
 
     return specs
 

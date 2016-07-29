@@ -75,7 +75,7 @@ class MVGridDistrictDingo(RegionDingo):
         """Summarizes peak loads of underlying aggregated load_areas"""
         peak_load_aggregated = 0
         for lv_load_area in self.lv_load_areas():
-            if lv_load_area.aggregated:
+            if lv_load_area.is_aggregated:
                 peak_load_aggregated += lv_load_area.peak_load_sum
         self.peak_load_aggregated = peak_load_aggregated
 
@@ -101,7 +101,7 @@ class LVLoadAreaDingo(RegionDingo):
         self.lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
-        self.aggregated = kwargs.get('aggregated', False)
+        self.is_aggregated = kwargs.get('is_aggregated', False)
 
         # threshold: load area peak load, if peak load < threshold => treat load area as satellite
         load_area_sat_load_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_load_threshold')
