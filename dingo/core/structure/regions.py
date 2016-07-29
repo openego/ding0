@@ -26,6 +26,7 @@ class MVGridDistrictDingo(RegionDingo):
         # INSERT LOAD PARAMS
         self.peak_load = kwargs.get('peak_load', None)  # in kVA
         self.peak_load_satellites = kwargs.get('peak_load_satellites', None)  # in kVA
+        self.peak_load_aggregated = kwargs.get('peak_load_aggregated', None)  # in kVA
 
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""
@@ -61,7 +62,7 @@ class MVGridDistrictDingo(RegionDingo):
             self._lv_load_area_groups.append(lv_load_area_group)
 
     def add_peak_demand(self):
-        """Summarizes peak loads of underlying load_areas in kVA"""
+        """Summarizes peak loads of underlying load_areas in kVA (peak load sum and peak load of satellites)"""
         peak_load = peak_load_satellites = 0
         for lv_load_area in self.lv_load_areas():
             peak_load += lv_load_area.peak_load_sum
@@ -69,6 +70,14 @@ class MVGridDistrictDingo(RegionDingo):
                 peak_load_satellites += lv_load_area.peak_load_sum
         self.peak_load = peak_load
         self.peak_load_satellites = peak_load_satellites
+
+    def add_aggregated_peak_demand(self):
+        """Summarizes peak loads of underlying aggregated load_areas"""
+        peak_load_aggregated = 0
+        for lv_load_area in self.lv_load_areas():
+            if lv_load_area.aggregated:
+                peak_load_aggregated += lv_load_area.peak_load_sum
+        self.peak_load_aggregated = peak_load_aggregated
 
     def __repr__(self):
         return 'mv_grid_district_' + str(self.id_db)
