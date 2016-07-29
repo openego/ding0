@@ -183,8 +183,11 @@ class MVGridDingo(GridDingo):
         -----
         Parameter values for cables and lines are taken from [1]_, [2]_ and [3]_.
 
-        Lines are chosen to have 60 % load relative to their nominal capacity
-        according to [4]_.
+        Lines are chosen to have 60 % load relative to their nominal capacity according to [4]_.
+
+        Decision on usage of overhead lines vs. cables is determined by load density of the considered region. Urban
+        areas usually are equipped with underground cables whereas rural areas often have overhead lines as MV
+        distribution system [5]_.
 
         References
         ----------
@@ -194,6 +197,8 @@ class MVGridDingo(GridDingo):
             http://www.alt.fh-aachen.de/downloads//Vorlesung%20EV/Hilfsb%2044%20Netzdaten%20Leitung%20Kabel.pdf, 2010
         .. [4] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012
+        .. [5] Tao, X., "Automatisierte Grundsatzplanung von
+            Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
 
         package_path = dingo.__path__[0]
@@ -289,118 +294,6 @@ class MVGridDingo(GridDingo):
 
         # add peak demand for all LV load areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
-
-    def parametrize_lines(self):
-        """Chooses line/cable type and defines parameters
-
-        Adds relevant parameters to medium voltage lines of routed grids. It is
-        assumed that for each MV circuit same type of overhead lines/cables are
-        used. Furthermore, within each circuit no mix of overhead lines/ cables
-        is applied.
-
-        Notes
-        -----
-        Parameter values are take from [1]_.
-
-        Lines are chosen to have 60 % load relative to their nominal capacity
-        according to [2]_.
-
-        Decision on usage of overhead lines vs. cables is determined by load
-        density of the considered region. Urban areas (load density of
-        >= 1 MW/km2 according to [3]_) usually are equipped with underground
-        cables whereas rural areas often have overhead lines as MV distribution
-        system [4]_.
-
-        References
-        ----------
-        .. [1] Helmut Alt, "Vorlesung Elektrische Energieerzeugung und
-            -verteilung"
-            http://www.alt.fh-aachen.de/downloads//Vorlesung%20EV/Hilfsb%2044%
-            20Netzdaten%20Leitung%20Kabel.pdf, 2010
-        .. [2] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie.
-            Ausbau- und Innovationsbedarf der Stromverteilnetze in Deutschland
-            bis 2030.", 2012
-        .. [3] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger
-            Referenznetze im Verteilnetzsektor zur Überprüfung der
-            Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
-        .. [4] Tao, X., "Automatisierte Grundsatzplanung von
-            Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
-        """
-
-        # load assumptions
-        load_density_threshold= float(cfg_dingo.get('assumptions',
-                                                    'load_density_threshold'))
-        load_factor_line_normal = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_line_normal'))
-        load_factor_cable_normal = float(cfg_dingo.get('assumptions',
-                                                       'load_factor_cable_normal'))
-
-        # load cable/line parameters (after loading corresponding file names)
-        package_path = dingo.__path__[0]
-        equipment_parameters_lines = cfg_dingo.get('equipment',
-                                                   'equipment_parameters_lines')
-        equipment_parameters_cables = cfg_dingo.get('equipment',
-                                                    'equipment_parameters_cables')
-
-        line_parameter = pd.read_csv(os.path.join(package_path, 'data',
-                                     equipment_parameters_lines),
-                                     converters={'i_max_th': lambda x: int(x)})
-        cable_parameter = pd.read_csv(os.path.join(package_path, 'data',
-                                      equipment_parameters_cables),
-                                      converters={'I_n': lambda x: int(x)})
-
-
-        # iterate over edges (lines) of graph
-        for edge in self.graph_edges():
-
-            # calculate load density
-            # TODO: Move constant 1e6 to config file
-            load_density = ((self.region.peak_load / 1e3) /
-                            (self.region.geo_data.area / 1e6)) # unit MVA/km^2
-
-            # identify voltage level
-            # identify type: line or cable
-            # TODO: is this simple approach valuable?
-            # see: dena Verteilnetzstudie
-            if load_density < load_density_threshold:
-                edge['branch'].v_level = 20
-                branch_type = 'cable'
-            elif load_density >= load_density_threshold:
-                edge['branch'].v_level = 10
-                branch_type = 'line'
-            else:
-                raise ValueError('load_density has to be greater than 0!')
-
-            peak_current = self.region.peak_load / edge['branch'].v_level
-
-            # choose line/cable type according to peak load of mv_grid
-            if branch_type is 'line':
-                # TODO: cross-check is multiplication by 3 is right
-                line_name = line_parameter.ix[line_parameter[
-                    line_parameter['i_max_th'] * 3 * load_factor_line_normal >= peak_current]
-                ['i_max_th'].idxmin()]['name']
-
-                # set parameters to branch object
-                edge['branch'].x = float(line_parameter.loc[
-                                        line_parameter['name'] == line_name, 'x'])
-                edge['branch'].r = float(line_parameter.loc[
-                                            line_parameter['name'] == line_name, 'r'])
-                edge['branch'].i_max_th = float(line_parameter.loc[
-                                                   line_parameter['name'] == line_name, 'i_max_th'])
-                edge['branch'].type = branch_type
-            elif branch_type is 'cable':
-                cable_name = cable_parameter.ix[cable_parameter[
-                    cable_parameter['I_n'] * 3 * load_factor_cable_normal >= peak_current]
-                ['I_n'].idxmin()]['name']
-
-                # set parameters to branch object
-                edge['branch'].x = float(cable_parameter.loc[
-                                            cable_parameter['name'] == cable_name, 'x_L'])
-                edge['branch'].r = float(cable_parameter.loc[
-                                            cable_parameter['name'] == cable_name, 'r'])
-                edge['branch'].i_max_th = float(cable_parameter.loc[
-                                                   cable_parameter['name'] == cable_name, 'I_n'])
-                edge['branch'].type = branch_type
 
     def __repr__(self):
         return 'mv_grid_' + str(self.id_db)
