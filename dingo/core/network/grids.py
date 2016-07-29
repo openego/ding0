@@ -176,7 +176,7 @@ class MVGridDingo(GridDingo):
             debug: If True, information is printed during process
 
         Returns:
-            default branch type (pandas Series object)
+            default branch type (pandas Series object). If no appropriate type is found, return largest possible one.
 
         Notes
         -----
@@ -244,6 +244,7 @@ class MVGridDingo(GridDingo):
             half_ring_count = round(peak_current_sum / (row['I_max_th'] * load_factor_normal))
 
             if debug:
+                print('=== Selection of default branch type in', str(self), '===')
                 print('Peak load=', self.grid_district.peak_load, 'kVA')
                 print('Peak current=', peak_current_sum)
                 print('I_max_th=', row['I_max_th'])
@@ -253,8 +254,19 @@ class MVGridDingo(GridDingo):
             if half_ring_count <= mv_half_ring_count_max:
                 return row
 
-        raise ValueError('No appropriate line/cable type could be found for ' + str(self) +
-                         '. Please check equipment in ' + equipment_parameters_file + '.')
+        # no equipment was found, set LV load areas with too high demand to aggregated type.
+        for node in self._graph.nodes():
+            if isinstance(node, LVLoadAreaCentreDingo):
+                peak_current_node = (node.lv_load_area.peak_load_sum * (3**0.5) / self.v_level)  # units: kVA / kV = A
+                if peak_current_node > (row['I_max_th'] * load_factor_normal):
+                    node.lv_load_area.aggregated = True
+
+        if debug:
+            print('No appropriate line/cable type could be found for', self, ', declare', self.grid_district,
+                  'as aggregated MV grid district.')
+
+        return row
+
 
     def parametrize_lines(self):
         """Chooses line/cable type and defines parameters

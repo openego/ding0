@@ -22,6 +22,7 @@ def dingo_graph_to_routing_specs(graph):
     specs = {}
     nodes_demands = {}
     nodes_pos = {}
+    nodes_agg = {}
     for node in graph.nodes():
 
         # station is LV station
@@ -32,6 +33,11 @@ def dingo_graph_to_routing_specs(graph):
                 # nodes_demands[str(node)] = node.grid.grid_district.peak_load_sum
                 nodes_demands[str(node)] = node.lv_load_area.peak_load_sum
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
+                # get aggregation flag
+                if node.lv_load_area.aggregated:
+                    nodes_agg[str(node)] = True
+                else:
+                    nodes_agg[str(node)] = False
 
         # station is MV station
         elif isinstance(node, MVStationDingo):
@@ -46,6 +52,7 @@ def dingo_graph_to_routing_specs(graph):
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands
     specs['MATRIX'] = calc_geo_dist_matrix_vincenty(nodes_pos)
+    specs['AGGREGATED'] = nodes_agg
 
     # TODO: capacity per MV ring (TEMP) -> Later tech. constraints are used for limitation of ring length
     specs['CAPACITY'] = 3000    # in kW

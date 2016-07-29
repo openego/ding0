@@ -446,6 +446,7 @@ class Graph(object):
         self._branch_type = data['BRANCH_TYPE']
         self._v_level = data['V_LEVEL']
         self._v_level_operation = data['V_LEVEL_OP']
+        self._aggregated = data['AGGREGATED']
         #self._voltage = data['VOLTAGE']
         #self._cabletype = CableType(data['CABLETYPE'])
 
