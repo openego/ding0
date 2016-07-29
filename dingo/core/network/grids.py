@@ -313,7 +313,6 @@ class LVGridDingo(GridDingo):
             apartments = 1
 
         # select set of strings that represent one type of model grid
-        print(population, apartments)
         strings = apartment_string.loc[apartments]
         selected_strings = [int(s) for s in strings[strings >= 1].index.tolist()]
 
