@@ -33,6 +33,7 @@ class MVGridDingo(GridDingo):
         self._cable_distributors = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
         self.default_branch_type = kwargs.get('default_branch_type', None)
+        self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
 
         self.add_station(kwargs.get('station', None))
 
@@ -160,7 +161,7 @@ class MVGridDingo(GridDingo):
         self._station.set_operation_voltage_level()
 
         # set default branch type
-        self.default_branch_type = self.set_default_branch_type(debug)
+        self.default_branch_type, self.default_branch_type_aggregated = self.set_default_branch_type(debug)
 
         # choose appropriate transformers for each MV sub-station
         self._station.choose_transformers()
@@ -233,11 +234,21 @@ class MVGridDingo(GridDingo):
         # select appropriate branch params according to voltage level, sorted ascending by max. current
         branch_parameters = branch_parameters[branch_parameters['U_n'] == self.v_level].sort_values('I_max_th')
 
-        # calc peak current sum (= "virtual" current) of whole grid (I = S * sqrt(3) / U)
-        peak_current_sum = ((self.grid_district.peak_load - self.grid_district.peak_load_satellites) *
+        # get largest line/cable type
+        branch_type_max = branch_parameters.loc[branch_parameters['I_max_th'].idxmax()]
+
+        # set aggregation flag using largest available line/cable
+        self.set_nodes_aggregation_flag(branch_type_max['I_max_th'] * load_factor_normal)
+
+        # calc peak current sum (= "virtual" current) of whole grid (I = S * sqrt(3) / U) excluding load areas of type
+        # satellite and aggregated
+        peak_current_sum = ((self.grid_district.peak_load -
+                             self.grid_district.peak_load_satellites -
+                             self.grid_district.peak_load_aggregated) *
                             (3**0.5) / self.v_level)  # units: kVA / kV = A
 
-        # search the smallest possible line/cable for MV grid district in equipment datasets
+        # search the smallest possible line/cable for MV grid district in equipment datasets for all load areas
+        # excluding those of type satellite and aggregated
         for idx, row in branch_parameters.iterrows():
             # calc number of required rings using peak current sum of grid district,
             # load factor and max. current of line/cable
@@ -252,17 +263,14 @@ class MVGridDingo(GridDingo):
 
             # if count of half rings is below or equal max. allowed count, use current branch type as default
             if half_ring_count <= mv_half_ring_count_max:
-                self.set_nodes_aggregation_flag(row['I_max_th'] * load_factor_normal)
-                return row
+                return row, branch_type_max
 
-        # no equipment was found
-        self.set_nodes_aggregation_flag(row['I_max_th'] * load_factor_normal)
+        # no equipment was found, return largest available line/cable
 
         if debug:
-            print('No appropriate line/cable type could be found for', self, ', declare', self.grid_district,
-                  'as aggregated MV grid district.')
+            print('No appropriate line/cable type could be found for', self, ', declare some load areas as aggregated.')
 
-        return row
+        return branch_type_max, branch_type_max
 
     def set_nodes_aggregation_flag(self, peak_current_branch_max):
         """ Set LV load areas with too high demand to aggregated type.
@@ -273,12 +281,15 @@ class MVGridDingo(GridDingo):
         Returns:
             nothing
         """
-        # no equipment was found,
+
         for node in self._graph.nodes():
             if isinstance(node, LVLoadAreaCentreDingo):
                 peak_current_node = (node.lv_load_area.peak_load_sum * (3**0.5) / self.v_level)  # units: kVA / kV = A
                 if peak_current_node > peak_current_branch_max:
                     node.lv_load_area.aggregated = True
+
+        # add peak demand for all LV load areas of aggregation type
+        self.grid_district.add_aggregated_peak_demand()
 
     def parametrize_lines(self):
         """Chooses line/cable type and defines parameters
