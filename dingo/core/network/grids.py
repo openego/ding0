@@ -244,7 +244,7 @@ class MVGridDingo(GridDingo):
             half_ring_count = round(peak_current_sum / (row['I_max_th'] * load_factor_normal))
 
             if debug:
-                print('=== Selection of default branch type in', str(self), '===')
+                print('=== Selection of default branch type in', self, '===')
                 print('Peak load=', self.grid_district.peak_load, 'kVA')
                 print('Peak current=', peak_current_sum)
                 print('I_max_th=', row['I_max_th'])
@@ -252,14 +252,11 @@ class MVGridDingo(GridDingo):
 
             # if count of half rings is below or equal max. allowed count, use current branch type as default
             if half_ring_count <= mv_half_ring_count_max:
+                self.set_nodes_aggregation_flag(row['I_max_th'] * load_factor_normal)
                 return row
 
-        # no equipment was found, set LV load areas with too high demand to aggregated type.
-        for node in self._graph.nodes():
-            if isinstance(node, LVLoadAreaCentreDingo):
-                peak_current_node = (node.lv_load_area.peak_load_sum * (3**0.5) / self.v_level)  # units: kVA / kV = A
-                if peak_current_node > (row['I_max_th'] * load_factor_normal):
-                    node.lv_load_area.aggregated = True
+        # no equipment was found
+        self.set_nodes_aggregation_flag(row['I_max_th'] * load_factor_normal)
 
         if debug:
             print('No appropriate line/cable type could be found for', self, ', declare', self.grid_district,
@@ -267,6 +264,21 @@ class MVGridDingo(GridDingo):
 
         return row
 
+    def set_nodes_aggregation_flag(self, peak_current_branch_max):
+        """ Set LV load areas with too high demand to aggregated type.
+
+        Args:
+            peak_current_branch_max: Max. allowed current for line/cable
+
+        Returns:
+            nothing
+        """
+        # no equipment was found,
+        for node in self._graph.nodes():
+            if isinstance(node, LVLoadAreaCentreDingo):
+                peak_current_node = (node.lv_load_area.peak_load_sum * (3**0.5) / self.v_level)  # units: kVA / kV = A
+                if peak_current_node > peak_current_branch_max:
+                    node.lv_load_area.aggregated = True
 
     def parametrize_lines(self):
         """Chooses line/cable type and defines parameters
