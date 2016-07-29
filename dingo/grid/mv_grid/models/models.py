@@ -10,27 +10,10 @@
     copy of the license at http://www.apache.org/licenses/LICENSE-2.0
 """
 
-class CableType(object):
-    def __init__(self, cabletype_id):
-        #for cable_no in range(1,2)
-        cables = {1: {'name': 'Al185', 'r': 0.164, 'x': 0.090, 'c': 550, 'g': 520, 'i_max_th': 295},
-                  2: {'name': 'Al240', 'r': 0.125, 'x': 0.089, 'c': 610, 'g': 640, 'i_max_th': 343}}
-        
-        self.cabletype_id = cabletype_id
-        self.name = cables[cabletype_id]['name']
-        self.r = cables[cabletype_id]['r']
-        self.x = cables[cabletype_id]['x']
-        self.c = cables[cabletype_id]['c']
-        self.g = cables[cabletype_id]['g']
-        self.i_max_th = cables[cabletype_id]['i_max_th']
+from dingo.tools import config as cfg_dingo
 
-#class Ring(object):
-#    """
-#    params for CVRP route
-#    """
-#    
-#    def __init__(self, route):
-#        self._routes = []
+from math import pi, tan, acos
+
 
 class Route(object):
     """
@@ -39,23 +22,33 @@ class Route(object):
     bla
     """
 
-    def __init__(self, cvrp_problem, capacity):
+    def __init__(self, cvrp_problem):
         """Class constructor
 
-        Initialize route capacity
+        Initialize route
 
         Parameters:
-            capacity: route capacity
+
         """
         self._problem = cvrp_problem
-        self._capacity = capacity
         self._demand = 0
         self._nodes = []
 
+    def clone(self):
+        """Returns a deep copy of self
 
-    def capacity(self):
-        """Returns the route capacity"""
-        return self._capacity
+        Clones:
+            allocation
+            nodes
+        """
+
+        new_route = self.__class__(self._problem)
+        for node in self.nodes():
+            # Insere new node on new route
+            new_node = node.__class__(node._name, node._demand)
+            new_route.allocate([new_node])
+
+        return new_route
 
     def demand(self):
         """Returns the current route demand"""
@@ -84,25 +77,17 @@ class Route(object):
 
         return cost
 
-    def can_allocate(self, nodes):
+    def can_allocate(self, nodes, pos=None):
         """Returns True if this route can allocate nodes in `nodes` list"""
-        nodes_demand = sum([node.demand() for node in nodes])
 
-        if self._demand + nodes_demand <= self._capacity:
-            return True
+        # clone route and nodes
+        new_route = self.clone()
+        new_nodes = [node.clone() for node in nodes]
+        if pos is None:
+            pos = len(self._nodes)
+        new_route._nodes = new_route._nodes[:pos] + new_nodes + new_route._nodes[pos:]
 
-        return False
-        
-    def can_exchange_nodes(self, target_route, nodes, target_nodes):
-        """Returns True if this route can insert `nodes` (list) into route
-        `target_route` and insert `target_nodes` into self regarding `routes`'
-        and `target_routes`' capacities."""
-        
-        nodes_demand = sum([node.demand() for node in nodes])
-        target_nodes_demand = sum([node.demand() for node in target_nodes])
-
-        if (self._demand - nodes_demand + target_nodes_demand <= self._capacity and
-            target_route._demand - target_nodes_demand + nodes_demand <= target_route._capacity):
+        if new_route.tech_constraints_satisfied():
             return True
 
         return False
@@ -111,8 +96,10 @@ class Route(object):
         """Allocates all nodes from `nodes` list in this route"""
 
         # TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        #if not self.can_allocate(nodes):
-        #    raise Exception('Trying to allocate more than route capacity')
+        # if not self.can_allocate(nodes):
+        #     if len(self._nodes) == 0:
+        #         x = self.can_allocate(nodes)
+        #         raise Exception('Trying to allocate more than route capacity')
 
         nodes_demand = 0
         for node in [node for node in nodes]:
@@ -145,9 +132,9 @@ class Route(object):
     def insert(self, nodes, pos):
         """Inserts all nodes from `nodes` list into this route at position `pos`"""
         
-        # TODO: TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        #if not self.can_allocate(nodes):
-        #    raise Exception('Trying to allocate more than route capacity')
+        # # TODO: TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
+        # if not self.can_allocate(nodes):
+        #     raise Exception('Trying to allocate more than route capacity')
         
         node_list = []
         nodes_demand = 0
@@ -168,37 +155,157 @@ class Route(object):
     def last(self, node):
         """Returns True if node is the last node in the route"""
         return self._nodes.index(node) == len(self._nodes) - 1
+
+    def calc_circuit_breaker_position(self, debug=False):
+        """ Calculates the optimal position of a circuit breaker on route.
+
+        Returns:
+            OLD: 2-tuple of nodes (instances of Node class) = route segment
+            position of circuit breaker on route (index of last node on 1st half-ring preceding the circuit breaker)
+
+        Notes
+        -----
+        According to planning principles of MV grids, a MV ring is run as two strings (half-rings) separated by a
+        circuit breaker which is open at normal operation.
+        Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
+        breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
+        the route.
+
+        References
+        ----------
+
+        """
+        # TODO: add references (Tao)
+
+        # set init value
+        demand_diff_min = 10e6
+
+        # check possible positions in route
+        for ctr in range(len(self._nodes)):
+            # split route and calc demand difference
+            route_demand_part1 = sum([node.demand() for node in self._nodes[0:ctr]])
+            route_demand_part2 = sum([node.demand() for node in self._nodes[ctr:len(self._nodes)]])
+            demand_diff = abs(route_demand_part1 - route_demand_part2)
+
+            if demand_diff < demand_diff_min:
+                demand_diff_min = demand_diff
+                position = ctr
+
+        if debug:
+            print('sum 1=', sum([node.demand() for node in self._nodes[0:position]]))
+            print('sum 2=', sum([node.demand() for node in self._nodes[position:len(self._nodes)]]))
+            print('Position of circuit breaker: ', self._nodes[position-1], '-', self._nodes[position],
+                  '(sumdiff=', demand_diff_min, ')')
+
+        return position
         
     def tech_constraints_satisfied(self):
-        """Check route validity according to technical constraints
+        """ Check route validity according to technical constraints
         
         Constraints:
             current rating of cable/line
             voltage stability at all nodes
             cable/line losses?
         """
-        ### CHECK WITH ROUTE CAPACITY (see also: solution.is_complete AND route.can_allocate)
-        # TODO: TO BE COMPLETED
 
-        # check current rating of cable/line
-        i_max_th = self._problem._cabletype.i_max_th
-        voltage = self._problem._voltage
-        power_factor = 0.95
-        valid_current_rating = (self.demand / (3*voltage*power_factor)) <= i_max_th
-        
-        # check voltage stability at all nodes
-        v_max_diff = 0.03
-        for node in self.nodes():
-            print('xxx')
-        valid_voltage_stability = 1
-        #print('bla')
-        return valid_current_rating and valid_voltage_stability
+        # load parameters
+        if self._problem._branch_kind == 'line':
+            load_factor_normal = float(cfg_dingo.get('assumptions',
+                                                     'load_factor_line_normal'))
+            load_factor_malfunc = float(cfg_dingo.get('assumptions',
+                                                      'load_factor_line_malfunc'))
+        elif self._problem._branch_kind == 'cable':
+            load_factor_normal = float(cfg_dingo.get('assumptions',
+                                                     'load_factor_cable_normal'))
+            load_factor_malfunc = float(cfg_dingo.get('assumptions',
+                                                      'load_factor_cable_malfunc'))
+        else:
+            raise ValueError('Grid\'s _branch_kind is invalid, could not use branch parameters.')
+
+        mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                         'mv_max_v_level_diff_normal'))
+        mv_max_v_level_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                          'mv_max_v_level_diff_malfunc'))
+        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                       'mv_routing_loads_cos_phi'))
+
+        # step 1: calc circuit breaker position
+        position = self.calc_circuit_breaker_position()
+
+        # step 2: calc required values for checking current & voltage
+        # get nodes of half-rings
+        nodes_hring1 = [self._problem._depot] + self._nodes[0:position]
+        nodes_hring2 = list(reversed(self._nodes[position:len(self._nodes)] + [self._problem._depot]))
+        # get all nodes of full ring for both directions
+        nodes_ring1 = [self._problem._depot] + self._nodes
+        nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
+        # factor to calc reactive from active power
+        Q_factor = tan(acos(mv_routing_loads_cos_phi))
+        # line/cable params per km
+        r = self._problem._branch_type['R']  # unit: ohm/km
+        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit: ohm/km
+
+        # step 3a: check if current rating of default cable/line is violated
+        # (for every of the 2 half-rings using load factor for normal operation)
+        demand_hring_1 = sum([node.demand() for node in self._nodes[0:position]])
+        demand_hring_2 = sum([node.demand() for node in self._nodes[position:len(self._nodes)]])
+        peak_current_sum_hring1 = demand_hring_1 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_hring2 = demand_hring_2 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+
+        if (peak_current_sum_hring1 > (self._problem._branch_type['I_max_th'] * load_factor_normal) or
+            peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_normal)):
+            return False
+
+        # step 3b: check if current rating of default cable/line is violated
+        # (for full ring using load factor for malfunction operation)
+        peak_current_sum_ring = self._demand * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_malfunc):
+            return False
+
+        # step 4a: check voltage stability at all nodes
+        # (for every of the 2 half-rings using max. voltage difference for normal operation)
+
+        # get operation voltage level from station
+        v_level_hring1 =\
+            v_level_hring2 =\
+            v_level_ring_dir1 =\
+            v_level_ring_dir2 =\
+            v_level_op =\
+            self._problem._v_level_operation * 1e3
+
+        for n1, n2 in zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]):
+            v_level_hring1 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring1
+            if (v_level_op - v_level_hring1) > (v_level_op * mv_max_v_level_diff_normal):
+                return False
+
+        for n1, n2 in zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)]):
+            v_level_hring2 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring2
+            if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_diff_normal):
+                return False
+
+        # step 4b: check voltage stability at all nodes
+        # (for full ring calculating both directions simultaneously using max. voltage diff. for malfunction operation)
+        for (n1, n2), (n3, n4) in zip(zip(nodes_ring1[0:len(nodes_ring1)-1], nodes_ring1[1:len(nodes_ring1)]),
+                                      zip(nodes_ring2[0:len(nodes_ring2)-1], nodes_ring2[1:len(nodes_ring2)])):
+            v_level_ring_dir1 -= (n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) /
+                                  v_level_ring_dir1)
+            v_level_ring_dir2 -= (n4.demand() * 1e3 * self._problem.distance(n3, n4) * (r + x*Q_factor) /
+                                  v_level_ring_dir2)
+            if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_diff_malfunc) or
+                (v_level_op - v_level_ring_dir2) > (v_level_op * mv_max_v_level_diff_malfunc)):
+                return False
+
+        return True
+
+        # TODO (mv_routing): create circuit breaker object, open ring after routing
+
 
     def __str__(self):
         return str(self._nodes)
 
     def __repr__(self):
         return str(self._nodes)
+
 
 class Node(object):
     """
@@ -219,6 +326,18 @@ class Node(object):
         self._name = name
         self._demand = demand
         self._allocation = None
+
+    def clone(self):
+        """Returns a deep copy of self
+
+        Clones:
+            allocation
+            nodes
+        """
+
+        new_node = self.__class__(self._name, self._demand)
+
+        return new_node
 
     def name(self):
         """Returns node name"""
@@ -247,6 +366,7 @@ class Node(object):
     def __hash__(self):
         return self._name.__hash__()
 
+
 class Graph(object):
     """Class for modelling a CVRP problem data"""
     """
@@ -267,10 +387,12 @@ class Graph(object):
         self._coord = data['NODE_COORD_SECTION']
         self._nodes = {i: Node(i, data['DEMAND'][i]) for i in data['MATRIX']}
         self._matrix = {}
-        self._capacity = data['CAPACITY']
         self._depot = None
-        #self._voltage = data['VOLTAGE']
-        #self._cabletype = CableType(data['CABLETYPE'])
+        self._branch_kind = data['BRANCH_KIND']
+        self._branch_type = data['BRANCH_TYPE']
+        self._v_level = data['V_LEVEL']
+        self._v_level_operation = data['V_LEVEL_OP']
+        self._is_aggregated = data['IS_AGGREGATED']
 
         for i in data['MATRIX']:
 
@@ -281,9 +403,6 @@ class Graph(object):
                 self._depot = x # x, not i!!
 
             for j in data['MATRIX']:
-                #if i == j:
-                #    continue
-
                 y = self._nodes[j]
 
                 self._matrix[x][y] = data['MATRIX'][i][j]
@@ -309,22 +428,10 @@ class Graph(object):
 
     def distance(self, i, j):
         """Returns the distance between node i and node j"""
-        #a = i
-        #b = j
+
         a, b = i, j
 
         if a.name() > b.name():
-            #c = a            
-            #a = b
-            #b = c
             a, b = b, a
-            
-        #print(a, b)
-        #if b.name() == '7'
-        #return self._matrix[a][b]
         
         return self._matrix[self._nodes[a.name()]][self._nodes[b.name()]]
-
-    def capacity(self):
-        """Returns vehicles capacity"""
-        return self._capacity

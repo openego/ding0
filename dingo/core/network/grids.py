@@ -20,6 +20,8 @@ class MVGridDingo(GridDingo):
     Parameters
     ----------
     region : MV region (instance of MVGridDistrictDingo class) that is associated with grid
+    default_branch_kind: kind of branch (possible values: 'cable' or 'line')
+    default_branch_type: type of branch (pandas Series object with cable/line parameters)
     """
     # TODO: Add method to join MV graph with LV graphs to have one graph that covers whole grid (MV and LV)
 
@@ -29,6 +31,9 @@ class MVGridDingo(GridDingo):
         #more params
         self._station = None
         self._cable_distributors = []
+        self.default_branch_kind = kwargs.get('default_branch_kind', None)
+        self.default_branch_type = kwargs.get('default_branch_type', None)
+        self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
 
         self.add_station(kwargs.get('station', None))
 
@@ -104,14 +109,59 @@ class MVGridDingo(GridDingo):
         #     mv_branches[edge] = mv_branch
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
 
+    def set_voltage_level(self):
+        """ Sets voltage level of MV grid according to load density.
+
+        Args:
+            none
+        Returns:
+            nothing
+
+        Notes
+        -----
+        Decision on voltage level is determined by load density of the considered region. Urban areas (load density of
+        >= 1 MW/km2 according to [1]_) usually got a voltage of 10 kV whereas rural areas mostly use 20 kV.
+
+        References
+        ----------
+        .. [1] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger Referenznetze im Verteilnetzsektor zur
+            Überprüfung der Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
+        """
+        # TODO: more references!
+
+        load_density_threshold = float(cfg_dingo.get('assumptions',
+                                                     'load_density_threshold'))
+
+        # calculate load density
+        # TODO: Move constant 1e6 to config file
+        load_density = ((self.grid_district.peak_load / 1e3) /
+                        (self.grid_district.geo_data.area / 1e6)) # unit MVA/km^2
+
+        # identify voltage level
+        if load_density < load_density_threshold:
+            self.v_level = 20
+        elif load_density >= load_density_threshold:
+            self.v_level = 10
+        else:
+            raise ValueError('load_density is invalid!')
+
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment.
 
         Args:
-            debug: If True, information is printed while routing
+            debug: If True, information is printed during process
         """
         # TODO: Add more detailed description
         # TODO: Pass debug flag to functions
+
+        # set grid's voltage level
+        self.set_voltage_level()
+
+        # set MV station's voltage level
+        self._station.set_operation_voltage_level()
+
+        # set default branch type
+        self.default_branch_type, self.default_branch_type_aggregated = self.set_default_branch_type(debug)
 
         # choose appropriate transformers for each MV sub-station
         self._station.choose_transformers()
@@ -119,6 +169,126 @@ class MVGridDingo(GridDingo):
         # choose appropriate type of line/cable for each edge
         # TODO: move line parametrization to routing process
         #self.parametrize_lines()
+
+    def set_default_branch_type(self, debug=False):
+        """ Determines default branch type according to grid district's peak load and standard equipment.
+
+        Args:
+            debug: If True, information is printed during process
+
+        Returns:
+            default branch type (pandas Series object). If no appropriate type is found, return largest possible one.
+
+        Notes
+        -----
+        Parameter values for cables and lines are taken from [1]_, [2]_ and [3]_.
+
+        Lines are chosen to have 60 % load relative to their nominal capacity
+        according to [4]_.
+
+        References
+        ----------
+        .. [1] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
+        .. [2] René Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
+        .. [3] Helmut Alt, "Vorlesung Elektrische Energieerzeugung und -verteilung"
+            http://www.alt.fh-aachen.de/downloads//Vorlesung%20EV/Hilfsb%2044%20Netzdaten%20Leitung%20Kabel.pdf, 2010
+        .. [4] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
+            Stromverteilnetze in Deutschland bis 2030.", 2012
+        """
+
+        package_path = dingo.__path__[0]
+
+        # decide whether cable or line is used (initially for entire grid) and set grid's attribute
+        if self.v_level == 20:
+            self.default_branch_kind = 'line'
+        elif self.v_level == 10:
+            self.default_branch_kind = 'cable'
+
+        # get max. count of half rings per MV grid district
+        mv_half_ring_count_max = int(cfg_dingo.get('mv_routing_tech_constraints',
+                                                   'mv_half_ring_count_max'))
+
+        # load cable/line assumptions, file_names and parameter
+        if self.default_branch_kind == 'line':
+            load_factor_normal = float(cfg_dingo.get('assumptions',
+                                                     'load_factor_line_normal'))
+            equipment_parameters_file = cfg_dingo.get('equipment',
+                                                      'equipment_parameters_lines')
+            branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
+                                            equipment_parameters_file),
+                                            comment='#',
+                                            converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+
+        elif self.default_branch_kind == 'cable':
+            load_factor_normal = float(cfg_dingo.get('assumptions',
+                                                     'load_factor_cable_normal'))
+            equipment_parameters_file = cfg_dingo.get('equipment',
+                                                      'equipment_parameters_cables')
+            branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
+                                            equipment_parameters_file),
+                                            comment='#',
+                                            converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+        else:
+            raise ValueError('Grid\'s default_branch_kind is invalid, could not set branch parameters.')
+
+        # select appropriate branch params according to voltage level, sorted ascending by max. current
+        branch_parameters = branch_parameters[branch_parameters['U_n'] == self.v_level].sort_values('I_max_th')
+
+        # get largest line/cable type
+        branch_type_max = branch_parameters.loc[branch_parameters['I_max_th'].idxmax()]
+
+        # set aggregation flag using largest available line/cable
+        self.set_nodes_aggregation_flag(branch_type_max['I_max_th'] * load_factor_normal)
+
+        # calc peak current sum (= "virtual" current) of whole grid (I = S * sqrt(3) / U) excluding load areas of type
+        # satellite and aggregated
+        peak_current_sum = ((self.grid_district.peak_load -
+                             self.grid_district.peak_load_satellites -
+                             self.grid_district.peak_load_aggregated) *
+                            (3**0.5) / self.v_level)  # units: kVA / kV = A
+
+        # search the smallest possible line/cable for MV grid district in equipment datasets for all load areas
+        # excluding those of type satellite and aggregated
+        for idx, row in branch_parameters.iterrows():
+            # calc number of required rings using peak current sum of grid district,
+            # load factor and max. current of line/cable
+            half_ring_count = round(peak_current_sum / (row['I_max_th'] * load_factor_normal))
+
+            if debug:
+                print('=== Selection of default branch type in', self, '===')
+                print('Peak load=', self.grid_district.peak_load, 'kVA')
+                print('Peak current=', peak_current_sum)
+                print('I_max_th=', row['I_max_th'])
+                print('Half ring count=', half_ring_count)
+
+            # if count of half rings is below or equal max. allowed count, use current branch type as default
+            if half_ring_count <= mv_half_ring_count_max:
+                return row, branch_type_max
+
+        # no equipment was found, return largest available line/cable
+
+        if debug:
+            print('No appropriate line/cable type could be found for', self, ', declare some load areas as aggregated.')
+
+        return branch_type_max, branch_type_max
+
+    def set_nodes_aggregation_flag(self, peak_current_branch_max):
+        """ Set LV load areas with too high demand to aggregated type.
+
+        Args:
+            peak_current_branch_max: Max. allowed current for line/cable
+
+        Returns:
+            nothing
+        """
+
+        for lv_load_area in self.grid_district.lv_load_areas():
+            peak_current_node = (lv_load_area.peak_load_sum * (3**0.5) / self.v_level)  # units: kVA / kV = A
+            if peak_current_node > peak_current_branch_max:
+                lv_load_area.is_aggregated = True
+
+        # add peak demand for all LV load areas of aggregation type
+        self.grid_district.add_aggregated_peak_demand()
 
     def parametrize_lines(self):
         """Chooses line/cable type and defines parameters
@@ -160,10 +330,10 @@ class MVGridDingo(GridDingo):
         # load assumptions
         load_density_threshold= float(cfg_dingo.get('assumptions',
                                                     'load_density_threshold'))
-        load_factor_line = float(cfg_dingo.get('assumptions',
-                                               'load_factor_line'))
-        load_factor_cable = float(cfg_dingo.get('assumptions',
-                                                'load_factor_cable'))
+        load_factor_line_normal = float(cfg_dingo.get('assumptions',
+                                                      'load_factor_line_normal'))
+        load_factor_cable_normal = float(cfg_dingo.get('assumptions',
+                                                       'load_factor_cable_normal'))
 
         # load cable/line parameters (after loading corresponding file names)
         package_path = dingo.__path__[0]
@@ -207,7 +377,7 @@ class MVGridDingo(GridDingo):
             if branch_type is 'line':
                 # TODO: cross-check is multiplication by 3 is right
                 line_name = line_parameter.ix[line_parameter[
-                    line_parameter['i_max_th'] * 3 * load_factor_line >= peak_current]
+                    line_parameter['i_max_th'] * 3 * load_factor_line_normal >= peak_current]
                 ['i_max_th'].idxmin()]['name']
 
                 # set parameters to branch object
@@ -220,7 +390,7 @@ class MVGridDingo(GridDingo):
                 edge['branch'].type = branch_type
             elif branch_type is 'cable':
                 cable_name = cable_parameter.ix[cable_parameter[
-                    cable_parameter['I_n'] * 3 * load_factor_cable >= peak_current]
+                    cable_parameter['I_n'] * 3 * load_factor_cable_normal >= peak_current]
                 ['I_n'].idxmin()]['name']
 
                 # set parameters to branch object

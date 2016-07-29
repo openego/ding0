@@ -36,9 +36,30 @@ load_area_sat_buffer_radius_inc = 1000
 #load_density_threshold: unit MVA/km^2
 load_density_threshold = 1
 
-load_factor_transformer = 0.6
-load_factor_line = 0.6
-load_factor_cable = 0.6
+load_factor_transformer_normal = 0.6
+load_factor_line_normal = 0.6
+load_factor_cable_normal = 0.6
+
+load_factor_transformer_malfunc = 1.0
+load_factor_line_malfunc = 1.0
+load_factor_cable_malfunc = 1.0
 
 #branch_detour_factor: unit: -
 branch_detour_factor = 1.4
+
+[mv_routing_tech_constraints]
+
+#mv_half_ring_count_max: unit: -
+mv_half_ring_count_max = 8
+
+#mv_routing_loads_cos_phi: unit: -
+mv_routing_loads_cos_phi = 0.95
+
+#mv_station_v_level_operation: unit: -
+mv_station_v_level_operation = 1.04
+
+#mv_max_v_level_diff_normal: unit: -
+mv_max_v_level_diff_normal = 0.04
+
+#mv_max_v_level_diff_malfunc: unit: -
+mv_max_v_level_diff_malfunc = 0.10

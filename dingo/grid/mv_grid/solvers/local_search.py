@@ -19,6 +19,7 @@ from dingo.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
 
 from dingo.tools import config as cfg_dingo
 
+
 class LocalSearchSolution(BaseSolution):
     """Solution class for Local Search metaheuristic"""
 
@@ -41,9 +42,9 @@ class LocalSearchSolution(BaseSolution):
 
         # Clone routes
         for index, r in enumerate(self._routes):
-            new_route = new_solution._routes[index] = models.Route(self._problem, self._problem.capacity())
+            new_route = new_solution._routes[index] = models.Route(self._problem)
             for node in r.nodes():
-                # Insere new node on new route
+                # Insert new node on new route
                 new_node = new_solution._nodes[node.name()]
                 new_route.allocate([new_node])
 
@@ -52,20 +53,6 @@ class LocalSearchSolution(BaseSolution):
 
         return new_solution
 
-    def is_complete(self):
-        """Returns True if this is a complete solution, i.e, all nodes are allocated
-        TO BE REVIEWED, CURRENTY NOT IN USE        
-        """
-        allocated = all(
-            [node.route_allocation() is not None for node in list(self._nodes.values()) if node.name() != self._problem.depot().name()]
-        )
-
-        valid_routes = len(self._routes) == self._vehicles
-
-        valid_demands = all([route.demand() <= route.capacity() for route in self._routes])
-
-        #return allocated and valid_routes and valid_demands
-        return 0
 
 class LocalSearchSolver(BaseSolver):
     """ Improve initial savings solution using local search
@@ -127,6 +114,12 @@ class LocalSearchSolver(BaseSolver):
         dn = graph._nodes
         
         for route in solution.routes():
+
+            # exclude routes with single high-demand nodes (LV load areas)
+            if len(route._nodes) == 1:
+                if solution._problem._is_aggregated[str(route._nodes[0])]:
+                    continue
+
             n = len(route._nodes)+1
 
             # create tour by adding depot at start and end
@@ -208,10 +201,22 @@ class LocalSearchSolver(BaseSolver):
             length_diff_best = 0
             
             for route in solution.routes():
+
+                # exclude origin routes with single high-demand nodes (LV load areas)
+                if len(route._nodes) == 1:
+                    if solution._problem._is_aggregated[str(route._nodes[0])]:
+                        continue
+
                 # create tour by adding depot at start and end
                 tour = [graph._depot] + route._nodes + [graph._depot]
                 
                 for target_route in solution.routes():
+
+                    # exclude (origin+target) routes with single high-demand nodes (LV load areas)
+                    if len(target_route._nodes) == 1:
+                        if solution._problem._is_aggregated[str(target_route._nodes[0])]:
+                            continue
+
                     target_tour = [graph._depot] + target_route._nodes + [graph._depot]
                     
                     if route == target_route:
@@ -293,15 +298,27 @@ class LocalSearchSolver(BaseSolver):
             length_diff_best = 0
             
             for route in solution.routes():
+
+                # exclude origin routes with single high-demand nodes (LV load areas)
+                if len(route._nodes) == 1:
+                    if solution._problem._is_aggregated[str(route._nodes[0])]:
+                        continue
+
                 # create tour by adding depot at start and end
                 tour = [graph._depot] + route._nodes + [graph._depot]
                 
                 for target_route in solution.routes():
-                    target_tour = [graph._depot] + target_route._nodes + [graph._depot]
-                    
+
                     if route == target_route:
                         continue
-                    
+
+                    # exclude (origin+target) routes with single high-demand nodes (LV load areas)
+                    if len(target_route._nodes) == 1:
+                        if solution._problem._is_aggregated[str(target_route._nodes[0])]:
+                            continue
+
+                    target_tour = [graph._depot] + target_route._nodes + [graph._depot]
+
                     n = len(route._nodes)
                     nt = len(target_route._nodes)
 
@@ -309,8 +326,7 @@ class LocalSearchSolver(BaseSolver):
                         node = route._nodes[i]
                         for j in range(0,nt):
                             target_node = target_route._nodes[j]
-                            
-                            #if route.can_exchange_nodes(target_route, [node], [target_node]):
+
                             length_diff = (-dm[dn[tour[i].name()]][dn[tour[i+1].name()]] -
                                             dm[dn[tour[i+1].name()]][dn[tour[i+2].name()]] -
                                             dm[dn[target_tour[j].name()]][dn[target_tour[j+1].name()]] -
@@ -326,6 +342,7 @@ class LocalSearchSolver(BaseSolver):
                                 node_best, target_node_best, route_best, target_route_best = node, target_node, route, target_route
                                         
             if length_diff_best < 0:
+                #if route_best.can_allocate([target_node_best], i_best) and target_route_best.can_allocate([node_best], j_best):
                 # insert new node
                 target_route_best.insert([node_best], j_best)
                 route_best.insert([target_node_best], i_best)

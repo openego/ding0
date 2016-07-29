@@ -22,6 +22,7 @@ def dingo_graph_to_routing_specs(graph):
     specs = {}
     nodes_demands = {}
     nodes_pos = {}
+    nodes_agg = {}
     for node in graph.nodes():
 
         # station is LV station
@@ -32,19 +33,26 @@ def dingo_graph_to_routing_specs(graph):
                 # nodes_demands[str(node)] = node.grid.grid_district.peak_load_sum
                 nodes_demands[str(node)] = node.lv_load_area.peak_load_sum
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
+                # get aggregation flag
+                if node.lv_load_area.is_aggregated:
+                    nodes_agg[str(node)] = True
+                else:
+                    nodes_agg[str(node)] = False
 
         # station is MV station
         elif isinstance(node, MVStationDingo):
             nodes_demands[str(node)] = 0
             nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
             specs['DEPOT'] = str(node)
+            specs['BRANCH_KIND'] = node.grid.default_branch_kind
+            specs['BRANCH_TYPE'] = node.grid.default_branch_type
+            specs['V_LEVEL'] = node.grid.v_level
+            specs['V_LEVEL_OP'] = node.v_level_operation
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands
     specs['MATRIX'] = calc_geo_dist_matrix_vincenty(nodes_pos)
-
-    # TODO: capacity per MV ring (TEMP) -> Later tech. constraints are used for limitation of ring length
-    specs['CAPACITY'] = 3000    # in kW
+    specs['IS_AGGREGATED'] = nodes_agg
 
     return specs
 
@@ -61,8 +69,6 @@ def routing_solution_to_dingo_graph(graph, solution):
     """
     # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
     # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
-
-    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
 
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}
@@ -91,7 +97,7 @@ def routing_solution_to_dingo_graph(graph, solution):
                 node1 = node_list[n1.name()]
                 node2 = node_list[n2.name()]
                 # set branch length
-                b.length = branch_detour_factor * calc_geo_dist_vincenty(node1, node2)
+                b.length = calc_geo_dist_vincenty(node1, node2)
                 # append to branch list
                 edges_graph.append((node1, node2, dict(branch=b)))
 
@@ -146,6 +152,7 @@ def solve(graph, debug=False, anim=None):
 
     # improve initial solution using local search
     local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, debug, anim)
+    #local_search_solution = savings_solution
 
     if debug:
         print('Local Search solution:')
