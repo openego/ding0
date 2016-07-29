@@ -309,8 +309,8 @@ class LVGridDingo(GridDingo):
             "population_per_apartment")
 
         apartments = round(population / population_per_apartment)
-        if apartments < 1:
-            apartments = 1
+        if apartments > 196:
+            apartments = 196
 
         # select set of strings that represent one type of model grid
         strings = apartment_string.loc[apartments]

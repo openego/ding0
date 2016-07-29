@@ -13,6 +13,7 @@ EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
 EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
 CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
 EgoDeuOnts_name = cfg_dingo.get('stations', 'lv_stations')
+LVGridDistrict_name = cfg_dingo.get('regions', 'lv_grid_district')
 
 from egoio.db_tables import calc_ego_substation as orm_mod_calc_ego_substation
 from egoio.db_tables import calc_ego_grid_district as orm_calc_ego_grid_district
@@ -22,6 +23,8 @@ orm_EgoDeuSubstation = orm_mod_calc_ego_substation.\
     __getattribute__(EgoDeuSubstation_name)
 orm_GridDistrict = orm_calc_ego_grid_district.\
     __getattribute__(GridDistrict_name)
+orm_LVGridDistrict = orm_calc_ego_grid_district.\
+    __getattribute__(LVGridDistrict_name)
 orm_EgoDeuLoadArea = orm_calc_ego_loads.__getattribute__(EgoDeuLoadArea_name)
 orm_CalcEgoPeakLoad = orm_calc_ego_loads.__getattribute__(CalcEgoPeakLoad_name)
 orm_EgoDeuOnts = orm_mod_calc_ego_substation.__getattribute__(EgoDeuOnts_name)
@@ -110,23 +113,21 @@ class NetworkDingo:
         lv_stations = self.import_lv_stations(conn, lv_load_area)
 
         # Associate lv_grid_district to load_area
-        for id_grid_district, geom_grid_district in lv_grid_districts.iterrows():
-            # TODO: add geom to lv_grid_district
+        for id, row in lv_grid_districts.iterrows():
             lv_grid_district = LVGridDistrictDingo(
-                id_db=id_grid_district)
-
-            # TODO: replace population by less random data
-            lv_grid_district.population = random.randrange(1, 196)
+                id_db=id,
+                geo_data=row['geom'],
+                population=row['population'])
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(grid_district=lv_grid_district,
-                                  id_db=id_grid_district,
-                                  geo_data=lv_grid_district.geom)
+                                  id_db=id,
+                                  geo_data=row['geom'])
 
             lv_station = LVStationDingo(
-                id_db=id_grid_district,  # is equal to station id
+                id_db=id,  # is equal to station id
                 grid=lv_grid,
-                geo_data=lv_stations.loc[id_grid_district, 'geom'])
+                geo_data=lv_stations.loc[id, 'geom'])
 
             lv_grid.add_station(lv_station)
 
@@ -351,22 +352,21 @@ class NetworkDingo:
             Table of lv_grid_districts
         """
 
-        # TODO: build sql query
-
         # 1. filter grid districts of relevant load area
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        # TODO: select grid districts instead of load areas
-        lv_grid_districs_sqla = session.query(orm_EgoDeuOnts.load_area_id,
-                                              orm_EgoDeuOnts.geom). \
-            filter(orm_EgoDeuOnts.load_area_id == lv_load_area.id_db)
+        lv_grid_districs_sqla = session.query(orm_LVGridDistrict.load_area_id,
+                                              orm_LVGridDistrict.geom,
+                                              orm_LVGridDistrict.population,
+                                              orm_LVGridDistrict.id). \
+            filter(orm_LVGridDistrict.load_area_id == lv_load_area.id_db)
 
 
         # read data from db
         lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
                                              session.bind,
-                                             index_col='load_area_id')
+                                             index_col='id')
 
         return lv_grid_districs
 
@@ -388,14 +388,15 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        lv_stations_sqla = session.query(orm_EgoDeuOnts.load_area_id,
+        lv_stations_sqla = session.query(orm_EgoDeuOnts.id,
+                                         orm_EgoDeuOnts.load_area_id,
                                               orm_EgoDeuOnts.geom). \
             filter(orm_EgoDeuOnts.load_area_id == lv_load_area.id_db)
 
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
                                              session.bind,
-                                             index_col='load_area_id')
+                                             index_col='id')
         return lv_grid_stations
 
     def import_lv_model_grids(self):
