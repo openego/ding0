@@ -3,7 +3,7 @@
     Licensed under GNU General Public License 3.0. See the LICENSE file at the
     top-level directory of this distribution or obtain a copy of the license at
     http://www.gnu.org/licenses/gpl-3.0.txt
-    
+
     Based on code by Romulo Oliveira copyright (C) 2015,
     https://github.com/RomuloOliveira/monte-carlo-cvrp
     Originally licensed under the Apache License, Version 2.0. You may obtain a
@@ -12,6 +12,7 @@
 
 import networkx as nx
 import matplotlib.pyplot as plt
+
 
 class BaseSolution(object):
     """Base abstract class for a CVRP solution"""
@@ -22,14 +23,8 @@ class BaseSolution(object):
         Parameters:
             cvrp_problem: Graph instance
         """
-        #self._routes = [models.Route(cvrp_problem, cvrp_problem.capacity()) for _ in range(vehicles)]
         self._problem = cvrp_problem
         self._allocated = 0
-        
-#        if savings_solution:
-#            self._nodes = savings_solution._nodes
-#        else:
-#            self._nodes = {x.name(): models.Node(x.name(), x.demand()) for x in cvrp_problem.nodes()}
 
     def get_pair(self, pair):
         i, j = pair
@@ -91,10 +86,10 @@ class BaseSolution(object):
         Returns a new instance (deep copy) of self object
         """
         raise NotImplementedError()
-        
+
     def draw_network(self, anim):
         """draws solution's graph using networkx"""
-        
+
         g = nx.Graph()
         ntemp = []
         nodes_pos = {}
@@ -116,7 +111,7 @@ class BaseSolution(object):
             e.append((depot, r._nodes[0]))
             e.append((r._nodes[-1], depot))
             g.add_edges_from(e)
-    
+
         plt.figure()
 
         if anim is not None:

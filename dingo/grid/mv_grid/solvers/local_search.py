@@ -42,7 +42,7 @@ class LocalSearchSolution(BaseSolution):
 
         # Clone routes
         for index, r in enumerate(self._routes):
-            new_route = new_solution._routes[index] = models.Route(self._problem, self._problem.capacity())
+            new_route = new_solution._routes[index] = models.Route(self._problem)
             for node in r.nodes():
                 # Insert new node on new route
                 new_node = new_solution._nodes[node.name()]
@@ -52,21 +52,6 @@ class LocalSearchSolution(BaseSolution):
         new_solution._routes = [route for route in new_solution._routes if route._nodes]
 
         return new_solution
-
-    def is_complete(self):
-        """Returns True if this is a complete solution, i.e, all nodes are allocated
-        TO BE REVIEWED, CURRENT NOT IN USE
-        """
-        allocated = all(
-            [node.route_allocation() is not None for node in list(self._nodes.values()) if node.name() != self._problem.depot().name()]
-        )
-
-        valid_routes = len(self._routes) == self._vehicles
-
-        #valid_demands = all([route.demand() <= route.capacity() for route in self._routes])
-
-        #return allocated and valid_routes and valid_demands
-        return 0
 
 
 class LocalSearchSolver(BaseSolver):
@@ -341,8 +326,7 @@ class LocalSearchSolver(BaseSolver):
                         node = route._nodes[i]
                         for j in range(0,nt):
                             target_node = target_route._nodes[j]
-                            
-                            #if route.can_exchange_nodes(target_route, [node], [target_node]):
+
                             length_diff = (-dm[dn[tour[i].name()]][dn[tour[i+1].name()]] -
                                             dm[dn[tour[i+1].name()]][dn[tour[i+2].name()]] -
                                             dm[dn[target_tour[j].name()]][dn[target_tour[j+1].name()]] -

@@ -23,7 +23,7 @@ class SavingsSolution(BaseSolution):
         super(SavingsSolution, self).__init__(cvrp_problem)
         
         self._nodes = {x.name(): models.Node(x.name(), x.demand()) for x in cvrp_problem.nodes()}
-        self._routes = [models.Route(cvrp_problem, cvrp_problem.capacity()) for _ in range(len(self._nodes) - 1)]
+        self._routes = [models.Route(cvrp_problem) for _ in range(len(self._nodes) - 1)]
 
         for i, node in enumerate([node for node in list(self._nodes.values()) if node.name() != cvrp_problem.depot().name()]):
             self._routes[i].allocate([node])
@@ -41,7 +41,7 @@ class SavingsSolution(BaseSolution):
 
         # Clone routes
         for index, r in enumerate(self._routes):
-            new_route = new_solution._routes[index] = models.Route(self._problem, self._problem.capacity())
+            new_route = new_solution._routes[index] = models.Route(self._problem)
             for node in r.nodes():
                 # Insert new node on new route
                 new_node = new_solution._nodes[node.name()]
@@ -60,17 +60,8 @@ class SavingsSolution(BaseSolution):
             [node.route_allocation() is not None for node in list(self._nodes.values()) if node.name() != self._problem.depot().name()]
         )
 
-        #valid_routes = len(self._routes) == self._vehicles
         valid_routes = len(self._routes) == 1 #workaround: try to use only one route (otherwise process will stop if no of vehicles is reached)
 
-        #valid_demands = all([route.demand() <= route.capacity() for route in self._routes])
-        ##### NEW CAPACITY DEFINITION / CHECK CONSTRAINTS HERE
-        #valid_tech_constraints = all([route.tech_constraints_satisfied() for route in self._routes])
-        
-        #if allocated and valid_routes and valid_demands:
-        #    print('xxx')
-        #return allocated and valid_routes and valid_demands
-        #return allocated and valid_demands
         return allocated and valid_routes
 
     def process(self, pair):

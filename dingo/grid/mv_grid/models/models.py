@@ -45,16 +45,15 @@ class Route(object):
     bla
     """
 
-    def __init__(self, cvrp_problem, capacity):
+    def __init__(self, cvrp_problem):
         """Class constructor
 
-        Initialize route capacity
+        Initialize route
 
         Parameters:
-            capacity: route capacity
+
         """
         self._problem = cvrp_problem
-        self._capacity = capacity
         self._demand = 0
         self._nodes = []
 
@@ -66,17 +65,13 @@ class Route(object):
             nodes
         """
 
-        new_route = self.__class__(self._problem, capacity=self._capacity)
+        new_route = self.__class__(self._problem)
         for node in self.nodes():
             # Insere new node on new route
             new_node = node.__class__(node._name, node._demand)
             new_route.allocate([new_node])
 
         return new_route
-
-    def capacity(self):
-        """Returns the route capacity"""
-        return self._capacity
 
     def demand(self):
         """Returns the current route demand"""
@@ -121,36 +116,16 @@ class Route(object):
         if new_route.tech_constraints_satisfied():
             return True
 
-        #if self._demand + nodes_demand <= self._capacity:
-        #    return True
-
-        return False
-        
-    def can_exchange_nodes(self, target_route, node, target_node, position, target_position):
-        """Returns True if this route can insert `nodes` (list) into route
-        `target_route` and insert `target_nodes` into self regarding `routes`'
-        and `target_routes`' capacities."""
-        
-        # nodes_demand = sum([node.demand() for node in nodes])
-        # target_nodes_demand = sum([node.demand() for node in target_nodes])
-        #
-        # if (self._demand - nodes_demand + target_nodes_demand <= self._capacity and
-        #     target_route._demand - target_nodes_demand + nodes_demand <= target_route._capacity):
-        #     return True
-        #
-        # return False
-
-        if self.tech_constraints_satisfied() and target_route.tech_constraints_satisfied():
-            return True
-
         return False
 
     def allocate(self, nodes, append=True):
         """Allocates all nodes from `nodes` list in this route"""
 
         # TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        #if not self.can_allocate(nodes):
-        #    raise Exception('Trying to allocate more than route capacity')
+        if not self.can_allocate(nodes):
+            if len(self._nodes) == 0:
+                x = self.can_allocate(nodes)
+                raise Exception('Trying to allocate more than route capacity')
 
         nodes_demand = 0
         for node in [node for node in nodes]:
@@ -184,8 +159,8 @@ class Route(object):
         """Inserts all nodes from `nodes` list into this route at position `pos`"""
         
         # TODO: TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        #if not self.can_allocate(nodes):
-        #    raise Exception('Trying to allocate more than route capacity')
+        if not self.can_allocate(nodes):
+            raise Exception('Trying to allocate more than route capacity')
         
         node_list = []
         nodes_demand = 0
@@ -259,7 +234,6 @@ class Route(object):
             voltage stability at all nodes
             cable/line losses?
         """
-        ### CHECK WITH ROUTE CAPACITY (see also: solution.is_complete AND route.can_allocate)
 
         # load parameters
         if self._problem._branch_kind == 'line':
@@ -440,7 +414,6 @@ class Graph(object):
         self._coord = data['NODE_COORD_SECTION']
         self._nodes = {i: Node(i, data['DEMAND'][i]) for i in data['MATRIX']}
         self._matrix = {}
-        self._capacity = data['CAPACITY']
         self._depot = None
         self._branch_kind = data['BRANCH_KIND']
         self._branch_type = data['BRANCH_TYPE']
@@ -502,7 +475,3 @@ class Graph(object):
         #return self._matrix[a][b]
         
         return self._matrix[self._nodes[a.name()]][self._nodes[b.name()]]
-
-    def capacity(self):
-        """Returns vehicles capacity"""
-        return self._capacity
