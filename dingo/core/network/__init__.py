@@ -214,6 +214,11 @@ class BranchDingo:
         # branch (line/cable) length in m
         self.length = kwargs.get('length', None)
         self.type = kwargs.get('type', None)
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> e547894... Adapt class BranchDingo to it's actual needs
 
 
 class TransformerDingo():
