@@ -188,17 +188,11 @@ class BusDingo(Bus):
 
 class BranchDingo:
     """
-    Cables and lines
+    Parameter
     ----------------
-    geo_data : shapely.geometry object
-        Geo-spatial data with informations for location/region-shape. The
-        geometry can be a polygon/multi-polygon for regions, a line for
-        transport objects or a point for objects such as transformer sources.
-    equip_line_id : int
-        ID of cable/line type according to DB table 'equip_line'
-    out_max : float
-        Maximum output which can possibly be obtained when using the transport,
-        in $MW$.
+    length : float
+        Length of line given
+    type : Association to pandas Series
     """
 
 
@@ -208,21 +202,8 @@ class BranchDingo:
 
         # branch (line/cable) length in m
         self.length = kwargs.get('length', None)
-
-        # more params (OLD)
-        self.equip_line_id = kwargs.get('equip_line_id', None)
-        self.v_level = kwargs.get('v_level', None)
         self.type = kwargs.get('type', None)
-        self.cable_cnt = kwargs.get('cable_cnt', None)
-        self.wire_cnt = kwargs.get('wire_cnt', None)
-        self.cs_area = kwargs.get('cs_area', None)
-        self.r = kwargs.get('r', None)
-        self.x = kwargs.get('x', None)
-        self.c = kwargs.get('c', None)
-        self.i_max_th = kwargs.get('i_max_th', None)
-        self.s_max_a = kwargs.get('s_max_a', None)
-        self.s_max_b = kwargs.get('s_max_b', None)
-        self.s_max_c = kwargs.get('s_max_c', None)
+
 
 
 
