@@ -129,6 +129,12 @@ class LocalSearchSolver(BaseSolver):
         dn = graph._nodes
         
         for route in solution.routes():
+
+            # exclude routes with single high-demand nodes (LV load areas)
+            if len(route._nodes) == 1:
+                if solution._problem._aggregated[str(route._nodes[0])]:
+                    continue
+
             n = len(route._nodes)+1
 
             # create tour by adding depot at start and end
@@ -210,10 +216,22 @@ class LocalSearchSolver(BaseSolver):
             length_diff_best = 0
             
             for route in solution.routes():
+
+                # exclude origin routes with single high-demand nodes (LV load areas)
+                if len(route._nodes) == 1:
+                    if solution._problem._aggregated[str(route._nodes[0])]:
+                        continue
+
                 # create tour by adding depot at start and end
                 tour = [graph._depot] + route._nodes + [graph._depot]
                 
                 for target_route in solution.routes():
+
+                    # exclude (origin+target) routes with single high-demand nodes (LV load areas)
+                    if len(target_route._nodes) == 1:
+                        if solution._problem._aggregated[str(target_route._nodes[0])]:
+                            continue
+
                     target_tour = [graph._depot] + target_route._nodes + [graph._depot]
                     
                     if route == target_route:
@@ -295,15 +313,27 @@ class LocalSearchSolver(BaseSolver):
             length_diff_best = 0
             
             for route in solution.routes():
+
+                # exclude origin routes with single high-demand nodes (LV load areas)
+                if len(route._nodes) == 1:
+                    if solution._problem._aggregated[str(route._nodes[0])]:
+                        continue
+
                 # create tour by adding depot at start and end
                 tour = [graph._depot] + route._nodes + [graph._depot]
                 
                 for target_route in solution.routes():
-                    target_tour = [graph._depot] + target_route._nodes + [graph._depot]
-                    
+
                     if route == target_route:
                         continue
-                    
+
+                    # exclude (origin+target) routes with single high-demand nodes (LV load areas)
+                    if len(target_route._nodes) == 1:
+                        if solution._problem._aggregated[str(target_route._nodes[0])]:
+                            continue
+
+                    target_tour = [graph._depot] + target_route._nodes + [graph._depot]
+
                     n = len(route._nodes)
                     nt = len(target_route._nodes)
 
