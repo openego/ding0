@@ -255,7 +255,7 @@ class SourceDingo():
         super().__init__(**kwargs)
 
 
-class CableDistributorDingo():
+class CableDistributorDingo:
     """ Cable distributor (connection point) """
 
     def __init__(self, **kwargs):
@@ -302,3 +302,27 @@ class LVLoadDingo():
     def __repr__(self):
         return ('lv_load_' + str(self.id) + '_' + str(self.string_id) + '-'
             + str(self.branch_no) + '_' + str(self.load_no))
+
+class CircuitBreakerDingo:
+    """ Class for modelling a circuit breaker """
+
+    def __init__(self, **kwargs):
+        self.id_db = kwargs.get('id_db', None)
+        self.geo_data = kwargs.get('geo_data', None)
+        self.grid = kwargs.get('grid', None)
+        self.branch = kwargs.get('branch', None)
+        self.status = kwargs.get('status', 'closed')
+
+        # get id from count of cable distributors in associated MV grid
+        self.id_db = self.grid.circuit_breakers_count() + 1
+
+    def open(self):
+        self.status = 'open'
+        # delete branch
+
+    def close(self):
+        self.status = 'closed'
+        # create branch
+
+    def __repr__(self):
+        return 'circuit_breaker_' + str(self.id_db)

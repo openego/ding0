@@ -1,7 +1,7 @@
 #from dingo.core.network import GridDingo
 from . import GridDingo
 from dingo.core.network.stations import *
-from dingo.core.network import BranchDingo
+from dingo.core.network import BranchDingo, CircuitBreakerDingo
 from dingo.core.network import CableDistributorDingo, LVLoadDingo, \
 LVCableDistributorDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
@@ -33,6 +33,7 @@ class MVGridDingo(GridDingo):
         #more params
         self._station = None
         self._cable_distributors = []
+        self._circuit_breakers = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
         self.default_branch_type = kwargs.get('default_branch_type', None)
         self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
@@ -51,6 +52,25 @@ class MVGridDingo(GridDingo):
     def cable_distributors_count(self):
         """Returns the count of cable distributors in MV grid"""
         return len(self._cable_distributors)
+
+    def circuit_breakers(self):
+        """Returns a generator for iterating over circuit breakers"""
+        for circ_breaker in self._circuit_breakers:
+            yield circ_breaker
+
+    def circuit_breakers_count(self):
+        """Returns the count of circuit breakers in MV grid"""
+        return len(self._circuit_breakers)
+
+    def add_circuit_breaker(self, circ_breaker):
+        """ Creates circuit breaker object and ...
+
+        Args:
+            circ_breaker: CircuitBreakerDingo object
+        """
+        if circ_breaker not in self._circuit_breakers and isinstance(circ_breaker, CircuitBreakerDingo):
+            self._circuit_breakers.append(circ_breaker)
+            self.graph_add_node(circ_breaker)
 
     def add_station(self, mv_station, force=False):
         """Adds MV station if not already existing
