@@ -213,12 +213,8 @@ class BranchDingo:
 
         # branch (line/cable) length in m
         self.length = kwargs.get('length', None)
+        self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.type = kwargs.get('type', None)
-<<<<<<< HEAD
-=======
-
-
->>>>>>> e547894... Adapt class BranchDingo to it's actual needs
 
 
 class TransformerDingo():
