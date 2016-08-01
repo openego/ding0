@@ -106,8 +106,10 @@ def routing_solution_to_dingo_graph(graph, solution):
                 b.type = depot_node.grid.default_branch_type
                 # 2) aggregated load area types
                 if node1 == depot_node and solution._problem._is_aggregated[n2.name()]:
+                    b.connects_aggregated = True
                     b.type = depot_node.grid.default_branch_type_aggregated
                 elif node2 == depot_node and solution._problem._is_aggregated[n1.name()]:
+                    b.connects_aggregated = True
                     b.type = depot_node.grid.default_branch_type_aggregated
 
                 # append to branch list
