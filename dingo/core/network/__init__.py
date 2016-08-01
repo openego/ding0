@@ -216,8 +216,6 @@ class BranchDingo:
         self.type = kwargs.get('type', None)
 
 
-
-
 class TransformerDingo():
     """
     Transformers
