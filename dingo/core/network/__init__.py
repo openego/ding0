@@ -1,11 +1,4 @@
-from oemof.core.network.entities.components import Source
-from oemof.core.network.entities.buses import Bus
-
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
-
-#from oemof.core.network.entities.buses import BusPypo
-#from oemof.core.network.entities.components.transports import BranchPypo
-#from oemof.core.network.entities.components.sources import GenPypo
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -157,7 +150,7 @@ class StationDingo():
         # TODO: what if it exists? -> error message
 
 
-class BusDingo(Bus):
+class BusDingo():
     """ Create new pypower Bus class as child from oemof Bus used to define
     busses and generators data
     """
@@ -182,7 +175,6 @@ class BusDingo(Bus):
         vmin -- the minimum allowed voltage magnitude in p.u.
         """
 
-        super().__init__(**kwargs)
         # Bus Data parameters
         
 
@@ -197,8 +189,6 @@ class BranchDingo:
 
 
     def __init__(self, **kwargs):
-        # inherit parameters from oemof's Transport
-        #super().__init__(**kwargs)
 
         # branch (line/cable) length in m
         self.length = kwargs.get('length', None)
@@ -244,7 +234,7 @@ class TransformerDingo():
         self.tap_ratio = kwargs.get('tap_ratio', None)
 
 
-class SourceDingo(Source):
+class SourceDingo():
     """
     Generators
     """

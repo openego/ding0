@@ -1,15 +1,11 @@
-from oemof.core.energy_system import Region
 
 
-class RegionDingo(Region):
+class RegionDingo():
     """
-    Defines a region in DINGO, derived from oemof
-    ---------------------------------------------
+    Defines a region in DINGO
 
     """
     def __init__(self, **kwargs):
-        #inherit parameters from oemof's Region
-        super().__init__(**kwargs)
 
         #more params
         self.id_db = kwargs.get('id_db', None)
