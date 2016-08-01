@@ -22,9 +22,10 @@ nd = NetworkDingo(name='network')
 # get database connection info from config file
 conn = db.connection(section='oedb')
 
-mv_grid_districts=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
+#mv_grid_districts=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 #mv_grid_districts=[360, 571, 593, 368, 491, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 #mv_grid_districts=[482]
+mv_grid_districts=[360]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 
@@ -37,6 +38,12 @@ nd.mv_routing(debug=False, animation=False)
 conn = db.connection(section='oedb')
 nd.export_mv_grid(conn, mv_grid_districts)
 conn.close()
+
+for edge in nd._mv_grid_districts[0].mv_grid.graph_edges():
+    if edge['branch'].type is not None:
+        print(edge['branch'].type['name'])
+    else:
+        print('None')
 
 # lvrg = []
 # for mv_grid_district in nd.mv_grid_districts():
