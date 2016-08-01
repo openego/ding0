@@ -13,7 +13,6 @@ setup(name='dingo',
                         'pyproj',
                         'geoalchemy2',
                         #'matplotlib', #should be included but fails via pip3
-                        'oemof',
                         'ego.io >= 0.0.1-pre',
                         'oemof.db']
      )
