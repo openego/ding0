@@ -25,6 +25,8 @@ class GridDingo:
         if ((node_object not in self._graph.nodes()) and
             (isinstance(node_object, (StationDingo, CableDistributorDingo, LVLoadAreaCentreDingo)))):
             self._graph.add_node(node_object)
+        else:
+            print('Not with me, dude!')
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and load_areas!
     def graph_draw(self):
@@ -264,13 +266,13 @@ class LVCableDistributorDingo():
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id', None)
-        string_id = kwargs.get('string_id', None)
-        branch_no = kwargs.get('branch_no', None)
-        load_no = kwargs.get('load_no', None)
+        self.string_id = kwargs.get('string_id', None)
+        self.branch_no = kwargs.get('branch_no', None)
+        self.load_no = kwargs.get('load_no', None)
 
     def __repr__(self):
-        return ('lv_cable_dist_' + str(self.id) + '_' + str(string_id) + '-'
-            + str(branch_no) + '_' + str(load_no))
+        return ('lv_cable_dist_' + str(self.id) + '_' + str(self.string_id) + '-'
+            + str(self.branch_no) + '_' + str(self.load_no))
 
 class LVLoadDingo():
     """
@@ -283,11 +285,11 @@ class LVLoadDingo():
     """
 
     def __init__(self, **kwargs):
-        id = kwargs.get('id', None)
-        string_id = kwargs.get('string_id', None)
-        branch_no = kwargs.get('branch_no', None)
-        load_no = kwargs.get('load_no', None)
+        self.id = kwargs.get('id', None)
+        self.string_id = kwargs.get('string_id', None)
+        self.branch_no = kwargs.get('branch_no', None)
+        self.load_no = kwargs.get('load_no', None)
 
     def __repr__(self):
-        return ('lv_load_' + str(self.id) + '_' + str(string_id) + '-'
-            + str(branch_no) + '_' + str(load_no))
+        return ('lv_load_' + str(self.id) + '_' + str(self.string_id) + '-'
+            + str(self.branch_no) + '_' + str(self.load_no))

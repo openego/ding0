@@ -251,6 +251,17 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
+        # TODO: move to a more sophisticated location
+        import pandas as pd
+        import os
+        global testtest
+        testtest = 2
+        global lv_cable_parameters
+        lv_cable_parameters = pd.read_csv(os.path.join(
+            'dingo',
+            'data',
+            'equipment-parameters_LV_cables.csv'), index_col='name')
+
         lv_load_areas_sqla = session.query(
             orm_EgoDeuLoadArea.id.label('id_db'),
             orm_EgoDeuLoadArea.zensus_sum,

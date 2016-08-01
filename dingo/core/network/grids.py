@@ -9,6 +9,7 @@ from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
 from dingo.tools import config as cfg_dingo
+import dingo.core
 
 import networkx as nx
 import pandas as pd
@@ -334,6 +335,22 @@ class LVGridDingo(GridDingo):
         ---------
         selected_string_df: Dataframe
             Table of strings of the selected grid model
+
+        Notes
+        -----
+        To understand what is happening in this method a few data table columns
+        are explained here
+
+        * `count house branch`: number of houses connected to a string
+        * `distance house branch`: distance on a string between two house
+            branches
+        * `string length`: total length of a string
+        * `length house branch A|B`: cable from string to connection point of a
+            house
+
+        A|B in general brings some variation in to the typified model grid and
+        refer to different length of house branches and different cable types
+        respectively different cable widths.
         """
 
         # iterate over each type of branch
@@ -342,6 +359,10 @@ class LVGridDingo(GridDingo):
             for branch_no in range(1, int(row['occurence']) + 1):
                 # iterate over house branches
                 for house_branch in range(1, row['count house branch'] + 1):
+                    if house_branch % 2 == 0:
+                        variant = 'B'
+                    else:
+                        variant = 'A'
                     lv_cable_dist = LVCableDistributorDingo(
                         id=self.grid_district.id_db,
                         string_id=i,
@@ -357,6 +378,8 @@ class LVGridDingo(GridDingo):
                     self.add_load(lv_load)
                     self.add_cable_dist(lv_cable_dist)
 
+                    cable_name = row['cable type'] + \
+                                       ' 4x1x{}'.format(row['cable width'])
 
                     # connect current lv_cable_dist to last one
                     if house_branch == 1:
@@ -365,20 +388,28 @@ class LVGridDingo(GridDingo):
                             self._station[0],
                             lv_cable_dist,
                             branch=BranchDingo(
-                                length=row['distance house branch']))
+                                length=row['distance house branch'],
+                                type=cable_name
+                                ))
                     else:
                         self._graph.add_edge(
                             self._cable_dists[-2],
                             lv_cable_dist,
                             branch=BranchDingo(
-                                length=row['distance house branch']))
+                                length=row['distance house branch'],
+                                type=cable_name))
 
                     # connect house to cable distributor
+                    house_cable_name = row['cable type {}'.format(variant)] + \
+                        ' 4x1x{}'.format(row['cable width {}'.format(variant)])
                     self._graph.add_edge(
                         lv_cable_dist,
                         lv_load,
                         branch=BranchDingo(
-                            length=row['length house branch A']))
+                            length=row['length house branch {}'.format(
+                                variant)],
+                            type=dingo.core.lv_cable_parameters. \
+                                loc[house_cable_name]))
 
     # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
     # def graph_build(self):
