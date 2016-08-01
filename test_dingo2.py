@@ -39,11 +39,11 @@ conn = db.connection(section='oedb')
 nd.export_mv_grid(conn, mv_grid_districts)
 conn.close()
 
-for edge in nd._mv_grid_districts[0].mv_grid.graph_edges():
-    if edge['branch'].type is not None:
-        print(edge['branch'].type['name'])
-    else:
-        print('None')
+# for edge in nd._mv_grid_districts[0].mv_grid.graph_edges():
+#     if edge['branch'].type is not None:
+#         print(edge['branch'].type['name'])
+#     else:
+#         print('None')
 
 # lvrg = []
 # for mv_grid_district in nd.mv_grid_districts():
