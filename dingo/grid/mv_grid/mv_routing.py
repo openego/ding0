@@ -6,7 +6,7 @@ from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
-from dingo.core.network import BranchDingo
+from dingo.core.network import BranchDingo, CircuitBreakerDingo
 
 
 def dingo_graph_to_routing_specs(graph):
@@ -88,6 +88,11 @@ def routing_solution_to_dingo_graph(graph, solution):
             # create MV Branch object for every edge in `edges`
             mv_branches = [BranchDingo() for _ in edges]
             edges_with_branches = list(zip(edges, mv_branches))
+
+            # recalculate circuit breaker positions for final solution and create
+            circ_breaker_pos = r.calc_circuit_breaker_position()
+            circ_breaker = CircuitBreakerDingo(grid=depot_node.grid, branch=mv_branches[circ_breaker_pos-1])
+            depot_node.grid.add_circuit_breaker(circ_breaker)
 
             # translate solution's node names to graph node objects using dict created before
             # note: branch object is assigned to edge using an attribute ('branch' is used here), it can be accessed
