@@ -76,6 +76,7 @@ def routing_solution_to_dingo_graph(graph, solution):
     # add edges from solution to graph
     try:
         depot = solution._nodes[solution._problem._depot.name()]
+        depot_node = node_list[depot.name()]
         for r in solution.routes():
             # build edge list
             n1 = r._nodes[0:len(r._nodes)-1]
@@ -96,8 +97,19 @@ def routing_solution_to_dingo_graph(graph, solution):
                 # get node objects
                 node1 = node_list[n1.name()]
                 node2 = node_list[n2.name()]
+
                 # set branch length
                 b.length = calc_geo_dist_vincenty(node1, node2)
+
+                # set branch type
+                # 1) default
+                b.type = depot_node.grid.default_branch_type
+                # 2) aggregated load area types
+                if node1 == depot_node and solution._problem._is_aggregated[n2.name()]:
+                    b.type = depot_node.grid.default_branch_type_aggregated
+                elif node2 == depot_node and solution._problem._is_aggregated[n1.name()]:
+                    b.type = depot_node.grid.default_branch_type_aggregated
+
                 # append to branch list
                 edges_graph.append((node1, node2, dict(branch=b)))
 
