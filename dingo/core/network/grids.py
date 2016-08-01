@@ -99,7 +99,7 @@ class MVGridDingo(GridDingo):
 
         # do the routing
         self._graph = mv_routing.solve(self._graph, debug, anim)
-        self._graph = mv_connect.mv_connect(self._graph, LVLoadAreaCentreDingo(), debug)
+        self._graph = mv_connect.mv_connect(self, self._graph, LVLoadAreaCentreDingo(), debug)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:

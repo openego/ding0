@@ -343,7 +343,24 @@ def disconnect_node(node, target_obj_result, graph, debug):
         print('disconnect edge', node, '-', target_obj_result)
 
 
-def mv_connect(graph, dingo_object, debug=False):
+def parametrize_lines(mv_grid_dingo):
+    """ Set unparametrized branches to default branch type
+    Args:
+        graph: NetworkX graph object with nodes
+
+    Returns:
+        nothing
+
+    Notes:
+        During the connection process of satellites, new branches are created - these have to be parametrized.
+    """
+
+    for branch in mv_grid_dingo.graph_edges():
+        if branch['branch'].type is None:
+            branch['branch'].type = mv_grid_dingo.default_branch_type
+
+
+def mv_connect(mv_grid_dingo, graph, dingo_object, debug=False):
     """ Connects DINGO objects to MV grid, e.g. load areas of type `satellite`, DER etc.
 
     Method:
@@ -426,13 +443,15 @@ def mv_connect(graph, dingo_object, debug=False):
 
                         # === FIND ===
                         # calc distance between node and grid's lines -> find nearest line
-                        conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1, conn_dist_weight, debug)
+                        conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1,
+                                                                           conn_dist_weight, debug)
 
                         # === iterate over object stack ===
-                        find_connection_point(node, node_shp, graph, proj2, conn_objects_min_stack, conn_dist_ring_mod, debug)
+                        find_connection_point(node, node_shp, graph, proj2, conn_objects_min_stack,
+                                              conn_dist_ring_mod, debug)
 
-
-                        # TODO: Parametrize new lines!
+        # parametrize newly created branches
+        parametrize_lines(mv_grid_dingo)
 
         if debug:
             print('Elapsed time (mv_connect): {}'.format(time.time() - start))
