@@ -30,7 +30,10 @@ class GridDingo:
     def graph_add_node(self, node_object):
         """Adds a station or cable distributor object to grid graph if not already existing"""
         if ((node_object not in self._graph.nodes()) and
-            (isinstance(node_object, (StationDingo, CableDistributorDingo, LVLoadAreaCentreDingo)))):
+            (isinstance(node_object, (StationDingo,
+                                      CableDistributorDingo,
+                                      LVLoadAreaCentreDingo,
+                                      CircuitBreakerDingo)))):
             self._graph.add_node(node_object)
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and load_areas!
