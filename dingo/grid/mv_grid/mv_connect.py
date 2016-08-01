@@ -139,34 +139,38 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # connect node
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
-            # if node was connected via branch (target line not re-routed):
+
+            # if node was connected via branch (target line not re-routed and not member of aggregated load area):
             # create new LV load_area group for current node
-            if target_obj_result:
+            if (target_obj_result is not None) and (target_obj_result != 're-routed'):
                 lv_load_area_group = LoadAreaGroupDingo(mv_grid_district=node.lv_load_area.mv_grid_district,
                                                         root_node=target_obj_result)
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                 node.lv_load_area.lv_load_area_group = lv_load_area_group
                 node.lv_load_area.mv_grid_district.add_lv_load_area_group(lv_load_area_group)
 
-            if debug:
-                print('New LV load_area group', lv_load_area_group, 'created!')
+                if debug:
+                    print('New LV load_area group', lv_load_area_group, 'created!')
 
-            # node connected, stop connection for current node
-            node_connected = True
-            break
+                # node connected, stop connection for current node
+                node_connected = True
+                break
+
+            # node was inserted into line (target line was re-routed)
+            elif target_obj_result == 're-routed':
+                # node connected, stop connection for current node
+                node_connected = True
+                break
 
         # target object is member of a LV load_area group
         else:
 
-            # save current graph object for possible rollback
-            #graph_backup = graph
-
             # connect node
             target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
 
-            # if node was connected via branch (target line not re-routed):
+            # if node was connected via branch (target line not re-routed and not member of aggregated load area):
             # create new LV load_area group for current node
-            if target_obj_result:
+            if (target_obj_result is not None) and (target_obj_result != 're-routed'):
                 # node can join LV load_area group
                 if lv_load_area_group.can_add_lv_load_area(node=node):
 
@@ -197,7 +201,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                     continue
 
             # node was inserted into line (target line was re-routed)
-            else:
+            elif target_obj_result == 're-routed':
                 # add node to LV load_area group
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                 node.lv_load_area.lv_load_area_group = lv_load_area_group
@@ -205,6 +209,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                 # node inserted into existing route, stop connection for current node
                 node_connected = True
                 break
+
+            # else: node could not be connected because target object belongs to load area of aggregated type
 
     if not node_connected:
         print('Node', node, 'could not be connected, try to increase the parameter `load_area_sat_buffer_radius` in',
@@ -239,62 +245,71 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
         conn_point_shp = target_obj['shp'].interpolate(target_obj['shp'].project(node_shp))
         conn_point_shp = transform(proj, conn_point_shp)
 
-        # Node is close to line
-        # -> insert node into route (change existing route)
-        if target_obj['dist'] < conn_dist_ring_mod:
+        # target MV line does currently not connect a load area of type aggregated
+        if not target_obj['obj']['branch'].connects_aggregated:
 
-            # split old ring main route into 2 segments (delete old branch and create 2 new ones
-            # along node)
-            graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
+            # Node is close to line
+            # -> insert node into route (change existing route)
+            if (target_obj['dist'] < conn_dist_ring_mod):
 
-            branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], node)
-            graph.add_edge(target_obj['obj']['adj_nodes'][0], node, branch=BranchDingo(length=branch_length))
+                # split old ring main route into 2 segments (delete old branch and create 2 new ones
+                # along node)
+                graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
 
-            branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], node)
-            graph.add_edge(target_obj['obj']['adj_nodes'][1], node, branch=BranchDingo(length=branch_length))
+                branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], node)
+                graph.add_edge(target_obj['obj']['adj_nodes'][0], node, branch=BranchDingo(length=branch_length))
 
-            if debug:
-                print('Ring main route modified to include node', node)
+                branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], node)
+                graph.add_edge(target_obj['obj']['adj_nodes'][1], node, branch=BranchDingo(length=branch_length))
 
-        # Node is too far away from route
-        # => keep main route and create new line from node to (cable distributor on) route.
-        else:
+                target_obj_result = 're-routed'
 
-            # create cable distributor and add it to grid
-            cable_dist = CableDistributorDingo(geo_data=conn_point_shp,
-                                               grid=node.lv_load_area.mv_grid_district.mv_grid)
-            node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
+                if debug:
+                    print('Ring main route modified to include node', node)
 
-            # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
-            graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
+            # Node is too far away from route
+            # => keep main route and create new line from node to (cable distributor on) route.
+            else:
 
-            branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], cable_dist)
-            graph.add_edge(target_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo(length=branch_length))
+                # create cable distributor and add it to grid
+                cable_dist = CableDistributorDingo(geo_data=conn_point_shp,
+                                                   grid=node.lv_load_area.mv_grid_district.mv_grid)
+                node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
-            branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], cable_dist)
-            graph.add_edge(target_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo(length=branch_length))
+                # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
+                graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
 
-            # add new branch for satellite (station to cable distributor)
-            branch_length = calc_geo_dist_vincenty(node, cable_dist)
-            graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length))
-            target_obj_result = cable_dist
+                branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], cable_dist)
+                graph.add_edge(target_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo(length=branch_length))
 
-            # debug info
-            if debug:
-                print('Nearest connection point for object', node, 'is branch',
-                      target_obj['obj']['adj_nodes'], '(distance=', target_obj['dist'], 'm)')
+                branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], cable_dist)
+                graph.add_edge(target_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo(length=branch_length))
+
+                # add new branch for satellite (station to cable distributor)
+                branch_length = calc_geo_dist_vincenty(node, cable_dist)
+                graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length))
+                target_obj_result = cable_dist
+
+                # debug info
+                if debug:
+                    print('Nearest connection point for object', node, 'is branch',
+                          target_obj['obj']['adj_nodes'], '(distance=', target_obj['dist'], 'm)')
 
     # node ist nearest connection point
     else:
-        # add new branch for satellite (station to station)
-        branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
-        graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length))
-        target_obj_result = target_obj['obj']
 
-        # debug info
-        if debug:
-            print('Nearest connection point for object', node, 'is station',
-                  target_obj['obj'], '(distance=', target_obj['dist'], 'm)')
+        # target node is not a load area of type aggregated
+        if isinstance(target_obj['obj'], LVLoadAreaCentreDingo) and not target_obj['obj'].lv_load_area.is_aggregated:
+
+            # add new branch for satellite (station to station)
+            branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
+            graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length))
+            target_obj_result = target_obj['obj']
+
+            # debug info
+            if debug:
+                print('Nearest connection point for object', node, 'is station',
+                      target_obj['obj'], '(distance=', target_obj['dist'], 'm)')
 
     return target_obj_result
 
