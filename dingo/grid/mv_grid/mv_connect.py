@@ -241,6 +241,9 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
     # MV line is nearest connection point
     if isinstance(target_obj['shp'], LineString):
 
+        adj_node1 = target_obj['obj']['adj_nodes'][0]
+        adj_node2 = target_obj['obj']['adj_nodes'][1]
+
         # find nearest point on MV line
         conn_point_shp = target_obj['shp'].interpolate(target_obj['shp'].project(node_shp))
         conn_point_shp = transform(proj, conn_point_shp)
@@ -251,16 +254,15 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
             # Node is close to line
             # -> insert node into route (change existing route)
             if (target_obj['dist'] < conn_dist_ring_mod):
-
                 # split old ring main route into 2 segments (delete old branch and create 2 new ones
                 # along node)
-                graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
+                graph.remove_edge(adj_node1, adj_node2)
 
-                branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], node)
-                graph.add_edge(target_obj['obj']['adj_nodes'][0], node, branch=BranchDingo(length=branch_length))
+                branch_length = calc_geo_dist_vincenty(adj_node1, node)
+                graph.add_edge(adj_node1, node, branch=BranchDingo(length=branch_length))
 
-                branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], node)
-                graph.add_edge(target_obj['obj']['adj_nodes'][1], node, branch=BranchDingo(length=branch_length))
+                branch_length = calc_geo_dist_vincenty(adj_node2, node)
+                graph.add_edge(adj_node2, node, branch=BranchDingo(length=branch_length))
 
                 target_obj_result = 're-routed'
 
@@ -277,13 +279,13 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
                 node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
                 # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
-                graph.remove_edge(target_obj['obj']['adj_nodes'][0], target_obj['obj']['adj_nodes'][1])
+                graph.remove_edge(adj_node1, adj_node2)
 
-                branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][0], cable_dist)
-                graph.add_edge(target_obj['obj']['adj_nodes'][0], cable_dist, branch=BranchDingo(length=branch_length))
+                branch_length = calc_geo_dist_vincenty(adj_node1, cable_dist)
+                graph.add_edge(adj_node1, cable_dist, branch=BranchDingo(length=branch_length))
 
-                branch_length = calc_geo_dist_vincenty(target_obj['obj']['adj_nodes'][1], cable_dist)
-                graph.add_edge(target_obj['obj']['adj_nodes'][1], cable_dist, branch=BranchDingo(length=branch_length))
+                branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
+                graph.add_edge(adj_node2, cable_dist, branch=BranchDingo(length=branch_length))
 
                 # add new branch for satellite (station to cable distributor)
                 branch_length = calc_geo_dist_vincenty(node, cable_dist)
