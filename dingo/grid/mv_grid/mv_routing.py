@@ -8,9 +8,6 @@ from dingo.core.network.stations import *
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.core.network import BranchDingo, CircuitBreakerDingo
 
-import pyproj
-from functools import partial
-
 
 def dingo_graph_to_routing_specs(graph):
     """ Build data dictionary from graph nodes for routing (translation)
@@ -73,18 +70,6 @@ def routing_solution_to_dingo_graph(graph, solution):
     # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
     # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
 
-    # WGS84 (conformal) to ETRS (equidistant) projection
-    proj1 = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
-    # ETRS (equidistant) to WGS84 (conformal) projection
-    proj2 = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:3035'),  # source coordinate system
-            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
-
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}
 
@@ -106,14 +91,16 @@ def routing_solution_to_dingo_graph(graph, solution):
 
             # recalculate circuit breaker positions for final solution, create it and set associated branch
             circ_breaker_pos = r.calc_circuit_breaker_position()
-            point_shp = calc_geo_centre_point(node_list[edges[circ_breaker_pos - 1][0].name()],
-                                            node_list[edges[circ_breaker_pos - 1][1].name()],
-                                            proj1,
-                                            proj2)
-            circ_breaker = CircuitBreakerDingo(grid=depot_node.grid, branch=mv_branches[circ_breaker_pos - 1],
-                                               geo_data=point_shp)
-            depot_node.grid.add_circuit_breaker(circ_breaker)
-            # TODO: HANDLE NEW-CREATION of BRANCHES
+            node1 = node_list[edges[circ_breaker_pos - 1][0].name()]
+            node2 = node_list[edges[circ_breaker_pos - 1][1].name()]
+            # exclude aggregated load areas
+            if not (node1 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][1].name()] or
+                    node2 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][0].name()]):
+                branch = mv_branches[circ_breaker_pos - 1]
+                circ_breaker = CircuitBreakerDingo(grid=depot_node.grid, branch=branch,
+                                                   geo_data=calc_geo_centre_point(node1, node2))
+                branch.circuit_breaker = circ_breaker
+                depot_node.grid.add_circuit_breaker(circ_breaker)
 
             # translate solution's node names to graph node objects using dict created before
             # note: branch object is assigned to edge using an attribute ('branch' is used here), it can be accessed

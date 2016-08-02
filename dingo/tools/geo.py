@@ -2,6 +2,9 @@ from geopy.distance import vincenty
 from shapely.geometry import LineString
 from shapely.ops import transform
 
+import pyproj
+from functools import partial
+
 from dingo.tools import config as cfg_dingo
 
 
@@ -100,7 +103,7 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
     return matrix
 
 
-def calc_geo_centre_point(node_source, node_target, proj_source, proj_target):
+def calc_geo_centre_point(node_source, node_target):
     """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
         config_calc.
     Args:
@@ -110,6 +113,17 @@ def calc_geo_centre_point(node_source, node_target, proj_source, proj_target):
     Returns:
         Distance in m
     """
+
+    proj_source = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),  # source coordinate system
+            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+
+    # ETRS (equidistant) to WGS84 (conformal) projection
+    proj_target = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:3035'),  # source coordinate system
+            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
     branch_shp = transform(proj_source, LineString([node_source.geo_data, node_target.geo_data]))
 
