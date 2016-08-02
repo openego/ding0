@@ -44,6 +44,9 @@ load_factor_transformer_malfunc = 1.0
 load_factor_line_malfunc = 1.0
 load_factor_cable_malfunc = 1.0
 
+apartment_house_branch_ratio = 1.5
+population_per_apartment = 2.3
+
 #branch_detour_factor: unit: -
 branch_detour_factor = 1.4
 
