@@ -98,3 +98,24 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
             matrix[i][j] = distance
 
     return matrix
+
+
+def calc_geo_centre_point(node_source, node_target, proj_source, proj_target):
+    """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
+        config_calc.
+    Args:
+        node_source: source node (Dingo object), member of _graph
+        node_target: target node (Dingo object), member of _graph
+
+    Returns:
+        Distance in m
+    """
+
+    branch_shp = transform(proj_source, LineString([node_source.geo_data, node_target.geo_data]))
+
+    distance = vincenty((node_source.geo_data.y, node_source.geo_data.x),
+                        (node_target.geo_data.y, node_target.geo_data.x)).m
+
+    centre_point_shp = transform(proj_target, branch_shp.interpolate(distance/2))
+
+    return centre_point_shp
