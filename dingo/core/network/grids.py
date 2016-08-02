@@ -70,6 +70,16 @@ class MVGridDingo(GridDingo):
             self._circuit_breakers.append(circ_breaker)
             self.graph_add_node(circ_breaker)
 
+    def open_circuit_breakers(self):
+        """ Opens all circuit breakers in MV grid """
+        for circ_breaker in self.circuit_breakers():
+            circ_breaker.open()
+
+    def close_circuit_breakers(self):
+        """ Closes all circuit breakers in MV grid """
+        for circ_breaker in self.circuit_breakers():
+            circ_breaker.close()
+
     def add_station(self, mv_station, force=False):
         """Adds MV station if not already existing
 
