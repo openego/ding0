@@ -377,14 +377,23 @@ class LVGridDingo(GridDingo):
                                    apartment_trafo,
                                    population):
         """
+        Selects typified model grid based on population
 
         Parameters
         ----------
-        string_properties:
-        apartment_trafo:
-        apartment_string:
-        population:
+        string_properties: DataFrame
+            Properties of LV typified model grids
+        apartment_string: DataFrame
+            Relational table of apartment count and strings of model grid
+        apartment_trafo: DataFrame
+            Relational table of apartment count and trafo size
+        population: Int
+            Population within LV grid district
 
+        Returns
+        -------
+        selected_strings_df: DataFrame
+            Selected string of typified model grid
         """
 
         apartment_house_branch_ratio = cfg_dingo.get("assumptions",

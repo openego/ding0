@@ -425,7 +425,7 @@ class NetworkDingo:
         lv_stations_sqla = session.query(orm_EgoDeuOnts.id,
                                          orm_EgoDeuOnts.load_area_id,
                                               orm_EgoDeuOnts.geom)
-        
+
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
                                              session.bind,
