@@ -135,12 +135,19 @@ class NetworkDingo:
                 grid=lv_grid,
                 geo_data=lv_stations.loc[id, 'geom'])
 
-            lv_grid.add_station(lv_station)
+            model_grid, transformer = lv_grid.select_typified_grid_model(
+                string_properties,
+                apartment_string,
+                apartment_trafo,
+                lv_grid_district.population)
 
-            model_grid = lv_grid.select_typified_grid_model(string_properties,
-                                               apartment_string,
-                                               apartment_trafo,
-                                               lv_grid_district.population)
+            lv_transformer = TransformerDingo(equip_trans_id=id,
+                                              v_level=0.4,
+                                              s_max_longterm=transformer)
+
+            lv_station.add_transformer(lv_transformer)
+
+            lv_grid.add_station(lv_station)
 
             lv_grid.build_lv_graph(model_grid)
 

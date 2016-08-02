@@ -394,6 +394,8 @@ class LVGridDingo(GridDingo):
         -------
         selected_strings_df: DataFrame
             Selected string of typified model grid
+        transformer: Int
+            Size of Transformer given in kVar
         """
 
         apartment_house_branch_ratio = cfg_dingo.get("assumptions",
@@ -416,7 +418,9 @@ class LVGridDingo(GridDingo):
         occurence_selector = [str(i) for i in selected_strings]
         selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
 
-        return selected_strings_df
+        transformer = apartment_trafo.loc[apartments]
+
+        return selected_strings_df, transformer
 
 
     def build_lv_graph(self, selected_string_df):
