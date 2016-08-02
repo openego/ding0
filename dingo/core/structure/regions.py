@@ -96,7 +96,7 @@ class LVLoadAreaDingo(RegionDingo):
         super().__init__(**kwargs)
 
         # more params
-        self._lv_grids = []     # TODO: add setter
+        self._lv_grid_districts = []
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
         self.lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
@@ -140,70 +140,74 @@ class LVLoadAreaDingo(RegionDingo):
             if self.peak_load_sum < load_area_sat_load_threshold:
                 self.is_satellite = True
 
-        # Alternative to version above:
-        # many params, use better structure (dict? classes from demand-lib?)
+                # Alternative to version above:
+                # many params, use better structure (dict? classes from demand-lib?)
 
 
-        # for attribute in ['geo_area',
-        #                   'geo_centre',
-        #                   'area',
-        #                   'nuts_code',
-        #                   'zensus_sum',
-        #                   'zensus_cnt',
-        #                   'ioer_sum',
-        #                   'ioer_cnt',
-        #                   'sector_area_residential',
-        #                   'sector_area_retail',
-        #                   'sector_area_industrial',
-        #                   'sector_area_agricultural',
-        #                   'sector_share_residential',
-        #                   'sector_share_retail',
-        #                   'sector_share_industrial',
-        #                   'sector_share_agricultural',
-        #                   'sector_count_residential',
-        #                   'sector_count_retail',
-        #                   'sector_count_industrial',
-        #                   'sector_count_agricultural']:
-        #     setattr(self, attribute, kwargs.get(attribute, None))
+                # for attribute in ['geo_area',
+                #                   'geo_centre',
+                #                   'area',
+                #                   'nuts_code',
+                #                   'zensus_sum',
+                #                   'zensus_cnt',
+                #                   'ioer_sum',
+                #                   'ioer_cnt',
+                #                   'sector_area_residential',
+                #                   'sector_area_retail',
+                #                   'sector_area_industrial',
+                #                   'sector_area_agricultural',
+                #                   'sector_share_residential',
+                #                   'sector_share_retail',
+                #                   'sector_share_industrial',
+                #                   'sector_share_agricultural',
+                #                   'sector_count_residential',
+                #                   'sector_count_retail',
+                #                   'sector_count_industrial',
+                #                   'sector_count_agricultural']:
+                #     setattr(self, attribute, kwargs.get(attribute, None))
 
-        # self.geo_area = kwargs.get('geo_area', None)
-        # self.geo_centre= kwargs.get('geo_centroid', None)
-        #
-        # self.area = kwargs.get('area', None)
-        # self.nuts_code = kwargs.get('nuts_code', None)
-        #
-        # self.zensus_sum = kwargs.get('zensus_sum', None)
-        # self.zensus_cnt = kwargs.get('zensus_cnt', None)
-        # self.ioer_sum = kwargs.get('ioer_sum', None)
-        # self.ioer_cnt = kwargs.get('ioer_cnt', None)
+                # self.geo_area = kwargs.get('geo_area', None)
+                # self.geo_centre= kwargs.get('geo_centroid', None)
+                #
+                # self.area = kwargs.get('area', None)
+                # self.nuts_code = kwargs.get('nuts_code', None)
+                #
+                # self.zensus_sum = kwargs.get('zensus_sum', None)
+                # self.zensus_cnt = kwargs.get('zensus_cnt', None)
+                # self.ioer_sum = kwargs.get('ioer_sum', None)
+                # self.ioer_cnt = kwargs.get('ioer_cnt', None)
 
-        # self.sector_area_residential =
-        # self.sector_area_retail =
-        # self.sector_area_industrial =
-        # self.sector_area_agricultural =
-        # self.sector_share_residential =
-        # self.sector_share_retail =
-        # self.sector_share_industrial =
-        # self.sector_share_agricultural =
-        # self.sector_count_residential =
-        # self.sector_count_retail =
-        # self.sector_count_industrial =
-        # self.sector_count_agricultural =
+                # self.sector_area_residential =
+                # self.sector_area_retail =
+                # self.sector_area_industrial =
+                # self.sector_area_agricultural =
+                # self.sector_share_residential =
+                # self.sector_share_retail =
+                # self.sector_share_industrial =
+                # self.sector_share_agricultural =
+                # self.sector_count_residential =
+                # self.sector_count_retail =
+                # self.sector_count_industrial =
+                # self.sector_count_agricultural =
 
-        #self.sector_consumption_residential =
-        #self.sector_consumption_retail =
-        #self.sector_consumption_industrial =
-        #self.sector_consumption_agricultural =
+                #self.sector_consumption_residential =
+                #self.sector_consumption_retail =
+                #self.sector_consumption_industrial =
+                #self.sector_consumption_agricultural =
 
-    def lv_grids(self):
+    def lv_grid_districts(self):
         """Returns a generator for iterating over LV grids"""
-        for grid in self._lv_grids:
-            yield grid
+        for lv_grid_district in self._lv_grid_districts:
+            yield lv_grid_district
 
-    def add_lv_grid(self, lv_grid):
-        """Adds a LV grid to _lv_grids if not already existing"""
-        if lv_grid not in self.lv_grids():  # and isinstance(lv_grid, LVGridDingo):
-            self._lv_grids.append(lv_grid)
+    def add_lv_grid_district(self, lv_grid_district):
+        """
+        Adds a LV grid district to _lv_grid_districts if not already existing
+        """
+
+        if lv_grid_district not in self._lv_grid_districts and \
+                isinstance(lv_grid_district, LVGridDistrictDingo):
+            self._lv_grid_districts.append(lv_grid_district)
 
     def __repr__(self):
         return 'lv_load_area_' + str(self.id_db)
@@ -227,4 +231,25 @@ class LVLoadAreaCentreDingo:
         self.lv_load_area = kwargs.get('lv_load_area', None)
 
     def __repr__(self):
-        return 'lv_load_area_centre_' + str(self.id_db)
+        return 'regioncentre_' + str(self.id_db)
+
+
+class LVGridDistrictDingo(RegionDingo):
+    """
+    Describes region that is covered by a single LV grid
+
+    Parameters
+    ----------
+    RegionDingo: class
+        Dingo's region base class
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._geo_data = kwargs.get('geo_data', None)
+        self._peak_load = kwargs.get('peak_load', None)
+        self.lv_grid = kwargs.get('lv_grid', None)
+        self.population = kwargs.get('population', None)
+
+    def __repr__(self):
+        return 'lv_grid_district_' + str(self.id_db)

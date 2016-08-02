@@ -1,11 +1,4 @@
-from oemof.core.network.entities.components import Source
-from oemof.core.network.entities.buses import Bus
-
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
-
-#from oemof.core.network.entities.buses import BusPypo
-#from oemof.core.network.entities.components.transports import BranchPypo
-#from oemof.core.network.entities.components.sources import GenPypo
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -17,11 +10,12 @@ class GridDingo:
     Parameters
     ----------
     id_db : id according to database table
+    grid_district: class, area that is covered by the lv grid
     """
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
-        self.grid_district = kwargs.get('region', None)
+        self.grid_district = kwargs.get('grid_district', None)
         #self.geo_data = kwargs.get('geo_data', None)
         self.v_level = kwargs.get('v_level', None)
 
@@ -171,7 +165,7 @@ class StationDingo():
         # TODO: what if it exists? -> error message
 
 
-class BusDingo(Bus):
+class BusDingo():
     """ Create new pypower Bus class as child from oemof Bus used to define
     busses and generators data
     """
@@ -196,7 +190,6 @@ class BusDingo(Bus):
         vmin -- the minimum allowed voltage magnitude in p.u.
         """
 
-        super().__init__(**kwargs)
         # Bus Data parameters
         
 
@@ -211,8 +204,6 @@ class BranchDingo:
 
 
     def __init__(self, **kwargs):
-        # inherit parameters from oemof's Transport
-        #super().__init__(**kwargs)
 
         # branch (line/cable) length in m
         self.length = kwargs.get('length', None)
@@ -257,7 +248,7 @@ class TransformerDingo():
         self.tap_ratio = kwargs.get('tap_ratio', None)
 
 
-class SourceDingo(Source):
+class SourceDingo():
     """
     Generators
     """
@@ -282,6 +273,38 @@ class CableDistributorDingo:
     def __repr__(self):
         return 'cable_dist_' + str(self.id_db)
 
+class LVCableDistributorDingo():
+    """LV Cable distributor (connection point) """
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id', None)
+        self.string_id = kwargs.get('string_id', None)
+        self.branch_no = kwargs.get('branch_no', None)
+        self.load_no = kwargs.get('load_no', None)
+
+    def __repr__(self):
+        return ('lv_cable_dist_' + str(self.id) + '_' + str(self.string_id) + '-'
+            + str(self.branch_no) + '_' + str(self.load_no))
+
+class LVLoadDingo():
+    """
+    Load in LV grids
+
+    Notes
+    -----
+    Current attributes and __repr__ is designed to fulfill requirements of
+    typified model grids.
+    """
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id', None)
+        self.string_id = kwargs.get('string_id', None)
+        self.branch_no = kwargs.get('branch_no', None)
+        self.load_no = kwargs.get('load_no', None)
+
+    def __repr__(self):
+        return ('lv_load_' + str(self.id) + '_' + str(self.string_id) + '-'
+            + str(self.branch_no) + '_' + str(self.load_no))
 
 class CircuitBreakerDingo:
     """ Class for modelling a circuit breaker """
