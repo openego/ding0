@@ -2,6 +2,7 @@ from oemof.core.network.entities.components import Source
 from oemof.core.network.entities.buses import Bus
 
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
+from dingo.tools.geo import calc_geo_dist_vincenty
 
 #from oemof.core.network.entities.buses import BusPypo
 #from oemof.core.network.entities.components.transports import BranchPypo
@@ -71,6 +72,18 @@ class GridDingo:
 
         """
         return sorted(self._graph.nodes(), key=lambda _: repr(_))
+
+    def graph_nodes_from_branch(self, branch):
+        """ Returns nodes that are connected by `branch`
+
+        Args:
+            branch: BranchDingo object
+        Returns:
+            2-tuple of nodes (Dingo objects)
+        """
+        edges = nx.get_edge_attributes(self._graph, 'branch')
+        nodes = list(edges.keys())[list(edges.values()).index(branch)]
+        return nodes
 
     def graph_edges(self):
         """ Returns a generator for iterating over graph edges
@@ -216,8 +229,9 @@ class BranchDingo:
 
         # branch (line/cable) length in m
         self.length = kwargs.get('length', None)
-        self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.type = kwargs.get('type', None)
+        self.connects_aggregated = kwargs.get('connects_aggregated', False)
+        self.circuit_breaker = kwargs.get('circuit_breaker', None)
 
 
 class TransformerDingo():
@@ -291,18 +305,20 @@ class CircuitBreakerDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self.branch = kwargs.get('branch', None)
+        self.branch_nodes = kwargs.get('branch_nodes', (None, None))
         self.status = kwargs.get('status', 'closed')
 
         # get id from count of cable distributors in associated MV grid
         self.id_db = self.grid.circuit_breakers_count() + 1
 
     def open(self):
+        self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)
+        self.grid._graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])
         self.status = 'open'
-        # delete branch
 
     def close(self):
+        self.grid._graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
         self.status = 'closed'
-        # create branch
 
     def __repr__(self):
         return 'circuit_breaker_' + str(self.id_db)
