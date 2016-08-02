@@ -97,18 +97,26 @@ class NetworkDingo:
         return mv_grid_district
 
     def build_lv_grid_district(self, conn, lv_load_area, string_properties,
-                               apartment_string, apartment_trafo):
+                               apartment_string, apartment_trafo,
+                               lv_grid_districts, lv_stations):
         """
         Instantiates and associates lv_grid_district incl grid and station
 
         Parameters
         ----------
-        conn:
-        load_area:
-
+        conn: SQLalchemy database connection object
+        load_area: load_area object
+        string_properties: DataFrame
+            Properties of LV typified model grids
+        apartment_string: DataFrame
+            Relational table of apartment count and strings of model grid
+        apartment_trafo: DataFrame
+            Relational table of apartment count and trafo size
+        lv_grid_districts: DataFrame
+            Table containing lv_grid_districts of according load_area
+        lv_stations : DataFrame
+            Table containing lv_stations of according load_area
         """
-        lv_grid_districts = self.import_lv_grid_districts(conn, lv_load_area)
-        lv_stations = self.import_lv_stations(conn, lv_load_area)
 
         # Associate lv_grid_district to load_area
         for id, row in lv_grid_districts.iterrows():
@@ -214,7 +222,17 @@ class NetworkDingo:
                                                  subst_id,
                                                  region_geo_data,
                                                  station_geo_data)
-                self.import_lv_load_areas(conn, mv_grid_district)
+
+                # import all lv_grid_districts wihtin mv_grid_district
+                lv_grid_districts = self.import_lv_grid_districts(conn)
+
+                # import all lv_stations wihtin mv_grid_district
+                lv_stations = self.import_lv_stations(conn)
+
+                self.import_lv_load_areas(conn,
+                                          mv_grid_district,
+                                          lv_grid_districts,
+                                          lv_stations)
 
                 # add sum of peak loads of underlying lv grid_districts to mv_grid_district
                 mv_grid_district.add_peak_demand()
@@ -222,7 +240,8 @@ class NetworkDingo:
             raise ValueError('unexpected error while initiating MV grid_districts' \
                              'from DB dataset.')
 
-    def import_lv_load_areas(self, conn, mv_grid_district):
+    def import_lv_load_areas(self, conn, mv_grid_district, lv_grid_districts,
+                             lv_stations):
         """imports load_areas (load areas) from database for a single MV grid_district
 
         Table definition for load areas can be found here:
@@ -234,6 +253,10 @@ class NetworkDingo:
         conn: Database connection
         mv_grid_district : MV grid_district/station (instance of MVGridDistrictDingo class) for
             which the import of load areas is performed
+        lv_grid_districts: DataFrame
+            LV grid districts within this mv_grid_district
+        lv_stations: DataFrame
+            LV stations within this mv_grid_district
         """
 
         srid = str(int(cfg_dingo.get('geo', 'srid')))
@@ -252,8 +275,7 @@ class NetworkDingo:
         # TODO: move to a more sophisticated location
         import pandas as pd
         import os
-        global testtest
-        testtest = 2
+
         global lv_cable_parameters
         lv_cable_parameters = pd.read_csv(os.path.join(
             'dingo',
@@ -323,11 +345,20 @@ class NetworkDingo:
                                                mv_grid_district=mv_grid_district,
                                                peak_load_sum=row['peak_load_sum'])
 
+                # sub-selection of lv_grid_districts/lv_stations within one
+                # specific load area
+                lv_grid_districts_per_load_area = lv_grid_districts.\
+                    loc[lv_grid_districts['load_area_id'] == id_db]
+                lv_stations_per_load_area = lv_stations.\
+                    loc[lv_stations['load_area_id'] == id_db]
+
                 self.build_lv_grid_district(conn,
                                             lv_load_area,
                                             string_properties,
                                             apartment_string,
-                                            apartment_trafo)
+                                            apartment_trafo,
+                                            lv_grid_districts_per_load_area,
+                                            lv_stations_per_load_area)
 
                 centre_geo_data = wkt_loads(row['geo_centre'])
 
@@ -346,14 +377,12 @@ class NetworkDingo:
                 # TODO: add LV station instead of LV load_area
                 #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
 
-    def import_lv_grid_districts(self, conn, lv_load_area):
+    def import_lv_grid_districts(self, conn):
         """Imports all lv grid districts within given load area
 
         Parameters
         ----------
         conn: SQLalchemy database connection
-        lv_load_area: LVLoadAreaDingo instance
-            Load area for which LV grid districts should be imported
 
         Returns
         -------
@@ -368,9 +397,7 @@ class NetworkDingo:
         lv_grid_districs_sqla = session.query(orm_LVGridDistrict.load_area_id,
                                               orm_LVGridDistrict.geom,
                                               orm_LVGridDistrict.population,
-                                              orm_LVGridDistrict.id). \
-            filter(orm_LVGridDistrict.load_area_id == lv_load_area.id_db)
-
+                                              orm_LVGridDistrict.id)
 
         # read data from db
         lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
@@ -380,14 +407,12 @@ class NetworkDingo:
         return lv_grid_districs
 
 
-    def import_lv_stations(self, conn, lv_load_area):
+    def import_lv_stations(self, conn):
         """
         Import lv_stations within the given load_area
         Parameters
         ----------
         conn: SQLalchemy database connection
-        lv_load_area: LVLoadAreaDingo instance
-            Load area for which LV grid districts should be imported
 
         Returns
         -------
@@ -399,9 +424,8 @@ class NetworkDingo:
 
         lv_stations_sqla = session.query(orm_EgoDeuOnts.id,
                                          orm_EgoDeuOnts.load_area_id,
-                                              orm_EgoDeuOnts.geom). \
-            filter(orm_EgoDeuOnts.load_area_id == lv_load_area.id_db)
-
+                                              orm_EgoDeuOnts.geom)
+        
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
                                              session.bind,
