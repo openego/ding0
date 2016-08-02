@@ -4,7 +4,7 @@ from dingo.core.network import BranchDingo, CableDistributorDingo
 from dingo.core.structure.groups import LoadAreaGroupDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.tools import config as cfg_dingo
-from dingo.tools.geo import calc_geo_branches_in_buffer, calc_geo_dist_vincenty
+from dingo.tools.geo import calc_geo_branches_in_buffer, calc_geo_dist_vincenty, calc_geo_centre_point
 
 from shapely.geometry import LineString
 from shapely.ops import transform
@@ -254,12 +254,22 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
             # Node is close to line
             # -> insert node into route (change existing route)
             if (target_obj['dist'] < conn_dist_ring_mod):
+
+                # check if there's a circuit breaker on current branch,
+                # if yes set new position between first node (adj_node1) and newly inserted node
+                circ_breaker = graph.edge[adj_node1][adj_node2]['branch'].circuit_breaker
+                if circ_breaker is not None:
+                    circ_breaker.geo_data = calc_geo_centre_point(adj_node1, node)
+
                 # split old ring main route into 2 segments (delete old branch and create 2 new ones
                 # along node)
                 graph.remove_edge(adj_node1, adj_node2)
 
                 branch_length = calc_geo_dist_vincenty(adj_node1, node)
-                graph.add_edge(adj_node1, node, branch=BranchDingo(length=branch_length))
+                branch = BranchDingo(length=branch_length, circuit_breaker=circ_breaker)
+                if circ_breaker is not None:
+                    circ_breaker.branch = branch
+                graph.add_edge(adj_node1, node, branch=branch)
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, node)
                 graph.add_edge(adj_node2, node, branch=BranchDingo(length=branch_length))
@@ -278,11 +288,20 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
                                                    grid=node.lv_load_area.mv_grid_district.mv_grid)
                 node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
+                # check if there's a circuit breaker on current branch,
+                # if yes set new position between first node (adj_node1) and newly created cable distributor
+                circ_breaker = graph.edge[adj_node1][adj_node2]['branch'].circuit_breaker
+                if circ_breaker is not None:
+                    circ_breaker.geo_data = calc_geo_centre_point(adj_node1, cable_dist)
+
                 # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
                 graph.remove_edge(adj_node1, adj_node2)
 
                 branch_length = calc_geo_dist_vincenty(adj_node1, cable_dist)
-                graph.add_edge(adj_node1, cable_dist, branch=BranchDingo(length=branch_length))
+                branch = BranchDingo(length=branch_length, circuit_breaker=circ_breaker)
+                if circ_breaker is not None:
+                    circ_breaker.branch = branch
+                graph.add_edge(adj_node1, cable_dist, branch=branch)
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
                 graph.add_edge(adj_node2, cable_dist, branch=BranchDingo(length=branch_length))
@@ -328,7 +347,9 @@ def disconnect_node(node, target_obj_result, graph, debug):
     Returns:
         nothing
     """
-
+    circ_breaker =  graph.edge[node][target_obj_result]['branch'].circuit_breaker
+    if circ_breaker is not None:
+        print('bla')
     graph.remove_edge(node, target_obj_result)
 
     if isinstance(target_obj_result, CableDistributorDingo):
