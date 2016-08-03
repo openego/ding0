@@ -347,9 +347,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
     Returns:
         nothing
     """
-    circ_breaker =  graph.edge[node][target_obj_result]['branch'].circuit_breaker
-    if circ_breaker is not None:
-        print('bla')
+
     graph.remove_edge(node, target_obj_result)
 
     if isinstance(target_obj_result, CableDistributorDingo):
