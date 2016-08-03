@@ -103,6 +103,7 @@ class MVStationDingo(StationDingo):
     def __repr__(self):
         return 'mv_station_' + str(self.id_db)
 
+
 class LVStationDingo(StationDingo):
     """
     Defines a LV station in DINGO
@@ -111,6 +112,8 @@ class LVStationDingo(StationDingo):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        self.lv_load_area = kwargs.get('lv_load_area', None)
 
     def __repr__(self):
         return 'lv_station_' + str(self.id_db)
