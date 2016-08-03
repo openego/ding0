@@ -133,6 +133,7 @@ class NetworkDingo:
             lv_station = LVStationDingo(
                 id_db=id,  # is equal to station id
                 grid=lv_grid,
+                lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']))
 
             model_grid, transformer = lv_grid.select_typified_grid_model(
@@ -359,6 +360,12 @@ class NetworkDingo:
                     loc[lv_grid_districts['load_area_id'] == id_db]
                 lv_stations_per_load_area = lv_stations.\
                     loc[lv_stations['load_area_id'] == id_db]
+
+                # DEBUG STUFF (BUG JONAS)
+                if len(lv_grid_districts_per_load_area) == 0:
+                    print('No LV grid district for', lv_load_area, 'found!')
+                if len(lv_stations_per_load_area) == 0:
+                    print('No station for', lv_load_area, 'found!')
 
                 self.build_lv_grid_district(conn,
                                             lv_load_area,
