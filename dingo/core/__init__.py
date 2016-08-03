@@ -130,10 +130,12 @@ class NetworkDingo:
                                   id_db=id,
                                   geo_data=wkt_loads(row['geom']))
 
+            # TODO: assign "real" peak_load value to lv_station when available
             lv_station = LVStationDingo(
                 id_db=id,  # is equal to station id
                 grid=lv_grid,
-                geo_data=wkt_loads(lv_stations.loc[id, 'geom']))
+                geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
+                peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
 
             model_grid, transformer = lv_grid.select_typified_grid_model(
                 string_properties,
@@ -154,6 +156,9 @@ class NetworkDingo:
             lv_grid_district.lv_grid = lv_grid
 
             lv_load_area.add_lv_grid_district(lv_grid_district)
+
+
+
 
     def import_mv_grid_districts(self, conn, mv_grid_districts=None):
         """Imports MV grid_districts and MV stations from database, reprojects geodata
