@@ -104,7 +104,7 @@ class NetworkDingo:
         Parameters
         ----------
         conn: SQLalchemy database connection object
-        load_area: load_area object
+        lv_load_area: load_area object
         string_properties: DataFrame
             Properties of LV typified model grids
         apartment_string: DataFrame
@@ -121,6 +121,7 @@ class NetworkDingo:
         for id, row in lv_grid_districts.iterrows():
             lv_grid_district = LVGridDistrictDingo(
                 id_db=id,
+                lv_load_area=lv_load_area,
                 geo_data=wkt_loads(row['geom']),
                 population=row['population'])
 
