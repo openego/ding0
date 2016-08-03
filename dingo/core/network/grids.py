@@ -131,7 +131,8 @@ class MVGridDingo(GridDingo):
 
         # do the routing
         self._graph = mv_routing.solve(self._graph, debug, anim)
-        self._graph = mv_connect.mv_connect(self, self._graph, LVLoadAreaCentreDingo(), debug)
+        self._graph = mv_connect.mv_connect_satellites(self, self._graph, LVLoadAreaCentreDingo(), debug)
+        mv_connect.mv_connect_stations(self.grid_district, self._graph, debug)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:
