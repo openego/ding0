@@ -287,6 +287,7 @@ class CableDistributorDingo:
     def __repr__(self):
         return 'cable_dist_' + str(self.id_db)
 
+
 class LVCableDistributorDingo():
     """LV Cable distributor (connection point) """
 
@@ -299,6 +300,7 @@ class LVCableDistributorDingo():
     def __repr__(self):
         return ('lv_cable_dist_' + str(self.id) + '_' + str(self.string_id) + '-'
             + str(self.branch_no) + '_' + str(self.load_no))
+
 
 class LVLoadDingo():
     """
@@ -319,6 +321,7 @@ class LVLoadDingo():
     def __repr__(self):
         return ('lv_load_' + str(self.id) + '_' + str(self.string_id) + '-'
             + str(self.branch_no) + '_' + str(self.load_no))
+
 
 class CircuitBreakerDingo:
     """ Class for modelling a circuit breaker """
