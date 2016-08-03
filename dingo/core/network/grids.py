@@ -341,7 +341,7 @@ class LVGridDingo(GridDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self._station = []
+        self._station = None
         self._loads = []
         self._cable_dists = []
         self.population = kwargs.get('population', None)
@@ -352,8 +352,10 @@ class LVGridDingo(GridDingo):
 
     def add_station(self, lv_station):
         """Adds a LV station to _station and grid graph if not already existing"""
-        if lv_station not in self.station() and isinstance(lv_station, LVStationDingo):
-            self._station.append(lv_station)
+        if not isinstance(lv_station, LVStationDingo):
+            raise Exception('Given LV station is not a LVStationDingo object.')
+        if self._station is None:
+            self._station = lv_station
             self.graph_add_node(lv_station)
 
     def add_load(self, lv_load):
@@ -490,7 +492,7 @@ class LVGridDingo(GridDingo):
                     if house_branch == 1:
                         # edge connect first house branch in branch with the station
                         self._graph.add_edge(
-                            self._station[0],
+                            self.station(),
                             lv_cable_dist,
                             branch=BranchDingo(
                                 length=row['distance house branch'],
