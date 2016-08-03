@@ -9,6 +9,7 @@ from dingo.tools import config as cfg_dingo
 
 
 def calc_geo_branches_in_polygon(mv_grid, polygon, proj):
+    # TODO: DOCSTRING
 
     branches = []
     polygon_shp = transform(proj, polygon)
@@ -36,7 +37,6 @@ def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
         list of branches (NetworkX branch objects)
 
     """
-    # TODO: check if this is the right place for this function!
 
     branches = []
 
