@@ -8,6 +8,19 @@ from functools import partial
 from dingo.tools import config as cfg_dingo
 
 
+def calc_geo_branches_in_polygon(mv_grid, polygon, proj):
+
+    branches = []
+    polygon_shp = transform(proj, polygon)
+    for branch in mv_grid.graph_edges():
+        nodes = branch['adj_nodes']
+        branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
+        if polygon_shp.intersects(branch_shp):
+            branches.append(branch)
+
+    return branches
+
+
 def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
     """ Determines branches in nodes' associated graph that are at least partly within buffer of `radius` from `node`.
         If there are no nodes, the buffer is successively extended by `radius_inc` until nodes are found.
