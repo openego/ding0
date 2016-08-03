@@ -36,7 +36,6 @@ from sqlalchemy import func, Numeric
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads, dumps as wkt_dumps
 from shapely.geometry import Point, MultiPoint, MultiLineString
-import random
 
 from functools import partial
 import pyproj
@@ -122,18 +121,18 @@ class NetworkDingo:
         for id, row in lv_grid_districts.iterrows():
             lv_grid_district = LVGridDistrictDingo(
                 id_db=id,
-                geo_data=row['geom'],
+                geo_data=wkt_loads(row['geom']),
                 population=row['population'])
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(grid_district=lv_grid_district,
                                   id_db=id,
-                                  geo_data=row['geom'])
+                                  geo_data=wkt_loads(row['geom']))
 
             lv_station = LVStationDingo(
                 id_db=id,  # is equal to station id
                 grid=lv_grid,
-                geo_data=lv_stations.loc[id, 'geom'])
+                geo_data=wkt_loads(lv_stations.loc[id, 'geom']))
 
             model_grid, transformer = lv_grid.select_typified_grid_model(
                 string_properties,
@@ -266,6 +265,7 @@ class NetworkDingo:
             LV stations within this mv_grid_district
         """
 
+        # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
         # threshold: load area peak load, if peak load < threshold => disregard
@@ -367,11 +367,9 @@ class NetworkDingo:
                                             lv_grid_districts_per_load_area,
                                             lv_stations_per_load_area)
 
-                centre_geo_data = wkt_loads(row['geo_centre'])
-
                 # create new centre object for LV load area
                 lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
-                                                            geo_data=centre_geo_data,
+                                                            geo_data=wkt_loads(row['geo_centre']),
                                                             lv_load_area=lv_load_area)
                 # links the centre object to LV load area
                 lv_load_area.lv_load_area_centre = lv_load_area_centre
@@ -397,12 +395,16 @@ class NetworkDingo:
             Table of lv_grid_districts
         """
 
+        # get dingos' standard CRS (SRID)
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
+
         # 1. filter grid districts of relevant load area
         Session = sessionmaker(bind=conn)
         session = Session()
 
         lv_grid_districs_sqla = session.query(orm_LVGridDistrict.load_area_id,
-                                              orm_LVGridDistrict.geom,
+                                              func.ST_AsText(func.ST_Transform(
+                                                orm_LVGridDistrict.geom, srid)).label('geom'),
                                               orm_LVGridDistrict.population,
                                               orm_LVGridDistrict.id)
 
@@ -426,12 +428,17 @@ class NetworkDingo:
         lv_stations: pandas Dataframe
             Table of lv_stations
         """
+
+        # get dingos' standard CRS (SRID)
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
+
         Session = sessionmaker(bind=conn)
         session = Session()
 
         lv_stations_sqla = session.query(orm_EgoDeuOnts.id,
                                          orm_EgoDeuOnts.load_area_id,
-                                              orm_EgoDeuOnts.geom)
+                                         func.ST_AsText(func.ST_Transform(
+                                           orm_EgoDeuOnts.geom, srid)).label('geom'))
 
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
@@ -506,34 +513,38 @@ class NetworkDingo:
         session.query(db_int.sqla_mv_grid_viz).delete()
         session.commit()
 
-        # build data array from grids (nodes and branches)
+        # build data array from MV grids (nodes and branches)
         for grid_district in self.mv_grid_districts():
+
             grid_id = grid_district.mv_grid.id_db
+
+            # init arrays for nodes
             mv_stations = []
             mv_cable_distributors = []
             mv_circuit_breakers = []
+            lv_load_area_centres = []
             lv_stations = []
             lines = []
 
+            # get nodes from grid's graph and append to corresponding array
             for node in grid_district.mv_grid._graph.nodes():
                 if isinstance(node, LVLoadAreaCentreDingo):
-                    lv_stations.append((node.geo_data.x, node.geo_data.y))
+                    lv_load_area_centres.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, CableDistributorDingo):
-                    mv_cable_distributors.append((node.geo_data.x,
-                                                  node.geo_data.y))
+                    mv_cable_distributors.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, MVStationDingo):
                     mv_stations.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, CircuitBreakerDingo):
-                    mv_circuit_breakers.append((node.geo_data.x,
-                                                node.geo_data.y))
+                    mv_circuit_breakers.append((node.geo_data.x, node.geo_data.y))
 
             # create shapely obj from stations and convert to
             # geoalchemy2.types.WKBElement
-            lv_stations_wkb = from_shape(MultiPoint(lv_stations), srid=srid)
+            lv_load_area_centres_wkb = from_shape(MultiPoint(lv_load_area_centres), srid=srid)
             mv_cable_distributors_wkb = from_shape(MultiPoint(mv_cable_distributors), srid=srid)
             mv_circuit_breakers_wkb = from_shape(MultiPoint(mv_circuit_breakers), srid=srid)
             mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
 
+            # get edges (lines) from grid's graph and append to corresponding array
             for branch in grid_district.mv_grid.graph_edges():
                 line = branch['adj_nodes']
                 lines.append(((line[0].geo_data.x,
@@ -545,12 +556,20 @@ class NetworkDingo:
             # geoalchemy2.types.WKBElement
             mv_lines_wkb = from_shape(MultiLineString(lines), srid=srid)
 
+            # get nodes from lv grid districts and append to corresponding array
+            for lv_load_area in grid_district.lv_load_areas():
+                for lv_grid_district in lv_load_area.lv_grid_districts():
+                    station = lv_grid_district.lv_grid.station()
+                    lv_stations.append((station.geo_data.x, station.geo_data.y))
+            lv_stations_wkb = from_shape(MultiPoint(lv_stations), srid=srid)
+
             # add dataset to session
             dataset = db_int.sqla_mv_grid_viz(
                 grid_id=grid_id,
                 geom_mv_station=mv_stations_wkb,
-                geom_mv_cable_dist=mv_cable_distributors_wkb,
-                geom_mv_circuit_breakers = mv_circuit_breakers_wkb,
+                geom_mv_cable_dists=mv_cable_distributors_wkb,
+                geom_mv_circuit_breakers=mv_circuit_breakers_wkb,
+                geom_lv_load_area_centres=lv_load_area_centres_wkb,
                 geom_lv_stations=lv_stations_wkb,
                 geom_mv_lines=mv_lines_wkb)
             session.add(dataset)
