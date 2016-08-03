@@ -2,6 +2,7 @@ from . import RegionDingo
 #from dingo.core.network.grids import LVGridDingo
 from dingo.tools import config as cfg_dingo
 
+from networkx import all_neighbors
 from shapely.wkt import loads as wkt_loads
 
 
@@ -196,18 +197,29 @@ class LVLoadAreaDingo(RegionDingo):
                 #self.sector_consumption_agricultural =
 
     def lv_grid_districts(self):
-        """Returns a generator for iterating over LV grids"""
+        """Returns a generator for iterating over LV grid districts"""
         for lv_grid_district in self._lv_grid_districts:
             yield lv_grid_district
 
+    def lv_grid_districts_count(self):
+        """Returns the count of LV grid districts"""
+        return len(self._lv_grid_districts)
+
     def add_lv_grid_district(self, lv_grid_district):
-        """
-        Adds a LV grid district to _lv_grid_districts if not already existing
-        """
+        """Adds a LV grid district to _lv_grid_districts if not already existing"""
 
         if lv_grid_district not in self._lv_grid_districts and \
                 isinstance(lv_grid_district, LVGridDistrictDingo):
             self._lv_grid_districts.append(lv_grid_district)
+
+    def is_connected(self):
+        """Determines if the LV load area centre of this LV load area is connected to the MV grid's graph"""
+        neighbor_node_count = len([_ for _ in all_neighbors(self.mv_grid_district.mv_grid._graph,
+                                                            self.lv_load_area_centre)])
+        if neighbor_node_count == 0:
+            return False
+        else:
+            return True
 
     def __repr__(self):
         return 'lv_load_area_' + str(self.id_db)
@@ -231,7 +243,7 @@ class LVLoadAreaCentreDingo:
         self.lv_load_area = kwargs.get('lv_load_area', None)
 
     def __repr__(self):
-        return 'regioncentre_' + str(self.id_db)
+        return 'lv_load_area_centre_' + str(self.id_db)
 
 
 class LVGridDistrictDingo(RegionDingo):
