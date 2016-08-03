@@ -248,6 +248,7 @@ class LVGridDistrictDingo(RegionDingo):
         super().__init__(**kwargs)
         self._geo_data = kwargs.get('geo_data', None)
         self._peak_load = kwargs.get('peak_load', None)
+        self.lv_load_area = kwargs.get('lv_load_area', None)
         self.lv_grid = kwargs.get('lv_grid', None)
         self.population = kwargs.get('population', None)
 
