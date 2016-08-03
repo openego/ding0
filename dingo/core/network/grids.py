@@ -357,6 +357,7 @@ class LVGridDingo(GridDingo):
         if self._station is None:
             self._station = lv_station
             self.graph_add_node(lv_station)
+            self.grid_district.lv_load_area.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
     def add_load(self, lv_load):
         """Adds a LV load to _loads and grid graph if not already existing"""
