@@ -347,9 +347,8 @@ class LVGridDingo(GridDingo):
         self.population = kwargs.get('population', None)
 
     def station(self):
-        """Returns a generator for iterating over LV station"""
-        for station in self._station:
-            yield station
+        """Returns grid's station"""
+        return self._station
 
     def add_station(self, lv_station):
         """Adds a LV station to _station and grid graph if not already existing"""
