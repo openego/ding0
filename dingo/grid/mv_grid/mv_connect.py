@@ -367,7 +367,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
 def parametrize_lines(mv_grid_dingo):
     """ Set unparametrized branches to default branch type
     Args:
-        graph: NetworkX graph object with nodes
+        mv_grid_dingo: MVGridDingo object
 
     Returns:
         nothing
