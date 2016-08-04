@@ -104,12 +104,13 @@ class GridDingo:
         Args:
             node: Dingo object (member of graph)
         Returns:
-            branches: List of BranchDingo objects
+            branches: List of tuples (node, branch), content: node=Dingo object (member of graph),
+                                                              branch=BranchDingo object
         """
         branches = []
         branches_dict = self._graph.edge[node]
-        for branch in branches_dict.values():
-            branches.append(branch['branch'])
+        for branch in branches_dict.items():
+            branches.append(branch)
         return branches
 
     def graph_edges(self):
