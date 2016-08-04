@@ -518,7 +518,6 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
     conn_dist_weight = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_weight')
     conn_dist_ring_mod = cfg_dingo.get('mv_connect', 'load_area_stat_conn_dist_ring_mod')
-    #conn_dist_ring_mod = 500
 
     # for every station: find nearest branch and connect to it
 
@@ -529,51 +528,69 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
         # exclude aggregated LV load areas and choose only load areas that were connected to grid before
         if not lv_load_area.is_aggregated and lv_load_area.is_connected():
 
-            # connect LV stations of all grid districts
-            for lv_grid_district in lv_load_area.lv_grid_districts():
+            # ===== DEBUG STUFF (BUG JONAS) =====
+            # TODO: Remove when fixed!
+            if lv_load_area.lv_grid_districts_count() == 0:
+                print('No station for', lv_load_area, 'found! (blame Jonas)')
+            # ===================================
 
-                # get branches that are partly or fully located in load area
-                branches = calc_geo_branches_in_polygon(mv_grid_district.mv_grid, lv_load_area.geo_area, proj1)
+            # there's only one station: Replace LV load area centre by station in graph
+            if lv_load_area.lv_grid_districts_count() == 1:
+                # get station
+                lv_station = list(lv_load_area.lv_grid_districts())[0].lv_grid.station()
+                lv_load_area_centre = lv_load_area.lv_load_area_centre
 
-                # filter branches that belong to satellites (load area groups) if LV load area is not a satellite itself
-                if not lv_load_area.is_satellite:
-                    for branch in branches:
-                        node1 = branch['adj_nodes'][0]
-                        node2 = branch['adj_nodes'][1]
-                        lv_load_area_group = get_lv_load_area_group_from_node_pair(node1, node2)
+                # get branches that are connected to LV load area centre
+                branches = mv_grid_district.mv_grid.graph_branches_from_node(lv_load_area_centre)
 
-                        if lv_load_area_group is not None:
-                            branches.remove(branch)
+                # connect LV station, delete LV load area centre
+                for node, branch in branches:
+                    # backup type of branch
+                    type = branch['branch'].type
 
-                lv_station = lv_grid_district.lv_grid.station()
-                lv_station_shp = transform(proj1, lv_station.geo_data)
-                conn_objects_min_stack = find_nearest_conn_objects(lv_station_shp, branches, proj1,
-                                                                   conn_dist_weight, debug,
-                                                                   branches_only=False)
+                    # respect circuit breaker if existent
+                    circ_breaker = branch['branch'].circuit_breaker
+                    if circ_breaker is not None:
+                        branch['branch'].circuit_breaker.geo_data = calc_geo_centre_point(lv_station, node)
 
-                #if len(conn_objects_min_stack) == 0:
-                #print(lv_load_area, ':', conn_objects_min_stack)
-                connect_node(lv_station, lv_station_shp, conn_objects_min_stack[0], proj2,
-                             graph, conn_dist_ring_mod, debug)
+                    # delete old branch to LV load area centre and create a new one to LV station
+                    graph.remove_edge(lv_load_area_centre, node)
 
-            # # LV load areas (satellite)
-            # else:
-            #     lv_grid_districts_count = lv_load_area.lv_grid_districts_count()
-            #
-            #     # DEBUG STUFF (BUG JONAS)
-            #     if lv_grid_districts_count == 0:
-            #         print('No station for', lv_load_area, 'found!')
-            #
-            #     # 1 LV grid district / station found: Change existing line (replace centre endpoint with LV station)
-            #     elif lv_grid_districts_count == 1:
-            #         lv_load_area_centre = lv_grid_district.lv_load_area.lv_load_area_centre
-            #         lv_station = lv_grid_district.lv_grid.station()
-            #         branch = mv_grid_district.mv_grid._graph.edge[lv_station]
-            #         print('fdsf')
-            #
-            #     # More than 1 LV grid district / station found:
-            #     else:
-            #         print('More than one station')
+                    branch_length = calc_geo_dist_vincenty(lv_station, node)
+                    branch = BranchDingo(length=branch_length, circuit_breaker=circ_breaker, type=type)
+                    if circ_breaker is not None:
+                        circ_breaker.branch = branch
+                    graph.add_edge(lv_station, node, branch=branch)
+
+                # delete LV load area centre
+                graph.remove_node(lv_load_area_centre)
+
+            # there're more than one station: Do normal connection process (as in satellites)
+            else:
+                # connect LV stations of all grid districts
+                for lv_grid_district in lv_load_area.lv_grid_districts():
+                    # get branches that are partly or fully located in load area
+                    branches = calc_geo_branches_in_polygon(mv_grid_district.mv_grid, lv_load_area.geo_area, proj1)
+
+                    # filter branches that belong to satellites (load area groups) if LV load area is not a satellite itself
+                    if not lv_load_area.is_satellite:
+                        for branch in branches:
+                            node1 = branch['adj_nodes'][0]
+                            node2 = branch['adj_nodes'][1]
+                            lv_load_area_group = get_lv_load_area_group_from_node_pair(node1, node2)
+
+                            if lv_load_area_group is not None:
+                                branches.remove(branch)
+
+                    lv_station = lv_grid_district.lv_grid.station()
+                    lv_station_shp = transform(proj1, lv_station.geo_data)
+                    conn_objects_min_stack = find_nearest_conn_objects(lv_station_shp, branches, proj1,
+                                                                       conn_dist_weight, debug,
+                                                                       branches_only=False)
+
+                    connect_node(lv_station, lv_station_shp, conn_objects_min_stack[0], proj2,
+                                 graph, conn_dist_ring_mod, debug)
+
 
     # TODO: Parametrize lines
     # TODO: Delete old centres from grid, replace by stations (adjust graph)

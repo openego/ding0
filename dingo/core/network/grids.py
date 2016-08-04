@@ -138,7 +138,6 @@ class MVGridDingo(GridDingo):
                     branch['branch'].id_db = lv_grid_district.id_db * 10**7 + ctr
                     ctr += 1
 
-
     def routing(self, debug=False, anim=None):
         """ Performs routing on grid graph nodes, adds resulting edges
 
