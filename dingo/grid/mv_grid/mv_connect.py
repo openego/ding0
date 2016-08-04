@@ -278,6 +278,8 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
             # Node is close to line
             # -> insert node into route (change existing route)
             if (target_obj['dist'] < conn_dist_ring_mod):
+                # backup type of branch
+                branch_type = graph.edge[adj_node1][adj_node2]['branch'].type
 
                 # check if there's a circuit breaker on current branch,
                 # if yes set new position between first node (adj_node1) and newly inserted node
@@ -290,13 +292,16 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
                 graph.remove_edge(adj_node1, adj_node2)
 
                 branch_length = calc_geo_dist_vincenty(adj_node1, node)
-                branch = BranchDingo(length=branch_length, circuit_breaker=circ_breaker)
+                branch = BranchDingo(length=branch_length,
+                                     circuit_breaker=circ_breaker,
+                                     type=branch_type)
                 if circ_breaker is not None:
                     circ_breaker.branch = branch
                 graph.add_edge(adj_node1, node, branch=branch)
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, node)
-                graph.add_edge(adj_node2, node, branch=BranchDingo(length=branch_length))
+                graph.add_edge(adj_node2, node, branch=BranchDingo(length=branch_length,
+                                                                   type=branch_type))
 
                 target_obj_result = 're-routed'
 
@@ -319,20 +324,34 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
                     circ_breaker.geo_data = calc_geo_centre_point(adj_node1, cable_dist)
 
                 # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
+                # ===========================================================================================
+
+                # backup type of branch
+                branch_type = graph.edge[adj_node1][adj_node2]['branch'].type
+
                 graph.remove_edge(adj_node1, adj_node2)
 
                 branch_length = calc_geo_dist_vincenty(adj_node1, cable_dist)
-                branch = BranchDingo(length=branch_length, circuit_breaker=circ_breaker)
+                branch = BranchDingo(length=branch_length,
+                                     circuit_breaker=circ_breaker,
+                                     type=branch_type)
                 if circ_breaker is not None:
                     circ_breaker.branch = branch
                 graph.add_edge(adj_node1, cable_dist, branch=branch)
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
-                graph.add_edge(adj_node2, cable_dist, branch=BranchDingo(length=branch_length))
+                graph.add_edge(adj_node2, cable_dist, branch=BranchDingo(length=branch_length,
+                                                                         type=type))
 
                 # add new branch for satellite (station to cable distributor)
+                # ===========================================================
+
+                # get default branch type from grid to use it for new branch
+                branch_type = node.lv_load_area.mv_grid_district.mv_grid.default_branch_type
+
                 branch_length = calc_geo_dist_vincenty(node, cable_dist)
-                graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length))
+                graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length,
+                                                                    type=branch_type))
                 target_obj_result = cable_dist
 
                 # debug info
@@ -346,9 +365,13 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
         # target node is not a load area of type aggregated
         if isinstance(target_obj['obj'], LVLoadAreaCentreDingo) and not target_obj['obj'].lv_load_area.is_aggregated:
 
+            # get default branch type from grid to use it for new branch
+            branch_type = node.lv_load_area.mv_grid_district.mv_grid.default_branch_type
+
             # add new branch for satellite (station to station)
             branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
-            graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length))
+            graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length,
+                                                                       type=branch_type))
             target_obj_result = target_obj['obj']
 
             # debug info
@@ -372,6 +395,9 @@ def disconnect_node(node, target_obj_result, graph, debug):
         nothing
     """
 
+    # backup type of branch
+    branch_type = graph.edge[node][target_obj_result]['branch'].type
+
     graph.remove_edge(node, target_obj_result)
 
     if isinstance(target_obj_result, MVCableDistributorDingo):
@@ -382,7 +408,8 @@ def disconnect_node(node, target_obj_result, graph, debug):
             graph.remove_node(target_obj_result)
 
             branch_length = calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
-            graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDingo(length=branch_length))
+            graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDingo(length=branch_length,
+                                                                                    type=branch_type))
 
     if debug:
         print('disconnect edge', node, '-', target_obj_result)
@@ -480,13 +507,12 @@ def mv_connect_satellites(mv_grid, graph, dingo_object, debug=False):
                                                                load_area_sat_buffer_radius,
                                                                load_area_sat_buffer_radius_inc, proj1)
 
-                        # === FIND ===
                         # calc distance between node and grid's lines -> find nearest line
                         conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1,
                                                                            conn_dist_weight, debug,
                                                                            branches_only=False)
 
-                        # === iterate over object stack ===
+                        # iterate over object stack
                         find_connection_point(node, node_shp, graph, proj2, conn_objects_min_stack,
                                               conn_dist_ring_mod, debug)
 
@@ -534,11 +560,12 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                 print('No station for', lv_load_area, 'found! (blame Jonas)')
             # ===================================
 
+            lv_load_area_centre = lv_load_area.lv_load_area_centre
+
             # there's only one station: Replace LV load area centre by station in graph
             if lv_load_area.lv_grid_districts_count() == 1:
                 # get station
                 lv_station = list(lv_load_area.lv_grid_districts())[0].lv_grid.station()
-                lv_load_area_centre = lv_load_area.lv_load_area_centre
 
                 # get branches that are connected to LV load area centre
                 branches = mv_grid_district.mv_grid.graph_branches_from_node(lv_load_area_centre)
@@ -546,7 +573,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                 # connect LV station, delete LV load area centre
                 for node, branch in branches:
                     # backup type of branch
-                    type = branch['branch'].type
+                    branch_type = branch['branch'].type
 
                     # respect circuit breaker if existent
                     circ_breaker = branch['branch'].circuit_breaker
@@ -557,22 +584,26 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     graph.remove_edge(lv_load_area_centre, node)
 
                     branch_length = calc_geo_dist_vincenty(lv_station, node)
-                    branch = BranchDingo(length=branch_length, circuit_breaker=circ_breaker, type=type)
+                    branch = BranchDingo(length=branch_length,
+                                         circuit_breaker=circ_breaker,
+                                         type=branch_type)
                     if circ_breaker is not None:
                         circ_breaker.branch = branch
                     graph.add_edge(lv_station, node, branch=branch)
 
-                # delete LV load area centre
+                # delete LV load area centre from graph
                 graph.remove_node(lv_load_area_centre)
 
             # there're more than one station: Do normal connection process (as in satellites)
             else:
                 # connect LV stations of all grid districts
+                # =========================================
                 for lv_grid_district in lv_load_area.lv_grid_districts():
                     # get branches that are partly or fully located in load area
                     branches = calc_geo_branches_in_polygon(mv_grid_district.mv_grid, lv_load_area.geo_area, proj1)
 
-                    # filter branches that belong to satellites (load area groups) if LV load area is not a satellite itself
+                    # filter branches that belong to satellites (load area groups) if LV load area is not a satellite
+                    # itself
                     if not lv_load_area.is_satellite:
                         for branch in branches:
                             node1 = branch['adj_nodes'][0]
@@ -582,15 +613,47 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                             if lv_load_area_group is not None:
                                 branches.remove(branch)
 
+                    # find possible connection objects
                     lv_station = lv_grid_district.lv_grid.station()
                     lv_station_shp = transform(proj1, lv_station.geo_data)
                     conn_objects_min_stack = find_nearest_conn_objects(lv_station_shp, branches, proj1,
                                                                        conn_dist_weight, debug,
                                                                        branches_only=False)
 
+                    # connect!
                     connect_node(lv_station, lv_station_shp, conn_objects_min_stack[0], proj2,
                                  graph, conn_dist_ring_mod, debug)
 
+                # Replace LV load area centre by cable distributor
+                # ================================================
+                # create cable distributor and add it to grid
+                cable_dist = MVCableDistributorDingo(geo_data=lv_load_area_centre.geo_data,
+                                                     grid=mv_grid_district.mv_grid)
+                mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
-    # TODO: Parametrize lines
-    # TODO: Delete old centres from grid, replace by stations (adjust graph)
+                # get branches that are connected to LV load area centre
+                branches = mv_grid_district.mv_grid.graph_branches_from_node(lv_load_area_centre)
+
+                # connect LV station, delete LV load area centre
+                for node, branch in branches:
+                    # backup type of branch
+                    branch_type = branch['branch'].type
+
+                    # respect circuit breaker if existent
+                    circ_breaker = branch['branch'].circuit_breaker
+                    if circ_breaker is not None:
+                        branch['branch'].circuit_breaker.geo_data = calc_geo_centre_point(cable_dist, node)
+
+                    # delete old branch to LV load area centre and create a new one to LV station
+                    graph.remove_edge(lv_load_area_centre, node)
+
+                    branch_length = calc_geo_dist_vincenty(cable_dist, node)
+                    branch = BranchDingo(length=branch_length,
+                                         circuit_breaker=circ_breaker,
+                                         type=branch_type)
+                    if circ_breaker is not None:
+                        circ_breaker.branch = branch
+                    graph.add_edge(cable_dist, node, branch=branch)
+
+                # delete LV load area centre from graph
+                graph.remove_node(lv_load_area_centre)
