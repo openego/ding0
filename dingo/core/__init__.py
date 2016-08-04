@@ -609,8 +609,7 @@ class NetworkDingo:
 
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see
-        method `parametrize_grid` in class
-        `MVGridDingo` for details.
+            method `parametrize_grid()` in class `MVGridDingo` for details.
 
         Parameters
         ----------
@@ -619,6 +618,14 @@ class NetworkDingo:
 
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.parametrize_grid(debug)
+
+    def set_branch_ids(self):
+        """ Performs generation and setting of ids of branches for all MV and underlying LV grids, see
+            method `set_branch_ids()` in class `MVGridDingo` for details.
+        """
+
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.set_branch_ids()
 
     def __repr__(self):
         return str(self.name)

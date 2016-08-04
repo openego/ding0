@@ -35,6 +35,8 @@ nd.mv_parametrize_grid()
 
 nd.mv_routing(debug=False, animation=False)
 
+nd.set_branch_ids()
+
 # Open and close all circuit breakers in grid (for testing)
 #nd._mv_grid_districts[0].mv_grid.open_circuit_breakers()
 #nd._mv_grid_districts[0].mv_grid.close_circuit_breakers()
