@@ -15,10 +15,12 @@ EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
 CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
 EgoDeuOnts_name = cfg_dingo.get('stations', 'lv_stations')
 LVGridDistrict_name = cfg_dingo.get('regions', 'lv_grid_district')
+EgoDeuDea_name = cfg_dingo.get('generators', 're_generators')
 
 from egoio.db_tables import calc_ego_substation as orm_mod_calc_ego_substation
 from egoio.db_tables import calc_ego_grid_district as orm_calc_ego_grid_district
 from egoio.db_tables import calc_ego_loads as orm_calc_ego_loads
+from egoio.db_tables import calc_ego_re as orm_calc_ego_re
 
 orm_EgoDeuSubstation = orm_mod_calc_ego_substation.\
     __getattribute__(EgoDeuSubstation_name)
@@ -29,6 +31,7 @@ orm_LVGridDistrict = orm_calc_ego_grid_district.\
 orm_EgoDeuLoadArea = orm_calc_ego_loads.__getattribute__(EgoDeuLoadArea_name)
 orm_CalcEgoPeakLoad = orm_calc_ego_loads.__getattribute__(CalcEgoPeakLoad_name)
 orm_EgoDeuOnts = orm_mod_calc_ego_substation.__getattribute__(EgoDeuOnts_name)
+orm_EgoDeuDea = orm_calc_ego_re.__getattribute__(EgoDeuDea_name)
 
 import pandas as pd
 
@@ -178,6 +181,7 @@ class NetworkDingo:
         import_lv_load_areas : used to import load_areas for every single MV grid_district
         add_peak_demand : used to summarize peak loads of underlying load_areas
         """
+        # TODO: Complete "See Also"-List
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_grid_districts):
@@ -494,6 +498,34 @@ class NetworkDingo:
             index_col='apartment_count')
 
         return string_properties, apartment_string, apartment_trafo
+
+    def import_generators(self, conn):
+        """ Imports generators
+
+        """
+        # TODO: Currently only the renewable power plants are imported here, no conventional ones! (has to be done)
+
+        # get dingos' standard CRS (SRID)
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
+
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        lv_stations_sqla = session.query(orm_EgoDeuDea.id,
+                                         orm_EgoDeuDea.subst_id,
+                                         orm_EgoDeuDea.la_id,
+                                         orm_EgoDeuDea.electrical_capacity,
+                                         orm_EgoDeuDea.generation_type,
+                                         orm_EgoDeuDea.generation_subtype,
+                                         orm_EgoDeuDea.voltage_level,
+                                         func.ST_AsText(func.ST_Transform(
+                                           orm_EgoDeuDea.geom_new, srid)).label('geom'))
+
+        # read data from db
+        lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
+                                             session.bind,
+                                             index_col='id')
+        return lv_grid_stations
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
