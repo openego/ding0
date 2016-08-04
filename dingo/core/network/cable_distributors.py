@@ -10,8 +10,9 @@ class MVCableDistributorDingo(CableDistributorDingo):
         self.grid = kwargs.get('grid', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
 
-        # get id from count of cable distributors in associated MV grid
-        self.id_db = self.grid.cable_distributors_count() + 1
+        # build id from associated grid district id and the count of cable distributors in grid,
+        # use 10^3 as factor to separate both ids (allow later distinction between these two parts)
+        self.id_db = self.grid.grid_district.id_db * 10**3 + self.grid.cable_distributors_count() + 1
 
     def __repr__(self):
         return 'mv_cable_dist_' + str(self.id_db)
