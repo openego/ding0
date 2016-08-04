@@ -341,7 +341,7 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
                 graph.add_edge(adj_node2, cable_dist, branch=BranchDingo(length=branch_length,
-                                                                         type=type))
+                                                                         type=branch_type))
 
                 # add new branch for satellite (station to cable distributor)
                 # ===========================================================
