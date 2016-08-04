@@ -31,3 +31,6 @@ lv_loads = CalcEgoPeakLoadTa
 
 [grids]
 mv_grids = app_dingo_res.mv_grids
+
+[generators]
+re_generators = EgoDeuDea
