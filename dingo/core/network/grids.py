@@ -2,7 +2,7 @@
 from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CircuitBreakerDingo
-from dingo.core.network.loads import LVLoadDingo
+from dingo.core.network.loads import *
 from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
@@ -105,6 +105,13 @@ class MVGridDingo(GridDingo):
     #     # TODO: not sure if the following works:
     #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_load_areas()]]:
     #         self.graph_add_node(lv_station)
+
+    def add_load(self, lv_load):
+        """Adds a MV load to _loads and grid graph if not already existing"""
+        if lv_load not in self._loads and isinstance(lv_load,
+                                                     MVLoadDingo):
+            self._loads.append(lv_load)
+            self.graph_add_node(lv_load)
 
     def add_cable_distributor(self, cable_dist):
         """Adds a cable distributor to _cable_distributors if not already existing"""
@@ -373,9 +380,9 @@ class LVGridDingo(GridDingo):
     def add_load(self, lv_load):
         """Adds a LV load to _loads and grid graph if not already existing"""
         if lv_load not in self._loads and isinstance(lv_load,
-                                                           LVLoadDingo):
+                                                     LVLoadDingo):
             self._loads.append(lv_load)
-            self._graph.add_node(lv_load)
+            self.graph_add_node(lv_load)
 
     def add_cable_dist(self, lv_cable_dist):
         """Adds a LV cable_dist to _cable_dists and grid graph if not already existing"""
