@@ -7,7 +7,6 @@ class MVCableDistributorDingo(CableDistributorDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.grid = kwargs.get('grid', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
 
         # build id from associated grid district id and the count of cable distributors in grid,
