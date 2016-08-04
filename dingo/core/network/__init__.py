@@ -98,6 +98,20 @@ class GridDingo:
         nodes = list(edges.keys())[list(edges.values()).index(branch)]
         return nodes
 
+    def graph_branches_from_node(self, node):
+        """ Returns branches that are connected to `node`
+
+        Args:
+            node: Dingo object (member of graph)
+        Returns:
+            branches: List of BranchDingo objects
+        """
+        branches = []
+        branches_dict = self._graph.edge[node]
+        for branch in branches_dict.values():
+            branches.append(branch['branch'])
+        return branches
+
     def graph_edges(self):
         """ Returns a generator for iterating over graph edges
 
