@@ -2,7 +2,7 @@
 from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CircuitBreakerDingo
-from dingo.core.network import LVLoadDingo
+from dingo.core.network.loads import LVLoadDingo
 from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
@@ -483,7 +483,7 @@ class LVGridDingo(GridDingo):
                         branch_no=branch_no,
                         load_no=house_branch)
 
-                    lv_load = LVLoadDingo(id=self.grid_district.id_db,
+                    lv_load = LVLoadDingo(grid=self,
                                           string_id=i,
                                           branch_no=branch_no,
                                           load_no=house_branch)
