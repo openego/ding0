@@ -34,5 +34,4 @@ class LVCableDistributorDingo(CableDistributorDingo):
         self.id_db = self.grid.grid_district.id_db * 10**7 + self.grid.cable_distributors_count() + 1
 
     def __repr__(self):
-        return ('lv_cable_dist_' + str(self.id_db) + '_' + str(self.string_id) + '-'
-            + str(self.branch_no) + '_' + str(self.load_no))
+        return 'lv_cable_dist_' + str(self.id_db)
