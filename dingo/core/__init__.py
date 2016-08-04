@@ -1,5 +1,6 @@
 import dingo
 from dingo.config import config_db_interfaces as db_int
+from dingo.core.network import GeneratorDingo
 from dingo.core.network.cable_distributors import MVCableDistributorDingo
 from dingo.core.network.grids import *
 from dingo.core.network.stations import *
@@ -36,7 +37,7 @@ orm_EgoDeuDea = orm_calc_ego_re.__getattribute__(EgoDeuDea_name)
 import pandas as pd
 
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point, MultiPoint, MultiLineString
@@ -206,7 +207,7 @@ class NetworkDingo:
                                        func.ST_AsText(func.ST_Transform(
                                            orm_EgoDeuSubstation.point, srid)).\
                                        label('subs_geom')).\
-            join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id==
+            join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id ==
                  orm_EgoDeuSubstation.id).\
             filter(orm_GridDistrict.subst_id.in_(mv_grid_districts))
 
@@ -340,8 +341,8 @@ class NetworkDingo:
 
         # read data from db
         lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
-                                       session.bind,
-                                       index_col='id_db')
+                                          session.bind,
+                                          index_col='id_db')
 
         # read LV model grid data from CSV file
         string_properties, apartment_string, apartment_trafo = self.import_lv_model_grids()
@@ -430,7 +431,6 @@ class NetworkDingo:
 
         return lv_grid_districs
 
-
     def import_lv_stations(self, conn):
         """
         Import lv_stations within the given load_area
@@ -499,7 +499,7 @@ class NetworkDingo:
 
         return string_properties, apartment_string, apartment_trafo
 
-    def import_generators(self, conn):
+    def import_generators(self, conn, mv_grid_districts, debug=False):
         """ Imports generators
 
         """
@@ -511,21 +511,34 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        lv_stations_sqla = session.query(orm_EgoDeuDea.id,
-                                         orm_EgoDeuDea.subst_id,
-                                         orm_EgoDeuDea.la_id,
-                                         orm_EgoDeuDea.electrical_capacity,
-                                         orm_EgoDeuDea.generation_type,
-                                         orm_EgoDeuDea.generation_subtype,
-                                         orm_EgoDeuDea.voltage_level,
-                                         func.ST_AsText(func.ST_Transform(
-                                           orm_EgoDeuDea.geom_new, srid)).label('geom'))
+        for mv_grid_district in mv_grid_districts:
 
-        # read data from db
-        lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
-                                             session.bind,
-                                             index_col='id')
-        return lv_grid_stations
+            generators_sqla = session.query(orm_EgoDeuDea.id,
+                                            orm_EgoDeuDea.subst_id,
+                                            orm_EgoDeuDea.la_id,
+                                            orm_EgoDeuDea.electrical_capacity,
+                                            orm_EgoDeuDea.generation_type,
+                                            orm_EgoDeuDea.generation_subtype,
+                                            orm_EgoDeuDea.voltage_level,
+                                             func.ST_AsText(func.ST_Transform(
+                                            orm_EgoDeuDea.geom_new, srid)).label('geom')).\
+                                            filter(orm_EgoDeuDea.subst_id == mv_grid_district).\
+                                            filter(or_(orm_EgoDeuDea.voltage_level == '05 (MS)',
+                                                       orm_EgoDeuDea.voltage_level == '04 (HS/MS)'))
+
+            # read data from db
+            generators = pd.read_sql_query(generators_sqla.statement,
+                                           session.bind,
+                                           index_col='id')
+
+            #print(generators)
+
+            for id_db, row in generators.iterrows():
+                generator = GeneratorDingo(id_db=id_db,
+                                           mv_grid=XXX)
+                if row['voltage_level'] == '05 (MS)':
+                    # find co
+
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
