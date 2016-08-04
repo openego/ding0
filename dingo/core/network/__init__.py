@@ -301,14 +301,29 @@ class TransformerDingo:
         self.tap_ratio = kwargs.get('tap_ratio', None)
 
 
-class SourceDingo:
-    """
-    Generators
+class GeneratorDingo:
+    """ Generators (power plants of any kind)
     """
 
     def __init__(self, **kwargs):
-        #inherit parameters from oemof's Transformer
-        super().__init__(**kwargs)
+        self.id_db = kwargs.get('id_db', None)
+        self.geo_data = kwargs.get('geo_data', None)
+        self.mv_grid = kwargs.get('mv_grid', None)
+        self.lv_grid = kwargs.get('lv_grid', None)
+
+        self.capacity = kwargs.get('capacity', None)
+        self.type = kwargs.get('type', None)
+        self.subtype = kwargs.get('subtype', None)
+        self.v_level = kwargs.get('v_level', None)
+
+    def __repr__(self):
+        if self.v_level in [6,7]:
+            return ('generator_' + self.type + '_' + self.subtype +
+                    '_mvgd' + str(self.mv_grid.grid_district.id_db) +
+                    '_lvgd' + str(self.lv_grid.id_db) + '_' + str(self.id_db))
+        else:
+            return ('generator_' + self.type + '_' + self.subtype +
+                    '_mvgd' + str(self.mv_grid.id_db) + '_' + str(self.id_db))
 
 
 class CableDistributorDingo:
