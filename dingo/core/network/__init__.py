@@ -17,6 +17,7 @@ class GridDingo:
         self.id_db = kwargs.get('id_db', None)
         self.grid_district = kwargs.get('grid_district', None)
         self._cable_distributors = []
+        self._loads = []
         #self.geo_data = kwargs.get('geo_data', None)
         self.v_level = kwargs.get('v_level', None)
 
@@ -28,8 +29,17 @@ class GridDingo:
             yield cable_dist
 
     def cable_distributors_count(self):
-        """Returns the count of cable distributors in MV grid"""
+        """Returns the count of cable distributors in grid"""
         return len(self._cable_distributors)
+
+    def loads(self):
+        """Returns a generator for iterating over loads"""
+        for load in self._loads:
+            yield load
+
+    def loads_count(self):
+        """Returns the count of loads in grid"""
+        return len(self._loads)
 
     def graph_add_node(self, node_object):
         """Adds a station or cable distributor object to grid graph if not already existing"""
