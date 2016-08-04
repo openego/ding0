@@ -1,10 +1,11 @@
+import dingo
+from dingo.config import config_db_interfaces as db_int
+from dingo.core.network.cable_distributors import MVCableDistributorDingo
 from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
-from dingo.config import config_db_interfaces as db_int
-import dingo
 
 # import ORM classes for oedb access depending on input in config file
 cfg_dingo.load_config('config_db_tables')
@@ -32,9 +33,9 @@ orm_EgoDeuOnts = orm_mod_calc_ego_substation.__getattribute__(EgoDeuOnts_name)
 import pandas as pd
 
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func, Numeric
+from sqlalchemy import func
 from geoalchemy2.shape import from_shape
-from shapely.wkt import loads as wkt_loads, dumps as wkt_dumps
+from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point, MultiPoint, MultiLineString
 
 from functools import partial
@@ -134,8 +135,9 @@ class NetworkDingo:
             lv_station = LVStationDingo(
                 id_db=id,  # is equal to station id
                 grid=lv_grid,
+                lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
-                peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
+		peak_load=lv_load_area.peak_load_sum / lv_grid)
 
             model_grid, transformer = lv_grid.select_typified_grid_model(
                 string_properties,
@@ -365,6 +367,12 @@ class NetworkDingo:
                 lv_stations_per_load_area = lv_stations.\
                     loc[lv_stations['load_area_id'] == id_db]
 
+                # DEBUG STUFF (BUG JONAS)
+                if len(lv_grid_districts_per_load_area) == 0:
+                    print('No LV grid district for', lv_load_area, 'found!')
+                if len(lv_stations_per_load_area) == 0:
+                    print('No station for', lv_load_area, 'found!')
+
                 self.build_lv_grid_district(conn,
                                             lv_load_area,
                                             string_properties,
@@ -536,7 +544,7 @@ class NetworkDingo:
             for node in grid_district.mv_grid._graph.nodes():
                 if isinstance(node, LVLoadAreaCentreDingo):
                     lv_load_area_centres.append((node.geo_data.x, node.geo_data.y))
-                elif isinstance(node, CableDistributorDingo):
+                elif isinstance(node, MVCableDistributorDingo):
                     mv_cable_distributors.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, MVStationDingo):
                     mv_stations.append((node.geo_data.x, node.geo_data.y))

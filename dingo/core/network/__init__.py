@@ -1,8 +1,7 @@
-from dingo.core.structure.regions import LVLoadAreaCentreDingo
-from dingo.tools.geo import calc_geo_dist_vincenty
-
-import networkx as nx
 import matplotlib.pyplot as plt
+import networkx as nx
+
+from dingo.core.structure.regions import LVLoadAreaCentreDingo
 
 
 class GridDingo:
@@ -17,10 +16,20 @@ class GridDingo:
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
         self.grid_district = kwargs.get('grid_district', None)
+        self._cable_distributors = []
         #self.geo_data = kwargs.get('geo_data', None)
         self.v_level = kwargs.get('v_level', None)
 
         self._graph = nx.Graph()
+
+    def cable_distributors(self):
+        """Returns a generator for iterating over cable distributors"""
+        for cable_dist in self._cable_distributors:
+            yield cable_dist
+
+    def cable_distributors_count(self):
+        """Returns the count of cable distributors in MV grid"""
+        return len(self._cable_distributors)
 
     def graph_add_node(self, node_object):
         """Adds a station or cable distributor object to grid graph if not already existing"""
@@ -279,26 +288,7 @@ class CableDistributorDingo:
         self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
-        self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
 
-        # get id from count of cable distributors in associated MV grid
-        self.id_db = self.grid.cable_distributors_count() + 1
-
-    def __repr__(self):
-        return 'cable_dist_' + str(self.id_db)
-
-class LVCableDistributorDingo():
-    """LV Cable distributor (connection point) """
-
-    def __init__(self, **kwargs):
-        self.id = kwargs.get('id', None)
-        self.string_id = kwargs.get('string_id', None)
-        self.branch_no = kwargs.get('branch_no', None)
-        self.load_no = kwargs.get('load_no', None)
-
-    def __repr__(self):
-        return ('lv_cable_dist_' + str(self.id) + '_' + str(self.string_id) + '-'
-            + str(self.branch_no) + '_' + str(self.load_no))
 
 class LVLoadDingo():
     """
@@ -319,6 +309,7 @@ class LVLoadDingo():
     def __repr__(self):
         return ('lv_load_' + str(self.id) + '_' + str(self.string_id) + '-'
             + str(self.branch_no) + '_' + str(self.load_no))
+
 
 class CircuitBreakerDingo:
     """ Class for modelling a circuit breaker """

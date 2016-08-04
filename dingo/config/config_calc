@@ -22,8 +22,11 @@ load_area_sat_conn_dist_weight = 1
 #load_area_sat_string_length_threshold: unit m
 load_area_sat_string_length_threshold = 3000
 
-#load_area_sat_conn_dist_ring: unit m
+#load_area_sat_conn_dist_ring_mod: unit m
 load_area_sat_conn_dist_ring_mod = 100
+
+#load_area_stat_conn_dist_ring_mod: unit m
+load_area_stat_conn_dist_ring_mod = 300
 
 #load_area_sat_buffer_radius: unit m
 load_area_sat_buffer_radius = 2000
