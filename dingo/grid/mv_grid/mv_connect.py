@@ -1,6 +1,7 @@
 
 from dingo.core.network.stations import *
-from dingo.core.network import BranchDingo, CableDistributorDingo
+from dingo.core.network import BranchDingo
+from dingo.core import MVCableDistributorDingo
 from dingo.core.structure.groups import LoadAreaGroupDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.tools import config as cfg_dingo
@@ -101,17 +102,17 @@ def get_lv_load_area_group_from_node_pair(node1, node2):
 
     # node 1 is LV station and node 2 not -> get group from node 1
     elif (isinstance(node1, LVLoadAreaCentreDingo) and
-          isinstance(node2, (MVStationDingo, CableDistributorDingo))):
+          isinstance(node2, (MVStationDingo, MVCableDistributorDingo))):
         lv_load_area_group = node1.lv_load_area.lv_load_area_group
 
     # node 2 is LV station and node 1 not -> get group from node 2
-    elif (isinstance(node1, (MVStationDingo, CableDistributorDingo)) and
+    elif (isinstance(node1, (MVStationDingo, MVCableDistributorDingo)) and
           isinstance(node2, LVLoadAreaCentreDingo)):
         lv_load_area_group = node2.lv_load_area.lv_load_area_group
 
     # both nodes are not a LV station -> no group
-    elif (isinstance(node1, (MVStationDingo, CableDistributorDingo)) and
-          isinstance(node2, (MVStationDingo, CableDistributorDingo))):
+    elif (isinstance(node1, (MVStationDingo, MVCableDistributorDingo)) and
+          isinstance(node2, (MVStationDingo, MVCableDistributorDingo))):
         lv_load_area_group = None
 
     return lv_load_area_group
@@ -151,7 +152,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
         # target object is node
         else:
-            if isinstance(dist_min_obj['obj'], CableDistributorDingo):
+            if isinstance(dist_min_obj['obj'], MVCableDistributorDingo):
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area_group
             else:
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area.lv_load_area_group
@@ -200,7 +201,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                     lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                     node.lv_load_area.lv_load_area_group = lv_load_area_group
 
-                    if isinstance(target_obj_result, CableDistributorDingo):
+                    if isinstance(target_obj_result, MVCableDistributorDingo):
                         lv_load_area_group.add_lv_load_area(lv_load_area=target_obj_result)
                         target_obj_result.lv_load_area_group = lv_load_area_group
 
@@ -255,7 +256,7 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
 
     Returns:
         target_obj_result: object that node was connected to (instance of LVLoadAreaCentreDingo or
-                           CableDistributorDingo). If node is included into line instead of creating a new line (see arg
+                           MVCableDistributorDingo). If node is included into line instead of creating a new line (see arg
                            `conn_dist_ring_mod`), `target_obj_result` is None.
     """
 
@@ -307,8 +308,8 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
             else:
 
                 # create cable distributor and add it to grid
-                cable_dist = CableDistributorDingo(geo_data=conn_point_shp,
-                                                   grid=node.lv_load_area.mv_grid_district.mv_grid)
+                cable_dist = MVCableDistributorDingo(geo_data=conn_point_shp,
+                                                     grid=node.lv_load_area.mv_grid_district.mv_grid)
                 node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
                 # check if there's a circuit breaker on current branch,
@@ -373,7 +374,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
 
     graph.remove_edge(node, target_obj_result)
 
-    if isinstance(target_obj_result, CableDistributorDingo):
+    if isinstance(target_obj_result, MVCableDistributorDingo):
 
         neighbor_nodes = graph.neighbors(target_obj_result)
 

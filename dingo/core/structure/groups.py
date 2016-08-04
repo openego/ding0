@@ -1,4 +1,4 @@
-from dingo.core.network import CableDistributorDingo
+from dingo.core import MVCableDistributorDingo
 from dingo.tools import config as cfg_dingo
 
 
@@ -31,7 +31,7 @@ class LoadAreaGroupDingo:
     def add_lv_load_area(self, lv_load_area):
         """Adds a LV load_area to _lv_load_areas if not already existing"""
         self._lv_load_areas.append(lv_load_area)
-        if not isinstance(lv_load_area, CableDistributorDingo):
+        if not isinstance(lv_load_area, MVCableDistributorDingo):
             self.peak_load_sum += lv_load_area.peak_load_sum
 
     def can_add_lv_load_area(self, node):
