@@ -152,7 +152,7 @@ class GridDingo:
         return length
 
 
-class StationDingo():
+class StationDingo:
     """
     Defines a MV/LVstation in DINGO
     -------------------------------
@@ -187,7 +187,7 @@ class StationDingo():
         # TODO: what if it exists? -> error message
 
 
-class BusDingo():
+class BusDingo:
     """ Create new pypower Bus class as child from oemof Bus used to define
     busses and generators data
     """
@@ -239,7 +239,7 @@ class BranchDingo:
         return 'branch_' + str(self.id_db)
 
 
-class TransformerDingo():
+class TransformerDingo:
     """
     Transformers
     ------------
@@ -276,7 +276,7 @@ class TransformerDingo():
         self.tap_ratio = kwargs.get('tap_ratio', None)
 
 
-class SourceDingo():
+class SourceDingo:
     """
     Generators
     """
@@ -295,7 +295,7 @@ class CableDistributorDingo:
         self.grid = kwargs.get('grid', None)
 
 
-class LVLoadDingo():
+class LVLoadDingo:
     """
     Load in LV grids
 
