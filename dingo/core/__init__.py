@@ -506,10 +506,9 @@ class NetworkDingo:
             whose MV grids are exported.
 
         """
-        # TODO: currently only station- & line-positions are exported
-        # TODO: (no further electric data)
-
-        # TODO: method has to be extended to cover more data
+        # TODO: currently only station- & line-positions are exported (no further electric data)
+        # TODO: method has to be extended to cover more data and to export different object types to different tables
+        # TODO: (make all attributes visible in GIS :)
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_grid_districts):
@@ -550,10 +549,26 @@ class NetworkDingo:
 
             # create shapely obj from stations and convert to
             # geoalchemy2.types.WKBElement
-            lv_load_area_centres_wkb = from_shape(MultiPoint(lv_load_area_centres), srid=srid)
-            mv_cable_distributors_wkb = from_shape(MultiPoint(mv_cable_distributors), srid=srid)
-            mv_circuit_breakers_wkb = from_shape(MultiPoint(mv_circuit_breakers), srid=srid)
-            mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
+            # set to None if no objects found (otherwise SQLAlchemy will throw an error).
+            if lv_load_area_centres:
+                lv_load_area_centres_wkb = from_shape(MultiPoint(lv_load_area_centres), srid=srid)
+            else:
+                lv_load_area_centres_wkb = None
+
+            if mv_cable_distributors:
+                mv_cable_distributors_wkb = from_shape(MultiPoint(mv_cable_distributors), srid=srid)
+            else:
+                mv_cable_distributors_wkb = None
+
+            if mv_circuit_breakers:
+                mv_circuit_breakers_wkb = from_shape(MultiPoint(mv_circuit_breakers), srid=srid)
+            else:
+                mv_circuit_breakers_wkb = None
+
+            if mv_stations:
+                mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
+            else:
+                mv_stations_wkb = None
 
             # get edges (lines) from grid's graph and append to corresponding array
             for branch in grid_district.mv_grid.graph_edges():
