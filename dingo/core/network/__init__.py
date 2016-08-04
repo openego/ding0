@@ -295,25 +295,13 @@ class CableDistributorDingo:
         self.grid = kwargs.get('grid', None)
 
 
-class LVLoadDingo:
-    """
-    Load in LV grids
-
-    Notes
-    -----
-    Current attributes and __repr__ is designed to fulfill requirements of
-    typified model grids.
-    """
+class LoadDingo:
+    """ Class for modelling a load """
 
     def __init__(self, **kwargs):
-        self.id = kwargs.get('id', None)
-        self.string_id = kwargs.get('string_id', None)
-        self.branch_no = kwargs.get('branch_no', None)
-        self.load_no = kwargs.get('load_no', None)
-
-    def __repr__(self):
-        return ('lv_load_' + str(self.id) + '_' + str(self.string_id) + '-'
-            + str(self.branch_no) + '_' + str(self.load_no))
+        self.id_db = kwargs.get('id', None)
+        self.geo_data = kwargs.get('geo_data', None)
+        self.grid = kwargs.get('grid', None)
 
 
 class CircuitBreakerDingo:
