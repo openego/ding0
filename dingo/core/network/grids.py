@@ -134,6 +134,31 @@ class MVGridDingo(GridDingo):
         #     mv_branches[edge] = mv_branch
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
 
+    def parametrize_grid(self, debug=False):
+        """ Performs Parametrization of grid equipment.
+
+        Args:
+            debug: If True, information is printed during process
+        """
+        # TODO: Add more detailed description
+        # TODO: Pass debug flag to functions
+
+        # set grid's voltage level
+        self.set_voltage_level()
+
+        # set MV station's voltage level
+        self._station.set_operation_voltage_level()
+
+        # set default branch type
+        self.default_branch_type, self.default_branch_type_aggregated = self.set_default_branch_type(debug)
+
+        # choose appropriate transformers for each MV sub-station
+        self._station.choose_transformers()
+
+        # choose appropriate type of line/cable for each edge
+        # TODO: move line parametrization to routing process
+        #self.parametrize_lines()
+
     def set_voltage_level(self):
         """ Sets voltage level of MV grid according to load density.
 
@@ -169,31 +194,6 @@ class MVGridDingo(GridDingo):
             self.v_level = 10
         else:
             raise ValueError('load_density is invalid!')
-
-    def parametrize_grid(self, debug=False):
-        """ Performs Parametrization of grid equipment.
-
-        Args:
-            debug: If True, information is printed during process
-        """
-        # TODO: Add more detailed description
-        # TODO: Pass debug flag to functions
-
-        # set grid's voltage level
-        self.set_voltage_level()
-
-        # set MV station's voltage level
-        self._station.set_operation_voltage_level()
-
-        # set default branch type
-        self.default_branch_type, self.default_branch_type_aggregated = self.set_default_branch_type(debug)
-
-        # choose appropriate transformers for each MV sub-station
-        self._station.choose_transformers()
-
-        # choose appropriate type of line/cable for each edge
-        # TODO: move line parametrization to routing process
-        #self.parametrize_lines()
 
     def set_default_branch_type(self, debug=False):
         """ Determines default branch type according to grid district's peak load and standard equipment.
