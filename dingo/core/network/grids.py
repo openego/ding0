@@ -33,7 +33,6 @@ class MVGridDingo(GridDingo):
 
         #more params
         self._station = None
-        self._cable_distributors = []
         self._circuit_breakers = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
         self.default_branch_type = kwargs.get('default_branch_type', None)
@@ -44,15 +43,6 @@ class MVGridDingo(GridDingo):
     def station(self):
         """Returns MV station"""
         return self._station
-
-    def cable_distributors(self):
-        """Returns a generator for iterating over cable distributors"""
-        for cable_dist in self._cable_distributors:
-            yield cable_dist
-
-    def cable_distributors_count(self):
-        """Returns the count of cable distributors in MV grid"""
-        return len(self._cable_distributors)
 
     def circuit_breakers(self):
         """Returns a generator for iterating over circuit breakers"""
@@ -118,7 +108,8 @@ class MVGridDingo(GridDingo):
 
     def add_cable_distributor(self, cable_dist):
         """Adds a cable distributor to _cable_distributors if not already existing"""
-        if cable_dist not in self.cable_distributors() and isinstance(cable_dist, MVCableDistributorDingo):
+        if cable_dist not in self.cable_distributors() and isinstance(cable_dist,
+                                                                      MVCableDistributorDingo):
             # add to array and graph
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
@@ -345,7 +336,6 @@ class LVGridDingo(GridDingo):
 
         self._station = None
         self._loads = []
-        self._cable_dists = []
         self.population = kwargs.get('population', None)
 
     def station(self):
@@ -370,15 +360,11 @@ class LVGridDingo(GridDingo):
 
     def add_cable_dist(self, lv_cable_dist):
         """Adds a LV cable_dist to _cable_dists and grid graph if not already existing"""
-        if lv_cable_dist not in self._cable_dists and isinstance(lv_cable_dist,
-                                                       LVCableDistributorDingo):
-            self._cable_dists.append(lv_cable_dist)
-            self._graph.add_node(lv_cable_dist)
-
-    def cable_dists(self):
-        """Returns a generator for iterating over LV _cable_dist"""
-        for cable_dist in self._cable_dists:
-            yield cable_dist
+        if lv_cable_dist not in self._cable_distributors and isinstance(lv_cable_dist,
+                                                                        LVCableDistributorDingo):
+            self._cable_distributors.append(lv_cable_dist)
+            #self._graph.add_node(lv_cable_dist)
+            self.graph_add_node(lv_cable_dist)
 
     def loads(self):
         """Returns a generator for iterating over LV _load"""
@@ -474,7 +460,7 @@ class LVGridDingo(GridDingo):
                     else:
                         variant = 'A'
                     lv_cable_dist = LVCableDistributorDingo(
-                        id=self.grid_district.id_db,
+                        grid=self,
                         string_id=i,
                         branch_no=branch_no,
                         load_no=house_branch)
@@ -503,7 +489,7 @@ class LVGridDingo(GridDingo):
                                 ))
                     else:
                         self._graph.add_edge(
-                            self._cable_dists[-2],
+                            self._cable_distributors[-2],
                             lv_cable_dist,
                             branch=BranchDingo(
                                 length=row['distance house branch'],
