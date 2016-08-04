@@ -202,7 +202,8 @@ class MVGridDingo(GridDingo):
             debug: If True, information is printed during process
 
         Returns:
-            default branch type (pandas Series object). If no appropriate type is found, return largest possible one.
+            default branch type: pandas Series object. If no appropriate type is found, return largest possible one.
+            default branch type max: pandas Series object. Largest available line/cable type
 
         Notes
         -----
