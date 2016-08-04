@@ -27,6 +27,11 @@ class LVCableDistributorDingo(CableDistributorDingo):
         self.branch_no = kwargs.get('branch_no', None)
         self.load_no = kwargs.get('load_no', None)
 
+        # build id from associated grid district id and the count of cable distributors in grid,
+        # use 10^7 (because max. count of LV grid districts is 10^6) as factor to separate both ids
+        # (allow later distinction between these two parts)
+        self.id_db = self.grid.grid_district.id_db * 10**7 + self.grid.cable_distributors_count() + 1
+
     def __repr__(self):
         return ('lv_cable_dist_' + str(self.id_db) + '_' + str(self.string_id) + '-'
             + str(self.branch_no) + '_' + str(self.load_no))
