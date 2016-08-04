@@ -114,6 +114,24 @@ class MVGridDingo(GridDingo):
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
 
+    def set_branch_ids(self):
+        """ Generates and sets ids of branches for MV and underlying LV grids """
+
+        # MV grid:
+        ctr = 1
+        for branch in self.graph_edges():
+            branch['branch'].id_db = self.grid_district.id_db * 10**4 + ctr
+            ctr += 1
+
+        # LV grid:
+        for lv_load_area in self.grid_district.lv_load_areas():
+            for lv_grid_district in lv_load_area.lv_grid_districts():
+                ctr = 1
+                for branch in lv_grid_district.lv_grid.graph_edges():
+                    branch['branch'].id_db = lv_grid_district.id_db * 10**7 + ctr
+                    ctr += 1
+
+
     def routing(self, debug=False, anim=None):
         """ Performs routing on grid graph nodes, adds resulting edges
 
@@ -133,6 +151,31 @@ class MVGridDingo(GridDingo):
         #     mv_branch = BranchDingo()
         #     mv_branches[edge] = mv_branch
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
+
+    def parametrize_grid(self, debug=False):
+        """ Performs Parametrization of grid equipment.
+
+        Args:
+            debug: If True, information is printed during process
+        """
+        # TODO: Add more detailed description
+        # TODO: Pass debug flag to functions
+
+        # set grid's voltage level
+        self.set_voltage_level()
+
+        # set MV station's voltage level
+        self._station.set_operation_voltage_level()
+
+        # set default branch type
+        self.default_branch_type, self.default_branch_type_aggregated = self.set_default_branch_type(debug)
+
+        # choose appropriate transformers for each MV sub-station
+        self._station.choose_transformers()
+
+        # choose appropriate type of line/cable for each edge
+        # TODO: move line parametrization to routing process
+        #self.parametrize_lines()
 
     def set_voltage_level(self):
         """ Sets voltage level of MV grid according to load density.
@@ -170,31 +213,6 @@ class MVGridDingo(GridDingo):
         else:
             raise ValueError('load_density is invalid!')
 
-    def parametrize_grid(self, debug=False):
-        """ Performs Parametrization of grid equipment.
-
-        Args:
-            debug: If True, information is printed during process
-        """
-        # TODO: Add more detailed description
-        # TODO: Pass debug flag to functions
-
-        # set grid's voltage level
-        self.set_voltage_level()
-
-        # set MV station's voltage level
-        self._station.set_operation_voltage_level()
-
-        # set default branch type
-        self.default_branch_type, self.default_branch_type_aggregated = self.set_default_branch_type(debug)
-
-        # choose appropriate transformers for each MV sub-station
-        self._station.choose_transformers()
-
-        # choose appropriate type of line/cable for each edge
-        # TODO: move line parametrization to routing process
-        #self.parametrize_lines()
-
     def set_default_branch_type(self, debug=False):
         """ Determines default branch type according to grid district's peak load and standard equipment.
 
@@ -202,7 +220,8 @@ class MVGridDingo(GridDingo):
             debug: If True, information is printed during process
 
         Returns:
-            default branch type (pandas Series object). If no appropriate type is found, return largest possible one.
+            default branch type: pandas Series object. If no appropriate type is found, return largest possible one.
+            default branch type max: pandas Series object. Largest available line/cable type
 
         Notes
         -----
@@ -363,7 +382,6 @@ class LVGridDingo(GridDingo):
         if lv_cable_dist not in self._cable_distributors and isinstance(lv_cable_dist,
                                                                         LVCableDistributorDingo):
             self._cable_distributors.append(lv_cable_dist)
-            #self._graph.add_node(lv_cable_dist)
             self.graph_add_node(lv_cable_dist)
 
     def loads(self):

@@ -222,16 +222,21 @@ class BranchDingo:
     length : float
         Length of line given
     type : Association to pandas Series
-    """
 
+    Notes:
+        Important: id_db is not set until whole grid is finished (setting at the end, see method set_branch_ids())
+    """
 
     def __init__(self, **kwargs):
 
-        # branch (line/cable) length in m
-        self.length = kwargs.get('length', None)
+        self.id_db = kwargs.get('id_db', None)
+        self.length = kwargs.get('length', None)  # branch (line/cable) length in m
         self.type = kwargs.get('type', None)
         self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.circuit_breaker = kwargs.get('circuit_breaker', None)
+
+    def __repr__(self):
+        return 'branch_' + str(self.id_db)
 
 
 class TransformerDingo():
