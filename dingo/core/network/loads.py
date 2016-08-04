@@ -1,6 +1,25 @@
 from . import LoadDingo
 
 
+class MVLoadDingo(LoadDingo):
+    """
+    Load in MV grids
+
+    """
+    # TODO: Currently not used, check later if still required
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # build id from associated grid district id and the count of loads in grid, use 10^4
+        # (because max. count of MV grid districts is 4*10^3) as factor to separate both ids
+        # (allow later distinction between these two parts)
+        self.id_db = self.grid.grid_district.id_db * 10**4 + self.grid.loads_count() + 1
+
+    def __repr__(self):
+        return 'mv_load_' + str(self.id_db)
+
+
 class LVLoadDingo(LoadDingo):
     """
     Load in LV grids
