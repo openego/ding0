@@ -434,12 +434,7 @@ def parametrize_lines(mv_grid):
 
 # TODO: MAKE MV_CONNECT THE START METHOD FOR CONNECTION, SPLIT TYPES INTO SUBMETHODS
 def mv_connect_satellites(mv_grid, graph, dingo_object, debug=False):
-    """ Connects DINGO objects to MV grid, e.g. load areas of type `satellite`, DER etc.
-
-    Method:
-        1. Find nearest line for every satellite using shapely distance:
-            Transform  to equidistant CRS
-        2. ...
+    """ Connect satellites (small LV load areas) to MV grid
 
     Args:
         mv_grid: MVGridDingo object
@@ -529,6 +524,15 @@ def mv_connect_satellites(mv_grid, graph, dingo_object, debug=False):
 
 
 def mv_connect_stations(mv_grid_district, graph, debug=False):
+    """ Connect LV stations to MV grid
+    Args:
+        mv_grid_district: MVGridDistrictDingo object fore which the connection process has to be done
+        graph: NetworkX graph object with nodes
+        debug: If True, information is printed during process
+
+    Returns:
+
+    """
 
     # WGS84 (conformal) to ETRS (equidistant) projection
     proj1 = partial(
@@ -544,10 +548,6 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
     conn_dist_weight = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_weight')
     conn_dist_ring_mod = cfg_dingo.get('mv_connect', 'load_area_stat_conn_dist_ring_mod')
-
-    # for every station: find nearest branch and connect to it
-
-    # set branch in load area to cable type (type and start- and end point)
 
     for lv_load_area in mv_grid_district.lv_load_areas():
 
