@@ -84,15 +84,15 @@ class NetworkDingo:
                                                   mv_grid_district_id_n: mv_grid_district_obj_n}
         """
 
-        mv_grid_districts = {}
-        lv_load_areas = {}
+        mv_grid_districts_dict = {}
+        lv_load_areas_dict = {}
 
         for mv_grid_district in self.mv_grid_districts():
-            mv_grid_districts[mv_grid_district.id_db] = mv_grid_district
+            mv_grid_districts_dict[mv_grid_district.id_db] = mv_grid_district
             for lv_load_area in mv_grid_district.lv_load_areas():
-                lv_load_areas[lv_load_area.id_db] = lv_load_area
+                lv_load_areas_dict[lv_load_area.id_db] = lv_load_area
 
-        return lv_load_areas, mv_grid_districts
+        return mv_grid_districts_dict, lv_load_areas_dict
 
     def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
                         station_geo_data):
@@ -522,8 +522,15 @@ class NetworkDingo:
 
         return string_properties, apartment_string, apartment_trafo
 
-    def import_generators(self, conn, mv_grid_districts, debug=False):
+    def import_generators(self, conn, mv_grid_districts_no, debug=False):
         """ Imports generators
+
+        Args:
+            conn:
+            mv_grid_districts_no:
+            debug:
+
+        Returns:
 
         """
         # TODO: Currently only the renewable power plants are imported here, no conventional ones! (has to be done)
@@ -534,34 +541,67 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        for mv_grid_district in mv_grid_districts:
+        # build query
+        generators_sqla = session.query(orm_EgoDeuDea.id,
+                                        orm_EgoDeuDea.subst_id,
+                                        orm_EgoDeuDea.la_id,
+                                        orm_EgoDeuDea.electrical_capacity,
+                                        orm_EgoDeuDea.generation_type,
+                                        orm_EgoDeuDea.generation_subtype,
+                                        orm_EgoDeuDea.voltage_level,
+                                         func.ST_AsText(func.ST_Transform(
+                                        orm_EgoDeuDea.geom_new, srid)).label('geom')).\
+                                        filter(orm_EgoDeuDea.subst_id.in_(mv_grid_districts_no)).\
+                                        filter(or_(orm_EgoDeuDea.voltage_level == '05 (MS)',
+                                                   orm_EgoDeuDea.voltage_level == '04 (HS/MS)'))
 
-            generators_sqla = session.query(orm_EgoDeuDea.id,
-                                            orm_EgoDeuDea.subst_id,
-                                            orm_EgoDeuDea.la_id,
-                                            orm_EgoDeuDea.electrical_capacity,
-                                            orm_EgoDeuDea.generation_type,
-                                            orm_EgoDeuDea.generation_subtype,
-                                            orm_EgoDeuDea.voltage_level,
-                                             func.ST_AsText(func.ST_Transform(
-                                            orm_EgoDeuDea.geom_new, srid)).label('geom')).\
-                                            filter(orm_EgoDeuDea.subst_id == mv_grid_district).\
-                                            filter(or_(orm_EgoDeuDea.voltage_level == '05 (MS)',
-                                                       orm_EgoDeuDea.voltage_level == '04 (HS/MS)'))
+        # TODO: Currently only MV generators are imported, please include LV!
+        # TODO: Easter-egg for Guido:
 
-            # read data from db
-            generators = pd.read_sql_query(generators_sqla.statement,
-                                           session.bind,
-                                           index_col='id')
+        # read data from db
+        generators = pd.read_sql_query(generators_sqla.statement,
+                                       session.bind,
+                                       index_col='id')
 
-            #print(generators)
+        # build dicts to map MV grid district and LV load area ids to related objects
+        mv_grid_districts_dict, lv_load_areas_dict = self.get_mvgd_lvla_obj_from_id()
 
-            for id_db, row in generators.iterrows():
-                generator = GeneratorDingo(id_db=id_db,
-                                           mv_grid=XXX)
-                if row['voltage_level'] == '05 (MS)':
-                    # find co
+        for id_db, row in generators.iterrows():
+            # ===== DEBUG STUFF (NOT ALL GENERATOR GEOMS IN DATABASE YET -> catch empty geoms) =====
+            # TODO: Remove when fixed!
+            if not row['geom']:
+                geo_data = None
+                print('Generator', str(id_db), 'has no geom, bad day dude!')
+            else:
+                geo_data = wkt_loads(row['geom'])
+            # ======================================================================================
 
+            # look up MV grid
+            mv_grid_district_id = row['subst_id']
+            mv_grid = mv_grid_districts_dict[mv_grid_district_id].mv_grid
+
+            # look up LV load area
+            lv_load_area_id = row['la_id']
+            if lv_load_area_id:
+                lv_load_area = lv_load_areas_dict[lv_load_area_id]
+            else:
+                lv_load_area = None
+
+            # create generator object
+            generator = GeneratorDingo(id_db=id_db,
+                                       geo_data=geo_data,
+                                       mv_grid=mv_grid,
+                                       lv_load_area=lv_load_area,
+                                       capacity=row['electrical_capacity'],
+                                       type=row['generation_type'],
+                                       subtype=row['generation_subtype'],
+                                       v_level=row['voltage_level'])
+
+            # add generators to graph
+            if generator.v_level in ['04 (HS/MS)', '05 (MS)']:
+                mv_grid.add_generator(generator)
+            elif generator.v_level in ['06 (MS/NS)', '07 (MS)']:
+                raise NotImplementedError
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
