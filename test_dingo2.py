@@ -28,12 +28,11 @@ conn = db.connection(section='oedb')
 mv_grid_districts=[360]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
+nd.import_generators(conn)
 
 nd.mv_parametrize_grid()
 
 nd.mv_routing(debug=False, animation=False)
-
-nd.import_generators(conn)
 
 nd.connect_generators()
 
