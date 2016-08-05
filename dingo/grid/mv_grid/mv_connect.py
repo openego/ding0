@@ -1,6 +1,6 @@
 
 from dingo.core.network.stations import *
-from dingo.core.network import BranchDingo
+from dingo.core.network import BranchDingo, GeneratorDingo
 from dingo.core import MVCableDistributorDingo
 from dingo.core.structure.groups import LoadAreaGroupDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
@@ -161,7 +161,14 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
         if not lv_load_area_group:
 
             # connect node
-            target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
+            target_obj_result = connect_node(node,
+                                             node_shp,
+                                             node.lv_load_area.mv_grid_district.mv_grid,
+                                             dist_min_obj,
+                                             proj,
+                                             graph,
+                                             conn_dist_ring_mod,
+                                             debug)
 
             # if node was connected via branch (target line not re-routed and not member of aggregated load area):
             # create new LV load_area group for current node
@@ -189,7 +196,14 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
         else:
 
             # connect node
-            target_obj_result = connect_node(node, node_shp, dist_min_obj, proj, graph, conn_dist_ring_mod, debug)
+            target_obj_result = connect_node(node,
+                                             node_shp,
+                                             node.lv_load_area.mv_grid_district.mv_grid,
+                                             dist_min_obj,
+                                             proj,
+                                             graph,
+                                             conn_dist_ring_mod,
+                                             debug)
 
             # if node was connected via branch (target line not re-routed and not member of aggregated load area):
             # create new LV load_area group for current node
@@ -241,7 +255,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
               'config file `config_calc` to gain more possible connection points.')
 
 
-def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, debug):
+def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_ring_mod, debug):
     """ Connects `node` to `target_obj`
 
     Args:
@@ -314,8 +328,8 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
 
                 # create cable distributor and add it to grid
                 cable_dist = MVCableDistributorDingo(geo_data=conn_point_shp,
-                                                     grid=node.lv_load_area.mv_grid_district.mv_grid)
-                node.lv_load_area.mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
+                                                     grid=mv_grid)
+                mv_grid.add_cable_distributor(cable_dist)
 
                 # check if there's a circuit breaker on current branch,
                 # if yes set new position between first node (adj_node1) and newly created cable distributor
@@ -347,7 +361,7 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
                 # ===========================================================
 
                 # get default branch type from grid to use it for new branch
-                branch_type = node.lv_load_area.mv_grid_district.mv_grid.default_branch_type
+                branch_type = mv_grid.default_branch_type
 
                 branch_length = calc_geo_dist_vincenty(node, cable_dist)
                 graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length,
@@ -362,11 +376,22 @@ def connect_node(node, node_shp, target_obj, proj, graph, conn_dist_ring_mod, de
     # node ist nearest connection point
     else:
 
+        # what kind of node is to be connected? (which type is node of?)
+        #   LVLoadAreaCentreDingo: Connect to LVLoadAreaCentreDingo only
+        #   LVStationDingo: Connect to LVLoadAreaCentreDingo or LVStationDingo
+        #   GeneratorDingo: Connect to LVLoadAreaCentreDingo or LVStationDingo
+        if isinstance(node, LVLoadAreaCentreDingo):
+            valid_conn_objects = LVLoadAreaCentreDingo
+        elif isinstance(node, (LVStationDingo, GeneratorDingo)):
+            valid_conn_objects = (LVLoadAreaCentreDingo, LVStationDingo)
+        else:
+            raise ValueError('Oops, the node you are trying to connect is not a valid Dingo object')
+
         # target node is not a load area of type aggregated
-        if isinstance(target_obj['obj'], LVLoadAreaCentreDingo) and not target_obj['obj'].lv_load_area.is_aggregated:
+        if isinstance(target_obj['obj'], valid_conn_objects) and not target_obj['obj'].lv_load_area.is_aggregated:
 
             # get default branch type from grid to use it for new branch
-            branch_type = node.lv_load_area.mv_grid_district.mv_grid.default_branch_type
+            branch_type = mv_grid.default_branch_type
 
             # add new branch for satellite (station to station)
             branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
@@ -486,7 +511,9 @@ def mv_connect_satellites(mv_grid, graph, debug=False):
 
                 node_shp = transform(proj1, node.geo_data)
 
+                # get branches within a the predefined radius `load_area_sat_buffer_radius`
                 branches = calc_geo_branches_in_buffer(node,
+                                                       mv_grid,
                                                        load_area_sat_buffer_radius,
                                                        load_area_sat_buffer_radius_inc, proj1)
 
@@ -517,7 +544,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
         debug: If True, information is printed during process
 
     Returns:
-
+        graph: NetworkX graph object with nodes and newly created branches
     """
 
     # WGS84 (conformal) to ETRS (equidistant) projection
@@ -607,8 +634,14 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                                                                        branches_only=False)
 
                     # connect!
-                    connect_node(lv_station, lv_station_shp, conn_objects_min_stack[0], proj2,
-                                 graph, conn_dist_ring_mod, debug)
+                    connect_node(lv_station,
+                                 lv_station_shp,
+                                 mv_grid_district.mv_grid,
+                                 conn_objects_min_stack[0],
+                                 proj2,
+                                 graph,
+                                 conn_dist_ring_mod,
+                                 debug)
 
                 # Replace LV load area centre by cable distributor
                 # ================================================
