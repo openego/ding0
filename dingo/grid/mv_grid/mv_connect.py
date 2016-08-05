@@ -378,17 +378,26 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
         # what kind of node is to be connected? (which type is node of?)
         #   LVLoadAreaCentreDingo: Connect to LVLoadAreaCentreDingo only
-        #   LVStationDingo: Connect to LVLoadAreaCentreDingo or LVStationDingo
-        #   GeneratorDingo: Connect to LVLoadAreaCentreDingo or LVStationDingo
+        #   LVStationDingo: Connect to LVLoadAreaCentreDingo, LVStationDingo or MVCableDistributorDingo
+        #   GeneratorDingo: Connect to LVLoadAreaCentreDingo, LVStationDingo, MVCableDistributorDingo or GeneratorDingo
         if isinstance(node, LVLoadAreaCentreDingo):
             valid_conn_objects = LVLoadAreaCentreDingo
-        elif isinstance(node, (LVStationDingo, GeneratorDingo)):
-            valid_conn_objects = (LVLoadAreaCentreDingo, LVStationDingo)
+        elif isinstance(node, LVStationDingo):
+            valid_conn_objects = (LVLoadAreaCentreDingo, LVStationDingo, MVCableDistributorDingo)
+        elif isinstance(node, GeneratorDingo):
+            valid_conn_objects = (LVLoadAreaCentreDingo, LVStationDingo, MVCableDistributorDingo, GeneratorDingo)
         else:
-            raise ValueError('Oops, the node you are trying to connect is not a valid Dingo object')
+            raise ValueError('Oops, the node you are trying to connect is not a valid connection object')
+
+        # if target is LV load area centre or LV station, check if it belongs to a load area of type aggregated
+        # (=> connection not allowed)
+        if isinstance(target_obj['obj'], (LVLoadAreaCentreDingo, LVStationDingo)):
+            target_is_aggregated = target_obj['obj'].lv_load_area.is_aggregated
+        else:
+            target_is_aggregated = False
 
         # target node is not a load area of type aggregated
-        if isinstance(target_obj['obj'], valid_conn_objects) and not target_obj['obj'].lv_load_area.is_aggregated:
+        if isinstance(target_obj['obj'], valid_conn_objects) and not target_is_aggregated:
 
             # get default branch type from grid to use it for new branch
             branch_type = mv_grid.default_branch_type
@@ -496,7 +505,6 @@ def mv_connect_satellites(mv_grid, graph, debug=False):
             pyproj.transform,
             pyproj.Proj(init='epsg:3035'),  # source coordinate system
             pyproj.Proj(init='epsg:4326'))  # destination coordinate system
-
 
     # TODO: create generators in grid class for iterating over satellites and non-satellites (nice-to-have) instead
     # TODO: of iterating over all nodes
