@@ -215,7 +215,6 @@ class NetworkDingo:
         except OSError:
             print('cannot open config file.')
 
-
         # build SQL query
         Session = sessionmaker(bind=conn)
         session = Session()
@@ -271,6 +270,8 @@ class NetworkDingo:
                 mv_grid_district.add_peak_demand()
         except:
             raise ValueError('unexpected error while initiating MV grid_districts from DB dataset.')
+
+        print('=====> MV Grid Districts imported')
 
     def import_lv_load_areas(self, conn, mv_grid_district, lv_grid_districts,
                              lv_stations):
@@ -388,9 +389,9 @@ class NetworkDingo:
                 # # ===== DEBUG STUFF (BUG JONAS) =====
                 # TODO: Remove when fixed!
                 if len(lv_grid_districts_per_load_area) == 0:
-                    print('No LV grid district for', lv_load_area, 'found! (blame Jonas)')
+                    print('No LV grid district for', lv_load_area, 'found! (Bug Jonas)')
                 if len(lv_stations_per_load_area) == 0:
-                    print('No station for', lv_load_area, 'found! (blame Jonas)')
+                    print('No station for', lv_load_area, 'found! (Bug Jonas)')
                 # ===================================
 
                 self.build_lv_grid_district(conn,
@@ -600,6 +601,8 @@ class NetworkDingo:
             elif generator.v_level in ['06 (MS/NS)', '07 (NS)']:
                 raise NotImplementedError
 
+        print('=====> Generators imported')
+
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
@@ -715,6 +718,8 @@ class NetworkDingo:
         # commit changes to db
         session.commit()
 
+        print('=====> MV Grids exported')
+
     def mv_routing(self, debug=False, animation=False):
         """ Performs routing on all MV grids, see method `routing` in class
         `MVGridDingo` for details.
@@ -736,6 +741,8 @@ class NetworkDingo:
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.routing(debug, anim)
 
+        print('=====> MV Routing (Routing, Connection of Satellites & Stations) performed')
+
     def connect_generators(self, debug=False):
         """ Connects generators (graph nodes) to grid (graph) for every MV grid district
 
@@ -750,6 +757,8 @@ class NetworkDingo:
             #for lv_load_area in mv_grid_district.lv_load_areas():
             #    CALL FUTURE METHOD FOR LV connect_generators HERE
 
+        print('=====> Generators connected')
+
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see
             method `parametrize_grid()` in class `MVGridDingo` for details.
@@ -762,6 +771,8 @@ class NetworkDingo:
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.parametrize_grid(debug)
 
+        print('=====> MV Grids parametrized')
+
     def set_branch_ids(self):
         """ Performs generation and setting of ids of branches for all MV and underlying LV grids, see
             method `set_branch_ids()` in class `MVGridDingo` for details.
@@ -769,6 +780,8 @@ class NetworkDingo:
 
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.set_branch_ids()
+
+        print('=====> Branch IDs set')
 
     def __repr__(self):
         return str(self.name)

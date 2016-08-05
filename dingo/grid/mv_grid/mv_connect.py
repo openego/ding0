@@ -578,7 +578,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
             # ===== DEBUG STUFF (BUG JONAS) =====
             # TODO: Remove when fixed!
             if lv_load_area.lv_grid_districts_count() == 0:
-                print('No station for', lv_load_area, 'found! (blame Jonas)')
+                print('No station for', lv_load_area, 'found! (Bug Jonas)')
             # ===================================
 
             lv_load_area_centre = lv_load_area.lv_load_area_centre
