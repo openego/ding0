@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
-from dingo.core.network import GeneratorDingo
 
 
 class GridDingo:
