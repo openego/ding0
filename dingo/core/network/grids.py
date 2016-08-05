@@ -5,7 +5,6 @@ from dingo.core.network import BranchDingo, CircuitBreakerDingo
 from dingo.core.network.loads import *
 from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
-from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
@@ -147,8 +146,8 @@ class MVGridDingo(GridDingo):
 
         # do the routing
         self._graph = mv_routing.solve(self._graph, debug, anim)
-        self._graph = mv_connect.mv_connect_satellites(self, self._graph, LVLoadAreaCentreDingo(), debug)
-        mv_connect.mv_connect_stations(self.grid_district, self._graph, debug)
+        self._graph = mv_connect.mv_connect_satellites(self, self._graph, debug)
+        self._graph = mv_connect.mv_connect_stations(self.grid_district, self._graph, debug)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:

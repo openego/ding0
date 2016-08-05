@@ -432,18 +432,12 @@ def parametrize_lines(mv_grid):
             branch['branch'].type = mv_grid.default_branch_type
 
 
-# TODO: MAKE MV_CONNECT THE START METHOD FOR CONNECTION, SPLIT TYPES INTO SUBMETHODS
-def mv_connect_satellites(mv_grid, graph, dingo_object, debug=False):
+def mv_connect_satellites(mv_grid, graph, debug=False):
     """ Connect satellites (small LV load areas) to MV grid
 
     Args:
         mv_grid: MVGridDingo object
         graph: NetworkX graph object with nodes
-        dingo_object: component (instance(!) of Dingo class) to be connected
-            Valid objects:  LVStationDingo (small load areas that are not incorporated in cvrp MV routing)
-                            MVDEA (MV renewable energy plants) (not existent yet)
-            CAUTION: `dingo_object` is not connected but it specifies the types of objects that are to be connected,
-                     e.g. if LVStationDingo() is passed, all objects of this type within `graph` are connected.
         debug: If True, information is printed during process
 
     Returns:
@@ -466,65 +460,57 @@ def mv_connect_satellites(mv_grid, graph, dingo_object, debug=False):
 
     start = time.time()
 
-    # check if dingo_object is valid object (can be connected)
-    # TODO: Add RES to isinstance check
-    if isinstance(dingo_object, (LVLoadAreaCentreDingo, LVStationDingo)):
+    # WGS84 (conformal) to ETRS (equidistant) projection
+    proj1 = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),  # source coordinate system
+            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
 
-        # WGS84 (conformal) to ETRS (equidistant) projection
-        proj1 = partial(
-                pyproj.transform,
-                pyproj.Proj(init='epsg:4326'),  # source coordinate system
-                pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
-        # ETRS (equidistant) to WGS84 (conformal) projection
-        proj2 = partial(
-                pyproj.transform,
-                pyproj.Proj(init='epsg:3035'),  # source coordinate system
-                pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+    # ETRS (equidistant) to WGS84 (conformal) projection
+    proj2 = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:3035'),  # source coordinate system
+            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
 
-        # TODO: create generators in grid class for iterating over satellites and non-satellites (nice-to-have) instead
-        # TODO: of iterating over all nodes
-        # check all nodes
-        for node in sorted(graph.nodes(), key=lambda x: repr(x)):
-            # LV load area centres are to be connected (= satellite handling)
-            if isinstance(dingo_object, LVLoadAreaCentreDingo):
+    # TODO: create generators in grid class for iterating over satellites and non-satellites (nice-to-have) instead
+    # TODO: of iterating over all nodes
+    # check all nodes
+    for node in sorted(graph.nodes(), key=lambda x: repr(x)):
 
-                # node is LV load area centre
-                if isinstance(node, LVLoadAreaCentreDingo):
+        # node is LV load area centre
+        if isinstance(node, LVLoadAreaCentreDingo):
 
-                    # satellites only
-                    if node.lv_load_area.is_satellite:
+            # satellites only
+            if node.lv_load_area.is_satellite:
 
-                        node_shp = transform(proj1, node.geo_data)
+                node_shp = transform(proj1, node.geo_data)
 
-                        branches = calc_geo_branches_in_buffer(node,
-                                                               load_area_sat_buffer_radius,
-                                                               load_area_sat_buffer_radius_inc, proj1)
+                branches = calc_geo_branches_in_buffer(node,
+                                                       load_area_sat_buffer_radius,
+                                                       load_area_sat_buffer_radius_inc, proj1)
 
-                        # calc distance between node and grid's lines -> find nearest line
-                        conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1,
-                                                                           conn_dist_weight, debug,
-                                                                           branches_only=False)
+                # calc distance between node and grid's lines -> find nearest line
+                conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1,
+                                                                   conn_dist_weight, debug,
+                                                                   branches_only=False)
 
-                        # iterate over object stack
-                        find_connection_point(node, node_shp, graph, proj2, conn_objects_min_stack,
-                                              conn_dist_ring_mod, debug)
+                # iterate over object stack
+                find_connection_point(node, node_shp, graph, proj2, conn_objects_min_stack,
+                                      conn_dist_ring_mod, debug)
 
-        # parametrize newly created branches
-        parametrize_lines(mv_grid)
+    # parametrize newly created branches
+    parametrize_lines(mv_grid)
 
-        if debug:
-            print('Elapsed time (mv_connect): {}'.format(time.time() - start))
+    if debug:
+        print('Elapsed time (mv_connect): {}'.format(time.time() - start))
 
-        return graph
-
-    else:
-        print('argument `dingo_object` has invalid value, see method for valid inputs.')
+    return graph
 
 
 def mv_connect_stations(mv_grid_district, graph, debug=False):
     """ Connect LV stations to MV grid
+
     Args:
         mv_grid_district: MVGridDistrictDingo object fore which the connection process has to be done
         graph: NetworkX graph object with nodes
@@ -657,3 +643,11 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
                 # delete LV load area centre from graph
                 graph.remove_node(lv_load_area_centre)
+
+    return graph
+
+
+def mv_connect_generators(mv_grid_district, graph, debug=False):
+    print('möööp')
+
+    return graph
