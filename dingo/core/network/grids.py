@@ -139,7 +139,7 @@ class MVGridDingo(GridDingo):
                     ctr += 1
 
     def routing(self, debug=False, anim=None):
-        """ Performs routing on grid graph nodes, adds resulting edges
+        """ Performs routing on grid graph nodes
 
         Args:
             debug: If True, information is printed while routing
@@ -157,6 +157,15 @@ class MVGridDingo(GridDingo):
         #     mv_branch = BranchDingo()
         #     mv_branches[edge] = mv_branch
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
+
+    def connect_generators(self, debug=False):
+        """ Connects MV generators (graph nodes) to grid (graph)
+
+        Args:
+            debug: If True, information is printed during process
+        """
+
+        self._graph = mv_connect.mv_connect_generators(self.grid_district, self._graph, debug)
 
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment.
