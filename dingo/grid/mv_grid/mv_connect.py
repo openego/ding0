@@ -747,14 +747,22 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                                                        generator_buffer_radius_inc, proj1)
 
                 # calc distance between node and grid's lines -> find nearest line
-                conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1,
-                                                                   conn_dist_weight=1, debug=debug,
+                conn_objects_min_stack = find_nearest_conn_objects(node_shp,
+                                                                   branches,
+                                                                   proj1,
+                                                                   conn_dist_weight=1,
+                                                                   debug=debug,
                                                                    branches_only=False)
 
                 # connect!
                 # go through the stack (from nearest to most far connection target object)
                 node_connected = False
                 for dist_min_obj in conn_objects_min_stack:
+                    # Note 1: conn_dist_ring_mod=0 to avoid re-routing of existent lines
+                    # Note 2: In connect_node(), the default cable/line type of grid is used. This is reasonable since
+                    #         the max. allowed power of the smallest possible cable/line type (3.64 MVA for overhead
+                    #         line of type 48-AL1/8-ST1A) exceeds the max. allowed power of a generator (4.5 MVA (dena))
+                    #         (if connected separately!)
                     target_obj_result = connect_node(node,
                                                      node_shp,
                                                      mv_grid_district.mv_grid,
