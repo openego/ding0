@@ -2,7 +2,7 @@
 from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CircuitBreakerDingo
-from dingo.core.network import LVLoadDingo
+from dingo.core.network.loads import *
 from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
@@ -110,6 +110,13 @@ class MVGridDingo(GridDingo):
     #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_load_areas()]]:
     #         self.graph_add_node(lv_station)
 
+    def add_load(self, lv_load):
+        """Adds a MV load to _loads and grid graph if not already existing"""
+        if lv_load not in self._loads and isinstance(lv_load,
+                                                     MVLoadDingo):
+            self._loads.append(lv_load)
+            self.graph_add_node(lv_load)
+
     def add_cable_distributor(self, cable_dist):
         """Adds a cable distributor to _cable_distributors if not already existing"""
         if cable_dist not in self.cable_distributors() and isinstance(cable_dist,
@@ -135,9 +142,8 @@ class MVGridDingo(GridDingo):
                     branch['branch'].id_db = lv_grid_district.id_db * 10**7 + ctr
                     ctr += 1
 
-
     def routing(self, debug=False, anim=None):
-        """ Performs routing on grid graph nodes, adds resulting edges
+        """ Performs routing on grid graph nodes
 
         Args:
             debug: If True, information is printed while routing
@@ -155,6 +161,15 @@ class MVGridDingo(GridDingo):
         #     mv_branch = BranchDingo()
         #     mv_branches[edge] = mv_branch
         # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
+
+    def connect_generators(self, debug=False):
+        """ Connects MV generators (graph nodes) to grid (graph)
+
+        Args:
+            debug: If True, information is printed during process
+        """
+
+        self._graph = mv_connect.mv_connect_generators(self.grid_district, self._graph, debug)
 
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment.
@@ -418,9 +433,9 @@ class LVGridDingo(GridDingo):
     def add_load(self, lv_load):
         """Adds a LV load to _loads and grid graph if not already existing"""
         if lv_load not in self._loads and isinstance(lv_load,
-                                                           LVLoadDingo):
+                                                     LVLoadDingo):
             self._loads.append(lv_load)
-            self._graph.add_node(lv_load)
+            self.graph_add_node(lv_load)
 
     def add_cable_dist(self, lv_cable_dist):
         """Adds a LV cable_dist to _cable_dists and grid graph if not already existing"""
@@ -528,7 +543,7 @@ class LVGridDingo(GridDingo):
                         branch_no=branch_no,
                         load_no=house_branch)
 
-                    lv_load = LVLoadDingo(id=self.grid_district.id_db,
+                    lv_load = LVLoadDingo(grid=self,
                                           string_id=i,
                                           branch_no=branch_no,
                                           load_no=house_branch)

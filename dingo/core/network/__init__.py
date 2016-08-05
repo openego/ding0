@@ -17,7 +17,8 @@ class GridDingo:
         self.id_db = kwargs.get('id_db', None)
         self.grid_district = kwargs.get('grid_district', None)
         self._cable_distributors = []
-        #self.geo_data = kwargs.get('geo_data', None)
+        self._loads = []
+        self._generators = []
         self.v_level = kwargs.get('v_level', None)
 
         self._graph = nx.Graph()
@@ -28,8 +29,29 @@ class GridDingo:
             yield cable_dist
 
     def cable_distributors_count(self):
-        """Returns the count of cable distributors in MV grid"""
+        """Returns the count of cable distributors in grid"""
         return len(self._cable_distributors)
+
+    def loads(self):
+        """Returns a generator for iterating over grid's loads"""
+        for load in self._loads:
+            yield load
+
+    def loads_count(self):
+        """Returns the count of loads in grid"""
+        return len(self._loads)
+
+    def generators(self):
+        """Returns a generator for iterating over grid's generators"""
+        for generator in self._generators:
+            yield generator
+
+    def add_generator(self, generator):
+        """Adds a generator to _generators and grid graph if not already existing"""
+        if generator not in self._generators and isinstance(generator,
+                                                            GeneratorDingo):
+            self._generators.append(generator)
+            self.graph_add_node(generator)
 
     def graph_add_node(self, node_object):
         """Adds a station or cable distributor object to grid graph if not already existing"""
@@ -37,7 +59,8 @@ class GridDingo:
             (isinstance(node_object, (StationDingo,
                                       CableDistributorDingo,
                                       LVLoadAreaCentreDingo,
-                                      CircuitBreakerDingo)))):
+                                      CircuitBreakerDingo,
+                                      GeneratorDingo)))):
             self._graph.add_node(node_object)
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and load_areas!
@@ -87,6 +110,21 @@ class GridDingo:
         edges = nx.get_edge_attributes(self._graph, 'branch')
         nodes = list(edges.keys())[list(edges.values()).index(branch)]
         return nodes
+
+    def graph_branches_from_node(self, node):
+        """ Returns branches that are connected to `node`
+
+        Args:
+            node: Dingo object (member of graph)
+        Returns:
+            branches: List of tuples (node, branch), content: node=Dingo object (member of graph),
+                                                              branch=BranchDingo object
+        """
+        branches = []
+        branches_dict = self._graph.edge[node]
+        for branch in branches_dict.items():
+            branches.append(branch)
+        return branches
 
     def graph_edges(self):
         """ Returns a generator for iterating over graph edges
@@ -152,7 +190,7 @@ class GridDingo:
         return length
 
 
-class StationDingo():
+class StationDingo:
     """
     Defines a MV/LVstation in DINGO
     -------------------------------
@@ -187,7 +225,7 @@ class StationDingo():
         # TODO: what if it exists? -> error message
 
 
-class BusDingo():
+class BusDingo:
     """ Create new pypower Bus class as child from oemof Bus used to define
     busses and generators data
     """
@@ -239,7 +277,7 @@ class BranchDingo:
         return 'branch_' + str(self.id_db)
 
 
-class TransformerDingo():
+class TransformerDingo:
     """
     Transformers
     ------------
@@ -276,14 +314,30 @@ class TransformerDingo():
         self.tap_ratio = kwargs.get('tap_ratio', None)
 
 
-class SourceDingo():
-    """
-    Generators
+class GeneratorDingo:
+    """ Generators (power plants of any kind)
     """
 
     def __init__(self, **kwargs):
-        #inherit parameters from oemof's Transformer
-        super().__init__(**kwargs)
+        self.id_db = kwargs.get('id_db', None)
+        self.geo_data = kwargs.get('geo_data', None)
+        self.mv_grid = kwargs.get('mv_grid', None)
+        self.lv_load_area = kwargs.get('lv_load_area', None)
+        self.lv_grid = kwargs.get('lv_grid', None)
+
+        self.capacity = kwargs.get('capacity', None)
+        self.type = kwargs.get('type', None)
+        self.subtype = kwargs.get('subtype', None)
+        self.v_level = kwargs.get('v_level', None)
+
+    def __repr__(self):
+        if self.v_level in [6,7]:
+            return ('generator_' + self.type + '_' + self.subtype +
+                    '_mvgd' + str(self.mv_grid.grid_district.id_db) +
+                    '_lvgd' + str(self.lv_grid.id_db) + '_' + str(self.id_db))
+        else:
+            return ('generator_' + self.type + '_' + self.subtype +
+                    '_mvgd' + str(self.mv_grid.id_db) + '_' + str(self.id_db))
 
 
 class CableDistributorDingo:
@@ -295,25 +349,13 @@ class CableDistributorDingo:
         self.grid = kwargs.get('grid', None)
 
 
-class LVLoadDingo():
-    """
-    Load in LV grids
-
-    Notes
-    -----
-    Current attributes and __repr__ is designed to fulfill requirements of
-    typified model grids.
-    """
+class LoadDingo:
+    """ Class for modelling a load """
 
     def __init__(self, **kwargs):
-        self.id = kwargs.get('id', None)
-        self.string_id = kwargs.get('string_id', None)
-        self.branch_no = kwargs.get('branch_no', None)
-        self.load_no = kwargs.get('load_no', None)
-
-    def __repr__(self):
-        return ('lv_load_' + str(self.id) + '_' + str(self.string_id) + '-'
-            + str(self.branch_no) + '_' + str(self.load_no))
+        self.id_db = kwargs.get('id', None)
+        self.geo_data = kwargs.get('geo_data', None)
+        self.grid = kwargs.get('grid', None)
 
 
 class CircuitBreakerDingo:

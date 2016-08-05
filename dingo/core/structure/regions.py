@@ -2,7 +2,6 @@ from . import RegionDingo
 #from dingo.core.network.grids import LVGridDingo
 from dingo.tools import config as cfg_dingo
 
-from networkx import all_neighbors
 from shapely.wkt import loads as wkt_loads
 
 
@@ -214,8 +213,8 @@ class LVLoadAreaDingo(RegionDingo):
 
     def is_connected(self):
         """Determines if the LV load area centre of this LV load area is connected to the MV grid's graph"""
-        neighbor_node_count = len([_ for _ in all_neighbors(self.mv_grid_district.mv_grid._graph,
-                                                            self.lv_load_area_centre)])
+
+        neighbor_node_count = len(self.mv_grid_district.mv_grid._graph.neighbors(self.lv_load_area_centre))
         if neighbor_node_count == 0:
             return False
         else:

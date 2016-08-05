@@ -25,22 +25,23 @@ conn = db.connection(section='oedb')
 #mv_grid_districts=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 #mv_grid_districts=[360, 571, 593, 368, 491, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 #mv_grid_districts=[482]
-mv_grid_districts=[360]
+mv_grid_districts=[368]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
-
-conn.close()
 
 nd.mv_parametrize_grid()
 
 nd.mv_routing(debug=False, animation=False)
+
+nd.import_generators(conn, mv_grid_districts)
+
+nd.set_branch_ids()
 
 # Open and close all circuit breakers in grid (for testing)
 #nd._mv_grid_districts[0].mv_grid.open_circuit_breakers()
 #nd._mv_grid_districts[0].mv_grid.close_circuit_breakers()
 
 
-conn = db.connection(section='oedb')
 nd._mv_grid_districts[0].mv_grid.export_to_pypsa(conn)
 nd.export_mv_grid(conn, mv_grid_districts)
 conn.close()
