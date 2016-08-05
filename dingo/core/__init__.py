@@ -636,6 +636,7 @@ class NetworkDingo:
             mv_circuit_breakers = []
             lv_load_area_centres = []
             lv_stations = []
+            mv_generators = []
             lines = []
 
             # get nodes from grid's graph and append to corresponding array
@@ -648,6 +649,8 @@ class NetworkDingo:
                     mv_stations.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, CircuitBreakerDingo):
                     mv_circuit_breakers.append((node.geo_data.x, node.geo_data.y))
+                elif isinstance(node, GeneratorDingo):
+                    mv_generators.append((node.geo_data.x, node.geo_data.y))
 
             # create shapely obj from stations and convert to
             # geoalchemy2.types.WKBElement
@@ -671,6 +674,11 @@ class NetworkDingo:
                 mv_stations_wkb = from_shape(Point(mv_stations), srid=srid)
             else:
                 mv_stations_wkb = None
+
+            if mv_generators:
+                mv_generators_wkb = from_shape(MultiPoint(mv_generators), srid=srid)
+            else:
+                mv_generators_wkb = None
 
             # get edges (lines) from grid's graph and append to corresponding array
             for branch in grid_district.mv_grid.graph_edges():
@@ -699,6 +707,7 @@ class NetworkDingo:
                 geom_mv_circuit_breakers=mv_circuit_breakers_wkb,
                 geom_lv_load_area_centres=lv_load_area_centres_wkb,
                 geom_lv_stations=lv_stations_wkb,
+                geom_mv_generators=mv_generators_wkb,
                 geom_mv_lines=mv_lines_wkb)
             session.add(dataset)
 
