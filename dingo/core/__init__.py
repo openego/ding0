@@ -528,6 +528,7 @@ class NetworkDingo:
             Nothing
         """
         # TODO: Currently only the renewable power plants are imported here, no conventional ones! (has to be done)
+        # TODO: Note: Connection of generators is done later on in NetworkDingo's method connect_generators()
 
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
@@ -736,14 +737,18 @@ class NetworkDingo:
             grid_district.mv_grid.routing(debug, anim)
 
     def connect_generators(self, debug=False):
-        """ Connects MV generators (graph nodes) to grid (graph) for every MV grid district
+        """ Connects generators (graph nodes) to grid (graph) for every MV grid district
 
         Args:
             debug: If True, information is printed during process
         """
 
-        for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.connect_generators(debug)
+        for mv_grid_district in self.mv_grid_districts():
+            mv_grid_district.mv_grid.connect_generators(debug)
+
+            # TODO: Currently only MV generators are connected, use following snippet to call connect LV generators
+            #for lv_load_area in mv_grid_district.lv_load_areas():
+            #    CALL FUTURE METHOD FOR LV connect_generators HERE
 
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see
