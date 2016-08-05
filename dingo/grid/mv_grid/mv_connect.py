@@ -681,6 +681,74 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
 
 def mv_connect_generators(mv_grid_district, graph, debug=False):
-    print('möööp')
+    """ Connect MV generators to MV grid
+
+    Args:
+        mv_grid_district: MVGridDistrictDingo object fore which the connection process has to be done
+        graph: NetworkX graph object with nodes
+        debug: If True, information is printed during process
+
+    Returns:
+        graph: NetworkX graph object with nodes and newly created branches
+    """
+
+    load_area_sat_buffer_radius = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius')
+    load_area_sat_buffer_radius_inc = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius_inc')
+
+    # WGS84 (conformal) to ETRS (equidistant) projection
+    proj1 = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),  # source coordinate system
+            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+
+    # ETRS (equidistant) to WGS84 (conformal) projection
+    proj2 = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:3035'),  # source coordinate system
+            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+
+    for node in sorted(graph.nodes(), key=lambda x: repr(x)):
+
+        # node is generator (since method is called from MV grid, there are only MV generators in graph.
+        if isinstance(node, GeneratorDingo):
+
+            # generator has to be connected to MV station
+            if node.v_level == '04 (HS/MS)':
+                mv_station = mv_grid_district.mv_grid.station()
+
+                branch_length = calc_geo_dist_vincenty(node, mv_station)
+
+                # TODO: set branch type to something reasonable (to be calculated)
+                branch_type =  mv_grid_district.mv_grid.default_branch_type
+
+                branch = BranchDingo(length=branch_length,
+                                     type=branch_type)
+                graph.add_edge(node, mv_station, branch=branch)
+
+            # generator has to be connected to MV grid
+            elif node.v_level == '05 (MS)':
+                node_shp = transform(proj1, node.geo_data)
+
+                # get branches within a the predefined radius `load_area_sat_buffer_radius`
+                branches = calc_geo_branches_in_buffer(node,
+                                                       mv_grid_district.mv_grid,
+                                                       load_area_sat_buffer_radius,
+                                                       load_area_sat_buffer_radius_inc, proj1)
+
+                # calc distance between node and grid's lines -> find nearest line
+                conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1,
+                                                                   conn_dist_weight=1, debug=debug,
+                                                                   branches_only=False)
+
+                # connect!
+                connect_node(node,
+                             node_shp,
+                             mv_grid_district.mv_grid,
+                             conn_objects_min_stack[0],
+                             proj2,
+                             graph,
+                             conn_dist_ring_mod=0,
+                             debug=debug)
+
 
     return graph

@@ -35,6 +35,8 @@ nd.mv_routing(debug=False, animation=False)
 
 nd.import_generators(conn)
 
+nd.connect_generators()
+
 nd.set_branch_ids()
 
 # Open and close all circuit breakers in grid (for testing)
