@@ -596,18 +596,16 @@ class NetworkDingo:
             # add generators to graph
             if generator.v_level in ['04 (HS/MS)', '05 (MS)']:
                 mv_grid.add_generator(generator)
-            elif generator.v_level in ['06 (MS/NS)', '07 (MS)']:
+            elif generator.v_level in ['06 (MS/NS)', '07 (NS)']:
                 raise NotImplementedError
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
-        Parameters
-        ----------
-        conn : sqlalchemy.engine.base.Connection object
-               Database connection
-        mv_grid_districts : List of MV grid_districts (instances of MVGridDistrictDingo class)
-            whose MV grids are exported.
+        Args:
+            conn: Database connection (sqlalchemy.engine.base.Connection object)
+            mv_grid_districts: List of MV grid_districts (instances of MVGridDistrictDingo class)
+                               whose MV grids are exported.
 
         """
         # TODO: currently only station- & line-positions are exported (no further electric data)
