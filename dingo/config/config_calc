@@ -53,6 +53,12 @@ population_per_apartment = 2.3
 #branch_detour_factor: unit: -
 branch_detour_factor = 1.4
 
+# load_in_generation_case: unit: kW
+load_in_generation_case = 0
+
+# generation_in_load_case: unit: kW
+generation_in_load_case = 0
+
 [mv_routing_tech_constraints]
 
 #mv_half_ring_count_max: unit: -

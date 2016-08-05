@@ -39,7 +39,9 @@ nd.mv_routing(debug=False, animation=False)
 #nd._mv_grid_districts[0].mv_grid.open_circuit_breakers()
 #nd._mv_grid_districts[0].mv_grid.close_circuit_breakers()
 
+
 conn = db.connection(section='oedb')
+nd._mv_grid_districts[0].mv_grid.export_to_pypsa(conn)
 nd.export_mv_grid(conn, mv_grid_districts)
 conn.close()
 

@@ -9,12 +9,16 @@ from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
-from dingo.tools import config as cfg_dingo
+from dingo.tools import config as cfg_dingo, pypsa_io
 import dingo.core
+
+
 
 import networkx as nx
 import pandas as pd
 import os
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime
 
 
 class MVGridDingo(GridDingo):
@@ -338,6 +342,47 @@ class MVGridDingo(GridDingo):
 
         # add peak demand for all LV load areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
+
+
+    def export_to_pypsa(self, conn):
+        """Exports MVGridDingo grid to PyPSA database tables
+
+        Peculiarities of MV grids are implemented here. Derive general export
+        method from this and adapt to needs of LVGridDingo
+
+        Notes
+        -----
+        It has to be proven that this method works for LV grids as well!
+
+        Dingo treats two stationary case of powerflow:
+        1) Full load: We assume no generation and loads to be set to peak load
+        2) Generation worst case:
+        """
+
+        # definitions for temp_resolution table
+        timesteps = 2
+        # TODO: temp_id=1 works only if its the only set of powerflow data in db
+        temp_id = 1
+        start_time = datetime(1970, 1, 1, 00, 00, 0)
+        resolution = 'h'
+
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        # Empty tables
+        pypsa_io.delete_powerflow_tables(session)
+
+        # Export node objects: Busses, Loads, Generators
+        # TODO: add export method for Generator
+        # TODO: add to LVStation case: LVTransformers
+        # TODO: add export of MVStation incl. bus and transformer
+        pypsa_io.export_nodes(self, session, temp_id)
+
+
+        # Export edges
+        # TODO: use `nd._mv_grid_districts[0].mv_grid.graph_edges()`
+
+
 
     def __repr__(self):
         return 'mv_grid_' + str(self.id_db)
