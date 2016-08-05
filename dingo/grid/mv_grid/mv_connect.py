@@ -700,8 +700,8 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
         graph: NetworkX graph object with nodes and newly created branches
     """
 
-    load_area_sat_buffer_radius = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius')
-    load_area_sat_buffer_radius_inc = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius_inc')
+    generator_buffer_radius = cfg_dingo.get('mv_connect', 'generator_buffer_radius')
+    generator_buffer_radius_inc = cfg_dingo.get('mv_connect', 'generator_buffer_radius_inc')
 
     # WGS84 (conformal) to ETRS (equidistant) projection
     proj1 = partial(
@@ -720,7 +720,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
         # node is generator (since method is called from MV grid, there are only MV generators in graph.
         if isinstance(node, GeneratorDingo):
 
-            # generator has to be connected to MV station
+            # ===== generator has to be connected to MV station =====
             if node.v_level == '04 (HS/MS)':
                 mv_station = mv_grid_district.mv_grid.station()
 
@@ -733,15 +733,18 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                                      type=branch_type)
                 graph.add_edge(node, mv_station, branch=branch)
 
-            # generator has to be connected to MV grid
+                if debug:
+                    print('Generator', node, 'was connected to', mv_station)
+
+            # ===== generator has to be connected to MV grid =====
             elif node.v_level == '05 (MS)':
                 node_shp = transform(proj1, node.geo_data)
 
-                # get branches within a the predefined radius `load_area_sat_buffer_radius`
+                # get branches within a the predefined radius `generator_buffer_radius`
                 branches = calc_geo_branches_in_buffer(node,
                                                        mv_grid_district.mv_grid,
-                                                       load_area_sat_buffer_radius,
-                                                       load_area_sat_buffer_radius_inc, proj1)
+                                                       generator_buffer_radius,
+                                                       generator_buffer_radius_inc, proj1)
 
                 # calc distance between node and grid's lines -> find nearest line
                 conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1,
