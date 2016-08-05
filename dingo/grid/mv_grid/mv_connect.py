@@ -752,14 +752,29 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                                                                    branches_only=False)
 
                 # connect!
-                connect_node(node,
-                             node_shp,
-                             mv_grid_district.mv_grid,
-                             conn_objects_min_stack[0],
-                             proj2,
-                             graph,
-                             conn_dist_ring_mod=0,
-                             debug=debug)
+                # go through the stack (from nearest to most far connection target object)
+                node_connected = False
+                for dist_min_obj in conn_objects_min_stack:
+                    target_obj_result = connect_node(node,
+                                                     node_shp,
+                                                     mv_grid_district.mv_grid,
+                                                     dist_min_obj,
+                                                     proj2,
+                                                     graph,
+                                                     conn_dist_ring_mod=0,
+                                                     debug=debug)
+
+                    if target_obj_result is not None:
+                        if debug:
+                            print('Generator', node, 'was connected to', target_obj_result)
+                        node_connected = True
+                        break
+
+                if not node_connected:
+                    print('Generator', node, 'could not be connected, try to increase the parameter',
+                          '`generator_buffer_radius` in config file `config_calc`',
+                          'to gain more possible connection points.')
+
 
 
     return graph
