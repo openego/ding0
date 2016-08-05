@@ -309,6 +309,7 @@ class GeneratorDingo:
         self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.mv_grid = kwargs.get('mv_grid', None)
+        self.lv_load_area = kwargs.get('lv_load_area', None)
         self.lv_grid = kwargs.get('lv_grid', None)
 
         self.capacity = kwargs.get('capacity', None)
