@@ -184,20 +184,16 @@ class NetworkDingo:
 
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-    def import_mv_grid_districts(self, conn, mv_grid_districts=None):
-        """Imports MV grid_districts and MV stations from database, reprojects geodata
-        and and initiates objects.
+    def import_mv_grid_districts(self, conn, mv_grid_districts_no=None):
+        """ Imports MV grid_districts and MV stations from database, reprojects geodata
+            and and initiates objects.
 
-        Parameters
-        ----------
-        conn : sqlalchemy.engine.base.Connection object
-               Database connection
-        mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
-            all grid_districts & stations are imported)
+        Args:
+            conn: sqlalchemy.engine.base.Connection object Database connection
+            mv_grid_districts_no: List of MV grid_districts/stations (int) to be imported
 
-        Returns
-        -------
-        Nothing
+        Returns:
+            Nothing
 
         See Also
         --------
@@ -208,7 +204,7 @@ class NetworkDingo:
         # TODO: Complete "See Also"-List
 
         # check arguments
-        if not all(isinstance(_, int) for _ in mv_grid_districts):
+        if not all(isinstance(_, int) for _ in mv_grid_districts_no):
             raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
         # get database naming and srid settings from config
@@ -232,7 +228,7 @@ class NetworkDingo:
                                        label('subs_geom')).\
             join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id ==
                  orm_EgoDeuSubstation.id).\
-            filter(orm_GridDistrict.subst_id.in_(mv_grid_districts))
+            filter(orm_GridDistrict.subst_id.in_(mv_grid_districts_no))
 
         # read MV data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
@@ -274,8 +270,7 @@ class NetworkDingo:
                 # add sum of peak loads of underlying lv grid_districts to mv_grid_district
                 mv_grid_district.add_peak_demand()
         except:
-            raise ValueError('unexpected error while initiating MV grid_districts' \
-                             'from DB dataset.')
+            raise ValueError('unexpected error while initiating MV grid_districts from DB dataset.')
 
     def import_lv_load_areas(self, conn, mv_grid_district, lv_grid_districts,
                              lv_stations):
