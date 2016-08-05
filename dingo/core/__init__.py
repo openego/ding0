@@ -71,6 +71,19 @@ class NetworkDingo:
         if mv_grid_district not in self.mv_grid_districts():
             self._mv_grid_districts.append(mv_grid_district)
 
+    def get_lv_load_area_obj_from_id(self):
+        """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object ()
+        Returns:
+            lv_load_areas: dict with Format {id_1: obj_1, ..., id_n: obj_n}
+        """
+
+        lv_load_areas = {}
+        for mv_grid_district in self.mv_grid_districts():
+            for lv_load_area in mv_grid_district.lv_load_areas():
+                lv_load_areas[lv_load_area.id_db] = lv_load_area
+
+        return lv_load_areas
+
     def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
                         station_geo_data):
         """initiates single MV grid_district including station and grid
