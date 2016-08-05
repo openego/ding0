@@ -125,6 +125,7 @@ class NetworkDingo:
 
     def build_lv_grid_district(self, conn, lv_load_area, string_properties,
                                apartment_string, apartment_trafo,
+                               trafo_parameters,
                                lv_grid_districts, lv_stations):
         """
         Instantiates and associates lv_grid_district incl grid and station
@@ -139,6 +140,8 @@ class NetworkDingo:
             Relational table of apartment count and strings of model grid
         apartment_trafo: DataFrame
             Relational table of apartment count and trafo size
+        trafo_parameters: DataFrame
+            Equipment parameters of LV transformers
         lv_grid_districts: DataFrame
             Table containing lv_grid_districts of according load_area
         lv_stations : DataFrame
@@ -170,11 +173,15 @@ class NetworkDingo:
                 string_properties,
                 apartment_string,
                 apartment_trafo,
+                trafo_parameters,
                 lv_grid_district.population)
 
-            lv_transformer = TransformerDingo(equip_trans_id=id,
-                                              v_level=0.4,
-                                              s_max_longterm=transformer)
+            lv_transformer = TransformerDingo(
+                equip_trans_id=id,
+                v_level=0.4,
+                s_max_longterm=transformer['trafo_apparent_power'],
+                r=transformer['r'],
+                x=transformer['x'])
 
             lv_station.add_transformer(lv_transformer)
 
@@ -373,7 +380,8 @@ class NetworkDingo:
                                           index_col='id_db')
 
         # read LV model grid data from CSV file
-        string_properties, apartment_string, apartment_trafo = self.import_lv_model_grids()
+        string_properties, apartment_string, apartment_trafo, trafo_parameters\
+            = self.import_lv_model_grids()
 
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
@@ -408,6 +416,7 @@ class NetworkDingo:
                                             string_properties,
                                             apartment_string,
                                             apartment_trafo,
+                                            trafo_parameters,
                                             lv_grid_districts_per_load_area,
                                             lv_stations_per_load_area)
 
@@ -509,6 +518,8 @@ class NetworkDingo:
                                                "apartment_string")
         apartment_trafo_file = cfg_dingo.get("model_grids",
                                                "apartment_trafo")
+        trafo_parameters_file = cfg_dingo.get("model_grids",
+                                              "trafo_parameters")
 
         package_path = dingo.__path__[0]
 
@@ -524,8 +535,13 @@ class NetworkDingo:
             package_path, 'data', apartment_trafo_file),
             comment='#', delimiter=';', decimal=',',
             index_col='apartment_count')
+        trafo_parameters = pd.read_csv(os.path.join(
+            package_path, 'data', trafo_parameters_file),
+            comment='#', delimiter=',', decimal='.',
+            index_col='transformer_size')
 
-        return string_properties, apartment_string, apartment_trafo
+        return string_properties, apartment_string, apartment_trafo,\
+            trafo_parameters
 
     def import_generators(self, conn, mv_grid_districts_no, debug=False):
         """ Imports generators

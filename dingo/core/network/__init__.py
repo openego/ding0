@@ -312,6 +312,8 @@ class TransformerDingo:
         self.s_max_c = kwargs.get('s_max_emergency', None)
         self.phase_angle = kwargs.get('phase_angle', None)
         self.tap_ratio = kwargs.get('tap_ratio', None)
+        self.r = kwargs.get('r', None)
+        self.x = kwargs.get('x', None)
 
 
 class GeneratorDingo:

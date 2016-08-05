@@ -453,6 +453,7 @@ class LVGridDingo(GridDingo):
                                    string_properties,
                                    apartment_string,
                                    apartment_trafo,
+                                   trafo_parameters,
                                    population):
         """
         Selects typified model grid based on population
@@ -465,6 +466,8 @@ class LVGridDingo(GridDingo):
             Relational table of apartment count and strings of model grid
         apartment_trafo: DataFrame
             Relational table of apartment count and trafo size
+        trafo_parameters: DataFrame
+            Equipment parameters of LV transformers
         population: Int
             Population within LV grid district
 
@@ -472,8 +475,8 @@ class LVGridDingo(GridDingo):
         -------
         selected_strings_df: DataFrame
             Selected string of typified model grid
-        transformer: Int
-            Size of Transformer given in kVar
+        transformer: Dataframe
+            Parameters of chosen Transformer
         """
 
         apartment_house_branch_ratio = cfg_dingo.get("assumptions",
@@ -497,6 +500,11 @@ class LVGridDingo(GridDingo):
         selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
 
         transformer = apartment_trafo.loc[apartments]
+
+        transformer['x'] = trafo_parameters.loc[
+            transformer['trafo_apparent_power'], 'x']
+        transformer['r'] = trafo_parameters.loc[
+            transformer['trafo_apparent_power'], 'r']
 
         return selected_strings_df, transformer
 
