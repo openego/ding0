@@ -522,21 +522,23 @@ class NetworkDingo:
 
         return string_properties, apartment_string, apartment_trafo
 
-    def import_generators(self, conn, mv_grid_districts_no, debug=False):
+    def import_generators(self, conn, debug=False):
         """ Imports generators
 
         Args:
-            conn:
-            mv_grid_districts_no:
-            debug:
+            conn: SQLalchemy database connection
+            debug: If True, information is printed during process
 
         Returns:
-
+            Nothing
         """
         # TODO: Currently only the renewable power plants are imported here, no conventional ones! (has to be done)
 
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
+
+        # build dicts to map MV grid district and LV load area ids to related objects
+        mv_grid_districts_dict, lv_load_areas_dict = self.get_mvgd_lvla_obj_from_id()
 
         Session = sessionmaker(bind=conn)
         session = Session()
@@ -554,20 +556,16 @@ class NetworkDingo:
                                         orm_EgoDeuDea.voltage_level,
                                          func.ST_AsText(func.ST_Transform(
                                         orm_EgoDeuDea.geom, srid)).label('geom')).\
-                                        filter(orm_EgoDeuDea.subst_id.in_(mv_grid_districts_no)).\
+                                        filter(orm_EgoDeuDea.subst_id.in_(list(mv_grid_districts_dict))).\
                                         filter(or_(orm_EgoDeuDea.voltage_level == '05 (MS)',
                                                    orm_EgoDeuDea.voltage_level == '04 (HS/MS)'))
 
         # TODO: Currently only MV generators are imported, please include LV!
-        # TODO: Easter-egg for Guido:
 
         # read data from db
         generators = pd.read_sql_query(generators_sqla.statement,
                                        session.bind,
                                        index_col='id')
-
-        # build dicts to map MV grid district and LV load area ids to related objects
-        mv_grid_districts_dict, lv_load_areas_dict = self.get_mvgd_lvla_obj_from_id()
 
         for id_db, row in generators.iterrows():
             # ===== DEBUG STUFF (NOT ALL GENERATOR GEOMS IN DATABASE YET -> catch empty geoms) =====
