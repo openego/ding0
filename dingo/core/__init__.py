@@ -692,6 +692,16 @@ class NetworkDingo:
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.routing(debug, anim)
 
+    def connect_generators(self, debug=False):
+        """ Connects MV generators (graph nodes) to grid (graph) for every MV grid district
+
+        Args:
+            debug: If True, information is printed during process
+        """
+
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.connect_generators(debug)
+
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see
             method `parametrize_grid()` in class `MVGridDingo` for details.
