@@ -22,7 +22,7 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, proj):
     return branches
 
 
-def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
+def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
     """ Determines branches in nodes' associated graph that are at least partly within buffer of `radius` from `node`.
         If there are no nodes, the buffer is successively extended by `radius_inc` until nodes are found.
 
@@ -43,7 +43,7 @@ def calc_geo_branches_in_buffer(node, radius, radius_inc, proj):
     while not branches:
         node_shp = transform(proj, node.geo_data)
         buffer_zone_shp = node_shp.buffer(radius)
-        for branch in node.lv_load_area.mv_grid_district.mv_grid.graph_edges():
+        for branch in mv_grid.graph_edges():
             nodes = branch['adj_nodes']
             branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
             if buffer_zone_shp.intersects(branch_shp):
