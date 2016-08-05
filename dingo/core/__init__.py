@@ -550,7 +550,10 @@ class NetworkDingo:
                                         orm_EgoDeuDea.generation_subtype,
                                         orm_EgoDeuDea.voltage_level,
                                          func.ST_AsText(func.ST_Transform(
-                                        orm_EgoDeuDea.geom_new, srid)).label('geom')).\
+                                        orm_EgoDeuDea.geom_new, srid)).label('geom_new'),
+                                        orm_EgoDeuDea.voltage_level,
+                                         func.ST_AsText(func.ST_Transform(
+                                        orm_EgoDeuDea.geom, srid)).label('geom')).\
                                         filter(orm_EgoDeuDea.subst_id.in_(mv_grid_districts_no)).\
                                         filter(or_(orm_EgoDeuDea.voltage_level == '05 (MS)',
                                                    orm_EgoDeuDea.voltage_level == '04 (HS/MS)'))
@@ -568,12 +571,12 @@ class NetworkDingo:
 
         for id_db, row in generators.iterrows():
             # ===== DEBUG STUFF (NOT ALL GENERATOR GEOMS IN DATABASE YET -> catch empty geoms) =====
-            # TODO: Remove when fixed!
-            if not row['geom']:
-                geo_data = None
-                print('Generator', str(id_db), 'has no geom, bad day dude!')
-            else:
+            # TODO: Remove when fixed! And delete column 'geom' (original geom from EnergyMap) from query above
+            if not row['geom_new']:
                 geo_data = wkt_loads(row['geom'])
+                print('Generator', str(id_db), 'has no geom_new entry, bad day dude! (using EnergyMap\'s geom entry)')
+            else:
+                geo_data = wkt_loads(row['geom_new'])
             # ======================================================================================
 
             # look up MV grid
