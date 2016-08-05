@@ -137,7 +137,7 @@ class NetworkDingo:
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
-		peak_load=lv_load_area.peak_load_sum / lv_grid)
+                peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
 
             model_grid, transformer = lv_grid.select_typified_grid_model(
                 string_properties,
