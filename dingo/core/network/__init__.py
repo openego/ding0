@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
+from dingo.core.network import GeneratorDingo
 
 
 class GridDingo:
@@ -18,7 +19,7 @@ class GridDingo:
         self.grid_district = kwargs.get('grid_district', None)
         self._cable_distributors = []
         self._loads = []
-        #self.geo_data = kwargs.get('geo_data', None)
+        self._generators = []
         self.v_level = kwargs.get('v_level', None)
 
         self._graph = nx.Graph()
@@ -33,7 +34,7 @@ class GridDingo:
         return len(self._cable_distributors)
 
     def loads(self):
-        """Returns a generator for iterating over loads"""
+        """Returns a generator for iterating over grid's loads"""
         for load in self._loads:
             yield load
 
@@ -41,13 +42,26 @@ class GridDingo:
         """Returns the count of loads in grid"""
         return len(self._loads)
 
+    def generators(self):
+        """Returns a generator for iterating over grid's generators"""
+        for generator in self._generators:
+            yield generator
+
+    def add_generator(self, generator):
+        """Adds a generator to _generators and grid graph if not already existing"""
+        if generator not in self._generators and isinstance(generator,
+                                                            GeneratorDingo):
+            self._generators.append(generator)
+            self.graph_add_node(generator)
+
     def graph_add_node(self, node_object):
         """Adds a station or cable distributor object to grid graph if not already existing"""
         if ((node_object not in self._graph.nodes()) and
             (isinstance(node_object, (StationDingo,
                                       CableDistributorDingo,
                                       LVLoadAreaCentreDingo,
-                                      CircuitBreakerDingo)))):
+                                      CircuitBreakerDingo,
+                                      GeneratorDingo)))):
             self._graph.add_node(node_object)
 
     # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and load_areas!
