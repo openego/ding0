@@ -621,7 +621,10 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                 # =========================================
                 for lv_grid_district in lv_load_area.lv_grid_districts():
                     # get branches that are partly or fully located in load area
-                    branches = calc_geo_branches_in_polygon(mv_grid_district.mv_grid, lv_load_area.geo_area, proj1)
+                    branches = calc_geo_branches_in_polygon(mv_grid_district.mv_grid,
+                                                            lv_load_area.geo_area,
+                                                            mode='intersects',
+                                                            proj=proj1)
 
                     # filter branches that belong to satellites (load area groups) if LV load area is not a satellite
                     # itself
@@ -684,6 +687,19 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
                 # delete LV load area centre from graph
                 graph.remove_node(lv_load_area_centre)
+
+            # Replace all overhead lines by cables
+            # ====================================
+            # if grid's default type is overhead line
+            if mv_grid_district.mv_grid.default_branch_kind == 'line':
+                # get all branches in load area
+                branches = calc_geo_branches_in_polygon(mv_grid_district.mv_grid,
+                                                        lv_load_area.geo_area,
+                                                        mode='contains',
+                                                        proj=proj1)
+                # set type
+                for branch in branches:
+                    branch['branch'].type = mv_grid_district.mv_grid.default_branch_type_settle
 
     return graph
 
