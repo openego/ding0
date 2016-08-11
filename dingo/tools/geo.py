@@ -8,7 +8,7 @@ from functools import partial
 from dingo.tools import config as cfg_dingo
 
 
-def calc_geo_branches_in_polygon(mv_grid, polygon, proj):
+def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
     # TODO: DOCSTRING
 
     branches = []
@@ -16,9 +16,18 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, proj):
     for branch in mv_grid.graph_edges():
         nodes = branch['adj_nodes']
         branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
-        if polygon_shp.intersects(branch_shp):
-            branches.append(branch)
 
+        # check if branches intersect with polygon if mode = 'intersects'
+        if mode == 'intersects':
+            if polygon_shp.intersects(branch_shp):
+                branches.append(branch)
+        # check if polygon contains branches if mode = 'contains'
+        elif mode == 'contains':
+            if polygon_shp.contains(branch_shp):
+                branches.append(branch)
+        # error
+        else:
+            raise ValueError('Mode is invalid!')
     return branches
 
 
