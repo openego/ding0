@@ -5,7 +5,6 @@ from dingo.core.network import BranchDingo, CircuitBreakerDingo
 from dingo.core.network.loads import *
 from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
-from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
@@ -40,6 +39,7 @@ class MVGridDingo(GridDingo):
         self._circuit_breakers = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
         self.default_branch_type = kwargs.get('default_branch_type', None)
+        self.default_branch_type_settle = kwargs.get('default_branch_type_settle', None)
         self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
 
         self.add_station(kwargs.get('station', None))
@@ -151,8 +151,8 @@ class MVGridDingo(GridDingo):
 
         # do the routing
         self._graph = mv_routing.solve(self._graph, debug, anim)
-        self._graph = mv_connect.mv_connect_satellites(self, self._graph, LVLoadAreaCentreDingo(), debug)
-        mv_connect.mv_connect_stations(self.grid_district, self._graph, debug)
+        self._graph = mv_connect.mv_connect_satellites(self, self._graph, debug)
+        self._graph = mv_connect.mv_connect_stations(self.grid_district, self._graph, debug)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:
@@ -186,8 +186,10 @@ class MVGridDingo(GridDingo):
         # set MV station's voltage level
         self._station.set_operation_voltage_level()
 
-        # set default branch type
-        self.default_branch_type, self.default_branch_type_aggregated = self.set_default_branch_type(debug)
+        # set default branch types (normal, aggregated areas and within settlements)
+        self.default_branch_type,\
+        self.default_branch_type_aggregated,\
+        self.default_branch_type_settle = self.set_default_branch_type(debug)
 
         # choose appropriate transformers for each MV sub-station
         self._station.choose_transformers()
@@ -287,6 +289,16 @@ class MVGridDingo(GridDingo):
                                             comment='#',
                                             converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
 
+            # load cables as well to use it within settlements
+            equipment_parameters_file_settle = cfg_dingo.get('equipment',
+                                                             'equipment_parameters_cables')
+            branch_parameters_settle = pd.read_csv(os.path.join(package_path, 'data',
+                                                   equipment_parameters_file_settle),
+                                                   comment='#',
+                                                   converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+            # select types with appropriate voltage level
+            branch_parameters_settle = branch_parameters_settle[branch_parameters_settle['U_n'] == self.v_level]
+
         elif self.default_branch_kind == 'cable':
             load_factor_normal = float(cfg_dingo.get('assumptions',
                                                      'load_factor_cable_normal'))
@@ -315,6 +327,8 @@ class MVGridDingo(GridDingo):
                              self.grid_district.peak_load_aggregated) *
                             (3**0.5) / self.v_level)  # units: kVA / kV = A
 
+        branch_type_settle = branch_type_settle_max = None
+
         # search the smallest possible line/cable for MV grid district in equipment datasets for all load areas
         # excluding those of type satellite and aggregated
         for idx, row in branch_parameters.iterrows():
@@ -331,14 +345,21 @@ class MVGridDingo(GridDingo):
 
             # if count of half rings is below or equal max. allowed count, use current branch type as default
             if half_ring_count <= mv_half_ring_count_max:
-                return row, branch_type_max
+                if self.default_branch_kind == 'line':
+                    # get type with similar I_max_th
+                    branch_type_settle = branch_parameters_settle.iloc[(branch_parameters_settle['I_max_th'] -
+                                                                        row['I_max_th']).abs().argsort()[:1]]
+                return row, branch_type_max, branch_type_settle
 
         # no equipment was found, return largest available line/cable
 
         if debug:
             print('No appropriate line/cable type could be found for', self, ', declare some load areas as aggregated.')
 
-        return branch_type_max, branch_type_max
+        if self.default_branch_kind == 'line':
+            branch_type_settle_max = branch_parameters_settle.loc[branch_parameters_settle['I_max_th'].idxmax()]
+
+        return branch_type_max, branch_type_max, branch_type_settle_max
 
     def set_nodes_aggregation_flag(self, peak_current_branch_max):
         """ Set LV load areas with too high demand to aggregated type.

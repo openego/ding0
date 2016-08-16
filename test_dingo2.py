@@ -25,15 +25,16 @@ conn = db.connection(section='oedb')
 #mv_grid_districts=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 #mv_grid_districts=[360, 571, 593, 368, 491, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 #mv_grid_districts=[482]
-mv_grid_districts=[368]
+mv_grid_districts=[360]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
+nd.import_generators(conn)
 
 nd.mv_parametrize_grid()
 
 nd.mv_routing(debug=False, animation=False)
 
-nd.import_generators(conn, mv_grid_districts)
+nd.connect_generators()
 
 nd.set_branch_ids()
 

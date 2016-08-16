@@ -333,12 +333,12 @@ class GeneratorDingo:
         self.v_level = kwargs.get('v_level', None)
 
     def __repr__(self):
-        if self.v_level in [6,7]:
-            return ('generator_' + self.type + '_' + self.subtype +
+        if self.v_level in ['06 (MS/NS)', '07 (NS)']:
+            return ('generator_' + str(self.type) + '_' + str(self.subtype) +
                     '_mvgd' + str(self.mv_grid.grid_district.id_db) +
                     '_lvgd' + str(self.lv_grid.id_db) + '_' + str(self.id_db))
         else:
-            return ('generator_' + self.type + '_' + self.subtype +
+            return ('generator_' + str(self.type) + '_' + str(self.subtype) +
                     '_mvgd' + str(self.mv_grid.id_db) + '_' + str(self.id_db))
 
 

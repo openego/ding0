@@ -136,6 +136,7 @@ def routing_solution_to_dingo_graph(graph, solution):
 
     return graph
 
+
 def solve(graph, debug=False, anim=None):
     """ Do MV routing for given nodes in `graph`. Translate data from node objects to appropriate format before.
 
