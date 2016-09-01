@@ -396,11 +396,11 @@ class MVGridDingo(GridDingo):
         """
 
         # definitions for temp_resolution table
-        timesteps = 2
         # TODO: temp_id=1 works only if its the only set of powerflow data in db
         temp_id = 1
+        timesteps = 2
         start_time = datetime(1970, 1, 1, 00, 00, 0)
-        resolution = 'h'
+        resolution = 'H'
 
         Session = sessionmaker(bind=conn)
         session = Session()
@@ -418,7 +418,11 @@ class MVGridDingo(GridDingo):
         # TODO: use `nd._mv_grid_districts[0].mv_grid.graph_edges()`
         pypsa_io.export_edges(self, session)
 
-
+        # Create table about temporal coverage of PF analysis
+        pypsa_io.create_temp_resolution_table(session,
+                                              timesteps=timesteps,
+                                              resolution=resolution,
+                                              start_time=start_time)
 
     def __repr__(self):
         return 'mv_grid_' + str(self.id_db)
@@ -506,6 +510,7 @@ class LVGridDingo(GridDingo):
             "population_per_apartment")
 
         apartments = round(population / population_per_apartment)
+
         if apartments > 196:
             apartments = 196
 

@@ -250,4 +250,18 @@ def export_edges(grid, session):
             )
             session.add(line)
             session.commit()
+
+def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
+                                 temp_id=1):
+    """
+    Write info about temporal coverage into table `temp_resolution`
+    """
+
+    temp_resolution = orm_pypsa.TempResolution(
+        temp_id=temp_id,
+        timesteps=timesteps,
+        resolution=resolution,
+        start_time=start_time
+        )
+    session.add(temp_resolution)
     session.commit()
