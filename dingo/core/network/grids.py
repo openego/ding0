@@ -416,6 +416,7 @@ class MVGridDingo(GridDingo):
 
         # Export edges
         # TODO: use `nd._mv_grid_districts[0].mv_grid.graph_edges()`
+        pypsa_io.export_edges(self, session)
 
 
 

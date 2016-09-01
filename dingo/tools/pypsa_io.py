@@ -185,4 +185,69 @@ def export_nodes(grid, session, temp_id, lv_transformer=True):
 
     # write changes to database
     session.commit()
+
+
+def export_edges(grid, session):
+    """Export nodes of grid graph representation to pypsa input tables
+
+    Parameters
+    ----------
+    grid: MVGridDingo
+        Instance of MVGridDingo class
+    session: SQLAlchemy session object
+    """
+
+    omega = 2 * pi * 50
+    srid = int(cfg_dingo.get('geo', 'srid'))
+
+    for edge in grid.graph_edges():
+        # if isinstance(edge, BranchDingo):
+        if not (isinstance(edge['adj_nodes'][0],
+                           (LVLoadAreaCentreDingo,
+                            # MVStationDingo,
+                            CircuitBreakerDingo)) or
+                    isinstance(edge['adj_nodes'][1],
+                               (LVLoadAreaCentreDingo,
+                                # MVStationDingo,
+                                CircuitBreakerDingo))):
+            # TODO: check s_nom calculation
+            # TODO: 1. do we need to consider 3 cables
+            # TODO: 2. do we need to respect to consider a load factor
+
+            # TODO: find the real cause for being L, C, I_th_max type of Series
+            if (isinstance(edge['branch'].type['L'], Series) or
+                isinstance(edge['branch'].type['C'], Series)):
+                x = omega * edge['branch'].type['L'].values[0] - 1 / (
+                    omega * edge['branch'].type['C'].values[0])
+            else:
+                x = omega * edge['branch'].type['L'] - 1 / (
+                    omega * edge['branch'].type['C'])
+
+            if isinstance(edge['branch'].type['R'], Series) :
+                r = edge['branch'].type['R'].values[0]
+            else:
+                r = edge['branch'].type['R']
+
+            if (isinstance(edge['branch'].type['I_max_th'], Series) or
+                    isinstance(edge['branch'].type['U_n'], Series)):
+                s_nom = edge['branch'].type['I_max_th'].values[0] * \
+                    edge['branch'].type['U_n'].values[0]
+            else:
+                s_nom = edge['branch'].type['I_max_th'] * \
+                    edge['branch'].type['U_n']
+
+            line = orm_pypsa.Line(
+                line_id='_'.join(['MV', str(grid.id_db), 'lin', str(edge['branch'].id_db)]),
+                bus0=edge['adj_nodes'][0].pypsa_id,
+                bus1=edge['adj_nodes'][1].pypsa_id,
+                x=x,
+                r=r * edge['branch'].length,
+                s_nom=s_nom,
+                length=edge['branch'].length,
+                cables=3,
+                geom=from_shape(LineString([edge['adj_nodes'][0].geo_data,
+                                 edge['adj_nodes'][1].geo_data]), srid=srid)
+            )
+            session.add(line)
+            session.commit()
     session.commit()
