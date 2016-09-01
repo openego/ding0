@@ -152,8 +152,13 @@ def export_nodes(grid, session, temp_id, lv_transformer=True):
                 bus_id=node.pypsa_id,
                 temp_id=temp_id,
                 v_mag_pu_set=[1, 1])
+            slack_gen = orm_pypsa.Generator(
+                generator_id='_'.join(['MV', str(grid.id_db), 'slack']),
+                bus=node.pypsa_id,
+                control='Slack')
             session.add(bus_mv_station)
             session.add(bus_pq_set_mv_station)
+            session.add(slack_gen)
         elif isinstance(node, GeneratorDingo):
             bus_gen = orm_pypsa.Bus(
                 bus_id=node.pypsa_id,
