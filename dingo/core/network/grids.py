@@ -412,8 +412,7 @@ class MVGridDingo(GridDingo):
         # TODO: add export method for Generator
         # TODO: add to LVStation case: LVTransformers
         # TODO: add export of MVStation incl. bus and transformer
-        pypsa_io.export_nodes(self, session, temp_id)
-
+        pypsa_io.export_nodes(self, session, temp_id, lv_transformer=False)
 
         # Export edges
         # TODO: use `nd._mv_grid_districts[0].mv_grid.graph_edges()`

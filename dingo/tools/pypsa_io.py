@@ -6,8 +6,9 @@ from dingo.core import MVCableDistributorDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 
 from geoalchemy2.shape import from_shape
-from math import tan, acos
-
+from math import tan, acos, pi
+from shapely.geometry import LineString
+from pandas import Series
 
 def delete_powerflow_tables(session):
     """Empties all powerflow tables to start export from scratch
@@ -17,14 +18,16 @@ def delete_powerflow_tables(session):
     session: SQLAlchemy session object
     """
     tables = [orm_pypsa.Bus, orm_pypsa.BusVMagSet, orm_pypsa.Load,
-              orm_pypsa.LoadPqSet]
+              orm_pypsa.LoadPqSet, orm_pypsa.Generator,
+              orm_pypsa.GeneratorPqSet, orm_pypsa.Line, orm_pypsa.Transformer,
+              orm_pypsa.TempResolution]
 
     for table in tables:
         session.query(table).delete()
     session.commit()
 
 
-def export_nodes(grid, session, temp_id):
+def export_nodes(grid, session, temp_id, lv_transformer=True):
     """Export nodes of grid graph representation to pypsa input tables
 
     Parameters
@@ -34,6 +37,8 @@ def export_nodes(grid, session, temp_id):
     session: SQLAlchemy session object
     temp_id: int
         ID of `temp_resolution` table
+    lv_transformer: boolean, default True
+        Toggles between representation of LV transformer
 
     Notes
     -----
@@ -68,40 +73,47 @@ def export_nodes(grid, session, temp_id):
                     bus_id=node.pypsa_id,
                     temp_id = temp_id,
                     v_mag_pu_set=[1, 1])
-                # Add transformer to bus
-                transformer = orm_pypsa.Transformer(
-                    trafo_id='_'.join(['MV', str(grid.id_db), 'trf', str(node.id_db)]),
-                    s_nom=node._transformers[0].s_max_a,
-                    bus0='_'.join(['MV', str(grid.id_db), 'tru', str(node.id_db)]),
-                    bus1='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
-                    x=node._transformers[0].x,
-                    r=node._transformers[0].r,
-                    tap_ratio=1,
-                    geom=from_shape(node.geo_data, srid=srid))
-                # Add bus on transformer's LV side
-                bus_lv = orm_pypsa.Bus(
-                    bus_id='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
-                    v_nom=node._transformers[0].v_level,
-                    geom=from_shape(node.geo_data, srid=srid))
-                bus_pq_set_lv = orm_pypsa.BusVMagSet(
-                    bus_id='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
-                    temp_id=temp_id,
-                    v_mag_pu_set=[1, 1])
-                # Add aggregated LV load to bus
-                load = orm_pypsa.Load(
-                    load_id = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
-                    bus = '_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]))
+                session.add(bus_mv)
+                session.add(bus_pq_set_mv)
+                if lv_transformer is True:
+                    # Add transformer to bus
+                    transformer = orm_pypsa.Transformer(
+                        trafo_id='_'.join(['MV', str(grid.id_db), 'trf', str(node.id_db)]),
+                        s_nom=node._transformers[0].s_max_a,
+                        bus0=node.pypsa_id,
+                        bus1='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
+                        x=node._transformers[0].x,
+                        r=node._transformers[0].r,
+                        tap_ratio=1,
+                        geom=from_shape(node.geo_data, srid=srid))
+                    session.add(transformer)
+                    # Add bus on transformer's LV side
+                    bus_lv = orm_pypsa.Bus(
+                        bus_id='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
+                        v_nom=node._transformers[0].v_level,
+                        geom=from_shape(node.geo_data, srid=srid))
+                    bus_pq_set_lv = orm_pypsa.BusVMagSet(
+                        bus_id='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
+                        temp_id=temp_id,
+                        v_mag_pu_set=[1, 1])
+                    session.add(bus_lv)
+                    session.add(bus_pq_set_lv)
+                    # Add aggregated LV load to LV bus
+                    load = orm_pypsa.Load(
+                        load_id = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
+                        bus = '_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]))
+                else:
+                    # Add aggregated LV load to MV bus
+                    load = orm_pypsa.Load(
+                        load_id='_'.join(
+                            ['MV', str(grid.id_db), 'loa', str(node.id_db)]),
+                        bus=node.pypsa_id)
                 load_pq_set = orm_pypsa.LoadPqSet(
                     load_id = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
                     temp_id = temp_id,
                     p_set = [node.peak_load, load_in_generation_case],
                     q_set = [node.peak_load *
                              Q_factor_load, load_in_generation_case])
-            session.add(bus_mv)
-            session.add(bus_pq_set_mv)
-            session.add(transformer)
-            session.add(bus_lv)
-            session.add(bus_pq_set_lv)
             session.add(load)
             session.add(load_pq_set)
         elif isinstance(node, LVLoadAreaCentreDingo):
@@ -162,4 +174,5 @@ def export_nodes(grid, session, temp_id):
             raise TypeError("Node of type", node, "cannot handled here")
 
     # write changes to database
+    session.commit()
     session.commit()
