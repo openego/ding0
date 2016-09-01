@@ -169,26 +169,31 @@ class NetworkDingo:
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
                 peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
 
-            model_grid, transformer = lv_grid.select_typified_grid_model(
-                string_properties,
-                apartment_string,
-                apartment_trafo,
-                trafo_parameters,
-                lv_grid_district.population)
+            # Choice of typified lv model grid depends on population within lv
+            # grid district. If no population is given, lv grid is omitted and
+            # load is represented by lv station's peak load
+            if lv_grid_district.population > 0:
 
-            lv_transformer = TransformerDingo(
-                equip_trans_id=id,
-                v_level=0.4,
-                s_max_longterm=transformer['trafo_apparent_power'],
-                r=transformer['r'],
-                x=transformer['x'])
+                model_grid, transformer = lv_grid.select_typified_grid_model(
+                    string_properties,
+                    apartment_string,
+                    apartment_trafo,
+                    trafo_parameters,
+                    lv_grid_district.population)
 
-            lv_station.add_transformer(lv_transformer)
+                lv_transformer = TransformerDingo(
+                    equip_trans_id=id,
+                    v_level=0.4,
+                    s_max_longterm=transformer['trafo_apparent_power'],
+                    r=transformer['r'],
+                    x=transformer['x'])
+
+                lv_station.add_transformer(lv_transformer)
+
+
+                lv_grid.build_lv_graph(model_grid)
 
             lv_grid.add_station(lv_station)
-
-            lv_grid.build_lv_graph(model_grid)
-
             lv_grid_district.lv_grid = lv_grid
 
             lv_load_area.add_lv_grid_district(lv_grid_district)
@@ -423,7 +428,8 @@ class NetworkDingo:
                 # create new centre object for LV load area
                 lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
                                                             geo_data=wkt_loads(row['geo_centre']),
-                                                            lv_load_area=lv_load_area)
+                                                            lv_load_area=lv_load_area,
+                                                            grid=mv_grid_district.mv_grid)
                 # links the centre object to LV load area
                 lv_load_area.lv_load_area_centre = lv_load_area_centre
 
