@@ -63,7 +63,7 @@ def export_nodes(grid, session, temp_id, lv_transformer=True):
     # TODO: use `for node in nd._mv_grid_districts[0].mv_grid._graph.node`
     for node in grid._graph.nodes():
         if isinstance(node, LVStationDingo):
-            if node.lv_load_area.is_connected:
+            if node.lv_load_area.is_connected and grid._graph.adj[node]:
                 # MV side bus
                 bus_mv = orm_pypsa.Bus(
                     bus_id=node.pypsa_id,
