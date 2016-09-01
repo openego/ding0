@@ -332,6 +332,11 @@ class GeneratorDingo:
         self.subtype = kwargs.get('subtype', None)
         self.v_level = kwargs.get('v_level', None)
 
+    @property
+    def pypsa_id(self):
+        return '_'.join(['MV', str(self.mv_grid.id_db),
+                                  'gen', str(self.id_db)])
+
     def __repr__(self):
         if self.v_level in ['06 (MS/NS)', '07 (NS)']:
             return ('generator_' + str(self.type) + '_' + str(self.subtype) +

@@ -238,8 +238,13 @@ class LVLoadAreaCentreDingo:
     """
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
+        self.grid = kwargs.get('grid', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.lv_load_area = kwargs.get('lv_load_area', None)
+
+    @property
+    def pypsa_id(self):
+        return '_'.join(['MV', str(self.grid.id_db), 'lac', str(self.id_db)])
 
     def __repr__(self):
         return 'lv_load_area_centre_' + str(self.id_db)

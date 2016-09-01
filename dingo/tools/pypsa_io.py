@@ -61,11 +61,11 @@ def export_nodes(grid, session, temp_id):
             if node.lv_load_area.is_connected:
                 # MV side bus
                 bus_mv = orm_pypsa.Bus(
-                    bus_id = '_'.join(['MV', str(grid.id_db), 'tru', str(node.id_db)]),
-                    v_nom = grid.v_level,
-                    geom = from_shape(node.geo_data, srid=srid))
+                    bus_id=node.pypsa_id,
+                    v_nom=grid.v_level,
+                    geom=from_shape(node.geo_data, srid=srid))
                 bus_pq_set_mv = orm_pypsa.BusVMagSet(
-                    bus_id='_'.join(['MV', str(grid.id_db), 'tru', str(node.id_db)]),
+                    bus_id=node.pypsa_id,
                     temp_id = temp_id,
                     v_mag_pu_set=[1, 1])
                 # Add transformer to bus
@@ -108,10 +108,10 @@ def export_nodes(grid, session, temp_id):
             if node.lv_load_area.is_connected:
                 if node.lv_load_area.is_aggregated:
                     load = orm_pypsa.Load(
-                        load_id='_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
-                        bus='_'.join(['HV', str(grid.id_db), 'trd', str(node.id_db)]))
+                        load_id=node.pypsa_id,
+                        bus='_'.join(['HV', str(grid.id_db), 'trd']))
                     load_pq_set = orm_pypsa.LoadPqSet(
-                        load_id='_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
+                        load_id=node.pypsa_id,
                         temp_id=temp_id,
                         p_set=[node.lv_load_area.peak_load_sum,
                                load_in_generation_case],
@@ -121,11 +121,11 @@ def export_nodes(grid, session, temp_id):
                     session.add(load_pq_set)
         elif isinstance(node, MVCableDistributorDingo):
             bus = orm_pypsa.Bus(
-                bus_id='_'.join(['MV', str(grid.id_db), 'cld', str(node.id_db)]),
+                bus_id=node.pypsa_id,
                 v_nom=grid.v_level,
                 geom=from_shape(node.geo_data, srid=srid))
             bus_pq_set = orm_pypsa.BusVMagSet(
-                bus_id='_'.join(['MV', str(grid.id_db), 'cld', str(node.id_db)]),
+                bus_id=node.pypsa_id,
                 temp_id=temp_id,
                 v_mag_pu_set=[1, 1])
             session.add(bus)
@@ -134,16 +134,16 @@ def export_nodes(grid, session, temp_id):
             print('Adding of MVStations is currently missing...')
         elif isinstance(node, GeneratorDingo):
             bus_gen = orm_pypsa.Bus(
-                bus_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
+                bus_id=node.pypsa_id,
                 v_nom=grid.v_level,
                 geom=from_shape(node.geo_data, srid=srid))
             bus_pq_set_gen = orm_pypsa.BusVMagSet(
-                bus_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
+                bus_id=node.pypsa_id,
                 temp_id=temp_id,
                 v_mag_pu_set=[1, 1])
             generator = orm_pypsa.Generator(
                 generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
-                bus='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
+                bus=node.pypsa_id,
                 control='PQ',
                 p_nom=node.capacity)
             generator_pq_set = orm_pypsa.GeneratorPqSet(

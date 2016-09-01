@@ -10,6 +10,12 @@ class MVCableDistributorDingo(CableDistributorDingo):
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.id_db = self.grid.cable_distributors_count() + 1
 
+    @property
+    def pypsa_id(self):
+
+        return '_'.join(['MV', str(self.grid.id_db),
+                                  'cld', str(self.id_db)])
+
     def __repr__(self):
         return 'mv_cable_dist_' + str(self.id_db)
 

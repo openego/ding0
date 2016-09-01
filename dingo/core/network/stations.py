@@ -100,6 +100,10 @@ class MVStationDingo(StationDingo):
 
         self.add_transformer(TransformerDingo(**int_kwargs))
 
+    @property
+    def pypsa_id(self):
+        return '_'.join(['HV', str(self.grid.id_db), 'trd'])
+
     def __repr__(self):
         return 'mv_station_' + str(self.id_db)
 
@@ -114,6 +118,12 @@ class LVStationDingo(StationDingo):
         super().__init__(**kwargs)
 
         self.lv_load_area = kwargs.get('lv_load_area', None)
+
+    @property
+    def pypsa_id(self):
+        return '_'.join(['MV', str(
+            self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'tru', str(self.id_db)])
 
     def __repr__(self):
         return 'lv_station_' + str(self.id_db)
