@@ -143,7 +143,17 @@ def export_nodes(grid, session, temp_id, lv_transformer=True):
             session.add(bus)
             session.add(bus_pq_set)
         elif isinstance(node, MVStationDingo):
-            print('Adding of MVStations is currently missing...')
+            print('Only MV side bus of MVStation will be added.')
+            bus_mv_station = orm_pypsa.Bus(
+                bus_id=node.pypsa_id,
+                v_nom=grid.v_level,
+                geom=from_shape(node.geo_data, srid=srid))
+            bus_pq_set_mv_station = orm_pypsa.BusVMagSet(
+                bus_id=node.pypsa_id,
+                temp_id=temp_id,
+                v_mag_pu_set=[1, 1])
+            session.add(bus_mv_station)
+            session.add(bus_pq_set_mv_station)
         elif isinstance(node, GeneratorDingo):
             bus_gen = orm_pypsa.Bus(
                 bus_id=node.pypsa_id,
