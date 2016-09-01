@@ -129,7 +129,7 @@ class GridDingo:
     def graph_edges(self):
         """ Returns a generator for iterating over graph edges
 
-        The edge of a graph is described by the to adjacent node and the branch
+        The edge of a graph is described by the two adjacent node and the branch
         object itself. Whereas the branch object is used to hold all relevant
         power system parameters.
 
