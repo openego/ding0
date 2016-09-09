@@ -222,11 +222,14 @@ def export_edges(grid, session):
             # TODO: find the real cause for being L, C, I_th_max type of Series
             if (isinstance(edge['branch'].type['L'], Series) or
                 isinstance(edge['branch'].type['C'], Series)):
-                x = omega * edge['branch'].type['L'].values[0] - 1 / (
-                    omega * edge['branch'].type['C'].values[0])
+                # x = omega * edge['branch'].type['L'].values[0] * 1e-3 - 1 / (
+                #     omega * edge['branch'].type['C'].values[0] * 1e-6)
+                # TODO: not sure if capacity C can be omitted
+                x = omega * edge['branch'].type['L'].values[0] * 1e-3
             else:
-                x = omega * edge['branch'].type['L'] - 1 / (
-                    omega * edge['branch'].type['C'])
+                # x = omega * edge['branch'].type['L'] * 1e-3 - 1 / (
+                #     omega * edge['branch'].type['C'] * 1e-6)
+                x = omega * edge['branch'].type['L'] * 1e-3
 
             if isinstance(edge['branch'].type['R'], Series) :
                 r = edge['branch'].type['R'].values[0]
@@ -245,10 +248,10 @@ def export_edges(grid, session):
                 line_id='_'.join(['MV', str(grid.id_db), 'lin', str(edge['branch'].id_db)]),
                 bus0=edge['adj_nodes'][0].pypsa_id,
                 bus1=edge['adj_nodes'][1].pypsa_id,
-                x=x,
-                r=r * edge['branch'].length,
+                x=x * edge['branch'].length / 1e3,
+                r=r * edge['branch'].length / 1e3,
                 s_nom=s_nom,
-                length=edge['branch'].length,
+                length=edge['branch'].length / 1e3,
                 cables=3,
                 geom=from_shape(LineString([edge['adj_nodes'][0].geo_data,
                                  edge['adj_nodes'][1].geo_data]), srid=srid)
