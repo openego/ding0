@@ -380,7 +380,7 @@ class MVGridDingo(GridDingo):
         self.grid_district.add_aggregated_peak_demand()
 
 
-    def export_to_pypsa(self, conn):
+    def export_to_pypsa(self, conn, single_half_ring=False):
         """Exports MVGridDingo grid to PyPSA database tables
 
         Peculiarities of MV grids are implemented here. Derive general export
@@ -408,15 +408,41 @@ class MVGridDingo(GridDingo):
         # Empty tables
         pypsa_io.delete_powerflow_tables(session)
 
+        # Extract a subset of the graph (especially for testing purposes)
+        degrees = self._graph.degree()
+
+        if single_half_ring:
+            # find mv station in graph
+            for node in self._graph.nodes():
+                if isinstance(node, MVStationDingo):
+                    mv_station = node
+
+            # find one exterior node (end of graph path)
+            for node in self._graph.nodes():
+                if degrees[node] == 1:
+                    break
+
+            # compute subgraph from mv_station to exterior node
+            nodes = nx.subgraph(self._graph,
+                                nx.shortest_path(self._graph,
+                                                 source=mv_station,
+                                                 target=node))
+        else:
+            nodes = self._graph.nodes()
+
+        edges = [edge for edge in list(self.graph_edges())
+                 if edge['adj_nodes'][0] in nodes
+                 and edge['adj_nodes'][1] in nodes]
+
         # Export node objects: Busses, Loads, Generators
         # TODO: add export method for Generator
         # TODO: add to LVStation case: LVTransformers
         # TODO: add export of MVStation incl. bus and transformer
-        pypsa_io.export_nodes(self, session, temp_id, lv_transformer=False)
+        pypsa_io.export_nodes(self, session, nodes, temp_id, lv_transformer=False)
 
         # Export edges
         # TODO: use `nd._mv_grid_districts[0].mv_grid.graph_edges()`
-        pypsa_io.export_edges(self, session)
+        pypsa_io.export_edges(self, session, edges)
 
         # Create table about temporal coverage of PF analysis
         pypsa_io.create_temp_resolution_table(session,

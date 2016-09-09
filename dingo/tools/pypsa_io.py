@@ -9,6 +9,7 @@ from geoalchemy2.shape import from_shape
 from math import tan, acos, pi
 from shapely.geometry import LineString
 from pandas import Series
+import networkx as nx
 
 def delete_powerflow_tables(session):
     """Empties all powerflow tables to start export from scratch
@@ -27,7 +28,7 @@ def delete_powerflow_tables(session):
     session.commit()
 
 
-def export_nodes(grid, session, temp_id, lv_transformer=True):
+def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
     """Export nodes of grid graph representation to pypsa input tables
 
     Parameters
@@ -56,12 +57,11 @@ def export_nodes(grid, session, temp_id, lv_transformer=True):
 
     Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
 
-
     # Create all busses
     # TODO: incorporates CableDists, LVStations
     # TODO: for all LVStations a representative load has to be added
     # TODO: use `for node in nd._mv_grid_districts[0].mv_grid._graph.node`
-    for node in grid._graph.nodes():
+    for node in nodes:
         if isinstance(node, LVStationDingo):
             if node.lv_load_area.is_connected and grid._graph.adj[node]:
                 # MV side bus
@@ -192,7 +192,7 @@ def export_nodes(grid, session, temp_id, lv_transformer=True):
     session.commit()
 
 
-def export_edges(grid, session):
+def export_edges(grid, session, edges):
     """Export nodes of grid graph representation to pypsa input tables
 
     Parameters
@@ -205,7 +205,8 @@ def export_edges(grid, session):
     omega = 2 * pi * 50
     srid = int(cfg_dingo.get('geo', 'srid'))
 
-    for edge in grid.graph_edges():
+    # for edge in grid.graph_edges():
+    for edge in edges:
         # if isinstance(edge, BranchDingo):
         if not (isinstance(edge['adj_nodes'][0],
                            (LVLoadAreaCentreDingo,
