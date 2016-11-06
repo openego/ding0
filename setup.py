@@ -12,7 +12,8 @@ setup(name='dingo',
                         'pyomo >= 1.9.5.1',
                         'pyproj',
                         'geoalchemy2',
-                        #'matplotlib', #should be included but fails via pip3
-                        'ego.io >= 0.0.1-pre',
+                        'matplotlib',
+                        'ego.io',# >= 0.0.1rc7',
                         'oemof.db']
+      # dependency_links=['https://github.com/openego/ego.io/archive/856769eb79e5342c349fe479e8c42da6481e122c.zip#egg=ego.io-0.0.1rc7+git.856769e']
      )
