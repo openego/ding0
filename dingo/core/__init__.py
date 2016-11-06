@@ -247,7 +247,7 @@ class NetworkDingo:
                                            orm_EgoDeuSubstation.point, srid)).\
                                        label('subs_geom')).\
             join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id ==
-                 orm_EgoDeuSubstation.id).\
+                 orm_EgoDeuSubstation.subst_id).\
             filter(orm_GridDistrict.subst_id.in_(mv_grid_districts_no))
 
         # read MV data from db
