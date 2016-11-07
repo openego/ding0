@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
 from setuptools import find_packages, setup
-import subprocess
-
-subprocess.call(["sudo", "apt-get", "install", "libgeos-dev"])
+# import subprocess
+#
+# subprocess.call(["sudo", "apt-get", "install", "libgeos-dev"])
 
 setup(name='dingo',
       author='openego development group',
