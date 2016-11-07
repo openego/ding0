@@ -6,10 +6,18 @@
 Welcome to dingo's documentation!
 =================================
 
-Contents:
+Choose you favorite topic from the list of content
 
 .. toctree::
    :maxdepth: 2
+
+   welcome
+   getting_started
+   about
+   usage_details
+   development
+   whatsnew
+   api
 
 
 

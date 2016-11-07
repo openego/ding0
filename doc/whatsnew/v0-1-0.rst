@@ -1,0 +1,35 @@
+v0.1.0 (November 25, 2016)
+++++++++++++++++++++++++++
+
+As this is the first release of dingo, we built everything from scratch.
+
+
+API changes
+###########
+ 
+
+New features
+############
+
+
+Documentation
+#############
+
+
+Testing
+#######
+
+
+Bug fixes
+#########
+
+
+Other changes
+#############
+
+
+Contributors
+############
+
+ * Jonathan Amme
+ * Guido Pleßmann
