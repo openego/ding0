@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 
 from setuptools import find_packages, setup
+import subprocess
+
+subprocess.call("apt-get install libgeos-dev")
 
 setup(name='dingo',
       author='openego development group',
@@ -16,3 +19,4 @@ setup(name='dingo',
                         'ego.io >= 0.0.1-pre',
                         'oemof.db']
      )
+
