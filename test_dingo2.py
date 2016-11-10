@@ -44,7 +44,7 @@ nd.set_branch_ids()
 
 
 nd._mv_grid_districts[0].mv_grid.export_to_pypsa(conn, single_half_ring=False)
-nd.export_mv_grid(conn, mv_grid_districts)
+# nd.export_mv_grid(conn, mv_grid_districts)
 conn.close()
 
 # for edge in nd._mv_grid_districts[0].mv_grid.graph_edges():
