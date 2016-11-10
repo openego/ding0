@@ -76,12 +76,12 @@ class NetworkDingo:
                                          MVGridDistrictDingo id to MVGridDistrictDingo object
 
         Returns:
-            lv_load_areas:      dict with Format {lv_load_area_id_1: lv_load_area_obj_1,
-                                                  ...,
-                                                  lv_load_area_id_n: lv_load_area_obj_n}
             mv_grid_districts:  dict with Format {mv_grid_district_id_1: mv_grid_district_obj_1,
                                                   ...,
                                                   mv_grid_district_id_n: mv_grid_district_obj_n}
+            lv_load_areas:      dict with Format {lv_load_area_id_1: lv_load_area_obj_1,
+                                                  ...,
+                                                  lv_load_area_id_n: lv_load_area_obj_n}
         """
 
         mv_grid_districts_dict = {}
