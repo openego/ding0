@@ -461,11 +461,14 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
+        load_areas = list(self.get_mvgd_lvla_obj_from_id()[1])
+
         lv_grid_districs_sqla = session.query(orm_LVGridDistrict.load_area_id,
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_LVGridDistrict.geom, srid)).label('geom'),
                                               orm_LVGridDistrict.population,
-                                              orm_LVGridDistrict.id)
+                                              orm_LVGridDistrict.id).\
+            filter(orm_LVGridDistrict.load_area_id.in_(load_areas))
 
         # read data from db
         lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
@@ -493,10 +496,15 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
+        # get list of mv grid districts
+        mv_grid_districts = list(self.get_mvgd_lvla_obj_from_id()[0])
+
         lv_stations_sqla = session.query(orm_EgoDeuOnts.id,
                                          orm_EgoDeuOnts.load_area_id,
                                          func.ST_AsText(func.ST_Transform(
-                                           orm_EgoDeuOnts.geom, srid)).label('geom'))
+                                           orm_EgoDeuOnts.geom, srid)).\
+                                         label('geom')).\
+            filter(orm_EgoDeuOnts.subst_id.in_(mv_grid_districts))
 
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
