@@ -25,7 +25,7 @@ conn = db.connection(section='oedb')
 # mv_grid_districts=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 # mv_grid_districts=[360, 571, 593, 368, 491, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 # mv_grid_districts=[482]
-mv_grid_districts=[360]
+mv_grid_districts=[1748]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 nd.import_generators(conn)
