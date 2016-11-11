@@ -13,8 +13,8 @@ Choose you favorite topic from the list of content
 
    welcome
    getting_started
-   about
    usage_details
+   about
    development
    whatsnew
    api
