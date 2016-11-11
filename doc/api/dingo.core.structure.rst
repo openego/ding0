@@ -4,6 +4,14 @@ dingo.core.structure package
 Submodules
 ----------
 
+dingo.core.structure.groups module
+----------------------------------
+
+.. automodule:: dingo.core.structure.groups
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 dingo.core.structure.regions module
 -----------------------------------
 

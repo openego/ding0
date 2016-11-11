@@ -4,6 +4,14 @@ dingo.core.network package
 Submodules
 ----------
 
+dingo.core.network.cable_distributors module
+--------------------------------------------
+
+.. automodule:: dingo.core.network.cable_distributors
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 dingo.core.network.grids module
 -------------------------------
 
@@ -12,10 +20,10 @@ dingo.core.network.grids module
     :undoc-members:
     :show-inheritance:
 
-dingo.core.network.lines module
+dingo.core.network.loads module
 -------------------------------
 
-.. automodule:: dingo.core.network.lines
+.. automodule:: dingo.core.network.loads
     :members:
     :undoc-members:
     :show-inheritance:

@@ -7,7 +7,7 @@ Subpackages
 .. toctree::
 
     dingo.grid.lv_grid
-    dingo.grid.mv_routing
+    dingo.grid.mv_grid
 
 Module contents
 ---------------
