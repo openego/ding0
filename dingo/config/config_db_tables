@@ -33,4 +33,4 @@ lv_loads = CalcEgoPeakLoad
 mv_grids = app_dingo_res.mv_grids
 
 [generators]
-re_generators = EgoDeuDea
+re_generators = EgoDeaAllocation
