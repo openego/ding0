@@ -25,7 +25,8 @@ conn = db.connection(section='oedb')
 # mv_grid_districts=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 # mv_grid_districts=[360, 571, 593, 368, 491, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 # mv_grid_districts=[482]
-mv_grid_districts=[1748]
+# mv_grid_districts = [386,372,406,371,402,415,480,424,489,367,359,569,591]
+mv_grid_districts=[386]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 nd.import_generators(conn)
@@ -44,7 +45,7 @@ nd.set_branch_ids()
 
 
 nd._mv_grid_districts[0].mv_grid.export_to_pypsa(conn, single_half_ring=False)
-# nd.export_mv_grid(conn, mv_grid_districts)
+nd.export_mv_grid(conn, mv_grid_districts)
 conn.close()
 
 # for edge in nd._mv_grid_districts[0].mv_grid.graph_edges():
