@@ -56,6 +56,8 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                                             'load_in_generation_case')
 
     Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
+    
+    kw2mw = 1e-3
 
     # Create all busses
     # TODO: incorporates CableDists, LVStations
@@ -68,11 +70,13 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 bus_mv = orm_pypsa.Bus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
-                    geom=from_shape(node.geo_data, srid=srid))
+                    geom=from_shape(node.geo_data, srid=srid),
+                    grid_id=grid.id_db)
                 bus_pq_set_mv = orm_pypsa.BusVMagSet(
                     bus_id=node.pypsa_id,
                     temp_id = temp_id,
-                    v_mag_pu_set=[1, 1])
+                    v_mag_pu_set=[1, 1],
+                    grid_id=grid.id_db)
                 session.add(bus_mv)
                 session.add(bus_pq_set_mv)
                 if lv_transformer is True:
@@ -85,61 +89,73 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                         x=node._transformers[0].x,
                         r=node._transformers[0].r,
                         tap_ratio=1,
-                        geom=from_shape(node.geo_data, srid=srid))
+                        geom=from_shape(node.geo_data, srid=srid),
+                        grid_id=grid.id_db)
                     session.add(transformer)
                     # Add bus on transformer's LV side
                     bus_lv = orm_pypsa.Bus(
                         bus_id='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         v_nom=node._transformers[0].v_level,
-                        geom=from_shape(node.geo_data, srid=srid))
+                        geom=from_shape(node.geo_data, srid=srid),
+                        grid_id=grid.id_db)
                     bus_pq_set_lv = orm_pypsa.BusVMagSet(
                         bus_id='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         temp_id=temp_id,
-                        v_mag_pu_set=[1, 1])
+                        v_mag_pu_set=[1, 1],
+                        grid_id=grid.id_db)
                     session.add(bus_lv)
                     session.add(bus_pq_set_lv)
                     # Add aggregated LV load to LV bus
                     load = orm_pypsa.Load(
                         load_id = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
-                        bus = '_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]))
+                        bus = '_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
+                        grid_id=grid.id_db)
                 else:
                     # Add aggregated LV load to MV bus
                     load = orm_pypsa.Load(
                         load_id='_'.join(
                             ['MV', str(grid.id_db), 'loa', str(node.id_db)]),
-                        bus=node.pypsa_id)
+                        bus=node.pypsa_id,
+                        grid_id=grid.id_db)
                 load_pq_set = orm_pypsa.LoadPqSet(
                     load_id = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
                     temp_id = temp_id,
-                    p_set = [node.peak_load, load_in_generation_case],
-                    q_set = [node.peak_load *
-                             Q_factor_load, load_in_generation_case])
-            session.add(load)
-            session.add(load_pq_set)
+                    p_set = [node.peak_load * kw2mw,
+                             load_in_generation_case * kw2mw],
+                    q_set = [node.peak_load * Q_factor_load * kw2mw,
+                             load_in_generation_case],
+                    grid_id=grid.id_db)
+                session.add(load)
+                session.add(load_pq_set)
         elif isinstance(node, LVLoadAreaCentreDingo):
             if node.lv_load_area.is_connected:
                 if node.lv_load_area.is_aggregated:
                     load = orm_pypsa.Load(
                         load_id=node.pypsa_id,
-                        bus='_'.join(['HV', str(grid.id_db), 'trd']))
+                        bus='_'.join(['HV', str(grid.id_db), 'trd']),
+                        grid_id=grid.id_db)
                     load_pq_set = orm_pypsa.LoadPqSet(
                         load_id=node.pypsa_id,
                         temp_id=temp_id,
-                        p_set=[node.lv_load_area.peak_load_sum,
-                               load_in_generation_case],
+                        p_set=[node.lv_load_area.peak_load_sum * kw2mw,
+                               load_in_generation_case * kw2mw],
                         q_set=[node.lv_load_area.peak_load_sum
-                               * Q_factor_load, load_in_generation_case])
+                               * Q_factor_load * kw2mw,
+                               load_in_generation_case * kw2mw],
+                        grid_id=grid.id_db)
                     session.add(load)
                     session.add(load_pq_set)
         elif isinstance(node, MVCableDistributorDingo):
             bus = orm_pypsa.Bus(
                 bus_id=node.pypsa_id,
                 v_nom=grid.v_level,
-                geom=from_shape(node.geo_data, srid=srid))
+                geom=from_shape(node.geo_data, srid=srid),
+                grid_id=grid.id_db)
             bus_pq_set = orm_pypsa.BusVMagSet(
                 bus_id=node.pypsa_id,
                 temp_id=temp_id,
-                v_mag_pu_set=[1, 1])
+                v_mag_pu_set=[1, 1],
+                grid_id=grid.id_db)
             session.add(bus)
             session.add(bus_pq_set)
         elif isinstance(node, MVStationDingo):
@@ -147,15 +163,18 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
             bus_mv_station = orm_pypsa.Bus(
                 bus_id=node.pypsa_id,
                 v_nom=grid.v_level,
-                geom=from_shape(node.geo_data, srid=srid))
+                geom=from_shape(node.geo_data, srid=srid),
+                grid_id=grid.id_db)
             bus_pq_set_mv_station = orm_pypsa.BusVMagSet(
                 bus_id=node.pypsa_id,
                 temp_id=temp_id,
-                v_mag_pu_set=[1, 1])
+                v_mag_pu_set=[1, 1],
+                grid_id=grid.id_db)
             slack_gen = orm_pypsa.Generator(
                 generator_id='_'.join(['MV', str(grid.id_db), 'slack']),
                 bus=node.pypsa_id,
-                control='Slack')
+                control='Slack',
+                grid_id=grid.id_db)
             session.add(bus_mv_station)
             session.add(bus_pq_set_mv_station)
             session.add(slack_gen)
@@ -163,21 +182,25 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
             bus_gen = orm_pypsa.Bus(
                 bus_id=node.pypsa_id,
                 v_nom=grid.v_level,
-                geom=from_shape(node.geo_data, srid=srid))
+                geom=from_shape(node.geo_data, srid=srid),
+                grid_id=grid.id_db)
             bus_pq_set_gen = orm_pypsa.BusVMagSet(
                 bus_id=node.pypsa_id,
                 temp_id=temp_id,
-                v_mag_pu_set=[1, 1])
+                v_mag_pu_set=[1, 1],
+                grid_id=grid.id_db)
             generator = orm_pypsa.Generator(
                 generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
                 bus=node.pypsa_id,
                 control='PQ',
-                p_nom=node.capacity)
+                p_nom=node.capacity,
+                grid_id=grid.id_db)
             generator_pq_set = orm_pypsa.GeneratorPqSet(
                 generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
                 temp_id=temp_id,
-                p_set=[0, node.capacity],
-                q_set=[0, 0])
+                p_set=[0 * kw2mw, node.capacity * kw2mw],
+                q_set=[0 * kw2mw, 0 * kw2mw],
+                grid_id=grid.id_db)
             session.add(bus_gen)
             session.add(bus_pq_set_gen)
             session.add(generator)
@@ -255,7 +278,8 @@ def export_edges(grid, session, edges):
                 length=edge['branch'].length / 1e3,
                 cables=3,
                 geom=from_shape(LineString([edge['adj_nodes'][0].geo_data,
-                                 edge['adj_nodes'][1].geo_data]), srid=srid)
+                                 edge['adj_nodes'][1].geo_data]), srid=srid),
+                grid_id=grid.id_db
             )
             session.add(line)
             session.commit()
