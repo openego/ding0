@@ -537,6 +537,9 @@ class LVGridDingo(GridDingo):
 
         apartments = round(population / population_per_apartment)
 
+        if apartments <= 0:
+            apartments = 1
+
         if apartments > 196:
             apartments = 196
 

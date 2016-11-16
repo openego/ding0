@@ -45,6 +45,7 @@ from shapely.geometry import Point, MultiPoint, MultiLineString
 from functools import partial
 import pyproj
 from shapely.ops import transform
+import random
 
 
 class NetworkDingo:
@@ -277,10 +278,17 @@ class NetworkDingo:
                                                  station_geo_data)
 
                 # import all lv_grid_districts wihtin mv_grid_district
-                lv_grid_districts = self.import_lv_grid_districts(conn)
+                # lv_grid_districts = self.import_lv_grid_districts(conn)
 
                 # import all lv_stations wihtin mv_grid_district
                 lv_stations = self.import_lv_stations(conn)
+                lv_grid_districts = pd.DataFrame(
+                    columns=['load_area_id', 'population'],
+                    index=list(lv_stations.index.values))
+                lv_grid_districts['load_area_id'] = lv_stations['load_area_id'].tolist()
+                lv_grid_districts['population'] = [random.randrange(1, 450) for x in lv_grid_districts.index.values]
+                lv_grid_districts['geom'] = lv_stations[
+                    'geom'].tolist()
 
                 self.import_lv_load_areas(conn,
                                           mv_grid_district,
