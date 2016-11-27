@@ -262,10 +262,10 @@ def export_edges(grid, session, edges):
 
             if (isinstance(edge['branch'].type['I_max_th'], Series) or
                     isinstance(edge['branch'].type['U_n'], Series)):
-                s_nom = edge['branch'].type['I_max_th'].values[0] * \
+                s_nom = sqrt(3) * edge['branch'].type['I_max_th'].values[0] * \
                     edge['branch'].type['U_n'].values[0]
             else:
-                s_nom = edge['branch'].type['I_max_th'] * \
+                s_nom = sqrt(3) * edge['branch'].type['I_max_th'] * \
                     edge['branch'].type['U_n']
 
             line = orm_pypsa.Line(
