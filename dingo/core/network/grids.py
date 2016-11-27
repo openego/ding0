@@ -435,7 +435,6 @@ class MVGridDingo(GridDingo):
                  and edge['adj_nodes'][1] in nodes]
 
         # Export node objects: Busses, Loads, Generators
-        # TODO: add export method for Generator
         # TODO: add to LVStation case: LVTransformers
         # TODO: add export of MVStation incl. bus and transformer
         pypsa_io.export_nodes(self, session, nodes, temp_id, lv_transformer=False)
@@ -449,6 +448,23 @@ class MVGridDingo(GridDingo):
                                               timesteps=timesteps,
                                               resolution=resolution,
                                               start_time=start_time)
+
+    def import_powerflow_results(self, conn):
+        """
+        Assign results from power flow analysis to edges and nodes
+        :return:
+        """
+
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        # bus data
+        pypsa_io.import_pfa_bus_results(session, self)
+
+        # line data
+        pypsa_io.import_pfa_line_results(session, self)
+
+        # transformer data
 
     def __repr__(self):
         return 'mv_grid_' + str(self.id_db)

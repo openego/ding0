@@ -1,4 +1,6 @@
 from egoio.db_tables import calc_ego_mv_powerflow as orm_pypsa
+from egoio.db_tables.calc_ego_mv_powerflow import ResBus, ResLine,\
+    ResTransformer, Bus, Line, Transformer
 from dingo.tools import config as cfg_dingo
 from dingo.core.network.stations import LVStationDingo, MVStationDingo
 from dingo.core.network import BranchDingo, CircuitBreakerDingo, GeneratorDingo
@@ -6,10 +8,10 @@ from dingo.core import MVCableDistributorDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 
 from geoalchemy2.shape import from_shape
-from math import tan, acos, pi
+from math import tan, acos, pi, sqrt
 from shapely.geometry import LineString
-from pandas import Series
-import networkx as nx
+from pandas import Series, read_sql_query
+
 
 def delete_powerflow_tables(session):
     """Empties all powerflow tables to start export from scratch
@@ -298,3 +300,112 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
         )
     session.add(temp_resolution)
     session.commit()
+
+
+def import_pfa_bus_results(session, grid):
+    """
+    Assign results from power flow analysis to grid network object
+
+    As this function operates on nodes/buses of the graph, voltage levels from
+    power flow analysis are assigned to attribute `voltage_res` of node objects
+    of the mv grid graph.
+    The attribute `voltage_res` is a list of two elements
+    1. voltage in load case
+    2. voltage in feed-in case
+
+    Parameters
+    ----------
+    session: SQLAlchemy session object
+    grid: networkX graph
+
+    Returns
+    -------
+    None
+    """
+
+    # get bus data from database
+    bus_query = session.query(ResBus.bus_id,
+                        ResBus.v_mag_pu).\
+        join(Bus, ResBus.bus_id == Bus.bus_id).\
+        filter(Bus.grid_id == grid.id_db)
+
+    bus_data = read_sql_query(bus_query.statement,
+                                 session.bind,
+                                 index_col='bus_id')
+
+    # iterate of nodes and assign voltage obtained from power flow analysis
+    for node in grid._graph.nodes():
+        if isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
+            if len(grid._graph.neighbors(node)) > 0:
+                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+        elif not isinstance(node, CircuitBreakerDingo):
+            node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+
+
+def import_pfa_line_results(session, grid):
+    """
+    Assign results from power flow analysis to grid network object
+
+    As this function operates on branches/lines of the graph, power flows from
+    power flow analysis are assigned to attribute `s_res` of edge objects
+    of the mv grid graph.
+    The attribute `s_res` is computed according to
+
+    .. math::
+        s = \sqrt{{max(p0, p1)}^2 + {max(p0, p1)}^2}
+
+    Parameters
+    ----------
+    session: SQLAlchemy session object
+    grid: networkX graph
+
+    Returns
+    -------
+    None
+    """
+
+    # get lines data from database
+    lines_query = session.query(ResLine.line_id,
+                                ResLine.p0,
+                                ResLine.p1,
+                                ResLine.q0,
+                                ResLine.q1).\
+        join(Line, ResLine.line_id == Line.line_id).\
+        filter(Line.grid_id == grid.id_db)
+
+    line_data = read_sql_query(lines_query.statement,
+                                 session.bind,
+                                 index_col='line_id')
+
+    edges = [edge for edge in grid.graph_edges()
+             if edge['adj_nodes'][0] in grid._graph.nodes()
+             and edge['adj_nodes'][1] in grid._graph.nodes()]
+
+    for edge in edges:
+        # TODO: when applying max() to p,q check if negative values are possible
+        # TODO: if so, catch those by using abs()
+        s_res = [
+            sqrt(
+                max(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                    'branch'].id_db), 'p0'][0],
+                    line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'p1'][0]) ** 2 +
+                max(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                    'branch'].id_db), 'q0'][0],
+                    line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'q1'][0]) ** 2),
+            sqrt(
+                max(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                    'branch'].id_db), 'p0'][1],
+                    line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'p1'][1]) ** 2 +
+                max(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                    'branch'].id_db), 'q0'][1],
+                    line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'q1'][1]) ** 2)]
+
+        edge['branch'].s_res = s_res
+
+
+def import_pfa_transformer_results():
+    pass
