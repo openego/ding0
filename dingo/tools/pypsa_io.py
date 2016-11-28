@@ -62,9 +62,6 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
     kw2mw = 1e-3
 
     # Create all busses
-    # TODO: incorporates CableDists, LVStations
-    # TODO: for all LVStations a representative load has to be added
-    # TODO: use `for node in nd._mv_grid_districts[0].mv_grid._graph.node`
     for node in nodes:
         if isinstance(node, LVStationDingo):
             if node.lv_load_area.is_connected and grid._graph.adj[node]:

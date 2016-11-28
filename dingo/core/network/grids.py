@@ -440,7 +440,6 @@ class MVGridDingo(GridDingo):
         pypsa_io.export_nodes(self, session, nodes, temp_id, lv_transformer=False)
 
         # Export edges
-        # TODO: use `nd._mv_grid_districts[0].mv_grid.graph_edges()`
         pypsa_io.export_edges(self, session, edges)
 
         # Create table about temporal coverage of PF analysis
