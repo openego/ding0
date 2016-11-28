@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 from oemof import db
-
+conn = db.connection(section='oedb')
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
 
@@ -18,9 +18,6 @@ cfg_dingo.load_config('config_misc')
 
 # instantiate dingo network object
 nd = NetworkDingo(name='network')
-
-# get database connection info from config file
-conn = db.connection(section='oedb')
 
 # mv_grid_districts=[360, 571, 593, 368, 491, 425, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
 # mv_grid_districts=[360, 571, 593, 368, 491, 416, 372, 387, 407, 403, 373, 482] # some MV grid_districts from SPF region
@@ -45,6 +42,7 @@ nd.set_branch_ids()
 
 
 nd._mv_grid_districts[0].mv_grid.export_to_pypsa(conn, single_half_ring=False)
+nd._mv_grid_districts[0].mv_grid.run_powerflow(conn)
 nd._mv_grid_districts[0].mv_grid.import_powerflow_results(conn)
 nd.export_mv_grid(conn, mv_grid_districts)
 
