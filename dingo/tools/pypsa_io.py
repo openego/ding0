@@ -1,6 +1,16 @@
 from egoio.db_tables import calc_ego_mv_powerflow as orm_pypsa
 from egoio.db_tables.calc_ego_mv_powerflow import ResBus, ResLine,\
     ResTransformer, Bus, Line, Transformer
+
+from egopowerflow.tools.io import get_timerange, import_components,\
+    import_pq_sets, create_powerflow_problem, results_to_oedb
+from egopowerflow.tools.plot import add_coordinates, plot_line_loading
+
+
+from egoio.db_tables.calc_ego_mv_powerflow import Bus, Line, Generator, Load, \
+    Transformer, TempResolution, BusVMagSet, GeneratorPqSet, LoadPqSet
+from egoio.db_tables.calc_ego_mv_powerflow import TempResolution
+
 from dingo.tools import config as cfg_dingo
 from dingo.core.network.stations import LVStationDingo, MVStationDingo
 from dingo.core.network import BranchDingo, CircuitBreakerDingo, GeneratorDingo
@@ -310,6 +320,90 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
         )
     session.add(temp_resolution)
     session.commit()
+
+
+def run_powerflow(conn):
+    """
+    Run powerflow to test grid stability
+
+    Two cases are defined to be tested here:
+     i) load case
+     ii) feed-in case
+
+    Parameters
+    ----------
+    conn: SQLAlchemy session object
+
+    """
+    # session = oedb_session(section='oedb')
+
+    scenario = 'Status Quo'
+
+    # define relevant tables of generator table
+    pq_set_cols = ['temp_id', 'p_set', 'q_set']
+
+    # choose temp_id
+    temp_id_set = 1
+
+    # define investigated time range
+    timerange = get_timerange(conn, temp_id_set, TempResolution)
+
+    # define relevant tables
+    tables = [Bus, Line, Generator, Load, Transformer]
+
+    # get components from database tables
+    components = import_components(tables, conn, scenario)
+
+    # create PyPSA powerflow problem
+    network, snapshots = create_powerflow_problem(timerange, components)
+
+    # import pq-set tables to pypsa network (p_set for generators and loads)
+    pq_object = [GeneratorPqSet, LoadPqSet]
+    network = import_pq_sets(conn,
+                             network,
+                             pq_object,
+                             timerange,
+                             scenario,
+                             columns=['p_set'],
+                             start_h=0,
+                             end_h=2)
+
+    # import pq-set table to pypsa network (q_set for loads)
+    network = import_pq_sets(conn,
+                             network,
+                             pq_object,
+                             timerange,
+                             scenario,
+                             columns=['q_set'],
+                             start_h=0,
+                             end_h=2)
+
+    # Import `v_mag_pu_set` for Bus
+    network = import_pq_sets(conn,
+                             network,
+                             [BusVMagSet],
+                             timerange,
+                             scenario,
+                             columns=['v_mag_pu_set'],
+                             start_h=0,
+                             end_h=2)
+
+    # add coordinates to network nodes and make ready for map plotting
+    network = add_coordinates(network)
+
+    # start powerflow calculations
+    network.pf(snapshots)
+
+    # make a line loading plot
+    plot_line_loading(network, timestep=0,
+                      filename='Line_loading_load_case.png')
+    plot_line_loading(network, timestep=1,
+                      filename='Line_loading_feed-in_case.png')
+
+    results_to_oedb(conn, network)
+
+    # close session
+    # session.close()
 
 
 def import_pfa_bus_results(session, grid):

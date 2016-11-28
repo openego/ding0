@@ -448,6 +448,15 @@ class MVGridDingo(GridDingo):
                                               resolution=resolution,
                                               start_time=start_time)
 
+
+    def run_powerflow(self, conn):
+
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        pypsa_io.run_powerflow(session)
+
+
     def import_powerflow_results(self, conn):
         """
         Assign results from power flow analysis to edges and nodes
