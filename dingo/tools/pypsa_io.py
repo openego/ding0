@@ -382,27 +382,25 @@ def import_pfa_line_results(session, grid):
              and edge['adj_nodes'][1] in grid._graph.nodes()]
 
     for edge in edges:
-        # TODO: when applying max() to p,q check if negative values are possible
-        # TODO: if so, catch those by using abs()
         s_res = [
             sqrt(
-                max(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'p0'][0],
-                    line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'p1'][0]) ** 2 +
-                max(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'q0'][0],
-                    line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][0]) ** 2),
+                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                    'branch'].id_db), 'p0'][0]),
+                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'p1'][0])) ** 2 +
+                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                    'branch'].id_db), 'q0'][0]),
+                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'q1'][0])) ** 2),
             sqrt(
-                max(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'p0'][1],
-                    line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'p1'][1]) ** 2 +
-                max(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'q0'][1],
-                    line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][1]) ** 2)]
+                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                    'branch'].id_db), 'p0'][1]),
+                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'p1'][1])) ** 2 +
+                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                    'branch'].id_db), 'q0'][1]),
+                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'q1'][1])) ** 2)]
 
         edge['branch'].s_res = s_res
 
