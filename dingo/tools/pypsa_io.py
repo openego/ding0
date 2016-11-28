@@ -229,6 +229,12 @@ def export_edges(grid, session, edges):
 
     # for edge in grid.graph_edges():
     for edge in edges:
+
+        line_name = '_'.join(['MV',
+                              str(grid.id_db),
+                              'lin',
+                              str(edge['branch'].id_db)])
+
         # if isinstance(edge, BranchDingo):
         if not (isinstance(edge['adj_nodes'][0],
                            (LVLoadAreaCentreDingo,
@@ -267,14 +273,21 @@ def export_edges(grid, session, edges):
                 s_nom = sqrt(3) * edge['branch'].type['I_max_th'] * \
                     edge['branch'].type['U_n']
 
+            # get lengths of line
+            l = edge['branch'].length / 1e3
+            if l == 0:
+                l=1
+                print("Length of line {0} is set to {1}".format(
+                    line_name, l))
+
             line = orm_pypsa.Line(
-                line_id='_'.join(['MV', str(grid.id_db), 'lin', str(edge['branch'].id_db)]),
+                line_id=line_name,
                 bus0=edge['adj_nodes'][0].pypsa_id,
                 bus1=edge['adj_nodes'][1].pypsa_id,
-                x=x * edge['branch'].length / 1e3,
-                r=r * edge['branch'].length / 1e3,
+                x=x * l,
+                r=r * l,
                 s_nom=s_nom,
-                length=edge['branch'].length / 1e3,
+                length=l,
                 cables=3,
                 geom=from_shape(LineString([edge['adj_nodes'][0].geo_data,
                                  edge['adj_nodes'][1].geo_data]), srid=srid),
