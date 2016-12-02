@@ -189,6 +189,15 @@ class GridDingo:
 
         return length
 
+    def graph_isolated_nodes(self):
+        """ Finds isolated nodes = nodes with no neighbors (degree zero)
+        Args:
+            none
+        Returns:
+            list with nodes (Dingo objects)
+        """
+        return nx.isolates(self._graph)
+
 
 class StationDingo:
     """
