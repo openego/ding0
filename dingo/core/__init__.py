@@ -603,7 +603,6 @@ class NetworkDingo:
                                                    orm_EgoDeuDea.voltage_level == '04 (HS/MS)'))
 
         # TODO: Currently only MV generators are imported, please include LV!
-        # TODO: Easter-egg for Guido:
 
         # read data from db
         generators = pd.read_sql_query(generators_sqla.statement,
@@ -615,7 +614,10 @@ class NetworkDingo:
             # TODO: Remove when fixed! And delete column 'geom' (original geom from EnergyMap) from query above
             if not row['geom_new']:
                 geo_data = wkt_loads(row['geom'])
-                print('Generator', str(id_db), 'has no geom_new entry, bad day dude! (using EnergyMap\'s geom entry)')
+                print('Generator', str(id_db),
+                      'has no geom_new entry, bad day dude! (EnergyMap\'s geom entry will be used)')
+            elif not row['geom_new']:
+                print('Generator', str(id_db), 'has no geom entry either, your day is getting worse dude!')
             else:
                 geo_data = wkt_loads(row['geom_new'])
             # ======================================================================================
