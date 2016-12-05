@@ -229,10 +229,8 @@ class NetworkDingo:
         if not all(isinstance(_, int) for _ in mv_grid_districts_no):
             raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
-        # get database naming and srid settings from config
+        # get srid settings from config
         try:
-            mv_grid_districts_schema_table = cfg_dingo.get('regions', 'mv_grid_districts')
-            mv_stations_schema_table = cfg_dingo.get('stations', 'mv_stations')
             srid = str(int(cfg_dingo.get('geo', 'srid')))
         except OSError:
             print('cannot open config file.')
