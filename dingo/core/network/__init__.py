@@ -78,7 +78,11 @@ class GridDingo:
         nodes_pos = {}; demands = {}; demands_pos = {}
         nodes_color = []
         for node in g.nodes():
-            if isinstance(node, (StationDingo, LVLoadAreaCentreDingo, CableDistributorDingo)):
+            if isinstance(node, (StationDingo,
+                                 LVLoadAreaCentreDingo,
+                                 CableDistributorDingo,
+                                 GeneratorDingo,
+                                 CircuitBreakerDingo)):
                 nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
                 # TODO: MOVE draw/color settings to config
             if node == self.station():
