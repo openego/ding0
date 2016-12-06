@@ -74,7 +74,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
     # Create all busses
     for node in nodes:
         if isinstance(node, LVStationDingo):
-            if node.lv_load_area.is_connected and grid._graph.adj[node]:
+            if node.lv_load_area.is_connected() and grid._graph.adj[node]:
                 # MV side bus
                 bus_mv = orm_pypsa.Bus(
                     bus_id=node.pypsa_id,
@@ -137,7 +137,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(load)
                 session.add(load_pq_set)
         elif isinstance(node, LVLoadAreaCentreDingo):
-            if node.lv_load_area.is_connected:
+            if node.lv_load_area.is_connected():
                 if node.lv_load_area.is_aggregated:
                     load = orm_pypsa.Load(
                         load_id=node.pypsa_id,
