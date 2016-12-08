@@ -14,6 +14,8 @@ setup(name='dingo',
                         'geoalchemy2',
                         'matplotlib',
                         'ego.io',# >= 0.0.1rc7',
-                        'oemof.db']
+                        'oemof.db',
+                        # 'ego.powerflow',
+                        ]
       # dependency_links=['https://github.com/openego/ego.io/archive/856769eb79e5342c349fe479e8c42da6481e122c.zip#egg=ego.io-0.0.1rc7+git.856769e']
      )
