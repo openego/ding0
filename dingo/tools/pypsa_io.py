@@ -225,9 +225,9 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 # TODO: remove this elif-case if CircuitBreaker are removed from graph
                 continue
             else:
-                raise TypeError("Node of type", node, "cannot handled here")
+                raise TypeError("Node of type", node, "cannot be handled here")
         else:
-            print("Node {} is not connected to the graph and will omitted"\
+            print("Node {} is not connected to the graph and will be omitted "\
                   "in power flow analysis".format(node))
 
     # write changes to database
