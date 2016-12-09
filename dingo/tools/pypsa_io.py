@@ -71,7 +71,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
 
     Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
 
-    voltage_set_slack = cfg_dingo.get("assumptions",
+    voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
     
     kw2mw = 1e-3
