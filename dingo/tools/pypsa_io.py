@@ -330,10 +330,12 @@ def run_powerflow(conn):
     """
     # session = oedb_session(section='oedb')
 
-    scenario = 'Status Quo'
 
     # define relevant tables of generator table
     pq_set_cols = ['temp_id', 'p_set', 'q_set']
+    scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
+    start_hour = cfg_dingo.get("powerflow", "start_hour")
+    end_hour = cfg_dingo.get("powerflow", "end_hour")
 
     # choose temp_id
     temp_id_set = 1
@@ -358,8 +360,8 @@ def run_powerflow(conn):
                              timerange,
                              scenario,
                              columns=['p_set'],
-                             start_h=0,
-                             end_h=2)
+                             start_h=start_hour,
+                             end_h=end_hour)
 
     # import pq-set table to pypsa network (q_set for loads)
     network = import_pq_sets(conn,
@@ -368,8 +370,8 @@ def run_powerflow(conn):
                              timerange,
                              scenario,
                              columns=['q_set'],
-                             start_h=0,
-                             end_h=2)
+                             start_h=start_hour,
+                             end_h=end_hour)
 
     # Import `v_mag_pu_set` for Bus
     network = import_pq_sets(conn,
@@ -378,8 +380,8 @@ def run_powerflow(conn):
                              timerange,
                              scenario,
                              columns=['v_mag_pu_set'],
-                             start_h=0,
-                             end_h=2)
+                             start_h=start_hour,
+                             end_h=end_hour)
 
     # add coordinates to network nodes and make ready for map plotting
     network = add_coordinates(network)
