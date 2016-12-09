@@ -320,11 +320,11 @@ class MVGridDingo(GridDingo):
         # set aggregation flag using largest available line/cable
         self.set_nodes_aggregation_flag(branch_type_max['I_max_th'] * load_factor_normal)
 
-        # calc peak current sum (= "virtual" current) of whole grid (I = S * sqrt(3) / U) excluding load areas of type
+        # calc peak current sum (= "virtual" current) of whole grid (I = S / sqrt(3) / U) excluding load areas of type
         # satellite and aggregated
         peak_current_sum = ((self.grid_district.peak_load -
                              self.grid_district.peak_load_satellites -
-                             self.grid_district.peak_load_aggregated) *
+                             self.grid_district.peak_load_aggregated) /
                             (3**0.5) / self.v_level)  # units: kVA / kV = A
 
         branch_type_settle = branch_type_settle_max = None
@@ -372,7 +372,7 @@ class MVGridDingo(GridDingo):
         """
 
         for lv_load_area in self.grid_district.lv_load_areas():
-            peak_current_node = (lv_load_area.peak_load_sum * (3**0.5) / self.v_level)  # units: kVA / kV = A
+            peak_current_node = (lv_load_area.peak_load_sum / (3**0.5) / self.v_level)  # units: kVA / kV = A
             if peak_current_node > peak_current_branch_max:
                 lv_load_area.is_aggregated = True
 

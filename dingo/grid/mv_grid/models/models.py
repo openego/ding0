@@ -206,7 +206,11 @@ class Route(object):
             current rating of cable/line
             voltage stability at all nodes
             cable/line losses?
+
+        References:
+
         """
+        #TODO: Add reference for voltage stability method (Basse?)
 
         # load parameters
         if self._problem._branch_kind == 'line':
@@ -242,15 +246,15 @@ class Route(object):
         # factor to calc reactive from active power
         Q_factor = tan(acos(mv_routing_loads_cos_phi))
         # line/cable params per km
-        r = self._problem._branch_type['R']  # unit: ohm/km
-        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit: ohm/km
+        r = self._problem._branch_type['R']  # unit for r: ohm/km
+        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km
 
         # step 3a: check if current rating of default cable/line is violated
         # (for every of the 2 half-rings using load factor for normal operation)
         demand_hring_1 = sum([node.demand() for node in self._nodes[0:position]])
         demand_hring_2 = sum([node.demand() for node in self._nodes[position:len(self._nodes)]])
-        peak_current_sum_hring1 = demand_hring_1 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
-        peak_current_sum_hring2 = demand_hring_2 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_hring1 = demand_hring_1 / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_hring2 = demand_hring_2 / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
 
         if (peak_current_sum_hring1 > (self._problem._branch_type['I_max_th'] * load_factor_normal) or
             peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_normal)):
@@ -258,7 +262,7 @@ class Route(object):
 
         # step 3b: check if current rating of default cable/line is violated
         # (for full ring using load factor for malfunction operation)
-        peak_current_sum_ring = self._demand * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_ring = self._demand / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
         if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_malfunc):
             return False
 
