@@ -247,7 +247,7 @@ def export_edges(grid, session, edges):
     omega = 2 * pi * 50
     srid = int(cfg_dingo.get('geo', 'srid'))
 
-    # for edge in grid.graph_edges():
+    # iterate over edges and add them one by one
     for edge in edges:
 
         line_name = '_'.join(['MV',
@@ -255,66 +255,57 @@ def export_edges(grid, session, edges):
                               'lin',
                               str(edge['branch'].id_db)])
 
-        # if isinstance(edge, BranchDingo):
-        if not (isinstance(edge['adj_nodes'][0],
-                           (LVLoadAreaCentreDingo,
-                            # MVStationDingo,
-                            CircuitBreakerDingo)) or
-                    isinstance(edge['adj_nodes'][1],
-                               (LVLoadAreaCentreDingo,
-                                # MVStationDingo,
-                                CircuitBreakerDingo))):
-            # TODO: check s_nom calculation
-            # TODO: 1. do we need to consider 3 cables
-            # TODO: 2. do we need to respect to consider a load factor
+        # TODO: check s_nom calculation
+        # TODO: 1. do we need to consider 3 cables
+        # TODO: 2. do we need to respect to consider a load factor
 
-            # TODO: find the real cause for being L, C, I_th_max type of Series
-            if (isinstance(edge['branch'].type['L'], Series) or
-                isinstance(edge['branch'].type['C'], Series)):
-                # x = omega * edge['branch'].type['L'].values[0] * 1e-3 - 1 / (
-                #     omega * edge['branch'].type['C'].values[0] * 1e-6)
-                # TODO: not sure if capacity C can be omitted
-                x = omega * edge['branch'].type['L'].values[0] * 1e-3
-            else:
-                # x = omega * edge['branch'].type['L'] * 1e-3 - 1 / (
-                #     omega * edge['branch'].type['C'] * 1e-6)
-                x = omega * edge['branch'].type['L'] * 1e-3
+        # TODO: find the real cause for being L, C, I_th_max type of Series
+        if (isinstance(edge['branch'].type['L'], Series) or
+            isinstance(edge['branch'].type['C'], Series)):
+            # x = omega * edge['branch'].type['L'].values[0] * 1e-3 - 1 / (
+            #     omega * edge['branch'].type['C'].values[0] * 1e-6)
+            # TODO: not sure if capacity C can be omitted
+            x = omega * edge['branch'].type['L'].values[0] * 1e-3
+        else:
+            # x = omega * edge['branch'].type['L'] * 1e-3 - 1 / (
+            #     omega * edge['branch'].type['C'] * 1e-6)
+            x = omega * edge['branch'].type['L'] * 1e-3
 
-            if isinstance(edge['branch'].type['R'], Series) :
-                r = edge['branch'].type['R'].values[0]
-            else:
-                r = edge['branch'].type['R']
+        if isinstance(edge['branch'].type['R'], Series) :
+            r = edge['branch'].type['R'].values[0]
+        else:
+            r = edge['branch'].type['R']
 
-            if (isinstance(edge['branch'].type['I_max_th'], Series) or
-                    isinstance(edge['branch'].type['U_n'], Series)):
-                s_nom = sqrt(3) * edge['branch'].type['I_max_th'].values[0] * \
-                    edge['branch'].type['U_n'].values[0]
-            else:
-                s_nom = sqrt(3) * edge['branch'].type['I_max_th'] * \
-                    edge['branch'].type['U_n']
+        if (isinstance(edge['branch'].type['I_max_th'], Series) or
+                isinstance(edge['branch'].type['U_n'], Series)):
+            s_nom = sqrt(3) * edge['branch'].type['I_max_th'].values[0] * \
+                edge['branch'].type['U_n'].values[0]
+        else:
+            s_nom = sqrt(3) * edge['branch'].type['I_max_th'] * \
+                edge['branch'].type['U_n']
 
-            # get lengths of line
-            l = edge['branch'].length / 1e3
-            if l == 0:
-                l=1
-                print("Length of line {0} is set to {1}".format(
-                    line_name, l))
+        # get lengths of line
+        l = edge['branch'].length / 1e3
+        if l == 0:
+            l=1
+            print("Length of line {0} is set to {1}".format(
+                line_name, l))
 
-            line = orm_pypsa.Line(
-                line_id=line_name,
-                bus0=edge['adj_nodes'][0].pypsa_id,
-                bus1=edge['adj_nodes'][1].pypsa_id,
-                x=x * l,
-                r=r * l,
-                s_nom=s_nom,
-                length=l,
-                cables=3,
-                geom=from_shape(LineString([edge['adj_nodes'][0].geo_data,
-                                 edge['adj_nodes'][1].geo_data]), srid=srid),
-                grid_id=grid.id_db
-            )
-            session.add(line)
-            session.commit()
+        line = orm_pypsa.Line(
+            line_id=line_name,
+            bus0=edge['adj_nodes'][0].pypsa_id,
+            bus1=edge['adj_nodes'][1].pypsa_id,
+            x=x * l,
+            r=r * l,
+            s_nom=s_nom,
+            length=l,
+            cables=3,
+            geom=from_shape(LineString([edge['adj_nodes'][0].geo_data,
+                             edge['adj_nodes'][1].geo_data]), srid=srid),
+            grid_id=grid.id_db
+        )
+        session.add(line)
+        session.commit()
 
 def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
                                  temp_id=1):

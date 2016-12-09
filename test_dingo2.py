@@ -37,7 +37,7 @@ nd.connect_generators()
 nd.set_branch_ids()
 
 # Open and close all circuit breakers in grid (for testing)
-#nd._mv_grid_districts[0].mv_grid.open_circuit_breakers()
+[gd.mv_grid.open_circuit_breakers() for gd in nd._mv_grid_districts]
 #nd._mv_grid_districts[0].mv_grid.close_circuit_breakers()
 
 
