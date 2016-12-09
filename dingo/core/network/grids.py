@@ -380,7 +380,7 @@ class MVGridDingo(GridDingo):
         self.grid_district.add_aggregated_peak_demand()
 
 
-    def export_to_pypsa(self, conn, single_half_ring=False):
+    def export_to_pypsa(self, conn):
         """Exports MVGridDingo grid to PyPSA database tables
 
         Peculiarities of MV grids are implemented here. Derive general export
@@ -411,24 +411,7 @@ class MVGridDingo(GridDingo):
         # Extract a subset of the graph (especially for testing purposes)
         degrees = self._graph.degree()
 
-        if single_half_ring:
-            # find mv station in graph
-            for node in self._graph.nodes():
-                if isinstance(node, MVStationDingo):
-                    mv_station = node
-
-            # find one exterior node (end of graph path)
-            for node in self._graph.nodes():
-                if degrees[node] == 1:
-                    break
-
-            # compute subgraph from mv_station to exterior node
-            nodes = nx.subgraph(self._graph,
-                                nx.shortest_path(self._graph,
-                                                 source=mv_station,
-                                                 target=node))
-        else:
-            nodes = self._graph.nodes()
+        nodes = self._graph.nodes()
 
         edges = [edge for edge in list(self.graph_edges())
                  if edge['adj_nodes'][0] in nodes
