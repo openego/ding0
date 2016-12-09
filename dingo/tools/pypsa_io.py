@@ -328,11 +328,7 @@ def run_powerflow(conn):
     conn: SQLAlchemy session object
 
     """
-    # session = oedb_session(section='oedb')
 
-
-    # define relevant tables of generator table
-    pq_set_cols = ['temp_id', 'p_set', 'q_set']
     scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
     start_hour = cfg_dingo.get("powerflow", "start_hour")
     end_hour = cfg_dingo.get("powerflow", "end_hour")
@@ -390,15 +386,13 @@ def run_powerflow(conn):
     network.pf(snapshots)
 
     # make a line loading plot
+    # TODO: make this optional
     plot_line_loading(network, timestep=0,
                       filename='Line_loading_load_case.png')
     plot_line_loading(network, timestep=1,
                       filename='Line_loading_feed-in_case.png')
 
     results_to_oedb(conn, network)
-
-    # close session
-    # session.close()
 
 
 def import_pfa_bus_results(session, grid):
