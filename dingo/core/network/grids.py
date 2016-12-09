@@ -418,8 +418,6 @@ class MVGridDingo(GridDingo):
                  and edge['adj_nodes'][1] in nodes]
 
         # Export node objects: Busses, Loads, Generators
-        # TODO: add to LVStation case: LVTransformers
-        # TODO: add export of MVStation incl. bus and transformer
         pypsa_io.export_nodes(self, session, nodes, temp_id, lv_transformer=False)
 
         # Export edges
