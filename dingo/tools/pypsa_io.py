@@ -255,20 +255,12 @@ def export_edges(grid, session, edges):
                               'lin',
                               str(edge['branch'].id_db)])
 
-        # TODO: check s_nom calculation
-        # TODO: 1. do we need to consider 3 cables
-        # TODO: 2. do we need to respect to consider a load factor
-
         # TODO: find the real cause for being L, C, I_th_max type of Series
         if (isinstance(edge['branch'].type['L'], Series) or
             isinstance(edge['branch'].type['C'], Series)):
-            # x = omega * edge['branch'].type['L'].values[0] * 1e-3 - 1 / (
-            #     omega * edge['branch'].type['C'].values[0] * 1e-6)
-            # TODO: not sure if capacity C can be omitted
             x = omega * edge['branch'].type['L'].values[0] * 1e-3
         else:
-            # x = omega * edge['branch'].type['L'] * 1e-3 - 1 / (
-            #     omega * edge['branch'].type['C'] * 1e-6)
+
             x = omega * edge['branch'].type['L'] * 1e-3
 
         if isinstance(edge['branch'].type['R'], Series) :
