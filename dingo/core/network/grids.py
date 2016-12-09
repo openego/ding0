@@ -380,11 +380,19 @@ class MVGridDingo(GridDingo):
         self.grid_district.add_aggregated_peak_demand()
 
 
-    def export_to_pypsa(self, conn):
+    def export_to_pypsa(self, conn, method='onthefly'):
         """Exports MVGridDingo grid to PyPSA database tables
 
         Peculiarities of MV grids are implemented here. Derive general export
         method from this and adapt to needs of LVGridDingo
+
+        Parameters
+        ----------
+        conn: SQLAlchemy session object
+        method: str
+            Specify export method
+            If method='db' grid data will be exported to database (default)
+            If method='onthefly' grid data will be passed to PyPSA directly
 
         Notes
         -----
@@ -402,32 +410,41 @@ class MVGridDingo(GridDingo):
         start_time = datetime(1970, 1, 1, 00, 00, 0)
         resolution = 'H'
 
-        Session = sessionmaker(bind=conn)
-        session = Session()
-
-        # Empty tables
-        pypsa_io.delete_powerflow_tables(session)
-
-        # Extract a subset of the graph (especially for testing purposes)
-        degrees = self._graph.degree()
 
         nodes = self._graph.nodes()
 
         edges = [edge for edge in list(self.graph_edges())
                  if edge['adj_nodes'][0] in nodes
                  and edge['adj_nodes'][1] in nodes]
+        if method is 'db':
+            Session = sessionmaker(bind=conn)
+            session = Session()
 
-        # Export node objects: Busses, Loads, Generators
-        pypsa_io.export_nodes(self, session, nodes, temp_id, lv_transformer=False)
+            # Empty tables
+            pypsa_io.delete_powerflow_tables(session)
 
-        # Export edges
-        pypsa_io.export_edges(self, session, edges)
 
-        # Create table about temporal coverage of PF analysis
-        pypsa_io.create_temp_resolution_table(session,
-                                              timesteps=timesteps,
-                                              resolution=resolution,
-                                              start_time=start_time)
+            # Export node objects: Busses, Loads, Generators
+            pypsa_io.export_nodes(self,
+                                  session,
+                                  nodes,
+                                  temp_id,
+                                  lv_transformer=False)
+
+            # Export edges
+            pypsa_io.export_edges(self, session, edges)
+
+            # Create table about temporal coverage of PF analysis
+            pypsa_io.create_temp_resolution_table(session,
+                                                  timesteps=timesteps,
+                                                  resolution=resolution,
+                                                  start_time=start_time)
+        elif method is 'onthefly':
+            components = pypsa_io.nodes_to_dict_of_dataframes(self,
+                                                              nodes,
+                                                              lv_transformer=False)
+        else:
+            raise ValueError('Sorry, this export method does not exist!')
 
 
     def run_powerflow(self, conn):

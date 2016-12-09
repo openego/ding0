@@ -311,6 +311,116 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
     session.commit()
 
 
+def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
+    """
+    Creates dictionary of dataframes containing grid
+
+    Parameters
+    ----------
+    nodes: list of dingo grid components objects
+        Nodes of the grid graph
+    lv_transformer: bool, True
+        Toggle transformer representation in power flow analysis
+
+    Returns:
+    components: dict of pandas.DataFrame
+        DataFrames contain components attributes. Dict is keyed by components
+        type
+    """
+
+    bus_instances = [LVStationDingo, GeneratorDingo, MVCableDistributorDingo,
+                     MVStationDingo]
+
+    generator_instances = [MVStationDingo, GeneratorDingo]
+    # TODO: MVStationDingo has a slack generator
+
+    mv_routing_loads_cos_phi = float(
+        cfg_dingo.get('mv_routing_tech_constraints',
+                      'mv_routing_loads_cos_phi'))
+    srid = int(cfg_dingo.get('geo', 'srid'))
+
+    load_in_generation_case = cfg_dingo.get('assumptions',
+                                            'load_in_generation_case')
+
+    Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
+
+    voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
+                                      "mv_station_v_level_operation")
+
+    # define dictionaries
+    buses = {'bus_id': [], 'v_nom': [], 'geom': [], 'grid_id': []}
+    generator = {'generator_id': [], 'bus': [], 'control': [], 'grid_id': [],
+                 'p_nom': []}
+    load = {'load_id': [], 'bus': [], 'grid_id': []}
+
+    # TODO: consider other implications of `lv_transformer is True`
+    if lv_transformer is True:
+        bus_instances.append(Transformer)
+
+    for node in nodes:
+        if node not in grid.graph_isolated_nodes():
+            # buses only
+            if isinstance(node, MVCableDistributorDingo):
+                buses['bus_id'].append(node.pypsa_id)
+                buses['v_nom'].append(grid.v_level)
+                buses['geom'].append(from_shape(node.geo_data, srid=srid))
+                buses['grid_id'].append(grid.id_db)
+
+            # bus + generator
+            elif isinstance(node, tuple(generator_instances)):
+                # slack generator
+                if isinstance(node, MVStationDingo):
+                    print('Only MV side bus of MVStation will be added.')
+                    generator['generator_id'].append(
+                        '_'.join(['MV', str(grid.id_db), 'slack']))
+                    generator['control'] =  'Slack'
+                    generator['p_nom'] = 0
+
+                # other generators
+                if isinstance(node, GeneratorDingo):
+                    generator['generator_id'].append(
+                        '_'.join(['MV', str(grid.id_db), 'gen']))
+                    generator['control'] = 'PQ'
+                    generator['p_nom'] = node.capacity
+
+                buses['bus_id'].append(node.pypsa_id)
+                buses['v_nom'].append(grid.v_level)
+                buses['geom'].append(from_shape(node.geo_data, srid=srid))
+                buses['grid_id'].append(grid.id_db)
+
+                generator['grid_id'].append(grid.id_db)
+                generator['bus'].append(node.pypsa_id)
+
+            # aggregated load at hv/mv substation
+            elif isinstance(node, LVLoadAreaCentreDingo):
+                load['load_id'] = node.pypsa_id
+                load['bus'] = '_'.join(['HV', str(grid.id_db), 'trd'])
+                load['grid_id'] = grid.id_db
+
+            # bus + aggregate load of lv grids (at mv/ls substation)
+            elif isinstance(node, LVStationDingo):
+                load['load_id'] = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)])
+                load['bus'] = node.pypsa_id
+                load['grid_id'] = grid.id_db
+
+                buses['bus_id'].append(node.pypsa_id)
+                buses['v_nom'].append(grid.v_level)
+                buses['geom'].append(from_shape(node.geo_data, srid=srid))
+                buses['grid_id'].append(grid.id_db)
+
+            elif isinstance(node, CircuitBreakerDingo):
+                # TODO: remove this elif-case if CircuitBreaker are removed from graph
+                continue
+            else:
+                raise TypeError("Node of type", node, "cannot be handled here")
+        else:
+            print("Node {} is not connected to the graph and will be omitted "\
+                  "in power flow analysis".format(node))
+
+    return [buses, generator, load]
+
+
+
 def run_powerflow(conn):
     """
     Run powerflow to test grid stability
