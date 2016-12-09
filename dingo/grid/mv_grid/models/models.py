@@ -206,7 +206,11 @@ class Route(object):
             current rating of cable/line
             voltage stability at all nodes
             cable/line losses?
+
+        References:
+
         """
+        #TODO: Add reference for voltage stability method (Basse?)
 
         # load parameters
         if self._problem._branch_kind == 'line':
@@ -242,8 +246,8 @@ class Route(object):
         # factor to calc reactive from active power
         Q_factor = tan(acos(mv_routing_loads_cos_phi))
         # line/cable params per km
-        r = self._problem._branch_type['R']  # unit: ohm/km
-        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit: ohm/km
+        r = self._problem._branch_type['R']  # unit for r: ohm/km
+        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km
 
         # step 3a: check if current rating of default cable/line is violated
         # (for every of the 2 half-rings using load factor for normal operation)
