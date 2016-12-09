@@ -249,8 +249,8 @@ class Route(object):
         # (for every of the 2 half-rings using load factor for normal operation)
         demand_hring_1 = sum([node.demand() for node in self._nodes[0:position]])
         demand_hring_2 = sum([node.demand() for node in self._nodes[position:len(self._nodes)]])
-        peak_current_sum_hring1 = demand_hring_1 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
-        peak_current_sum_hring2 = demand_hring_2 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_hring1 = demand_hring_1 / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_hring2 = demand_hring_2 / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
 
         if (peak_current_sum_hring1 > (self._problem._branch_type['I_max_th'] * load_factor_normal) or
             peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_normal)):
@@ -258,7 +258,7 @@ class Route(object):
 
         # step 3b: check if current rating of default cable/line is violated
         # (for full ring using load factor for malfunction operation)
-        peak_current_sum_ring = self._demand * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_ring = self._demand / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
         if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_malfunc):
             return False
 
