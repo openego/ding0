@@ -573,7 +573,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
     for lv_load_area in mv_grid_district.lv_load_areas():
 
         # exclude aggregated LV load areas and choose only load areas that were connected to grid before
-        if not lv_load_area.is_aggregated and lv_load_area.is_connected():
+        if not lv_load_area.is_aggregated and \
+           lv_load_area.lv_load_area_centre not in mv_grid_district.mv_grid.graph_isolated_nodes():
 
             # ===== DEBUG STUFF (BUG JONAS) =====
             # TODO: Remove when fixed!

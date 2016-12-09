@@ -211,16 +211,6 @@ class LVLoadAreaDingo(RegionDingo):
                 isinstance(lv_grid_district, LVGridDistrictDingo):
             self._lv_grid_districts.append(lv_grid_district)
 
-    def is_connected(self):
-        """Determines if the LV load area centre of this LV load area is connected to the MV grid's graph"""
-
-        neighbor_node_count = len(self.mv_grid_district.mv_grid._graph.neighbors(self.lv_load_area_centre))
-        if neighbor_node_count == 0:
-            return False
-        else:
-            return True
-
-
     def __repr__(self):
         return 'lv_load_area_' + str(self.id_db)
 
