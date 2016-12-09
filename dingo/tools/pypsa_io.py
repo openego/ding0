@@ -278,10 +278,6 @@ def export_edges(grid, session, edges):
 
         # get lengths of line
         l = edge['branch'].length / 1e3
-        if l == 0:
-            l=1
-            print("Length of line {0} is set to {1}".format(
-                line_name, l))
 
         line = orm_pypsa.Line(
             line_id=line_name,
