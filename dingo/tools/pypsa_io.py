@@ -57,6 +57,8 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
     -----
     Reactive power of DEA is modeled with cos phi = 1 according to "DENA
     Verteilnetzstudie"
+
+
     """
 
     mv_routing_loads_cos_phi = float(
@@ -68,13 +70,16 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                                             'load_in_generation_case')
 
     Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
+
+    voltage_set_slack = cfg_dingo.get("assumptions",
+                                      "mv_station_v_level_operation")
     
     kw2mw = 1e-3
 
     # Create all busses
     for node in nodes:
-        if isinstance(node, LVStationDingo):
-            if node.lv_load_area.is_connected() and grid._graph.adj[node]:
+        if node not in grid.graph_isolated_nodes():
+            if isinstance(node, LVStationDingo):
                 # MV side bus
                 bus_mv = orm_pypsa.Bus(
                     bus_id=node.pypsa_id,
@@ -90,6 +95,10 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set_mv)
                 if lv_transformer is True:
                     # Add transformer to bus
+                    print("Regarding x, r and s_nom LV station {} only "\
+                        "first transformer in considered in PF "\
+                        "analysis".format(node))
+                    # TODO: consider multiple transformers and remove above warning
                     transformer = orm_pypsa.Transformer(
                         trafo_id='_'.join(['MV', str(grid.id_db), 'trf', str(node.id_db)]),
                         s_nom=node._transformers[0].s_max_a,
@@ -136,89 +145,90 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     grid_id=grid.id_db)
                 session.add(load)
                 session.add(load_pq_set)
-        elif isinstance(node, LVLoadAreaCentreDingo):
-            if node.lv_load_area.is_connected():
-                if node.lv_load_area.is_aggregated:
-                    load = orm_pypsa.Load(
-                        load_id=node.pypsa_id,
-                        bus='_'.join(['HV', str(grid.id_db), 'trd']),
-                        grid_id=grid.id_db)
-                    load_pq_set = orm_pypsa.LoadPqSet(
-                        load_id=node.pypsa_id,
-                        temp_id=temp_id,
-                        p_set=[node.lv_load_area.peak_load_sum * kw2mw,
-                               load_in_generation_case * kw2mw],
-                        q_set=[node.lv_load_area.peak_load_sum
-                               * Q_factor_load * kw2mw,
-                               load_in_generation_case * kw2mw],
-                        grid_id=grid.id_db)
-                    session.add(load)
-                    session.add(load_pq_set)
-        elif isinstance(node, MVCableDistributorDingo):
-            bus = orm_pypsa.Bus(
-                bus_id=node.pypsa_id,
-                v_nom=grid.v_level,
-                geom=from_shape(node.geo_data, srid=srid),
-                grid_id=grid.id_db)
-            bus_pq_set = orm_pypsa.BusVMagSet(
-                bus_id=node.pypsa_id,
-                temp_id=temp_id,
-                v_mag_pu_set=[1, 1],
-                grid_id=grid.id_db)
-            session.add(bus)
-            session.add(bus_pq_set)
-        elif isinstance(node, MVStationDingo):
-            print('Only MV side bus of MVStation will be added.')
-            bus_mv_station = orm_pypsa.Bus(
-                bus_id=node.pypsa_id,
-                v_nom=grid.v_level,
-                geom=from_shape(node.geo_data, srid=srid),
-                grid_id=grid.id_db)
-            bus_pq_set_mv_station = orm_pypsa.BusVMagSet(
-                bus_id=node.pypsa_id,
-                temp_id=temp_id,
-                v_mag_pu_set=[1, 1],
-                grid_id=grid.id_db)
-            slack_gen = orm_pypsa.Generator(
-                generator_id='_'.join(['MV', str(grid.id_db), 'slack']),
-                bus=node.pypsa_id,
-                control='Slack',
-                grid_id=grid.id_db)
-            session.add(bus_mv_station)
-            session.add(bus_pq_set_mv_station)
-            session.add(slack_gen)
-        elif isinstance(node, GeneratorDingo):
-            bus_gen = orm_pypsa.Bus(
-                bus_id=node.pypsa_id,
-                v_nom=grid.v_level,
-                geom=from_shape(node.geo_data, srid=srid),
-                grid_id=grid.id_db)
-            bus_pq_set_gen = orm_pypsa.BusVMagSet(
-                bus_id=node.pypsa_id,
-                temp_id=temp_id,
-                v_mag_pu_set=[1, 1],
-                grid_id=grid.id_db)
-            generator = orm_pypsa.Generator(
-                generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
-                bus=node.pypsa_id,
-                control='PQ',
-                p_nom=node.capacity,
-                grid_id=grid.id_db)
-            generator_pq_set = orm_pypsa.GeneratorPqSet(
-                generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
-                temp_id=temp_id,
-                p_set=[0 * kw2mw, node.capacity * kw2mw],
-                q_set=[0 * kw2mw, 0 * kw2mw],
-                grid_id=grid.id_db)
-            session.add(bus_gen)
-            session.add(bus_pq_set_gen)
-            session.add(generator)
-            session.add(generator_pq_set)
-        elif isinstance(node, CircuitBreakerDingo):
-            # TODO: remove this elif-case if CircuitBreaker are removed from graph
-            continue
+            elif isinstance(node, LVLoadAreaCentreDingo):
+                load = orm_pypsa.Load(
+                    load_id=node.pypsa_id,
+                    bus='_'.join(['HV', str(grid.id_db), 'trd']),
+                    grid_id=grid.id_db)
+                load_pq_set = orm_pypsa.LoadPqSet(
+                    load_id=node.pypsa_id,
+                    temp_id=temp_id,
+                    p_set=[node.lv_load_area.peak_load_sum * kw2mw,
+                           load_in_generation_case * kw2mw],
+                    q_set=[node.lv_load_area.peak_load_sum
+                           * Q_factor_load * kw2mw,
+                           load_in_generation_case * kw2mw],
+                    grid_id=grid.id_db)
+                session.add(load)
+                session.add(load_pq_set)
+            elif isinstance(node, MVCableDistributorDingo):
+                bus = orm_pypsa.Bus(
+                    bus_id=node.pypsa_id,
+                    v_nom=grid.v_level,
+                    geom=from_shape(node.geo_data, srid=srid),
+                    grid_id=grid.id_db)
+                bus_pq_set = orm_pypsa.BusVMagSet(
+                    bus_id=node.pypsa_id,
+                    temp_id=temp_id,
+                    v_mag_pu_set=[1, 1],
+                    grid_id=grid.id_db)
+                session.add(bus)
+                session.add(bus_pq_set)
+            elif isinstance(node, MVStationDingo):
+                print('Only MV side bus of MVStation will be added.')
+                bus_mv_station = orm_pypsa.Bus(
+                    bus_id=node.pypsa_id,
+                    v_nom=grid.v_level,
+                    geom=from_shape(node.geo_data, srid=srid),
+                    grid_id=grid.id_db)
+                bus_pq_set_mv_station = orm_pypsa.BusVMagSet(
+                    bus_id=node.pypsa_id,
+                    temp_id=temp_id,
+                    v_mag_pu_set=[voltage_set_slack, voltage_set_slack],
+                    grid_id=grid.id_db)
+                slack_gen = orm_pypsa.Generator(
+                    generator_id='_'.join(['MV', str(grid.id_db), 'slack']),
+                    bus=node.pypsa_id,
+                    control='Slack',
+                    grid_id=grid.id_db)
+                session.add(bus_mv_station)
+                session.add(bus_pq_set_mv_station)
+                session.add(slack_gen)
+            elif isinstance(node, GeneratorDingo):
+                bus_gen = orm_pypsa.Bus(
+                    bus_id=node.pypsa_id,
+                    v_nom=grid.v_level,
+                    geom=from_shape(node.geo_data, srid=srid),
+                    grid_id=grid.id_db)
+                bus_pq_set_gen = orm_pypsa.BusVMagSet(
+                    bus_id=node.pypsa_id,
+                    temp_id=temp_id,
+                    v_mag_pu_set=[1, 1],
+                    grid_id=grid.id_db)
+                generator = orm_pypsa.Generator(
+                    generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
+                    bus=node.pypsa_id,
+                    control='PQ',
+                    p_nom=node.capacity,
+                    grid_id=grid.id_db)
+                generator_pq_set = orm_pypsa.GeneratorPqSet(
+                    generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
+                    temp_id=temp_id,
+                    p_set=[0 * kw2mw, node.capacity * kw2mw],
+                    q_set=[0 * kw2mw, 0 * kw2mw],
+                    grid_id=grid.id_db)
+                session.add(bus_gen)
+                session.add(bus_pq_set_gen)
+                session.add(generator)
+                session.add(generator_pq_set)
+            elif isinstance(node, CircuitBreakerDingo):
+                # TODO: remove this elif-case if CircuitBreaker are removed from graph
+                continue
+            else:
+                raise TypeError("Node of type", node, "cannot handled here")
         else:
-            raise TypeError("Node of type", node, "cannot handled here")
+            print("Node {} is not connected to the graph and will omitted"\
+                  "in power flow analysis".format(node))
 
     # write changes to database
     session.commit()
@@ -439,11 +449,17 @@ def import_pfa_bus_results(session, grid):
 
     # iterate of nodes and assign voltage obtained from power flow analysis
     for node in grid._graph.nodes():
-        if isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
-            if len(grid._graph.neighbors(node)) > 0:
+        # check if node is connected to graph
+        if node not in grid.graph_isolated_nodes():
+            if isinstance(node, LVStationDingo):
+                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
+                if node.lv_load_area.is_aggregated:
+                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            elif not isinstance(node, CircuitBreakerDingo):
                 node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-        elif not isinstance(node, CircuitBreakerDingo):
-            node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            else:
+                print("Object {} has been skipped while importing results!")
 
 
 def import_pfa_line_results(session, grid):
