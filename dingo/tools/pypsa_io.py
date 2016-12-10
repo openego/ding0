@@ -20,7 +20,7 @@ from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
 from shapely.geometry import LineString
-from pandas import Series, read_sql_query
+from pandas import Series, read_sql_query, DataFrame
 
 
 def delete_powerflow_tables(session):
@@ -373,15 +373,15 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     print('Only MV side bus of MVStation will be added.')
                     generator['generator_id'].append(
                         '_'.join(['MV', str(grid.id_db), 'slack']))
-                    generator['control'] =  'Slack'
-                    generator['p_nom'] = 0
+                    generator['control'].append('Slack')
+                    generator['p_nom'].append(0)
 
                 # other generators
                 if isinstance(node, GeneratorDingo):
                     generator['generator_id'].append(
                         '_'.join(['MV', str(grid.id_db), 'gen']))
-                    generator['control'] = 'PQ'
-                    generator['p_nom'] = node.capacity
+                    generator['control'].append('PQ')
+                    generator['p_nom'].append(node.capacity)
 
                 buses['bus_id'].append(node.pypsa_id)
                 buses['v_nom'].append(grid.v_level)
@@ -393,15 +393,15 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
             # aggregated load at hv/mv substation
             elif isinstance(node, LVLoadAreaCentreDingo):
-                load['load_id'] = node.pypsa_id
-                load['bus'] = '_'.join(['HV', str(grid.id_db), 'trd'])
-                load['grid_id'] = grid.id_db
+                load['load_id'].append(node.pypsa_id)
+                load['bus'].append('_'.join(['HV', str(grid.id_db), 'trd']))
+                load['grid_id'].append( grid.id_db)
 
             # bus + aggregate load of lv grids (at mv/ls substation)
             elif isinstance(node, LVStationDingo):
-                load['load_id'] = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)])
-                load['bus'] = node.pypsa_id
-                load['grid_id'] = grid.id_db
+                load['load_id'].append('_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
+                load['bus'].append(node.pypsa_id)
+                load['grid_id'].append(grid.id_db)
 
                 buses['bus_id'].append(node.pypsa_id)
                 buses['v_nom'].append(grid.v_level)
@@ -417,7 +417,9 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             print("Node {} is not connected to the graph and will be omitted "\
                   "in power flow analysis".format(node))
 
-    return [buses, generator, load]
+    return {'Bus': DataFrame(buses),
+            'Generator': DataFrame(generator),
+            'Load': DataFrame(load)}
 
 
 
