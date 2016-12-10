@@ -8,7 +8,7 @@ from dingo.core.network.cable_distributors import LVCableDistributorDingo
 from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
-from dingo.tools import config as cfg_dingo, pypsa_io
+from dingo.tools import config as cfg_dingo, pypsa_io, tools
 import dingo.core
 
 
@@ -440,9 +440,11 @@ class MVGridDingo(GridDingo):
                                                   resolution=resolution,
                                                   start_time=start_time)
         elif method is 'onthefly':
-            components = pypsa_io.nodes_to_dict_of_dataframes(self,
+            nodes_dict = pypsa_io.nodes_to_dict_of_dataframes(self,
                                                               nodes,
                                                               lv_transformer=False)
+            edges_dict = pypsa_io.edges_to_dict_of_dataframes(self, edges)
+            components = tools.merge_two_dicts(nodes_dict, edges_dict)
         else:
             raise ValueError('Sorry, this export method does not exist!')
 

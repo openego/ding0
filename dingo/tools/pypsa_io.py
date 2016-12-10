@@ -422,6 +422,72 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             'Load': DataFrame(load)}
 
 
+def edges_to_dict_of_dataframes(grid, edges):
+    """
+    Export edges to DataFrame
+
+    :param grid:
+    :param edges:
+    Returns
+    -------
+    edges_dict: dict
+    """
+    omega = 2 * pi * 50
+    srid = int(cfg_dingo.get('geo', 'srid'))
+
+    lines = {'line_id': [], 'bus0': [], 'bus1': [], 'x': [], 'r': [],
+             's_nom': [], 'length': [], 'cables': [], 'geom': [],
+             'grid_id': []}
+
+    # iterate over edges and add them one by one
+    for edge in edges:
+
+        line_name = '_'.join(['MV',
+                              str(grid.id_db),
+                              'lin',
+                              str(edge['branch'].id_db)])
+
+        # TODO: find the real cause for being L, C, I_th_max type of Series
+        if (isinstance(edge['branch'].type['L'], Series) or
+                isinstance(edge['branch'].type['C'], Series)):
+            x = omega * edge['branch'].type['L'].values[0] * 1e-3
+        else:
+
+            x = omega * edge['branch'].type['L'] * 1e-3
+
+        if isinstance(edge['branch'].type['R'], Series):
+            r = edge['branch'].type['R'].values[0]
+        else:
+            r = edge['branch'].type['R']
+
+        if (isinstance(edge['branch'].type['I_max_th'], Series) or
+                isinstance(edge['branch'].type['U_n'], Series)):
+            s_nom = sqrt(3) * edge['branch'].type['I_max_th'].values[0] * \
+                    edge['branch'].type['U_n'].values[0]
+        else:
+            s_nom = sqrt(3) * edge['branch'].type['I_max_th'] * \
+                    edge['branch'].type['U_n']
+
+        # get lengths of line
+        l = edge['branch'].length / 1e3
+
+        lines['line_id'].append(line_name)
+        lines['bus0'].append(edge['adj_nodes'][0].pypsa_id)
+        lines['bus1'].append(edge['adj_nodes'][1].pypsa_id)
+        lines['x'].append(x * l)
+        lines['r'].append(r * l)
+        lines['s_nom'].append(s_nom)
+        lines['length'].append(l)
+        lines['cables'].append(3)
+        lines['geom'].append(from_shape(
+            LineString([edge['adj_nodes'][0].geo_data,
+                        edge['adj_nodes'][1].geo_data]),
+            srid=srid))
+        lines['grid_id'].append(grid.id_db)
+
+    return {'Line': DataFrame(lines)}
+
+
 
 def run_powerflow(conn):
     """
