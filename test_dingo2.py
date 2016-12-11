@@ -41,7 +41,7 @@ nd.set_branch_ids()
 #nd._mv_grid_districts[0].mv_grid.close_circuit_breakers()
 
 for mv_grid_district in nd._mv_grid_districts:
-    mv_grid_district.mv_grid.export_to_pypsa(conn)
+    mv_grid_district.mv_grid.export_to_pypsa(conn, method='onthefly')
     mv_grid_district.mv_grid.run_powerflow(conn)
     mv_grid_district.mv_grid.import_powerflow_results(conn)
 

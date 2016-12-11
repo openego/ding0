@@ -440,9 +440,10 @@ class MVGridDingo(GridDingo):
                                                   resolution=resolution,
                                                   start_time=start_time)
         elif method is 'onthefly':
-            nodes_dict = pypsa_io.nodes_to_dict_of_dataframes(self,
-                                                              nodes,
-                                                              lv_transformer=False)
+            nodes_dict, components_data = pypsa_io.nodes_to_dict_of_dataframes(
+                self,
+                nodes,
+                lv_transformer=False)
             edges_dict = pypsa_io.edges_to_dict_of_dataframes(self, edges)
             components = tools.merge_two_dicts(nodes_dict, edges_dict)
         else:

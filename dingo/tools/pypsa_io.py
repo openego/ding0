@@ -347,11 +347,18 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
 
+    kw2mw = 1e-3
+
     # define dictionaries
     buses = {'bus_id': [], 'v_nom': [], 'geom': [], 'grid_id': []}
+    bus_v_mag_set = {'bus_id': [], 'temp_id': [], 'v_mag_pu_set': [], 'grid_id': []}
     generator = {'generator_id': [], 'bus': [], 'control': [], 'grid_id': [],
                  'p_nom': []}
+    generator_pq_set = {'generator_id': [], 'temp_id': [], 'p_set': [],
+                        'grid_id': [], 'q_set': []}
     load = {'load_id': [], 'bus': [], 'grid_id': []}
+    load_pq_set = {'load_id': [], 'temp_id': [], 'p_set': [],
+                        'grid_id': [], 'q_set': []}
 
     # TODO: consider other implications of `lv_transformer is True`
     if lv_transformer is True:
@@ -366,6 +373,11 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 buses['geom'].append(from_shape(node.geo_data, srid=srid))
                 buses['grid_id'].append(grid.id_db)
 
+                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['temp_id'].append(1)
+                bus_v_mag_set['v_mag_pu_set'].append([1, 1])
+                bus_v_mag_set['grid_id'].append(grid.id_db)
+
             # bus + generator
             elif isinstance(node, tuple(generator_instances)):
                 # slack generator
@@ -375,6 +387,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                         '_'.join(['MV', str(grid.id_db), 'slack']))
                     generator['control'].append('Slack')
                     generator['p_nom'].append(0)
+                    bus_v_mag_set['v_mag_pu_set'].append(
+                        [voltage_set_slack, voltage_set_slack])
 
                 # other generators
                 if isinstance(node, GeneratorDingo):
@@ -383,13 +397,28 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     generator['control'].append('PQ')
                     generator['p_nom'].append(node.capacity)
 
+                    generator_pq_set['generator_id'].append(
+                        '_'.join(['MV', str(grid.id_db), 'gen']))
+                    generator_pq_set['temp_id'].append(1)
+                    generator_pq_set['p_set'].append(
+                        [0 * kw2mw, node.capacity * kw2mw])
+                    generator_pq_set['q_set'].append(
+                        [0 * kw2mw, 0 * kw2mw])
+                    generator_pq_set['grid_id'].append(grid.id_db)
+                    bus_v_mag_set['v_mag_pu_set'].append([1, 1])
+
                 buses['bus_id'].append(node.pypsa_id)
                 buses['v_nom'].append(grid.v_level)
                 buses['geom'].append(from_shape(node.geo_data, srid=srid))
                 buses['grid_id'].append(grid.id_db)
 
+                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['temp_id'].append(1)
+                bus_v_mag_set['grid_id'].append(grid.id_db)
+
                 generator['grid_id'].append(grid.id_db)
                 generator['bus'].append(node.pypsa_id)
+
 
             # aggregated load at hv/mv substation
             elif isinstance(node, LVLoadAreaCentreDingo):
@@ -397,16 +426,42 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 load['bus'].append('_'.join(['HV', str(grid.id_db), 'trd']))
                 load['grid_id'].append( grid.id_db)
 
+                load_pq_set['load_id'].append(node.pypsa_id)
+                load_pq_set['temp_id'].append(1)
+                load_pq_set['p_set'].append(
+                    [node.lv_load_area.peak_load_sum * kw2mw,
+                     load_in_generation_case * kw2mw])
+                load_pq_set['q_set'].append(
+                    [node.lv_load_area.peak_load_sum
+                     * Q_factor_load * kw2mw,
+                     load_in_generation_case * kw2mw])
+                load_pq_set['grid_id'].append(grid.id_db)
+
             # bus + aggregate load of lv grids (at mv/ls substation)
             elif isinstance(node, LVStationDingo):
                 load['load_id'].append('_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
                 load['bus'].append(node.pypsa_id)
                 load['grid_id'].append(grid.id_db)
 
+                load_pq_set['load_id'].append(node.pypsa_id)
+                load_pq_set['temp_id'].append(1)
+                load_pq_set['p_set'].append(
+                    [node.peak_load * kw2mw,
+                     load_in_generation_case * kw2mw])
+                load_pq_set['q_set'].append(
+                    [node.peak_load * Q_factor_load * kw2mw,
+                     load_in_generation_case])
+                load_pq_set['grid_id'].append(grid.id_db)
+
                 buses['bus_id'].append(node.pypsa_id)
                 buses['v_nom'].append(grid.v_level)
                 buses['geom'].append(from_shape(node.geo_data, srid=srid))
                 buses['grid_id'].append(grid.id_db)
+
+                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['temp_id'].append(1)
+                bus_v_mag_set['v_mag_pu_set'].append([1, 1])
+                bus_v_mag_set['grid_id'].append(grid.id_db)
 
             elif isinstance(node, CircuitBreakerDingo):
                 # TODO: remove this elif-case if CircuitBreaker are removed from graph
@@ -417,9 +472,16 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             print("Node {} is not connected to the graph and will be omitted "\
                   "in power flow analysis".format(node))
 
-    return {'Bus': DataFrame(buses),
-            'Generator': DataFrame(generator),
-            'Load': DataFrame(load)}
+    components = {'Bus': DataFrame(buses).set_index('bus_id'),
+                  'Generator': DataFrame(generator).set_index('generator_id'),
+                  'Load': DataFrame(load).set_index('load_id')}
+
+    components_data = {'BusVMagSet': DataFrame(bus_v_mag_set).set_index('bus_id'),
+                       'GeneratorPQSet': DataFrame(generator_pq_set).set_index(
+                           'generator_id'),
+                       'LoadPQSet': DataFrame(load_pq_set).set_index('load_id')}
+
+    return components, components_data
 
 
 def edges_to_dict_of_dataframes(grid, edges):
