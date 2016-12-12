@@ -24,6 +24,8 @@ nd = NetworkDingo(name='network')
 # mv_grid_districts=[482]
 # mv_grid_districts = [386,372,406,371,402,415,480,424,489,367,359,569,591]
 mv_grid_districts=[489]
+method = 'onthefly'
+# method = 'db'
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 nd.import_generators(conn)
@@ -41,8 +43,9 @@ nd.set_branch_ids()
 #nd._mv_grid_districts[0].mv_grid.close_circuit_breakers()
 
 for mv_grid_district in nd._mv_grid_districts:
-    mv_grid_district.mv_grid.export_to_pypsa(conn, method='onthefly')
-    mv_grid_district.mv_grid.run_powerflow(conn)
+    if method is not 'onthefly':
+        mv_grid_district.mv_grid.export_to_pypsa(conn, method=method)
+    mv_grid_district.mv_grid.run_powerflow(conn, method=method)
     mv_grid_district.mv_grid.import_powerflow_results(conn)
 
 nd.export_mv_grid(conn, mv_grid_districts)

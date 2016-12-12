@@ -469,15 +469,21 @@ class MVGridDingo(GridDingo):
                 lv_transformer=False)
             edges_dict = pypsa_io.edges_to_dict_of_dataframes(self, edges)
             components = tools.merge_two_dicts(nodes_dict, edges_dict)
+
+            return components, components_data
         else:
             raise ValueError('Sorry, this export method does not exist!')
 
-    def run_powerflow(self, conn):
+    def run_powerflow(self, conn, method='onthefly'):
 
-        Session = sessionmaker(bind=conn)
-        session = Session()
+        if method is 'db':
+            Session = sessionmaker(bind=conn)
+            session = Session()
 
-        pypsa_io.run_powerflow(session)
+            pypsa_io.run_powerflow(session)
+        elif method is 'onthefly':
+            components, components_data = self.export_to_pypsa(conn, method)
+            pypsa_io.run_powerflow_onthefly(components, components_data)
 
     def import_powerflow_results(self, conn):
         """
