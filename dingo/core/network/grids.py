@@ -9,6 +9,7 @@ from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
 from dingo.tools import config as cfg_dingo, pypsa_io
+from dingo.flexopt.reinforce_grid import *
 import dingo.core
 
 
@@ -455,6 +456,17 @@ class MVGridDingo(GridDingo):
 
         # transformer data
 
+    def reinforce_grid(self):
+        """ Performs grid reinforcement measures for current MV grid
+        Args:
+
+        Returns:
+
+        """
+        # TODO: Finalize docstring
+
+        reinforce_grid(self, mode='MV')
+
     def __repr__(self):
         return 'mv_grid_' + str(self.id_db)
 
@@ -663,6 +675,17 @@ class LVGridDingo(GridDingo):
     #         self.graph_add_node(lv_station)
     #
     #     # TODO: add more nodes (loads etc.) here
+
+    def reinforce_grid(self):
+        """ Performs grid reinforcement measures for current LV grid
+        Args:
+
+        Returns:
+
+        """
+        # TODO: Finalize docstring
+
+        reinforce_grid(self, mode='LV')
 
     def __repr__(self):
         return 'lv_grid_' + str(self.id_db)
