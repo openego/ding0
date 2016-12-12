@@ -331,6 +331,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
     Parameters
     ----------
+    grid: dingo.Network
     nodes: list of dingo grid components objects
         Nodes of the grid graph
     lv_transformer: bool, True
@@ -340,10 +341,9 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     components: dict of pandas.DataFrame
         DataFrames contain components attributes. Dict is keyed by components
         type
+    components_data: dict of pandas.DataFrame
+        DataFrame containing components time-varying data
     """
-
-    bus_instances = [LVStationDingo, GeneratorDingo, MVCableDistributorDingo,
-                     MVStationDingo]
 
     generator_instances = [MVStationDingo, GeneratorDingo]
     # TODO: MVStationDingo has a slack generator
@@ -375,9 +375,9 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     load_pq_set = {'load_id': [], 'temp_id': [], 'p_set': [],
                    'grid_id': [], 'q_set': []}
 
-    # TODO: consider other implications of `lv_transformer is True`
-    if lv_transformer is True:
-        bus_instances.append(Transformer)
+    # # TODO: consider other implications of `lv_transformer is True`
+    # if lv_transformer is True:
+    #     bus_instances.append(Transformer)
 
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
@@ -505,8 +505,12 @@ def edges_to_dict_of_dataframes(grid, edges):
     """
     Export edges to DataFrame
 
-    :param grid:
-    :param edges:
+    Parameters
+    ----------
+    grid: dingo.Network
+    edges: list
+        Edges of Dingo.Network graph
+
     Returns
     -------
     edges_dict: dict
@@ -564,7 +568,7 @@ def edges_to_dict_of_dataframes(grid, edges):
             srid=srid))
         lines['grid_id'].append(grid.id_db)
 
-    return {'Line': DataFrame(lines)}
+    return {'Line': DataFrame(lines).set_index('line_id')}
 
 
 def run_powerflow(conn):
