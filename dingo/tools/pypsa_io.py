@@ -647,6 +647,75 @@ def run_powerflow(conn):
     results_to_oedb(conn, network)
 
 
+def run_powerflow_onthefly(components, components_data):
+    """
+    Run powerflow to test grid stability
+
+    Two cases are defined to be tested here:
+     i) load case
+     ii) feed-in case
+
+    Parameters
+    ----------
+    components: dict of pandas.DataFrame
+    components_data: dict of pandas.DataFrame
+    """
+
+    scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
+    start_hour = cfg_dingo.get("powerflow", "start_hour")
+    end_hour = cfg_dingo.get("powerflow", "end_hour")
+
+    # choose temp_id
+    temp_id_set = 1
+    timesteps = 2
+    start_time = datetime(1970, 1, 1, 00, 00, 0)
+    resolution = 'H'
+
+    # define investigated time range
+    timerange = DatetimeIndex(freq=resolution,
+                              periods=timesteps,
+                              start=start_time)
+
+    # create PyPSA powerflow problem
+    network, snapshots = create_powerflow_problem(timerange, components)
+
+    # import pq-sets
+    for key in ['Load', 'Generator']:
+        for attr in ['p_set', 'q_set']:
+            series = transform_timeseries4pypsa(components_data[key][
+                                                    attr].to_frame(),
+                                                timerange,
+                                                column=attr)
+            import_series_from_dataframe(network,
+                                         series,
+                                         key,
+                                         attr)
+    series = transform_timeseries4pypsa(components_data['Bus']
+                                        ['v_mag_pu_set'].to_frame(),
+                                        timerange,
+                                        column='v_mag_pu_set')
+
+    import_series_from_dataframe(network,
+                                 series,
+                                 'Bus',
+                                 'v_mag_pu_set')
+
+    # # add coordinates to network nodes and make ready for map plotting
+    # network = add_coordinates(network)
+
+    # start powerflow calculations
+    network.pf(snapshots)
+
+    # # make a line loading plot
+    # # TODO: make this optional
+    # plot_line_loading(network, timestep=0,
+    #                   filename='Line_loading_load_case.png')
+    # plot_line_loading(network, timestep=1,
+    #                   filename='Line_loading_feed-in_case.png')
+
+    # results_to_oedb(conn, network)
+
+
 def import_pfa_bus_results(session, grid):
     """
     Assign results from power flow analysis to grid network object
