@@ -407,13 +407,13 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
                 # other generators
                 if isinstance(node, GeneratorDingo):
-                    generator['generator_id'].append(
-                        '_'.join(['MV', str(grid.id_db), 'gen']))
+                    generator['generator_id'].append('_'.join(
+                        ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
                     generator['control'].append('PQ')
                     generator['p_nom'].append(node.capacity)
 
-                    generator_pq_set['generator_id'].append(
-                        '_'.join(['MV', str(grid.id_db), 'gen']))
+                    generator_pq_set['generator_id'].append('_'.join(
+                        ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
                     generator_pq_set['temp_id'].append(1)
                     generator_pq_set['p_set'].append(
                         [0 * kw2mw, node.capacity * kw2mw])
@@ -459,7 +459,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 load['bus'].append(node.pypsa_id)
                 load['grid_id'].append(grid.id_db)
 
-                load_pq_set['load_id'].append(node.pypsa_id)
+                load_pq_set['load_id'].append(
+                    '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
                 load_pq_set['temp_id'].append(1)
                 load_pq_set['p_set'].append(
                     [node.peak_load * kw2mw,
@@ -564,7 +565,6 @@ def edges_to_dict_of_dataframes(grid, edges):
         lines['grid_id'].append(grid.id_db)
 
     return {'Line': DataFrame(lines)}
-
 
 
 def run_powerflow(conn):
