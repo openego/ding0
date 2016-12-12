@@ -232,7 +232,7 @@ class MVGridDingo(GridDingo):
         # TODO: Move constant 1e6 to config file
         load_density = ((self.grid_district.peak_load / 1e3) /
                         (
-                        self.grid_district.geo_data.area / 1e6))  # unit MVA/km^2
+                            self.grid_district.geo_data.area / 1e6))  # unit MVA/km^2
 
         # identify voltage level
         if load_density < load_density_threshold:
@@ -397,7 +397,7 @@ class MVGridDingo(GridDingo):
 
         for lv_load_area in self.grid_district.lv_load_areas():
             peak_current_node = (lv_load_area.peak_load_sum / (
-            3 ** 0.5) / self.v_level)  # units: kVA / kV = A
+                3 ** 0.5) / self.v_level)  # units: kVA / kV = A
             if peak_current_node > peak_current_branch_max:
                 lv_load_area.is_aggregated = True
 
@@ -462,6 +462,7 @@ class MVGridDingo(GridDingo):
                                                   resolution=resolution,
                                                   start_time=start_time)
         elif method is 'onthefly':
+
             nodes_dict, components_data = pypsa_io.nodes_to_dict_of_dataframes(
                 self,
                 nodes,

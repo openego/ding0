@@ -1,11 +1,11 @@
 from egoio.db_tables import calc_ego_mv_powerflow as orm_pypsa
-from egoio.db_tables.calc_ego_mv_powerflow import ResBus, ResLine,\
+from egoio.db_tables.calc_ego_mv_powerflow import ResBus, ResLine, \
     ResTransformer, Bus, Line, Transformer
 
-from egopowerflow.tools.io import get_timerange, import_components,\
-    import_pq_sets, create_powerflow_problem, results_to_oedb
+from egopowerflow.tools.io import get_timerange, import_components, \
+    import_pq_sets, create_powerflow_problem, results_to_oedb, \
+    transform_timeseries4pypsa
 from egopowerflow.tools.plot import add_coordinates, plot_line_loading
-
 
 from egoio.db_tables.calc_ego_mv_powerflow import Bus, Line, Generator, Load, \
     Transformer, TempResolution, BusVMagSet, GeneratorPqSet, LoadPqSet
@@ -20,7 +20,10 @@ from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
 from shapely.geometry import LineString
-from pandas import Series, read_sql_query, DataFrame
+from pandas import Series, read_sql_query, DataFrame, DatetimeIndex
+from pypsa.io import import_series_from_dataframe
+
+from datetime import datetime
 
 
 def delete_powerflow_tables(session):
@@ -73,7 +76,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
 
     voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
-    
+
     kw2mw = 1e-3
 
     # Create all busses
@@ -88,22 +91,24 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     grid_id=grid.id_db)
                 bus_pq_set_mv = orm_pypsa.BusVMagSet(
                     bus_id=node.pypsa_id,
-                    temp_id = temp_id,
+                    temp_id=temp_id,
                     v_mag_pu_set=[1, 1],
                     grid_id=grid.id_db)
                 session.add(bus_mv)
                 session.add(bus_pq_set_mv)
                 if lv_transformer is True:
                     # Add transformer to bus
-                    print("Regarding x, r and s_nom LV station {} only "\
-                        "first transformer in considered in PF "\
-                        "analysis".format(node))
+                    print("Regarding x, r and s_nom LV station {} only " \
+                          "first transformer in considered in PF " \
+                          "analysis".format(node))
                     # TODO: consider multiple transformers and remove above warning
                     transformer = orm_pypsa.Transformer(
-                        trafo_id='_'.join(['MV', str(grid.id_db), 'trf', str(node.id_db)]),
+                        trafo_id='_'.join(
+                            ['MV', str(grid.id_db), 'trf', str(node.id_db)]),
                         s_nom=node._transformers[0].s_max_a,
                         bus0=node.pypsa_id,
-                        bus1='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
+                        bus1='_'.join(
+                            ['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         x=node._transformers[0].x,
                         r=node._transformers[0].r,
                         tap_ratio=1,
@@ -112,12 +117,14 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     session.add(transformer)
                     # Add bus on transformer's LV side
                     bus_lv = orm_pypsa.Bus(
-                        bus_id='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
+                        bus_id='_'.join(
+                            ['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         v_nom=node._transformers[0].v_level,
                         geom=from_shape(node.geo_data, srid=srid),
                         grid_id=grid.id_db)
                     bus_pq_set_lv = orm_pypsa.BusVMagSet(
-                        bus_id='_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
+                        bus_id='_'.join(
+                            ['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         temp_id=temp_id,
                         v_mag_pu_set=[1, 1],
                         grid_id=grid.id_db)
@@ -125,8 +132,10 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     session.add(bus_pq_set_lv)
                     # Add aggregated LV load to LV bus
                     load = orm_pypsa.Load(
-                        load_id = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
-                        bus = '_'.join(['MV', str(grid.id_db), 'trd', str(node.id_db)]),
+                        load_id='_'.join(
+                            ['MV', str(grid.id_db), 'loa', str(node.id_db)]),
+                        bus='_'.join(
+                            ['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         grid_id=grid.id_db)
                 else:
                     # Add aggregated LV load to MV bus
@@ -136,12 +145,13 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                         bus=node.pypsa_id,
                         grid_id=grid.id_db)
                 load_pq_set = orm_pypsa.LoadPqSet(
-                    load_id = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]),
-                    temp_id = temp_id,
-                    p_set = [node.peak_load * kw2mw,
-                             load_in_generation_case * kw2mw],
-                    q_set = [node.peak_load * Q_factor_load * kw2mw,
-                             load_in_generation_case],
+                    load_id='_'.join(
+                        ['MV', str(grid.id_db), 'loa', str(node.id_db)]),
+                    temp_id=temp_id,
+                    p_set=[node.peak_load * kw2mw,
+                           load_in_generation_case * kw2mw],
+                    q_set=[node.peak_load * Q_factor_load * kw2mw,
+                           load_in_generation_case],
                     grid_id=grid.id_db)
                 session.add(load)
                 session.add(load_pq_set)
@@ -206,13 +216,15 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     v_mag_pu_set=[1, 1],
                     grid_id=grid.id_db)
                 generator = orm_pypsa.Generator(
-                    generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
+                    generator_id='_'.join(
+                        ['MV', str(grid.id_db), 'gen', str(node.id_db)]),
                     bus=node.pypsa_id,
                     control='PQ',
                     p_nom=node.capacity,
                     grid_id=grid.id_db)
                 generator_pq_set = orm_pypsa.GeneratorPqSet(
-                    generator_id='_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)]),
+                    generator_id='_'.join(
+                        ['MV', str(grid.id_db), 'gen', str(node.id_db)]),
                     temp_id=temp_id,
                     p_set=[0 * kw2mw, node.capacity * kw2mw],
                     q_set=[0 * kw2mw, 0 * kw2mw],
@@ -227,7 +239,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
             else:
                 raise TypeError("Node of type", node, "cannot be handled here")
         else:
-            print("Node {} is not connected to the graph and will be omitted "\
+            print("Node {} is not connected to the graph and will be omitted " \
                   "in power flow analysis".format(node))
 
     # write changes to database
@@ -257,13 +269,13 @@ def export_edges(grid, session, edges):
 
         # TODO: find the real cause for being L, C, I_th_max type of Series
         if (isinstance(edge['branch'].type['L'], Series) or
-            isinstance(edge['branch'].type['C'], Series)):
+                isinstance(edge['branch'].type['C'], Series)):
             x = omega * edge['branch'].type['L'].values[0] * 1e-3
         else:
 
             x = omega * edge['branch'].type['L'] * 1e-3
 
-        if isinstance(edge['branch'].type['R'], Series) :
+        if isinstance(edge['branch'].type['R'], Series):
             r = edge['branch'].type['R'].values[0]
         else:
             r = edge['branch'].type['R']
@@ -271,10 +283,10 @@ def export_edges(grid, session, edges):
         if (isinstance(edge['branch'].type['I_max_th'], Series) or
                 isinstance(edge['branch'].type['U_n'], Series)):
             s_nom = sqrt(3) * edge['branch'].type['I_max_th'].values[0] * \
-                edge['branch'].type['U_n'].values[0]
+                    edge['branch'].type['U_n'].values[0]
         else:
             s_nom = sqrt(3) * edge['branch'].type['I_max_th'] * \
-                edge['branch'].type['U_n']
+                    edge['branch'].type['U_n']
 
         # get lengths of line
         l = edge['branch'].length / 1e3
@@ -289,11 +301,13 @@ def export_edges(grid, session, edges):
             length=l,
             cables=3,
             geom=from_shape(LineString([edge['adj_nodes'][0].geo_data,
-                             edge['adj_nodes'][1].geo_data]), srid=srid),
+                                        edge['adj_nodes'][1].geo_data]),
+                            srid=srid),
             grid_id=grid.id_db
         )
         session.add(line)
         session.commit()
+
 
 def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
                                  temp_id=1):
@@ -306,7 +320,7 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
         timesteps=timesteps,
         resolution=resolution,
         start_time=start_time
-        )
+    )
     session.add(temp_resolution)
     session.commit()
 
@@ -351,14 +365,15 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
     # define dictionaries
     buses = {'bus_id': [], 'v_nom': [], 'geom': [], 'grid_id': []}
-    bus_v_mag_set = {'bus_id': [], 'temp_id': [], 'v_mag_pu_set': [], 'grid_id': []}
+    bus_v_mag_set = {'bus_id': [], 'temp_id': [], 'v_mag_pu_set': [],
+                     'grid_id': []}
     generator = {'generator_id': [], 'bus': [], 'control': [], 'grid_id': [],
                  'p_nom': []}
     generator_pq_set = {'generator_id': [], 'temp_id': [], 'p_set': [],
                         'grid_id': [], 'q_set': []}
     load = {'load_id': [], 'bus': [], 'grid_id': []}
     load_pq_set = {'load_id': [], 'temp_id': [], 'p_set': [],
-                        'grid_id': [], 'q_set': []}
+                   'grid_id': [], 'q_set': []}
 
     # TODO: consider other implications of `lv_transformer is True`
     if lv_transformer is True:
@@ -424,7 +439,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             elif isinstance(node, LVLoadAreaCentreDingo):
                 load['load_id'].append(node.pypsa_id)
                 load['bus'].append('_'.join(['HV', str(grid.id_db), 'trd']))
-                load['grid_id'].append( grid.id_db)
+                load['grid_id'].append(grid.id_db)
 
                 load_pq_set['load_id'].append(node.pypsa_id)
                 load_pq_set['temp_id'].append(1)
@@ -439,7 +454,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
             # bus + aggregate load of lv grids (at mv/ls substation)
             elif isinstance(node, LVStationDingo):
-                load['load_id'].append('_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
+                load['load_id'].append(
+                    '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
                 load['bus'].append(node.pypsa_id)
                 load['grid_id'].append(grid.id_db)
 
@@ -469,17 +485,17 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             else:
                 raise TypeError("Node of type", node, "cannot be handled here")
         else:
-            print("Node {} is not connected to the graph and will be omitted "\
+            print("Node {} is not connected to the graph and will be omitted " \
                   "in power flow analysis".format(node))
 
     components = {'Bus': DataFrame(buses).set_index('bus_id'),
                   'Generator': DataFrame(generator).set_index('generator_id'),
                   'Load': DataFrame(load).set_index('load_id')}
 
-    components_data = {'BusVMagSet': DataFrame(bus_v_mag_set).set_index('bus_id'),
-                       'GeneratorPQSet': DataFrame(generator_pq_set).set_index(
+    components_data = {'Bus': DataFrame(bus_v_mag_set).set_index('bus_id'),
+                       'Generator': DataFrame(generator_pq_set).set_index(
                            'generator_id'),
-                       'LoadPQSet': DataFrame(load_pq_set).set_index('load_id')}
+                       'Load': DataFrame(load_pq_set).set_index('load_id')}
 
     return components, components_data
 
@@ -654,20 +670,20 @@ def import_pfa_bus_results(session, grid):
 
     # get bus data from database
     bus_query = session.query(ResBus.bus_id,
-                        ResBus.v_mag_pu).\
-        join(Bus, ResBus.bus_id == Bus.bus_id).\
+                              ResBus.v_mag_pu). \
+        join(Bus, ResBus.bus_id == Bus.bus_id). \
         filter(Bus.grid_id == grid.id_db)
 
     bus_data = read_sql_query(bus_query.statement,
-                                 session.bind,
-                                 index_col='bus_id')
+                              session.bind,
+                              index_col='bus_id')
 
     # iterate of nodes and assign voltage obtained from power flow analysis
     for node in grid._graph.nodes():
         # check if node is connected to graph
         if node not in grid.graph_isolated_nodes():
             if isinstance(node, LVStationDingo):
-                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
             elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
                 if node.lv_load_area.is_aggregated:
                     node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
@@ -704,13 +720,13 @@ def import_pfa_line_results(session, grid):
                                 ResLine.p0,
                                 ResLine.p1,
                                 ResLine.q0,
-                                ResLine.q1).\
-        join(Line, ResLine.line_id == Line.line_id).\
+                                ResLine.q1). \
+        join(Line, ResLine.line_id == Line.line_id). \
         filter(Line.grid_id == grid.id_db)
 
     line_data = read_sql_query(lines_query.statement,
-                                 session.bind,
-                                 index_col='line_id')
+                               session.bind,
+                               index_col='line_id')
 
     edges = [edge for edge in grid.graph_edges()
              if edge['adj_nodes'][0] in grid._graph.nodes()
