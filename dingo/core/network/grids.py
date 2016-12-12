@@ -282,7 +282,7 @@ class MVGridDingo(GridDingo):
         # load cable/line assumptions, file_names and parameter
         if self.default_branch_kind == 'line':
             load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_line_normal'))
+                                                     'load_factor_mv_line_normal'))
             equipment_parameters_file = cfg_dingo.get('equipment',
                                                       'equipment_parameters_lines')
             branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
@@ -302,7 +302,7 @@ class MVGridDingo(GridDingo):
 
         elif self.default_branch_kind == 'cable':
             load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_cable_normal'))
+                                                     'load_factor_mv_cable_normal'))
             equipment_parameters_file = cfg_dingo.get('equipment',
                                                       'equipment_parameters_cables')
             branch_parameters = pd.read_csv(os.path.join(package_path, 'data',

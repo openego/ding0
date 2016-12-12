@@ -45,13 +45,13 @@ generator_buffer_radius_inc = 1000
 #load_density_threshold: unit MVA/km^2
 load_density_threshold = 1
 
-load_factor_transformer_normal = 0.6
-load_factor_line_normal = 0.6
-load_factor_cable_normal = 0.6
+load_factor_mv_transformer_normal = 0.6
+load_factor_mv_line_normal = 0.6
+load_factor_mv_cable_normal = 0.6
 
-load_factor_transformer_malfunc = 1.0
-load_factor_line_malfunc = 1.0
-load_factor_cable_malfunc = 1.0
+load_factor_mv_transformer_malfunc = 1.0
+load_factor_mv_line_malfunc = 1.0
+load_factor_mv_cable_malfunc = 1.0
 
 apartment_house_branch_ratio = 1.5
 population_per_apartment = 2.3
