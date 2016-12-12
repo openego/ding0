@@ -61,8 +61,8 @@ class MVStationDingo(StationDingo):
                 'voltage_level': 10,
                 'apparent_power': 40000}}
 
-        load_factor_mv_transformer_normal = float(cfg_dingo.get('assumptions',
-                                                                'load_factor_mv_transformer_normal'))
+        load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
+                                                             'load_factor_mv_trans_lc_normal'))
 
         # step 1: identify possible transformers by voltage level
         apparent_power = self.grid.grid_district.peak_load  # kW
@@ -80,7 +80,7 @@ class MVStationDingo(StationDingo):
                                for _ in possible_transformers]
 
         while residual_apparent_power > 0:
-            if residual_apparent_power > load_factor_mv_transformer_normal * max(possible_transformers):
+            if residual_apparent_power > load_factor_mv_trans_lc_normal * max(possible_transformers):
                 selected_app_power = max(possible_transformers)
             else:
                 selected_app_power = min(list(compress(possible_transformers,
@@ -90,7 +90,7 @@ class MVStationDingo(StationDingo):
             # add transformer on determined size with according parameters
             self.add_transformer(TransformerDingo(**{'v_level': self.grid.v_level,
                 's_max_longterm': selected_app_power}))
-            residual_apparent_power -= (load_factor_mv_transformer_normal *
+            residual_apparent_power -= (load_factor_mv_trans_lc_normal *
                                         selected_app_power)
 
         # add redundant transformer of the size of the largest transformer
