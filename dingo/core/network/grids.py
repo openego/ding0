@@ -40,7 +40,9 @@ class MVGridDingo(GridDingo):
         self._circuit_breakers = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
         self.default_branch_type = kwargs.get('default_branch_type', None)
+        self.default_branch_kind_settle = kwargs.get('default_branch_kind_settle', None)
         self.default_branch_type_settle = kwargs.get('default_branch_type_settle', None)
+        self.default_branch_kind_aggregated = kwargs.get('default_branch_kind_aggregated', None)
         self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
 
         self.add_station(kwargs.get('station', None))
@@ -177,6 +179,8 @@ class MVGridDingo(GridDingo):
 
         Args:
             debug: If True, information is printed during process
+        Notes:
+            It is assumed that only cables are used within settlements
         """
         # TODO: Add more detailed description
         # TODO: Pass debug flag to functions
@@ -191,6 +195,10 @@ class MVGridDingo(GridDingo):
         self.default_branch_type,\
         self.default_branch_type_aggregated,\
         self.default_branch_type_settle = self.set_default_branch_type(debug)
+
+        # set default branch kinds
+        self.default_branch_kind_aggregated = self.default_branch_kind
+        self.default_branch_kind_settle = 'cable'
 
         # choose appropriate transformers for each MV sub-station
         self._station.choose_transformers()
@@ -477,10 +485,14 @@ class LVGridDingo(GridDingo):
     Parameters
     ----------
     region : LV region (instance of LVLoadAreaDingo class) that is associated with grid
+
+    Notes:
+      It is assumed that LV grid have got cables only (attribute 'default_branch_kind')
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.default_branch_kind = kwargs.get('default_branch_kind', 'cable')
         self._station = None
         self._loads = []
         self.population = kwargs.get('population', None)

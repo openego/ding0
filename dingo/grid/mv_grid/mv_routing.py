@@ -114,15 +114,18 @@ def routing_solution_to_dingo_graph(graph, solution):
                 # set branch length
                 b.length = calc_geo_dist_vincenty(node1, node2)
 
-                # set branch type
+                # set branch kind and type
                 # 1) default
+                b.kind = depot_node.grid.default_branch_kind
                 b.type = depot_node.grid.default_branch_type
                 # 2) aggregated load area types
                 if node1 == depot_node and solution._problem._is_aggregated[n2.name()]:
                     b.connects_aggregated = True
+                    b.kind = depot_node.grid.default_branch_kind_aggregated
                     b.type = depot_node.grid.default_branch_type_aggregated
                 elif node2 == depot_node and solution._problem._is_aggregated[n1.name()]:
                     b.connects_aggregated = True
+                    b.kind = depot_node.grid.default_branch_kind_aggregated
                     b.type = depot_node.grid.default_branch_type_aggregated
 
                 # append to branch list
