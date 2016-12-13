@@ -79,6 +79,15 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
 
     kw2mw = 1e-3
 
+    # # TODO: only for debugging, remove afterwards
+    # import csv
+    # nodeslist = sorted([node.__repr__() for node in nodes
+    #                     if node not in grid.graph_isolated_nodes()])
+    # with open('/home/guido/dingo_debug/nodes_via_db.csv', 'w',
+    #           newline='') as csvfile:
+    #     writer = csv.writer(csvfile, delimiter='\n')
+    #     writer.writerow(nodeslist)
+
     # Create all busses
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
@@ -379,6 +388,15 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     # if lv_transformer is True:
     #     bus_instances.append(Transformer)
 
+    # # TODO: only for debugging, remove afterwards
+    # import csv
+    # nodeslist = sorted([node.__repr__() for node in nodes
+    #                     if node not in grid.graph_isolated_nodes()])
+    # with open('/home/guido/dingo_debug/nodes_via_dataframe.csv', 'w', newline='') as csvfile:
+    #     writer = csv.writer(csvfile, delimiter='\n')
+    #     writer.writerow(nodeslist)
+
+
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
             # buses only
@@ -489,6 +507,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             print("Node {} is not connected to the graph and will be omitted " \
                   "in power flow analysis".format(node))
 
+
     components = {'Bus': DataFrame(buses).set_index('bus_id'),
                   'Generator': DataFrame(generator).set_index('generator_id'),
                   'Load': DataFrame(load).set_index('load_id')}
@@ -497,6 +516,9 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                        'Generator': DataFrame(generator_pq_set).set_index(
                            'generator_id'),
                        'Load': DataFrame(load_pq_set).set_index('load_id')}
+
+    # with open('/home/guido/dingo_debug/number_of_nodes_buses.csv', 'a') as csvfile:
+    #     csvfile.write(','.join(['\n', str(len(nodes)), str(len(grid.graph_isolated_nodes())), str(len(components['Bus']))]))
 
     return components, components_data
 
