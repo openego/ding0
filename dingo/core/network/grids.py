@@ -367,9 +367,8 @@ class MVGridDingo(GridDingo):
                     branch_parameters_settle_filter = branch_parameters_settle[\
                                                       branch_parameters_settle['I_max_th'] - row['I_max_th'] > 0]
                     # get cable type with similar (but greater) I_max_th
-                    branch_type_settle = branch_parameters_settle_filter[\
-                                         branch_parameters_settle_filter.\
-                                         I_max_th == branch_parameters_settle_filter.I_max_th.min()]
+                    branch_type_settle = branch_parameters_settle_filter.loc[\
+                                         branch_parameters_settle_filter['I_max_th'].idxmin()]
 
                 return row, branch_type_max, branch_type_settle
 
