@@ -42,11 +42,9 @@ nd.set_branch_ids()
 [gd.mv_grid.open_circuit_breakers() for gd in nd._mv_grid_districts]
 #nd._mv_grid_districts[0].mv_grid.close_circuit_breakers()
 
+# Analyze grid by power flow analysis
 for mv_grid_district in nd._mv_grid_districts:
-    if method is not 'onthefly':
-        mv_grid_district.mv_grid.export_to_pypsa(conn, method=method)
     mv_grid_district.mv_grid.run_powerflow(conn, method=method)
-    mv_grid_district.mv_grid.import_powerflow_results(conn)
 
 nd.export_mv_grid(conn, mv_grid_districts)
 

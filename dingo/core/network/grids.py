@@ -480,19 +480,29 @@ class MVGridDingo(GridDingo):
             Session = sessionmaker(bind=conn)
             session = Session()
 
+            # export grid data to db (be ready for power flow analysis)
+            self.export_to_pypsa(conn, method=method)
+
+            # run the power flow problem
             pypsa_io.run_powerflow(session)
+
+            # import results from db
+            self.import_powerflow_results(session)
         elif method is 'onthefly':
             components, components_data = self.export_to_pypsa(conn, method)
-            pypsa_io.run_powerflow_onthefly(components, components_data)
+            pypsa_io.run_powerflow_onthefly(components, components_data, self)
 
-    def import_powerflow_results(self, conn):
+    def import_powerflow_results(self, session):
         """
         Assign results from power flow analysis to edges and nodes
-        :return:
-        """
 
-        Session = sessionmaker(bind=conn)
-        session = Session()
+        Parameters
+        ----------
+        session: SQLAlchemy session
+        Returns
+        -------
+        None
+        """
 
         # bus data
         pypsa_io.import_pfa_bus_results(session, self)
