@@ -9,6 +9,7 @@ from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
 from dingo.tools import config as cfg_dingo, pypsa_io, tools
+from dingo.flexopt.reinforce_grid import *
 import dingo.core
 
 import networkx as nx
@@ -38,10 +39,10 @@ class MVGridDingo(GridDingo):
         self._circuit_breakers = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
         self.default_branch_type = kwargs.get('default_branch_type', None)
-        self.default_branch_type_settle = kwargs.get(
-            'default_branch_type_settle', None)
-        self.default_branch_type_aggregated = kwargs.get(
-            'default_branch_type_aggregated', None)
+        self.default_branch_kind_settle = kwargs.get('default_branch_kind_settle', None)
+        self.default_branch_type_settle = kwargs.get('default_branch_type_settle', None)
+        self.default_branch_kind_aggregated = kwargs.get('default_branch_kind_aggregated', None)
+        self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
 
         self.add_station(kwargs.get('station', None))
 
@@ -64,8 +65,7 @@ class MVGridDingo(GridDingo):
         Args:
             circ_breaker: CircuitBreakerDingo object
         """
-        if circ_breaker not in self._circuit_breakers and isinstance(
-                circ_breaker, CircuitBreakerDingo):
+        if circ_breaker not in self._circuit_breakers and isinstance(circ_breaker, CircuitBreakerDingo):
             self._circuit_breakers.append(circ_breaker)
             self.graph_add_node(circ_breaker)
 
@@ -95,8 +95,7 @@ class MVGridDingo(GridDingo):
             if force:
                 self._station = mv_station
             else:
-                raise Exception(
-                    'MV Station already set, use argument `force=True` to override.')
+                raise Exception('MV Station already set, use argument `force=True` to override.')
 
     # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
     # def graph_build(self):
@@ -122,9 +121,8 @@ class MVGridDingo(GridDingo):
 
     def add_cable_distributor(self, cable_dist):
         """Adds a cable distributor to _cable_distributors if not already existing"""
-        if cable_dist not in self.cable_distributors() and isinstance(
-                cable_dist,
-                MVCableDistributorDingo):
+        if cable_dist not in self.cable_distributors() and isinstance(cable_dist,
+                                                                      MVCableDistributorDingo):
             # add to array and graph
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
@@ -135,7 +133,7 @@ class MVGridDingo(GridDingo):
         # MV grid:
         ctr = 1
         for branch in self.graph_edges():
-            branch['branch'].id_db = self.grid_district.id_db * 10 ** 4 + ctr
+            branch['branch'].id_db = self.grid_district.id_db * 10**4 + ctr
             ctr += 1
 
         # LV grid:
@@ -143,8 +141,7 @@ class MVGridDingo(GridDingo):
             for lv_grid_district in lv_load_area.lv_grid_districts():
                 ctr = 1
                 for branch in lv_grid_district.lv_grid.graph_edges():
-                    branch[
-                        'branch'].id_db = lv_grid_district.id_db * 10 ** 7 + ctr
+                    branch['branch'].id_db = lv_grid_district.id_db * 10**7 + ctr
                     ctr += 1
 
     def routing(self, debug=False, anim=None):
@@ -157,8 +154,7 @@ class MVGridDingo(GridDingo):
         # do the routing
         self._graph = mv_routing.solve(self._graph, debug, anim)
         self._graph = mv_connect.mv_connect_satellites(self, self._graph, debug)
-        self._graph = mv_connect.mv_connect_stations(self.grid_district,
-                                                     self._graph, debug)
+        self._graph = mv_connect.mv_connect_stations(self.grid_district, self._graph, debug)
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:
@@ -175,14 +171,15 @@ class MVGridDingo(GridDingo):
             debug: If True, information is printed during process
         """
 
-        self._graph = mv_connect.mv_connect_generators(self.grid_district,
-                                                       self._graph, debug)
+        self._graph = mv_connect.mv_connect_generators(self.grid_district, self._graph, debug)
 
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment.
 
         Args:
             debug: If True, information is printed during process
+        Notes:
+            It is assumed that only cables are used within settlements
         """
         # TODO: Add more detailed description
         # TODO: Pass debug flag to functions
@@ -194,16 +191,20 @@ class MVGridDingo(GridDingo):
         self._station.set_operation_voltage_level()
 
         # set default branch types (normal, aggregated areas and within settlements)
-        self.default_branch_type, \
-        self.default_branch_type_aggregated, \
+        self.default_branch_type,\
+        self.default_branch_type_aggregated,\
         self.default_branch_type_settle = self.set_default_branch_type(debug)
+
+        # set default branch kinds
+        self.default_branch_kind_aggregated = self.default_branch_kind
+        self.default_branch_kind_settle = 'cable'
 
         # choose appropriate transformers for each MV sub-station
         self._station.choose_transformers()
 
         # choose appropriate type of line/cable for each edge
         # TODO: move line parametrization to routing process
-        # self.parametrize_lines()
+        #self.parametrize_lines()
 
     def set_voltage_level(self):
         """ Sets voltage level of MV grid according to load density.
@@ -231,8 +232,7 @@ class MVGridDingo(GridDingo):
         # calculate load density
         # TODO: Move constant 1e6 to config file
         load_density = ((self.grid_district.peak_load / 1e3) /
-                        (
-                            self.grid_district.geo_data.area / 1e6))  # unit MVA/km^2
+                        (self.grid_district.geo_data.area / 1e6)) # unit MVA/km^2
 
         # identify voltage level
         if load_density < load_density_threshold:
@@ -283,69 +283,57 @@ class MVGridDingo(GridDingo):
             self.default_branch_kind = 'cable'
 
         # get max. count of half rings per MV grid district
-        mv_half_ring_count_max = int(
-            cfg_dingo.get('mv_routing_tech_constraints',
-                          'mv_half_ring_count_max'))
+        mv_half_ring_count_max = int(cfg_dingo.get('mv_routing_tech_constraints',
+                                                   'mv_half_ring_count_max'))
 
         # load cable/line assumptions, file_names and parameter
         if self.default_branch_kind == 'line':
             load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_line_normal'))
+                                                     'load_factor_mv_line_lc_normal'))
             equipment_parameters_file = cfg_dingo.get('equipment',
                                                       'equipment_parameters_lines')
             branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
-                                                         equipment_parameters_file),
+                                            equipment_parameters_file),
                                             comment='#',
-                                            converters={
-                                                'I_max_th': lambda x: int(x),
-                                                'U_n': lambda x: int(x)})
+                                            converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
 
             # load cables as well to use it within settlements
             equipment_parameters_file_settle = cfg_dingo.get('equipment',
                                                              'equipment_parameters_cables')
-            branch_parameters_settle = pd.read_csv(
-                os.path.join(package_path, 'data',
-                             equipment_parameters_file_settle),
-                comment='#',
-                converters={'I_max_th': lambda x: int(x),
-                            'U_n': lambda x: int(x)})
+            branch_parameters_settle = pd.read_csv(os.path.join(package_path, 'data',
+                                                   equipment_parameters_file_settle),
+                                                   comment='#',
+                                                   converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
             # select types with appropriate voltage level
-            branch_parameters_settle = branch_parameters_settle[
-                branch_parameters_settle['U_n'] == self.v_level]
+            branch_parameters_settle = branch_parameters_settle[branch_parameters_settle['U_n'] == self.v_level]
 
         elif self.default_branch_kind == 'cable':
             load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_cable_normal'))
+                                                     'load_factor_mv_cable_lc_normal'))
             equipment_parameters_file = cfg_dingo.get('equipment',
                                                       'equipment_parameters_cables')
             branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
-                                                         equipment_parameters_file),
+                                            equipment_parameters_file),
                                             comment='#',
-                                            converters={
-                                                'I_max_th': lambda x: int(x),
-                                                'U_n': lambda x: int(x)})
+                                            converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
         else:
-            raise ValueError(
-                'Grid\'s default_branch_kind is invalid, could not set branch parameters.')
+            raise ValueError('Grid\'s default_branch_kind is invalid, could not set branch parameters.')
 
         # select appropriate branch params according to voltage level, sorted ascending by max. current
-        branch_parameters = branch_parameters[
-            branch_parameters['U_n'] == self.v_level].sort_values('I_max_th')
+        branch_parameters = branch_parameters[branch_parameters['U_n'] == self.v_level].sort_values('I_max_th')
 
         # get largest line/cable type
-        branch_type_max = branch_parameters.loc[
-            branch_parameters['I_max_th'].idxmax()]
+        branch_type_max = branch_parameters.loc[branch_parameters['I_max_th'].idxmax()]
 
         # set aggregation flag using largest available line/cable
-        self.set_nodes_aggregation_flag(
-            branch_type_max['I_max_th'] * load_factor_normal)
+        self.set_nodes_aggregation_flag(branch_type_max['I_max_th'] * load_factor_normal)
 
         # calc peak current sum (= "virtual" current) of whole grid (I = S / sqrt(3) / U) excluding load areas of type
         # satellite and aggregated
         peak_current_sum = ((self.grid_district.peak_load -
                              self.grid_district.peak_load_satellites -
                              self.grid_district.peak_load_aggregated) /
-                            (3 ** 0.5) / self.v_level)  # units: kVA / kV = A
+                            (3**0.5) / self.v_level)  # units: kVA / kV = A
 
         branch_type_settle = branch_type_settle_max = None
 
@@ -354,8 +342,7 @@ class MVGridDingo(GridDingo):
         for idx, row in branch_parameters.iterrows():
             # calc number of required rings using peak current sum of grid district,
             # load factor and max. current of line/cable
-            half_ring_count = round(
-                peak_current_sum / (row['I_max_th'] * load_factor_normal))
+            half_ring_count = round(peak_current_sum / (row['I_max_th'] * load_factor_normal))
 
             if debug:
                 print('=== Selection of default branch type in', self, '===')
@@ -367,21 +354,30 @@ class MVGridDingo(GridDingo):
             # if count of half rings is below or equal max. allowed count, use current branch type as default
             if half_ring_count <= mv_half_ring_count_max:
                 if self.default_branch_kind == 'line':
-                    # get type with similar I_max_th
-                    branch_type_settle = branch_parameters_settle.iloc[
-                        (branch_parameters_settle['I_max_th'] -
-                         row['I_max_th']).abs().argsort()[:1]]
+                    # TODO: Newly installed cable has a greater I_max_th than former line, check with grid planning
+                    # TODO: principles and add to documentation
+                    # OLD:
+                    # branch_type_settle = branch_parameters_settle.ix\
+                    #                      [branch_parameters_settle\
+                    #                      [branch_parameters_settle['I_max_th'] - row['I_max_th'] > 0].\
+                    #                      sort_values(by='I_max_th')['I_max_th'].idxmin()]
+
+                    # take only cables that can handle at least the current of the line
+                    branch_parameters_settle_filter = branch_parameters_settle[\
+                                                      branch_parameters_settle['I_max_th'] - row['I_max_th'] > 0]
+                    # get cable type with similar (but greater) I_max_th
+                    branch_type_settle = branch_parameters_settle_filter.loc[\
+                                         branch_parameters_settle_filter['I_max_th'].idxmin()]
+
                 return row, branch_type_max, branch_type_settle
 
         # no equipment was found, return largest available line/cable
 
         if debug:
-            print('No appropriate line/cable type could be found for', self,
-                  ', declare some load areas as aggregated.')
+            print('No appropriate line/cable type could be found for', self, ', declare some load areas as aggregated.')
 
         if self.default_branch_kind == 'line':
-            branch_type_settle_max = branch_parameters_settle.loc[
-                branch_parameters_settle['I_max_th'].idxmax()]
+            branch_type_settle_max = branch_parameters_settle.loc[branch_parameters_settle['I_max_th'].idxmax()]
 
         return branch_type_max, branch_type_max, branch_type_settle_max
 
@@ -396,13 +392,13 @@ class MVGridDingo(GridDingo):
         """
 
         for lv_load_area in self.grid_district.lv_load_areas():
-            peak_current_node = (lv_load_area.peak_load_sum / (
-                3 ** 0.5) / self.v_level)  # units: kVA / kV = A
+            peak_current_node = (lv_load_area.peak_load_sum / (3**0.5) / self.v_level)  # units: kVA / kV = A
             if peak_current_node > peak_current_branch_max:
                 lv_load_area.is_aggregated = True
 
         # add peak demand for all LV load areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
+
 
     def export_to_pypsa(self, conn, method='onthefly'):
         """Exports MVGridDingo grid to PyPSA database tables
@@ -512,6 +508,17 @@ class MVGridDingo(GridDingo):
 
         # transformer data
 
+    def reinforce_grid(self):
+        """ Performs grid reinforcement measures for current MV grid
+        Args:
+
+        Returns:
+
+        """
+        # TODO: Finalize docstring
+
+        reinforce_grid(self, mode='MV')
+
     def __repr__(self):
         return 'mv_grid_' + str(self.id_db)
 
@@ -522,11 +529,15 @@ class LVGridDingo(GridDingo):
     Parameters
     ----------
     region : LV region (instance of LVLoadAreaDingo class) that is associated with grid
+
+    Notes:
+      It is assumed that LV grid have got cables only (attribute 'default_branch_kind')
     """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.default_branch_kind = kwargs.get('default_branch_kind', 'cable')
         self._station = None
         self._loads = []
         self.population = kwargs.get('population', None)
@@ -542,8 +553,7 @@ class LVGridDingo(GridDingo):
         if self._station is None:
             self._station = lv_station
             self.graph_add_node(lv_station)
-            self.grid_district.lv_load_area.mv_grid_district.mv_grid.graph_add_node(
-                lv_station)
+            self.grid_district.lv_load_area.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
     def add_load(self, lv_load):
         """Adds a LV load to _loads and grid graph if not already existing"""
@@ -554,9 +564,8 @@ class LVGridDingo(GridDingo):
 
     def add_cable_dist(self, lv_cable_dist):
         """Adds a LV cable_dist to _cable_dists and grid graph if not already existing"""
-        if lv_cable_dist not in self._cable_distributors and isinstance(
-                lv_cable_dist,
-                LVCableDistributorDingo):
+        if lv_cable_dist not in self._cable_distributors and isinstance(lv_cable_dist,
+                                                                        LVCableDistributorDingo):
             self._cable_distributors.append(lv_cable_dist)
             self.graph_add_node(lv_cable_dist)
 
@@ -596,9 +605,9 @@ class LVGridDingo(GridDingo):
         """
 
         apartment_house_branch_ratio = cfg_dingo.get("assumptions",
-                                                     "apartment_house_branch_ratio")
+            "apartment_house_branch_ratio")
         population_per_apartment = cfg_dingo.get("assumptions",
-                                                 "population_per_apartment")
+            "population_per_apartment")
 
         apartments = round(population / population_per_apartment)
 
@@ -610,16 +619,14 @@ class LVGridDingo(GridDingo):
 
         # select set of strings that represent one type of model grid
         strings = apartment_string.loc[apartments]
-        selected_strings = [int(s) for s in
-                            strings[strings >= 1].index.tolist()]
+        selected_strings = [int(s) for s in strings[strings >= 1].index.tolist()]
 
         # slice dataframe of string parameters
         selected_strings_df = string_properties.loc[selected_strings]
 
         # add number of occurences of each branch to df
         occurence_selector = [str(i) for i in selected_strings]
-        selected_strings_df['occurence'] = strings.loc[
-            occurence_selector].tolist()
+        selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
 
         transformer = apartment_trafo.loc[apartments]
 
@@ -629,6 +636,7 @@ class LVGridDingo(GridDingo):
             transformer['trafo_apparent_power'], 'r']
 
         return selected_strings_df, transformer
+
 
     def build_lv_graph(self, selected_string_df):
         """
@@ -682,7 +690,7 @@ class LVGridDingo(GridDingo):
                     self.add_cable_dist(lv_cable_dist)
 
                     cable_name = row['cable type'] + \
-                                 ' 4x1x{}'.format(row['cable width'])
+                                       ' 4x1x{}'.format(row['cable width'])
 
                     # connect current lv_cable_dist to last one
                     if house_branch == 1:
@@ -693,7 +701,7 @@ class LVGridDingo(GridDingo):
                             branch=BranchDingo(
                                 length=row['distance house branch'],
                                 type=cable_name
-                            ))
+                                ))
                     else:
                         self._graph.add_edge(
                             self._cable_distributors[-2],
@@ -704,9 +712,7 @@ class LVGridDingo(GridDingo):
 
                     # connect house to cable distributor
                     house_cable_name = row['cable type {}'.format(variant)] + \
-                                       ' 4x1x{}'.format(row[
-                                                            'cable width {}'.format(
-                                                                variant)])
+                        ' 4x1x{}'.format(row['cable width {}'.format(variant)])
                     self._graph.add_edge(
                         lv_cable_dist,
                         lv_load,
@@ -726,6 +732,17 @@ class LVGridDingo(GridDingo):
     #         self.graph_add_node(lv_station)
     #
     #     # TODO: add more nodes (loads etc.) here
+
+    def reinforce_grid(self):
+        """ Performs grid reinforcement measures for current LV grid
+        Args:
+
+        Returns:
+
+        """
+        # TODO: Finalize docstring
+
+        reinforce_grid(self, mode='LV')
 
     def __repr__(self):
         return 'lv_grid_' + str(self.id_db)

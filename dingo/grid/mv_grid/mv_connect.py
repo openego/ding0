@@ -292,8 +292,9 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
             # Node is close to line
             # -> insert node into route (change existing route)
             if (target_obj['dist'] < conn_dist_ring_mod):
-                # backup type of branch
+                # backup kind and type of branch
                 branch_type = graph.edge[adj_node1][adj_node2]['branch'].type
+                branch_kind = graph.edge[adj_node1][adj_node2]['branch'].kind
 
                 # check if there's a circuit breaker on current branch,
                 # if yes set new position between first node (adj_node1) and newly inserted node
@@ -308,6 +309,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_length = calc_geo_dist_vincenty(adj_node1, node)
                 branch = BranchDingo(length=branch_length,
                                      circuit_breaker=circ_breaker,
+                                     kind=branch_kind,
                                      type=branch_type)
                 if circ_breaker is not None:
                     circ_breaker.branch = branch
@@ -315,6 +317,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, node)
                 graph.add_edge(adj_node2, node, branch=BranchDingo(length=branch_length,
+                                                                   kind=branch_kind,
                                                                    type=branch_type))
 
                 target_obj_result = 're-routed'
@@ -340,7 +343,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 # split old branch into 2 segments (delete old branch and create 2 new ones along cable_dist)
                 # ===========================================================================================
 
-                # backup type of branch
+                # backup kind and type of branch
+                branch_kind = graph.edge[adj_node1][adj_node2]['branch'].kind
                 branch_type = graph.edge[adj_node1][adj_node2]['branch'].type
 
                 graph.remove_edge(adj_node1, adj_node2)
@@ -348,6 +352,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_length = calc_geo_dist_vincenty(adj_node1, cable_dist)
                 branch = BranchDingo(length=branch_length,
                                      circuit_breaker=circ_breaker,
+                                     kind=branch_kind,
                                      type=branch_type)
                 if circ_breaker is not None:
                     circ_breaker.branch = branch
@@ -355,16 +360,19 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
                 graph.add_edge(adj_node2, cable_dist, branch=BranchDingo(length=branch_length,
+                                                                         kind=branch_kind,
                                                                          type=branch_type))
 
                 # add new branch for satellite (station to cable distributor)
                 # ===========================================================
 
-                # get default branch type from grid to use it for new branch
+                # get default branch kind and type from grid to use it for new branch
+                branch_kind = mv_grid.default_branch_kind
                 branch_type = mv_grid.default_branch_type
 
                 branch_length = calc_geo_dist_vincenty(node, cable_dist)
                 graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length,
+                                                                    kind=branch_kind,
                                                                     type=branch_type))
                 target_obj_result = cable_dist
 
@@ -399,12 +407,14 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
         # target node is not a load area of type aggregated
         if isinstance(target_obj['obj'], valid_conn_objects) and not target_is_aggregated:
 
-            # get default branch type from grid to use it for new branch
+            # get default branch kind and type from grid to use it for new branch
+            branch_kind = mv_grid.default_branch_kind
             branch_type = mv_grid.default_branch_type
 
             # add new branch for satellite (station to station)
             branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
             graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length,
+                                                                       kind=branch_kind,
                                                                        type=branch_type))
             target_obj_result = target_obj['obj']
 
@@ -429,7 +439,8 @@ def disconnect_node(node, target_obj_result, graph, debug):
         nothing
     """
 
-    # backup type of branch
+    # backup kind and type of branch
+    branch_kind = graph.edge[node][target_obj_result]['branch'].kind
     branch_type = graph.edge[node][target_obj_result]['branch'].type
 
     graph.remove_edge(node, target_obj_result)
@@ -443,6 +454,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
 
             branch_length = calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
             graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDingo(length=branch_length,
+                                                                                    kind=branch_kind,
                                                                                     type=branch_type))
 
     if debug:
@@ -462,6 +474,8 @@ def parametrize_lines(mv_grid):
     """
 
     for branch in mv_grid.graph_edges():
+        if branch['branch'].kind is None:
+            branch['branch'].kind = mv_grid.default_branch_kind
         if branch['branch'].type is None:
             branch['branch'].type = mv_grid.default_branch_type
 
@@ -594,7 +608,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
                 # connect LV station, delete LV load area centre
                 for node, branch in branches:
-                    # backup type of branch
+                    # backup kind and type of branch
+                    branch_kind = branch['branch'].kind
                     branch_type = branch['branch'].type
 
                     # respect circuit breaker if existent
@@ -608,6 +623,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     branch_length = calc_geo_dist_vincenty(lv_station, node)
                     branch = BranchDingo(length=branch_length,
                                          circuit_breaker=circ_breaker,
+                                         kind=branch_kind,
                                          type=branch_type)
                     if circ_breaker is not None:
                         circ_breaker.branch = branch
@@ -667,7 +683,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
                 # connect LV station, delete LV load area centre
                 for node, branch in branches:
-                    # backup type of branch
+                    # backup kind and type of branch
+                    branch_kind = branch['branch'].kind
                     branch_type = branch['branch'].type
 
                     # respect circuit breaker if existent
@@ -681,6 +698,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     branch_length = calc_geo_dist_vincenty(cable_dist, node)
                     branch = BranchDingo(length=branch_length,
                                          circuit_breaker=circ_breaker,
+                                         kind=branch_kind,
                                          type=branch_type)
                     if circ_breaker is not None:
                         circ_breaker.branch = branch
@@ -700,6 +718,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                                                         proj=proj1)
                 # set type
                 for branch in branches:
+                    branch['branch'].kind = mv_grid_district.mv_grid.default_branch_kind_settle
                     branch['branch'].type = mv_grid_district.mv_grid.default_branch_type_settle
 
     return graph
@@ -744,9 +763,11 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                 branch_length = calc_geo_dist_vincenty(node, mv_station)
 
                 # TODO: set branch type to something reasonable (to be calculated)
-                branch_type =  mv_grid_district.mv_grid.default_branch_type
+                branch_kind = mv_grid_district.mv_grid.default_branch_kind
+                branch_type = mv_grid_district.mv_grid.default_branch_type
 
                 branch = BranchDingo(length=branch_length,
+                                     kind=branch_kind,
                                      type=branch_type)
                 graph.add_edge(node, mv_station, branch=branch)
 

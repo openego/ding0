@@ -215,14 +215,14 @@ class Route(object):
         # load parameters
         if self._problem._branch_kind == 'line':
             load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_line_normal'))
+                                                     'load_factor_mv_line_lc_normal'))
             load_factor_malfunc = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_line_malfunc'))
+                                                      'load_factor_mv_line_lc_malfunc'))
         elif self._problem._branch_kind == 'cable':
             load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_cable_normal'))
+                                                     'load_factor_mv_cable_lc_normal'))
             load_factor_malfunc = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_cable_malfunc'))
+                                                      'load_factor_mv_cable_lc_malfunc'))
         else:
             raise ValueError('Grid\'s _branch_kind is invalid, could not use branch parameters.')
 

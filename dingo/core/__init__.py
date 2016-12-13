@@ -7,6 +7,7 @@ from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
+from dingo.flexopt.reinforce_grid import *
 
 # import ORM classes for oedb access depending on input in config file
 cfg_dingo.load_config('config_db_tables')
@@ -832,6 +833,23 @@ class NetworkDingo:
             grid_district.mv_grid.set_branch_ids()
 
         print('=====> Branch IDs set')
+
+    def reinforce_grid(self):
+        """ Performs grid reinforcement measures for all MV and LV grids
+        Args:
+
+        Returns:
+
+        """
+        # TODO: Finish method and enable LV case
+
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.reinforce_grid()
+
+            # ===== LV PART (currently disabled) =====
+            # for lv_load_area in grid_district.lv_load_areas():
+            #     for lv_grid_district in lv_load_area.lv_grid_districts():
+            #         lv_grid_district.lv_grid.reinforce_grid()
 
     def __repr__(self):
         return str(self.name)

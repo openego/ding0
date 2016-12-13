@@ -50,6 +50,8 @@ nd.export_mv_grid(conn, mv_grid_districts)
 
 conn.close()
 
+#nd.reinforce_grid()
+
 # for edge in nd._mv_grid_districts[0].mv_grid.graph_edges():
 #     if edge['branch'].type is not None:
 #         print(edge['branch'].type['name'])
