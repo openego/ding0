@@ -355,9 +355,22 @@ class MVGridDingo(GridDingo):
             # if count of half rings is below or equal max. allowed count, use current branch type as default
             if half_ring_count <= mv_half_ring_count_max:
                 if self.default_branch_kind == 'line':
-                    # get type with similar I_max_th
-                    branch_type_settle = branch_parameters_settle.iloc[(branch_parameters_settle['I_max_th'] -
-                                                                        row['I_max_th']).abs().argsort()[:1]]
+                    # TODO: Newly installed cable has a greater I_max_th than former line, check with grid planning
+                    # TODO: principles and add to documentation
+                    # OLD:
+                    # branch_type_settle = branch_parameters_settle.ix\
+                    #                      [branch_parameters_settle\
+                    #                      [branch_parameters_settle['I_max_th'] - row['I_max_th'] > 0].\
+                    #                      sort_values(by='I_max_th')['I_max_th'].idxmin()]
+
+                    # take only cables that can handle at least the current of the line
+                    branch_parameters_settle_filter = branch_parameters_settle[\
+                                                      branch_parameters_settle['I_max_th'] - row['I_max_th'] > 0]
+                    # get cable type with similar (but greater) I_max_th
+                    branch_type_settle = branch_parameters_settle_filter[\
+                                         branch_parameters_settle_filter.\
+                                         I_max_th == branch_parameters_settle_filter.I_max_th.min()]
+
                 return row, branch_type_max, branch_type_settle
 
         # no equipment was found, return largest available line/cable
