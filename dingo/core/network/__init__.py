@@ -282,7 +282,8 @@ class BranchDingo:
 
         self.id_db = kwargs.get('id_db', None)
         self.length = kwargs.get('length', None)  # branch (line/cable) length in m
-        self.type = kwargs.get('type', None)
+        self.kind = kwargs.get('kind', None)  # 'line' or 'cable'
+        self.type = kwargs.get('type', None)  # DataFrame with attributes of line/cable
         self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.circuit_breaker = kwargs.get('circuit_breaker', None)
 
