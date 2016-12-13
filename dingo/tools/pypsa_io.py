@@ -651,7 +651,7 @@ def run_powerflow(conn):
     results_to_oedb(conn, network)
 
 
-def run_powerflow_onthefly(components, components_data):
+def run_powerflow_onthefly(components, components_data, grid):
     """
     Run powerflow to test grid stability
 
@@ -704,7 +704,7 @@ def run_powerflow_onthefly(components, components_data):
                                  'Bus',
                                  'v_mag_pu_set')
 
-    # # add coordinates to network nodes and make ready for map plotting
+    # add coordinates to network nodes and make ready for map plotting
     # network = add_coordinates(network)
 
     # start powerflow calculations
