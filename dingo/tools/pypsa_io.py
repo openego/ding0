@@ -739,7 +739,12 @@ def run_powerflow_onthefly(components, components_data, grid):
     # plot_line_loading(network, timestep=1,
     #                   filename='Line_loading_feed-in_case.png')
 
-    # results_to_oedb(conn, network)
+    # process results
+    bus_data, line_data = process_pf_results(network)
+
+    # assign results data to graph
+    assign_bus_results(grid, bus_data)
+    assign_line_results(grid, line_data)
 
 
 def import_pfa_bus_results(session, grid):
@@ -773,19 +778,8 @@ def import_pfa_bus_results(session, grid):
                               session.bind,
                               index_col='bus_id')
 
-    # iterate of nodes and assign voltage obtained from power flow analysis
-    for node in grid._graph.nodes():
-        # check if node is connected to graph
-        if node not in grid.graph_isolated_nodes():
-            if isinstance(node, LVStationDingo):
-                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-            elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
-                if node.lv_load_area.is_aggregated:
-                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-            elif not isinstance(node, CircuitBreakerDingo):
-                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-            else:
-                print("Object {} has been skipped while importing results!")
+    # Assign results to the graph
+    assign_bus_results(grid, bus_data)
 
 
 def import_pfa_line_results(session, grid):
@@ -823,33 +817,111 @@ def import_pfa_line_results(session, grid):
                                session.bind,
                                index_col='line_id')
 
-    edges = [edge for edge in grid.graph_edges()
-             if edge['adj_nodes'][0] in grid._graph.nodes()
-             and edge['adj_nodes'][1] in grid._graph.nodes()]
-
-    for edge in edges:
-        s_res = [
-            sqrt(
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'p0'][0]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'p1'][0])) ** 2 +
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'q0'][0]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][0])) ** 2),
-            sqrt(
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'p0'][1]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'p1'][1])) ** 2 +
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'q0'][1]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][1])) ** 2)]
-
-        edge['branch'].s_res = s_res
+    assign_line_results(grid, line_data)
 
 
 def import_pfa_transformer_results():
     pass
+
+
+def process_pf_results(network):
+    """
+
+    Parameters
+    ----------
+    network: pypsa.Network
+
+    Returns
+    -------
+    bus_data: pandas.DataFrame
+        Voltage level results at buses
+    line_data: pandas.DataFrame
+        Resulting apparent power at lines
+    """
+
+    bus_data = {'bus_id': [], 'v_mag_pu': []}
+    line_data = {'line_id': [], 'p0': [], 'p1': [], 'q0': [], 'q1': []}
+
+    # create dictionary of bus results data
+    for col in list(network.buses_t.v_mag_pu.columns):
+        bus_data['bus_id'].append(col)
+        bus_data['v_mag_pu'].append(network.buses_t.v_mag_pu[col].tolist())
+
+    # create dictionary of line results data
+    for col in list(network.lines_t.p0.columns):
+        line_data['line_id'].append(col)
+        line_data['p0'].append(network.lines_t.p0[col].tolist())
+        line_data['p1'].append(network.lines_t.p1[col].tolist())
+        line_data['q0'].append(network.lines_t.q0[col].tolist())
+        line_data['q1'].append(network.lines_t.q1[col].tolist())
+
+    return DataFrame(bus_data).set_index('bus_id'),\
+           DataFrame(line_data).set_index('line_id')
+
+def assign_bus_results(grid, bus_data):
+    """
+    Write results obtained from PF to graph
+
+    Parameters
+    ----------
+    grid: dingo.network
+    bus_data: pandas.DataFrame
+        DataFrame containing voltage levels obtained from PF analysis
+    """
+
+
+    # iterate of nodes and assign voltage obtained from power flow analysis
+    for node in grid._graph.nodes():
+        # check if node is connected to graph
+        if node not in grid.graph_isolated_nodes():
+            if isinstance(node, LVStationDingo):
+                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
+                if node.lv_load_area.is_aggregated:
+                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            elif not isinstance(node, CircuitBreakerDingo):
+                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            else:
+                print("Object {} has been skipped while importing results!")
+
+
+def assign_line_results(grid, line_data):
+    """
+    Write results obtained from PF to graph
+
+    Parameters
+    -----------
+    grid: dingo.network
+    line_data: pandas.DataFrame
+        DataFrame containing active/reactive at nodes obtained from PF analysis
+    """
+
+    edges = [edge for edge in grid.graph_edges()
+             if edge['adj_nodes'][0] in grid._graph.nodes()
+             and edge['adj_nodes'][1] in grid._graph.nodes()]
+    line_data.to_csv('line_data_after.csv')
+
+    for edge in edges:
+
+            s_res = [
+                sqrt(
+                    max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'p0'][0]),
+                        abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                            'branch'].id_db), 'p1'][0])) ** 2 +
+                    max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'q0'][0]),
+                        abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                            'branch'].id_db), 'q1'][0])) ** 2),
+                sqrt(
+                    max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'p0'][1]),
+                        abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                            'branch'].id_db), 'p1'][1])) ** 2 +
+                    max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'q0'][1]),
+                        abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                            'branch'].id_db), 'q1'][1])) ** 2)]
+
+            edge['branch'].s_res = s_res
+
