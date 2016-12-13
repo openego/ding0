@@ -1,4 +1,4 @@
-#from dingo.core.network import GridDingo
+# from dingo.core.network import GridDingo
 from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, CircuitBreakerDingo
@@ -8,11 +8,9 @@ from dingo.core.network.cable_distributors import LVCableDistributorDingo
 from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
-from dingo.tools import config as cfg_dingo, pypsa_io
+from dingo.tools import config as cfg_dingo, pypsa_io, tools
 from dingo.flexopt.reinforce_grid import *
 import dingo.core
-
-
 
 import networkx as nx
 import pandas as pd
@@ -30,12 +28,13 @@ class MVGridDingo(GridDingo):
     default_branch_kind: kind of branch (possible values: 'cable' or 'line')
     default_branch_type: type of branch (pandas Series object with cable/line parameters)
     """
+
     # TODO: Add method to join MV graph with LV graphs to have one graph that covers whole grid (MV and LV)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        #more params
+        # more params
         self._station = None
         self._circuit_breakers = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
@@ -401,11 +400,19 @@ class MVGridDingo(GridDingo):
         self.grid_district.add_aggregated_peak_demand()
 
 
-    def export_to_pypsa(self, conn):
+    def export_to_pypsa(self, conn, method='onthefly'):
         """Exports MVGridDingo grid to PyPSA database tables
 
         Peculiarities of MV grids are implemented here. Derive general export
         method from this and adapt to needs of LVGridDingo
+
+        Parameters
+        ----------
+        conn: SQLAlchemy session object
+        method: str
+            Specify export method
+            If method='db' grid data will be exported to database (default)
+            If method='onthefly' grid data will be passed to PyPSA directly
 
         Notes
         -----
@@ -423,50 +430,75 @@ class MVGridDingo(GridDingo):
         start_time = datetime(1970, 1, 1, 00, 00, 0)
         resolution = 'H'
 
-        Session = sessionmaker(bind=conn)
-        session = Session()
-
-        # Empty tables
-        pypsa_io.delete_powerflow_tables(session)
-
-        # Extract a subset of the graph (especially for testing purposes)
-        degrees = self._graph.degree()
-
         nodes = self._graph.nodes()
 
         edges = [edge for edge in list(self.graph_edges())
                  if edge['adj_nodes'][0] in nodes
                  and edge['adj_nodes'][1] in nodes]
+        if method is 'db':
+            Session = sessionmaker(bind=conn)
+            session = Session()
 
-        # Export node objects: Busses, Loads, Generators
-        pypsa_io.export_nodes(self, session, nodes, temp_id, lv_transformer=False)
+            # Empty tables
+            pypsa_io.delete_powerflow_tables(session)
 
-        # Export edges
-        pypsa_io.export_edges(self, session, edges)
+            # Export node objects: Busses, Loads, Generators
+            pypsa_io.export_nodes(self,
+                                  session,
+                                  nodes,
+                                  temp_id,
+                                  lv_transformer=False)
 
-        # Create table about temporal coverage of PF analysis
-        pypsa_io.create_temp_resolution_table(session,
-                                              timesteps=timesteps,
-                                              resolution=resolution,
-                                              start_time=start_time)
+            # Export edges
+            pypsa_io.export_edges(self, session, edges)
 
+            # Create table about temporal coverage of PF analysis
+            pypsa_io.create_temp_resolution_table(session,
+                                                  timesteps=timesteps,
+                                                  resolution=resolution,
+                                                  start_time=start_time)
+        elif method is 'onthefly':
 
-    def run_powerflow(self, conn):
+            nodes_dict, components_data = pypsa_io.nodes_to_dict_of_dataframes(
+                self,
+                nodes,
+                lv_transformer=False)
+            edges_dict = pypsa_io.edges_to_dict_of_dataframes(self, edges)
+            components = tools.merge_two_dicts(nodes_dict, edges_dict)
 
-        Session = sessionmaker(bind=conn)
-        session = Session()
+            return components, components_data
+        else:
+            raise ValueError('Sorry, this export method does not exist!')
 
-        pypsa_io.run_powerflow(session)
+    def run_powerflow(self, conn, method='onthefly'):
 
+        if method is 'db':
+            Session = sessionmaker(bind=conn)
+            session = Session()
 
-    def import_powerflow_results(self, conn):
+            # export grid data to db (be ready for power flow analysis)
+            self.export_to_pypsa(conn, method=method)
+
+            # run the power flow problem
+            pypsa_io.run_powerflow(session)
+
+            # import results from db
+            self.import_powerflow_results(session)
+        elif method is 'onthefly':
+            components, components_data = self.export_to_pypsa(conn, method)
+            pypsa_io.run_powerflow_onthefly(components, components_data, self)
+
+    def import_powerflow_results(self, session):
         """
         Assign results from power flow analysis to edges and nodes
-        :return:
-        """
 
-        Session = sessionmaker(bind=conn)
-        session = Session()
+        Parameters
+        ----------
+        session: SQLAlchemy session
+        Returns
+        -------
+        None
+        """
 
         # bus data
         pypsa_io.import_pfa_bus_results(session, self)
@@ -501,6 +533,7 @@ class LVGridDingo(GridDingo):
     Notes:
       It is assumed that LV grid have got cables only (attribute 'default_branch_kind')
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

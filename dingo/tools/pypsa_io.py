@@ -3,7 +3,7 @@ from egoio.db_tables.calc_ego_mv_powerflow import ResBus, ResLine,\
     ResTransformer, Bus, Line, Transformer
 
 from egopowerflow.tools.io import get_timerange, import_components,\
-    import_pq_sets, create_powerflow_problem, results_to_oedb
+    import_pq_sets, create_powerflow_problem, results_to_oedb, transform_timeseries4pypsa
 from egopowerflow.tools.plot import add_coordinates, plot_line_loading
 
 
@@ -20,7 +20,10 @@ from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
 from shapely.geometry import LineString
-from pandas import read_sql_query
+from pandas import Series, read_sql_query, DataFrame, DatetimeIndex
+from pypsa.io import import_series_from_dataframe
+
+from datetime import datetime
 
 
 def delete_powerflow_tables(session):
@@ -75,6 +78,15 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                                       "mv_station_v_level_operation")
     
     kw2mw = 1e-3
+
+    # # TODO: only for debugging, remove afterwards
+    # import csv
+    # nodeslist = sorted([node.__repr__() for node in nodes
+    #                     if node not in grid.graph_isolated_nodes()])
+    # with open('/home/guido/dingo_debug/nodes_via_db.csv', 'w',
+    #           newline='') as csvfile:
+    #     writer = csv.writer(csvfile, delimiter='\n')
+    #     writer.writerow(nodeslist)
 
     # Create all busses
     for node in nodes:
@@ -280,6 +292,7 @@ def export_edges(grid, session, edges):
         session.add(line)
         session.commit()
 
+
 def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
                                  temp_id=1):
     """
@@ -294,6 +307,265 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
         )
     session.add(temp_resolution)
     session.commit()
+
+
+def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
+    """
+    Creates dictionary of dataframes containing grid
+
+    Parameters
+    ----------
+    grid: dingo.Network
+    nodes: list of dingo grid components objects
+        Nodes of the grid graph
+    lv_transformer: bool, True
+        Toggle transformer representation in power flow analysis
+
+    Returns:
+    components: dict of pandas.DataFrame
+        DataFrames contain components attributes. Dict is keyed by components
+        type
+    components_data: dict of pandas.DataFrame
+        DataFrame containing components time-varying data
+    """
+
+    generator_instances = [MVStationDingo, GeneratorDingo]
+    # TODO: MVStationDingo has a slack generator
+
+    mv_routing_loads_cos_phi = float(
+        cfg_dingo.get('mv_routing_tech_constraints',
+                      'mv_routing_loads_cos_phi'))
+    srid = int(cfg_dingo.get('geo', 'srid'))
+
+    load_in_generation_case = cfg_dingo.get('assumptions',
+                                            'load_in_generation_case')
+
+    Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
+
+    voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
+                                      "mv_station_v_level_operation")
+
+    kw2mw = 1e-3
+
+    # define dictionaries
+    buses = {'bus_id': [], 'v_nom': [], 'geom': [], 'grid_id': []}
+    bus_v_mag_set = {'bus_id': [], 'temp_id': [], 'v_mag_pu_set': [],
+                     'grid_id': []}
+    generator = {'generator_id': [], 'bus': [], 'control': [], 'grid_id': [],
+                 'p_nom': []}
+    generator_pq_set = {'generator_id': [], 'temp_id': [], 'p_set': [],
+                        'grid_id': [], 'q_set': []}
+    load = {'load_id': [], 'bus': [], 'grid_id': []}
+    load_pq_set = {'load_id': [], 'temp_id': [], 'p_set': [],
+                   'grid_id': [], 'q_set': []}
+
+    # # TODO: consider other implications of `lv_transformer is True`
+    # if lv_transformer is True:
+    #     bus_instances.append(Transformer)
+
+    # # TODO: only for debugging, remove afterwards
+    # import csv
+    # nodeslist = sorted([node.__repr__() for node in nodes
+    #                     if node not in grid.graph_isolated_nodes()])
+    # with open('/home/guido/dingo_debug/nodes_via_dataframe.csv', 'w', newline='') as csvfile:
+    #     writer = csv.writer(csvfile, delimiter='\n')
+    #     writer.writerow(nodeslist)
+
+
+    for node in nodes:
+        if node not in grid.graph_isolated_nodes():
+            # buses only
+            if isinstance(node, MVCableDistributorDingo):
+                buses['bus_id'].append(node.pypsa_id)
+                buses['v_nom'].append(grid.v_level)
+                buses['geom'].append(from_shape(node.geo_data, srid=srid))
+                buses['grid_id'].append(grid.id_db)
+
+                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['temp_id'].append(1)
+                bus_v_mag_set['v_mag_pu_set'].append([1, 1])
+                bus_v_mag_set['grid_id'].append(grid.id_db)
+
+            # bus + generator
+            elif isinstance(node, tuple(generator_instances)):
+                # slack generator
+                if isinstance(node, MVStationDingo):
+                    print('Only MV side bus of MVStation will be added.')
+                    generator['generator_id'].append(
+                        '_'.join(['MV', str(grid.id_db), 'slack']))
+                    generator['control'].append('Slack')
+                    generator['p_nom'].append(0)
+                    bus_v_mag_set['v_mag_pu_set'].append(
+                        [voltage_set_slack, voltage_set_slack])
+
+                # other generators
+                if isinstance(node, GeneratorDingo):
+                    generator['generator_id'].append('_'.join(
+                        ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
+                    generator['control'].append('PQ')
+                    generator['p_nom'].append(node.capacity)
+
+                    generator_pq_set['generator_id'].append('_'.join(
+                        ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
+                    generator_pq_set['temp_id'].append(1)
+                    generator_pq_set['p_set'].append(
+                        [0 * kw2mw, node.capacity * kw2mw])
+                    generator_pq_set['q_set'].append(
+                        [0 * kw2mw, 0 * kw2mw])
+                    generator_pq_set['grid_id'].append(grid.id_db)
+                    bus_v_mag_set['v_mag_pu_set'].append([1, 1])
+
+                buses['bus_id'].append(node.pypsa_id)
+                buses['v_nom'].append(grid.v_level)
+                buses['geom'].append(from_shape(node.geo_data, srid=srid))
+                buses['grid_id'].append(grid.id_db)
+
+                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['temp_id'].append(1)
+                bus_v_mag_set['grid_id'].append(grid.id_db)
+
+                generator['grid_id'].append(grid.id_db)
+                generator['bus'].append(node.pypsa_id)
+
+
+            # aggregated load at hv/mv substation
+            elif isinstance(node, LVLoadAreaCentreDingo):
+                load['load_id'].append(node.pypsa_id)
+                load['bus'].append('_'.join(['HV', str(grid.id_db), 'trd']))
+                load['grid_id'].append(grid.id_db)
+
+                load_pq_set['load_id'].append(node.pypsa_id)
+                load_pq_set['temp_id'].append(1)
+                load_pq_set['p_set'].append(
+                    [node.lv_load_area.peak_load_sum * kw2mw,
+                     load_in_generation_case * kw2mw])
+                load_pq_set['q_set'].append(
+                    [node.lv_load_area.peak_load_sum
+                     * Q_factor_load * kw2mw,
+                     load_in_generation_case * kw2mw])
+                load_pq_set['grid_id'].append(grid.id_db)
+
+            # bus + aggregate load of lv grids (at mv/ls substation)
+            elif isinstance(node, LVStationDingo):
+                load['load_id'].append(
+                    '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
+                load['bus'].append(node.pypsa_id)
+                load['grid_id'].append(grid.id_db)
+
+                load_pq_set['load_id'].append(
+                    '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
+                load_pq_set['temp_id'].append(1)
+                load_pq_set['p_set'].append(
+                    [node.peak_load * kw2mw,
+                     load_in_generation_case * kw2mw])
+                load_pq_set['q_set'].append(
+                    [node.peak_load * Q_factor_load * kw2mw,
+                     load_in_generation_case])
+                load_pq_set['grid_id'].append(grid.id_db)
+
+                buses['bus_id'].append(node.pypsa_id)
+                buses['v_nom'].append(grid.v_level)
+                buses['geom'].append(from_shape(node.geo_data, srid=srid))
+                buses['grid_id'].append(grid.id_db)
+
+                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['temp_id'].append(1)
+                bus_v_mag_set['v_mag_pu_set'].append([1, 1])
+                bus_v_mag_set['grid_id'].append(grid.id_db)
+
+            elif isinstance(node, CircuitBreakerDingo):
+                # TODO: remove this elif-case if CircuitBreaker are removed from graph
+                continue
+            else:
+                raise TypeError("Node of type", node, "cannot be handled here")
+        else:
+            print("Node {} is not connected to the graph and will be omitted " \
+                  "in power flow analysis".format(node))
+
+
+    components = {'Bus': DataFrame(buses).set_index('bus_id'),
+                  'Generator': DataFrame(generator).set_index('generator_id'),
+                  'Load': DataFrame(load).set_index('load_id')}
+
+    components_data = {'Bus': DataFrame(bus_v_mag_set).set_index('bus_id'),
+                       'Generator': DataFrame(generator_pq_set).set_index(
+                           'generator_id'),
+                       'Load': DataFrame(load_pq_set).set_index('load_id')}
+
+    # with open('/home/guido/dingo_debug/number_of_nodes_buses.csv', 'a') as csvfile:
+    #     csvfile.write(','.join(['\n', str(len(nodes)), str(len(grid.graph_isolated_nodes())), str(len(components['Bus']))]))
+
+    return components, components_data
+
+
+def edges_to_dict_of_dataframes(grid, edges):
+    """
+    Export edges to DataFrame
+
+    Parameters
+    ----------
+    grid: dingo.Network
+    edges: list
+        Edges of Dingo.Network graph
+
+    Returns
+    -------
+    edges_dict: dict
+    """
+    omega = 2 * pi * 50
+    srid = int(cfg_dingo.get('geo', 'srid'))
+
+    lines = {'line_id': [], 'bus0': [], 'bus1': [], 'x': [], 'r': [],
+             's_nom': [], 'length': [], 'cables': [], 'geom': [],
+             'grid_id': []}
+
+    # iterate over edges and add them one by one
+    for edge in edges:
+
+        line_name = '_'.join(['MV',
+                              str(grid.id_db),
+                              'lin',
+                              str(edge['branch'].id_db)])
+
+        # TODO: find the real cause for being L, C, I_th_max type of Series
+        if (isinstance(edge['branch'].type['L'], Series) or
+                isinstance(edge['branch'].type['C'], Series)):
+            x = omega * edge['branch'].type['L'].values[0] * 1e-3
+        else:
+
+            x = omega * edge['branch'].type['L'] * 1e-3
+
+        if isinstance(edge['branch'].type['R'], Series):
+            r = edge['branch'].type['R'].values[0]
+        else:
+            r = edge['branch'].type['R']
+
+        if (isinstance(edge['branch'].type['I_max_th'], Series) or
+                isinstance(edge['branch'].type['U_n'], Series)):
+            s_nom = sqrt(3) * edge['branch'].type['I_max_th'].values[0] * \
+                    edge['branch'].type['U_n'].values[0]
+        else:
+            s_nom = sqrt(3) * edge['branch'].type['I_max_th'] * \
+                    edge['branch'].type['U_n']
+
+        # get lengths of line
+        l = edge['branch'].length / 1e3
+
+        lines['line_id'].append(line_name)
+        lines['bus0'].append(edge['adj_nodes'][0].pypsa_id)
+        lines['bus1'].append(edge['adj_nodes'][1].pypsa_id)
+        lines['x'].append(x * l)
+        lines['r'].append(r * l)
+        lines['s_nom'].append(s_nom)
+        lines['length'].append(l)
+        lines['cables'].append(3)
+        lines['geom'].append(from_shape(
+            LineString([edge['adj_nodes'][0].geo_data,
+                        edge['adj_nodes'][1].geo_data]),
+            srid=srid))
+        lines['grid_id'].append(grid.id_db)
+
+    return {'Line': DataFrame(lines).set_index('line_id')}
 
 
 def run_powerflow(conn):
@@ -376,6 +648,80 @@ def run_powerflow(conn):
     results_to_oedb(conn, network)
 
 
+def run_powerflow_onthefly(components, components_data, grid):
+    """
+    Run powerflow to test grid stability
+
+    Two cases are defined to be tested here:
+     i) load case
+     ii) feed-in case
+
+    Parameters
+    ----------
+    components: dict of pandas.DataFrame
+    components_data: dict of pandas.DataFrame
+    """
+
+    scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
+    start_hour = cfg_dingo.get("powerflow", "start_hour")
+    end_hour = cfg_dingo.get("powerflow", "end_hour")
+
+    # choose temp_id
+    temp_id_set = 1
+    timesteps = 2
+    start_time = datetime(1970, 1, 1, 00, 00, 0)
+    resolution = 'H'
+
+    # define investigated time range
+    timerange = DatetimeIndex(freq=resolution,
+                              periods=timesteps,
+                              start=start_time)
+
+    # create PyPSA powerflow problem
+    network, snapshots = create_powerflow_problem(timerange, components)
+
+    # import pq-sets
+    for key in ['Load', 'Generator']:
+        for attr in ['p_set', 'q_set']:
+            series = transform_timeseries4pypsa(components_data[key][
+                                                    attr].to_frame(),
+                                                timerange,
+                                                column=attr)
+            import_series_from_dataframe(network,
+                                         series,
+                                         key,
+                                         attr)
+    series = transform_timeseries4pypsa(components_data['Bus']
+                                        ['v_mag_pu_set'].to_frame(),
+                                        timerange,
+                                        column='v_mag_pu_set')
+
+    import_series_from_dataframe(network,
+                                 series,
+                                 'Bus',
+                                 'v_mag_pu_set')
+
+    # add coordinates to network nodes and make ready for map plotting
+    # network = add_coordinates(network)
+
+    # start powerflow calculations
+    network.pf(snapshots)
+
+    # # make a line loading plot
+    # # TODO: make this optional
+    # plot_line_loading(network, timestep=0,
+    #                   filename='Line_loading_load_case.png')
+    # plot_line_loading(network, timestep=1,
+    #                   filename='Line_loading_feed-in_case.png')
+
+    # process results
+    bus_data, line_data = process_pf_results(network)
+
+    # assign results data to graph
+    assign_bus_results(grid, bus_data)
+    assign_line_results(grid, line_data)
+
+
 def import_pfa_bus_results(session, grid):
     """
     Assign results from power flow analysis to grid network object
@@ -407,19 +753,8 @@ def import_pfa_bus_results(session, grid):
                                  session.bind,
                                  index_col='bus_id')
 
-    # iterate of nodes and assign voltage obtained from power flow analysis
-    for node in grid._graph.nodes():
-        # check if node is connected to graph
-        if node not in grid.graph_isolated_nodes():
-            if isinstance(node, LVStationDingo):
-                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-            elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
-                if node.lv_load_area.is_aggregated:
-                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-            elif not isinstance(node, CircuitBreakerDingo):
-                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-            else:
-                print("Object {} has been skipped while importing results!")
+    # Assign results to the graph
+    assign_bus_results(grid, bus_data)
 
 
 def import_pfa_line_results(session, grid):
@@ -454,36 +789,114 @@ def import_pfa_line_results(session, grid):
         filter(Line.grid_id == grid.id_db)
 
     line_data = read_sql_query(lines_query.statement,
-                                 session.bind,
-                                 index_col='line_id')
+                               session.bind,
+                               index_col='line_id')
 
-    edges = [edge for edge in grid.graph_edges()
-             if edge['adj_nodes'][0] in grid._graph.nodes()
-             and edge['adj_nodes'][1] in grid._graph.nodes()]
-
-    for edge in edges:
-        s_res = [
-            sqrt(
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'p0'][0]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'p1'][0])) ** 2 +
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'q0'][0]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][0])) ** 2),
-            sqrt(
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'p0'][1]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'p1'][1])) ** 2 +
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'q0'][1]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][1])) ** 2)]
-
-        edge['branch'].s_res = s_res
+    assign_line_results(grid, line_data)
 
 
 def import_pfa_transformer_results():
     pass
+
+
+def process_pf_results(network):
+    """
+
+    Parameters
+    ----------
+    network: pypsa.Network
+
+    Returns
+    -------
+    bus_data: pandas.DataFrame
+        Voltage level results at buses
+    line_data: pandas.DataFrame
+        Resulting apparent power at lines
+    """
+
+    bus_data = {'bus_id': [], 'v_mag_pu': []}
+    line_data = {'line_id': [], 'p0': [], 'p1': [], 'q0': [], 'q1': []}
+
+    # create dictionary of bus results data
+    for col in list(network.buses_t.v_mag_pu.columns):
+        bus_data['bus_id'].append(col)
+        bus_data['v_mag_pu'].append(network.buses_t.v_mag_pu[col].tolist())
+
+    # create dictionary of line results data
+    for col in list(network.lines_t.p0.columns):
+        line_data['line_id'].append(col)
+        line_data['p0'].append(network.lines_t.p0[col].tolist())
+        line_data['p1'].append(network.lines_t.p1[col].tolist())
+        line_data['q0'].append(network.lines_t.q0[col].tolist())
+        line_data['q1'].append(network.lines_t.q1[col].tolist())
+
+    return DataFrame(bus_data).set_index('bus_id'),\
+           DataFrame(line_data).set_index('line_id')
+
+def assign_bus_results(grid, bus_data):
+    """
+    Write results obtained from PF to graph
+
+    Parameters
+    ----------
+    grid: dingo.network
+    bus_data: pandas.DataFrame
+        DataFrame containing voltage levels obtained from PF analysis
+    """
+
+
+    # iterate of nodes and assign voltage obtained from power flow analysis
+    for node in grid._graph.nodes():
+        # check if node is connected to graph
+        if node not in grid.graph_isolated_nodes():
+            if isinstance(node, LVStationDingo):
+                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
+                if node.lv_load_area.is_aggregated:
+                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            elif not isinstance(node, CircuitBreakerDingo):
+                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+            else:
+                print("Object {} has been skipped while importing results!")
+
+
+def assign_line_results(grid, line_data):
+    """
+    Write results obtained from PF to graph
+
+    Parameters
+    -----------
+    grid: dingo.network
+    line_data: pandas.DataFrame
+        DataFrame containing active/reactive at nodes obtained from PF analysis
+    """
+
+    edges = [edge for edge in grid.graph_edges()
+             if edge['adj_nodes'][0] in grid._graph.nodes()
+             and edge['adj_nodes'][1] in grid._graph.nodes()]
+    line_data.to_csv('line_data_after.csv')
+
+    for edge in edges:
+
+            s_res = [
+                sqrt(
+                    max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'p0'][0]),
+                        abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                            'branch'].id_db), 'p1'][0])) ** 2 +
+                    max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'q0'][0]),
+                        abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                            'branch'].id_db), 'q1'][0])) ** 2),
+                sqrt(
+                    max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'p0'][1]),
+                        abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                            'branch'].id_db), 'p1'][1])) ** 2 +
+                    max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                        'branch'].id_db), 'q0'][1]),
+                        abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
+                            'branch'].id_db), 'q1'][1])) ** 2)]
+
+            edge['branch'].s_res = s_res
+
