@@ -45,12 +45,14 @@ def check_load(grid, mode):
         for branch in grid.graph_edges():
             s_max_th = 3**0.5 * branch['branch'].type['U_n'] * branch['branch'].type['I_max_th']
             # TODO: Add type attribute to branch for checking type !!!!
-            if grid.v_level == 20:
-                s_max_th = s_max_th * load_factor_mv_line_lc_normal
-            elif grid.v_level == 10:
-                s_max_th = s_max_th * load_factor_mv_cable_lc_normal
+            if branch['branch'].kind is 'line':
+                s_max_th *= load_factor_mv_line_lc_normal
+            elif branch['branch'].kind is 'cable':
+                s_max_th *= load_factor_mv_cable_lc_normal
+            else:
+                raise ValueError('Branch kind is invalid!')
 
-            if any(s*mw2kw >= s_max_th for s in branch['branch'].s_res):
+            if any([s*mw2kw >= s_max_th for s in branch['branch'].s_res]):
                 crit_branches.append(branch)
 
         # check trafos' loads
