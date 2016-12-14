@@ -366,6 +366,10 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     load_pq_set = {'load_id': [], 'temp_id': [], 'p_set': [],
                    'grid_id': [], 'q_set': []}
 
+    transformer = {'trafo_id': [], 'bus0': [], 'bus1': [], 'x': [], 'r': [],
+                   'grid_id': [], 'geom': [], 'tap_ratio': [], 's_nom': []}
+
+
     # # TODO: consider other implications of `lv_transformer is True`
     # if lv_transformer is True:
     #     bus_instances.append(Transformer)
@@ -402,17 +406,52 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             elif isinstance(node, tuple(generator_instances)):
                 # node is a MVStation
                 if isinstance(node, MVStationDingo):
-                    #
+                    # add slack bus (HV/MV transformer upside)
+                    buses['bus_id'].append(
+                        '_'.join(['HVMV', str(grid.id_db), 'tru']))
+                    buses['v_nom'].append(110) # high-voltage voltage level
+                    buses['geom'].append(from_shape(node.geo_data, srid=srid))
+                    buses['grid_id'].append(grid.id_db)
+
+                    # add properties to slack bus
+                    bus_v_mag_set['bus_id'].append(
+                        '_'.join(['HVMV', str(grid.id_db), 'tru']))
+                    bus_v_mag_set['temp_id'].append(1)
+                    bus_v_mag_set['v_mag_pu_set'].append(
+                        [voltage_set_slack, voltage_set_slack])
+                    bus_v_mag_set['grid_id'].append(grid.id_db)
 
                     # add slack generator
                     generator['generator_id'].append(
                         '_'.join(['MV', str(grid.id_db), 'slack']))
                     generator['control'].append('Slack')
                     generator['p_nom'].append(0)
+                    generator['bus'].append(
+                        '_'.join(['HVMV', str(grid.id_db), 'tru']))
 
-                    # add voltage set for slack bus
-                    bus_v_mag_set['v_mag_pu_set'].append(
-                        [voltage_set_slack, voltage_set_slack])
+                    # add transformers of HV/MV substation
+                    trafo_count = 1
+                    for trafo in node._transformers:
+
+                        # add transformer (HV/MV)
+                        transformer['trafo_id'].append('_'.join(
+                            ['MV', str(grid.id_db), 'tra', str(trafo_count),
+                             str(node.id_db)]))
+                        transformer['bus0'].append(
+                            '_'.join(['HVMV', str(grid.id_db), 'tru']))
+                        transformer['bus1'].append(node.pypsa_id)
+                        transformer['x'].append(0.1)
+                        transformer['r'].append(0.1)
+                        transformer['geom'].append(
+                            from_shape(node.geo_data, srid=srid))
+                        transformer['grid_id'].append(grid.id_db)
+                        transformer['tap_ratio'].append(1)
+                        transformer['s_nom'].append(trafo.s_max_a)
+
+                        # increment count
+                        trafo_count += 1
+
+
 
                 # node is GeneratorDingo
                 if isinstance(node, GeneratorDingo):
@@ -421,6 +460,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
                     generator['control'].append('PQ')
                     generator['p_nom'].append(node.capacity)
+                    generator['bus'].append(node.pypsa_id)
 
                     # add generator p and q setting
                     generator_pq_set['generator_id'].append('_'.join(
@@ -431,9 +471,6 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     generator_pq_set['q_set'].append(
                         [0 * kw2mw, 0 * kw2mw])
                     generator_pq_set['grid_id'].append(grid.id_db)
-
-                    # set voltage level of generator bus
-                    bus_v_mag_set['v_mag_pu_set'].append([1, 1])
 
                 # add generator bus at node OR (in case of MVStation) add
                 # transformer downside bus
@@ -446,10 +483,10 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 bus_v_mag_set['bus_id'].append(node.pypsa_id)
                 bus_v_mag_set['temp_id'].append(1)
                 bus_v_mag_set['grid_id'].append(grid.id_db)
+                bus_v_mag_set['v_mag_pu_set'].append([1, 1])
 
                 # add further properties for generator
                 generator['grid_id'].append(grid.id_db)
-                generator['bus'].append(node.pypsa_id)
 
 
             # aggregated load at hv/mv substation
@@ -515,7 +552,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
     components = {'Bus': DataFrame(buses).set_index('bus_id'),
                   'Generator': DataFrame(generator).set_index('generator_id'),
-                  'Load': DataFrame(load).set_index('load_id')}
+                  'Load': DataFrame(load).set_index('load_id'),
+                  'Transformer': DataFrame(transformer).set_index('trafo_id')}
 
     components_data = {'Bus': DataFrame(bus_v_mag_set).set_index('bus_id'),
                        'Generator': DataFrame(generator_pq_set).set_index(
@@ -709,8 +747,10 @@ def run_powerflow_onthefly(components, components_data, grid):
 
     # create PyPSA powerflow problem
     network, snapshots = create_powerflow_problem(timerange, components)
+    import networkx as nx
+    subgraphs = nx.connected_component_subgraphs(network.graph())
 
-    # import pq-sets
+    # import pq-sets of Loads and Generators
     for key in ['Load', 'Generator']:
         for attr in ['p_set', 'q_set']:
             series = transform_timeseries4pypsa(components_data[key][
@@ -721,6 +761,19 @@ def run_powerflow_onthefly(components, components_data, grid):
                                          series,
                                          key,
                                          attr)
+
+    # Import voltage set points for buses
+    series = transform_timeseries4pypsa(components_data['Bus']
+                                        ['v_mag_pu_set'].to_frame(),
+                                        timerange,
+                                        column='v_mag_pu_set')
+
+    import_series_from_dataframe(network,
+                                 series,
+                                 'Bus',
+                                 'v_mag_pu_set')
+
+    # Add transformers and its tap ratio
     series = transform_timeseries4pypsa(components_data['Bus']
                                         ['v_mag_pu_set'].to_frame(),
                                         timerange,
