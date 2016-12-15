@@ -139,13 +139,12 @@ class GridDingo:
 
         Note
         ----
-
         There are generator functions for nodes (`Graph.nodes()`) and edges
         (`Graph.edges()`) in NetworkX but unlike graph nodes, which can be
         represented by objects, branch objects can only be accessed by using an
         edge attribute ('branch' is used here)
 
-        To make access to attributes of the branch objects simplier and more
+        To make access to attributes of the branch objects simpler and more
         intuitive for the user, this generator yields a dictionary for each edge
         that contains information about adjacent nodes and the branch object.
 
@@ -153,7 +152,14 @@ class GridDingo:
         of the in-going tuple (which is defined by the needs of networkX). If
         this changes, the code will break.
         """
-        for edge in nx.get_edge_attributes(self._graph, 'branch').items():
+
+        # get edges with attributes
+        edges = nx.get_edge_attributes(self._graph, 'branch').items()
+
+        # sort them according to connected nodes
+        edges_sorted = sorted(list(edges), key=lambda _: repr(_[0]))
+
+        for edge in edges_sorted:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
     def find_path(self, node_source, node_target):
