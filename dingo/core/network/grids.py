@@ -79,11 +79,23 @@ class MVGridDingo(GridDingo):
         for circ_breaker in self.circuit_breakers():
             circ_breaker.close()
 
-    def add_station(self, mv_station, force=False):
-        """Adds MV station if not already existing
+    def rings(self):
+        """ Returns a generator for iterating over rings (=routes of MVGrid's graph)
 
-        mv_station: MVStationDingo object
-        force: bool. If True, MV Station is set even though it's not empty (override)
+        Returns:
+            List with nodes of each ring of _graph excluding root node (HV/MV station),
+            format: [ring_m_node_1, ..., ring_m_node_n]
+        """
+        for ring in nx.cycle_basis(self._graph, root=self._station):
+            ring.remove(self._station)
+            yield ring
+
+    def add_station(self, mv_station, force=False):
+        """ Adds MV station if not already existing
+
+        Args:
+            mv_station: MVStationDingo object
+            force: bool. If True, MV Station is set even though it's not empty (override)
         """
         # TODO: Use this exception handling as template for similar methods in other classes
         if not isinstance(mv_station, MVStationDingo):
