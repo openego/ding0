@@ -37,7 +37,6 @@ class MVGridDingo(GridDingo):
         # more params
         self._station = None
         self._circuit_breakers = []
-        self._rings = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
         self.default_branch_type = kwargs.get('default_branch_type', None)
         self.default_branch_kind_settle = kwargs.get('default_branch_kind_settle', None)
@@ -79,20 +78,6 @@ class MVGridDingo(GridDingo):
         """ Closes all circuit breakers in MV grid """
         for circ_breaker in self.circuit_breakers():
             circ_breaker.close()
-
-    def rings(self):
-        """Returns a generator for iterating over rings"""
-        for ring in self._rings:
-            yield ring
-
-    def add_ring(self, ring):
-        """ Adds ring to grid
-
-        Args:
-            ring: subgraph of self._graph (instance of NetworkX Graph)
-        """
-        if ring not in self._rings and isinstance(ring, nx.Graph):
-            self._rings.append(ring)
 
     def add_station(self, mv_station, force=False):
         """Adds MV station if not already existing
@@ -167,7 +152,7 @@ class MVGridDingo(GridDingo):
         """
 
         # do the routing
-        self._graph, self._rings = mv_routing.solve(self._graph, debug, anim)
+        self._graph = mv_routing.solve(self._graph, debug, anim)
         self._graph = mv_connect.mv_connect_satellites(self, self._graph, debug)
         self._graph = mv_connect.mv_connect_stations(self.grid_district, self._graph, debug)
 
