@@ -93,8 +93,8 @@ class GridDingo:
                 nodes_color.append((0.5, 0.5, 1))
 
         plt.figure()
-        nx.draw_networkx(g, nodes_pos, node_color=nodes_color, font_size=10)
-        nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
+        nx.draw_networkx(g, nodes_pos, node_color=nodes_color, font_size=8)
+        #nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
         plt.show()
 
     def graph_nodes_sorted(self):
@@ -386,7 +386,14 @@ class LoadDingo:
 
 
 class CircuitBreakerDingo:
-    """ Class for modelling a circuit breaker """
+    """ Class for modelling a circuit breaker
+
+    Notes:
+        Circuit breakers are nodes of a graph, but are NOT connected via an edge. They are associated to a specific
+        `branch` of a graph (and the branch refers to the circuit breaker via the attribute `circuit_breaker`) and its
+        two `branch_nodes`. Via open() and close() the associated branch can be removed from or added to graph.
+
+    """
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
