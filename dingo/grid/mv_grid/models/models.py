@@ -160,7 +160,6 @@ class Route(object):
         """ Calculates the optimal position of a circuit breaker on route.
 
         Returns:
-            OLD: 2-tuple of nodes (instances of Node class) = route segment
             position of circuit breaker on route (index of last node on 1st half-ring preceding the circuit breaker)
 
         Notes
@@ -170,6 +169,9 @@ class Route(object):
         Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
         breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
         the route.
+
+        The circuit breakers are used here for checking tech. constraints only and will be re-located after connection
+        of satellites and stations in dingo.grid.mv_grid.tools.set_circuit_breakers
 
         References
         ----------
