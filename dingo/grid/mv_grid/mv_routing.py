@@ -66,12 +66,16 @@ def routing_solution_to_dingo_graph(graph, solution):
 
     Returns:
         graph: NetworkX graph object with nodes and edges
+        subgraphs: List with NetworkX graph objects (represent rings/routes of grid)
     """
     # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
     # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
 
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}
+
+    # list to store subgraphs (subgraph = route)
+    subgraphs = []
 
     # add edges from solution to graph
     try:
@@ -105,11 +109,18 @@ def routing_solution_to_dingo_graph(graph, solution):
             # translate solution's node names to graph node objects using dict created before
             # note: branch object is assigned to edge using an attribute ('branch' is used here), it can be accessed
             # using the method `graph_edges()` of class `GridDingo`
-            edges_graph = []
+            edges_graph = []  # edges of route
+            nodes_subgraph = []  # nodes of route (for creation of subgraph)
             for ((n1, n2), b) in edges_with_branches:
                 # get node objects
                 node1 = node_list[n1.name()]
                 node2 = node_list[n2.name()]
+
+                # add nodes to subgraph to store routes/rings
+                if node1 not in nodes_subgraph:
+                    nodes_subgraph.append(node1)
+                if node2 not in nodes_subgraph:
+                    nodes_subgraph.append(node2)
 
                 # set branch length
                 b.length = calc_geo_dist_vincenty(node1, node2)
@@ -134,10 +145,14 @@ def routing_solution_to_dingo_graph(graph, solution):
             # add branches to graph
             graph.add_edges_from(edges_graph)
 
+            # create subgraph (route) and add it to subgraphs
+            subgraph = graph.subgraph(nodes_subgraph)
+            subgraphs.append(subgraph)
+
     except:
         print('unexpected error while converting routing solution to DINGO graph (NetworkX).')
 
-    return graph
+    return graph, subgraphs
 
 
 def solve(graph, debug=False, anim=None):
@@ -150,6 +165,7 @@ def solve(graph, debug=False, anim=None):
 
     Returns:
         graph: NetworkX graph object with nodes and edges
+        subgraphs: List with NetworkX graph objects (represent rings/routes of grid)
     """
 
     # TODO: Implement debug mode (pass to solver) to get more information while routing (print routes, draw network, ..)
@@ -191,4 +207,6 @@ def solve(graph, debug=False, anim=None):
         print('Elapsed time (seconds): {}'.format(time.time() - start))
         local_search_solution.draw_network()
 
-    return routing_solution_to_dingo_graph(graph, local_search_solution)
+    graph, subgraphs = routing_solution_to_dingo_graph(graph, local_search_solution)
+
+    return graph, subgraphs
