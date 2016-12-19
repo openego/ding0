@@ -176,7 +176,7 @@ class MVGridDingo(GridDingo):
             if node_source in node_ring:
                 for path in nx.shortest_path(self._graph, node_source).values():
                     if len(path)>1:
-                        if path[1] not in node_ring:
+                        if (path[1] not in node_ring) and (path[1] is not self.station()):
                             nodes_subtree.update(path[1:len(path)])
             else:
                 raise ValueError(node_source, 'is not member of ring.')
