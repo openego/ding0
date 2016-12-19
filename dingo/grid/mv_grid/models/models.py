@@ -168,7 +168,7 @@ class Route(object):
         circuit breaker which is open at normal operation.
         Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
         breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
-        the route.
+        the route. Instead of the peak current, the peak load is used here (assuming a constant voltage).
 
         The circuit breakers are used here for checking tech. constraints only and will be re-located after connection
         of satellites and stations in dingo.grid.mv_grid.tools.set_circuit_breakers
