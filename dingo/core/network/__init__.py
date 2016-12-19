@@ -124,6 +124,8 @@ class GridDingo:
             branches: List of tuples (node, branch), content: node=Dingo object (member of graph),
                                                               branch=BranchDingo object
         """
+        # TODO: This method can be replaced and speed up by using NetworkX' neighbors()
+
         branches = []
         branches_dict = self._graph.edge[node]
         for branch in branches_dict.items():
@@ -204,7 +206,7 @@ class GridDingo:
         Args:
             none
         Returns:
-            list with nodes (Dingo objects)
+            List of nodes (Dingo objects)
         """
         return nx.isolates(self._graph)
 
