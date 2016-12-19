@@ -128,6 +128,64 @@ class MVGridDingo(GridDingo):
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
 
+    def rings(self, include_root_node=False):
+        """ Returns a generator for iterating over rings (=routes of MVGrid's graph)
+        Args:
+            include_root_node: If True, the root node
+        Returns:
+            List with nodes of each ring of _graph in- or excluding root node (HV/MV station) (arg `include_root_node`),
+            format: [ring_m_node_1, ..., ring_m_node_n]
+        Notes:
+            Circuit breakers must be closed to find rings, this is done automatically.
+        """
+        for circ_breaker in self.circuit_breakers():
+            if circ_breaker.status is 'open':
+                circ_breaker.close()
+                print('Circuit breakers were closed to find MV rings')
+
+        for ring in nx.cycle_basis(self._graph, root=self._station):
+            if not include_root_node:
+                ring.remove(self._station)
+            yield ring
+
+    def graph_nodes_from_subtree(self, node_source):
+        """ Finds all nodes of a tree that is connected to `node_source` and are (except `node_source`) not part of the
+            ring of `node_source` (traversal of graph from `node_source` excluding nodes along ring).
+            Example: A given graph with ring (edges) 0-1-2-3-4-5-0 and a tree starting at node (`node_source`) 3 with
+            edges 3-6-7, 3-6-8-9 will return [6,7,8,9]
+
+        Args:
+            node_source: source node (Dingo object), member of _graph
+
+        Returns:
+            List of nodes (Dingo objects)
+        """
+
+        if node_source in self._graph.nodes():
+
+            # get all nodes that are member of a ring
+            for ring in self.rings(include_root_node=False):
+                if node_source in ring:
+                    node_ring = ring
+                    break
+
+            # result set
+            nodes_subtree = set()
+
+            # get nodes from subtree
+            if node_source in node_ring:
+                for path in nx.shortest_path(self._graph, node_source).values():
+                    if len(path)>1:
+                        if path[1] not in node_ring:
+                            nodes_subtree.update(path[1:len(path)])
+            else:
+                raise ValueError(node_source, 'is not member of ring.')
+
+        else:
+            raise ValueError(node_source, 'is not member of graph.')
+
+        return list(nodes_subtree)
+
     def set_branch_ids(self):
         """ Generates and sets ids of branches for MV and underlying LV grids """
 
