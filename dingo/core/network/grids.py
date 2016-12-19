@@ -9,6 +9,7 @@ from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
 from dingo.tools import config as cfg_dingo, pypsa_io, tools
+from dingo.grid.mv_grid.tools import set_circuit_breakers
 from dingo.flexopt.reinforce_grid import *
 import dingo.core
 
@@ -576,6 +577,14 @@ class MVGridDingo(GridDingo):
         # TODO: Finalize docstring
 
         reinforce_grid(self, mode='MV')
+
+    def set_circuit_breakers(self, debug=False):
+        """ Calculates the optimal position of the existing circuit breakers and relocates them within the graph,
+            see method `set_circuit_breakers` in dingo.grid.mv_grid.tools for details.
+        Args:
+            debug: If True, information is printed during process
+        """
+        set_circuit_breakers(self, debug)
 
     def __repr__(self):
         return 'mv_grid_' + str(self.id_db)
