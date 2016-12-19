@@ -834,6 +834,18 @@ class NetworkDingo:
 
         print('=====> Branch IDs set')
 
+    def set_circuit_breakers(self, debug=False):
+        """ Calculates the optimal position of the existing circuit breakers and relocates them within the graph for
+            all MV grids, see method `set_circuit_breakers` in dingo.grid.mv_grid.tools for details.
+        Args:
+            debug: If True, information is printed during process
+        """
+
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.set_circuit_breakers(debug)
+
+        print('=====> MV Circuit Breakers relocated')
+
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for all MV and LV grids
         Args:
