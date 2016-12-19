@@ -79,17 +79,6 @@ class MVGridDingo(GridDingo):
         for circ_breaker in self.circuit_breakers():
             circ_breaker.close()
 
-    def rings(self):
-        """ Returns a generator for iterating over rings (=routes of MVGrid's graph)
-
-        Returns:
-            List with nodes of each ring of _graph excluding root node (HV/MV station),
-            format: [ring_m_node_1, ..., ring_m_node_n]
-        """
-        for ring in nx.cycle_basis(self._graph, root=self._station):
-            ring.remove(self._station)
-            yield ring
-
     def add_station(self, mv_station, force=False):
         """ Adds MV station if not already existing
 
@@ -410,7 +399,6 @@ class MVGridDingo(GridDingo):
 
         # add peak demand for all LV load areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
-
 
     def export_to_pypsa(self, conn, method='onthefly'):
         """Exports MVGridDingo grid to PyPSA database tables
