@@ -141,7 +141,7 @@ class MVGridDingo(GridDingo):
         for circ_breaker in self.circuit_breakers():
             if circ_breaker.status is 'open':
                 circ_breaker.close()
-                print('Circuit breakers were closed to find MV rings')
+                print('Circuit breakers were closed in order to find MV rings')
 
         for ring in nx.cycle_basis(self._graph, root=self._station):
             if not include_root_node:
