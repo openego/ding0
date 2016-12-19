@@ -94,5 +94,3 @@ def set_circuit_breakers(mv_grid, debug=False):
                   '(position on route=', position, ')')
             print('Peak load sum:', sum(nodes_peak_load))
             print('Peak loads:', nodes_peak_load)
-
-    print('=====> MV Circuit Breakers relocated')
