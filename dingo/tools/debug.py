@@ -53,12 +53,20 @@ def compare_graphs(graph, mode):
 
         # check edges
         if len(edges1) > len(edges2):
-            print('Edge count in graph 1 > egde count in graph 2')
-            print('Difference:', [edge for edge in edges1 if (repr(edge) not in repr(edges2)) and (repr(tuple(reversed(edge))) not in repr(edges2))])
+            print('Edge count in graph 1 > edge count in graph 2')
+            print('Difference:', [edge for edge in edges1 if (repr(edge) not in repr(edges2)) and
+                                  (repr(tuple(reversed(edge))) not in repr(edges2))])
             graphs_are_isomorphic = False
         elif len(edges2) > len(edges1):
             print('Edge count in graph 2 > edge count in graph 1')
-            print('Difference:', [edge for edge in edges2 if (repr(edge) not in repr(edges1)) and (repr(tuple(reversed(edge))) not in repr(edges1))])
+            print('Difference:', [edge for edge in edges2 if (repr(edge) not in repr(edges1)) and
+                                  (repr(tuple(reversed(edge))) not in repr(edges1))])
+            graphs_are_isomorphic = False
+        elif (len(edges1) == len(edges1)) and (len([edge for edge in edges1 if (repr(edge) not in repr(edges2)) and
+            (repr(tuple(reversed(edge))) not in repr(edges2))]) > 0):
+            print('Edge count in graph 1 = edge count in graph 2')
+            print('Difference:', [edge for edge in edges2 if (repr(edge) not in repr(edges1)) and
+                                  (repr(tuple(reversed(edge))) not in repr(edges1))])
             graphs_are_isomorphic = False
 
         if graphs_are_isomorphic:
