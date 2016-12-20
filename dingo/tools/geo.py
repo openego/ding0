@@ -59,8 +59,6 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
                 branches.append(branch)
         radius += radius_inc
 
-    #branches = [_[0] for _ in sorted(branches, key=lambda x: x[1])]
-
     return branches
 
 
