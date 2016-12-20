@@ -30,7 +30,7 @@ class MVGridDistrictDingo(RegionDingo):
 
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""
-        for load_area in self._lv_load_areas:
+        for load_area in sorted(self._lv_load_areas, key=lambda _: repr(_)):
             yield load_area
 
     def add_lv_load_area(self, lv_load_area):
@@ -197,7 +197,7 @@ class LVLoadAreaDingo(RegionDingo):
 
     def lv_grid_districts(self):
         """Returns a generator for iterating over LV grid districts"""
-        for lv_grid_district in self._lv_grid_districts:
+        for lv_grid_district in sorted(self._lv_grid_districts, key=lambda _: repr(_)):
             yield lv_grid_district
 
     def lv_grid_districts_count(self):

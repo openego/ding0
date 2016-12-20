@@ -130,7 +130,7 @@ class GridDingo:
         branches_dict = self._graph.edge[node]
         for branch in branches_dict.items():
             branches.append(branch)
-        return branches
+        return sorted(branches, key=lambda _: repr(_))
 
     def graph_edges(self):
         """ Returns a generator for iterating over graph edges
