@@ -5,6 +5,7 @@ from oemof import db
 conn = db.connection(section='oedb')
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
+from dingo.tools.debug import compare_graphs
 
 plt.close('all')
 
@@ -42,6 +43,8 @@ nd.set_branch_ids()
 #compare_graphs(graph=nd._mv_grid_districts[0].mv_grid._graph,
 #               mode='compare')
 
+nd.set_circuit_breakers()
+
 # Open and close all circuit breakers in grid (for testing)
 [gd.mv_grid.open_circuit_breakers() for gd in nd._mv_grid_districts]
 #nd._mv_grid_districts[0].mv_grid.close_circuit_breakers()
@@ -50,7 +53,6 @@ nd.set_branch_ids()
 for mv_grid_district in nd._mv_grid_districts:
     mv_grid_district.mv_grid.run_powerflow(conn, method=method)
 
-nd.set_circuit_breakers()
 
 nd.export_mv_grid(conn, mv_grid_districts)
 
