@@ -263,8 +263,8 @@ class LocalSearchSolver(BaseSolver):
     def operator_exchange(self, graph, solution, op_diff_round_digits, anim):
         """applies Exchange inter-route operator to solution
         
-        Takes every node from every route and calculates savings when inserted
-        into all possible positions in other routes. Insertion is done at
+        Takes every node from every route and calculates savings when exchanged
+        with another one of all possible nodes in other routes. Insertion is done at
         position with max. saving and procedure starts over again with newly
         created graph as input. Stops when no improvement is found.
         
