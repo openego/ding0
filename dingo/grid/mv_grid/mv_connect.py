@@ -480,12 +480,15 @@ def parametrize_lines(mv_grid):
             branch['branch'].type = mv_grid.default_branch_type
 
 
-def mv_connect_satellites(mv_grid, graph, debug=False):
+def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     """ Connect satellites (small LV load areas) to MV grid
 
     Args:
         mv_grid: MVGridDingo object
         graph: NetworkX graph object with nodes
+        mode: 'normal' (step 1, do connection considering restrictions like max. string length, max peak load per
+                        string) or
+              'isolated' (step 2, connect to closest line/station on a MV ring that have not been connected in step 1)
         debug: If True, information is printed during process
 
     Returns:
@@ -523,7 +526,15 @@ def mv_connect_satellites(mv_grid, graph, debug=False):
     # TODO: create generators in grid class for iterating over satellites and non-satellites (nice-to-have) instead
     # TODO: of iterating over all nodes
     # check all nodes
-    for node in sorted(graph.nodes(), key=lambda x: repr(x)):
+
+    if mode is 'normal':
+        nodes = sorted(graph.nodes(), key=lambda x: repr(x))
+    elif mode is 'isolated':
+        nodes = mv_grid.graph_isolated_nodes()
+    else:
+        raise ValueError('\'mode\' is invalid.')
+
+    for node in nodes:
 
         # node is LV load area centre
         if isinstance(node, LVLoadAreaCentreDingo):
@@ -533,11 +544,23 @@ def mv_connect_satellites(mv_grid, graph, debug=False):
 
                 node_shp = transform(proj1, node.geo_data)
 
-                # get branches within a the predefined radius `load_area_sat_buffer_radius`
-                branches = calc_geo_branches_in_buffer(node,
-                                                       mv_grid,
-                                                       load_area_sat_buffer_radius,
-                                                       load_area_sat_buffer_radius_inc, proj1)
+                if mode is 'normal':
+                    # get branches within a the predefined radius `load_area_sat_buffer_radius`
+                    branches = calc_geo_branches_in_buffer(node,
+                                                           mv_grid,
+                                                           load_area_sat_buffer_radius,
+                                                           load_area_sat_buffer_radius_inc, proj1)
+                elif mode is 'isolated':
+                    # get nodes of all MV rings
+                    nodes = set()
+                    [nodes.update(ring_nodes) for ring_nodes in list(mv_grid.rings(include_root_node=True))]
+                    nodes = list(nodes)
+                    # get branches of these nodes
+                    branches = []
+                    [branches.append(mv_grid.graph_branches_from_node(node_branches)) for node_branches in nodes]
+                    # reformat branches
+                    branches = [_ for _ in list(mv_grid.graph_edges())
+                                if (_['adj_nodes'][0] in nodes and _['adj_nodes'][1] in nodes)]
 
                 # calc distance between node and grid's lines -> find nearest line
                 conn_objects_min_stack = find_nearest_conn_objects(node_shp, branches, proj1,
