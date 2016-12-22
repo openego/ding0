@@ -95,12 +95,6 @@ class Route(object):
     def allocate(self, nodes, append=True):
         """Allocates all nodes from `nodes` list in this route"""
 
-        # TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        # if not self.can_allocate(nodes):
-        #     if len(self._nodes) == 0:
-        #         x = self.can_allocate(nodes)
-        #         raise Exception('Trying to allocate more than route capacity')
-
         nodes_demand = 0
         for node in [node for node in nodes]:
             if node._allocation:
@@ -131,10 +125,6 @@ class Route(object):
     
     def insert(self, nodes, pos):
         """Inserts all nodes from `nodes` list into this route at position `pos`"""
-        
-        # # TODO: TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        # if not self.can_allocate(nodes):
-        #     raise Exception('Trying to allocate more than route capacity')
         
         node_list = []
         nodes_demand = 0
