@@ -230,17 +230,17 @@ class LocalSearchSolver(BaseSolver):
                         for j in range(0,nt):
                             #target_node = target_route._nodes[j]
                             
-                            #if target_route.can_allocate([node]):
-                            length_diff = (-dm[dn[tour[i].name()]][dn[tour[i+1].name()]] -
-                                            dm[dn[tour[i+1].name()]][dn[tour[i+2].name()]] +
-                                            dm[dn[tour[i].name()]][dn[tour[i+2].name()]] +
-                                            dm[dn[target_tour[j].name()]][dn[tour[i+1].name()]] +
-                                            dm[dn[tour[i+1].name()]][dn[target_tour[j+1].name()]] -
-                                            dm[dn[target_tour[j].name()]][dn[target_tour[j+1].name()]])
-                                            
-                            if length_diff < length_diff_best:
-                                length_diff_best = length_diff                                        
-                                node_best, target_route_best, j_best = node, target_route, j
+                            if target_route.can_allocate([node]):
+                                length_diff = (-dm[dn[tour[i].name()]][dn[tour[i+1].name()]] -
+                                                dm[dn[tour[i+1].name()]][dn[tour[i+2].name()]] +
+                                                dm[dn[tour[i].name()]][dn[tour[i+2].name()]] +
+                                                dm[dn[target_tour[j].name()]][dn[tour[i+1].name()]] +
+                                                dm[dn[tour[i+1].name()]][dn[target_tour[j+1].name()]] -
+                                                dm[dn[target_tour[j].name()]][dn[target_tour[j+1].name()]])
+
+                                if length_diff < length_diff_best:
+                                    length_diff_best = length_diff
+                                    node_best, target_route_best, j_best = node, target_route, j
                                         
             if length_diff_best < 0:
                 # insert new node
@@ -342,12 +342,13 @@ class LocalSearchSolver(BaseSolver):
                                 node_best, target_node_best, route_best, target_route_best = node, target_node, route, target_route
                                         
             if length_diff_best < 0:
-                #if route_best.can_allocate([target_node_best], i_best) and target_route_best.can_allocate([node_best], j_best):
-                # insert new node
-                target_route_best.insert([node_best], j_best)
-                route_best.insert([target_node_best], i_best)
-                # remove empty routes from solution
-                solution._routes = [route for route in solution._routes if route._nodes]
+                if route_best.can_allocate([target_node_best], i_best) and \
+                   target_route_best.can_allocate([node_best], j_best):
+                    # insert new node
+                    target_route_best.insert([node_best], j_best)
+                    route_best.insert([target_node_best], i_best)
+                    # remove empty routes from solution
+                    solution._routes = [route for route in solution._routes if route._nodes]
 
                 if anim is not None:
                     solution.draw_network(anim)
