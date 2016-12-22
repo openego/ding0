@@ -373,7 +373,12 @@ class NetworkDingo:
             join(orm_CalcEgoPeakLoad, orm_EgoDeuLoadArea.id
                  == orm_CalcEgoPeakLoad.id).\
             filter(orm_EgoDeuLoadArea.subst_id == mv_grid_district.\
-                   mv_grid._station.id_db)
+                   mv_grid._station.id_db).\
+            filter(((orm_CalcEgoPeakLoad.residential    # only pick load areas with peak load > lv_loads_threshold
+                        + orm_CalcEgoPeakLoad.retail
+                        + orm_CalcEgoPeakLoad.industrial
+                        + orm_CalcEgoPeakLoad.agricultural)
+                       * load_scaling_factor) > lv_loads_threshold)
 
         # read data from db
         lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
@@ -387,50 +392,46 @@ class NetworkDingo:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
-            # only pick load areas with peak load greater than
-            # lv_loads_threshold
-            # TODO: When migrating to SQLAlchemy, move condition to query
-            if row['peak_load_sum'] >= lv_loads_threshold:
-                # create LV load_area object
-                lv_load_area = LVLoadAreaDingo(id_db=id_db,
-                                               db_data=row,
-                                               mv_grid_district=mv_grid_district,
-                                               peak_load_sum=row['peak_load_sum'])
+            # create LV load_area object
+            lv_load_area = LVLoadAreaDingo(id_db=id_db,
+                                           db_data=row,
+                                           mv_grid_district=mv_grid_district,
+                                           peak_load_sum=row['peak_load_sum'])
 
-                # sub-selection of lv_grid_districts/lv_stations within one
-                # specific load area
-                lv_grid_districts_per_load_area = lv_grid_districts.\
-                    loc[lv_grid_districts['load_area_id'] == id_db]
-                lv_stations_per_load_area = lv_stations.\
-                    loc[lv_stations['load_area_id'] == id_db]
+            # sub-selection of lv_grid_districts/lv_stations within one
+            # specific load area
+            lv_grid_districts_per_load_area = lv_grid_districts.\
+                loc[lv_grid_districts['load_area_id'] == id_db]
+            lv_stations_per_load_area = lv_stations.\
+                loc[lv_stations['load_area_id'] == id_db]
 
-                # # ===== DEBUG STUFF (BUG JONAS) =====
-                # TODO: Remove when fixed!
-                if len(lv_grid_districts_per_load_area) == 0:
-                    print('No LV grid district for', lv_load_area, 'found! (Bug Jonas)')
-                if len(lv_stations_per_load_area) == 0:
-                    print('No station for', lv_load_area, 'found! (Bug Jonas)')
-                # ===================================
+            # # ===== DEBUG STUFF (BUG JONAS) =====
+            # TODO: Remove when fixed!
+            if len(lv_grid_districts_per_load_area) == 0:
+                print('No LV grid district for', lv_load_area, 'found! (Bug Jonas)')
+            if len(lv_stations_per_load_area) == 0:
+                print('No station for', lv_load_area, 'found! (Bug Jonas)')
+            # ===================================
 
-                self.build_lv_grid_district(conn,
-                                            lv_load_area,
-                                            string_properties,
-                                            apartment_string,
-                                            apartment_trafo,
-                                            trafo_parameters,
-                                            lv_grid_districts_per_load_area,
-                                            lv_stations_per_load_area)
+            self.build_lv_grid_district(conn,
+                                        lv_load_area,
+                                        string_properties,
+                                        apartment_string,
+                                        apartment_trafo,
+                                        trafo_parameters,
+                                        lv_grid_districts_per_load_area,
+                                        lv_stations_per_load_area)
 
-                # create new centre object for LV load area
-                lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
-                                                            geo_data=wkt_loads(row['geo_centre']),
-                                                            lv_load_area=lv_load_area,
-                                                            grid=mv_grid_district.mv_grid)
-                # links the centre object to LV load area
-                lv_load_area.lv_load_area_centre = lv_load_area_centre
+            # create new centre object for LV load area
+            lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
+                                                        geo_data=wkt_loads(row['geo_centre']),
+                                                        lv_load_area=lv_load_area,
+                                                        grid=mv_grid_district.mv_grid)
+            # links the centre object to LV load area
+            lv_load_area.lv_load_area_centre = lv_load_area_centre
 
-                # add LV load area to MV grid district (and add centre object to MV gris district's graph)
-                mv_grid_district.add_lv_load_area(lv_load_area)
+            # add LV load area to MV grid district (and add centre object to MV gris district's graph)
+            mv_grid_district.add_lv_load_area(lv_load_area)
 
     def import_lv_grid_districts(self, conn):
         """Imports all lv grid districts within given load area
