@@ -586,9 +586,11 @@ class NetworkDingo:
                                         orm_EgoDeuDea.geom, srid)).label('geom')).\
                                         filter(orm_EgoDeuDea.subst_id.in_(list(mv_grid_districts_dict))).\
                                         filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
-                                                   orm_EgoDeuDea.voltage_level == '05 (MS)',
-                                                   orm_EgoDeuDea.voltage_level == '06 (MS/NS)',
-                                                   orm_EgoDeuDea.voltage_level == '07 (NS)'))
+                                                   orm_EgoDeuDea.voltage_level == '05 (MS)'))
+                                        # filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
+                                        #            orm_EgoDeuDea.voltage_level == '05 (MS)',
+                                        #            orm_EgoDeuDea.voltage_level == '06 (MS/NS)',
+                                        #            orm_EgoDeuDea.voltage_level == '07 (NS)'))
 
         # TODO: Currently only MV generators are imported, please include LV!
 
