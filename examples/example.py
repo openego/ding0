@@ -8,7 +8,7 @@ __author__ = "Jonathan Amme, Guido Pleßmann"
 """
 
 import matplotlib.pyplot as plt
-from oemof import db
+import oemof.db as db
 
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
@@ -27,7 +27,7 @@ conn = db.connection(section='oedb')
 nd = NetworkDingo(name='network')
 
 # mv_grid_districts = [386,372,406,371,402,415,480,424,489,367,359,569,591]
-mv_grid_districts=[480]
+mv_grid_districts=[489]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 
