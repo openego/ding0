@@ -4,6 +4,7 @@ from dingo.tools import config as cfg_dingo
 
 from itertools import compress
 
+
 class MVStationDingo(StationDingo):
     """
     Defines a MV station in DINGO
