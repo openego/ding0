@@ -10,7 +10,6 @@
     copy of the license at http://www.apache.org/licenses/LICENSE-2.0
 """
 
-#import operator
 import time
 import itertools as it
 
@@ -396,9 +395,6 @@ class LocalSearchSolver(BaseSolver):
         # shorter var names for loop
         dm = graph._matrix
         dn = graph._nodes
-
-
-
 
     def benchmark_operator_order(self, graph, solution, op_diff_round_digits):
         """performs all possible permutations of route improvement and prints graph length"""
