@@ -212,9 +212,28 @@ class MVGridDingo(GridDingo):
         """
 
         # do the routing
-        self._graph = mv_routing.solve(self._graph, debug, anim)
-        self._graph = mv_connect.mv_connect_satellites(self, self._graph, debug)
-        self._graph = mv_connect.mv_connect_stations(self.grid_district, self._graph, debug)
+        self._graph = mv_routing.solve(graph=self._graph,
+                                       debug=debug,
+                                       anim=anim)
+
+        # connect satellites (step 1, with restrictions like max. string length, max peak load per string)
+        self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
+                                                       graph=self._graph,
+                                                       mode='normal',
+                                                       debug=debug)
+
+        # connect satellites to closest line/station on a MV ring that have not been connected in step 1
+        self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
+                                                       graph=self._graph,
+                                                       mode='isolated',
+                                                       debug=debug)
+
+        # connect stations
+        self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
+                                                     graph=self._graph,
+                                                     debug=debug)
+
+
 
         # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
         # TODO:
