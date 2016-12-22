@@ -16,6 +16,7 @@ import time
 from dingo.grid.mv_grid.models import models
 from dingo.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
 
+
 class SavingsSolution(BaseSolution):
     """Solution class for a Clarke and Wright Savings parallel algorithm"""
 
