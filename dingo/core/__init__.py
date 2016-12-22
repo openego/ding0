@@ -9,6 +9,8 @@ from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *
 
+import os
+
 # import ORM classes for oedb access depending on input in config file
 cfg_dingo.load_config('config_db_tables')
 GridDistrict_name = cfg_dingo.get('regions', 'grid_district')
@@ -109,7 +111,6 @@ class NetworkDingo:
         station_geo_data: Point (shapely object) of station
 
         """
-        # TODO: validate input params
 
         mv_station = MVStationDingo(id_db=subst_id, geo_data=station_geo_data)
 
@@ -200,9 +201,6 @@ class NetworkDingo:
 
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-
-
-
     def import_mv_grid_districts(self, conn, mv_grid_districts_no=None):
         """Imports MV grid_districts and MV stations from database, reprojects geodata
         and and initiates objects.
@@ -214,17 +212,12 @@ class NetworkDingo:
         mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
 
-        Returns
-        -------
-        Nothing
-
         See Also
         --------
         build_mv_grid_district : used to instantiate MV grid_district objects
         import_lv_load_areas : used to import load_areas for every single MV grid_district
         add_peak_demand : used to summarize peak loads of underlying load_areas
         """
-        # TODO: Complete "See Also"-List
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_grid_districts_no):
@@ -334,10 +327,6 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        # TODO: move to a more sophisticated location
-        import pandas as pd
-        import os
-
         global lv_cable_parameters
         lv_cable_parameters = pd.read_csv(os.path.join(
             'dingo',
@@ -442,11 +431,6 @@ class NetworkDingo:
 
                 # add LV load area to MV grid district (and add centre object to MV gris district's graph)
                 mv_grid_district.add_lv_load_area(lv_load_area)
-
-                # OLD:
-                # add LV load_area to MV grid graph
-                # TODO: add LV station instead of LV load_area
-                #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
 
     def import_lv_grid_districts(self, conn):
         """Imports all lv grid districts within given load area
