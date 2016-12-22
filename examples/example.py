@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+"""This is a simple example file for DINGO.
+
+__copyright__ = "Reiner Lemoine Institut, openego development group"
+__license__ = "GNU GPLv3"
+__author__ = "Jonathan Amme, Guido Pleßmann"
+"""
+
 import matplotlib.pyplot as plt
 from oemof import db
 
