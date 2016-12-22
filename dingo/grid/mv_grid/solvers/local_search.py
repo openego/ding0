@@ -99,6 +99,13 @@ class LocalSearchSolver(BaseSolver):
                                   (for a more detailed description of the matter see http://floating-point-gui.de or
                                   https://docs.python.org/3.5/tutorial/floatingpoint.html)
 
+        Notes:
+            Since Or-Opt is an intra-route operator, it has not to be checked if route can allocate (Route's method
+            can_allocate()) nodes during relocation regarding max. peak load/current because the line/cable type is the
+            same along the entire route. However, node order within a route has an impact on the voltage stability
+            so the check would be actually required. Due to large line capacity (load factor of lines/cables ~60 %)
+            the voltage stability issues are neglected.
+
         (Inner) Loop variables:
             s: length (count of consecutive nodes) of the chain that is moved. Values: 3..1
             i: node that precedes the chain before moving (position in the route `tour`, not node name)
