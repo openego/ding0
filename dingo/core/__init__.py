@@ -585,8 +585,10 @@ class NetworkDingo:
                                          func.ST_AsText(func.ST_Transform(
                                         orm_EgoDeuDea.geom, srid)).label('geom')).\
                                         filter(orm_EgoDeuDea.subst_id.in_(list(mv_grid_districts_dict))).\
-                                        filter(or_(orm_EgoDeuDea.voltage_level == '05 (MS)',
-                                                   orm_EgoDeuDea.voltage_level == '04 (HS/MS)'))
+                                        filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
+                                                   orm_EgoDeuDea.voltage_level == '05 (MS)',
+                                                   orm_EgoDeuDea.voltage_level == '06 (MS/NS)',
+                                                   orm_EgoDeuDea.voltage_level == '07 (NS)'))
 
         # TODO: Currently only MV generators are imported, please include LV!
 
@@ -633,7 +635,8 @@ class NetworkDingo:
             if generator.v_level in ['04 (HS/MS)', '05 (MS)']:
                 mv_grid.add_generator(generator)
             elif generator.v_level in ['06 (MS/NS)', '07 (NS)']:
-                raise NotImplementedError
+                pass
+                #raise NotImplementedError
 
         print('=====> Generators imported')
 
