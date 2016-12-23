@@ -178,7 +178,7 @@ class ClarkeWrightSolver(BaseSolver):
 
                 if inserted:
                     savings_list.remove((i, j))
-                    #savings_list.remove((j, i))
+                    savings_list.remove((i, j))
 
                     if anim:
                         solution.draw_network(anim)
@@ -186,5 +186,4 @@ class ClarkeWrightSolver(BaseSolver):
             if time.time() - start > timeout:
                 break
 
-        #solution._routes[0].calc_circuit_breaker_position()
         return solution
