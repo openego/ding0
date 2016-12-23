@@ -49,7 +49,7 @@ nd.set_circuit_breakers()
 
 # Analyze grid by power flow analysis
 for mv_grid_district in nd._mv_grid_districts:
-    mv_grid_district.mv_grid.run_powerflow(conn, method='onthefly')
+    mv_grid_district.mv_grid.run_powerflow(conn, method='onthefly', debug=True)
 
 
 nd.export_mv_grid(conn, mv_grid_districts)

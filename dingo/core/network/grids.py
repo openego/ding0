@@ -548,7 +548,7 @@ class MVGridDingo(GridDingo):
         else:
             raise ValueError('Sorry, this export method does not exist!')
 
-    def run_powerflow(self, conn, method='onthefly'):
+    def run_powerflow(self, conn, method='onthefly', debug=False):
 
         if method is 'db':
             Session = sessionmaker(bind=conn)
@@ -564,7 +564,8 @@ class MVGridDingo(GridDingo):
             self.import_powerflow_results(session)
         elif method is 'onthefly':
             components, components_data = self.export_to_pypsa(conn, method)
-            pypsa_io.run_powerflow_onthefly(components, components_data, self)
+            pypsa_io.run_powerflow_onthefly(components, components_data, self,
+                                            debug=debug)
 
     def import_powerflow_results(self, session):
         """

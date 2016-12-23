@@ -24,6 +24,7 @@ from pandas import Series, read_sql_query, DataFrame, DatetimeIndex
 from pypsa.io import import_series_from_dataframe
 
 from datetime import datetime
+import sys
 
 
 def delete_powerflow_tables(session):
@@ -648,7 +649,7 @@ def run_powerflow(conn):
     results_to_oedb(conn, network)
 
 
-def run_powerflow_onthefly(components, components_data, grid):
+def run_powerflow_onthefly(components, components_data, grid, debug=False):
     """
     Run powerflow to test grid stability
 
@@ -671,6 +672,10 @@ def run_powerflow_onthefly(components, components_data, grid):
     timesteps = 2
     start_time = datetime(1970, 1, 1, 00, 00, 0)
     resolution = 'H'
+
+    # inspect grid data for integrity
+    if debug:
+        data_integrity(components, components_data)
 
     # define investigated time range
     timerange = DatetimeIndex(freq=resolution,
@@ -720,6 +725,39 @@ def run_powerflow_onthefly(components, components_data, grid):
     # assign results data to graph
     assign_bus_results(grid, bus_data)
     assign_line_results(grid, line_data)
+
+
+def data_integrity(components, components_data):
+    """
+    Check grid data for integrity
+
+    Parameters
+    ----------
+    components: dict
+        Grid components
+    components_data: dict
+        Grid component data (such as p,q and v set points)
+
+    Returns
+    -------
+    """
+
+    data_check = {}
+
+    for comp in ['Bus', 'Load']:  # list(components_data.keys()):
+        data_check[comp] = {}
+        data_check[comp]['length_diff'] = len(components[comp]) - len(
+            components_data[comp])
+
+    # print short report to user and exit program if not integer
+    for comp in list(data_check.keys()):
+        if data_check[comp]['length_diff'] != 0:
+            print("{comp} data is invalid. You supplied {no_comp} {comp} "
+                  "objects and {no_data} datasets. Check you grid data "
+                  "and try again".format(comp=comp,
+                                         no_comp=len(components[comp]),
+                                         no_data=len(components_data[comp])))
+            sys.exit(1)
 
 
 def import_pfa_bus_results(session, grid):
