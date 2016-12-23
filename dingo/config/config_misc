@@ -5,3 +5,9 @@
 [geo]
 srid = 4326
 # WGS84: 4326
+
+[powerflow]
+test_grid_stability_scenario = Status Quo
+
+start_hour = 0
+end_hour = 2

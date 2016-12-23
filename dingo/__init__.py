@@ -1,6 +1,7 @@
 import numpy
 from psycopg2.extensions import register_adapter, AsIs
 
+
 # TODO: (Maybe) move to more general place (ego.io repo)
 def adapt_numpy_int64(numpy_int64):
     """ Adapting numpy.int64 type to SQL-conform int type using psycopg extension, see [1]_ for more info.

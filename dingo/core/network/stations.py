@@ -4,6 +4,7 @@ from dingo.tools import config as cfg_dingo
 
 from itertools import compress
 
+
 class MVStationDingo(StationDingo):
     """
     Defines a MV station in DINGO
@@ -61,8 +62,8 @@ class MVStationDingo(StationDingo):
                 'voltage_level': 10,
                 'apparent_power': 40000}}
 
-        load_factor_transformer_normal = float(cfg_dingo.get('assumptions',
-                                                             'load_factor_transformer_normal'))
+        load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
+                                                             'load_factor_mv_trans_lc_normal'))
 
         # step 1: identify possible transformers by voltage level
         apparent_power = self.grid.grid_district.peak_load  # kW
@@ -80,7 +81,7 @@ class MVStationDingo(StationDingo):
                                for _ in possible_transformers]
 
         while residual_apparent_power > 0:
-            if residual_apparent_power > load_factor_transformer_normal * max(possible_transformers):
+            if residual_apparent_power > load_factor_mv_trans_lc_normal * max(possible_transformers):
                 selected_app_power = max(possible_transformers)
             else:
                 selected_app_power = min(list(compress(possible_transformers,
@@ -90,7 +91,7 @@ class MVStationDingo(StationDingo):
             # add transformer on determined size with according parameters
             self.add_transformer(TransformerDingo(**{'v_level': self.grid.v_level,
                 's_max_longterm': selected_app_power}))
-            residual_apparent_power -= (load_factor_transformer_normal *
+            residual_apparent_power -= (load_factor_mv_trans_lc_normal *
                                         selected_app_power)
 
         # add redundant transformer of the size of the largest transformer
@@ -99,6 +100,10 @@ class MVStationDingo(StationDingo):
                       's_max_longterm': s_max_max}
 
         self.add_transformer(TransformerDingo(**int_kwargs))
+
+    @property
+    def pypsa_id(self):
+        return '_'.join(['HV', str(self.grid.id_db), 'trd'])
 
     def __repr__(self):
         return 'mv_station_' + str(self.id_db)
@@ -114,6 +119,12 @@ class LVStationDingo(StationDingo):
         super().__init__(**kwargs)
 
         self.lv_load_area = kwargs.get('lv_load_area', None)
+
+    @property
+    def pypsa_id(self):
+        return '_'.join(['MV', str(
+            self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'tru', str(self.id_db)])
 
     def __repr__(self):
         return 'lv_station_' + str(self.id_db)

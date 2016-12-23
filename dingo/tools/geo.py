@@ -59,8 +59,6 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
                 branches.append(branch)
         radius += radius_inc
 
-    #branches = [_[0] for _ in sorted(branches, key=lambda x: x[1])]
-
     return branches
 
 
@@ -78,8 +76,19 @@ def calc_geo_dist_vincenty(node_source, node_target):
     branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
 
     # notice: vincenty takes (lat,lon)
-    return branch_detour_factor * vincenty((node_source.geo_data.y, node_source.geo_data.x),
-                                           (node_target.geo_data.y, node_target.geo_data.x)).m
+    branch_length = branch_detour_factor * vincenty((node_source.geo_data.y, node_source.geo_data.x),
+                                                    (node_target.geo_data.y, node_target.geo_data.x)).m
+
+    # ========= BUG: LINE LENGTH=0 WHEN CONNECTING GENERATORS ===========
+    # When importing generators, the geom_new field is used as position. If it is empty, EnergyMap's geom
+    # is used and so there are a couple of generators at the same position => length of interconnecting
+    # line is 0. See issue #76
+    if branch_length == 0:
+        branch_length = 1
+        print('Geo distance is zero, check objects\' positions. Distance is set to 1m')
+    # ===================================================================
+
+    return branch_length
 
 
 def calc_geo_dist_matrix_vincenty(nodes_pos):

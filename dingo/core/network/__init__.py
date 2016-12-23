@@ -34,6 +34,7 @@ class GridDingo:
 
     def loads(self):
         """Returns a generator for iterating over grid's loads"""
+        # TODO: Is this method really needed?
         for load in self._loads:
             yield load
 
@@ -43,6 +44,7 @@ class GridDingo:
 
     def generators(self):
         """Returns a generator for iterating over grid's generators"""
+        # TODO: Is this method really needed?
         for generator in self._generators:
             yield generator
 
@@ -78,7 +80,11 @@ class GridDingo:
         nodes_pos = {}; demands = {}; demands_pos = {}
         nodes_color = []
         for node in g.nodes():
-            if isinstance(node, (StationDingo, LVLoadAreaCentreDingo, CableDistributorDingo)):
+            if isinstance(node, (StationDingo,
+                                 LVLoadAreaCentreDingo,
+                                 CableDistributorDingo,
+                                 GeneratorDingo,
+                                 CircuitBreakerDingo)):
                 nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
                 # TODO: MOVE draw/color settings to config
             if node == self.station():
@@ -89,8 +95,8 @@ class GridDingo:
                 nodes_color.append((0.5, 0.5, 1))
 
         plt.figure()
-        nx.draw_networkx(g, nodes_pos, node_color=nodes_color, font_size=10)
-        nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
+        nx.draw_networkx(g, nodes_pos, node_color=nodes_color, font_size=8)
+        #nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
         plt.show()
 
     def graph_nodes_sorted(self):
@@ -120,28 +126,29 @@ class GridDingo:
             branches: List of tuples (node, branch), content: node=Dingo object (member of graph),
                                                               branch=BranchDingo object
         """
+        # TODO: This method can be replaced and speed up by using NetworkX' neighbors()
+
         branches = []
         branches_dict = self._graph.edge[node]
         for branch in branches_dict.items():
             branches.append(branch)
-        return branches
+        return sorted(branches, key=lambda _: repr(_))
 
     def graph_edges(self):
         """ Returns a generator for iterating over graph edges
 
-        The edge of a graph is described by the to adjacent node and the branch
+        The edge of a graph is described by the two adjacent node and the branch
         object itself. Whereas the branch object is used to hold all relevant
         power system parameters.
 
         Note
         ----
-
         There are generator functions for nodes (`Graph.nodes()`) and edges
         (`Graph.edges()`) in NetworkX but unlike graph nodes, which can be
         represented by objects, branch objects can only be accessed by using an
         edge attribute ('branch' is used here)
 
-        To make access to attributes of the branch objects simplier and more
+        To make access to attributes of the branch objects simpler and more
         intuitive for the user, this generator yields a dictionary for each edge
         that contains information about adjacent nodes and the branch object.
 
@@ -149,7 +156,14 @@ class GridDingo:
         of the in-going tuple (which is defined by the needs of networkX). If
         this changes, the code will break.
         """
-        for edge in nx.get_edge_attributes(self._graph, 'branch').items():
+
+        # get edges with attributes
+        edges = nx.get_edge_attributes(self._graph, 'branch').items()
+
+        # sort them according to connected nodes
+        edges_sorted = sorted(list(edges), key=lambda _: repr(_[0]))
+
+        for edge in edges_sorted:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
     def find_path(self, node_source, node_target):
@@ -188,6 +202,15 @@ class GridDingo:
             length += self._graph.edge[n1][n2]['branch'].length
 
         return length
+
+    def graph_isolated_nodes(self):
+        """ Finds isolated nodes = nodes with no neighbors (degree zero)
+        Args:
+            none
+        Returns:
+            List of nodes (Dingo objects)
+        """
+        return nx.isolates(self._graph)
 
 
 class StationDingo:
@@ -269,7 +292,8 @@ class BranchDingo:
 
         self.id_db = kwargs.get('id_db', None)
         self.length = kwargs.get('length', None)  # branch (line/cable) length in m
-        self.type = kwargs.get('type', None)
+        self.kind = kwargs.get('kind', None)  # 'line' or 'cable'
+        self.type = kwargs.get('type', None)  # DataFrame with attributes of line/cable
         self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.circuit_breaker = kwargs.get('circuit_breaker', None)
 
@@ -312,6 +336,8 @@ class TransformerDingo:
         self.s_max_c = kwargs.get('s_max_emergency', None)
         self.phase_angle = kwargs.get('phase_angle', None)
         self.tap_ratio = kwargs.get('tap_ratio', None)
+        self.r = kwargs.get('r', None)
+        self.x = kwargs.get('x', None)
 
 
 class GeneratorDingo:
@@ -329,6 +355,11 @@ class GeneratorDingo:
         self.type = kwargs.get('type', None)
         self.subtype = kwargs.get('subtype', None)
         self.v_level = kwargs.get('v_level', None)
+
+    @property
+    def pypsa_id(self):
+        return '_'.join(['MV', str(self.mv_grid.id_db),
+                                  'gen', str(self.id_db)])
 
     def __repr__(self):
         if self.v_level in ['06 (MS/NS)', '07 (NS)']:
@@ -359,7 +390,14 @@ class LoadDingo:
 
 
 class CircuitBreakerDingo:
-    """ Class for modelling a circuit breaker """
+    """ Class for modelling a circuit breaker
+
+    Notes:
+        Circuit breakers are nodes of a graph, but are NOT connected via an edge. They are associated to a specific
+        `branch` of a graph (and the branch refers to the circuit breaker via the attribute `circuit_breaker`) and its
+        two `branch_nodes`. Via open() and close() the associated branch can be removed from or added to graph.
+
+    """
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)

@@ -16,6 +16,7 @@ import math
 from os import path
 from dingo.grid.mv_grid.models.models import Graph
 
+
 class ParseException(Exception):
     """Exception raised when something unexpected occurs in a TSPLIB file parsing"""
     def __init__(self, value):
@@ -24,9 +25,11 @@ class ParseException(Exception):
     def __str__(self):
         return repr(self.value)
 
+
 def strip(line):
     """Removes any \r or \n from line and remove trailing whitespaces"""
     return line.replace('\r\n', '').strip() # remove new lines and trailing whitespaces
+
 
 def sanitize(filename):
     """Returns a sanitized file name with absolut path
@@ -34,6 +37,7 @@ def sanitize(filename):
     Example: ~/input.txt -> /home/<your_home/input.txt
     """
     return path.abspath(path.expanduser(path.expandvars(filename)))
+
 
 def _parse_depot_section(f):
     """Parse TSPLIB DEPOT_SECTION data part from file descriptor f
@@ -53,6 +57,7 @@ def _parse_depot_section(f):
         raise ParseException('One and only one depot is supported')
 
     return int(depots[0])
+
 
 def _parse_nodes_section(f, current_section, nodes):
     """Parse TSPLIB NODE_COORD_SECTION or DEMAND_SECTION from file descript f
@@ -96,6 +101,7 @@ def _parse_nodes_section(f, current_section, nodes):
 
     return section
 
+
 def _parse_edge_weight(f, nodes):
     """Parse TSPLIB EDGE_WEIGHT_SECTION from file f
 
@@ -124,6 +130,7 @@ def _parse_edge_weight(f, nodes):
 
     return matrix
 
+
 def calculate_euc_distance(a, b):
     """Calculates Eclidian distances from two points a and b
 
@@ -146,6 +153,7 @@ def _post_process_specs(specs):
 
     for s in integer_specs:
         specs[s] = int(specs[s])
+
 
 def _create_node_matrix_from_coord_section(specs):
     """Transformed parsed data from NODE_COORD_SECTION into an upper triangular matrix
@@ -177,6 +185,7 @@ def _create_node_matrix_from_coord_section(specs):
             specs['MATRIX'][i][j] = distance
             #specs['MATRIX'][i][i] = distance
 
+
 def _create_node_matrix_from_full_matrix(specs):
     """Transform parsed data from EDGE_WEIGHT_SECTION into an upper triangular matrix
 
@@ -195,6 +204,7 @@ def _create_node_matrix_from_full_matrix(specs):
                 continue
 
             specs['MATRIX'][i + 1][j + 1] = int(old_matrix[i][j])
+
 
 def _create_node_matrix(specs):
     """Transform parsed data into an upper triangular matrix
@@ -216,9 +226,11 @@ def _setup_depot(specs):
     """
     specs['DEPOT'] = specs['DEPOT_SECTION']
 
+
 def _setup_demands(specs):
     """Setup demand model"""
     specs['DEMAND'] = specs['DEMAND_SECTION']
+
 
 def _post_process_data(specs):
     """Post-process specs data after complete parsing
@@ -232,6 +244,7 @@ def _post_process_data(specs):
     _create_node_matrix(specs)
     _setup_depot(specs)
     _setup_demands(specs)
+
 
 def _parse_tsplib(f):
     """Parses a TSPLIB file descriptor and returns a dict containing the problem definition"""
@@ -298,6 +311,7 @@ def _parse_tsplib(f):
     _post_process_data(specs)
 
     return specs
+
 
 def read_file(filename):
     """Reads a TSPLIB file and returns the problem data"""
