@@ -27,7 +27,7 @@ conn = db.connection(section='oedb')
 nd = NetworkDingo(name='network')
 
 # mv_grid_districts = [386,372,406,371,402,415,480,424,489,367,359,569,591]
-mv_grid_districts=[489]
+mv_grid_districts=[480]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 
@@ -49,8 +49,8 @@ nd.set_branch_ids()
 
 nd.set_circuit_breakers()
 
-# Open and close all circuit breakers in grid
-[gd.mv_grid.open_circuit_breakers() for gd in nd._mv_grid_districts]
+# Open all circuit breakers in grid
+nd.control_circuit_breakers(mode='open')
 
 # Analyze grid by power flow analysis
 for mv_grid_district in nd._mv_grid_districts:

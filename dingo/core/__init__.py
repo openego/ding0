@@ -836,6 +836,27 @@ class NetworkDingo:
 
         print('=====> MV Circuit Breakers relocated')
 
+    def control_circuit_breakers(self, mode=None):
+        """ Opens or closes all circuit breakers of all MV grids.
+
+        Args:
+            mode: Set mode='open' to open, mode='close' to close
+            debug: If True, information is printed during process
+        """
+
+        for grid_district in self.mv_grid_districts():
+            if mode is 'open':
+                grid_district.mv_grid.open_circuit_breakers()
+            elif mode is 'close':
+                grid_district.mv_grid.close_circuit_breakers()
+            else:
+                raise ValueError('\'mode\' is invalid.')
+
+        if mode is 'open':
+            print('=====> MV Circuit Breakers opened')
+        elif mode is 'close':
+            print('=====> MV Circuit Breakers closed')
+
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for all MV and LV grids
         Args:
