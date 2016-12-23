@@ -429,27 +429,27 @@ class LocalSearchSolver(BaseSolver):
 
         solution = LocalSearchSolution(graph, savings_solution)
 
-        # FOR BENCHMARKING:
+        # FOR BENCHMARKING OF OPERATOR'S ORDER:
         #self.benchmark_operator_order(graph, savings_solution, op_diff_round_digits)
 
-        start = time.time()
-
-        #solution = self.operator_oropt(graph, solution, op_diff_round_digits)
-
-        for i in range(10):
+        for run in range(10):
+            start = time.time()
             solution = self.operator_exchange(graph, solution, op_diff_round_digits, anim)
             time1 = time.time()
             if debug:
-                print('Elapsed time (exchange): {}'.format(time1 - start))
+                print('Elapsed time (exchange, run {1}): {0}'.format(time1 - start, str(run)), ',',
+                      'Solution\'s length: {}'.format(solution.length()))
 
             solution = self.operator_relocate(graph, solution, op_diff_round_digits, anim)
             time2 = time.time()
             if debug:
-                print('Elapsed time (relocate): {}'.format(time2 - time1))
+                print('Elapsed time (relocate, run {1}): {0}'.format(time2 - time1, str(run)), ',',
+                      'Solution\'s length: {}'.format(solution.length()))
 
             solution = self.operator_oropt(graph, solution, op_diff_round_digits, anim)
             time3 = time.time()
             if debug:
-                print('Elapsed time (oropt): {}'.format(time3 - time2))
+                print('Elapsed time (oropt, run {1}): {0}'.format(time3 - time2, str(run)), ',',
+                      'Solution\'s length: {}'.format(solution.length()))
 
         return solution
