@@ -27,13 +27,19 @@ conn = db.connection(section='oedb')
 nd = NetworkDingo(name='network')
 
 # mv_grid_districts = [386,372,406,371,402,415,480,424,489,367,359,569,591]
-mv_grid_districts=[480]
+#mv_grid_districts = [402, 406, 489, 480, 371]
+mv_grid_districts=[447]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 
 nd.import_generators(conn)
 
 nd.mv_parametrize_grid()
+
+if any([_.is_aggregated for _ in nd._mv_grid_districts[0].lv_load_areas()]):
+    print('GRID DISTRICT CONTAINS AGGREGATED LV LOAD AREA')
+else:
+    print('GRID DISTRICT DOES NOT CONTAIN AGGREGATED LV LOAD AREA')
 
 nd.mv_routing(debug=False, animation=False)
 
