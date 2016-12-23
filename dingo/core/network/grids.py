@@ -88,7 +88,6 @@ class MVGridDingo(GridDingo):
             mv_station: MVStationDingo object
             force: bool. If True, MV Station is set even though it's not empty (override)
         """
-        # TODO: Use this exception handling as template for similar methods in other classes
         if not isinstance(mv_station, MVStationDingo):
             raise Exception('Given MV station is not a MVStationDingo object.')
         if self._station is None:
@@ -99,21 +98,6 @@ class MVGridDingo(GridDingo):
                 self._station = mv_station
             else:
                 raise Exception('MV Station already set, use argument `force=True` to override.')
-
-    # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
-    # def graph_build(self):
-    #     """Builds/fills graph with objects (stations, ..)"""
-    #     # TODO: Add edges, loads etc. later on
-    #
-    #     # add MV station
-    #     self.graph_add_node(self._station)
-    #
-    #     # add LV stations
-    #     # TODO: to get LV stations, generator of generators is necessary
-    #     # TODO: see http://stackoverflow.com/questions/19033401/python-generator-of-generators
-    #     # TODO: not sure if the following works:
-    #     for lv_station in [grid.stations() for grid in [region.lv_grids() for region in self.region.lv_load_areas()]]:
-    #         self.graph_add_node(lv_station)
 
     def add_load(self, lv_load):
         """Adds a MV load to _loads and grid graph if not already existing"""
@@ -162,7 +146,6 @@ class MVGridDingo(GridDingo):
         Returns:
             List of nodes (Dingo objects)
         """
-
         if node_source in self._graph.nodes():
 
             # get all nodes that are member of a ring
@@ -234,16 +217,6 @@ class MVGridDingo(GridDingo):
                                                      graph=self._graph,
                                                      debug=debug)
 
-
-
-        # create MV Branch objects from graph edges (lines) and link these objects back to graph edges
-        # TODO:
-        # mv_branches = {}
-        # for edge in self._graph.edges():
-        #     mv_branch = BranchDingo()
-        #     mv_branches[edge] = mv_branch
-        # nx.set_edge_attributes(self._graph, 'branch', mv_branches)
-
     def connect_generators(self, debug=False):
         """ Connects MV generators (graph nodes) to grid (graph)
 
@@ -254,7 +227,8 @@ class MVGridDingo(GridDingo):
         self._graph = mv_connect.mv_connect_generators(self.grid_district, self._graph, debug)
 
     def parametrize_grid(self, debug=False):
-        """ Performs Parametrization of grid equipment.
+        """ Performs Parametrization of grid equipment: 1. Sets voltage level of MV grid, 2. Operation voltage level
+            and transformer of HV/MV station, 3. Default branch types (normal, aggregated, settlement)
 
         Args:
             debug: If True, information is printed during process
@@ -262,7 +236,6 @@ class MVGridDingo(GridDingo):
             It is assumed that only cables are used within settlements
         """
         # TODO: Add more detailed description
-        # TODO: Pass debug flag to functions
 
         # set grid's voltage level
         self.set_voltage_level()
@@ -279,12 +252,8 @@ class MVGridDingo(GridDingo):
         self.default_branch_kind_aggregated = self.default_branch_kind
         self.default_branch_kind_settle = 'cable'
 
-        # choose appropriate transformers for each MV sub-station
+        # choose appropriate transformers for each HV/MV sub-station
         self._station.choose_transformers()
-
-        # choose appropriate type of line/cable for each edge
-        # TODO: move line parametrization to routing process
-        #self.parametrize_lines()
 
     def set_voltage_level(self):
         """ Sets voltage level of MV grid according to load density.
@@ -727,7 +696,6 @@ class LVGridDingo(GridDingo):
 
         return selected_strings_df, transformer
 
-
     def build_lv_graph(self, selected_string_df):
         """
         Builds nxGraph based on the LV grid model
@@ -811,17 +779,6 @@ class LVGridDingo(GridDingo):
                                 variant)],
                             type=dingo.core.lv_cable_parameters. \
                                 loc[house_cable_name]))
-
-    # TODO: Following code builds graph after all objects are added (called manually) - maybe used later instead of ad-hoc adding
-    # def graph_build(self):
-    #     """Builds/fills graph with objects (stations, ..)"""
-    #     # TODO: Add edges, loads etc. later on
-    #
-    #     # add LV stations
-    #     for lv_station in self.stations():
-    #         self.graph_add_node(lv_station)
-    #
-    #     # TODO: add more nodes (loads etc.) here
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid

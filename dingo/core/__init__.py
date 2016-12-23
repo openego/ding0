@@ -9,6 +9,8 @@ from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *
 
+import os
+
 # import ORM classes for oedb access depending on input in config file
 cfg_dingo.load_config('config_db_tables')
 GridDistrict_name = cfg_dingo.get('regions', 'grid_district')
@@ -109,7 +111,6 @@ class NetworkDingo:
         station_geo_data: Point (shapely object) of station
 
         """
-        # TODO: validate input params
 
         mv_station = MVStationDingo(id_db=subst_id, geo_data=station_geo_data)
 
@@ -200,9 +201,6 @@ class NetworkDingo:
 
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-
-
-
     def import_mv_grid_districts(self, conn, mv_grid_districts_no=None):
         """Imports MV grid_districts and MV stations from database, reprojects geodata
         and and initiates objects.
@@ -214,17 +212,12 @@ class NetworkDingo:
         mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
 
-        Returns
-        -------
-        Nothing
-
         See Also
         --------
         build_mv_grid_district : used to instantiate MV grid_district objects
         import_lv_load_areas : used to import load_areas for every single MV grid_district
         add_peak_demand : used to summarize peak loads of underlying load_areas
         """
-        # TODO: Complete "See Also"-List
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_grid_districts_no):
@@ -334,10 +327,6 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        # TODO: move to a more sophisticated location
-        import pandas as pd
-        import os
-
         global lv_cable_parameters
         lv_cable_parameters = pd.read_csv(os.path.join(
             'dingo',
@@ -384,7 +373,12 @@ class NetworkDingo:
             join(orm_CalcEgoPeakLoad, orm_EgoDeuLoadArea.id
                  == orm_CalcEgoPeakLoad.id).\
             filter(orm_EgoDeuLoadArea.subst_id == mv_grid_district.\
-                   mv_grid._station.id_db)
+                   mv_grid._station.id_db).\
+            filter(((orm_CalcEgoPeakLoad.residential    # only pick load areas with peak load > lv_loads_threshold
+                        + orm_CalcEgoPeakLoad.retail
+                        + orm_CalcEgoPeakLoad.industrial
+                        + orm_CalcEgoPeakLoad.agricultural)
+                       * load_scaling_factor) > lv_loads_threshold)
 
         # read data from db
         lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
@@ -398,55 +392,46 @@ class NetworkDingo:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
-            # only pick load areas with peak load greater than
-            # lv_loads_threshold
-            # TODO: When migrating to SQLAlchemy, move condition to query
-            if row['peak_load_sum'] >= lv_loads_threshold:
-                # create LV load_area object
-                lv_load_area = LVLoadAreaDingo(id_db=id_db,
-                                               db_data=row,
-                                               mv_grid_district=mv_grid_district,
-                                               peak_load_sum=row['peak_load_sum'])
+            # create LV load_area object
+            lv_load_area = LVLoadAreaDingo(id_db=id_db,
+                                           db_data=row,
+                                           mv_grid_district=mv_grid_district,
+                                           peak_load_sum=row['peak_load_sum'])
 
-                # sub-selection of lv_grid_districts/lv_stations within one
-                # specific load area
-                lv_grid_districts_per_load_area = lv_grid_districts.\
-                    loc[lv_grid_districts['load_area_id'] == id_db]
-                lv_stations_per_load_area = lv_stations.\
-                    loc[lv_stations['load_area_id'] == id_db]
+            # sub-selection of lv_grid_districts/lv_stations within one
+            # specific load area
+            lv_grid_districts_per_load_area = lv_grid_districts.\
+                loc[lv_grid_districts['load_area_id'] == id_db]
+            lv_stations_per_load_area = lv_stations.\
+                loc[lv_stations['load_area_id'] == id_db]
 
-                # # ===== DEBUG STUFF (BUG JONAS) =====
-                # TODO: Remove when fixed!
-                if len(lv_grid_districts_per_load_area) == 0:
-                    print('No LV grid district for', lv_load_area, 'found! (Bug Jonas)')
-                if len(lv_stations_per_load_area) == 0:
-                    print('No station for', lv_load_area, 'found! (Bug Jonas)')
-                # ===================================
+            # # ===== DEBUG STUFF (BUG JONAS) =====
+            # TODO: Remove when fixed!
+            if len(lv_grid_districts_per_load_area) == 0:
+                print('No LV grid district for', lv_load_area, 'found! (Bug Jonas)')
+            if len(lv_stations_per_load_area) == 0:
+                print('No station for', lv_load_area, 'found! (Bug Jonas)')
+            # ===================================
 
-                self.build_lv_grid_district(conn,
-                                            lv_load_area,
-                                            string_properties,
-                                            apartment_string,
-                                            apartment_trafo,
-                                            trafo_parameters,
-                                            lv_grid_districts_per_load_area,
-                                            lv_stations_per_load_area)
+            self.build_lv_grid_district(conn,
+                                        lv_load_area,
+                                        string_properties,
+                                        apartment_string,
+                                        apartment_trafo,
+                                        trafo_parameters,
+                                        lv_grid_districts_per_load_area,
+                                        lv_stations_per_load_area)
 
-                # create new centre object for LV load area
-                lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
-                                                            geo_data=wkt_loads(row['geo_centre']),
-                                                            lv_load_area=lv_load_area,
-                                                            grid=mv_grid_district.mv_grid)
-                # links the centre object to LV load area
-                lv_load_area.lv_load_area_centre = lv_load_area_centre
+            # create new centre object for LV load area
+            lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
+                                                        geo_data=wkt_loads(row['geo_centre']),
+                                                        lv_load_area=lv_load_area,
+                                                        grid=mv_grid_district.mv_grid)
+            # links the centre object to LV load area
+            lv_load_area.lv_load_area_centre = lv_load_area_centre
 
-                # add LV load area to MV grid district (and add centre object to MV gris district's graph)
-                mv_grid_district.add_lv_load_area(lv_load_area)
-
-                # OLD:
-                # add LV load_area to MV grid graph
-                # TODO: add LV station instead of LV load_area
-                #mv_grid_district.mv_grid.graph_add_node(lv_load_area)
+            # add LV load area to MV grid district (and add centre object to MV gris district's graph)
+            mv_grid_district.add_lv_load_area(lv_load_area)
 
     def import_lv_grid_districts(self, conn):
         """Imports all lv grid districts within given load area
@@ -600,8 +585,12 @@ class NetworkDingo:
                                          func.ST_AsText(func.ST_Transform(
                                         orm_EgoDeuDea.geom, srid)).label('geom')).\
                                         filter(orm_EgoDeuDea.subst_id.in_(list(mv_grid_districts_dict))).\
-                                        filter(or_(orm_EgoDeuDea.voltage_level == '05 (MS)',
-                                                   orm_EgoDeuDea.voltage_level == '04 (HS/MS)'))
+                                        filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
+                                                   orm_EgoDeuDea.voltage_level == '05 (MS)'))
+                                        # filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
+                                        #            orm_EgoDeuDea.voltage_level == '05 (MS)',
+                                        #            orm_EgoDeuDea.voltage_level == '06 (MS/NS)',
+                                        #            orm_EgoDeuDea.voltage_level == '07 (NS)'))
 
         # TODO: Currently only MV generators are imported, please include LV!
 
@@ -648,7 +637,8 @@ class NetworkDingo:
             if generator.v_level in ['04 (HS/MS)', '05 (MS)']:
                 mv_grid.add_generator(generator)
             elif generator.v_level in ['06 (MS/NS)', '07 (NS)']:
-                raise NotImplementedError
+                pass
+                #raise NotImplementedError
 
         print('=====> Generators imported')
 
@@ -845,6 +835,27 @@ class NetworkDingo:
             grid_district.mv_grid.set_circuit_breakers(debug)
 
         print('=====> MV Circuit Breakers relocated')
+
+    def control_circuit_breakers(self, mode=None):
+        """ Opens or closes all circuit breakers of all MV grids.
+
+        Args:
+            mode: Set mode='open' to open, mode='close' to close
+            debug: If True, information is printed during process
+        """
+
+        for grid_district in self.mv_grid_districts():
+            if mode is 'open':
+                grid_district.mv_grid.open_circuit_breakers()
+            elif mode is 'close':
+                grid_district.mv_grid.close_circuit_breakers()
+            else:
+                raise ValueError('\'mode\' is invalid.')
+
+        if mode is 'open':
+            print('=====> MV Circuit Breakers opened')
+        elif mode is 'close':
+            print('=====> MV Circuit Breakers closed')
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for all MV and LV grids

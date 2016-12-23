@@ -16,6 +16,7 @@ import time
 from dingo.grid.mv_grid.models import models
 from dingo.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
 
+
 class SavingsSolution(BaseSolution):
     """Solution class for a Clarke and Wright Savings parallel algorithm"""
 
@@ -177,7 +178,6 @@ class ClarkeWrightSolver(BaseSolver):
 
                 if inserted:
                     savings_list.remove((i, j))
-                    #savings_list.remove((j, i))
 
                     if anim:
                         solution.draw_network(anim)
@@ -185,5 +185,4 @@ class ClarkeWrightSolver(BaseSolver):
             if time.time() - start > timeout:
                 break
 
-        #solution._routes[0].calc_circuit_breaker_position()
         return solution
