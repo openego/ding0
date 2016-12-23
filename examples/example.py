@@ -36,11 +36,6 @@ nd.import_generators(conn)
 
 nd.mv_parametrize_grid()
 
-if any([_.is_aggregated for _ in nd._mv_grid_districts[0].lv_load_areas()]):
-    print('GRID DISTRICT CONTAINS AGGREGATED LV LOAD AREA')
-else:
-    print('GRID DISTRICT DOES NOT CONTAIN AGGREGATED LV LOAD AREA')
-
 nd.mv_routing(debug=False, animation=False)
 
 nd.connect_generators()
