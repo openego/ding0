@@ -15,10 +15,10 @@ from dingo.tools import config as cfg_dingo
 
 plt.close('all')
 
-cfg_dingo.load_config('config_db_tables')
-cfg_dingo.load_config('config_calc')
-cfg_dingo.load_config('config_files')
-cfg_dingo.load_config('config_misc')
+cfg_dingo.load_config('config_db_tables.cfg')
+cfg_dingo.load_config('config_calc.cfg')
+cfg_dingo.load_config('config_files.cfg')
+cfg_dingo.load_config('config_misc.cfg')
 
 # database connection
 conn = db.connection(section='oedb')
@@ -28,7 +28,7 @@ nd = NetworkDingo(name='network')
 
 # mv_grid_districts = [386,372,406,371,402,415,480,424,489,367,359,569,591]
 #mv_grid_districts = [402, 406, 489, 480, 371]
-mv_grid_districts=[447]
+mv_grid_districts=[359]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 

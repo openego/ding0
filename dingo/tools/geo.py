@@ -64,7 +64,7 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
 
 def calc_geo_dist_vincenty(node_source, node_target):
     """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
-        config_calc.
+        config_calc.cfg.
     Args:
         node_source: source node (Dingo object), member of _graph
         node_target: target node (Dingo object), member of _graph
@@ -93,7 +93,7 @@ def calc_geo_dist_vincenty(node_source, node_target):
 
 def calc_geo_dist_matrix_vincenty(nodes_pos):
     """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor in
-        config_calc. For every two points/coord it uses geopy's vincenty function (formula devised by Thaddeus Vincenty,
+        config_calc.cfg. For every two points/coord it uses geopy's vincenty function (formula devised by Thaddeus Vincenty,
         with an accurate ellipsoidal model of the earth). As default ellipsoidal model of the earth WGS-84 is used.
         For more options see
         https://geopy.readthedocs.org/en/1.10.0/index.html?highlight=vincenty#geopy.distance.vincenty
@@ -136,7 +136,7 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
 
 def calc_geo_centre_point(node_source, node_target):
     """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
-        config_calc.
+        config_calc.cfg.
     Args:
         node_source: source node (Dingo object), member of _graph
         node_target: target node (Dingo object), member of _graph

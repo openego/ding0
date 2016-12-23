@@ -12,7 +12,7 @@ from dingo.flexopt.reinforce_grid import *
 import os
 
 # import ORM classes for oedb access depending on input in config file
-cfg_dingo.load_config('config_db_tables')
+cfg_dingo.load_config('config_db_tables.cfg')
 GridDistrict_name = cfg_dingo.get('regions', 'grid_district')
 EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
 EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
