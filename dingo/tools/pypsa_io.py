@@ -886,7 +886,9 @@ def assign_bus_results(grid, bus_data):
     # iterate of nodes and assign voltage obtained from power flow analysis
     for node in grid._graph.nodes():
         # check if node is connected to graph
-        if node not in grid.graph_isolated_nodes():
+        if (node not in grid.graph_isolated_nodes()
+            and not isinstance(node,
+                               LVLoadAreaCentreDingo)):
             if isinstance(node, LVStationDingo):
                 node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
             elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
@@ -910,8 +912,11 @@ def assign_line_results(grid, line_data):
     """
 
     edges = [edge for edge in grid.graph_edges()
-             if edge['adj_nodes'][0] in grid._graph.nodes()
-             and edge['adj_nodes'][1] in grid._graph.nodes()]
+             if (edge['adj_nodes'][0] in grid._graph.nodes() and not isinstance(
+            edge['adj_nodes'][0], LVLoadAreaCentreDingo))
+             and (
+             edge['adj_nodes'][1] in grid._graph.nodes() and not isinstance(
+                 edge['adj_nodes'][1], LVLoadAreaCentreDingo))]
     line_data.to_csv('line_data_after.csv')
 
     for edge in edges:

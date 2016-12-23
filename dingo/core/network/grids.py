@@ -12,6 +12,7 @@ from dingo.tools import config as cfg_dingo, pypsa_io, tools
 from dingo.grid.mv_grid.tools import set_circuit_breakers
 from dingo.flexopt.reinforce_grid import *
 import dingo.core
+from dingo.core.structure.regions import LVLoadAreaCentreDingo
 
 import networkx as nx
 import pandas as pd
@@ -511,8 +512,10 @@ class MVGridDingo(GridDingo):
         nodes = self._graph.nodes()
 
         edges = [edge for edge in list(self.graph_edges())
-                 if edge['adj_nodes'][0] in nodes
-                 and edge['adj_nodes'][1] in nodes]
+                 if (edge['adj_nodes'][0] in nodes and not isinstance(
+                edge['adj_nodes'][0], LVLoadAreaCentreDingo))
+                 and (edge['adj_nodes'][1] in nodes and not isinstance(
+                edge['adj_nodes'][1], LVLoadAreaCentreDingo))]
         if method is 'db':
             Session = sessionmaker(bind=conn)
             session = Session()
