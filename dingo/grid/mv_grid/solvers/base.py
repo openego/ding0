@@ -125,7 +125,6 @@ class BaseSolution(object):
             plt.show()
 
 
-
 class BaseSolver(object):
     """Base algorithm solver class"""
 

@@ -10,6 +10,7 @@
     copy of the license at http://www.apache.org/licenses/LICENSE-2.0
 """
 
+
 def print_upper_triangular_matrix(matrix):
     """Prints a CVRP data dict matrix"""
 

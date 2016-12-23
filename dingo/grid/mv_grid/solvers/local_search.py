@@ -10,7 +10,6 @@
     copy of the license at http://www.apache.org/licenses/LICENSE-2.0
 """
 
-#import operator
 import time
 import itertools as it
 
@@ -98,6 +97,13 @@ class LocalSearchSolver(BaseSolver):
                                   this behaviour: A threshold to handle values very close to zero as if they were zero
                                   (for a more detailed description of the matter see http://floating-point-gui.de or
                                   https://docs.python.org/3.5/tutorial/floatingpoint.html)
+
+        Notes:
+            Since Or-Opt is an intra-route operator, it has not to be checked if route can allocate (Route's method
+            can_allocate()) nodes during relocation regarding max. peak load/current because the line/cable type is the
+            same along the entire route. However, node order within a route has an impact on the voltage stability
+            so the check would be actually required. Due to large line capacity (load factor of lines/cables ~60 %)
+            the voltage stability issues are neglected.
 
         (Inner) Loop variables:
             s: length (count of consecutive nodes) of the chain that is moved. Values: 3..1
@@ -230,17 +236,17 @@ class LocalSearchSolver(BaseSolver):
                         for j in range(0,nt):
                             #target_node = target_route._nodes[j]
                             
-                            #if target_route.can_allocate([node]):
-                            length_diff = (-dm[dn[tour[i].name()]][dn[tour[i+1].name()]] -
-                                            dm[dn[tour[i+1].name()]][dn[tour[i+2].name()]] +
-                                            dm[dn[tour[i].name()]][dn[tour[i+2].name()]] +
-                                            dm[dn[target_tour[j].name()]][dn[tour[i+1].name()]] +
-                                            dm[dn[tour[i+1].name()]][dn[target_tour[j+1].name()]] -
-                                            dm[dn[target_tour[j].name()]][dn[target_tour[j+1].name()]])
-                                            
-                            if length_diff < length_diff_best:
-                                length_diff_best = length_diff                                        
-                                node_best, target_route_best, j_best = node, target_route, j
+                            if target_route.can_allocate([node]):
+                                length_diff = (-dm[dn[tour[i].name()]][dn[tour[i+1].name()]] -
+                                                dm[dn[tour[i+1].name()]][dn[tour[i+2].name()]] +
+                                                dm[dn[tour[i].name()]][dn[tour[i+2].name()]] +
+                                                dm[dn[target_tour[j].name()]][dn[tour[i+1].name()]] +
+                                                dm[dn[tour[i+1].name()]][dn[target_tour[j+1].name()]] -
+                                                dm[dn[target_tour[j].name()]][dn[target_tour[j+1].name()]])
+
+                                if length_diff < length_diff_best:
+                                    length_diff_best = length_diff
+                                    node_best, target_route_best, j_best = node, target_route, j
                                         
             if length_diff_best < 0:
                 # insert new node
@@ -263,8 +269,8 @@ class LocalSearchSolver(BaseSolver):
     def operator_exchange(self, graph, solution, op_diff_round_digits, anim):
         """applies Exchange inter-route operator to solution
         
-        Takes every node from every route and calculates savings when inserted
-        into all possible positions in other routes. Insertion is done at
+        Takes every node from every route and calculates savings when exchanged
+        with another one of all possible nodes in other routes. Insertion is done at
         position with max. saving and procedure starts over again with newly
         created graph as input. Stops when no improvement is found.
         
@@ -342,12 +348,13 @@ class LocalSearchSolver(BaseSolver):
                                 node_best, target_node_best, route_best, target_route_best = node, target_node, route, target_route
                                         
             if length_diff_best < 0:
-                #if route_best.can_allocate([target_node_best], i_best) and target_route_best.can_allocate([node_best], j_best):
-                # insert new node
-                target_route_best.insert([node_best], j_best)
-                route_best.insert([target_node_best], i_best)
-                # remove empty routes from solution
-                solution._routes = [route for route in solution._routes if route._nodes]
+                if route_best.can_allocate([target_node_best], i_best) and \
+                   target_route_best.can_allocate([node_best], j_best):
+                    # insert new node
+                    target_route_best.insert([node_best], j_best)
+                    route_best.insert([target_node_best], i_best)
+                    # remove empty routes from solution
+                    solution._routes = [route for route in solution._routes if route._nodes]
 
                 if anim is not None:
                     solution.draw_network(anim)
@@ -389,9 +396,6 @@ class LocalSearchSolver(BaseSolver):
         dm = graph._matrix
         dn = graph._nodes
 
-
-
-
     def benchmark_operator_order(self, graph, solution, op_diff_round_digits):
         """performs all possible permutations of route improvement and prints graph length"""
         
@@ -425,27 +429,27 @@ class LocalSearchSolver(BaseSolver):
 
         solution = LocalSearchSolution(graph, savings_solution)
 
-        # FOR BENCHMARKING:
+        # FOR BENCHMARKING OF OPERATOR'S ORDER:
         #self.benchmark_operator_order(graph, savings_solution, op_diff_round_digits)
 
-        start = time.time()
-
-        #solution = self.operator_oropt(graph, solution, op_diff_round_digits)
-
-        for i in range(10):
+        for run in range(10):
+            start = time.time()
             solution = self.operator_exchange(graph, solution, op_diff_round_digits, anim)
             time1 = time.time()
             if debug:
-                print('Elapsed time (exchange): {}'.format(time1 - start))
+                print('Elapsed time (exchange, run {1}): {0}'.format(time1 - start, str(run)), ',',
+                      'Solution\'s length: {}'.format(solution.length()))
 
             solution = self.operator_relocate(graph, solution, op_diff_round_digits, anim)
             time2 = time.time()
             if debug:
-                print('Elapsed time (relocate): {}'.format(time2 - time1))
+                print('Elapsed time (relocate, run {1}): {0}'.format(time2 - time1, str(run)), ',',
+                      'Solution\'s length: {}'.format(solution.length()))
 
             solution = self.operator_oropt(graph, solution, op_diff_round_digits, anim)
             time3 = time.time()
             if debug:
-                print('Elapsed time (oropt): {}'.format(time3 - time2))
+                print('Elapsed time (oropt, run {1}): {0}'.format(time3 - time2, str(run)), ',',
+                      'Solution\'s length: {}'.format(solution.length()))
 
         return solution

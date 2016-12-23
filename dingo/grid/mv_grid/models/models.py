@@ -95,12 +95,6 @@ class Route(object):
     def allocate(self, nodes, append=True):
         """Allocates all nodes from `nodes` list in this route"""
 
-        # TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        # if not self.can_allocate(nodes):
-        #     if len(self._nodes) == 0:
-        #         x = self.can_allocate(nodes)
-        #         raise Exception('Trying to allocate more than route capacity')
-
         nodes_demand = 0
         for node in [node for node in nodes]:
             if node._allocation:
@@ -132,10 +126,6 @@ class Route(object):
     def insert(self, nodes, pos):
         """Inserts all nodes from `nodes` list into this route at position `pos`"""
         
-        # # TODO: TEMPORÄR RAUS. SPÄTER WIEDER REIN!!
-        # if not self.can_allocate(nodes):
-        #     raise Exception('Trying to allocate more than route capacity')
-        
         node_list = []
         nodes_demand = 0
         for node in [node for node in nodes]:
@@ -160,7 +150,6 @@ class Route(object):
         """ Calculates the optimal position of a circuit breaker on route.
 
         Returns:
-            OLD: 2-tuple of nodes (instances of Node class) = route segment
             position of circuit breaker on route (index of last node on 1st half-ring preceding the circuit breaker)
 
         Notes
@@ -169,7 +158,10 @@ class Route(object):
         circuit breaker which is open at normal operation.
         Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
         breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
-        the route.
+        the route. Instead of the peak current, the peak load is used here (assuming a constant voltage).
+
+        The circuit breakers are used here for checking tech. constraints only and will be re-located after connection
+        of satellites and stations in dingo.grid.mv_grid.tools.set_circuit_breakers
 
         References
         ----------
@@ -206,19 +198,23 @@ class Route(object):
             current rating of cable/line
             voltage stability at all nodes
             cable/line losses?
+
+        References:
+
         """
+        #TODO: Add reference for voltage stability method (Basse?)
 
         # load parameters
         if self._problem._branch_kind == 'line':
             load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_line_normal'))
+                                                     'load_factor_mv_line_lc_normal'))
             load_factor_malfunc = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_line_malfunc'))
+                                                      'load_factor_mv_line_lc_malfunc'))
         elif self._problem._branch_kind == 'cable':
             load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_cable_normal'))
+                                                     'load_factor_mv_cable_lc_normal'))
             load_factor_malfunc = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_cable_malfunc'))
+                                                      'load_factor_mv_cable_lc_malfunc'))
         else:
             raise ValueError('Grid\'s _branch_kind is invalid, could not use branch parameters.')
 
@@ -242,15 +238,15 @@ class Route(object):
         # factor to calc reactive from active power
         Q_factor = tan(acos(mv_routing_loads_cos_phi))
         # line/cable params per km
-        r = self._problem._branch_type['R']  # unit: ohm/km
-        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit: ohm/km
+        r = self._problem._branch_type['R']  # unit for r: ohm/km
+        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km
 
         # step 3a: check if current rating of default cable/line is violated
         # (for every of the 2 half-rings using load factor for normal operation)
         demand_hring_1 = sum([node.demand() for node in self._nodes[0:position]])
         demand_hring_2 = sum([node.demand() for node in self._nodes[position:len(self._nodes)]])
-        peak_current_sum_hring1 = demand_hring_1 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
-        peak_current_sum_hring2 = demand_hring_2 * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_hring1 = demand_hring_1 / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_hring2 = demand_hring_2 / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
 
         if (peak_current_sum_hring1 > (self._problem._branch_type['I_max_th'] * load_factor_normal) or
             peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_normal)):
@@ -258,7 +254,7 @@ class Route(object):
 
         # step 3b: check if current rating of default cable/line is violated
         # (for full ring using load factor for malfunction operation)
-        peak_current_sum_ring = self._demand * (3**0.5) / self._problem._v_level  # units: kVA / kV = A
+        peak_current_sum_ring = self._demand / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
         if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_malfunc):
             return False
 
