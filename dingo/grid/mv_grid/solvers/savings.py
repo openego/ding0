@@ -178,7 +178,6 @@ class ClarkeWrightSolver(BaseSolver):
 
                 if inserted:
                     savings_list.remove((i, j))
-                    savings_list.remove((i, j))
 
                     if anim:
                         solution.draw_network(anim)
