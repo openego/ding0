@@ -697,14 +697,16 @@ def run_powerflow_onthefly(components, components_data, grid, debug=False):
     # import pq-sets
     for key in ['Load', 'Generator']:
         for attr in ['p_set', 'q_set']:
-            series = transform_timeseries4pypsa(components_data[key][
-                                                    attr].to_frame(),
-                                                timerange,
-                                                column=attr)
-            import_series_from_dataframe(network,
-                                         series,
-                                         key,
-                                         attr)
+            # catch MV grid districts without generators
+            if not components_data[key].empty:
+                series = transform_timeseries4pypsa(components_data[key][
+                                                        attr].to_frame(),
+                                                    timerange,
+                                                    column=attr)
+                import_series_from_dataframe(network,
+                                             series,
+                                             key,
+                                             attr)
     series = transform_timeseries4pypsa(components_data['Bus']
                                         ['v_mag_pu_set'].to_frame(),
                                         timerange,
