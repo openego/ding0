@@ -1,1 +1,12 @@
 sphinx-rtd-theme
+numpy
+psycopg2
+matplotlib
+networkx
+geoalchemy2
+shapely
+geopy
+pyproj
+egoio
+pandas
+egopowerflow
