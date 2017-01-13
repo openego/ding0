@@ -35,7 +35,7 @@ nd = NetworkDingo(name='network')
 #mv_grid_districts = [359, 415, 424, 447, 402, 406, 489, 480, 371]
 #mv_grid_districts=[372]
 #mv_grid_districts = [386,372,406,371,402,415,480,424,489,367]#,569,359,591]
-mv_grid_districts=[480]
+mv_grid_districts=[480, 359]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 
@@ -61,9 +61,7 @@ nd.set_circuit_breakers()
 nd.control_circuit_breakers(mode='open')
 
 # Analyze grid by power flow analysis
-for mv_grid_district in nd._mv_grid_districts:
-    mv_grid_district.mv_grid.run_powerflow(conn, method='onthefly')
-
+nd.run_powerflow(conn, method='db')
 
 nd.export_mv_grid(conn, mv_grid_districts)
 
@@ -72,4 +70,4 @@ conn.close()
 print('Elapsed time for', str(len(mv_grid_districts)), 'MV grid districts (seconds): {}'.format(time.time() - start))
 
 # reinforce MV grid
-nd.reinforce_grid()
+#nd.reinforce_grid()
