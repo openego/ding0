@@ -26,6 +26,7 @@ def check_load(grid, mode):
     crit_trafos = []
 
     if mode == 'MV':
+        # load load factors (conditions) for cables, lines and trafos for load- and feedin case
         load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
                                                              'load_factor_mv_trans_lc_normal'))
         load_factor_mv_line_lc_normal = float(cfg_dingo.get('assumptions',
