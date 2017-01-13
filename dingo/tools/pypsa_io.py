@@ -316,8 +316,13 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
         resolution=resolution,
         start_time=start_time
     )
-    session.add(temp_resolution)
-    session.commit()
+
+    # check if there is a temp resolution dataset in DB
+    # => another grid was run before, use existing dataset instead of creating a new one
+    if session.query(orm_pypsa.TempResolution.temp_id).count() == 0:
+
+        session.add(temp_resolution)
+        session.commit()
 
 
 def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):

@@ -471,7 +471,6 @@ class MVGridDingo(GridDingo):
         """
 
         # definitions for temp_resolution table
-        # TODO: temp_id=1 works only if its the only set of powerflow data in db
         temp_id = 1
         timesteps = 2
         start_time = datetime(1970, 1, 1, 00, 00, 0)
