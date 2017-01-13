@@ -310,16 +310,16 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
     Write info about temporal coverage into table `temp_resolution`
     """
 
-    temp_resolution = orm_pypsa.TempResolution(
-        temp_id=temp_id,
-        timesteps=timesteps,
-        resolution=resolution,
-        start_time=start_time
-    )
-
     # check if there is a temp resolution dataset in DB
     # => another grid was run before, use existing dataset instead of creating a new one
     if session.query(orm_pypsa.TempResolution.temp_id).count() == 0:
+
+        temp_resolution = orm_pypsa.TempResolution(
+            temp_id=temp_id,
+            timesteps=timesteps,
+            resolution=resolution,
+            start_time=start_time
+        )
 
         session.add(temp_resolution)
         session.commit()
