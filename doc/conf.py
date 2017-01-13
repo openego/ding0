@@ -120,7 +120,7 @@ class Mock(MagicMock):
             return MagicMock()
 
 #MOCK_MODULES = ['libgeos', 'geos', 'libgeos_c', 'geos_c']
-MOCK_MODULES = ['shapely', 'shapely.wkt']
+MOCK_MODULES = ['shapely', 'shapely.wkt', 'shapely.wkb', 'shapely.geometry']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
