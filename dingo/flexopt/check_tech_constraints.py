@@ -26,6 +26,7 @@ def check_load(grid, mode):
     crit_trafos = []
 
     if mode == 'MV':
+        # load load factors (conditions) for cables, lines and trafos for load- and feedin case
         load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
                                                              'load_factor_mv_trans_lc_normal'))
         load_factor_mv_line_lc_normal = float(cfg_dingo.get('assumptions',
@@ -41,7 +42,7 @@ def check_load(grid, mode):
 
         mw2kw = 1e3
 
-        # check branches' loads
+        # 1. check branches' loads
         for branch in grid.graph_edges():
             s_max_th = 3**0.5 * branch['branch'].type['U_n'] * branch['branch'].type['I_max_th']
             # TODO: Add type attribute to branch for checking type !!!!
@@ -52,14 +53,30 @@ def check_load(grid, mode):
             else:
                 raise ValueError('Branch kind is invalid!')
 
-            if any([s*mw2kw >= s_max_th for s in branch['branch'].s_res]):
-                crit_branches.append(branch)
+            # check loads only for non-aggregated LV load areas (aggregated ones are skipped)
+            try:
+                if any([s*mw2kw >= s_max_th for s in branch['branch'].s_res]):
+                    crit_branches.append(branch)
+            except:
+                pass
 
-        # check trafos' loads
-        for trafo in grid.graph_edges():
-            s_max_th = 3**0.5 * branch['branch'].type['U_n'] * branch['branch'].type['I_max_th']
-            if any(s*mw2kw >= s_max_th for s in branch['branch'].s_res):
-                crit_trafos.append(trafo)
+        # 2. check trafos' loads
+        # get power flow case count
+        # TODO: This way is odd, as soon as there's a central place where PF settings are stored, get it from there
+        pf_case_count = len(branch['branch'].s_res)
+
+        # max. allowed load of trafo
+        s_max_th_trafo = sum(trafo.s_max_a for trafo in grid._station.transformers())
+
+        s_max_th_branch = [0] * pf_case_count
+        for node in grid._graph.edge[grid._station]:
+            branch = grid._graph.edge[grid._station][node]['branch']
+            if not branch.connects_aggregated:
+                s = [sum(_) for _ in zip(s_max_th_branch, branch.s_res)]
+
+        if any([s*mw2kw >= s_max_th_trafo for s in s_max_th_branch]):
+            print('Trafo has to be reinforced')
+            # PUT MORE STUFF IN HERE
 
     elif mode == 'LV':
         pass

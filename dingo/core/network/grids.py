@@ -17,7 +17,6 @@ from dingo.core.structure.regions import LVLoadAreaCentreDingo
 import networkx as nx
 import pandas as pd
 import os
-from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 
@@ -448,7 +447,7 @@ class MVGridDingo(GridDingo):
         # add peak demand for all LV load areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
 
-    def export_to_pypsa(self, conn, method='onthefly'):
+    def export_to_pypsa(self, session, method='onthefly'):
         """Exports MVGridDingo grid to PyPSA database tables
 
         Peculiarities of MV grids are implemented here. Derive general export
@@ -456,11 +455,11 @@ class MVGridDingo(GridDingo):
 
         Parameters
         ----------
-        conn: SQLAlchemy session object
+        session: SQLalchemy database session
         method: str
             Specify export method
-            If method='db' grid data will be exported to database (default)
-            If method='onthefly' grid data will be passed to PyPSA directly
+            If method='db' grid data will be exported to database
+            If method='onthefly' grid data will be passed to PyPSA directly (default)
 
         Notes
         -----
@@ -472,7 +471,6 @@ class MVGridDingo(GridDingo):
         """
 
         # definitions for temp_resolution table
-        # TODO: temp_id=1 works only if its the only set of powerflow data in db
         temp_id = 1
         timesteps = 2
         start_time = datetime(1970, 1, 1, 00, 00, 0)
@@ -485,12 +483,8 @@ class MVGridDingo(GridDingo):
                 edge['adj_nodes'][0], LVLoadAreaCentreDingo))
                  and (edge['adj_nodes'][1] in nodes and not isinstance(
                 edge['adj_nodes'][1], LVLoadAreaCentreDingo))]
-        if method is 'db':
-            Session = sessionmaker(bind=conn)
-            session = Session()
 
-            # Empty tables
-            pypsa_io.delete_powerflow_tables(session)
+        if method is 'db':
 
             # Export node objects: Busses, Loads, Generators
             pypsa_io.export_nodes(self,
@@ -520,22 +514,37 @@ class MVGridDingo(GridDingo):
         else:
             raise ValueError('Sorry, this export method does not exist!')
 
-    def run_powerflow(self, conn, method='onthefly', debug=False):
+    def run_powerflow(self, session, method='onthefly', debug=False):
+        """ Performs power flow calculation for all MV grids
+
+        Args:
+            session: SQLalchemy database session
+            method: str
+                Specify export method
+                If method='db' grid data will be exported to database
+                If method='onthefly' grid data will be passed to PyPSA directly (default)
+            debug: If True, information is printed during process
+
+        Notes:
+            It has to be proven that this method works for LV grids as well!
+
+            Dingo treats two stationary case of powerflow:
+            1) Full load: We assume no generation and loads to be set to peak load
+            2) Generation worst case:
+        """
 
         if method is 'db':
-            Session = sessionmaker(bind=conn)
-            session = Session()
-
             # export grid data to db (be ready for power flow analysis)
-            self.export_to_pypsa(conn, method=method)
+            self.export_to_pypsa(session, method=method)
 
             # run the power flow problem
             pypsa_io.run_powerflow(session)
 
             # import results from db
             self.import_powerflow_results(session)
+
         elif method is 'onthefly':
-            components, components_data = self.export_to_pypsa(conn, method)
+            components, components_data = self.export_to_pypsa(session, method)
             pypsa_io.run_powerflow_onthefly(components, components_data, self,
                                             debug=debug)
 
@@ -545,7 +554,7 @@ class MVGridDingo(GridDingo):
 
         Parameters
         ----------
-        session: SQLAlchemy session
+        session: SQLalchemy database session
         Returns
         -------
         None

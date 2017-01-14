@@ -5,7 +5,7 @@ from dingo.core.network.cable_distributors import MVCableDistributorDingo
 from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
-from dingo.tools import config as cfg_dingo
+from dingo.tools import pypsa_io, config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *
 
@@ -856,6 +856,32 @@ class NetworkDingo:
             print('=====> MV Circuit Breakers opened')
         elif mode is 'close':
             print('=====> MV Circuit Breakers closed')
+
+    def run_powerflow(self, conn, method='onthefly', debug=False):
+        """ Performs power flow calculation for all MV grids
+
+        Args:
+            conn: SQLalchemy database connection
+            method: str
+                Specify export method
+                If method='db' grid data will be exported to database
+                If method='onthefly' grid data will be passed to PyPSA directly (default)
+            debug: If True, information is printed during process
+        """
+
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        if method is 'db':
+            # Empty tables
+            pypsa_io.delete_powerflow_tables(session)
+
+            for grid_district in self.mv_grid_districts():
+                grid_district.mv_grid.run_powerflow(session, method='db', debug=debug)
+
+        elif method is 'onthefly':
+            for grid_district in self.mv_grid_districts():
+                grid_district.mv_grid.run_powerflow(session, method='onthefly', debug=debug)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for all MV and LV grids

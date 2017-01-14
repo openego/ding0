@@ -310,14 +310,19 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
     Write info about temporal coverage into table `temp_resolution`
     """
 
-    temp_resolution = orm_pypsa.TempResolution(
-        temp_id=temp_id,
-        timesteps=timesteps,
-        resolution=resolution,
-        start_time=start_time
-    )
-    session.add(temp_resolution)
-    session.commit()
+    # check if there is a temp resolution dataset in DB
+    # => another grid was run before, use existing dataset instead of creating a new one
+    if session.query(orm_pypsa.TempResolution.temp_id).count() == 0:
+
+        temp_resolution = orm_pypsa.TempResolution(
+            temp_id=temp_id,
+            timesteps=timesteps,
+            resolution=resolution,
+            start_time=start_time
+        )
+
+        session.add(temp_resolution)
+        session.commit()
 
 
 def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
@@ -578,7 +583,7 @@ def edges_to_dict_of_dataframes(grid, edges):
     return {'Line': DataFrame(lines).set_index('line_id')}
 
 
-def run_powerflow(conn):
+def run_powerflow(session):
     """
     Run powerflow to test grid stability
 
@@ -588,7 +593,7 @@ def run_powerflow(conn):
 
     Parameters
     ----------
-    conn: SQLAlchemy session object
+    session: SQLalchemy database session
 
     """
 
@@ -600,20 +605,20 @@ def run_powerflow(conn):
     temp_id_set = 1
 
     # define investigated time range
-    timerange = get_timerange(conn, temp_id_set, TempResolution)
+    timerange = get_timerange(session, temp_id_set, TempResolution)
 
     # define relevant tables
     tables = [Bus, Line, Generator, Load, Transformer]
 
     # get components from database tables
-    components = import_components(tables, conn, scenario)
+    components = import_components(tables, session, scenario)
 
     # create PyPSA powerflow problem
     network, snapshots = create_powerflow_problem(timerange, components)
 
     # import pq-set tables to pypsa network (p_set for generators and loads)
     pq_object = [GeneratorPqSet, LoadPqSet]
-    network = import_pq_sets(conn,
+    network = import_pq_sets(session,
                              network,
                              pq_object,
                              timerange,
@@ -623,7 +628,7 @@ def run_powerflow(conn):
                              end_h=end_hour)
 
     # import pq-set table to pypsa network (q_set for loads)
-    network = import_pq_sets(conn,
+    network = import_pq_sets(session,
                              network,
                              pq_object,
                              timerange,
@@ -633,7 +638,7 @@ def run_powerflow(conn):
                              end_h=end_hour)
 
     # Import `v_mag_pu_set` for Bus
-    network = import_pq_sets(conn,
+    network = import_pq_sets(session,
                              network,
                              [BusVMagSet],
                              timerange,
@@ -655,7 +660,7 @@ def run_powerflow(conn):
     plot_line_loading(network, timestep=1,
                       filename='Line_loading_feed-in_case.png')
 
-    results_to_oedb(conn, network)
+    results_to_oedb(session, network)
 
 
 def run_powerflow_onthefly(components, components_data, grid, debug=False):

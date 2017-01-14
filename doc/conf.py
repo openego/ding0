@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../'))
 
 # -- General configuration ------------------------------------------------
 
@@ -36,6 +36,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.pngmath',
+    'sphinx.ext.viewcode',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -118,7 +119,8 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return MagicMock()
 
-MOCK_MODULES = ['libgeos', 'geos', 'libgeos_c', 'geos_c']
+#MOCK_MODULES = ['libgeos', 'geos', 'libgeos_c', 'geos_c']
+MOCK_MODULES = ['shapely', 'shapely.wkt', 'shapely.wkb', 'shapely.geometry', 'shapely.ops']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
