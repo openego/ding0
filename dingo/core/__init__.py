@@ -313,13 +313,14 @@ class NetworkDingo:
             LV stations within this mv_grid_district
         """
 
+        package_path = dingo.__path__[0]
+
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
         lv_loads_threshold = cfg_dingo.get('mv_routing', 'load_area_threshold')
-
 
         load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
 
@@ -329,9 +330,11 @@ class NetworkDingo:
 
         global lv_cable_parameters
         lv_cable_parameters = pd.read_csv(os.path.join(
-            'dingo',
+            package_path,
             'data',
-            'equipment-parameters_LV_cables.csv'), index_col='name')
+            'equipment-parameters_LV_cables.csv'),
+            comment='#',
+            index_col='name')
 
         lv_load_areas_sqla = session.query(
             orm_EgoDeuLoadArea.id.label('id_db'),

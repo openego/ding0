@@ -1,3 +1,4 @@
+import dingo
 from egoio.db_tables import calc_ego_mv_powerflow as orm_pypsa
 from egoio.db_tables.calc_ego_mv_powerflow import ResBus, ResLine, \
     ResTransformer, Bus, Line, Transformer
@@ -25,6 +26,7 @@ from pypsa.io import import_series_from_dataframe
 
 from datetime import datetime
 import sys
+import os
 
 
 def delete_powerflow_tables(session):
@@ -927,13 +929,16 @@ def assign_line_results(grid, line_data):
         DataFrame containing active/reactive at nodes obtained from PF analysis
     """
 
+    package_path = dingo.__path__[0]
+
     edges = [edge for edge in grid.graph_edges()
              if (edge['adj_nodes'][0] in grid._graph.nodes() and not isinstance(
             edge['adj_nodes'][0], LVLoadAreaCentreDingo))
              and (
              edge['adj_nodes'][1] in grid._graph.nodes() and not isinstance(
                  edge['adj_nodes'][1], LVLoadAreaCentreDingo))]
-    line_data.to_csv('line_data_after.csv')
+    line_data.to_csv(os.path.join(package_path,
+                                  'line_data_after.csv'))
 
     for edge in edges:
         s_res = [
