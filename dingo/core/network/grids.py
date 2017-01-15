@@ -339,7 +339,7 @@ class MVGridDingo(GridDingo):
             load_factor_normal = float(cfg_dingo.get('assumptions',
                                                      'load_factor_mv_line_lc_normal'))
             equipment_parameters_file = cfg_dingo.get('equipment',
-                                                      'equipment_parameters_lines')
+                                                      'equipment_mv_parameters_lines')
             branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
                                             equipment_parameters_file),
                                             comment='#',
@@ -347,7 +347,7 @@ class MVGridDingo(GridDingo):
 
             # load cables as well to use it within settlements
             equipment_parameters_file_settle = cfg_dingo.get('equipment',
-                                                             'equipment_parameters_cables')
+                                                             'equipment_mv_parameters_cables')
             branch_parameters_settle = pd.read_csv(os.path.join(package_path, 'data',
                                                    equipment_parameters_file_settle),
                                                    comment='#',
@@ -359,7 +359,7 @@ class MVGridDingo(GridDingo):
             load_factor_normal = float(cfg_dingo.get('assumptions',
                                                      'load_factor_mv_cable_lc_normal'))
             equipment_parameters_file = cfg_dingo.get('equipment',
-                                                      'equipment_parameters_cables')
+                                                      'equipment_mv_parameters_cables')
             branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
                                             equipment_parameters_file),
                                             comment='#',

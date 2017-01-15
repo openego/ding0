@@ -328,8 +328,8 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        cable_parameters_file = cfg_dingo.get("model_grids",
-                                              "cable_parameters")
+        cable_parameters_file = cfg_dingo.get("equipment",
+                                              "equipment_lv_parameters_cables")
 
         global lv_cable_parameters
         lv_cable_parameters = pd.read_csv(os.path.join(
@@ -530,8 +530,8 @@ class NetworkDingo:
                                                "apartment_string")
         apartment_trafo_file = cfg_dingo.get("model_grids",
                                                "apartment_trafo")
-        trafo_parameters_file = cfg_dingo.get("model_grids",
-                                              "trafo_parameters")
+        trafo_parameters_file = cfg_dingo.get("equipment",
+                                              "equipment_lv_parameters_trafos")
 
         package_path = dingo.__path__[0]
 
