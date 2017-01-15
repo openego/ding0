@@ -525,11 +525,11 @@ class NetworkDingo:
         """
 
         string_properties_file = cfg_dingo.get("model_grids",
-                                               "string_properties")
+                                               "model_grids_lv_string_properties")
         apartment_string_file = cfg_dingo.get("model_grids",
-                                               "apartment_string")
+                                               "model_grids_lv_apartment_string")
         apartment_trafo_file = cfg_dingo.get("model_grids",
-                                               "apartment_trafo")
+                                               "model_grids_lv_apartment_trafo")
         trafo_parameters_file = cfg_dingo.get("equipment",
                                               "equipment_lv_parameters_trafos")
 
