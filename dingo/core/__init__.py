@@ -328,11 +328,14 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
+        cable_parameters_file = cfg_dingo.get("model_grids",
+                                              "cable_parameters")
+
         global lv_cable_parameters
         lv_cable_parameters = pd.read_csv(os.path.join(
             package_path,
             'data',
-            'equipment-parameters_LV_cables.csv'),
+            cable_parameters_file),
             comment='#',
             index_col='name')
 
