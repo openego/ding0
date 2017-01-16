@@ -815,7 +815,7 @@ class NetworkDingo:
 
             # get branches (lines) from grid's graph and create datasets
             for branch in grid_district.mv_grid.graph_edges():
-                if hasattr(branch, 's_res'):
+                if hasattr(branch['branch'], 's_res'):
                     branch_name = '_'.join(['MV',
                                             str(grid_district.mv_grid.id_db),
                                             'lin',
