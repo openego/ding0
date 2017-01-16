@@ -41,6 +41,7 @@ def check_load(grid, mode):
                                                              'load_factor_mv_cable_fc_normal'))
 
         mw2kw = 1e3
+        kw2mw = 1e-3
 
         # 1. check branches' loads
         for branch in grid.graph_edges():
@@ -72,8 +73,13 @@ def check_load(grid, mode):
         for node in grid._graph.edge[grid._station]:
             branch = grid._graph.edge[grid._station][node]['branch']
             if not branch.connects_aggregated:
-                s = [sum(_) for _ in zip(s_max_th_branch, branch.s_res)]
+                s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch, branch.s_res)]
+            else:
+                # TODO: Currently, peak load is assumed for aggregated LV for all cases!
+                s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch,
+                                                       pf_case_count * [kw2mw * node.lv_load_area.peak_load_sum])]
 
+        print(s_max_th_branch)
         if any([s*mw2kw >= s_max_th_trafo for s in s_max_th_branch]):
             print('Trafo has to be reinforced')
             # PUT MORE STUFF IN HERE
