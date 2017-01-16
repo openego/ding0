@@ -212,6 +212,17 @@ class GridDingo:
         """
         return nx.isolates(self._graph)
 
+    def control_generators(self, capacity_factor):
+        """ Sets capacity factor of all generators of a grid (example: A capacity factor of 0.6 means that all
+            generators are to provide a capacity of 60% of their nominal power).
+
+        Args:
+            capacity_factor: 0..1
+        """
+
+        for generator in self.generators():
+            generator.capacity_factor = capacity_factor
+
 
 class StationDingo:
     """
