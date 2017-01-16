@@ -43,7 +43,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func, or_
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
-from shapely.geometry import Point, MultiPoint, MultiLineString
+from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 
 from functools import partial
 import pyproj
@@ -766,6 +766,81 @@ class NetworkDingo:
         session.commit()
 
         print('=====> MV Grids exported')
+
+    def export_mv_grid_new(self, conn, mv_grid_districts):
+        """ Exports MV grids to database for visualization purposes
+
+        Parameters
+        ----------
+        conn : sqlalchemy.engine.base.Connection object
+               Database connection
+        mv_grid_districts : List of MV grid_districts (instances of MVGridDistrictDingo class)
+            whose MV grids are exported.
+
+        """
+
+        # check arguments
+        if not all(isinstance(_, int) for _ in mv_grid_districts):
+            raise TypeError('`mv_grid_districts` has to be a list of integers.')
+
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
+
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        # delete all existing datasets
+        session.query(db_int.sqla_mv_grid_viz_branches).delete()
+        session.query(db_int.sqla_mv_grid_viz_nodes).delete()
+        session.commit()
+
+        # build data array from MV grids (nodes and branches)
+        for grid_district in self.mv_grid_districts():
+
+            # get nodes from grid's graph and create datasets
+            for node in grid_district.mv_grid._graph.nodes():
+                if hasattr(node, 'voltage_res'):
+                    node_name = '_'.join(['MV',
+                                          str(grid_district.mv_grid.id_db),
+                                          repr(node)])
+
+                    node_dataset = db_int.sqla_mv_grid_viz_nodes(
+                        node_id=node_name,
+                        grid_id=grid_district.mv_grid.id_db,
+                        v_nom=grid_district.mv_grid.v_level,
+                        geom=from_shape(Point(node.geo_data), srid=srid),
+                        v_res0=node.voltage_res[0],
+                        v_res1=node.voltage_res[1]
+                    )
+                    session.add(node_dataset)
+
+            # get branches (lines) from grid's graph and create datasets
+            for branch in grid_district.mv_grid.graph_edges():
+                if hasattr(branch, 's_res'):
+                    branch_name = '_'.join(['MV',
+                                            str(grid_district.mv_grid.id_db),
+                                            'lin',
+                                            str(branch['branch'].id_db)])
+
+                    branch_dataset = db_int.sqla_mv_grid_viz_branches(
+                        branch_id=branch_name,
+                        grid_id=grid_district.mv_grid.id_db,
+                        type_name=branch['branch'].type['name'],
+                        type_kind=branch['branch'].kind,
+                        type_v_nom=branch['branch'].type['U_n'],
+                        type_s_nom=3**0.5 * branch['branch'].type['I_max_th'] * branch['branch'].type['U_n'],
+                        length=branch['branch'].length / 1e3,
+                        geom=from_shape(LineString([branch['adj_nodes'][0].geo_data,
+                                                    branch['adj_nodes'][1].geo_data]),
+                                        srid=srid),
+                        s_res0=branch['branch'].s_res[0],
+                        s_res1=branch['branch'].s_res[1]
+                    )
+                    session.add(branch_dataset)
+
+        # commit changes to db
+        session.commit()
+
+        print('=====> MV Grids exported (NEW)')
 
     def mv_routing(self, debug=False, animation=False):
         """ Performs routing on all MV grids, see method `routing` in class
