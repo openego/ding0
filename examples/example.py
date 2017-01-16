@@ -63,11 +63,12 @@ nd.control_circuit_breakers(mode='open')
 # Analyze grid by power flow analysis
 nd.run_powerflow(conn, method='onthefly')
 
-nd.export_mv_grid(conn, mv_grid_districts)
+#nd.export_mv_grid(conn, mv_grid_districts)
+nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
 
 print('Elapsed time for', str(len(mv_grid_districts)), 'MV grid districts (seconds): {}'.format(time.time() - start))
 
 # reinforce MV grid
-nd.reinforce_grid()
+#nd.reinforce_grid()
