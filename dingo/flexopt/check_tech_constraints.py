@@ -23,7 +23,7 @@ def check_load(grid, mode):
     """
 
     crit_branches = []
-    crit_trafos = []
+    crit_stations = []
 
     if mode == 'MV':
         # load load factors (conditions) for cables, lines and trafos for load- and feedin case
@@ -79,22 +79,24 @@ def check_load(grid, mode):
                 s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch,
                                                        pf_case_count * [kw2mw * node.lv_load_area.peak_load_sum])]
 
-        print(s_max_th_branch)
+        #print(s_max_th_branch)
         if any([s*mw2kw >= s_max_th_trafo for s in s_max_th_branch]):
             print('Trafo has to be reinforced')
+            crit_stations.append(grid._station)
             # PUT MORE STUFF IN HERE
 
     elif mode == 'LV':
         pass
 
+    return crit_branches, crit_stations
 
-def check_voltage(grid, mode, nodes):
+
+def check_voltage(grid, mode):
     """ Checks for voltage stability issues at all nodes for MV or LV grid
 
     Args:
         grid: GridDingo object
         mode: kind of grid ('MV' or 'LV')
-        nodes: List of members
 
     Returns:
         List of critical nodes, sorted descending by voltage difference
@@ -107,12 +109,28 @@ def check_voltage(grid, mode, nodes):
     .. [1] dena VNS
     """
 
+    crit_nodes = {}
+
     if mode == 'MV':
-        pass
+        # load max. voltage difference
+        mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                         'mv_max_v_level_diff_normal'))
+
+        # 1. check nodes' voltages
+        voltage_station = grid._station.voltage_res
+        for node in grid.graph_nodes_sorted():
+            try:
+                # compare node's voltage with max. allowed voltage difference
+                if any([(v1/v2 > (1 + mv_max_v_level_diff_normal)) or
+                        (v1/v2 < (1 - mv_max_v_level_diff_normal))
+                        for v1, v2 in zip(node.voltage_res, voltage_station)]):
+                    crit_nodes[node] = {'node': node,
+                                        'v_diff': max([(v1/v2) for v1, v2 in zip(node.voltage_res, voltage_station)])}
+            except:
+                pass
+
     elif mode == 'LV':
         pass
 
-
-
-
-
+    #print(crit_nodes)
+    return [_['node'] for _ in sorted(crit_nodes.values(), key=lambda _: _['v_diff'], reverse=True)]

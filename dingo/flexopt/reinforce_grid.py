@@ -18,7 +18,11 @@ def reinforce_grid(grid, mode):
 
     # which kind of grid is to be evaluated?
     if mode == 'MV':
-        check_load(grid, mode)
+        crit_branches, crit_stations = check_load(grid, mode)
+        print(crit_branches)
+
+        crit_nodes = check_voltage(grid, mode)
+        print(crit_nodes)
     elif mode == 'LV':
         check_load(grid, mode)
 
