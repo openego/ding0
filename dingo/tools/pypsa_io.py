@@ -232,13 +232,13 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]),
                     bus=node.pypsa_id,
                     control='PQ',
-                    p_nom=node.capacity,
+                    p_nom=node.capacity * node.capacity_factor,
                     grid_id=grid.id_db)
                 generator_pq_set = orm_pypsa.GeneratorPqSet(
                     generator_id='_'.join(
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]),
                     temp_id=temp_id,
-                    p_set=[0 * kw2mw, node.capacity * kw2mw],
+                    p_set=[0 * kw2mw, node.capacity * node.capacity_factor * kw2mw],
                     q_set=[0 * kw2mw, 0 * kw2mw],
                     grid_id=grid.id_db)
                 session.add(bus_gen)
@@ -421,13 +421,13 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     generator['generator_id'].append('_'.join(
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
                     generator['control'].append('PQ')
-                    generator['p_nom'].append(node.capacity)
+                    generator['p_nom'].append(node.capacity * node.capacity_factor)
 
                     generator_pq_set['generator_id'].append('_'.join(
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
                     generator_pq_set['temp_id'].append(1)
                     generator_pq_set['p_set'].append(
-                        [0 * kw2mw, node.capacity * kw2mw])
+                        [0 * kw2mw, node.capacity * node.capacity_factor * kw2mw])
                     generator_pq_set['q_set'].append(
                         [0 * kw2mw, 0 * kw2mw])
                     generator_pq_set['grid_id'].append(grid.id_db)
