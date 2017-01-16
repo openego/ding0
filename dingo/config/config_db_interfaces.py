@@ -44,17 +44,17 @@ class sqla_mv_grid_viz_branches(Base):
     s_res1                      = sa.Column('s_res1', sa.Float(53))
 
 
-class sqla_mv_grid_viz_buses(Base):
+class sqla_mv_grid_viz_nodes(Base):
     """ SQLAlchemy table definition for the export of MV grids' branches for visualization purposes
     """
 
-    __tablename__ = 'ego_deu_mv_grids_vis_buses'
+    __tablename__ = 'ego_deu_mv_grids_vis_nodes'
     __table_args__ = {'schema': 'calc_ego_grid'}
 
 
-    bus_id                      = sa.Column(sa.String(25), primary_key=True)
+    node_id                     = sa.Column(sa.String(100), primary_key=True)
     grid_id                     = sa.Column('grid_id', sa.Integer)
-    type_v_nom                  = sa.Column('type_v_nom', sa.Integer)
+    v_nom                       = sa.Column('v_nom', sa.Integer)
     geom                        = sa.Column('geom', Geometry(geometry_type='POINT', srid=4326))
     v_res0                      = sa.Column('v_res0', sa.Float(53))
     v_res1                      = sa.Column('v_res1', sa.Float(53))
