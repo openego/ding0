@@ -352,6 +352,7 @@ class GeneratorDingo:
         self.lv_grid = kwargs.get('lv_grid', None)
 
         self.capacity = kwargs.get('capacity', None)
+        self.capacity_factor = kwargs.get('capacity_factor', 1)
         self.type = kwargs.get('type', None)
         self.subtype = kwargs.get('subtype', None)
         self.v_level = kwargs.get('v_level', None)
