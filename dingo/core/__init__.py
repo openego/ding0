@@ -938,7 +938,7 @@ class NetworkDingo:
         elif mode is 'close':
             print('=====> MV Circuit Breakers closed')
 
-    def run_powerflow(self, conn, method='onthefly', debug=False):
+    def run_powerflow(self, conn, method='onthefly', export_pypsa=False, debug=False):
         """ Performs power flow calculation for all MV grids
 
         Args:
@@ -947,6 +947,8 @@ class NetworkDingo:
                 Specify export method
                 If method='db' grid data will be exported to database
                 If method='onthefly' grid data will be passed to PyPSA directly (default)
+            export_pypsa: bool
+                If True PyPSA networks will be exported as csv to output/debug/grid/<MV-GRID_NAME>/
             debug: If True, information is printed during process
         """
 
@@ -958,11 +960,24 @@ class NetworkDingo:
             pypsa_io.delete_powerflow_tables(session)
 
             for grid_district in self.mv_grid_districts():
-                grid_district.mv_grid.run_powerflow(session, method='db', debug=debug)
+                if export_pypsa:
+                    export_pypsa_dir = repr(grid_district.mv_grid)
+                else:
+                    export_pypsa_dir = None
+                grid_district.mv_grid.run_powerflow(session, method='db',
+                                                    export_pypsa_dir=export_pypsa_dir,
+                                                    debug=debug)
 
         elif method is 'onthefly':
             for grid_district in self.mv_grid_districts():
-                grid_district.mv_grid.run_powerflow(session, method='onthefly', debug=debug)
+                if export_pypsa:
+                    export_pypsa_dir = repr(grid_district.mv_grid)
+                else:
+                    export_pypsa_dir = None
+                grid_district.mv_grid.run_powerflow(session,
+                                                    method='onthefly',
+                                                    export_pypsa_dir=export_pypsa_dir,
+                                                    debug=debug)
 
     def control_generators(self):
         """

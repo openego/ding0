@@ -514,11 +514,14 @@ class MVGridDingo(GridDingo):
         else:
             raise ValueError('Sorry, this export method does not exist!')
 
-    def run_powerflow(self, session, method='onthefly', debug=False):
+    def run_powerflow(self, session, export_pypsa_dir=None,  method='onthefly', debug=False):
         """ Performs power flow calculation for all MV grids
 
         Args:
             session: SQLalchemy database session
+            export_pypsa_dir: str
+                Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
+                Export is omitted if argument is empty.
             method: str
                 Specify export method
                 If method='db' grid data will be exported to database
@@ -538,14 +541,17 @@ class MVGridDingo(GridDingo):
             self.export_to_pypsa(session, method=method)
 
             # run the power flow problem
-            pypsa_io.run_powerflow(session)
+            pypsa_io.run_powerflow(session, export_pypsa_dir=export_pypsa_dir)
 
             # import results from db
             self.import_powerflow_results(session)
 
         elif method is 'onthefly':
             components, components_data = self.export_to_pypsa(session, method)
-            pypsa_io.run_powerflow_onthefly(components, components_data, self,
+            pypsa_io.run_powerflow_onthefly(components,
+                                            components_data,
+                                            self,
+                                            export_pypsa_dir=export_pypsa_dir,
                                             debug=debug)
 
     def import_powerflow_results(self, session):

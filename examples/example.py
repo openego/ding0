@@ -61,10 +61,10 @@ nd.set_circuit_breakers()
 nd.control_circuit_breakers(mode='open')
 
 # Analyze grid by power flow analysis
-nd.run_powerflow(conn, method='onthefly')
+nd.run_powerflow(conn, method='onthefly', export_pypsa=True)
 
 #nd.export_mv_grid(conn, mv_grid_districts)
-nd.export_mv_grid_new(conn, mv_grid_districts)
+#nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
 

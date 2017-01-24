@@ -306,6 +306,25 @@ def export_edges(grid, session, edges):
         session.commit()
 
 
+def export_to_dir(network, export_dir):
+    """
+    Exports PyPSA network as CSV files to directory
+
+    Args:
+        network: pypsa.Network
+        export_dir: str
+            Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
+    """
+
+    package_path = dingo.__path__[0]
+
+    network.export_to_csv_folder(os.path.join(package_path,
+                                              'output',
+                                              'debug',
+                                              'grid',
+                                              export_dir))
+
+
 def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
                                  temp_id=1):
     """
@@ -585,7 +604,7 @@ def edges_to_dict_of_dataframes(grid, edges):
     return {'Line': DataFrame(lines).set_index('line_id')}
 
 
-def run_powerflow(session):
+def run_powerflow(session, export_pypsa_dir=None):
     """
     Run powerflow to test grid stability
 
@@ -596,6 +615,9 @@ def run_powerflow(session):
     Parameters
     ----------
     session: SQLalchemy database session
+    export_pypsa_dir: str
+        Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
+        Export is omitted if argument is empty.
 
     """
 
@@ -664,8 +686,12 @@ def run_powerflow(session):
 
     results_to_oedb(session, network)
 
+    # export network if directory is specified
+    if export_pypsa_dir:
+        export_to_dir(network, export_dir=export_pypsa_dir)
 
-def run_powerflow_onthefly(components, components_data, grid, debug=False):
+
+def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=None, debug=False):
     """
     Run powerflow to test grid stability
 
@@ -677,6 +703,9 @@ def run_powerflow_onthefly(components, components_data, grid, debug=False):
     ----------
     components: dict of pandas.DataFrame
     components_data: dict of pandas.DataFrame
+    export_pypsa_dir: str
+        Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
+        Export is omitted if argument is empty.
     """
 
     scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
@@ -743,6 +772,10 @@ def run_powerflow_onthefly(components, components_data, grid, debug=False):
     # assign results data to graph
     assign_bus_results(grid, bus_data)
     assign_line_results(grid, line_data)
+
+    # export network if directory is specified
+    if export_pypsa_dir:
+        export_to_dir(network, export_dir=export_pypsa_dir)
 
 
 def data_integrity(components, components_data):
