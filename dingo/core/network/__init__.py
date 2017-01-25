@@ -357,7 +357,7 @@ class GeneratorDingo:
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
-        self.name = kwargs.get('name', '')
+        self.name = kwargs.get('name', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.mv_grid = kwargs.get('mv_grid', None)
         self.lv_load_area = kwargs.get('lv_load_area', None)
