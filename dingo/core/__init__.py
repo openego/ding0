@@ -715,9 +715,6 @@ class NetworkDingo:
             whose MV grids are exported.
 
         """
-        # TODO: currently only station- & line-positions are exported (no further electric data)
-        # TODO: method has to be extended to cover more data and to export different object types to different tables
-        # TODO: (make all attributes visible in GIS :)
 
         # check arguments
         if not all(isinstance(_, int) for _ in mv_grid_districts):
