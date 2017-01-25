@@ -19,12 +19,14 @@ EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
 CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
 EgoDeuOnts_name = cfg_dingo.get('stations', 'lv_stations')
 LVGridDistrict_name = cfg_dingo.get('regions', 'lv_grid_district')
+EgoConvPowerplant_name = cfg_dingo.get('generators', 'conv_generators')
 EgoDeuDea_name = cfg_dingo.get('generators', 're_generators')
 
 from egoio.db_tables import calc_ego_substation as orm_mod_calc_ego_substation
 from egoio.db_tables import calc_ego_grid_district as orm_calc_ego_grid_district
 from egoio.db_tables import calc_ego_loads as orm_calc_ego_loads
 from egoio.db_tables import calc_ego_re as orm_calc_ego_re
+from egoio.db_tables import supply as orm_supply
 
 orm_EgoDeuSubstation = orm_mod_calc_ego_substation.\
     __getattribute__(EgoDeuSubstation_name)
@@ -35,7 +37,9 @@ orm_LVGridDistrict = orm_calc_ego_grid_district.\
 orm_EgoDeuLoadArea = orm_calc_ego_loads.__getattribute__(EgoDeuLoadArea_name)
 orm_CalcEgoPeakLoad = orm_calc_ego_loads.__getattribute__(CalcEgoPeakLoad_name)
 orm_EgoDeuOnts = orm_mod_calc_ego_substation.__getattribute__(EgoDeuOnts_name)
+orm_EgoConvPowerplant = orm_supply.__getattribute__(EgoConvPowerplant_name)
 orm_EgoDeuDea = orm_calc_ego_re.__getattribute__(EgoDeuDea_name)
+#orm_EgoDeuDea = orm_supply.__getattribute__(EgoDeuDea_name)
 
 import pandas as pd
 
@@ -593,6 +597,8 @@ class NetworkDingo:
                                         filter(orm_EgoDeuDea.subst_id.in_(list(mv_grid_districts_dict))).\
                                         filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
                                                    orm_EgoDeuDea.voltage_level == '05 (MS)'))
+                                        # filter(or_(orm_EgoDeuDea.voltage_level == 4,
+                                        #            orm_EgoDeuDea.voltage_level == 5))
                                         # filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
                                         #            orm_EgoDeuDea.voltage_level == '05 (MS)',
                                         #            orm_EgoDeuDea.voltage_level == '06 (MS/NS)',
