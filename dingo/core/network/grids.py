@@ -198,23 +198,27 @@ class MVGridDingo(GridDingo):
         self._graph = mv_routing.solve(graph=self._graph,
                                        debug=debug,
                                        anim=anim)
+        print('==> MV Routing for', repr(self), 'done')
 
         # connect satellites (step 1, with restrictions like max. string length, max peak load per string)
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
                                                        graph=self._graph,
                                                        mode='normal',
                                                        debug=debug)
+        print('==> MV Sat1 for', repr(self), 'done')
 
         # connect satellites to closest line/station on a MV ring that have not been connected in step 1
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
                                                        graph=self._graph,
                                                        mode='isolated',
                                                        debug=debug)
+        print('==> MV Sat2 for', repr(self), 'done')
 
         # connect stations
         self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
                                                      graph=self._graph,
                                                      debug=debug)
+        print('==> MV Stations for', repr(self), 'done')
 
     def connect_generators(self, debug=False):
         """ Connects MV generators (graph nodes) to grid (graph)
