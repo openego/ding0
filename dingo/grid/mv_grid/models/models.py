@@ -86,6 +86,7 @@ class Route(object):
         if pos is None:
             pos = len(self._nodes)
         new_route._nodes = new_route._nodes[:pos] + new_nodes + new_route._nodes[pos:]
+        new_route._demand = sum([node.demand() for node in new_route._nodes])
 
         if new_route.tech_constraints_satisfied():
             return True
