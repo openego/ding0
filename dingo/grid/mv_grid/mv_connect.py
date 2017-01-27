@@ -250,7 +250,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
             # else: node could not be connected because target object belongs to load area of aggregated type
 
-    if not node_connected:
+    if not node_connected and debug:
         print('Node', node, 'could not be connected, try to increase the parameter `load_area_sat_buffer_radius` in',
               'config file `config_calc.cfg` to gain more possible connection points.')
 
@@ -839,7 +839,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                         node_connected = True
                         break
 
-                if not node_connected:
+                if not node_connected and debug:
                     print('Generator', node, 'could not be connected, try to increase the parameter',
                           '`generator_buffer_radius` in config file `config_calc.cfg`',
                           'to gain more possible connection points.')
