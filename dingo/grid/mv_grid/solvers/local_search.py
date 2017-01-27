@@ -297,7 +297,9 @@ class LocalSearchSolver(BaseSolver):
 
         # shorter var names for loop
         dm = graph._matrix
-        dn = graph._nodes        
+        dn = graph._nodes
+
+        exchange_step = []
         
         # Exchange: Search better solutions by checking possible node exchanges
         while True:
@@ -349,12 +351,31 @@ class LocalSearchSolver(BaseSolver):
                                         
             if length_diff_best < 0:
                 if route_best.can_allocate([target_node_best], i_best) and \
-                   target_route_best.can_allocate([node_best], j_best):
+                        route_best.can_allocate([node_best], j_best):
                     # insert new node
                     target_route_best.insert([node_best], j_best)
                     route_best.insert([target_node_best], i_best)
                     # remove empty routes from solution
                     solution._routes = [route for route in solution._routes if route._nodes]
+                else:
+                    # This block is required for the following reason:
+                    # If there's exactly one better solution (length_diff_best < 0) but the routes (route_best,
+                    # route_best) cannot exchange the concerned nodes (node_best <-> target_node_best) due to a
+                    # validation of tech. constraints the exchange won't be done. So the exit condition below
+                    # (length_diff_best==0) isn't fulfilled and it never can be since there're no more better
+                    # solutions.
+                    # This is why the current (best) exchange configuration has to be compared to the former best.
+                    # If it has not changed, stop the exchange operator by setting length_diff_best = 0.
+                    if exchange_step == [node_best, route_best,
+                                         target_node_best, target_route_best,
+                                         round(length_diff_best, 5)]:
+                        length_diff_best = 0
+                        #print('FUCKED UP!')
+                    else:
+                        # save current exchange configuration
+                        exchange_step = [node_best, route_best,
+                                         target_node_best, target_route_best,
+                                         round(length_diff_best, 5)]
 
                 if anim is not None:
                     solution.draw_network(anim)
