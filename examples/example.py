@@ -10,6 +10,7 @@ __author__ = "Jonathan Amme, Guido Pleßmann"
 import matplotlib.pyplot as plt
 import oemof.db as db
 import time
+import objgraph
 
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
@@ -35,7 +36,8 @@ nd = NetworkDingo(name='network')
 #mv_grid_districts = [359, 415, 424, 447, 402, 406, 489, 480, 371]
 #mv_grid_districts=[372]
 #mv_grid_districts = [386,372,406,371,402,415,480,424,489,367]#,569,359,591]
-mv_grid_districts=[359]
+#mv_grid_districts=[3087, 2990, 3080, 3034, 3088]
+mv_grid_districts=[3080]#, 3080]#, 3080]
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 
@@ -61,13 +63,13 @@ nd.set_circuit_breakers()
 nd.control_circuit_breakers(mode='open')
 
 # Analyze grid by power flow analysis
-nd.run_powerflow(conn, method='onthefly', export_pypsa=True)
+nd.run_powerflow(conn, method='onthefly', export_pypsa=False)
 
-#nd.export_mv_grid(conn, mv_grid_districts)
+nd.export_mv_grid(conn, mv_grid_districts)
 #nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
-
+#objgraph.show_refs([nd], filename='nd.png')
 print('Elapsed time for', str(len(mv_grid_districts)), 'MV grid districts (seconds): {}'.format(time.time() - start))
 
 # reinforce MV grid
