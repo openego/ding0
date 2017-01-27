@@ -189,6 +189,6 @@ def solve(graph, debug=False, anim=None):
         print('Local Search solution:')
         util.print_solution(local_search_solution)
         print('Elapsed time (seconds): {}'.format(time.time() - start))
-        local_search_solution.draw_network()
+        #local_search_solution.draw_network()
 
     return routing_solution_to_dingo_graph(graph, local_search_solution)
