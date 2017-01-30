@@ -1,12 +1,13 @@
 import time
 
-from dingo.grid.mv_grid.models.models import Graph
+from dingo.grid.mv_grid.models.models import Graph, Node
 from dingo.grid.mv_grid.util import util, data_input
 from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty, calc_geo_centre_point
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.core.network import BranchDingo, CircuitBreakerDingo
+from dingo.core.network.cable_distributors import MVCableDistributorDingo
 
 
 def dingo_graph_to_routing_specs(graph):
@@ -78,6 +79,28 @@ def routing_solution_to_dingo_graph(graph, solution):
         depot = solution._nodes[solution._problem._depot.name()]
         depot_node = node_list[depot.name()]
         for r in solution.routes():
+            circ_breaker_pos = None
+
+            # if route has only one node and is not aggregated, it wouldn't be possible to add two lines from and to
+            # this node (undirected graph of NetworkX). So, as workaround, an additional MV cable distributor is added
+            # at nodes' position (resulting route: HV/MV_subst --- node --- cable_dist --- HV/MV_subst.
+            if len(r._nodes) == 1:
+                if not solution._problem._is_aggregated[r._nodes[0]._name]:
+                    # create new cable dist
+                    cable_dist = MVCableDistributorDingo(geo_data=node_list[r._nodes[0]._name].geo_data,
+                                                         grid=depot_node.grid)
+                    depot_node.grid.add_cable_distributor(cable_dist)
+
+                    # create new node (as dummy) an allocate to route r
+                    r.allocate([Node(name=repr(cable_dist), demand=0)])
+
+                    # add it to node list and allocated-list manually
+                    node_list[str(cable_dist)] = cable_dist
+                    solution._problem._is_aggregated[str(cable_dist)] = False
+
+                    # set circ breaker pos manually
+                    circ_breaker_pos = 1
+
             # build edge list
             n1 = r._nodes[0:len(r._nodes)-1]
             n2 = r._nodes[1:len(r._nodes)]
@@ -89,11 +112,25 @@ def routing_solution_to_dingo_graph(graph, solution):
             mv_branches = [BranchDingo() for _ in edges]
             edges_with_branches = list(zip(edges, mv_branches))
 
-            # recalculate circuit breaker positions for final solution, create it and set associated branch
-            circ_breaker_pos = r.calc_circuit_breaker_position()
+            # recalculate circuit breaker positions for final solution, create it and set associated branch.
+            # if circ. breaker position is not set manually (routes with more than one load area, see above)
+            if not circ_breaker_pos:
+                circ_breaker_pos = r.calc_circuit_breaker_position()
+
             node1 = node_list[edges[circ_breaker_pos - 1][0].name()]
             node2 = node_list[edges[circ_breaker_pos - 1][1].name()]
-            # exclude aggregated load areas
+
+            # ALTERNATIVE TO METHOD ABOVE: DO NOT CREATE 2 BRANCHES (NO RING) -> LA IS CONNECTED AS SATELLITE
+            # IF THIS IS COMMENTED-IN, THE IF-BLOCK IN LINE 87 HAS TO BE COMMENTED-OUT
+            # ===============================
+            # do not add circuit breaker for routes which are aggregated load areas or
+            # routes that contain only one load area
+            # if not (node1 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][1].name()] or
+            #         node2 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][0].name()] or
+            #         len(r._nodes) == 1):
+            # ===============================
+
+            # do not add circuit breaker for routes which are aggregated load areas
             if not (node1 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][1].name()] or
                     node2 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][0].name()]):
                 branch = mv_branches[circ_breaker_pos - 1]
