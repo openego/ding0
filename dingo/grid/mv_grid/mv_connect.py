@@ -666,10 +666,6 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                                                             mode='intersects',
                                                             proj=proj1)
 
-                    rings = list(mv_grid_district.mv_grid.rings())
-                    lv_load_area_ring_idx = next(i for i, val in enumerate(rings) if
-                                                 lv_grid_district.lv_load_area.lv_load_area_centre in val)
-
                     # filter branches that belong to satellites (load area groups) if LV load area is not a satellite
                     # itself
                     if not lv_load_area.is_satellite:
@@ -678,11 +674,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                             node2 = branch['adj_nodes'][1]
                             lv_load_area_group = get_lv_load_area_group_from_node_pair(node1, node2)
 
-                            branch_ring_idx = next(i for i, val in enumerate(rings)
-                                                   if (branch['adj_nodes'][0] in val) or
-                                                   (branch['adj_nodes'][1] in val))
-
-                            if (lv_load_area_group is not None) or (lv_load_area_ring_idx != branch_ring_idx):
+                            if lv_load_area_group is not None:
                                 branches.remove(branch)
 
                     # find possible connection objects
