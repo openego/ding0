@@ -423,6 +423,9 @@ class CircuitBreakerDingo:
         # get id from count of cable distributors in associated MV grid
         self.id_db = self.grid.circuit_breakers_count() + 1
 
+        # add circ breaker to grid and graph
+        self.grid.add_circuit_breaker(self)
+
     def open(self):
         self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)
         self.grid._graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])

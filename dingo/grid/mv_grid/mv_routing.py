@@ -137,7 +137,6 @@ def routing_solution_to_dingo_graph(graph, solution):
                 circ_breaker = CircuitBreakerDingo(grid=depot_node.grid, branch=branch,
                                                    geo_data=calc_geo_centre_point(node1, node2))
                 branch.circuit_breaker = circ_breaker
-                depot_node.grid.add_circuit_breaker(circ_breaker)
 
             # translate solution's node names to graph node objects using dict created before
             # note: branch object is assigned to edge using an attribute ('branch' is used here), it can be accessed
