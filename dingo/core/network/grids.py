@@ -113,10 +113,13 @@ class MVGridDingo(GridDingo):
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
 
-    def rings(self, include_root_node=False):
+    def rings(self, include_root_node=False, include_satellites=False):
         """ Returns a generator for iterating over rings (=routes of MVGrid's graph)
+
         Args:
-            include_root_node: If True, the root node
+            include_root_node: If True, the root node is included in the list of ring nodes.
+            include_satellites: If True, the satellite nodes (nodes that diverge from ring nodes) is included in the
+                                list of ring nodes.
         Returns:
             List with nodes of each ring of _graph in- or excluding root node (HV/MV station) (arg `include_root_node`),
             format: [ring_m_node_1, ..., ring_m_node_n]
@@ -131,7 +134,19 @@ class MVGridDingo(GridDingo):
         for ring in nx.cycle_basis(self._graph, root=self._station):
             if not include_root_node:
                 ring.remove(self._station)
-            yield ring
+
+            if include_satellites:
+                ring_nodes = ring
+                satellites = []
+                if include_root_node:
+                    ring_nodes.remove(self._station)
+                for ring_node in ring:
+                    # determine all branches diverging from each ring node
+                    satellites.append(self.graph_nodes_from_subtree(ring_node))
+                # return ring and satellite nodes (flatted list of lists)
+                yield ring + [_ for sublist in satellites for _ in sublist]
+            else:
+                yield ring
 
     def graph_nodes_from_subtree(self, node_source):
         """ Finds all nodes of a tree that is connected to `node_source` and are (except `node_source`) not part of the
