@@ -295,6 +295,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 # backup kind and type of branch
                 branch_type = graph.edge[adj_node1][adj_node2]['branch'].type
                 branch_kind = graph.edge[adj_node1][adj_node2]['branch'].kind
+                branch_ring = graph.edge[adj_node1][adj_node2]['branch'].ring
 
                 # check if there's a circuit breaker on current branch,
                 # if yes set new position between first node (adj_node1) and newly inserted node
@@ -310,7 +311,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch = BranchDingo(length=branch_length,
                                      circuit_breaker=circ_breaker,
                                      kind=branch_kind,
-                                     type=branch_type)
+                                     type=branch_type,
+                                     ring=branch_ring)
                 if circ_breaker is not None:
                     circ_breaker.branch = branch
                 graph.add_edge(adj_node1, node, branch=branch)
@@ -318,7 +320,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_length = calc_geo_dist_vincenty(adj_node2, node)
                 graph.add_edge(adj_node2, node, branch=BranchDingo(length=branch_length,
                                                                    kind=branch_kind,
-                                                                   type=branch_type))
+                                                                   type=branch_type,
+                                                                   ring=branch_ring))
 
                 target_obj_result = 're-routed'
 
@@ -346,6 +349,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 # backup kind and type of branch
                 branch_kind = graph.edge[adj_node1][adj_node2]['branch'].kind
                 branch_type = graph.edge[adj_node1][adj_node2]['branch'].type
+                branch_ring = graph.edge[adj_node1][adj_node2]['branch'].ring
 
                 graph.remove_edge(adj_node1, adj_node2)
 
@@ -353,7 +357,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch = BranchDingo(length=branch_length,
                                      circuit_breaker=circ_breaker,
                                      kind=branch_kind,
-                                     type=branch_type)
+                                     type=branch_type,
+                                     ring=branch_ring)
                 if circ_breaker is not None:
                     circ_breaker.branch = branch
                 graph.add_edge(adj_node1, cable_dist, branch=branch)
@@ -361,7 +366,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
                 graph.add_edge(adj_node2, cable_dist, branch=BranchDingo(length=branch_length,
                                                                          kind=branch_kind,
-                                                                         type=branch_type))
+                                                                         type=branch_type,
+                                                                         ring=branch_ring))
 
                 # add new branch for satellite (station to cable distributor)
                 # ===========================================================
@@ -373,7 +379,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_length = calc_geo_dist_vincenty(node, cable_dist)
                 graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length,
                                                                     kind=branch_kind,
-                                                                    type=branch_type))
+                                                                    type=branch_type,
+                                                                    ring=branch_ring))
                 target_obj_result = cable_dist
 
                 # debug info
@@ -411,11 +418,15 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
             branch_kind = mv_grid.default_branch_kind
             branch_type = mv_grid.default_branch_type
 
+            # get branch ring obj
+            branch_ring = mv_grid.get_ring_from_node(target_obj['obj'])
+
             # add new branch for satellite (station to station)
             branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
             graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length,
                                                                        kind=branch_kind,
-                                                                       type=branch_type))
+                                                                       type=branch_type,
+                                                                       ring=branch_ring))
             target_obj_result = target_obj['obj']
 
             # debug info
@@ -442,6 +453,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
     # backup kind and type of branch
     branch_kind = graph.edge[node][target_obj_result]['branch'].kind
     branch_type = graph.edge[node][target_obj_result]['branch'].type
+    branch_ring = graph.edge[node][target_obj_result]['branch'].ring
 
     graph.remove_edge(node, target_obj_result)
 
@@ -455,7 +467,8 @@ def disconnect_node(node, target_obj_result, graph, debug):
             branch_length = calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
             graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDingo(length=branch_length,
                                                                                     kind=branch_kind,
-                                                                                    type=branch_type))
+                                                                                    type=branch_type,
+                                                                                    ring=branch_ring))
 
     if debug:
         print('disconnect edge', node, '-', target_obj_result)
@@ -634,6 +647,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     # backup kind and type of branch
                     branch_kind = branch['branch'].kind
                     branch_type = branch['branch'].type
+                    branch_ring = branch['branch'].ring
 
                     # respect circuit breaker if existent
                     circ_breaker = branch['branch'].circuit_breaker
@@ -647,7 +661,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     branch = BranchDingo(length=branch_length,
                                          circuit_breaker=circ_breaker,
                                          kind=branch_kind,
-                                         type=branch_type)
+                                         type=branch_type,
+                                         ring=branch_ring)
                     if circ_breaker is not None:
                         circ_breaker.branch = branch
                     graph.add_edge(lv_station, node, branch=branch)
@@ -674,7 +689,10 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                             node2 = branch['adj_nodes'][1]
                             lv_load_area_group = get_lv_load_area_group_from_node_pair(node1, node2)
 
-                            if lv_load_area_group is not None:
+                            # delete branch as possible conn. target if it belongs to a group (=satellite) or
+                            # if it belongs to a ring different from the ring of the current LVLA
+                            if (lv_load_area_group is not None) or\
+                               (branch['branch'].ring is not lv_load_area.ring):
                                 branches.remove(branch)
 
                     # find possible connection objects
@@ -709,6 +727,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     # backup kind and type of branch
                     branch_kind = branch['branch'].kind
                     branch_type = branch['branch'].type
+                    branch_ring = branch['branch'].ring
 
                     # respect circuit breaker if existent
                     circ_breaker = branch['branch'].circuit_breaker
@@ -722,7 +741,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     branch = BranchDingo(length=branch_length,
                                          circuit_breaker=circ_breaker,
                                          kind=branch_kind,
-                                         type=branch_type)
+                                         type=branch_type,
+                                         ring=branch_ring)
                     if circ_breaker is not None:
                         circ_breaker.branch = branch
                     graph.add_edge(cable_dist, node, branch=branch)
@@ -791,7 +811,8 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
 
                 branch = BranchDingo(length=branch_length,
                                      kind=branch_kind,
-                                     type=branch_type)
+                                     type=branch_type,
+                                     ring=None)
                 graph.add_edge(node, mv_station, branch=branch)
 
                 if debug:
