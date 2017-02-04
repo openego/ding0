@@ -6,7 +6,7 @@ from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty, calc_geo_centre_point
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
-from dingo.core.network import BranchDingo, CircuitBreakerDingo
+from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
 from dingo.core.network.cable_distributors import MVCableDistributorDingo
 
 
@@ -138,6 +138,9 @@ def routing_solution_to_dingo_graph(graph, solution):
                                                    geo_data=calc_geo_centre_point(node1, node2))
                 branch.circuit_breaker = circ_breaker
 
+            # create new ring object for route
+            ring = RingDingo(grid=depot_node.grid)
+
             # translate solution's node names to graph node objects using dict created before
             # note: branch object is assigned to edge using an attribute ('branch' is used here), it can be accessed
             # using the method `graph_edges()` of class `GridDingo`
@@ -146,6 +149,13 @@ def routing_solution_to_dingo_graph(graph, solution):
                 # get node objects
                 node1 = node_list[n1.name()]
                 node2 = node_list[n2.name()]
+
+                # set branch's ring attribute
+                b.ring = ring
+
+                # add load area to ring
+                if isinstance(node1, LVLoadAreaCentreDingo):
+                    ring.add_lv_load_area(node1.lv_load_area)
 
                 # set branch length
                 b.length = calc_geo_dist_vincenty(node1, node2)
