@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from dingo.core.structure.regions import LVLoadAreaCentreDingo
+from dingo.core.structure.regions import LVLoadAreaDingo, LVLoadAreaCentreDingo
 
 
 class GridDingo:
@@ -285,7 +285,40 @@ class BusDingo:
         """
 
         # Bus Data parameters
-        
+
+
+class RingDingo:
+    """ Represents a medium voltage Ring
+    """
+    def __init__(self, **kwargs):
+        self._id_db = kwargs.get('id_db', None)
+        self._grid = kwargs.get('grid', None)
+        self._lv_load_areas = []
+
+        # get id from count of rings in associated MV grid
+        self.id_db = self._grid.rings_count() + 1
+
+        # add circ breaker to grid and graph
+        self._grid.add_ring(self)
+
+    def branches(self):
+        for branch in self._grid.graph_edges():
+            if branch['branch'].ring == self:
+                yield branch
+
+    def lv_load_areas(self):
+        for lv_load_area in self._lv_load_areas:
+            yield lv_load_area
+
+    def add_lv_load_area(self, lv_load_area):
+        """Adds a LV load area to _lv_load_areas if not already existing"""
+        if lv_load_area not in self._lv_load_areas and isinstance(lv_load_area,
+                                                                  LVLoadAreaDingo):
+            self._lv_load_areas.append(lv_load_area)
+
+    def __repr__(self):
+        return 'mv_ring_' + str(self._id_db)
+
 
 class BranchDingo:
     """
@@ -302,6 +335,7 @@ class BranchDingo:
     def __init__(self, **kwargs):
 
         self.id_db = kwargs.get('id_db', None)
+        self.ring = kwargs.get('ring', None)
         self.length = kwargs.get('length', None)  # branch (line/cable) length in m
         self.kind = kwargs.get('kind', None)  # 'line' or 'cable'
         self.type = kwargs.get('type', None)  # DataFrame with attributes of line/cable
