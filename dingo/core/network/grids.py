@@ -158,6 +158,18 @@ class MVGridDingo(GridDingo):
             else:
                 yield ring
 
+    def get_ring_from_node(self, node):
+        """ Determines the ring (RingDingo object) which node is member of.
+        Args:
+            node: Dingo object (member of graph)
+        Returns:
+            RingDingo object
+        """
+        try:
+            return self.graph_branches_from_node(node)[0][1]['branch'].ring
+        except:
+            raise Exception('Cannot get node\'s associated ring.')
+
     def graph_nodes_from_subtree(self, node_source):
         """ Finds all nodes of a tree that is connected to `node_source` and are (except `node_source`) not part of the
             ring of `node_source` (traversal of graph from `node_source` excluding nodes along ring).
