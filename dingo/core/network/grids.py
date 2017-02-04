@@ -113,7 +113,7 @@ class MVGridDingo(GridDingo):
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
 
-    def rings(self, include_root_node=False, include_satellites=False):
+    def rings_nodes(self, include_root_node=False, include_satellites=False):
         """ Returns a generator for iterating over rings (=routes of MVGrid's graph)
 
         Args:
@@ -163,7 +163,7 @@ class MVGridDingo(GridDingo):
         if node_source in self._graph.nodes():
 
             # get all nodes that are member of a ring
-            for ring in self.rings(include_root_node=False):
+            for ring in self.rings_nodes(include_root_node=False):
                 if node_source in ring:
                     node_ring = ring
                     break

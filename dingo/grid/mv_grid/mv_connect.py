@@ -553,7 +553,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
                 elif mode is 'isolated':
                     # get nodes of all MV rings
                     nodes = set()
-                    [nodes.update(ring_nodes) for ring_nodes in list(mv_grid.rings(include_root_node=True))]
+                    [nodes.update(ring_nodes) for ring_nodes in list(mv_grid.rings_nodes(include_root_node=True))]
                     nodes = list(nodes)
                     # get branches of these nodes
                     branches = []

@@ -37,7 +37,7 @@ def set_circuit_breakers(mv_grid, debug=False):
     demand_diff_min = 10e6
 
     # iterate over all rings and circuit breakers
-    for ring, circ_breaker in zip(mv_grid.rings(include_root_node=False), mv_grid.circuit_breakers()):
+    for ring, circ_breaker in zip(mv_grid.rings_nodes(include_root_node=False), mv_grid.circuit_breakers()):
 
         nodes_peak_load = []
         # iterate over all nodes of ring
