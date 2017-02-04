@@ -1,7 +1,7 @@
 # from dingo.core.network import GridDingo
 from . import GridDingo
 from dingo.core.network.stations import *
-from dingo.core.network import BranchDingo, CircuitBreakerDingo
+from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
 from dingo.core.network.loads import *
 from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
@@ -37,6 +37,7 @@ class MVGridDingo(GridDingo):
 
         # more params
         self._station = None
+        self._rings = []
         self._circuit_breakers = []
         self.default_branch_kind = kwargs.get('default_branch_kind', None)
         self.default_branch_type = kwargs.get('default_branch_type', None)
@@ -112,6 +113,15 @@ class MVGridDingo(GridDingo):
             # add to array and graph
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
+
+    def add_ring(self, ring):
+        """Adds a ring to _rings if not already existing"""
+        if ring not in self._rings and isinstance(ring, RingDingo):
+            self._rings.append(ring)
+
+    def rings_count(self):
+        """Returns the count of rings in MV grid"""
+        return len(self._rings)
 
     def rings_nodes(self, include_root_node=False, include_satellites=False):
         """ Returns a generator for iterating over rings (=routes of MVGrid's graph)
