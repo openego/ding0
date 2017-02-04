@@ -152,10 +152,9 @@ def routing_solution_to_dingo_graph(graph, solution):
 
                 # set branch's ring attribute
                 b.ring = ring
-
-                # add load area to ring
+                # set LVLA's ring attribute
                 if isinstance(node1, LVLoadAreaCentreDingo):
-                    ring.add_lv_load_area(node1.lv_load_area)
+                    node1.lv_load_area.ring = ring
 
                 # set branch length
                 b.length = calc_geo_dist_vincenty(node1, node2)

@@ -95,6 +95,7 @@ class LVLoadAreaDingo(RegionDingo):
 
         # more params
         self._lv_grid_districts = []
+        self.ring = kwargs.get('ring', None)
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
         self.lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
