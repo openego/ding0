@@ -727,6 +727,8 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
                               periods=timesteps,
                               start=start_time)
 
+    # TODO: Instead of hard coding PF config, values from class PFConfigDingo can be used here.
+
     # create PyPSA powerflow problem
     network, snapshots = create_powerflow_problem(timerange, components)
 
