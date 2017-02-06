@@ -39,6 +39,8 @@ nd = NetworkDingo(name='network')
 #mv_grid_districts=[3087, 2990, 3080, 3034, 3088]
 mv_grid_districts=[3080]#, 3080]#, 3080]
 
+nd.import_pf_config()
+
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 
 nd.import_generators(conn)
