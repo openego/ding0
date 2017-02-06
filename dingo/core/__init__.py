@@ -5,6 +5,7 @@ from dingo.core.network.cable_distributors import MVCableDistributorDingo
 from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
+from dingo.core.powerflow import *
 from dingo.tools import pypsa_io, config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *
@@ -67,6 +68,7 @@ class NetworkDingo:
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', None)
         self._mv_grid_districts = []
+        self._pf_config = kwargs.get('pf_config', None)
 
     def mv_grid_districts(self):
         """Returns a generator for iterating over MV grid_districts"""
@@ -78,6 +80,11 @@ class NetworkDingo:
         # TODO: use setter method here (make attribute '_mv_grid_districts' private)
         if mv_grid_district not in self.mv_grid_districts():
             self._mv_grid_districts.append(mv_grid_district)
+
+    @property
+    def pf_config(self):
+        """Returns PF config object"""
+        return self._pf_config
 
     def get_mvgd_lvla_obj_from_id(self):
         """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object and
@@ -703,6 +710,23 @@ class NetworkDingo:
         import_conv_generators()
 
         print('=====> Generators imported')
+
+    def import_pf_config(self):
+        """ Creates power flow config class and imports config from file """
+
+        scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
+        start_hour = int(cfg_dingo.get("powerflow", "start_hour"))
+        end_hour = int(cfg_dingo.get("powerflow", "end_hour"))
+        start_time = datetime(1970, 1, 1, 00, 00, 0)
+
+        resolution = cfg_dingo.get("powerflow", "resolution")
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
+
+        self._pf_config = PFConfigDingo(scenarios=[scenario],
+                                        timestep_start=start_time,
+                                        timesteps_count=end_hour-start_hour,
+                                        srid=srid,
+                                        resolution=resolution)
 
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
