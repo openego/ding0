@@ -35,8 +35,6 @@ class PFConfigDingo:
 
         if self._scenarios is None:
             raise ValueError('PF config: Please set at least one scenario.')
-        elif len(self._scenarios) != len(self._timeranges):
-            raise ValueError('PF config: Count of scenarios has to equal count of timeranges.')
 
         if not isinstance(self._timeranges, DatetimeIndex):
             if not isinstance(timesteps_count, int) or not isinstance(timestep_start, datetime):
@@ -49,6 +47,9 @@ class PFConfigDingo:
                     self._timeranges.append(DatetimeIndex(freq=self._resolution,
                                                           periods=timesteps_count,
                                                           start=timestep_start))
+
+        elif len(self._scenarios) != len(self._timeranges):
+            raise ValueError('PF config: Count of scenarios has to equal count of timeranges.')
 
 
     @property
