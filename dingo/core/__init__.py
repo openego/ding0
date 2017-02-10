@@ -283,7 +283,7 @@ class NetworkDingo:
                 # import all lv_grid_districts wihtin mv_grid_district
                 # lv_grid_districts = self.import_lv_grid_districts(conn)
 
-                # import all lv_stations wihtin mv_grid_district
+                # import all lv_stations within mv_grid_district
                 lv_stations = self.import_lv_stations(conn)
                 lv_grid_districts = pd.DataFrame(
                     columns=['load_area_id', 'population'],
