@@ -14,7 +14,7 @@ import os
 
 # import ORM classes for oedb access depending on input in config file
 cfg_dingo.load_config('config_db_tables.cfg')
-GridDistrict_name = cfg_dingo.get('regions', 'grid_district')
+GridDistrict_name = cfg_dingo.get('regions', 'mv_grid_districts')
 EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
 EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
 CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
