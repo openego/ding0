@@ -94,8 +94,15 @@ class GridDingo:
                 #demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [0.003]*len(nodes_pos[node]))])
                 nodes_color.append((0.5, 0.5, 1))
 
+        edges_color = []
+        for edge in g.edges():
+            if edge['branch'].critical:
+                edges_color.append((1, 0, 0))
+            else:
+                edges_color.append((0, 0, 0))
+
         plt.figure()
-        nx.draw_networkx(g, nodes_pos, node_color=nodes_color, font_size=8)
+        nx.draw_networkx(g, nodes_pos, node_color=nodes_color, edge_color=edges_color, font_size=8)
         #nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
         plt.show()
 

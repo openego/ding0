@@ -26,6 +26,7 @@ def reinforce_grid(grid, mode):
             branch['branch'].critical = True
 
         crit_nodes = check_voltage(grid, mode)
+        grid.graph_draw()
         print(crit_nodes)
     elif mode == 'LV':
         check_load(grid, mode)
