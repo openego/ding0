@@ -337,6 +337,8 @@ class BranchDingo:
         self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.circuit_breaker = kwargs.get('circuit_breaker', None)
 
+        self.critical = False
+
     def __repr__(self):
         return 'branch_' + str(self.id_db)
 

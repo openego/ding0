@@ -21,6 +21,10 @@ def reinforce_grid(grid, mode):
         crit_branches, crit_stations = check_load(grid, mode)
         print(crit_branches)
 
+        # mark critical branches
+        for branch in crit_branches:
+            branch['branch'].critical = True
+
         crit_nodes = check_voltage(grid, mode)
         print(crit_nodes)
     elif mode == 'LV':
