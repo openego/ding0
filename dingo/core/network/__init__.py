@@ -95,7 +95,7 @@ class GridDingo:
                 nodes_color.append((0.5, 0.5, 1))
 
         edges_color = []
-        for edge in g.edges():
+        for edge in self.graph_edges():
             if edge['branch'].critical:
                 edges_color.append((1, 0, 0))
             else:
