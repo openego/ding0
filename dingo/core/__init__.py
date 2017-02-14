@@ -24,7 +24,7 @@ lv_stations_name = cfg_dingo.get('stations', 'lv_stations')
 conv_generators_name = cfg_dingo.get('generators', 'conv_generators')
 re_generators_name = cfg_dingo.get('generators', 're_generators')
 
-from egoio.db_tables import model_draft as orm_model_draft, supply as orm_supply
+from egoio.db_tables import model_draft as orm_model_draft
 # from egoio.db_tables import calc_ego_grid_district as orm_calc_ego_grid_district
 # from egoio.db_tables import calc_ego_loads as orm_calc_ego_loads
 # from egoio.db_tables import calc_ego_re as orm_calc_ego_re
@@ -36,7 +36,7 @@ orm_lv_load_areas = orm_model_draft.__getattribute__(lv_load_areas_name)
 orm_lv_grid_district = orm_model_draft.__getattribute__(lv_grid_district_name)
 orm_lv_loads = orm_model_draft.__getattribute__(lv_loads_name)
 orm_lv_stations = orm_model_draft.__getattribute__(lv_stations_name)
-orm_conv_generators = orm_supply.__getattribute__(conv_generators_name)
+orm_conv_generators = orm_model_draft.__getattribute__(conv_generators_name)
 orm_re_generators = orm_model_draft.__getattribute__(re_generators_name)
 
 import pandas as pd
