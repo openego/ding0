@@ -14,29 +14,33 @@ import os
 
 # import ORM classes for oedb access depending on input in config file
 cfg_dingo.load_config('config_db_tables.cfg')
-mv_grid_districts_name = cfg_dingo.get('regions', 'mv_grid_districts')
-mv_stations_name = cfg_dingo.get('stations', 'mv_stations')
-lv_load_areas_name = cfg_dingo.get('regions', 'lv_load_areas')
-lv_grid_district_name = cfg_dingo.get('regions', 'lv_grid_district')
-lv_loads_name = cfg_dingo.get('loads', 'lv_loads')
-lv_stations_name = cfg_dingo.get('stations', 'lv_stations')
-conv_generators_name = cfg_dingo.get('generators', 'conv_generators')
-re_generators_name = cfg_dingo.get('generators', 're_generators')
+GridDistrict_name = cfg_dingo.get('regions', 'mv_grid_districts')
+EgoDeuSubstation_name = cfg_dingo.get('stations', 'mv_stations')
+EgoDeuLoadArea_name = cfg_dingo.get('regions', 'lv_load_areas')
+CalcEgoPeakLoad_name = cfg_dingo.get('loads', 'lv_loads')
+EgoDeuOnts_name = cfg_dingo.get('stations', 'lv_stations')
+LVGridDistrict_name = cfg_dingo.get('regions', 'lv_grid_district')
+EgoConvPowerplant_name = cfg_dingo.get('generators', 'conv_generators')
+EgoDeuDea_name = cfg_dingo.get('generators', 're_generators')
 
-from egoio.db_tables import model_draft as orm_model_draft
-# from egoio.db_tables import calc_ego_grid_district as orm_calc_ego_grid_district
-# from egoio.db_tables import calc_ego_loads as orm_calc_ego_loads
-# from egoio.db_tables import calc_ego_re as orm_calc_ego_re
-# from egoio.db_tables import supply as orm_supply
+from egoio.db_tables import calc_ego_substation as orm_mod_calc_ego_substation
+from egoio.db_tables import calc_ego_grid_district as orm_calc_ego_grid_district
+from egoio.db_tables import calc_ego_loads as orm_calc_ego_loads
+from egoio.db_tables import calc_ego_re as orm_calc_ego_re
+from egoio.db_tables import supply as orm_supply
 
-orm_mv_grid_districts = orm_model_draft.__getattribute__(mv_grid_districts_name)
-orm_mv_stations = orm_model_draft.__getattribute__(mv_stations_name)
-orm_lv_load_areas = orm_model_draft.__getattribute__(lv_load_areas_name)
-orm_lv_grid_district = orm_model_draft.__getattribute__(lv_grid_district_name)
-orm_lv_loads = orm_model_draft.__getattribute__(lv_loads_name)
-orm_lv_stations = orm_model_draft.__getattribute__(lv_stations_name)
-orm_conv_generators = orm_model_draft.__getattribute__(conv_generators_name)
-orm_re_generators = orm_model_draft.__getattribute__(re_generators_name)
+orm_EgoDeuSubstation = orm_mod_calc_ego_substation.\
+    __getattribute__(EgoDeuSubstation_name)
+orm_GridDistrict = orm_calc_ego_grid_district.\
+    __getattribute__(GridDistrict_name)
+orm_LVGridDistrict = orm_calc_ego_grid_district.\
+    __getattribute__(LVGridDistrict_name)
+orm_EgoDeuLoadArea = orm_calc_ego_loads.__getattribute__(EgoDeuLoadArea_name)
+orm_CalcEgoPeakLoad = orm_calc_ego_loads.__getattribute__(CalcEgoPeakLoad_name)
+orm_EgoDeuOnts = orm_mod_calc_ego_substation.__getattribute__(EgoDeuOnts_name)
+orm_EgoConvPowerplant = orm_supply.__getattribute__(EgoConvPowerplant_name)
+orm_EgoDeuDea = orm_calc_ego_re.__getattribute__(EgoDeuDea_name)
+#orm_EgoDeuDea = orm_supply.__getattribute__(EgoDeuDea_name)
 
 import pandas as pd
 
@@ -239,16 +243,16 @@ class NetworkDingo:
         # build SQL query
         Session = sessionmaker(bind=conn)
         session = Session()
-        grid_districts = session.query(orm_mv_grid_districts.subst_id,
+        grid_districts = session.query(orm_GridDistrict.subst_id,
                                        func.ST_AsText(func.ST_Transform(
-                                           orm_mv_grid_districts.geom, srid)). \
-                                       label('poly_geom'),
+                                           orm_GridDistrict.geom, srid)).\
+                                        label('poly_geom'),
                                        func.ST_AsText(func.ST_Transform(
-                                           orm_mv_stations.point, srid)). \
+                                           orm_EgoDeuSubstation.point, srid)).\
                                        label('subs_geom')).\
-            join(orm_mv_stations, orm_mv_grid_districts.subst_id ==
-                 orm_mv_stations.subst_id).\
-            filter(orm_mv_grid_districts.subst_id.in_(mv_grid_districts_no))
+            join(orm_EgoDeuSubstation, orm_GridDistrict.subst_id ==
+                 orm_EgoDeuSubstation.subst_id).\
+            filter(orm_GridDistrict.subst_id.in_(mv_grid_districts_no))
 
         # read MV data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
@@ -347,50 +351,50 @@ class NetworkDingo:
             index_col='name')
 
         lv_load_areas_sqla = session.query(
-            orm_lv_load_areas.id.label('id_db'),
-            orm_lv_load_areas.zensus_sum,
-            orm_lv_load_areas.zensus_count.label('zensus_cnt'),
-            orm_lv_load_areas.ioer_sum,
-            orm_lv_load_areas.ioer_count.label('ioer_cnt'),
-            orm_lv_load_areas.area_ha.label('area'),
-            orm_lv_load_areas.sector_area_residential,
-            orm_lv_load_areas.sector_area_retail,
-            orm_lv_load_areas.sector_area_industrial,
-            orm_lv_load_areas.sector_area_agricultural,
-            orm_lv_load_areas.sector_share_residential,
-            orm_lv_load_areas.sector_share_retail,
-            orm_lv_load_areas.sector_share_industrial,
-            orm_lv_load_areas.sector_share_agricultural,
-            orm_lv_load_areas.sector_count_residential,
-            orm_lv_load_areas.sector_count_retail,
-            orm_lv_load_areas.sector_count_industrial,
-            orm_lv_load_areas.sector_count_agricultural,
-            orm_lv_load_areas.nuts.label('nuts_code'),
-            func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom, srid)).\
+            orm_EgoDeuLoadArea.id.label('id_db'),
+            orm_EgoDeuLoadArea.zensus_sum,
+            orm_EgoDeuLoadArea.zensus_count.label('zensus_cnt'),
+            orm_EgoDeuLoadArea.ioer_sum,
+            orm_EgoDeuLoadArea.ioer_count.label('ioer_cnt'),
+            orm_EgoDeuLoadArea.area_ha.label('area'),
+            orm_EgoDeuLoadArea.sector_area_residential,
+            orm_EgoDeuLoadArea.sector_area_retail,
+            orm_EgoDeuLoadArea.sector_area_industrial,
+            orm_EgoDeuLoadArea.sector_area_agricultural,
+            orm_EgoDeuLoadArea.sector_share_residential,
+            orm_EgoDeuLoadArea.sector_share_retail,
+            orm_EgoDeuLoadArea.sector_share_industrial,
+            orm_EgoDeuLoadArea.sector_share_agricultural,
+            orm_EgoDeuLoadArea.sector_count_residential,
+            orm_EgoDeuLoadArea.sector_count_retail,
+            orm_EgoDeuLoadArea.sector_count_industrial,
+            orm_EgoDeuLoadArea.sector_count_agricultural,
+            orm_EgoDeuLoadArea.nuts.label('nuts_code'),
+            func.ST_AsText(func.ST_Transform(orm_EgoDeuLoadArea.geom, srid)).\
                 label('geo_area'),
-            func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom_centre, srid)).\
+            func.ST_AsText(func.ST_Transform(orm_EgoDeuLoadArea.geom_centre, srid)).\
                 label('geo_centre'),
-            func.round(orm_lv_loads.residential * load_scaling_factor).\
+            func.round(orm_CalcEgoPeakLoad.residential * load_scaling_factor).\
                 label('peak_load_residential'),
-            func.round(orm_lv_loads.retail * load_scaling_factor).\
+            func.round(orm_CalcEgoPeakLoad.retail * load_scaling_factor).\
                 label('peak_load_retail'),
-            func.round(orm_lv_loads.industrial * load_scaling_factor).\
+            func.round(orm_CalcEgoPeakLoad.industrial * load_scaling_factor).\
                 label('peak_load_industrial'),
-            func.round(orm_lv_loads.agricultural * load_scaling_factor).\
+            func.round(orm_CalcEgoPeakLoad.agricultural * load_scaling_factor).\
                 label('peak_load_agricultural'),
-            func.round((orm_lv_loads.residential
-                        + orm_lv_loads.retail
-                        + orm_lv_loads.industrial
-                        + orm_lv_loads.agricultural)
+            func.round((orm_CalcEgoPeakLoad.residential
+                        + orm_CalcEgoPeakLoad.retail
+                        + orm_CalcEgoPeakLoad.industrial
+                        + orm_CalcEgoPeakLoad.agricultural)
                        * load_scaling_factor).label('peak_load_sum')). \
-            join(orm_lv_loads, orm_lv_load_areas.id
-                 == orm_lv_loads.id).\
-            filter(orm_lv_load_areas.subst_id == mv_grid_district. \
+            join(orm_CalcEgoPeakLoad, orm_EgoDeuLoadArea.id
+                 == orm_CalcEgoPeakLoad.id).\
+            filter(orm_EgoDeuLoadArea.subst_id == mv_grid_district.\
                    mv_grid._station.id_db).\
-            filter(((orm_lv_loads.residential  # only pick load areas with peak load > lv_loads_threshold
-                     + orm_lv_loads.retail
-                     + orm_lv_loads.industrial
-                     + orm_lv_loads.agricultural)
+            filter(((orm_CalcEgoPeakLoad.residential    # only pick load areas with peak load > lv_loads_threshold
+                        + orm_CalcEgoPeakLoad.retail
+                        + orm_CalcEgoPeakLoad.industrial
+                        + orm_CalcEgoPeakLoad.agricultural)
                        * load_scaling_factor) > lv_loads_threshold)
 
         # read data from db
@@ -468,12 +472,12 @@ class NetworkDingo:
 
         load_areas = list(self.get_mvgd_lvla_obj_from_id()[1])
 
-        lv_grid_districs_sqla = session.query(orm_lv_grid_district.load_area_id,
+        lv_grid_districs_sqla = session.query(orm_LVGridDistrict.load_area_id,
                                               func.ST_AsText(func.ST_Transform(
-                                                orm_lv_grid_district.geom, srid)).label('geom'),
-                                              orm_lv_grid_district.population,
-                                              orm_lv_grid_district.id).\
-            filter(orm_lv_grid_district.load_area_id.in_(load_areas))
+                                                orm_LVGridDistrict.geom, srid)).label('geom'),
+                                              orm_LVGridDistrict.population,
+                                              orm_LVGridDistrict.id).\
+            filter(orm_LVGridDistrict.load_area_id.in_(load_areas))
 
         # read data from db
         lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
@@ -504,12 +508,12 @@ class NetworkDingo:
         # get list of mv grid districts
         mv_grid_districts = list(self.get_mvgd_lvla_obj_from_id()[0])
 
-        lv_stations_sqla = session.query(orm_lv_stations.id,
-                                         orm_lv_stations.load_area_id,
+        lv_stations_sqla = session.query(orm_EgoDeuOnts.id,
+                                         orm_EgoDeuOnts.load_area_id,
                                          func.ST_AsText(func.ST_Transform(
-                                           orm_lv_stations.geom, srid)). \
+                                           orm_EgoDeuOnts.geom, srid)).\
                                          label('geom')).\
-            filter(orm_lv_stations.subst_id.in_(mv_grid_districts))
+            filter(orm_EgoDeuOnts.subst_id.in_(mv_grid_districts))
 
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
@@ -577,26 +581,26 @@ class NetworkDingo:
             """Imports renewable (res) generators"""
 
             # build query
-            generators_sqla = session.query(orm_re_generators.id,
-                                            orm_re_generators.subst_id,
-                                            orm_re_generators.la_id,
-                                            orm_re_generators.electrical_capacity,
-                                            orm_re_generators.generation_type,
-                                            orm_re_generators.generation_subtype,
-                                            orm_re_generators.voltage_level,
-                                            func.ST_AsText(func.ST_Transform(
-                                            orm_re_generators.geom_new, srid)).label('geom_new'),
-                                            func.ST_AsText(func.ST_Transform(
-                                            orm_re_generators.geom, srid)).label('geom')).\
-                                            filter(orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))).\
-                                            filter(or_(orm_re_generators.voltage_level == '04 (HS/MS)',
-                                                       orm_re_generators.voltage_level == '05 (MS)'))
-                                            # filter(or_(orm_re_generators.voltage_level == 4,
-                                            #            orm_re_generators.voltage_level == 5))
-                                            # filter(or_(orm_re_generators.voltage_level == '04 (HS/MS)',
-                                            #            orm_re_generators.voltage_level == '05 (MS)',
-                                            #            orm_re_generators.voltage_level == '06 (MS/NS)',
-                                            #            orm_re_generators.voltage_level == '07 (NS)'))
+            generators_sqla = session.query(orm_EgoDeuDea.id,
+                                            orm_EgoDeuDea.subst_id,
+                                            orm_EgoDeuDea.la_id,
+                                            orm_EgoDeuDea.electrical_capacity,
+                                            orm_EgoDeuDea.generation_type,
+                                            orm_EgoDeuDea.generation_subtype,
+                                            orm_EgoDeuDea.voltage_level,
+                                             func.ST_AsText(func.ST_Transform(
+                                            orm_EgoDeuDea.geom_new, srid)).label('geom_new'),
+                                             func.ST_AsText(func.ST_Transform(
+                                            orm_EgoDeuDea.geom, srid)).label('geom')).\
+                                            filter(orm_EgoDeuDea.subst_id.in_(list(mv_grid_districts_dict))).\
+                                            filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
+                                                       orm_EgoDeuDea.voltage_level == '05 (MS)'))
+                                            # filter(or_(orm_EgoDeuDea.voltage_level == 4,
+                                            #            orm_EgoDeuDea.voltage_level == 5))
+                                            # filter(or_(orm_EgoDeuDea.voltage_level == '04 (HS/MS)',
+                                            #            orm_EgoDeuDea.voltage_level == '05 (MS)',
+                                            #            orm_EgoDeuDea.voltage_level == '06 (MS/NS)',
+                                            #            orm_EgoDeuDea.voltage_level == '07 (NS)'))
 
             # TODO: Currently only MV generators are imported, please include LV!
 
@@ -651,16 +655,16 @@ class NetworkDingo:
             """Imports conventional (conv) generators"""
 
             # build query
-            generators_sqla = session.query(orm_conv_generators.gid,
-                                            orm_conv_generators.subst_id,
-                                            orm_conv_generators.name,
-                                            orm_conv_generators.capacity,
-                                            orm_conv_generators.fuel,
-                                            orm_conv_generators.voltage_level,
-                                            func.ST_AsText(func.ST_Transform(
-                                            orm_conv_generators.geom, srid)).label('geom')).\
-                                            filter(orm_conv_generators.subst_id.in_(list(mv_grid_districts_dict))).\
-                                            filter(orm_conv_generators.voltage_level.in_([4, 5, 6]))
+            generators_sqla = session.query(orm_EgoConvPowerplant.gid,
+                                            orm_EgoConvPowerplant.subst_id,
+                                            orm_EgoConvPowerplant.name,
+                                            orm_EgoConvPowerplant.capacity,
+                                            orm_EgoConvPowerplant.fuel,
+                                            orm_EgoConvPowerplant.voltage_level,
+                                             func.ST_AsText(func.ST_Transform(
+                                            orm_EgoConvPowerplant.geom, srid)).label('geom')).\
+                                            filter(orm_EgoConvPowerplant.subst_id.in_(list(mv_grid_districts_dict))).\
+                                            filter(orm_EgoConvPowerplant.voltage_level.in_([4, 5, 6]))
 
             # read data from db
             generators = pd.read_sql_query(generators_sqla.statement,
