@@ -50,6 +50,7 @@ from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 from functools import partial
 import pyproj
 from shapely.ops import transform
+from math import isnan
 import random
 
 
@@ -619,7 +620,7 @@ class NetworkDingo:
 
                 # look up LV load area
                 lv_load_area_id = row['la_id']
-                if lv_load_area_id:
+                if lv_load_area_id and not isnan(lv_load_area_id):
                     lv_load_area = lv_load_areas_dict[lv_load_area_id]
                 else:
                     lv_load_area = None
