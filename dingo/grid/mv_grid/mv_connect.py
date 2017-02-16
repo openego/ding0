@@ -799,8 +799,8 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
         # node is generator (since method is called from MV grid, there are only MV generators in graph.
         if isinstance(node, GeneratorDingo):
 
-            # ===== generator has to be connected to MV station =====
-            if node.v_level == '04 (HS/MS)':
+            # ===== voltage level 4: generator has to be connected to MV station =====
+            if node.v_level == 4:
                 mv_station = mv_grid_district.mv_grid.station()
 
                 branch_length = calc_geo_dist_vincenty(node, mv_station)
@@ -818,8 +818,8 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                 if debug:
                     print('Generator', node, 'was connected to', mv_station)
 
-            # ===== generator has to be connected to MV grid =====
-            elif node.v_level == '05 (MS)':
+            # ===== voltage level 5: generator has to be connected to MV grid =====
+            elif node.v_level == 5:
                 node_shp = transform(proj1, node.geo_data)
 
                 # get branches within a the predefined radius `generator_buffer_radius`

@@ -633,13 +633,12 @@ class NetworkDingo:
                                            capacity=row['electrical_capacity'],
                                            type=row['generation_type'],
                                            subtype=row['generation_subtype'],
-                                           v_level=row['voltage_level'])
-                                            # TODO: Use v_level=int(row['voltage_level'])) as soon as new table is used
+                                           v_level=int(row['voltage_level']))
 
                 # add generators to graph
-                if generator.v_level in ['04 (HS/MS)', '05 (MS)']:
+                if generator.v_level in [4, 5]:
                     mv_grid.add_generator(generator)
-                elif generator.v_level in ['06 (MS/NS)', '07 (NS)']:
+                elif generator.v_level in [6, 7]:
                     pass
                     #raise NotImplementedError
 
