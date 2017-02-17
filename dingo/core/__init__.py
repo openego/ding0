@@ -6,7 +6,7 @@ from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.core.powerflow import *
-#from dingo.tools import pypsa_io, config as cfg_dingo
+from dingo.tools import pypsa_io, config as cfg_dingo
 from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *

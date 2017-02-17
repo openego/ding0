@@ -8,7 +8,7 @@ from dingo.core.network.cable_distributors import LVCableDistributorDingo
 from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
 import dingo
-#from dingo.tools import config as cfg_dingo, pypsa_io, tools
+from dingo.tools import config as cfg_dingo, pypsa_io, tools
 from dingo.tools import config as cfg_dingo, tools
 from dingo.grid.mv_grid.tools import set_circuit_breakers
 from dingo.flexopt.reinforce_grid import *

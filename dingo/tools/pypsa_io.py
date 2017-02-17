@@ -1,16 +1,14 @@
 import dingo
-from egoio.db_tables import calc_ego_mv_powerflow as orm_pypsa
-from egoio.db_tables.calc_ego_mv_powerflow import ResBus, ResLine, \
-    ResTransformer, Bus, Line, Transformer
 
 from egopowerflow.tools.io import get_timerange, import_components, \
     import_pq_sets, create_powerflow_problem, results_to_oedb, \
     transform_timeseries4pypsa
 from egopowerflow.tools.plot import add_coordinates, plot_line_loading
 
-from egoio.db_tables.calc_ego_mv_powerflow import Bus, Line, Generator, Load, \
-    Transformer, TempResolution, BusVMagSet, GeneratorPqSet, LoadPqSet
-from egoio.db_tables.calc_ego_mv_powerflow import TempResolution
+from egoio.db_tables import model_draft as orm_pypsa
+from egoio.db_tables.model_draft import EgoGridPfMvBu, EgoGridPfMvResBu, EgoGridPfMvLine,\
+    EgoGridPfMvResLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, \
+    EgoGridPfMvTransformer, EgoGridPfMvResTransformer, EgoGridPfMvTempResolution, EgoGridPfMvBusVMagSet, EgoGridPfMvGeneratorPqSet, EgoGridPfMvLoadPqSet
 
 from dingo.tools import config as cfg_dingo
 from dingo.core.network.stations import LVStationDingo, MVStationDingo
@@ -36,10 +34,10 @@ def delete_powerflow_tables(session):
     ----------
     session: SQLAlchemy session object
     """
-    tables = [orm_pypsa.Bus, orm_pypsa.BusVMagSet, orm_pypsa.Load,
-              orm_pypsa.LoadPqSet, orm_pypsa.Generator,
-              orm_pypsa.GeneratorPqSet, orm_pypsa.Line, orm_pypsa.Transformer,
-              orm_pypsa.TempResolution]
+    tables = [orm_pypsa.EgoGridPfMvBu, orm_pypsa.EgoGridPfMvBusVMagSet, orm_pypsa.EgoGridPfMvLoad,
+              orm_pypsa.EgoGridPfMvLoadPqSet, orm_pypsa.EgoGridPfMvGenerator,
+              orm_pypsa.EgoGridPfMvGeneratorPqSet, orm_pypsa.EgoGridPfMvLine, orm_pypsa.EgoGridPfMvTransformer,
+              orm_pypsa.EgoGridPfMvTempResolution]
 
     for table in tables:
         session.query(table).delete()
@@ -96,12 +94,12 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
         if node not in grid.graph_isolated_nodes():
             if isinstance(node, LVStationDingo):
                 # MV side bus
-                bus_mv = orm_pypsa.Bus(
+                bus_mv = orm_pypsa.EgoGridPfMvBu(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
                     grid_id=grid.id_db)
-                bus_pq_set_mv = orm_pypsa.BusVMagSet(
+                bus_pq_set_mv = orm_pypsa.EgoGridPfMvBusVMagSet(
                     bus_id=node.pypsa_id,
                     temp_id=temp_id,
                     v_mag_pu_set=[1, 1],
@@ -114,7 +112,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                           "first transformer in considered in PF " \
                           "analysis".format(node))
                     # TODO: consider multiple transformers and remove above warning
-                    transformer = orm_pypsa.Transformer(
+                    transformer = orm_pypsa.EgoGridPfMvTransformer(
                         trafo_id='_'.join(
                             ['MV', str(grid.id_db), 'trf', str(node.id_db)]),
                         s_nom=node._transformers[0].s_max_a,
@@ -128,13 +126,13 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                         grid_id=grid.id_db)
                     session.add(transformer)
                     # Add bus on transformer's LV side
-                    bus_lv = orm_pypsa.Bus(
+                    bus_lv = orm_pypsa.EgoGridPfMvBu(
                         bus_id='_'.join(
                             ['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         v_nom=node._transformers[0].v_level,
                         geom=from_shape(node.geo_data, srid=srid),
                         grid_id=grid.id_db)
-                    bus_pq_set_lv = orm_pypsa.BusVMagSet(
+                    bus_pq_set_lv = orm_pypsa.EgoGridPfMvBusVMagSet(
                         bus_id='_'.join(
                             ['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         temp_id=temp_id,
@@ -143,7 +141,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     session.add(bus_lv)
                     session.add(bus_pq_set_lv)
                     # Add aggregated LV load to LV bus
-                    load = orm_pypsa.Load(
+                    load = orm_pypsa.EgoGridPfMvLoad(
                         load_id='_'.join(
                             ['MV', str(grid.id_db), 'loa', str(node.id_db)]),
                         bus='_'.join(
@@ -151,12 +149,12 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                         grid_id=grid.id_db)
                 else:
                     # Add aggregated LV load to MV bus
-                    load = orm_pypsa.Load(
+                    load = orm_pypsa.EgoGridPfMvLoad(
                         load_id='_'.join(
                             ['MV', str(grid.id_db), 'loa', str(node.id_db)]),
                         bus=node.pypsa_id,
                         grid_id=grid.id_db)
-                load_pq_set = orm_pypsa.LoadPqSet(
+                load_pq_set = orm_pypsa.EgoGridPfMvLoadPqSet(
                     load_id='_'.join(
                         ['MV', str(grid.id_db), 'loa', str(node.id_db)]),
                     temp_id=temp_id,
@@ -168,11 +166,11 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(load)
                 session.add(load_pq_set)
             elif isinstance(node, LVLoadAreaCentreDingo):
-                load = orm_pypsa.Load(
+                load = orm_pypsa.EgoGridPfMvLoad(
                     load_id=node.pypsa_id,
                     bus='_'.join(['HV', str(grid.id_db), 'trd']),
                     grid_id=grid.id_db)
-                load_pq_set = orm_pypsa.LoadPqSet(
+                load_pq_set = orm_pypsa.EgoGridPfMvLoadPqSet(
                     load_id=node.pypsa_id,
                     temp_id=temp_id,
                     p_set=[node.lv_load_area.peak_load_sum * kw2mw,
@@ -184,12 +182,12 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(load)
                 session.add(load_pq_set)
             elif isinstance(node, MVCableDistributorDingo):
-                bus = orm_pypsa.Bus(
+                bus = orm_pypsa.EgoGridPfMvBu(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
                     grid_id=grid.id_db)
-                bus_pq_set = orm_pypsa.BusVMagSet(
+                bus_pq_set = orm_pypsa.EgoGridPfMvBusVMagSet(
                     bus_id=node.pypsa_id,
                     temp_id=temp_id,
                     v_mag_pu_set=[1, 1],
@@ -198,17 +196,17 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set)
             elif isinstance(node, MVStationDingo):
                 print('Only MV side bus of MVStation will be added.')
-                bus_mv_station = orm_pypsa.Bus(
+                bus_mv_station = orm_pypsa.EgoGridPfMvBu(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
                     grid_id=grid.id_db)
-                bus_pq_set_mv_station = orm_pypsa.BusVMagSet(
+                bus_pq_set_mv_station = orm_pypsa.EgoGridPfMvBusVMagSet(
                     bus_id=node.pypsa_id,
                     temp_id=temp_id,
                     v_mag_pu_set=[voltage_set_slack, voltage_set_slack],
                     grid_id=grid.id_db)
-                slack_gen = orm_pypsa.Generator(
+                slack_gen = orm_pypsa.EgoGridPfMvGenerator(
                     generator_id='_'.join(['MV', str(grid.id_db), 'slack']),
                     bus=node.pypsa_id,
                     control='Slack',
@@ -217,24 +215,24 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set_mv_station)
                 session.add(slack_gen)
             elif isinstance(node, GeneratorDingo):
-                bus_gen = orm_pypsa.Bus(
+                bus_gen = orm_pypsa.EgoGridPfMvBu(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
                     grid_id=grid.id_db)
-                bus_pq_set_gen = orm_pypsa.BusVMagSet(
+                bus_pq_set_gen = orm_pypsa.EgoGridPfMvBusVMagSet(
                     bus_id=node.pypsa_id,
                     temp_id=temp_id,
                     v_mag_pu_set=[1, 1],
                     grid_id=grid.id_db)
-                generator = orm_pypsa.Generator(
+                generator = orm_pypsa.EgoGridPfMvGenerator(
                     generator_id='_'.join(
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]),
                     bus=node.pypsa_id,
                     control='PQ',
                     p_nom=node.capacity * node.capacity_factor,
                     grid_id=grid.id_db)
-                generator_pq_set = orm_pypsa.GeneratorPqSet(
+                generator_pq_set = orm_pypsa.EgoGridPfMvGeneratorPqSet(
                     generator_id='_'.join(
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]),
                     temp_id=temp_id,
@@ -288,7 +286,7 @@ def export_edges(grid, session, edges):
         # get lengths of line
         l = edge['branch'].length / 1e3
 
-        line = orm_pypsa.Line(
+        line = orm_pypsa.EgoGridPfMvLine(
             line_id=line_name,
             bus0=edge['adj_nodes'][0].pypsa_id,
             bus1=edge['adj_nodes'][1].pypsa_id,
@@ -333,9 +331,9 @@ def create_temp_resolution_table(session, timesteps, start_time, resolution='H',
 
     # check if there is a temp resolution dataset in DB
     # => another grid was run before, use existing dataset instead of creating a new one
-    if session.query(orm_pypsa.TempResolution.temp_id).count() == 0:
+    if session.query(orm_pypsa.EgoGridPfMvTempResolution.temp_id).count() == 0:
 
-        temp_resolution = orm_pypsa.TempResolution(
+        temp_resolution = orm_pypsa.EgoGridPfMvTempResolution(
             temp_id=temp_id,
             timesteps=timesteps,
             resolution=resolution,
@@ -629,10 +627,10 @@ def run_powerflow(session, export_pypsa_dir=None):
     temp_id_set = 1
 
     # define investigated time range
-    timerange = get_timerange(session, temp_id_set, TempResolution)
+    timerange = get_timerange(session, temp_id_set, EgoGridPfMvTempResolution)
 
     # define relevant tables
-    tables = [Bus, Line, Generator, Load, Transformer]
+    tables = [EgoGridPfMvBu, EgoGridPfMvLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, EgoGridPfMvTransformer]
 
     # get components from database tables
     components = import_components(tables, session, scenario)
@@ -641,7 +639,7 @@ def run_powerflow(session, export_pypsa_dir=None):
     network, snapshots = create_powerflow_problem(timerange, components)
 
     # import pq-set tables to pypsa network (p_set for generators and loads)
-    pq_object = [GeneratorPqSet, LoadPqSet]
+    pq_object = [EgoGridPfMvGeneratorPqSet, EgoGridPfMvLoadPqSet]
     network = import_pq_sets(session,
                              network,
                              pq_object,
@@ -664,7 +662,7 @@ def run_powerflow(session, export_pypsa_dir=None):
     # Import `v_mag_pu_set` for Bus
     network = import_pq_sets(session,
                              network,
-                             [BusVMagSet],
+                             [EgoGridPfMvBusVMagSet],
                              timerange,
                              scenario,
                              columns=['v_mag_pu_set'],
@@ -835,10 +833,10 @@ def import_pfa_bus_results(session, grid):
     """
 
     # get bus data from database
-    bus_query = session.query(ResBus.bus_id,
-                              ResBus.v_mag_pu). \
-        join(Bus, ResBus.bus_id == Bus.bus_id). \
-        filter(Bus.grid_id == grid.id_db)
+    bus_query = session.query(EgoGridPfMvResBu.bus_id,
+                              EgoGridPfMvResBu.v_mag_pu). \
+        join(EgoGridPfMvBu, EgoGridPfMvResBu.bus_id == EgoGridPfMvBu.bus_id). \
+        filter(EgoGridPfMvBu.grid_id == grid.id_db)
 
     bus_data = read_sql_query(bus_query.statement,
                               session.bind,
@@ -871,13 +869,13 @@ def import_pfa_line_results(session, grid):
     """
 
     # get lines data from database
-    lines_query = session.query(ResLine.line_id,
-                                ResLine.p0,
-                                ResLine.p1,
-                                ResLine.q0,
-                                ResLine.q1). \
-        join(Line, ResLine.line_id == Line.line_id). \
-        filter(Line.grid_id == grid.id_db)
+    lines_query = session.query(EgoGridPfMvResLine.line_id,
+                                EgoGridPfMvResLine.p0,
+                                EgoGridPfMvResLine.p1,
+                                EgoGridPfMvResLine.q0,
+                                EgoGridPfMvResLine.q1). \
+        join(EgoGridPfMvLine, EgoGridPfMvResLine.line_id == EgoGridPfMvLine.line_id). \
+        filter(EgoGridPfMvLine.grid_id == grid.id_db)
 
     line_data = read_sql_query(lines_query.statement,
                                session.bind,
