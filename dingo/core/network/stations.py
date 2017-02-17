@@ -94,6 +94,14 @@ class MVStationDingo(StationDingo):
             residual_apparent_power -= (load_factor_mv_trans_lc_normal *
                                         selected_app_power)
 
+        # if no transformer was selected (no load in grid district), use smallest one
+        if len(self._transformers) == 0:
+            selected_app_power = min(list(compress(possible_transformers,
+                                                   [residual_apparent_power <= k
+                                                    for k in possible_transformers])))
+            self.add_transformer(TransformerDingo(**{'v_level': self.grid.v_level,
+                's_max_longterm': selected_app_power}))
+
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))
         int_kwargs = {'v_level': self.grid.v_level,
