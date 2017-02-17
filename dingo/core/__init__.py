@@ -719,6 +719,26 @@ class NetworkDingo:
                                         srid=srid,
                                         resolution=resolution)
 
+    def validate_grid_districts(self):
+        """ Tests MV grid districts for validity concerning imported data such as:
+
+        Invalid MV grid districts are subsequently deleted from Network.
+        """
+        for grid_district in self.mv_grid_districts():
+
+            # there's only one node (MV station) => grid is empty
+            if len(grid_district.mv_grid._graph.nodes()) == 1:
+                self._mv_grid_districts.remove(grid_district)
+                print('MV Grid District', grid_district, 'seems to be empty and was removed')
+
+            # there're only aggregated load areas
+            elif all([lvla.is_aggregated for lvla in grid_district.lv_load_areas()]):
+                self._mv_grid_districts.remove(grid_district)
+                print('MV Grid District', grid_district, 'contains only aggregated LV Load Areas and was removed')
+
+
+        print('=====> MV Grids validated')
+
     def export_mv_grid(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
