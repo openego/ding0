@@ -541,7 +541,8 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     # check all nodes
 
     if mode is 'normal':
-        nodes = sorted(graph.nodes(), key=lambda x: repr(x))
+        #nodes = sorted(graph.nodes(), key=lambda x: repr(x))
+        nodes = mv_grid.graph_isolated_nodes()
     elif mode is 'isolated':
         nodes = mv_grid.graph_isolated_nodes()
     else:

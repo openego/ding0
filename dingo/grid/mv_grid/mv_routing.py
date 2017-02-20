@@ -24,12 +24,21 @@ def dingo_graph_to_routing_specs(graph):
     nodes_demands = {}
     nodes_pos = {}
     nodes_agg = {}
-    for node in graph.nodes():
 
+    # check if there are only load areas of type aggregated and satellite
+    # -> treat satellites as normal load areas (allow for routing)
+    satellites_only = True
+    for node in graph.nodes():
+        if isinstance(node, LVLoadAreaCentreDingo):
+            if not node.lv_load_area.is_satellite and not node.lv_load_area.is_aggregated:
+                satellites_only = False
+
+    for node in graph.nodes():
         # station is LV station
         if isinstance(node, LVLoadAreaCentreDingo):
             # only major stations are connected via MV ring
-            if not node.lv_load_area.is_satellite:
+            # (satellites in case of there're only satellites in grid district)
+            if not node.lv_load_area.is_satellite or satellites_only:
                 # OLD: prior issue #51
                 # nodes_demands[str(node)] = node.grid.grid_district.peak_load_sum
                 nodes_demands[str(node)] = node.lv_load_area.peak_load_sum
