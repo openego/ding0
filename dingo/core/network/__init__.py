@@ -217,7 +217,7 @@ class GridDingo:
         Returns:
             List of nodes (Dingo objects)
         """
-        return nx.isolates(self._graph)
+        return sorted(nx.isolates(self._graph), key=lambda x: repr(x))
 
     def control_generators(self, capacity_factor):
         """ Sets capacity factor of all generators of a grid (example: A capacity factor of 0.6 means that all
