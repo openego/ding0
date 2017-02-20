@@ -298,11 +298,10 @@ class RingDingo:
     """ Represents a medium voltage Ring
     """
     def __init__(self, **kwargs):
-        self._id_db = kwargs.get('id_db', None)
         self._grid = kwargs.get('grid', None)
 
         # get id from count of rings in associated MV grid
-        self.id_db = self._grid.rings_count() + 1
+        self._id_db = self._grid.rings_count() + 1
 
         # add circ breaker to grid and graph
         self._grid.add_ring(self)
