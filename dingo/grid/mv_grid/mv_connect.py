@@ -685,6 +685,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     # filter branches that belong to satellites (load area groups) if LV load area is not a satellite
                     # itself
                     if not lv_load_area.is_satellite:
+                        branches_valid = []
                         for branch in branches:
                             node1 = branch['adj_nodes'][0]
                             node2 = branch['adj_nodes'][1]
@@ -692,9 +693,10 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
                             # delete branch as possible conn. target if it belongs to a group (=satellite) or
                             # if it belongs to a ring different from the ring of the current LVLA
-                            if (lv_load_area_group is not None) or\
-                               (branch['branch'].ring is not lv_load_area.ring):
-                                branches.remove(branch)
+                            if (lv_load_area_group is None) and\
+                               (branch['branch'].ring is lv_load_area.ring):
+                                branches_valid.append(branch)
+                        branches = branches_valid
 
                     # find possible connection objects
                     lv_station = lv_grid_district.lv_grid.station()
