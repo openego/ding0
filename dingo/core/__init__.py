@@ -835,7 +835,8 @@ class NetworkDingo:
             for lv_load_area in grid_district.lv_load_areas():
                 for lv_grid_district in lv_load_area.lv_grid_districts():
                     station = lv_grid_district.lv_grid.station()
-                    lv_stations.append((station.geo_data.x, station.geo_data.y))
+                    if station not in grid_district.mv_grid.graph_isolated_nodes():
+                        lv_stations.append((station.geo_data.x, station.geo_data.y))
             lv_stations_wkb = from_shape(MultiPoint(lv_stations), srid=srid)
 
             # add dataset to session
