@@ -131,6 +131,7 @@ def routing_solution_to_dingo_graph(graph, solution):
 
             # ALTERNATIVE TO METHOD ABOVE: DO NOT CREATE 2 BRANCHES (NO RING) -> LA IS CONNECTED AS SATELLITE
             # IF THIS IS COMMENTED-IN, THE IF-BLOCK IN LINE 87 HAS TO BE COMMENTED-OUT
+            # See issue #114
             # ===============================
             # do not add circuit breaker for routes which are aggregated load areas or
             # routes that contain only one load area
