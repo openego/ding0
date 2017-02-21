@@ -142,6 +142,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
     # go through the stack (from nearest to most far connection target object)
     for dist_min_obj in conn_objects_min_stack:
 
+        nodes_are_members_of_ring = False
+
         # target object is branch
         if isinstance(dist_min_obj['shp'], LineString):
             # rename for readability
@@ -150,6 +152,9 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
             lv_load_area_group = get_lv_load_area_group_from_node_pair(node1, node2)
 
+            # target line
+            nodes_are_members_of_ring = any(node1 in ring and node2 in ring for ring in node.grid.rings_nodes())
+
         # target object is node
         else:
             if isinstance(dist_min_obj['obj'], MVCableDistributorDingo):
@@ -157,7 +162,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             else:
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area.lv_load_area_group
 
-        # target object doesn't belong to a satellite string (is member of a LV load_area group)
+        # target object doesn't belong to a satellite string (is not a member of a LV load area group)
         if not lv_load_area_group:
 
             # connect node
@@ -188,11 +193,16 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
             # node was inserted into line (target line was re-routed)
             elif target_obj_result == 're-routed':
+
+                # if main ring was re-routed to include node => node is not a satellite anymore
+                if nodes_are_members_of_ring:
+                    node.lv_load_area.is_satellite = False
+
                 # node connected, stop connection for current node
                 node_connected = True
                 break
 
-        # target object is member of a LV load_area group
+        # target object is member of a LV load area group
         else:
 
             # connect node
@@ -242,7 +252,10 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                 # add node to LV load_area group
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                 node.lv_load_area.lv_load_area_group = lv_load_area_group
-                node.lv_load_area.is_satellite = False
+
+                # if main ring was re-routed to include node => node is not a satellite anymore
+                if nodes_are_members_of_ring:
+                    node.lv_load_area.is_satellite = False
 
                 # node inserted into existing route, stop connection for current node
                 node_connected = True
