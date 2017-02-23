@@ -175,10 +175,10 @@ class NetworkDingo:
 
             # TODO: assign "real" peak_load value to lv_station when available
             lv_station = LVStationDingo(
-                id_db=id,  # is equal to station id
+                id_db=row['mvlv_subst_id'],
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
-                geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
+                geo_data=wkt_loads(lv_stations.loc[row['mvlv_subst_id'], 'geom']),
                 peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
 
             # Choice of typified lv model grid depends on population within lv
@@ -278,18 +278,20 @@ class NetworkDingo:
                                                  region_geo_data,
                                                  station_geo_data)
 
-                # import all lv_grid_districts wihtin mv_grid_district
-                # lv_grid_districts = self.import_lv_grid_districts(conn)
-
                 # import all lv_stations within mv_grid_district
                 lv_stations = self.import_lv_stations(conn)
-                lv_grid_districts = pd.DataFrame(
-                    columns=['load_area_id', 'population'],
-                    index=list(lv_stations.index.values))
-                lv_grid_districts['load_area_id'] = lv_stations['load_area_id'].tolist()
+
+                # import all lv_grid_districts within mv_grid_district
+                lv_grid_districts = self.import_lv_grid_districts(conn, lv_stations)
                 lv_grid_districts['population'] = [random.randrange(1, 450) for x in lv_grid_districts.index.values]
-                lv_grid_districts['geom'] = lv_stations[
-                    'geom'].tolist()
+
+                # lv_grid_districts = pd.DataFrame(
+                #     columns=['load_area_id', 'population'],
+                #     index=list(lv_stations.index.values))
+                # lv_grid_districts['load_area_id'] = lv_stations['load_area_id'].tolist()
+                # lv_grid_districts['population'] = [random.randrange(1, 450) for x in lv_grid_districts.index.values]
+                # lv_grid_districts['geom'] = lv_stations[
+                #     'geom'].tolist()
 
                 self.import_lv_load_areas(conn,
                                           mv_grid_district,
@@ -423,9 +425,9 @@ class NetworkDingo:
             # # ===== DEBUG STUFF (BUG JONAS) =====
             # TODO: Remove when fixed!
             if len(lv_grid_districts_per_load_area) == 0:
-                print('No LV grid district for', lv_load_area, 'found! (Bug Jonas)')
+                print('No LV grid district for', lv_load_area, 'found! (Bug jong42)')
             if len(lv_stations_per_load_area) == 0:
-                print('No station for', lv_load_area, 'found! (Bug Jonas)')
+                print('No station for', lv_load_area, 'found! (Bug jong42)')
             # ===================================
 
             self.build_lv_grid_district(conn,
@@ -448,7 +450,7 @@ class NetworkDingo:
             # add LV load area to MV grid district (and add centre object to MV gris district's graph)
             mv_grid_district.add_lv_load_area(lv_load_area)
 
-    def import_lv_grid_districts(self, conn):
+    def import_lv_grid_districts(self, conn, lv_stations):
         """Imports all lv grid districts within given load area
 
         Parameters
@@ -473,9 +475,10 @@ class NetworkDingo:
         lv_grid_districs_sqla = session.query(orm_lv_grid_district.load_area_id,
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
-                                              orm_lv_grid_district.population,
-                                              orm_lv_grid_district.id).\
-            filter(orm_lv_grid_district.load_area_id.in_(load_areas))
+                                              orm_lv_grid_district.mvlv_subst_id,
+                                              orm_lv_grid_district.id). \
+            filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist()))
+            #filter(orm_lv_grid_district.load_area_id.in_(load_areas))
 
         # read data from db
         lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
