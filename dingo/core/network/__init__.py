@@ -412,7 +412,7 @@ class GeneratorDingo:
                                   'gen', str(self.id_db)])
 
     def __repr__(self):
-        if self.v_level in ['06 (MS/NS)', '07 (NS)']:
+        if self.v_level in ['6', '7']:
             return ('generator_' + str(self.type) + '_' + str(self.subtype) +
                     '_mvgd' + str(self.mv_grid.grid_district.id_db) +
                     '_lvgd' + str(self.lv_grid.id_db) + '_' + str(self.id_db))
