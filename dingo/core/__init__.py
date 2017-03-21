@@ -36,7 +36,7 @@ orm_lv_load_areas = orm_model_draft.__getattribute__(lv_load_areas_name)
 orm_lv_grid_district = orm_model_draft.__getattribute__(lv_grid_district_name)
 orm_lv_loads = orm_model_draft.__getattribute__(lv_loads_name)
 orm_lv_stations = orm_model_draft.__getattribute__(lv_stations_name)
-orm_conv_generators = orm_supply.__getattribute__(conv_generators_name)
+orm_conv_generators = orm_model_draft.__getattribute__(conv_generators_name)
 orm_re_generators = orm_model_draft.__getattribute__(re_generators_name)
 
 import pandas as pd
@@ -590,9 +590,10 @@ class NetworkDingo:
                                             orm_re_generators.generation_subtype,
                                             orm_re_generators.voltage_level,
                                             func.ST_AsText(func.ST_Transform(
-                                            orm_re_generators.geom_new, srid)).label('geom_new'),
+                                            orm_re_generators.rea_geom_new, srid)).label('geom_new'),
                                             func.ST_AsText(func.ST_Transform(
-                                            orm_re_generators.geom, srid)).label('geom')).\
+                                            orm_re_generators.geom, srid)).label('geom')
+                                            ).\
                                             filter(orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))).\
                                             filter(orm_re_generators.voltage_level.in_(['4', '5']))
                                             # filter(orm_re_generators.voltage_level.in_(['4', '5', '6', '7']))
@@ -764,6 +765,7 @@ class NetworkDingo:
         session = Session()
 
         # delete all existing datasets
+        # db_int.sqla_mv_grid_viz.__table__.create(conn) # create if not exist
         session.query(db_int.sqla_mv_grid_viz).delete()
         session.commit()
 
@@ -881,6 +883,8 @@ class NetworkDingo:
         session = Session()
 
         # delete all existing datasets
+        # db_int.sqla_mv_grid_viz_branches.__table__.create(conn) # create if not exist
+        # db_int.sqla_mv_grid_viz_nodes.__table__.create(conn) # create if not exist
         session.query(db_int.sqla_mv_grid_viz_branches).delete()
         session.query(db_int.sqla_mv_grid_viz_nodes).delete()
         session.commit()

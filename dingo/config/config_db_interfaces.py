@@ -12,8 +12,8 @@ class sqla_mv_grid_viz(Base):
     """ SQLAlchemy table definition for the export of MV grids for visualization purposes
     """
 
-    __tablename__ = 'ego_deu_mv_grids_vis'
-    __table_args__ = {'schema': 'calc_ego_grid'}
+    __tablename__ = 'ego_grid_mv_visualization_bunch'
+    __table_args__ = {'schema': 'model_draft'}
 
     grid_id                     = sa.Column('grid_id', sa.Integer(), primary_key=True)
     geom_mv_station             = sa.Column('geom_mv_station', Geometry(geometry_type='POINT', srid=4326))
@@ -29,8 +29,8 @@ class sqla_mv_grid_viz_branches(Base):
     """ SQLAlchemy table definition for the export of MV grids' branches for visualization purposes
     """
 
-    __tablename__ = 'ego_deu_mv_grids_vis_branches'
-    __table_args__ = {'schema': 'calc_ego_grid'}
+    __tablename__ = 'ego_grid_mv_visualization_branches'
+    __table_args__ = {'schema': 'model_draft'}
 
     branch_id                   = sa.Column(sa.String(25), primary_key=True)
     grid_id                     = sa.Column('grid_id', sa.Integer)
@@ -48,8 +48,8 @@ class sqla_mv_grid_viz_nodes(Base):
     """ SQLAlchemy table definition for the export of MV grids' branches for visualization purposes
     """
 
-    __tablename__ = 'ego_deu_mv_grids_vis_nodes'
-    __table_args__ = {'schema': 'calc_ego_grid'}
+    __tablename__ = 'ego_grid_mv_visualization_nodes'
+    __table_args__ = {'schema': 'model_draft'}
 
 
     node_id                     = sa.Column(sa.String(100), primary_key=True)

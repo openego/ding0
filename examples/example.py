@@ -10,7 +10,7 @@ __author__ = "Jonathan Amme, Guido Pleßmann"
 import matplotlib.pyplot as plt
 import oemof.db as db
 import time
-import objgraph
+# import objgraph
 
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
