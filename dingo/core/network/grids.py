@@ -363,6 +363,7 @@ class MVGridDingo(GridDingo):
         .. [5] Tao, X., "Automatisierte Grundsatzplanung von
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
+        # TODO: [3] ist tot, alternative Quelle nötig!
 
         package_path = dingo.__path__[0]
 
