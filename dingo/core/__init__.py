@@ -765,6 +765,7 @@ class NetworkDingo:
         session = Session()
 
         # delete all existing datasets
+        # db_int.sqla_mv_grid_viz.__table__.create(conn) # create if not exist
         session.query(db_int.sqla_mv_grid_viz).delete()
         session.commit()
 
@@ -882,6 +883,8 @@ class NetworkDingo:
         session = Session()
 
         # delete all existing datasets
+        # db_int.sqla_mv_grid_viz_branches.__table__.create(conn) # create if not exist
+        # db_int.sqla_mv_grid_viz_nodes.__table__.create(conn) # create if not exist
         session.query(db_int.sqla_mv_grid_viz_branches).delete()
         session.query(db_int.sqla_mv_grid_viz_nodes).delete()
         session.commit()
