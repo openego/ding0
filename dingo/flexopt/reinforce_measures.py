@@ -17,16 +17,8 @@ def reinforce_branches_current(grid, crit_branches):
         The branch type to be installed is determined per branch using the rel. overloading. According to Ackermann
         only cables are installed.
     """
-    # TODO: Move equipment data to attr. of nd
     # load cable/line assumptions, file_names and parameter
-    load_factor_normal = float(cfg_dingo.get('assumptions',
-                                             'load_factor_mv_cable_lc_normal'))
-    equipment_parameters_file = cfg_dingo.get('equipment',
-                                              'equipment_mv_parameters_cables')
-    branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
-                                    equipment_parameters_file),
-                                    comment='#',
-                                    converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+    branch_parameters = grid.network.static_data['MV_cables']
     branch_parameters = branch_parameters[branch_parameters['U_n'] == grid.v_level].sort_values('I_max_th')
 
     for branch, rel_overload in crit_branches.items():
@@ -51,16 +43,8 @@ def reinforce_branches_voltage(grid, crit_branches):
         The branch type to be installed is determined per branch - the next larger cable available is used.
         According to Ackermann only cables are installed.
     """
-    # TODO: Move equipment data to attr. of nd
     # load cable/line assumptions, file_names and parameter
-    load_factor_normal = float(cfg_dingo.get('assumptions',
-                                             'load_factor_mv_cable_lc_normal'))
-    equipment_parameters_file = cfg_dingo.get('equipment',
-                                              'equipment_mv_parameters_cables')
-    branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
-                                    equipment_parameters_file),
-                                    comment='#',
-                                    converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+    branch_parameters = grid.network.static_data['MV_cables']
     branch_parameters = branch_parameters[branch_parameters['U_n'] == grid.v_level].sort_values('I_max_th')
 
     for branch in crit_branches:
