@@ -53,6 +53,8 @@ from shapely.ops import transform
 from math import isnan
 import random
 
+package_path = dingo.__path__[0]
+
 
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the
@@ -67,6 +69,9 @@ class NetworkDingo:
         self.name = kwargs.get('name', None)
         self._mv_grid_districts = []
         self._pf_config = kwargs.get('pf_config', None)
+        self._static_data = kwargs.get('static_data', {})
+
+        self.import_static_data()
 
     def mv_grid_districts(self):
         """Returns a generator for iterating over MV grid_districts"""
@@ -83,6 +88,11 @@ class NetworkDingo:
     def pf_config(self):
         """Returns PF config object"""
         return self._pf_config
+
+    @property
+    def static_data(self):
+        """Returns static data"""
+        return self._static_data
 
     def get_mvgd_lvla_obj_from_id(self):
         """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object and
@@ -724,6 +734,30 @@ class NetworkDingo:
                                         timesteps_count=end_hour-start_hour,
                                         srid=srid,
                                         resolution=resolution)
+
+    def import_static_data(self):
+        """ Imports static data into NetworkDingo such as equipment."""
+
+        package_path = dingo.__path__[0]
+
+        # import equipment
+        equipment_parameters_file = cfg_dingo.get('equipment',
+                                                  'equipment_mv_parameters_lines')
+        self.static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
+                                                equipment_parameters_file),
+                                                comment='#',
+                                                converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+
+        equipment_parameters_file = cfg_dingo.get('equipment',
+                                                  'equipment_mv_parameters_cables')
+        self.static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
+                                        equipment_parameters_file),
+                                        comment='#',
+                                        converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+
+        # TODO: Include LV equipment
+
+
 
     def validate_grid_districts(self):
         """ Tests MV grid districts for validity concerning imported data such as:
