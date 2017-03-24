@@ -6,12 +6,15 @@ from dingo.tools import config as cfg_dingo
 package_path = dingo.__path__[0]
 
 
-def reinforce_branches(grid, crit_branches):
+def reinforce_branches(grid, crit_branches, mode):
     """ Reinforce MV or LV grid by installing a new branch/line type
 
     Args:
         grid: GridDingo object
         crit_branches; Dict of critical branches with max. relative overloading
+        mode: 'determined' (used for reinforcement measures due to current violations: set appropriate cable using
+                            the relative overload -> appropriate type can be determined) or
+              'next' (used for reinforcement measures due to voltage violations: set next larger cable available)
 
     Returns:
 
@@ -26,7 +29,7 @@ def reinforce_branches(grid, crit_branches):
     equipment_parameters_file = cfg_dingo.get('equipment',
                                               'equipment_mv_parameters_cables')
     branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
-                                                 'equipment - parameters_MV_cables.csv'),
+                                    equipment_parameters_file),
                                     comment='#',
                                     converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
     branch_parameters = branch_parameters[branch_parameters['U_n'] == grid.v_level].sort_values('I_max_th')

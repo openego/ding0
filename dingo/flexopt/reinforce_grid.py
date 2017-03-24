@@ -28,7 +28,7 @@ def reinforce_grid(grid, mode):
         #    branch['branch'].critical = True
 
         # do reinforcement
-        reinforce_branches(grid, crit_branches)
+        reinforce_branches(grid, crit_branches, mode='determined')
 
         # run PF again to check for voltage issues
         grid.nd.run_powerflow(conn=None, method='onthefly')
@@ -39,7 +39,8 @@ def reinforce_grid(grid, mode):
         # determine all branches on the way from HV-MV substation to crit. nodes
         crit_branches_v = grid.find_and_union_paths(grid.station(), crit_nodes)
 
-
+        # do reinforcement
+        reinforce_branches(grid, crit_branches_v, mode='next')
 
         # grid.graph_draw()
 
