@@ -11,8 +11,10 @@ def check_load(grid, mode):
         mode: kind of grid ('MV' or 'LV')
 
     Returns:
-        List of critical branches and transformers,
-        Format: [branch_1, ..., branch_n], [trafo_1, ..., trafo_m]
+        Dict of critical branches with max. relative overloading
+        List of critical transformers,
+        Format: {branch_1: rel_overloading_1, ..., branch_n: rel_overloading_n},
+                [trafo_1, ..., trafo_m]
 
     Notes:
         Lines'/cables' max. capacity (load case and feed-in case) are taken from [1]_.
@@ -22,7 +24,7 @@ def check_load(grid, mode):
 
     """
 
-    crit_branches = []
+    crit_branches = {}
     crit_stations = []
 
     if mode == 'MV':
@@ -54,10 +56,12 @@ def check_load(grid, mode):
             else:
                 raise ValueError('Branch kind is invalid!')
 
-            # check loads only for non-aggregated LV load areas (aggregated ones are skipped)
+            # check loads only for non-aggregated LV load areas (aggregated ones are skipped raising except)
             try:
                 if any([s*mw2kw >= s_max_th for s in branch['branch'].s_res]):
-                    crit_branches.append(branch)
+                    #crit_branches.append(branch)
+                    # save max. relative overloading
+                    crit_branches[branch] = max(branch['branch'].s_res) * mw2kw / s_max_th
             except:
                 pass
 
@@ -86,7 +90,7 @@ def check_load(grid, mode):
             # PUT MORE STUFF IN HERE
 
     elif mode == 'LV':
-        pass
+        raise NotImplementedError
 
     return crit_branches, crit_stations
 
@@ -130,7 +134,7 @@ def check_voltage(grid, mode):
                 pass
 
     elif mode == 'LV':
-        pass
+        raise NotImplementedError
 
     #print(crit_nodes)
     return [_['node'] for _ in sorted(crit_nodes.values(), key=lambda _: _['v_diff'], reverse=True)]

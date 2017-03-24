@@ -1,4 +1,5 @@
 from .check_tech_constraints import check_load, check_voltage
+from .reinforce_measures import reinforce_branches, extend_substation, new_substation
 
 
 def reinforce_grid(grid, mode):
@@ -13,21 +14,35 @@ def reinforce_grid(grid, mode):
 
     References:
     .. [1] dena VNS
+    .. [2] Ackermann et al. (RP VNS)
 
     """
 
-    # which kind of grid is to be evaluated?
+    # kind of grid to be evaluated (MV or LV)
     if mode == 'MV':
         crit_branches, crit_stations = check_load(grid, mode)
-        print(crit_branches)
+        #print(crit_branches)
 
         # mark critical branches
-        for branch in crit_branches:
-            branch['branch'].critical = True
+        #for branch in crit_branches:
+        #    branch['branch'].critical = True
+
+        # do reinforcement
+        reinforce_branches(grid, crit_branches)
+
+        # run PF again to check for voltage issues
+        grid.nd.run_powerflow(conn=None, method='onthefly')
 
         crit_nodes = check_voltage(grid, mode)
-        grid.graph_draw()
-        print(crit_nodes)
+        #print(crit_nodes)
+
+        # determine all branches on the way from HV-MV substation to crit. nodes
+        crit_branches_v = grid.find_and_union_paths(grid.station(), crit_nodes)
+
+
+
+        # grid.graph_draw()
+
     elif mode == 'LV':
         check_load(grid, mode)
 
