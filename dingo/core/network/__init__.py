@@ -177,6 +177,7 @@ class GridDingo:
     def find_path(self, node_source, node_target):
         """ Determines the shortest path from `node_source` to `node_target` in _graph using networkx' shortest path
             algorithm.
+
         Args:
             node_source: source node (Dingo object), member of _graph
             node_target: target node (Dingo object), member of _graph
@@ -190,6 +191,23 @@ class GridDingo:
             raise Exception('At least one of the nodes is not a member of graph.')
 
         return path
+
+    def find_and_union_paths(self, node_source, nodes_target):
+        """ Determines shortest paths from `node_source` to all nodes in `node_target` in _graph using find_path().
+            The branches of all paths are stored in a set - the result is a list of unique branches.
+
+        Args:
+            node_source: source node (Dingo object), member of _graph
+            nodes_target: list of target nodes (Dingo objects), members of _graph
+
+        Returns:
+            branches: list of branches (list of nodes in _graph)
+        """
+        branches = set()
+        for node_target in nodes_target:
+            branches.add(self.find_path(node_source, node_target))
+
+        return list(branches)
 
     def graph_path_length(self, node_source, node_target):
         """ Calculates the absolute distance between `node_source` and `node_target` in meters using find_path() and
