@@ -71,6 +71,7 @@ class NetworkDingo:
         self._pf_config = kwargs.get('pf_config', None)
         self._static_data = kwargs.get('static_data', {})
 
+        self.import_pf_config()
         self.import_static_data()
 
     def mv_grid_districts(self):

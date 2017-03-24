@@ -25,7 +25,7 @@ cfg_dingo.load_config('config_misc.cfg')
 start = time.time()
 
 # database connection
-conn = db.connection(section='oedb')
+conn = db.connection(section='oedb_remote')
 
 # instantiate dingo network object
 nd = NetworkDingo(name='network')
@@ -35,14 +35,13 @@ nd = NetworkDingo(name='network')
 #mv_grid_districts=[1328]
 #mv_grid_districts=[1294]
 #mv_grid_districts=[419]
+mv_grid_districts=[480]
 #mv_grid_districts = [359, 415, 424, 447, 402, 406, 489, 480, 371]
 #mv_grid_districts=[359]
 #mv_grid_districts = [386,372,406,371,402,415,480,424,489,367]#,569,359,591]
 #mv_grid_districts=[3087, 2990, 3080, 3034, 3088]
 #mv_grid_districts=[3080]#, 3080]#, 3080]
-mv_grid_districts = list(range(1250,1351))
-
-nd.import_pf_config()
+#mv_grid_districts = list(range(1250,1351))
 
 nd.import_mv_grid_districts(conn, mv_grid_districts)
 
