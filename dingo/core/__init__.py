@@ -123,7 +123,8 @@ class NetworkDingo:
 
         mv_station = MVStationDingo(id_db=subst_id, geo_data=station_geo_data)
 
-        mv_grid = MVGridDingo(id_db=poly_id,
+        mv_grid = MVGridDingo(network=self,
+                              id_db=poly_id,
                               station=mv_station)
         mv_grid_district = MVGridDistrictDingo(id_db=poly_id,
                                                mv_grid=mv_grid,
@@ -169,7 +170,8 @@ class NetworkDingo:
                 population=row['population'])
 
             # be aware, lv_grid takes grid district's geom!
-            lv_grid = LVGridDingo(grid_district=lv_grid_district,
+            lv_grid = LVGridDingo(network=self,
+                                  grid_district=lv_grid_district,
                                   id_db=id,
                                   geo_data=wkt_loads(row['geom']))
 
@@ -1094,7 +1096,7 @@ class NetworkDingo:
         # TODO: Finish method and enable LV case
 
         for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.reinforce_grid()
+            grid_district.mv_grid.reinforce_grid(self)
 
             # ===== LV PART (currently disabled) =====
             # for lv_load_area in grid_district.lv_load_areas():

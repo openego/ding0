@@ -14,6 +14,7 @@ class GridDingo:
     """
 
     def __init__(self, **kwargs):
+        self.network = kwargs.get('network', None)
         self.id_db = kwargs.get('id_db', None)
         self.grid_district = kwargs.get('grid_district', None)
         self._cable_distributors = []
