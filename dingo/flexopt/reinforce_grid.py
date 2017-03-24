@@ -1,5 +1,5 @@
 from .check_tech_constraints import check_load, check_voltage
-from .reinforce_measures import reinforce_branches, extend_substation, new_substation
+from .reinforce_measures import reinforce_branches_current, reinforce_branches_voltage, extend_substation, new_substation
 
 
 def reinforce_grid(grid, mode):
@@ -28,7 +28,7 @@ def reinforce_grid(grid, mode):
         #    branch['branch'].critical = True
 
         # do reinforcement
-        reinforce_branches(grid, crit_branches, mode='determined')
+        reinforce_branches_current(grid, crit_branches)
 
         # run PF again to check for voltage issues
         grid.nd.run_powerflow(conn=None, method='onthefly')
@@ -40,8 +40,7 @@ def reinforce_grid(grid, mode):
         crit_branches_v = grid.find_and_union_paths(grid.station(), crit_nodes)
 
         # do reinforcement
-        reinforce_branches(grid, crit_branches_v, mode='next')
-
+        reinforce_branches_voltage(grid, crit_branches_v)
         # grid.graph_draw()
 
     elif mode == 'LV':
