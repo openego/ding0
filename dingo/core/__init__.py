@@ -431,9 +431,9 @@ class NetworkDingo:
             # sub-selection of lv_grid_districts/lv_stations within one
             # specific load area
             lv_grid_districts_per_load_area = lv_grid_districts.\
-                loc[lv_grid_districts['load_area_id'] == id_db]
+                loc[lv_grid_districts['la_id'] == id_db]
             lv_stations_per_load_area = lv_stations.\
-                loc[lv_stations['load_area_id'] == id_db]
+                loc[lv_stations['la_id'] == id_db]
 
             # # ===== DEBUG STUFF (BUG JONAS) =====
             # TODO: Remove when fixed!
@@ -485,7 +485,7 @@ class NetworkDingo:
 
         load_areas = list(self.get_mvgd_lvla_obj_from_id()[1])
 
-        lv_grid_districs_sqla = session.query(orm_lv_grid_district.load_area_id,
+        lv_grid_districs_sqla = session.query(orm_lv_grid_district.la_id,
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
                                               orm_lv_grid_district.mvlv_subst_id,
@@ -522,8 +522,8 @@ class NetworkDingo:
         # get list of mv grid districts
         mv_grid_districts = list(self.get_mvgd_lvla_obj_from_id()[0])
 
-        lv_stations_sqla = session.query(orm_lv_stations.id,
-                                         orm_lv_stations.load_area_id,
+        lv_stations_sqla = session.query(orm_lv_stations.mvlv_subst_id,
+                                         orm_lv_stations.la_id,
                                          func.ST_AsText(func.ST_Transform(
                                            orm_lv_stations.geom, srid)). \
                                          label('geom')).\
@@ -532,7 +532,7 @@ class NetworkDingo:
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
                                              session.bind,
-                                             index_col='id')
+                                             index_col='mvlv_subst_id')
         return lv_grid_stations
 
     def import_lv_model_grids(self):
@@ -1131,7 +1131,7 @@ class NetworkDingo:
         # TODO: Finish method and enable LV case
 
         for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.reinforce_grid(self)
+            grid_district.mv_grid.reinforce_grid()
 
             # ===== LV PART (currently disabled) =====
             # for lv_load_area in grid_district.lv_load_areas():
