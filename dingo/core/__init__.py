@@ -938,6 +938,43 @@ class NetworkDingo:
 
         print('=====> MV Grids exported (NEW)')
 
+    def to_dataframe(self, conn, mv_grid_districts):
+        """Export grid data to dataframes for statistical analysis
+
+        The export to dataframe is similar to db tables exported by
+        `export_mv_grid_new`.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+        """
+
+        node_cols = ['node_id', 'grid_id', 'v_nom', 'geom', 'v_res0', 'v_res1']
+
+        nodes_df = pd.DataFrame(columns=node_cols)
+
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
+
+        for grid_district in self.mv_grid_districts():
+
+            # get nodes from grid's graph and create datasets
+            for node in grid_district.mv_grid._graph.nodes():
+                if hasattr(node, 'voltage_res'):
+                    node_name = '_'.join(['MV',
+                                          str(grid_district.mv_grid.id_db),
+                                          repr(node)])
+                    nodes_df = nodes_df.append(pd.Series(
+                        {'node_id': node_name,
+                         'grid_id': grid_district.mv_grid.id_db,
+                         'v_nom': grid_district.mv_grid.v_level,
+                         'geom': from_shape(Point(node.geo_data), srid=srid),
+                         'v_res0': node.voltage_res[0],
+                         'v_res1': node.voltage_res[1]}
+                    ), ignore_index=True)
+
+        return nodes_df
+
+
     def mv_routing(self, debug=False, animation=False):
         """ Performs routing on all MV grids, see method `routing` in class
         `MVGridDingo` for details.
