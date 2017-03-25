@@ -41,7 +41,7 @@ def create_results_dirs(base_path):
     os.mkdir(os.path.join(base_path, 'plots'))
 
 
-def run_dingo(mv_grid_districs, base_path):
+def run_dingo(mv_grid_district, base_path):
     """
     Perform dingo run on given grid districts
 
@@ -60,7 +60,7 @@ def run_dingo(mv_grid_districs, base_path):
 
     nd.import_pf_config()
 
-    nd.import_mv_grid_districts(conn, mv_grid_districts)
+    nd.import_mv_grid_districts(conn, mv_grid_district)
 
     nd.import_generators(conn)
 
@@ -83,7 +83,7 @@ def run_dingo(mv_grid_districs, base_path):
     nd.run_powerflow(conn, method='onthefly', export_pypsa=False)
 
     # nd.export_mv_grid(conn, mv_grid_districts)
-    nd.export_mv_grid_new(conn, mv_grid_districts)
+    nd.export_mv_grid_new(conn, mv_grid_district)
 
     pickle.dump(nd,
                 open(os.path.join(base_path, 'results',
@@ -91,7 +91,7 @@ def run_dingo(mv_grid_districs, base_path):
                                                                    mvgd_last)),
                      "wb"))
 
-    nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_districts)
+    nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_district)
     nodes_stats.to_csv(os.path.join(base_path, 'results',
                                     'mvgd_nodes_stats_{0}-{1}.csv'.format(
                                         mvgd_first, mvgd_last)))
