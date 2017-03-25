@@ -10,6 +10,7 @@ __author__ = "Jonathan Amme, Guido Pleßmann"
 import matplotlib.pyplot as plt
 import oemof.db as db
 import time
+import os
 import pickle
 
 from dingo.core import NetworkDingo
@@ -21,8 +22,26 @@ cfg_dingo.load_config('config_calc.cfg')
 cfg_dingo.load_config('config_files.cfg')
 cfg_dingo.load_config('config_misc.cfg')
 
+base_path = ''
 
-def run_dingo(mv_grid_districs):
+
+def create_results_dirs(base_path):
+    """Create base path dir and subdirectories
+
+    Parameters
+    ----------
+    base_path : str
+        The base path has subdirectories for raw and processed results
+    """
+
+    print("Creating directory {} for results data.".format(base_path))
+
+    os.mkdir(base_path)
+    os.mkdir(os.path.join(base_path, 'results'))
+    os.mkdir(os.path.join(base_path, 'plots'))
+
+
+def run_dingo(mv_grid_districs, base_path):
     """
     Perform dingo run on given grid districts
 
@@ -31,6 +50,10 @@ def run_dingo(mv_grid_districs):
     mv_grid_districs : list
     Integers describing grid districts
     """
+
+    # create directories for local results data
+    if not os.path.exists(base_path):
+        create_results_dirs(base_path)
 
     # instantiate dingo  network object
     nd = NetworkDingo(name='network')
@@ -63,7 +86,18 @@ def run_dingo(mv_grid_districs):
     nd.export_mv_grid_new(conn, mv_grid_districts)
 
     pickle.dump(nd,
-                open("dingo_grids_{0}-{1}.pkl".format(mvgd_first, mvgd_last), "wb"))
+                open(os.path.join(base_path, 'results',
+                                  "dingo_grids_{0}-{1}.pkl".format(mvgd_first,
+                                                                   mvgd_last)),
+                     "wb"))
+
+    nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_districts)
+    nodes_stats.to_csv(os.path.join(base_path, 'results',
+                                    'mvgd_nodes_stats_{0}-{1}.csv'.format(
+                                        mvgd_first, mvgd_last)))
+    edges_stats.to_csv(os.path.join(base_path, 'results',
+                                    'mvgd_edges_stats_{0}-{1}.csv'.format(
+                                        mvgd_first, mvgd_last)))
 
 
 if __name__ == '__main__':
@@ -75,7 +109,7 @@ if __name__ == '__main__':
 
     mvgd_exclude = []
     mvgd_first = 1
-    mvgd_last = 3608
+    mvgd_last = 50
 
     mv_grid_districts = [mv for mv in list(range(mvgd_first, mvgd_last)) if
                              mv not in mvgd_exclude]
@@ -84,7 +118,7 @@ if __name__ == '__main__':
 
     for mv_grid_district in mv_grid_districts:
         try:
-            run_dingo(mv_grid_district)
+            run_dingo(mv_grid_district, base_path)
         except:
             corrupt_grid_districts.append(mv_grid_district)
 
