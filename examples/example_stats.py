@@ -77,20 +77,21 @@ nd.control_circuit_breakers(mode='open')
 # Analyze grid by power flow analysis
 nd.run_powerflow(conn, method='onthefly', export_pypsa=False)
 
+# reinforce MV grid
+# nd.reinforce_grid()
+
 # nd.export_mv_grid(conn, mv_grid_districts)
 nd.export_mv_grid_new(conn, mv_grid_districts)
 
 import pickle
 pickle.dump(nd,
             open("dingo_grids_{0}-{1}.pkl".format(mvgd_first, mvgd_last), "wb"))
-mvgd_stats = nd.to_dataframe(conn, mv_grid_districts)
-print(mvgd_stats)
+nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_districts)
 # mvgd_stats.to_hdf('mvgd_stats_{0}-{1}.hf5'.format(mvgd_first, mvgd_last), 'data')
-mvgd_stats.to_csv('mvgd_stats_{0}-{1}.csv'.format(mvgd_first, mvgd_last))
+nodes_stats.to_csv('mvgd_nodes_stats_{0}-{1}.csv'.format(mvgd_first, mvgd_last))
+edges_stats.to_csv('mvgd_edges_stats_{0}-{1}.csv'.format(mvgd_first, mvgd_last))
 
 conn.close()
 #objgraph.show_refs([nd], filename='nd.png')
 print('Elapsed time for', str(len(mv_grid_districts)), 'MV grid districts (seconds): {}'.format(time.time() - start))
 
-# reinforce MV grid
-#nd.reinforce_grid()
