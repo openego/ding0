@@ -89,16 +89,17 @@ def run_dingo(mv_grid_district, base_path):
 
     pickle.dump(nd,
                 open(os.path.join(base_path, 'results',
-                                  "dingo_grids_{0}.pkl".format(mv)),
+                                  "dingo_grids_{0}.pkl".format(
+                                      mv_grid_district[0])),
                      "wb"))
 
     nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_district)
     nodes_stats.to_csv(os.path.join(base_path, 'results',
                                     'mvgd_nodes_stats_{0}.csv'.format(
-                                        mv_grid_district)))
+                                        mv_grid_district[0])))
     edges_stats.to_csv(os.path.join(base_path, 'results',
                                     'mvgd_edges_stats_{0}.csv'.format(
-                                        mv_grid_district)))
+                                        mv_grid_district[0])))
 
     return msg
 
