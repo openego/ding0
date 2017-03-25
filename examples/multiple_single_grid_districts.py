@@ -12,6 +12,7 @@ import oemof.db as db
 import time
 import os
 import pickle
+import pandas as pd
 
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
@@ -39,6 +40,7 @@ def create_results_dirs(base_path):
     os.mkdir(base_path)
     os.mkdir(os.path.join(base_path, 'results'))
     os.mkdir(os.path.join(base_path, 'plots'))
+    os.mkdir(os.path.join(base_path, 'info'))
 
 
 def run_dingo(mv_grid_district, base_path):
@@ -99,6 +101,8 @@ def run_dingo(mv_grid_district, base_path):
                                     'mvgd_edges_stats_{0}-{1}.csv'.format(
                                         mvgd_first, mvgd_last)))
 
+    return msg
+
 
 if __name__ == '__main__':
 
@@ -114,19 +118,29 @@ if __name__ == '__main__':
     mv_grid_districts = [mv for mv in list(range(mvgd_first, mvgd_last)) if
                              mv not in mvgd_exclude]
 
-    corrupt_grid_districts = []
+    corrupt_grid_districts = pd.DataFrame(columns=['id', 'message'])
 
     for mv_grid_district in mv_grid_districts:
         try:
-            run_dingo(mv_grid_district, base_path)
-        except:
-            corrupt_grid_districts.append(mv_grid_district)
+            msg = run_dingo([mv_grid_district], base_path)
+            if msg:
+                corrupt_grid_districts = corrupt_grid_districts.append(
+                    pd.Series({'id': mv_grid_district,
+                               'message': msg[0]}),
+                    ignore_index=True)
+        except Exception as e:
+            corrupt_grid_districts = corrupt_grid_districts.append(
+                pd.Series({'id': mv_grid_district,
+                           'message': e}),
+                ignore_index=True)
 
-    print(corrupt_grid_districts)
+            continue
 
-    thefile = open('corrupt_mv_grid_districts.txt', 'w')
-    for item in corrupt_grid_districts:
-        thefile.write("%s\n" % item)
+    corrupt_grid_districts.to_csv(os.path.join(base_path, 'info',
+                                               'corrupt_mv_grid_districts.txt'),
+                                  index=False,
+                                  float_format='%.0f')
+
 
 
     conn.close()
