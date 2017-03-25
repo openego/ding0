@@ -55,7 +55,7 @@ nd.import_generators(conn)
 
 nd.mv_parametrize_grid()
 
-nd.validate_grid_districts()
+msg = nd.validate_grid_districts()
 
 nd.mv_routing(debug=False, animation=False)
 
@@ -90,6 +90,8 @@ nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_districts)
 # mvgd_stats.to_hdf('mvgd_stats_{0}-{1}.hf5'.format(mvgd_first, mvgd_last), 'data')
 nodes_stats.to_csv('mvgd_nodes_stats_{0}-{1}.csv'.format(mvgd_first, mvgd_last))
 edges_stats.to_csv('mvgd_edges_stats_{0}-{1}.csv'.format(mvgd_first, mvgd_last))
+
+print(msg)
 
 conn.close()
 #objgraph.show_refs([nd], filename='nd.png')

@@ -66,7 +66,7 @@ def run_dingo(mv_grid_districs, base_path):
 
     nd.mv_parametrize_grid()
 
-    nd.validate_grid_districts()
+    msg = nd.validate_grid_districts()
 
     nd.mv_routing(debug=False, animation=False)
 
