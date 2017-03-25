@@ -608,8 +608,8 @@ class NetworkDingo:
                                             orm_re_generators.geom, srid)).label('geom')
                                             ).\
                                             filter(orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))).\
-                                            filter(orm_re_generators.voltage_level.in_(['4', '5']))
-                                            # filter(orm_re_generators.voltage_level.in_(['4', '5', '6', '7']))
+                                            filter(orm_re_generators.voltage_level.in_([4, 5]))
+                                            # filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
 
             # TODO: Currently only MV generators are imported, please include LV!
 
