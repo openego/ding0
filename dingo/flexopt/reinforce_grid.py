@@ -31,7 +31,7 @@ def reinforce_grid(grid, mode):
         reinforce_branches_current(grid, crit_branches)
 
         # run PF again to check for voltage issues
-        grid.nd.run_powerflow(conn=None, method='onthefly')
+        grid.network.run_powerflow(conn=None, method='onthefly')
 
         crit_nodes = check_voltage(grid, mode)
         #print(crit_nodes)
@@ -43,8 +43,14 @@ def reinforce_grid(grid, mode):
         reinforce_branches_voltage(grid, crit_branches_v)
         # grid.graph_draw()
 
+        grid.network.run_powerflow(conn=None, method='onthefly')
+        crit_branches, crit_stations = check_load(grid, mode)
+        crit_nodes = check_voltage(grid, mode)
+
+
     elif mode == 'LV':
-        check_load(grid, mode)
+        raise NotImplementedError
+        #check_load(grid, mode)
 
 
 
