@@ -363,6 +363,7 @@ class MVGridDingo(GridDingo):
         .. [5] Tao, X., "Automatisierte Grundsatzplanung von
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
+        # TODO: [3] ist tot, alternative Quelle nötig!
 
         package_path = dingo.__path__[0]
 
@@ -380,32 +381,17 @@ class MVGridDingo(GridDingo):
         if self.default_branch_kind == 'line':
             load_factor_normal = float(cfg_dingo.get('assumptions',
                                                      'load_factor_mv_line_lc_normal'))
-            equipment_parameters_file = cfg_dingo.get('equipment',
-                                                      'equipment_mv_parameters_lines')
-            branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
-                                            equipment_parameters_file),
-                                            comment='#',
-                                            converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+            branch_parameters = self.network.static_data['MV_overhead_lines']
 
             # load cables as well to use it within settlements
-            equipment_parameters_file_settle = cfg_dingo.get('equipment',
-                                                             'equipment_mv_parameters_cables')
-            branch_parameters_settle = pd.read_csv(os.path.join(package_path, 'data',
-                                                   equipment_parameters_file_settle),
-                                                   comment='#',
-                                                   converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+            branch_parameters_settle = self.network.static_data['MV_cables']
             # select types with appropriate voltage level
             branch_parameters_settle = branch_parameters_settle[branch_parameters_settle['U_n'] == self.v_level]
 
         elif self.default_branch_kind == 'cable':
             load_factor_normal = float(cfg_dingo.get('assumptions',
                                                      'load_factor_mv_cable_lc_normal'))
-            equipment_parameters_file = cfg_dingo.get('equipment',
-                                                      'equipment_mv_parameters_cables')
-            branch_parameters = pd.read_csv(os.path.join(package_path, 'data',
-                                            equipment_parameters_file),
-                                            comment='#',
-                                            converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+            branch_parameters = self.network.static_data['MV_cables']
         else:
             raise ValueError('Grid\'s default_branch_kind is invalid, could not set branch parameters.')
 

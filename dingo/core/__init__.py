@@ -53,6 +53,8 @@ from shapely.ops import transform
 from math import isnan
 import random
 
+package_path = dingo.__path__[0]
+
 
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the
@@ -67,6 +69,10 @@ class NetworkDingo:
         self.name = kwargs.get('name', None)
         self._mv_grid_districts = []
         self._pf_config = kwargs.get('pf_config', None)
+        self._static_data = kwargs.get('static_data', {})
+
+        self.import_pf_config()
+        self.import_static_data()
 
     def mv_grid_districts(self):
         """Returns a generator for iterating over MV grid_districts"""
@@ -83,6 +89,11 @@ class NetworkDingo:
     def pf_config(self):
         """Returns PF config object"""
         return self._pf_config
+
+    @property
+    def static_data(self):
+        """Returns static data"""
+        return self._static_data
 
     def get_mvgd_lvla_obj_from_id(self):
         """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object and
@@ -123,7 +134,8 @@ class NetworkDingo:
 
         mv_station = MVStationDingo(id_db=subst_id, geo_data=station_geo_data)
 
-        mv_grid = MVGridDingo(id_db=poly_id,
+        mv_grid = MVGridDingo(network=self,
+                              id_db=poly_id,
                               station=mv_station)
         mv_grid_district = MVGridDistrictDingo(id_db=poly_id,
                                                mv_grid=mv_grid,
@@ -169,7 +181,8 @@ class NetworkDingo:
                 population=row['population'])
 
             # be aware, lv_grid takes grid district's geom!
-            lv_grid = LVGridDingo(grid_district=lv_grid_district,
+            lv_grid = LVGridDingo(network=self,
+                                  grid_district=lv_grid_district,
                                   id_db=id,
                                   geo_data=wkt_loads(row['geom']))
 
@@ -418,9 +431,9 @@ class NetworkDingo:
             # sub-selection of lv_grid_districts/lv_stations within one
             # specific load area
             lv_grid_districts_per_load_area = lv_grid_districts.\
-                loc[lv_grid_districts['load_area_id'] == id_db]
+                loc[lv_grid_districts['la_id'] == id_db]
             lv_stations_per_load_area = lv_stations.\
-                loc[lv_stations['load_area_id'] == id_db]
+                loc[lv_stations['la_id'] == id_db]
 
             # # ===== DEBUG STUFF (BUG JONAS) =====
             # TODO: Remove when fixed!
@@ -472,7 +485,7 @@ class NetworkDingo:
 
         load_areas = list(self.get_mvgd_lvla_obj_from_id()[1])
 
-        lv_grid_districs_sqla = session.query(orm_lv_grid_district.load_area_id,
+        lv_grid_districs_sqla = session.query(orm_lv_grid_district.la_id,
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
                                               orm_lv_grid_district.mvlv_subst_id,
@@ -509,8 +522,8 @@ class NetworkDingo:
         # get list of mv grid districts
         mv_grid_districts = list(self.get_mvgd_lvla_obj_from_id()[0])
 
-        lv_stations_sqla = session.query(orm_lv_stations.id,
-                                         orm_lv_stations.load_area_id,
+        lv_stations_sqla = session.query(orm_lv_stations.mvlv_subst_id,
+                                         orm_lv_stations.la_id,
                                          func.ST_AsText(func.ST_Transform(
                                            orm_lv_stations.geom, srid)). \
                                          label('geom')).\
@@ -519,7 +532,7 @@ class NetworkDingo:
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
                                              session.bind,
-                                             index_col='id')
+                                             index_col='mvlv_subst_id')
         return lv_grid_stations
 
     def import_lv_model_grids(self):
@@ -595,8 +608,8 @@ class NetworkDingo:
                                             orm_re_generators.geom, srid)).label('geom')
                                             ).\
                                             filter(orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))).\
-                                            filter(orm_re_generators.voltage_level.in_(['4', '5']))
-                                            # filter(orm_re_generators.voltage_level.in_(['4', '5', '6', '7']))
+                                            filter(orm_re_generators.voltage_level.in_([4, 5]))
+                                            # filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
 
             # TODO: Currently only MV generators are imported, please include LV!
 
@@ -722,6 +735,30 @@ class NetworkDingo:
                                         timesteps_count=end_hour-start_hour,
                                         srid=srid,
                                         resolution=resolution)
+
+    def import_static_data(self):
+        """ Imports static data into NetworkDingo such as equipment."""
+
+        package_path = dingo.__path__[0]
+
+        # import equipment
+        equipment_parameters_file = cfg_dingo.get('equipment',
+                                                  'equipment_mv_parameters_lines')
+        self.static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
+                                                equipment_parameters_file),
+                                                comment='#',
+                                                converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+
+        equipment_parameters_file = cfg_dingo.get('equipment',
+                                                  'equipment_mv_parameters_cables')
+        self.static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
+                                        equipment_parameters_file),
+                                        comment='#',
+                                        converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+
+        # TODO: Include LV equipment
+
+
 
     def validate_grid_districts(self):
         """ Tests MV grid districts for validity concerning imported data such as:

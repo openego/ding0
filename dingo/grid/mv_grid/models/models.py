@@ -193,17 +193,24 @@ class Route(object):
         return position
         
     def tech_constraints_satisfied(self):
-        """ Check route validity according to technical constraints
+        """ Check route validity according to technical constraints (voltage and current rating)
         
         Constraints:
             current rating of cable/line
             voltage stability at all nodes
-            cable/line losses?
+
+        Notes:
+            The validation is done for every tested MV grid configuration during CVRP algorithm. The current rating is
+            checked using load factors from [1]_. Due to the high amount of steps the voltage rating cannot be checked
+            using load flow calculation. Therefore we use a simple method which determines the voltage change between
+            two consecutive nodes according to [2]_.
 
         References:
-
+        .. [1] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
+            Stromverteilnetze in Deutschland bis 2030.", 2012
+        .. [2] M. Sakulin, W. Hipp, "Netzaspekte von dezentralen Erzeugungseinheiten,
+            Studie im Auftrag der E-Control GmbH", TU Graz, 2004
         """
-        #TODO: Add reference for voltage stability method (Basse?)
 
         # load parameters
         if self._problem._branch_kind == 'line':
