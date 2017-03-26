@@ -95,7 +95,7 @@ class NetworkDingo:
         """Returns static data"""
         return self._static_data
 
-    def get_mvgd_lvla_obj_from_id(self):
+    def get_mvgd_lvla_lvgd_obj_from_id(self):
         """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object and
                                          MVGridDistrictDingo id to MVGridDistrictDingo object
 
@@ -110,13 +110,16 @@ class NetworkDingo:
 
         mv_grid_districts_dict = {}
         lv_load_areas_dict = {}
+        lv_grid_districts_dict = {}
 
         for mv_grid_district in self.mv_grid_districts():
             mv_grid_districts_dict[mv_grid_district.id_db] = mv_grid_district
             for lv_load_area in mv_grid_district.lv_load_areas():
                 lv_load_areas_dict[lv_load_area.id_db] = lv_load_area
+                for lv_grid_district in lv_load_area.lv_grid_districts():
+                    lv_grid_districts_dict[lv_grid_district.id_db] = lv_grid_district
 
-        return mv_grid_districts_dict, lv_load_areas_dict
+        return mv_grid_districts_dict, lv_load_areas_dict, lv_grid_districts_dict
 
     def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
                         station_geo_data):
@@ -489,7 +492,7 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        load_areas = list(self.get_mvgd_lvla_obj_from_id()[1])
+        #load_areas = list(self.get_mvgd_lvla_lvgd_obj_from_id()[1])
 
         lv_grid_districs_sqla = session.query(orm_lv_grid_district.la_id,
                                               func.ST_AsText(func.ST_Transform(
@@ -526,7 +529,7 @@ class NetworkDingo:
         session = Session()
 
         # get list of mv grid districts
-        mv_grid_districts = list(self.get_mvgd_lvla_obj_from_id()[0])
+        mv_grid_districts = list(self.get_mvgd_lvla_lvgd_obj_from_id()[0])
 
         lv_stations_sqla = session.query(orm_lv_stations.mvlv_subst_id,
                                          orm_lv_stations.la_id,
@@ -604,6 +607,7 @@ class NetworkDingo:
             generators_sqla = session.query(orm_re_generators.id,
                                             orm_re_generators.subst_id,
                                             orm_re_generators.la_id,
+                                            orm_re_generators.mvlv_subst_id,
                                             orm_re_generators.electrical_capacity,
                                             orm_re_generators.generation_type,
                                             orm_re_generators.generation_subtype,
@@ -613,9 +617,10 @@ class NetworkDingo:
                                             func.ST_AsText(func.ST_Transform(
                                             orm_re_generators.geom, srid)).label('geom')
                                             ).\
-                                            filter(orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))).\
-                                            filter(orm_re_generators.voltage_level.in_([4, 5]))
-                                            # filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
+                                            filter(orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))). \
+                                            filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
+                                            #filter(orm_re_generators.voltage_level.in_([4, 5]))
+                                            #filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
 
             # TODO: Currently only MV generators are imported, please include LV!
 
@@ -643,16 +648,24 @@ class NetworkDingo:
 
                 # look up LV load area
                 lv_load_area_id = row['la_id']
+                lv_grid_district_id = row['mvlv_subst_id']
                 if lv_load_area_id and not isnan(lv_load_area_id):
                     lv_load_area = lv_load_areas_dict[lv_load_area_id]
+                    # TODO: current state: no alloc of geno to lvgd / lv grid
+                    # TODO: id of LVGD (mvlv_subst_id) is used for alloc geno to lvgd / lv grid
+                    lv_grid_district = None
+                    #lv_grid_district = lv_grid_districts_dict[lv_grid_district_id]
+
                 else:
                     lv_load_area = None
+                    lv_grid_district = None
 
                 # create generator object
                 generator = GeneratorDingo(id_db=id_db,
                                            geo_data=geo_data,
                                            mv_grid=mv_grid,
                                            lv_load_area=lv_load_area,
+                                           lv_grid=lv_grid_district,
                                            capacity=row['electrical_capacity'],
                                            type=row['generation_type'],
                                            subtype=row['generation_subtype'],
@@ -662,11 +675,16 @@ class NetworkDingo:
                 if generator.v_level in [4, 5]:
                     mv_grid.add_generator(generator)
                 elif generator.v_level in [6, 7]:
-                    pass
-                    #raise NotImplementedError
+                    # TODO: current state: append LV genos to LA list "genos_collected_temp"
+                    if lv_load_area is not None:
+                        lv_load_area.genos_collected_temp.append(generator)
+                    else:
+                        print('Error: Generator', str(id_db), 'has no la_id and cannot be assigned!')
+                    #lv_grid_district.lv_grid.add_generator(generator)
 
         def import_conv_generators():
             """Imports conventional (conv) generators"""
+            # TODO: Alloc to LA required (add to peak_generation of LV stations) !
 
             # build query
             generators_sqla = session.query(orm_conv_generators.gid,
@@ -715,10 +733,38 @@ class NetworkDingo:
         session = Session()
 
         # build dicts to map MV grid district and LV load area ids to related objects
-        mv_grid_districts_dict, lv_load_areas_dict = self.get_mvgd_lvla_obj_from_id()
+        mv_grid_districts_dict, lv_load_areas_dict, lv_grid_districts_dict = self.get_mvgd_lvla_lvgd_obj_from_id()
 
         # import renewable generators
         import_res_generators()
+
+        # TODO: current state: LV genos are collected in "genos_collected_temp" and distributed equally to LV stations
+        # TODO: this can be dropped as soon as genos's "mvlv_subst_id" is correct (+further modifications required!)
+        for grid_district in self.mv_grid_districts():
+            for lv_load_area in grid_district.lv_load_areas():
+                genos_count = len(lv_load_area.genos_collected_temp)
+                lv_grid_district_count = lv_load_area.lv_grid_districts_count()
+                genos_per_lvgd = genos_count // lv_grid_district_count
+                genos_rest = genos_count % lv_grid_district_count
+
+                # alloc genos to lvgds (equal chunks)
+                i = 0
+                genos_rest = lv_load_area.genos_collected_temp
+                for lv_grid_district in lv_load_area.lv_grid_districts():
+                    for geno in lv_load_area.genos_collected_temp[i*genos_per_lvgd:i*genos_per_lvgd + genos_per_lvgd]:
+                        lv_grid_district.lv_grid.add_generator(geno)
+                        lv_grid_district.lv_grid._station.peak_generation += geno.capacity
+                        genos_rest.remove(geno)
+                    i += 1
+                # alloc genos to lvgds (rest)
+                i = 0
+                while genos_rest != []:
+                    geno = genos_rest[0]
+                    lv_grid_district = list(lv_load_area.lv_grid_districts())[i]
+                    lv_grid_district.lv_grid.add_generator(geno)
+                    lv_grid_district.lv_grid._station.peak_generation += geno.capacity
+                    genos_rest.remove(geno)
+                    i += 1
 
         # import conventional generators
         import_conv_generators()
