@@ -217,7 +217,7 @@ class ResultsDingo:
     def calculate_mvgd_stats(self):
 
         mvgd_stats = self.nodes.groupby('grid_id').sum()[
-            ['peak_load', 'generation_capacity']]
+            ['peak_load', 'generation_capacity']] / 1e3
         mvgd_stats['v_nom'] = self.nodes.groupby('grid_id').mean()['v_nom']
         cable_line_km = self.edges['length'].groupby(
             [self.edges['grid_id'], self.edges['type_kind']]).sum().unstack(
