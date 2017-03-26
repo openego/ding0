@@ -93,7 +93,7 @@ def run_dingo(mv_grid_district, base_path):
                                       mv_grid_district[0])),
                      "wb"))
 
-    nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_district)
+    nodes_stats, edges_stats = nd.to_dataframe()
     nodes_stats.to_csv(os.path.join(base_path, 'results',
                                     'mvgd_nodes_stats_{0}.csv'.format(
                                         mv_grid_district[0])),
