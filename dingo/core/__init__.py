@@ -751,26 +751,36 @@ class NetworkDingo:
             for lv_load_area in grid_district.lv_load_areas():
                 genos_count = len(lv_load_area.genos_collected_temp)
                 lv_grid_district_count = lv_load_area.lv_grid_districts_count()
-                genos_per_lvgd = genos_count // lv_grid_district_count
 
-                # alloc genos to lvgds (equal chunks)
-                genos = list(lv_load_area.genos_collected_temp)
-                for lv_grid_district in lv_load_area.lv_grid_districts():
-                    for geno in genos[0:genos_per_lvgd]:
+                # WORKAROUND FOR LA WITH NO LVGD (see DP issue #)
+                if lv_grid_district_count > 0:
+                    genos_per_lvgd = genos_count // lv_grid_district_count
+
+                    # alloc genos to lvgds (equal chunks)
+                    genos = list(lv_load_area.genos_collected_temp)
+                    for lv_grid_district in lv_load_area.lv_grid_districts():
+                        for geno in genos[0:genos_per_lvgd]:
+                            lv_grid_district.lv_grid.add_generator(geno)
+                            lv_grid_district.lv_grid._station.peak_generation += geno.capacity
+                            lv_load_area.peak_generation += geno.capacity
+                            genos.remove(geno)
+                    # alloc genos to lvgds (rest)
+                    i = 0
+                    while genos != []:
+                        geno = genos[0]
+                        lv_grid_district = list(lv_load_area.lv_grid_districts())[i]
                         lv_grid_district.lv_grid.add_generator(geno)
                         lv_grid_district.lv_grid._station.peak_generation += geno.capacity
-                        lv_grid_district.lv_load_area.peak_generation += geno.capacity
+                        lv_load_area.peak_generation += geno.capacity
                         genos.remove(geno)
-                # alloc genos to lvgds (rest)
-                i = 0
-                while genos != []:
-                    geno = genos[0]
-                    lv_grid_district = list(lv_load_area.lv_grid_districts())[i]
-                    lv_grid_district.lv_grid.add_generator(geno)
-                    lv_grid_district.lv_grid._station.peak_generation += geno.capacity
-                    lv_grid_district.lv_load_area.peak_generation += geno.capacity
-                    genos.remove(geno)
-                    i += 1
+                        i += 1
+                # PROBLEM: LA WITH NO LVGD -> aggregate genos capacity only
+                else:
+                    capacity = 0
+                    for geno in lv_load_area.genos_collected_temp:
+                        capacity += geno.capacity
+                    lv_load_area.peak_generation += geno.capacity
+                    print('No LV load area found in', repr(lv_load_area), '. Generators omitted.')
 
         # import conventional generators
         import_conv_generators()
