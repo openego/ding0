@@ -1047,7 +1047,8 @@ class NetworkDingo:
         df : pandas.DataFrame
         """
 
-        node_cols = ['node_id', 'grid_id', 'v_nom', 'geom', 'v_res0', 'v_res1']
+        node_cols = ['node_id', 'grid_id', 'v_nom', 'geom', 'v_res0', 'v_res1',
+                     'peak_load', 'generation_capacity']
         edges_cols = ['branch_id', 'grid_id', 'type_name', 'type_kind',
                       'type_v_nom', 'type_s_nom', 'length', 'geom', 's_res0',
                       's_res1']
@@ -1065,11 +1066,22 @@ class NetworkDingo:
                     node_name = '_'.join(['MV',
                                           str(grid_district.mv_grid.id_db),
                                           repr(node)])
+                    if isinstance(node, LVStationDingo):
+                        peak_load = node.peak_load
+                        generation_capacity = node.peak_generation
+                    elif isinstance(node, GeneratorDingo):
+                        peak_load = 0
+                        generation_capacity = node.capacity
+                    else:
+                        peak_load = 0
+                        generation_capacity = 0
                     nodes_df = nodes_df.append(pd.Series(
                         {'node_id': node_name,
                          'grid_id': grid_district.mv_grid.id_db,
                          'v_nom': grid_district.mv_grid.v_level,
                          'geom': from_shape(Point(node.geo_data), srid=srid),
+                         'peak_load': peak_load,
+                         'generation_capacity': generation_capacity,
                          'v_res0': node.voltage_res[0],
                          'v_res1': node.voltage_res[1]}
                     ), ignore_index=True)
