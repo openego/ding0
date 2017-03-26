@@ -96,10 +96,12 @@ def run_dingo(mv_grid_district, base_path):
     nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_district)
     nodes_stats.to_csv(os.path.join(base_path, 'results',
                                     'mvgd_nodes_stats_{0}.csv'.format(
-                                        mv_grid_district[0])))
+                                        mv_grid_district[0])),
+                       index=False)
     edges_stats.to_csv(os.path.join(base_path, 'results',
                                     'mvgd_edges_stats_{0}.csv'.format(
-                                        mv_grid_district[0])))
+                                        mv_grid_district[0])),
+                       index=False)
 
     return msg
 
@@ -136,10 +138,13 @@ if __name__ == '__main__':
 
             continue
 
-    corrupt_grid_districts.to_csv(os.path.join(base_path, 'info',
-                                               'corrupt_mv_grid_districts.txt'),
-                                  index=False,
-                                  float_format='%.0f')
+    corrupt_grid_districts.to_csv(
+        os.path.join(
+            base_path,
+            'info',
+            'corrupt_mv_grid_districts.txt'),
+        index=False,
+        float_format='%.0f')
 
 
 

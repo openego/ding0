@@ -14,6 +14,8 @@ import time
 
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
+import os
+import pandas as pd
 
 plt.close('all')
 cfg_dingo.load_config('config_db_tables.cfg')
@@ -29,19 +31,13 @@ conn = db.connection(section='oedb')
 # instantiate dingo network object
 nd = NetworkDingo(name='network')
 
-#mv_grid_districts = [386,372,406,371,402,415,480,424,489,367,359,569,591]
-#mv_grid_districts = [402, 406, 489, 480, 371]
-#mv_grid_districts=[1328]
-#mv_grid_districts=[1294]
-#mv_grid_districts=[419]
-#mv_grid_districts = [359, 415, 424, 447, 402, 406, 489, 480, 371]
-#mv_grid_districts=[359]
-#mv_grid_districts = [386,372,406,371,402,415,480,424,489,367]#,569,359,591]
-#mv_grid_districts=[3087, 2990, 3080, 3034, 3088]
-#mv_grid_districts=[3080]#, 3080]#, 3080]
-mvgd_exclude = [56]
-mvgd_first = 578
-mvgd_last = 580
+base_path = "/home/guido/rli_local/dingo_results/"
+
+mvgd_exclude = pd.read_csv(
+    os.path.join(
+        base_path, 'info', 'corrupt_mv_grid_districts.txt'))['id'].tolist()
+mvgd_first = 1
+mvgd_last = 10
 
 mv_grid_districts = [mv for mv in list(range(mvgd_first, mvgd_last)) if
                      mv not in mvgd_exclude]
