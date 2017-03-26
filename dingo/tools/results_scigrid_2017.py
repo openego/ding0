@@ -23,5 +23,6 @@ dingo_results = results.ResultsDingo(
     },
     base_path=base_path)
 global_stats = dingo_results.calculate_global_stats()
+mvgd_stats = dingo_results.calculate_mvgd_stats()
 for key in list(global_stats.keys()):
     print(key, global_stats[key])

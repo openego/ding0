@@ -41,6 +41,7 @@ class ResultsDingo:
         self.edges = None
         self.nodes = None
         self.global_stats = None
+        self.mvgd_stats = None
 
         if os.path.isfile(os.path.join(self.base_path,
                          'info',
@@ -194,6 +195,13 @@ class ResultsDingo:
             self.global_stats = self.calculate_global_stats()
 
         return self.global_stats
+    
+    def mvdg_stats(self):
+
+        if self.mvgd_stats is None:
+            self.mvgd_stats = self.calculate_mvgd_stats()
+
+        return self.mvgd_stats
 
     def calculate_global_stats(self):
 
@@ -206,4 +214,10 @@ class ResultsDingo:
 
         return global_stats
 
-    # TODO: add load for each not to nodes table
+    def calculate_mvgd_stats(self):
+
+        mvgd_stats = self.nodes.groupby('grid_id').sum()[
+            ['peak_load', 'generation_capacity']]
+        mvgd_stats['v_nom'] = self.nodes.groupby('grid_id').mean()['v_nom']
+
+        return mvgd_stats
