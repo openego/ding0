@@ -219,5 +219,11 @@ class ResultsDingo:
         mvgd_stats = self.nodes.groupby('grid_id').sum()[
             ['peak_load', 'generation_capacity']]
         mvgd_stats['v_nom'] = self.nodes.groupby('grid_id').mean()['v_nom']
+        cable_line_km = self.edges['length'].groupby(
+            [self.edges['grid_id'], self.edges['type_kind']]).sum().unstack(
+            level=-1).fillna(0)
+        cable_line_km.columns.name = None
+        mvgd_stats[['km_cable', 'km_line']] = cable_line_km
+        rings = mvgd_stats['grid_id'].apply(lambda x: len(self.nd._mv_grid_districts[x-1].mv_grid._rings))
 
         return mvgd_stats
