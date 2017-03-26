@@ -820,6 +820,7 @@ class NetworkDingo:
 
         msg_invalidity = []
 
+
         for grid_district in self.mv_grid_districts():
 
             # there's only one node (MV station) => grid is empty
@@ -828,7 +829,6 @@ class NetworkDingo:
                 msg_invalidity.append('MV Grid District {} seems to be empty ' \
                                       'and ' \
                                       'was removed'.format(grid_district))
-
             # there're only aggregated load areas
             elif all([lvla.is_aggregated for lvla in
                       grid_district.lv_load_areas()]):

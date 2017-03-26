@@ -227,7 +227,7 @@ class ResultsDingo:
             level=-1).fillna(0)
         cable_line_km.columns.name = None
         mvgd_stats[['km_cable', 'km_line']] = cable_line_km
-        rings = mvgd_stats['grid_id'].apply(lambda x: len(self.nd._mv_grid_districts[x-1].mv_grid._rings))
+        # rings = mvgd_stats['grid_id'].apply(lambda x: len(self.nd._mv_grid_districts[x-1].mv_grid._rings))
 
         return mvgd_stats
 
