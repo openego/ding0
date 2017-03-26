@@ -194,14 +194,14 @@ class NetworkDingo:
 
             # TODO: assign "real" peak_load value to lv_station when available
             lv_station = LVStationDingo(
-                id_db=row['mvlv_subst_id'],
+                id_db=id,
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
-                geo_data=wkt_loads(lv_stations.loc[row['mvlv_subst_id'], 'geom']),
-                #peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
+                geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
+                peak_load=int(lv_load_area.peak_load_sum * lv_grid_district.geo_data.area / lv_load_area.geo_area.area))
                 # TODO: current state: use LVGD count to calc peak load of station -> equal distribution (temporarily)
                 # TODO: use area share (based on total area of LA)
-                peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
+                #peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
 
             # Choice of typified lv model grid depends on population within lv
             # grid district. If no population is given, lv grid is omitted and
@@ -349,7 +349,9 @@ class NetworkDingo:
         package_path = dingo.__path__[0]
 
         # get dingos' standard CRS (SRID)
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        #srid = str(int(cfg_dingo.get('geo', 'srid')))
+        # SET SRID 3035 to achieve correct area calculation of lv_grid_district
+        srid = '3035'
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
@@ -486,7 +488,9 @@ class NetworkDingo:
         """
 
         # get dingos' standard CRS (SRID)
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        #srid = str(int(cfg_dingo.get('geo', 'srid')))
+        # SET SRID 3035 to achieve correct area calculation of lv_grid_district
+        srid = '3035'
 
         # 1. filter grid districts of relevant load area
         Session = sessionmaker(bind=conn)
@@ -497,15 +501,14 @@ class NetworkDingo:
         lv_grid_districs_sqla = session.query(orm_lv_grid_district.la_id,
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
-                                              orm_lv_grid_district.mvlv_subst_id,
-                                              orm_lv_grid_district.id). \
-            filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist()))
+                                              orm_lv_grid_district.mvlv_subst_id_new). \
+            filter(orm_lv_grid_district.mvlv_subst_id_new.in_(lv_stations.index.tolist()))
             #filter(orm_lv_grid_district.load_area_id.in_(load_areas))
 
         # read data from db
         lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
                                              session.bind,
-                                             index_col='id')
+                                             index_col='mvlv_subst_id_new')
 
         return lv_grid_districs
 
@@ -650,7 +653,11 @@ class NetworkDingo:
                 lv_load_area_id = row['la_id']
                 lv_grid_district_id = row['mvlv_subst_id']
                 if lv_load_area_id and not isnan(lv_load_area_id):
-                    lv_load_area = lv_load_areas_dict[lv_load_area_id]
+                    try:
+                        lv_load_area = lv_load_areas_dict[lv_load_area_id]
+                    except:
+                        print('Generator', str(id_db), 'cannot be assigned to non-existent load area! (omitted)')
+                        pass
                     # TODO: current state: no alloc of geno to lvgd / lv grid
                     # TODO: id of LVGD (mvlv_subst_id) is used for alloc geno to lvgd / lv grid
                     lv_grid_district = None
@@ -679,7 +686,7 @@ class NetworkDingo:
                     if lv_load_area is not None:
                         lv_load_area.genos_collected_temp.append(generator)
                     else:
-                        print('Error: Generator', str(id_db), 'has no la_id and cannot be assigned!')
+                        print('Generator', str(id_db), 'has no la_id and cannot be assigned!')
                     #lv_grid_district.lv_grid.add_generator(generator)
 
         def import_conv_generators():
@@ -745,25 +752,22 @@ class NetworkDingo:
                 genos_count = len(lv_load_area.genos_collected_temp)
                 lv_grid_district_count = lv_load_area.lv_grid_districts_count()
                 genos_per_lvgd = genos_count // lv_grid_district_count
-                genos_rest = genos_count % lv_grid_district_count
 
                 # alloc genos to lvgds (equal chunks)
-                i = 0
-                genos_rest = lv_load_area.genos_collected_temp
+                genos = list(lv_load_area.genos_collected_temp)
                 for lv_grid_district in lv_load_area.lv_grid_districts():
-                    for geno in lv_load_area.genos_collected_temp[i*genos_per_lvgd:i*genos_per_lvgd + genos_per_lvgd]:
+                    for geno in genos[0:genos_per_lvgd]:
                         lv_grid_district.lv_grid.add_generator(geno)
                         lv_grid_district.lv_grid._station.peak_generation += geno.capacity
-                        genos_rest.remove(geno)
-                    i += 1
+                        genos.remove(geno)
                 # alloc genos to lvgds (rest)
                 i = 0
-                while genos_rest != []:
-                    geno = genos_rest[0]
+                while genos != []:
+                    geno = genos[0]
                     lv_grid_district = list(lv_load_area.lv_grid_districts())[i]
                     lv_grid_district.lv_grid.add_generator(geno)
                     lv_grid_district.lv_grid._station.peak_generation += geno.capacity
-                    genos_rest.remove(geno)
+                    genos.remove(geno)
                     i += 1
 
         # import conventional generators
