@@ -653,7 +653,11 @@ class NetworkDingo:
                 lv_load_area_id = row['la_id']
                 lv_grid_district_id = row['mvlv_subst_id']
                 if lv_load_area_id and not isnan(lv_load_area_id):
-                    lv_load_area = lv_load_areas_dict[lv_load_area_id]
+                    try:
+                        lv_load_area = lv_load_areas_dict[lv_load_area_id]
+                    except:
+                        print('Generator', str(id_db), 'cannot be assigned to non-existent load area! (omitted)')
+                        pass
                     # TODO: current state: no alloc of geno to lvgd / lv grid
                     # TODO: id of LVGD (mvlv_subst_id) is used for alloc geno to lvgd / lv grid
                     lv_grid_district = None
@@ -682,7 +686,7 @@ class NetworkDingo:
                     if lv_load_area is not None:
                         lv_load_area.genos_collected_temp.append(generator)
                     else:
-                        print('Error: Generator', str(id_db), 'has no la_id and cannot be assigned!')
+                        print('Generator', str(id_db), 'has no la_id and cannot be assigned!')
                     #lv_grid_district.lv_grid.add_generator(generator)
 
         def import_conv_generators():
@@ -748,25 +752,22 @@ class NetworkDingo:
                 genos_count = len(lv_load_area.genos_collected_temp)
                 lv_grid_district_count = lv_load_area.lv_grid_districts_count()
                 genos_per_lvgd = genos_count // lv_grid_district_count
-                genos_rest = genos_count % lv_grid_district_count
 
                 # alloc genos to lvgds (equal chunks)
-                i = 0
-                genos_rest = lv_load_area.genos_collected_temp
+                genos = list(lv_load_area.genos_collected_temp)
                 for lv_grid_district in lv_load_area.lv_grid_districts():
-                    for geno in lv_load_area.genos_collected_temp[i*genos_per_lvgd:i*genos_per_lvgd + genos_per_lvgd]:
+                    for geno in genos[0:genos_per_lvgd]:
                         lv_grid_district.lv_grid.add_generator(geno)
                         lv_grid_district.lv_grid._station.peak_generation += geno.capacity
-                        genos_rest.remove(geno)
-                    i += 1
+                        genos.remove(geno)
                 # alloc genos to lvgds (rest)
                 i = 0
-                while genos_rest != []:
-                    geno = genos_rest[0]
+                while genos != []:
+                    geno = genos[0]
                     lv_grid_district = list(lv_load_area.lv_grid_districts())[i]
                     lv_grid_district.lv_grid.add_generator(geno)
                     lv_grid_district.lv_grid._station.peak_generation += geno.capacity
-                    genos_rest.remove(geno)
+                    genos.remove(geno)
                     i += 1
 
         # import conventional generators
