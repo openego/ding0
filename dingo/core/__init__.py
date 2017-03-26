@@ -1036,7 +1036,7 @@ class NetworkDingo:
 
         print('=====> MV Grids exported (NEW)')
 
-    def to_dataframe(self, conn, mv_grid_districts):
+    def to_dataframe(self):
         """Export grid data to dataframes for statistical analysis
 
         The export to dataframe is similar to db tables exported by
