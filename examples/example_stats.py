@@ -36,11 +36,13 @@ base_path = "/home/guido/rli_local/dingo_results/"
 mvgd_exclude = pd.read_csv(
     os.path.join(
         base_path, 'info', 'corrupt_mv_grid_districts.txt'))['id'].tolist()
-mvgd_first = 1
-mvgd_last = 10
+mvgd_exclude = []
+mvgd_first = 4
+mvgd_last = 5
 
 mv_grid_districts = [mv for mv in list(range(mvgd_first, mvgd_last)) if
                      mv not in mvgd_exclude]
+
 # mv_grid_districts = list(range(1,100))
 
 nd.import_pf_config()
@@ -89,7 +91,6 @@ nodes_stats.to_csv('mvgd_nodes_stats_{0}-{1}.csv'.format(mvgd_first, mvgd_last),
 edges_stats.to_csv('mvgd_edges_stats_{0}-{1}.csv'.format(mvgd_first, mvgd_last),
                    index=False)
 
-print(msg)
 
 conn.close()
 #objgraph.show_refs([nd], filename='nd.png')

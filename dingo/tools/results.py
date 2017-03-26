@@ -142,15 +142,15 @@ class ResultsDingo:
         pickle_name = cfg_dingo.get('output', 'nd_pickle')
         self.nd = self.read_pickles_from_files(pickle_name)
 
-        # load nodes and edges table data
-        edges = cfg_dingo.get('output', 'edges_stats')
-        self.edges = self.read_csv_from_files(edges)
-        self.edges['grid_id'] = self.edges['grid_id'].map(
-            lambda x: '%.0f' % x)
-        nodes = cfg_dingo.get('output', 'nodes_stats')
-        self.nodes = self.read_csv_from_files(nodes)
-        self.nodes['grid_id'] = self.nodes['grid_id'].map(
-            lambda x: '%.0f' % x)
+        # # load nodes and edges table data
+        # edges = cfg_dingo.get('output', 'edges_stats')
+        # self.edges = self.read_csv_from_files(edges)
+        # self.edges['grid_id'] = self.edges['grid_id'].map(
+        #     lambda x: '%.0f' % x)
+        # nodes = cfg_dingo.get('output', 'nodes_stats')
+        # self.nodes = self.read_csv_from_files(nodes)
+        # self.nodes['grid_id'] = self.nodes['grid_id'].map(
+        #     lambda x: '%.0f' % x)
 
     def read_nd_multiple_mvgds(self, filename):
         """
@@ -179,18 +179,30 @@ class ResultsDingo:
                     "dingo_grids_{0}-{1}.pkl".format(
                     self.mv_grid_districs[0], self.mv_grid_districs[-1])),
                      "wb"))
-        self.nodes.to_csv(os.path.join(
-                    self.base_path,
-                    'results', 'mvgd_nodes_stats_{0}-{1}.csv'.format(
-                    self.mv_grid_districs[0], self.mv_grid_districs[-1])),
-            index=False
-        )
-        self.edges.to_csv(os.path.join(
-                    self.base_path,
-                    'results', 'mvgd_edges_stats_{0}-{1}.csv'.format(
-                    self.mv_grid_districs[0], self.mv_grid_districs[-1])),
-            index=False
-        )
+        # self.nodes.to_csv(os.path.join(
+        #             self.base_path,
+        #             'results', 'mvgd_nodes_stats_{0}-{1}.csv'.format(
+        #             self.mv_grid_districs[0], self.mv_grid_districs[-1])),
+        #     index=False
+        # )
+        # self.edges.to_csv(os.path.join(
+        #             self.base_path,
+        #             'results', 'mvgd_edges_stats_{0}-{1}.csv'.format(
+        #             self.mv_grid_districs[0], self.mv_grid_districs[-1])),
+        #     index=False
+        # )
+
+        nodes, edges = self.nd.to_dataframe()
+        nodes.to_csv(os.path.join(
+            self.base_path,
+            'results', 'mvgd_nodes_stats_{0}-{1}.csv'.format(
+                self.mv_grid_districs[0], self.mv_grid_districs[-1])),
+            index=False)
+        edges.to_csv(os.path.join(
+            self.base_path,
+            'results', 'mvgd_edges_stats_{0}-{1}.csv'.format(
+                self.mv_grid_districs[0], self.mv_grid_districs[-1])),
+            index=False)
 
     def global_stats(self):
 
@@ -227,7 +239,7 @@ class ResultsDingo:
             level=-1).fillna(0)
         cable_line_km.columns.name = None
         mvgd_stats[['km_cable', 'km_line']] = cable_line_km
-        rings = mvgd_stats['grid_id'].apply(lambda x: len(self.nd._mv_grid_districts[x-1].mv_grid._rings))
+        # rings = mvgd_stats['grid_id'].apply(lambda x: len(self.nd._mv_grid_districts[x-1].mv_grid._rings))
 
         return mvgd_stats
 

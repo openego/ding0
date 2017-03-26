@@ -23,7 +23,7 @@ cfg_dingo.load_config('config_calc.cfg')
 cfg_dingo.load_config('config_files.cfg')
 cfg_dingo.load_config('config_misc.cfg')
 
-base_path = ''
+base_path = '/home/guido/rli_local/dingo_results/'
 
 
 def create_results_dirs(base_path):
@@ -114,8 +114,8 @@ if __name__ == '__main__':
     conn = db.connection(section='oedb')
 
     mvgd_exclude = []
-    mvgd_first = 1
-    mvgd_last = 50
+    mvgd_first = 5
+    mvgd_last = 25
 
     mv_grid_districts = [mv for mv in list(range(mvgd_first, mvgd_last)) if
                              mv not in mvgd_exclude]
