@@ -3,6 +3,9 @@ import os
 import pandas as pd
 
 from dingo.tools import config as cfg_dingo
+from matplotlib import pyplot as plt
+import seaborn as sns
+
 
 class ResultsDingo:
     """
@@ -226,4 +229,52 @@ class ResultsDingo:
         mvgd_stats[['km_cable', 'km_line']] = cable_line_km
         rings = mvgd_stats['grid_id'].apply(lambda x: len(self.nd._mv_grid_districts[x-1].mv_grid._rings))
 
-        return mvgd_stats
+        return mvgd_stats    def plot_cable_length(self):
+
+    def plot_cable_length(self):
+        """
+        Cable length per MV grid district
+        """
+
+        stats = self.calculate_mvgd_stats().rename(columns={'v_nom': 'Voltage level'})
+
+        # cable and line kilometer distribution
+        f, axarr = plt.subplots(2, sharex=True)
+        stats.hist(column=['km_cable'], bins=5, alpha=0.5, ax=axarr[0])
+        stats.hist(column=['km_line'], bins=5, alpha=0.5, ax=axarr[1])
+
+        plt.savefig(os.path.join(self.base_path, 'plots',
+                                 'Histogram_cable_line_length.pdf'))
+
+        # Generation capacity vs. peak load
+        sns.set_context("paper", font_scale=1.1)
+        sns.set_style("ticks")
+
+        sns.lmplot('generation_capacity', 'peak_load',
+                   data=stats,
+                   fit_reg=False,
+                   hue='Voltage level',
+                   scatter_kws={"marker": "D",
+                                "s": 100},
+                   aspect=2)
+        plt.title('Peak load vs. generation capcity')
+        plt.xlabel('Generation capacity in MW')
+        plt.ylabel('Peak load in MW')
+
+        plt.savefig(os.path.join(self.base_path, 'plots',
+                                 'Scatter_generation_load.pdf'))
+
+        # Cable vs. line kilometer scatter
+        sns.lmplot('km_cable', 'km_line',
+                   data=stats,
+                   fit_reg=False,
+                   hue='Voltage level',
+                   scatter_kws={"marker": "D",
+                                "s": 100},
+                   aspect=2)
+        plt.title('Kilometer of cable/line')
+        plt.xlabel('Km of cables')
+        plt.ylabel('Km of overhead lines')
+
+        plt.savefig(os.path.join(self.base_path, 'plots',
+                                 'Scatter_cables_lines.pdf'))
