@@ -1096,8 +1096,8 @@ class NetworkDingo:
                          'generation_capacity': generation_capacity,
                          'v_res0': node.voltage_res[0],
                          'v_res1': node.voltage_res[1],
-                         'type': type,
-                    ), ignore_index=True)
+                         #'type': type,
+                        }), ignore_index=True)
 
             # get branches (lines) from grid's graph and create datasets
             for branch in grid_district.mv_grid.graph_edges():

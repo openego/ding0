@@ -198,7 +198,7 @@ class ResultsDingo:
             self.global_stats = self.calculate_global_stats()
 
         return self.global_stats
-    
+
     def mvdg_stats(self):
 
         if self.mvgd_stats is None:
@@ -229,7 +229,7 @@ class ResultsDingo:
         mvgd_stats[['km_cable', 'km_line']] = cable_line_km
         rings = mvgd_stats['grid_id'].apply(lambda x: len(self.nd._mv_grid_districts[x-1].mv_grid._rings))
 
-        return mvgd_stats    def plot_cable_length(self):
+        return mvgd_stats
 
     def plot_cable_length(self):
         """
