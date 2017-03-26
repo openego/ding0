@@ -752,7 +752,7 @@ class NetworkDingo:
                 genos_count = len(lv_load_area.genos_collected_temp)
                 lv_grid_district_count = lv_load_area.lv_grid_districts_count()
 
-                # WORKAROUND FOR LA WITH NO LVGD (see DP issue #)
+                # WORKAROUND FOR LA WITH NO LVGD (see DP issue #68)
                 if lv_grid_district_count > 0:
                     genos_per_lvgd = genos_count // lv_grid_district_count
 
@@ -780,7 +780,7 @@ class NetworkDingo:
                     for geno in lv_load_area.genos_collected_temp:
                         capacity += geno.capacity
                     lv_load_area.peak_generation += geno.capacity
-                    print('No LV load area found in', repr(lv_load_area), '. Generators omitted.')
+                    print('No LV grid district found in', repr(lv_load_area), '. Generators omitted.')
 
         # import conventional generators
         import_conv_generators()
