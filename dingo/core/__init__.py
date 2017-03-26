@@ -759,6 +759,7 @@ class NetworkDingo:
                     for geno in genos[0:genos_per_lvgd]:
                         lv_grid_district.lv_grid.add_generator(geno)
                         lv_grid_district.lv_grid._station.peak_generation += geno.capacity
+                        lv_grid_district.lv_load_area.peak_generation += geno.capacity
                         genos.remove(geno)
                 # alloc genos to lvgds (rest)
                 i = 0
@@ -767,6 +768,7 @@ class NetworkDingo:
                     lv_grid_district = list(lv_load_area.lv_grid_districts())[i]
                     lv_grid_district.lv_grid.add_generator(geno)
                     lv_grid_district.lv_grid._station.peak_generation += geno.capacity
+                    lv_grid_district.lv_load_area.peak_generation += geno.capacity
                     genos.remove(geno)
                     i += 1
 
