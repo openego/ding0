@@ -826,8 +826,6 @@ class NetworkDingo:
 
         # TODO: Include LV equipment
 
-
-
     def validate_grid_districts(self):
         """ Tests MV grid districts for validity concerning imported data such as:
 
@@ -835,23 +833,26 @@ class NetworkDingo:
         """
 
         msg_invalidity = []
-
+        invalid_mv_grid_districts = []
 
         for grid_district in self.mv_grid_districts():
 
             # there's only one node (MV station) => grid is empty
             if len(grid_district.mv_grid._graph.nodes()) == 1:
-                self._mv_grid_districts.remove(grid_district)
+                invalid_mv_grid_districts.append(grid_district)
                 msg_invalidity.append('MV Grid District {} seems to be empty ' \
                                       'and ' \
                                       'was removed'.format(grid_district))
             # there're only aggregated load areas
             elif all([lvla.is_aggregated for lvla in
                       grid_district.lv_load_areas()]):
-                self._mv_grid_districts.remove(grid_district)
+                invalid_mv_grid_districts.append(grid_district)
                 msg_invalidity.append("MV Grid District {} contains only " \
                                  "aggregated LV Load Areas and was removed" \
                                  "".format(grid_district))
+
+        for grid_district in invalid_mv_grid_districts:
+            self._mv_grid_districts.remove(grid_district)
 
         print("\n".join(msg_invalidity))
         print('=====> MV Grids validated')
