@@ -178,7 +178,10 @@ class NetworkDingo:
                 id_db=id,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(row['geom']),
-                population=row['population'])
+                population=row['population'],
+                # TODO: current state: use LVGD count to calc peak load of station -> equal distribution (temporarily)
+                # TODO: use area share (based on total area of LA)
+                peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(network=self,
@@ -192,7 +195,10 @@ class NetworkDingo:
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[row['mvlv_subst_id'], 'geom']),
-                peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
+                #peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
+                # TODO: current state: use LVGD count to calc peak load of station -> equal distribution (temporarily)
+                # TODO: use area share (based on total area of LA)
+                peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
 
             # Choice of typified lv model grid depends on population within lv
             # grid district. If no population is given, lv grid is omitted and
