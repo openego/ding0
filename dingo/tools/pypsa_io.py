@@ -482,6 +482,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
             # bus + aggregate load of lv grids (at mv/ls substation)
             elif isinstance(node, LVStationDingo):
+                # Aggregated load representing load in LV grid
                 load['load_id'].append(
                     '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
                 load['bus'].append(node.pypsa_id)
@@ -498,6 +499,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                      load_in_generation_case])
                 load_pq_set['grid_id'].append(grid.id_db)
 
+                # bus at primary MV-LV transformer side
                 buses['bus_id'].append(node.pypsa_id)
                 buses['v_nom'].append(grid.v_level)
                 buses['geom'].append(from_shape(node.geo_data, srid=srid))
@@ -507,6 +509,23 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 bus_v_mag_set['temp_id'].append(1)
                 bus_v_mag_set['v_mag_pu_set'].append([1, 1])
                 bus_v_mag_set['grid_id'].append(grid.id_db)
+
+                # generator representing generation capacity in LV grid
+                generator['generator_id'].append('_'.join(
+                    ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
+                generator['control'].append('PQ')
+                generator['p_nom'].append(node.peak_generation)
+                generator['grid_id'].append(grid.id_db)
+                generator['bus'].append(node.pypsa_id)
+
+                generator_pq_set['generator_id'].append('_'.join(
+                    ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
+                generator_pq_set['temp_id'].append(1)
+                generator_pq_set['p_set'].append(
+                    [0 * kw2mw, node.peak_generation * kw2mw])
+                generator_pq_set['q_set'].append(
+                    [0 * kw2mw, 0 * kw2mw])
+                generator_pq_set['grid_id'].append(grid.id_db)
 
             elif isinstance(node, CircuitBreakerDingo):
                 # TODO: remove this elif-case if CircuitBreaker are removed from graph
