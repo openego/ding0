@@ -101,6 +101,8 @@ class LVLoadAreaDingo(RegionDingo):
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
         self.is_aggregated = kwargs.get('is_aggregated', False)
+        # TODO: attr. to collect LV genos
+        self.genos_collected_temp = []
 
         # threshold: load area peak load, if peak load < threshold => treat load area as satellite
         load_area_sat_load_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_load_threshold')
