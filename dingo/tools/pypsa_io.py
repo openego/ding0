@@ -533,8 +533,14 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             else:
                 raise TypeError("Node of type", node, "cannot be handled here")
         else:
-            print("Node {} is not connected to the graph and will be omitted " \
-                  "in power flow analysis".format(node))
+            if not isinstance(node, CircuitBreakerDingo):
+                add_info =  "LA is aggr. {0}".format(
+                    node.lv_load_area.is_aggregated)
+            else:
+                add_info = ""
+            print("Node {0} is not connected to the graph and will be omitted " \
+                  "in power flow analysis. {1}".format(
+                node, add_info))
 
     components = {'Bus': DataFrame(buses).set_index('bus_id'),
                   'Generator': DataFrame(generator).set_index('generator_id'),
