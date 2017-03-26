@@ -497,15 +497,14 @@ class NetworkDingo:
         lv_grid_districs_sqla = session.query(orm_lv_grid_district.la_id,
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
-                                              orm_lv_grid_district.mvlv_subst_id,
-                                              orm_lv_grid_district.id). \
-            filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist()))
+                                              orm_lv_grid_district.mvlv_subst_id_new). \
+            filter(orm_lv_grid_district.mvlv_subst_id_new.in_(lv_stations.index.tolist()))
             #filter(orm_lv_grid_district.load_area_id.in_(load_areas))
 
         # read data from db
         lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
                                              session.bind,
-                                             index_col='id')
+                                             index_col='mvlv_subst_id_new')
 
         return lv_grid_districs
 
