@@ -194,14 +194,14 @@ class NetworkDingo:
 
             # TODO: assign "real" peak_load value to lv_station when available
             lv_station = LVStationDingo(
-                id_db=row['mvlv_subst_id'],
+                id_db=id,
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
-                geo_data=wkt_loads(lv_stations.loc[row['mvlv_subst_id'], 'geom']),
-                #peak_load=lv_load_area.peak_load_sum / lv_grid_districts.size)
+                geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
+                peak_load=int(lv_load_area.peak_load_sum * lv_grid_district.geo_data.area / lv_load_area.geo_area.area))
                 # TODO: current state: use LVGD count to calc peak load of station -> equal distribution (temporarily)
                 # TODO: use area share (based on total area of LA)
-                peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
+                #peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
 
             # Choice of typified lv model grid depends on population within lv
             # grid district. If no population is given, lv grid is omitted and
@@ -349,7 +349,9 @@ class NetworkDingo:
         package_path = dingo.__path__[0]
 
         # get dingos' standard CRS (SRID)
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        #srid = str(int(cfg_dingo.get('geo', 'srid')))
+        # SET SRID 3035 to achieve correct area calculation of lv_grid_district
+        srid = '3035'
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
@@ -486,7 +488,9 @@ class NetworkDingo:
         """
 
         # get dingos' standard CRS (SRID)
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        #srid = str(int(cfg_dingo.get('geo', 'srid')))
+        # SET SRID 3035 to achieve correct area calculation of lv_grid_district
+        srid = '3035'
 
         # 1. filter grid districts of relevant load area
         Session = sessionmaker(bind=conn)
