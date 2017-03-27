@@ -205,7 +205,10 @@ class GridDingo:
         """
         branches = set()
         for node_target in nodes_target:
-            branches.add(self.find_path(node_source, node_target))
+            path = self.find_path(node_source, node_target)
+            node_pairs = list(zip(path[0:len(path) - 1], path[1:len(path)]))
+            for n1, n2 in node_pairs:
+                branches.add(self._graph.edge[n1][n2]['branch'])
 
         return list(branches)
 
