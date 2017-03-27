@@ -25,7 +25,7 @@ cfg_dingo.load_config('config_misc.cfg')
 start = time.time()
 
 # database connection
-conn = db.connection(section='oedb_remote')
+conn = db.connection(section='oedb')
 
 # instantiate dingo network object
 nd = NetworkDingo(name='network')
@@ -57,12 +57,6 @@ nd.connect_generators()
 
 nd.set_branch_ids()
 
-# DEBUG (Compare graphs to CLEAN UP THE SALT)
-#conn.close()
-#from dingo.tools.debug import compare_graphs
-#compare_graphs(graph=nd._mv_grid_districts[0].mv_grid._graph,
-#               mode='compare')
-
 nd.set_circuit_breakers()
 
 # Open all circuit breakers in grid
@@ -71,12 +65,14 @@ nd.control_circuit_breakers(mode='open')
 # Analyze grid by power flow analysis
 nd.run_powerflow(conn, method='onthefly', export_pypsa=False)
 
+# reinforce MV grid
+nd.reinforce_grid()
+
+#objgraph.show_refs([nd], filename='nd.png')
+print('Elapsed time for', str(len(mv_grid_districts)), 'MV grid districts (seconds): {}'.format(time.time() - start))
+
+# export grids
 nd.export_mv_grid(conn, mv_grid_districts)
 #nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
-#objgraph.show_refs([nd], filename='nd.png')
-print('Elapsed time for', str(len(mv_grid_districts)), 'MV grid districts (seconds): {}'.format(time.time() - start))
-
-# reinforce MV grid
-#nd.reinforce_grid()
