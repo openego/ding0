@@ -84,7 +84,7 @@ nd.export_mv_grid_new(conn, mv_grid_districts)
 import pickle
 pickle.dump(nd,
             open("dingo_grids_{0}-{1}.pkl".format(mvgd_first, mvgd_last), "wb"))
-nodes_stats, edges_stats = nd.to_dataframe(conn, mv_grid_districts)
+nodes_stats, edges_stats = nd.to_dataframe()
 # mvgd_stats.to_hdf('mvgd_stats_{0}-{1}.hf5'.format(mvgd_first, mvgd_last), 'data')
 nodes_stats.to_csv('mvgd_nodes_stats_{0}-{1}.csv'.format(mvgd_first, mvgd_last),
                    index=False)

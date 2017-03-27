@@ -1123,7 +1123,8 @@ class NetworkDingo:
                          'generation_capacity': generation_capacity,
                          'v_res0': node.voltage_res[0],
                          'v_res1': node.voltage_res[1],
-                         #'type': type,
+                         'type': type,
+                         'rings': len(grid_district.mv_grid._rings)
                         }), ignore_index=True)
 
             # get branches (lines) from grid's graph and create datasets

@@ -239,7 +239,11 @@ class ResultsDingo:
             level=-1).fillna(0)
         cable_line_km.columns.name = None
         mvgd_stats[['km_cable', 'km_line']] = cable_line_km
-        # rings = mvgd_stats['grid_id'].apply(lambda x: len(self.nd._mv_grid_districts[x-1].mv_grid._rings))
+        mvgd_stats['rings'] = self.nodes.groupby('grid_id').mean()['rings']
+        type = self.nodes.groupby(['grid_id','type']).count()['node_id'].unstack(level=-1).fillna(0)
+        type.columns.name= None
+        mvgd_stats = pd.concat([mvgd_stats, type], axis=1)
+
 
         return mvgd_stats
 
