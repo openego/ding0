@@ -10,6 +10,7 @@ from dingo.tools import pypsa_io, config as cfg_dingo
 from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *
+from egoio.tools.db import change_owner_to
 
 import os
 
@@ -894,6 +895,10 @@ class NetworkDingo:
 
         # delete all existing datasets
         # db_int.sqla_mv_grid_viz.__table__.create(conn) # create if not exist
+        # change_owner_to(conn,
+        #                 db_int.sqla_mv_grid_viz.__table_args__['schema'],
+        #                 db_int.sqla_mv_grid_viz.__tablename__,
+        #                 'oeuser')
         session.query(db_int.sqla_mv_grid_viz).delete()
         session.commit()
 
@@ -1012,7 +1017,15 @@ class NetworkDingo:
 
         # delete all existing datasets
         # db_int.sqla_mv_grid_viz_branches.__table__.create(conn) # create if not exist
+        # change_owner_to(conn,
+        #                 db_int.sqla_mv_grid_viz_branches.__table_args__['schema'],
+        #                 db_int.sqla_mv_grid_viz_branches.__tablename__,
+        #                 'oeuser')
         # db_int.sqla_mv_grid_viz_nodes.__table__.create(conn) # create if not exist
+        # change_owner_to(conn,
+        #                 db_int.sqla_mv_grid_viz_nodes.__table_args__['schema'],
+        #                 db_int.sqla_mv_grid_viz_nodes.__tablename__,
+        #                 'oeuser')
         session.query(db_int.sqla_mv_grid_viz_branches).delete()
         session.query(db_int.sqla_mv_grid_viz_nodes).delete()
         session.commit()
