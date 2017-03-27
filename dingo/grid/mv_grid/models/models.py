@@ -204,15 +204,20 @@ class Route(object):
             checked using load factors from [1]_. Due to the high amount of steps the voltage rating cannot be checked
             using load flow calculation. Therefore we use a simple method which determines the voltage change between
             two consecutive nodes according to [2]_.
+            Furthermore it is checked if new route has got more nodes than allowed (typ. 2*10 according to _[3]).
 
         References:
         .. [1] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012
         .. [2] M. Sakulin, W. Hipp, "Netzaspekte von dezentralen Erzeugungseinheiten,
             Studie im Auftrag der E-Control GmbH", TU Graz, 2004
+        .. [3] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
         """
 
         # load parameters
+        load_area_count_per_ring = float(cfg_dingo.get('mv_routing',
+                                                       'load_area_count_per_ring'))
+
         if self._problem._branch_kind == 'line':
             load_factor_normal = float(cfg_dingo.get('assumptions',
                                                      'load_factor_mv_line_lc_normal'))
@@ -232,6 +237,11 @@ class Route(object):
                                                           'mv_max_v_level_diff_malfunc'))
         mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                        'mv_routing_loads_cos_phi'))
+
+
+        # step 0: check if route has got more nodes than allowed
+        if len(self._nodes) > load_area_count_per_ring:
+            return False
 
         # step 1: calc circuit breaker position
         position = self.calc_circuit_breaker_position()
