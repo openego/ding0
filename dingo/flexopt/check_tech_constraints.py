@@ -85,12 +85,16 @@ def check_load(grid, mode):
 
         #print(s_max_th_branch)
         if any([s*mw2kw >= s_max_th_trafo for s in s_max_th_branch]):
-            print('Trafo has to be reinforced')
             crit_stations.append(grid._station)
             # PUT MORE STUFF IN HERE
 
     elif mode == 'LV':
         raise NotImplementedError
+
+    if crit_branches:
+        print('==>', len(crit_branches), 'branches have load issues.')
+    if crit_stations:
+        print('==>', len(crit_stations), 'stations have load issues.')
 
     return crit_branches, crit_stations
 
@@ -136,5 +140,7 @@ def check_voltage(grid, mode):
     elif mode == 'LV':
         raise NotImplementedError
 
-    #print(crit_nodes)
+    if crit_nodes:
+        print('==>', len(crit_nodes), 'nodes have voltage issues.')
+
     return [_['node'] for _ in sorted(crit_nodes.values(), key=lambda _: _['v_diff'], reverse=True)]
