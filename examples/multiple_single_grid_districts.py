@@ -142,7 +142,8 @@ if __name__ == '__main__':
         os.path.join(
             base_path,
             'info',
-            'corrupt_mv_grid_districts.txt'),
+            'corrupt_mv_grid_districts_{0}-{1}.txt'.format(
+                mvgd_first, mvgd_last)),
         index=False,
         float_format='%.0f')
 

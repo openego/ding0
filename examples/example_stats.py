@@ -33,12 +33,15 @@ nd = NetworkDingo(name='network')
 
 base_path = "/home/guido/rli_local/dingo_results/"
 
+mvgd_first = 5
+mvgd_last = 6
+
 mvgd_exclude = pd.read_csv(
     os.path.join(
-        base_path, 'info', 'corrupt_mv_grid_districts.txt'))['id'].tolist()
+        base_path, 'info', 'corrupt_mv_grid_districts_{0}-{1}.txt'.format(
+                              mvgd_first, mvgd_last[-1])
+    ))['id'].tolist()
 mvgd_exclude = []
-mvgd_first = 4
-mvgd_last = 5
 
 mv_grid_districts = [mv for mv in list(range(mvgd_first, mvgd_last)) if
                      mv not in mvgd_exclude]

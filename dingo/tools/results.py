@@ -48,11 +48,13 @@ class ResultsDingo:
 
         if os.path.isfile(os.path.join(self.base_path,
                          'info',
-                          'corrupt_mv_grid_districts.txt')):
+                          'corrupt_mv_grid_districts_{0}-{1}.txt'.format(
+                              mv_grid_districts[0], mv_grid_districts[-1]))):
             self.invalid_mvgd = pd.read_csv(
                 os.path.join(self.base_path,
                              'info',
-                             'corrupt_mv_grid_districts.txt'))
+                             'corrupt_mv_grid_districts_{0}-{1}.txt'.format(
+                              mv_grid_districts[0], mv_grid_districts[-1])))
 
         # get list of excluded grids (invalid) from info file
         self.excluded_grid_districts = self.invalid_mvgd['id'].tolist()
