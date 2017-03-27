@@ -480,6 +480,25 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                      load_in_generation_case * kw2mw])
                 load_pq_set['grid_id'].append(grid.id_db)
 
+                # generator representing generation capacity of aggregate LA
+                # analogously to load, generation is connected directly to
+                # HV-MV substation
+                generator['generator_id'].append('_'.join(
+                    ['MV', str(grid.id_db), 'lcg', str(node.id_db)]))
+                generator['control'].append('PQ')
+                generator['p_nom'].append(node.lv_load_area.peak_generation)
+                generator['grid_id'].append(grid.id_db)
+                generator['bus'].append('_'.join(['HV', str(grid.id_db), 'trd']))
+
+                generator_pq_set['generator_id'].append('_'.join(
+                    ['MV', str(grid.id_db), 'lcg', str(node.id_db)]))
+                generator_pq_set['temp_id'].append(1)
+                generator_pq_set['p_set'].append(
+                    [0 * kw2mw, node.lv_load_area.peak_generation * kw2mw])
+                generator_pq_set['q_set'].append(
+                    [0 * kw2mw, 0 * kw2mw])
+                generator_pq_set['grid_id'].append(grid.id_db)
+
             # bus + aggregate load of lv grids (at mv/ls substation)
             elif isinstance(node, LVStationDingo):
                 # Aggregated load representing load in LV grid
