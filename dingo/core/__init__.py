@@ -660,12 +660,16 @@ class NetworkDingo:
 
                 # look up LV load area
                 lv_load_area_id = row['la_id']
-                lv_grid_district_id = row['mvlv_subst_id']
                 if lv_load_area_id and not isnan(lv_load_area_id):
                     try:
                         lv_load_area = lv_load_areas_dict[lv_load_area_id]
+                    # if LA does not exist, choose random LA and move generator to centroid of LA
+                    # this occurs due to exclusion of LA with P < 1kW
                     except:
-                        print('Generator', str(id_db), 'cannot be assigned to non-existent load area! (omitted)')
+                        lv_load_area = random.choice(list(lv_load_areas_dict.values()))
+                        geo_data = lv_load_area.geo_centre
+                        print('Generator', str(id_db),
+                              'cannot be assigned to non-existent load area and was allocated to a random load area!')
                         pass
                     # TODO: current state: no alloc of geno to lvgd / lv grid
                     # TODO: id of LVGD (mvlv_subst_id) is used for alloc geno to lvgd / lv grid
