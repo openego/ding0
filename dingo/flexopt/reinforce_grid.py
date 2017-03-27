@@ -21,7 +21,6 @@ def reinforce_grid(grid, mode):
     # kind of grid to be evaluated (MV or LV)
     if mode == 'MV':
         crit_branches, crit_stations = check_load(grid, mode)
-        #print(crit_branches)
 
         # do reinforcement
         reinforce_branches_current(grid, crit_branches)
@@ -32,7 +31,6 @@ def reinforce_grid(grid, mode):
 
         crit_nodes = check_voltage(grid, mode)
         crit_nodes_count_prev_step = len(crit_nodes)
-        #print(crit_nodes)
 
         # as long as there are voltage issues, do reinforcement
         while crit_nodes:
@@ -41,8 +39,8 @@ def reinforce_grid(grid, mode):
 
             # do reinforcement
             reinforce_branches_voltage(grid, crit_branches_v)
-            # grid.graph_draw()
 
+            # run PF
             grid.network.run_powerflow(conn=None, method='onthefly')
 
             crit_nodes = check_voltage(grid, mode)
@@ -60,11 +58,3 @@ def reinforce_grid(grid, mode):
 
     elif mode == 'LV':
         raise NotImplementedError
-        #check_load(grid, mode)
-
-
-
-    #nodes = grid.
-    #check_voltage(grid, mode, nodes)
-
-
