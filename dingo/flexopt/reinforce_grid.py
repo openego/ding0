@@ -23,30 +23,40 @@ def reinforce_grid(grid, mode):
         crit_branches, crit_stations = check_load(grid, mode)
         #print(crit_branches)
 
-        # mark critical branches
-        #for branch in crit_branches:
-        #    branch['branch'].critical = True
-
         # do reinforcement
         reinforce_branches_current(grid, crit_branches)
 
-        # run PF again to check for voltage issues
-        grid.network.run_powerflow(conn=None, method='onthefly')
+        # if branches or stations have been reinforced: run PF again to check for voltage issues
+        if crit_branches or crit_stations:
+            grid.network.run_powerflow(conn=None, method='onthefly')
 
         crit_nodes = check_voltage(grid, mode)
+        crit_nodes_count_prev_step = len(crit_nodes)
         #print(crit_nodes)
 
-        # determine all branches on the way from HV-MV substation to crit. nodes
-        crit_branches_v = grid.find_and_union_paths(grid.station(), crit_nodes)
+        # as long as there are voltage issues, do reinforcement
+        while crit_nodes:
+            # determine all branches on the way from HV-MV substation to crit. nodes
+            crit_branches_v = grid.find_and_union_paths(grid.station(), crit_nodes)
 
-        # do reinforcement
-        reinforce_branches_voltage(grid, crit_branches_v)
-        # grid.graph_draw()
+            # do reinforcement
+            reinforce_branches_voltage(grid, crit_branches_v)
+            # grid.graph_draw()
 
-        grid.network.run_powerflow(conn=None, method='onthefly')
-        crit_branches, crit_stations = check_load(grid, mode)
-        crit_nodes = check_voltage(grid, mode)
+            grid.network.run_powerflow(conn=None, method='onthefly')
 
+            crit_nodes = check_voltage(grid, mode)
+
+            # if there are critical nodes left but no larger cable available, stop reinforcement
+            if len(crit_nodes) == crit_nodes_count_prev_step:
+                print('==> There are', len(grid.find_and_union_paths(grid.station(), crit_nodes)),
+                      'branches that cannot be reinforced (no appropriate cable available).')
+                break
+
+            crit_nodes_count_prev_step = len(crit_nodes)
+
+        if not crit_nodes:
+            print('==> All voltage issues could be solved using reinforcement.')
 
     elif mode == 'LV':
         raise NotImplementedError
