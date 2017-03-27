@@ -175,6 +175,13 @@ class NetworkDingo:
             Table containing lv_stations of according load_area
         """
 
+        # transform LVGD's and LA's area to epsg 3035
+        # to achieve correct area calculation
+        projection = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),  # source coordinate system
+            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+
         # Associate lv_grid_district to load_area
         for id, row in lv_grid_districts.iterrows():
             lv_grid_district = LVGridDistrictDingo(
@@ -198,9 +205,11 @@ class NetworkDingo:
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
-                peak_load=int(lv_load_area.peak_load_sum * lv_grid_district.geo_data.area / lv_load_area.geo_area.area))
-                # TODO: current state: use LVGD count to calc peak load of station -> equal distribution (temporarily)
-                # TODO: use area share (based on total area of LA)
+                #peak_load=int(lv_load_area.peak_load_sum * lv_grid_district.geo_data.area / lv_load_area.geo_area.area))
+                peak_load=int(lv_load_area.peak_load_sum * transform(projection,
+                                                                     lv_grid_district.geo_data).area /
+                                                                     transform(projection, lv_load_area.geo_area).area))
+                # TODO: current state: use area share (based on total area of LA)
                 #peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
 
             # Choice of typified lv model grid depends on population within lv
@@ -288,12 +297,12 @@ class NetworkDingo:
                 # transform `region_geo_data` to epsg 3035
                 # to achieve correct area calculation of mv_grid_district
                 station_geo_data = wkt_loads(row['subs_geom'])
-                projection = partial(
-                    pyproj.transform,
-                    pyproj.Proj(init='epsg:4326'),  # source coordinate system
-                    pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
-                region_geo_data = transform(projection, region_geo_data)
+                # projection = partial(
+                #     pyproj.transform,
+                #     pyproj.Proj(init='epsg:4326'),  # source coordinate system
+                #     pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+                #
+                # region_geo_data = transform(projection, region_geo_data)
 
                 mv_grid_district = self.build_mv_grid_district(poly_id,
                                                  subst_id,
@@ -349,9 +358,9 @@ class NetworkDingo:
         package_path = dingo.__path__[0]
 
         # get dingos' standard CRS (SRID)
-        #srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
-        srid = '3035'
+        #srid = '3035'
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
@@ -446,7 +455,7 @@ class NetworkDingo:
             lv_stations_per_load_area = lv_stations.\
                 loc[lv_stations['la_id'] == id_db]
 
-            # # ===== DEBUG STUFF (BUG JONAS) =====
+            # # ===== DEBUG STUFF (BUG jong42) =====
             # TODO: Remove when fixed!
             if len(lv_grid_districts_per_load_area) == 0:
                 print('No LV grid district for', lv_load_area, 'found! (Bug jong42)')
@@ -488,9 +497,9 @@ class NetworkDingo:
         """
 
         # get dingos' standard CRS (SRID)
-        #srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(cfg_dingo.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
-        srid = '3035'
+        #srid = '3035'
 
         # 1. filter grid districts of relevant load area
         Session = sessionmaker(bind=conn)
