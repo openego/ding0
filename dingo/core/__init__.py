@@ -694,8 +694,12 @@ class NetworkDingo:
                     # TODO: current state: append LV genos to LA list "genos_collected_temp"
                     if lv_load_area is not None:
                         lv_load_area.genos_collected_temp.append(generator)
+                    # if there is no LA, choose random LA and move generator to centroid of LA
                     else:
-                        print('Generator', str(id_db), 'has no la_id and cannot be assigned!')
+                        lv_load_area_random = random.choice(list(lv_load_areas_dict.values()))
+                        generator.geo_data = lv_load_area_random.geo_centre
+                        lv_load_area_random.genos_collected_temp.append(generator)
+                        print('LV generator', str(id_db), 'has no la_id and was allocated to a random load area!')
                     #lv_grid_district.lv_grid.add_generator(generator)
 
         def import_conv_generators():
