@@ -84,6 +84,9 @@ def run_dingo(mv_grid_district, base_path):
     # Analyze grid by power flow analysis
     nd.run_powerflow(conn, method='onthefly', export_pypsa=False)
 
+    # reinforce MV grid
+    nd.reinforce_grid()
+
     # nd.export_mv_grid(conn, mv_grid_districts)
     nd.export_mv_grid_new(conn, mv_grid_district)
 
@@ -152,6 +155,3 @@ if __name__ == '__main__':
     conn.close()
     print('Elapsed time for', str(len(mv_grid_districts)),
           'MV grid districts (seconds): {}'.format(time.time() - start))
-
-    # reinforce MV grid
-    #nd.reinforce_grid()

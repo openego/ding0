@@ -79,7 +79,7 @@ nd.control_circuit_breakers(mode='open')
 nd.run_powerflow(conn, method='onthefly', export_pypsa=False)
 
 # reinforce MV grid
-# nd.reinforce_grid()
+nd.reinforce_grid()
 
 # nd.export_mv_grid(conn, mv_grid_districts)
 nd.export_mv_grid_new(conn, mv_grid_districts)
