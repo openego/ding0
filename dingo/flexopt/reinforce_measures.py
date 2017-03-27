@@ -17,7 +17,7 @@ def reinforce_branches_current(grid, crit_branches):
         The branch type to be installed is determined per branch using the rel. overloading. According to Ackermann
         only cables are installed.
     """
-    # load cable/line assumptions, file_names and parameter
+    # load cable data, file_names and parameter
     branch_parameters = grid.network.static_data['MV_cables']
     branch_parameters = branch_parameters[branch_parameters['U_n'] == grid.v_level].sort_values('I_max_th')
 
@@ -48,7 +48,7 @@ def reinforce_branches_voltage(grid, crit_branches):
         The branch type to be installed is determined per branch - the next larger cable available is used.
         According to Ackermann only cables are installed.
     """
-    # load cable/line assumptions, file_names and parameter
+    # load cable data, file_names and parameter
     branch_parameters = grid.network.static_data['MV_cables']
     branch_parameters = branch_parameters[branch_parameters['U_n'] == grid.v_level].sort_values('I_max_th')
 
