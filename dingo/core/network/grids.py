@@ -386,6 +386,7 @@ class MVGridDingo(GridDingo):
         # get max. count of half rings per MV grid district
         mv_half_ring_count_max = int(cfg_dingo.get('mv_routing_tech_constraints',
                                                    'mv_half_ring_count_max'))
+        #mv_half_ring_count_max=20
 
         # load cable/line assumptions, file_names and parameter
         if self.default_branch_kind == 'line':
@@ -423,6 +424,8 @@ class MVGridDingo(GridDingo):
                              self.grid_district.peak_load_aggregated) /
                             (3**0.5) / self.v_level)  # units: kVA / kV = A
 
+        #lv_load_area_normal_count = sum([(not _.is_aggregated) and (not _.is_satellite) for _ in list(self.grid_district.lv_load_areas())])
+
         branch_type_settle = branch_type_settle_max = None
 
         # search the smallest possible line/cable for MV grid district in equipment datasets for all load areas
@@ -440,7 +443,8 @@ class MVGridDingo(GridDingo):
                 print('Half ring count=', half_ring_count)
 
             # if count of half rings is below or equal max. allowed count, use current branch type as default
-            if half_ring_count <= mv_half_ring_count_max:
+            if (half_ring_count <= mv_half_ring_count_max):
+            #if (half_ring_count <= mv_half_ring_count_max) and (half_ring_count > (lv_load_area_normal_count / 10)):
                 if self.default_branch_kind == 'line':
                     # TODO: Newly installed cable has a greater I_max_th than former line, check with grid planning
                     # TODO: principles and add to documentation
