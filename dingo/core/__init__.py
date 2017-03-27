@@ -1053,6 +1053,22 @@ class NetworkDingo:
                         v_res1=node.voltage_res[1]
                     )
                     session.add(node_dataset)
+                # LA centres of agg. LA
+                elif isinstance(node, LVLoadAreaCentreDingo):
+                    if node.lv_load_area.is_aggregated:
+                        node_name = '_'.join(['MV',
+                                              str(grid_district.mv_grid.id_db),
+                                              repr(node)])
+
+                        node_dataset = db_int.sqla_mv_grid_viz_nodes(
+                            node_id=node_name,
+                            grid_id=grid_district.mv_grid.id_db,
+                            v_nom=grid_district.mv_grid.v_level,
+                            geom=from_shape(Point(node.geo_data), srid=srid),
+                            v_res0=0,
+                            v_res1=0
+                        )
+                        session.add(node_dataset)
 
             # get branches (lines) from grid's graph and create datasets
             for branch in grid_district.mv_grid.graph_edges():
@@ -1077,6 +1093,28 @@ class NetworkDingo:
                         s_res1=branch['branch'].s_res[1]
                     )
                     session.add(branch_dataset)
+                else:
+                    branch_name = '_'.join(['MV',
+                                            str(grid_district.mv_grid.id_db),
+                                            'lin',
+                                            str(branch['branch'].id_db)])
+
+                    branch_dataset = db_int.sqla_mv_grid_viz_branches(
+                        branch_id=branch_name,
+                        grid_id=grid_district.mv_grid.id_db,
+                        type_name=branch['branch'].type['name'],
+                        type_kind=branch['branch'].kind,
+                        type_v_nom=branch['branch'].type['U_n'],
+                        type_s_nom=3**0.5 * branch['branch'].type['I_max_th'] * branch['branch'].type['U_n'],
+                        length=branch['branch'].length / 1e3,
+                        geom=from_shape(LineString([branch['adj_nodes'][0].geo_data,
+                                                    branch['adj_nodes'][1].geo_data]),
+                                        srid=srid),
+                        s_res0=0,
+                        s_res1=0
+                    )
+                    session.add(branch_dataset)
+
 
         # commit changes to db
         session.commit()

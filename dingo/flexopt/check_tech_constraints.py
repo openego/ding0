@@ -65,28 +65,30 @@ def check_load(grid, mode):
             except:
                 pass
 
-        # 2. check trafos' loads
-        # get power flow case count
-        # TODO: This way is odd, as soon as there's a central place where PF settings are stored, get it from there
-        pf_case_count = len(branch['branch'].s_res)
+        # TODO: temporarily do not reinforce HV-MV stations
 
-        # max. allowed load of trafo
-        s_max_th_trafo = sum(trafo.s_max_a for trafo in grid._station.transformers())
-
-        s_max_th_branch = [0] * pf_case_count
-        for node in grid._graph.edge[grid._station]:
-            branch = grid._graph.edge[grid._station][node]['branch']
-            if not branch.connects_aggregated:
-                s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch, branch.s_res)]
-            else:
-                # TODO: Currently, peak load is assumed for aggregated LV for all cases!
-                s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch,
-                                                       pf_case_count * [kw2mw * node.lv_load_area.peak_load_sum])]
-
-        #print(s_max_th_branch)
-        if any([s*mw2kw >= s_max_th_trafo for s in s_max_th_branch]):
-            crit_stations.append(grid._station)
-            # PUT MORE STUFF IN HERE
+        # # 2. check trafos' loads
+        # # get power flow case count
+        # # TODO: This way is odd, as soon as there's a central place where PF settings are stored, get it from there
+        # pf_case_count = len(branch['branch'].s_res)
+        #
+        # # max. allowed load of trafo
+        # s_max_th_trafo = sum(trafo.s_max_a for trafo in grid._station.transformers())
+        #
+        # s_max_th_branch = [0] * pf_case_count
+        # for node in grid._graph.edge[grid._station]:
+        #     branch = grid._graph.edge[grid._station][node]['branch']
+        #     if not branch.connects_aggregated:
+        #         s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch, branch.s_res)]
+        #     else:
+        #         # TODO: Currently, peak load is assumed for aggregated LV for all cases!
+        #         s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch,
+        #                                                pf_case_count * [kw2mw * node.lv_load_area.peak_load_sum])]
+        #
+        # #print(s_max_th_branch)
+        # if any([s*mw2kw >= s_max_th_trafo for s in s_max_th_branch]):
+        #     crit_stations.append(grid._station)
+        #     # PUT MORE STUFF IN HERE
 
     elif mode == 'LV':
         raise NotImplementedError
