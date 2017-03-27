@@ -19,6 +19,9 @@ import networkx as nx
 import pandas as pd
 import os
 from datetime import datetime
+from shapely.ops import transform
+import pyproj
+from functools import partial
 
 
 class MVGridDingo(GridDingo):
@@ -319,10 +322,17 @@ class MVGridDingo(GridDingo):
         load_density_threshold = float(cfg_dingo.get('assumptions',
                                                      'load_density_threshold'))
 
+        # transform MVGD's area to epsg 3035
+        # to achieve correct area calculation
+        projection = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),  # source coordinate system
+            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+
         # calculate load density
         # TODO: Move constant 1e6 to config file
         load_density = ((self.grid_district.peak_load / 1e3) /
-                        (self.grid_district.geo_data.area / 1e6)) # unit MVA/km^2
+                        (transform(projection, self.grid_district.geo_data).area / 1e6)) # unit MVA/km^2
 
         # identify voltage level
         if load_density < load_density_threshold:
