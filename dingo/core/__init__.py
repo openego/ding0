@@ -396,7 +396,7 @@ class NetworkDingo:
             orm_lv_load_areas.nuts.label('nuts_code'),
             func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom, srid)).\
                 label('geo_area'),
-            func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom_centre, srid)).\
+            func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom_centre, '4326')).\
                 label('geo_centre'),
             func.round(orm_lv_loads.residential * load_scaling_factor).\
                 label('peak_load_residential'),
