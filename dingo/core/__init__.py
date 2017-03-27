@@ -704,7 +704,6 @@ class NetworkDingo:
 
         def import_conv_generators():
             """Imports conventional (conv) generators"""
-            # TODO: Alloc to LA required (add to peak_generation of LV stations) !
 
             # build query
             generators_sqla = session.query(orm_conv_generators.gid,
