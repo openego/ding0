@@ -737,9 +737,10 @@ class NetworkDingo:
                 # add generators to graph
                 if generator.v_level in [4, 5]:
                     mv_grid.add_generator(generator)
+                # there's only one conv. geno with v_level=6 -> connect to MV grid
                 elif generator.v_level in [6]:
-                    pass
-                    #raise NotImplementedError
+                    generator.v_level = 5
+                    mv_grid.add_generator(generator)
 
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
