@@ -21,16 +21,21 @@ def reinforce_branches_current(grid, crit_branches):
     branch_parameters = grid.network.static_data['MV_cables']
     branch_parameters = branch_parameters[branch_parameters['U_n'] == grid.v_level].sort_values('I_max_th')
 
+    branch_ctr = 0
+
     for branch, rel_overload in crit_branches.items():
         try:
             type = branch_parameters.ix[branch_parameters[branch_parameters['I_max_th'] >=
                                         branch['branch'].type['I_max_th'] * rel_overload]['I_max_th'].idxmin()]
             branch['branch'].type = type
+            branch_ctr += 1
         except:
             print('Branch', branch, 'could not be reinforced (current issues) as there is no appropriate',
                   'cable type available. Original type is retained.')
             pass
 
+    if branch_ctr:
+        print('==>', str(branch_ctr), 'branches were reinforced.')
 
 def reinforce_branches_voltage(grid, crit_branches):
     """ Reinforce MV or LV grid by installing a new branch/line type
@@ -47,16 +52,22 @@ def reinforce_branches_voltage(grid, crit_branches):
     branch_parameters = grid.network.static_data['MV_cables']
     branch_parameters = branch_parameters[branch_parameters['U_n'] == grid.v_level].sort_values('I_max_th')
 
+    branch_ctr = 0
+
     for branch in crit_branches:
         try:
             type = branch_parameters.ix[branch_parameters.loc[branch_parameters['I_max_th'] >
-                                        branch['branch'].type['I_max_th']]['I_max_th'].idxmin()]
-            branch['branch'].type = type
+                                        branch.type['I_max_th']]['I_max_th'].idxmin()]
+            branch.type = type
+            branch_ctr += 1
         except:
             print('Branch', branch, 'could not be reinforced (voltage issues) as there is no appropriate',
                   'cable type available. Original type is retained.')
             pass
 
+
+    if branch_ctr:
+        print('==>', str(branch_ctr), 'branches were reinforced.')
 
 def extend_substation(grid):
     """ Reinforce MV or LV substation by exchanging the existing trafo and installing a parallel one if necessary with
