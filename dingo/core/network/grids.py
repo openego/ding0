@@ -406,7 +406,9 @@ class MVGridDingo(GridDingo):
             raise ValueError('Grid\'s default_branch_kind is invalid, could not set branch parameters.')
 
         # select appropriate branch params according to voltage level, sorted ascending by max. current
-        branch_parameters = branch_parameters[branch_parameters['U_n'] == self.v_level].sort_values('I_max_th')
+        # use <240mm2 only (ca. 420A) for initial rings and for disambiguation of agg. LA
+        branch_parameters = branch_parameters[branch_parameters['U_n'] == self.v_level]
+        branch_parameters = branch_parameters[branch_parameters['I_max_th'] < 420].sort_values('I_max_th')
 
         # get largest line/cable type
         branch_type_max = branch_parameters.loc[branch_parameters['I_max_th'].idxmax()]
