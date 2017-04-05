@@ -84,8 +84,6 @@ def setup_logger(log_dir=None):
     logger.addHandler(handler)
     logger.addHandler(stream)
 
-    logger.warning('########## New run of Dingo issued #############')
+    logger.info('########## New run of Dingo issued #############')
 
     return logger
-
-# logger = logging.getLogger(__name__)
