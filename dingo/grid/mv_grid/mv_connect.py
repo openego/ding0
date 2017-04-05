@@ -14,6 +14,10 @@ import pyproj
 from functools import partial
 
 import time
+from dingo.tools.logger import setup_logger
+
+
+logger = setup_logger()
 
 
 def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug, branches_only=False):
@@ -83,7 +87,7 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
     conn_objects_min_stack = [_ for _ in sorted(conn_objects_min_stack, key=lambda x: x['dist'])]
 
     if debug:
-        print('Stack length:', len(conn_objects_min_stack))
+        logger.debug('Stack length: {}'.format(len(conn_objects_min_stack)))
 
     return conn_objects_min_stack
 
@@ -186,7 +190,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                 node.lv_load_area.mv_grid_district.add_lv_load_area_group(lv_load_area_group)
 
                 if debug:
-                    print('New LV load_area group', lv_load_area_group, 'created!')
+                    logger.debug('New LV load_area group {} created!'.format(
+                        lv_load_area_group))
 
                 # node connected, stop connection for current node
                 node_connected = True
@@ -232,7 +237,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                         target_obj_result.lv_load_area_group = lv_load_area_group
 
                     if debug:
-                        print('LV load_area group', lv_load_area_group, 'joined!')
+                        logger.debug('LV load_area group {} joined!'.format(
+                            lv_load_area_group))
 
                     # node connected, stop connection for current node
                     node_connected = True
@@ -241,7 +247,9 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                 # cannot join LV load_area group
                 else:
                     if debug:
-                        print('Node', node, 'could not be added to load_area group', lv_load_area_group)
+                        logger.debug('Node {0} could not be added to '
+                                     'load_area group {1}'.format(
+                            node, lv_load_area_group))
 
                     # rollback changes in graph
                     disconnect_node(node, target_obj_result, graph, debug)
@@ -267,8 +275,10 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # else: node could not be connected because target object belongs to load area of aggregated type
 
     if not node_connected and debug:
-        print('Node', node, 'could not be connected, try to increase the parameter `load_area_sat_buffer_radius` in',
-              'config file `config_calc.cfg` to gain more possible connection points.')
+        logger.debug(
+            'Node {} could not be connected, try to increase the parameter '
+            '`load_area_sat_buffer_radius` in config file `config_calc.cfg` '
+            'to gain more possible connection points.'.format(node))
 
 
 def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_ring_mod, debug):
@@ -342,7 +352,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 target_obj_result = 're-routed'
 
                 if debug:
-                    print('Ring main route modified to include node', node)
+                    logger.debug('Ring main route modified to include '
+                                 'node {}'.format(node))
 
             # Node is too far away from route
             # => keep main route and create new line from node to (cable distributor on) route.
@@ -401,8 +412,9 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
                 # debug info
                 if debug:
-                    print('Nearest connection point for object', node, 'is branch',
-                          target_obj['obj']['adj_nodes'], '(distance=', target_obj['dist'], 'm)')
+                    logger.debug('Nearest connection point for object {0} '
+                                 'is branch {1} (distance={2} m)'.format(
+                        node, target_obj['obj']['adj_nodes'], target_obj['dist']))
 
     # node ist nearest connection point
     else:
@@ -447,8 +459,9 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
             # debug info
             if debug:
-                print('Nearest connection point for object', node, 'is station',
-                      target_obj['obj'], '(distance=', target_obj['dist'], 'm)')
+                logger.debug('Nearest connection point for object {0} is station {1} '
+                      '(distance={2} m)'.format(
+                    node, target_obj['obj'], target_obj['dist']))
 
     return target_obj_result
 
@@ -487,7 +500,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
                                                                                     ring=branch_ring))
 
     if debug:
-        print('disconnect edge', node, '-', target_obj_result)
+        logger.debug('disconnect edge {0}-{1}'.format(node, target_obj_result))
 
 
 def parametrize_lines(mv_grid):
@@ -605,7 +618,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     parametrize_lines(mv_grid)
 
     if debug:
-        print('Elapsed time (mv_connect): {}'.format(time.time() - start))
+        logger.debug('Elapsed time (mv_connect): {}'.format(time.time() - start))
 
     return graph
 
@@ -646,7 +659,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
             # ===== DEBUG STUFF (BUG JONAS) =====
             # TODO: Remove when fixed!
             if lv_load_area.lv_grid_districts_count() == 0:
-                print('No station for', lv_load_area, 'found! (Bug jong42)')
+                logger.error('No station for {} found! (Bug jong42)'.format(
+                    lv_load_area))
             # ===================================
 
             lv_load_area_centre = lv_load_area.lv_load_area_centre
@@ -835,7 +849,8 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                 graph.add_edge(node, mv_station, branch=branch)
 
                 if debug:
-                    print('Generator', node, 'was connected to', mv_station)
+                    logger.debug('Generator {0} was connected to {1}'.format(
+                        node, mv_station))
 
             # ===== voltage level 5: generator has to be connected to MV grid =====
             elif node.v_level == 5:
@@ -875,14 +890,18 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
 
                     if target_obj_result is not None:
                         if debug:
-                            print('Generator', node, 'was connected to', target_obj_result)
+                            logger.debug(
+                                'Generator {0} was connected to {1}'.format(
+                                    node, target_obj_result))
                         node_connected = True
                         break
 
                 if not node_connected and debug:
-                    print('Generator', node, 'could not be connected, try to increase the parameter',
-                          '`generator_buffer_radius` in config file `config_calc.cfg`',
-                          'to gain more possible connection points.')
+                    logger.debug(
+                        'Generator {0} could not be connected, try to '
+                        'increase the parameter `generator_buffer_radius` in '
+                        'config file `config_calc.cfg` to gain more possible '
+                        'connection points.'.format(node))
 
 
 

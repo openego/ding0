@@ -25,6 +25,10 @@ Option2 = value2 \n
 
 import os.path as path
 import dingo
+from dingo.tools.logger import setup_logger
+
+
+logger = setup_logger()
 
 try:
     import configparser as cp
@@ -44,7 +48,7 @@ def load_config(filename):
         global _loaded
         _loaded = True
     except:
-        print("configfile not found.")
+        logger.exception("configfile not found.")
 
 def get(section, key):
     """

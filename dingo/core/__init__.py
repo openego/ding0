@@ -53,8 +53,11 @@ import pyproj
 from shapely.ops import transform
 from math import isnan
 import random
+from dingo.tools.logger import setup_logger
 
 package_path = dingo.__path__[0]
+
+logger = setup_logger()
 
 
 class NetworkDingo:
@@ -268,7 +271,7 @@ class NetworkDingo:
         try:
             srid = str(int(cfg_dingo.get('geo', 'srid')))
         except OSError:
-            print('cannot open config file.')
+            logger.exception('cannot open config file.')
 
         # build SQL query
         Session = sessionmaker(bind=conn)
@@ -335,7 +338,8 @@ class NetworkDingo:
         except:
             raise ValueError('unexpected error while initiating MV grid_districts from DB dataset.')
 
-        print('=====> MV Grid Districts imported')
+        logger.info('=====> MV Grid Districts imported')
+
 
     def import_lv_load_areas(self, conn, mv_grid_district, lv_grid_districts,
                              lv_stations):
@@ -459,9 +463,12 @@ class NetworkDingo:
             # # ===== DEBUG STUFF (BUG jong42) =====
             # TODO: Remove when fixed!
             if len(lv_grid_districts_per_load_area) == 0:
-                print('No LV grid district for', lv_load_area, 'found! (Bug jong42)')
+                logger.error(
+                    'No LV grid district for {} found! (Bug jong42)'.format(
+                        lv_load_area))
             if len(lv_stations_per_load_area) == 0:
-                print('No station for', lv_load_area, 'found! (Bug jong42)')
+                logger.error('No station for {} found! (Bug jong42)'.format(
+                    lv_load_area))
             # ===================================
 
             self.build_lv_grid_district(conn,
@@ -647,10 +654,13 @@ class NetworkDingo:
                 # TODO: Remove when fixed! And delete column 'geom' (original geom from EnergyMap) from query above
                 if not row['geom_new']:
                     geo_data = wkt_loads(row['geom'])
-                    print('Generator', str(id_db),
-                          'has no geom_new entry, bad day dude! (EnergyMap\'s geom entry will be used)')
+                    logger.error(
+                        'Generator {} has no geom_new entry, bad day dude! '
+                        '(EnergyMap\'s geom entry will be used)'.format(
+                        id_db))
                 elif not row['geom_new']:
-                    print('Generator', str(id_db), 'has no geom entry either, your day is getting worse dude!')
+                    logger.error('Generator {} has no geom entry either, your '
+                                 'day is getting worse dude!'.format(id_db))
                 else:
                     geo_data = wkt_loads(row['geom_new'])
                 # ======================================================================================
@@ -669,8 +679,10 @@ class NetworkDingo:
                     except:
                         lv_load_area = random.choice(list(lv_load_areas_dict.values()))
                         geo_data = lv_load_area.geo_centre
-                        print('Generator', str(id_db),
-                              'cannot be assigned to non-existent load area and was allocated to a random load area!')
+                        logger.error('Generator {} cannot be assigned to '
+                                     'non-existent load area and was '
+                                     'allocated to a random load area!'.format(
+                            id_db))
                         pass
                     # TODO: current state: no alloc of geno to lvgd / lv grid
                     # TODO: id of LVGD (mvlv_subst_id) is used for alloc geno to lvgd / lv grid
@@ -704,7 +716,10 @@ class NetworkDingo:
                         lv_load_area_random = random.choice(list(lv_load_areas_dict.values()))
                         generator.geo_data = lv_load_area_random.geo_centre
                         lv_load_area_random.genos_collected_temp.append(generator)
-                        print('LV generator', str(id_db), 'has no la_id and was allocated to a random load area!')
+                        logger.warning('LV generator {} has no la_id and was '
+                                       'allocated to a random load area!'.format(
+                            id_db
+                        ))
                     #lv_grid_district.lv_grid.add_generator(generator)
 
         def import_conv_generators():
@@ -798,12 +813,14 @@ class NetworkDingo:
                     for geno in lv_load_area.genos_collected_temp:
                         capacity += geno.capacity
                     lv_load_area.peak_generation += geno.capacity
-                    print('No LV grid district found in', repr(lv_load_area), '. Generators omitted.')
+                    logger.error('No LV grid district found in {}. '
+                                 'Generators omitted.'.format(repr(
+                        lv_load_area)))
 
         # import conventional generators
         import_conv_generators()
 
-        print('=====> Generators imported')
+        logger.info('=====> Generators imported')
 
     def import_pf_config(self):
         """ Creates power flow config class and imports config from file """
@@ -872,8 +889,8 @@ class NetworkDingo:
         for grid_district in invalid_mv_grid_districts:
             self._mv_grid_districts.remove(grid_district)
 
-        print("\n".join(msg_invalidity))
-        print('=====> MV Grids validated')
+        logger.warning("\n".join(msg_invalidity))
+        logger.info('=====> MV Grids validated')
         return msg_invalidity
 
     def export_mv_grid(self, conn, mv_grid_districts):
@@ -996,7 +1013,8 @@ class NetworkDingo:
         # commit changes to db
         session.commit()
 
-        print('=====> MV Grids exported')
+        # logger.info('=====> MV Grids exported')
+        logger.info('MV Grids exported')
 
     def export_mv_grid_new(self, conn, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
@@ -1119,7 +1137,7 @@ class NetworkDingo:
         # commit changes to db
         session.commit()
 
-        print('=====> MV Grids exported (NEW)')
+        logger.info('=====> MV Grids exported (NEW)')
 
     def to_dataframe(self):
         """Export grid data to dataframes for statistical analysis
@@ -1236,7 +1254,7 @@ class NetworkDingo:
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.routing(debug, anim)
 
-        print('=====> MV Routing (Routing, Connection of Satellites & Stations) performed')
+        logger.info('=====> MV Routing (Routing, Connection of Satellites & Stations) performed')
 
     def connect_generators(self, debug=False):
         """ Connects generators (graph nodes) to grid (graph) for every MV grid district
@@ -1252,7 +1270,7 @@ class NetworkDingo:
             #for lv_load_area in mv_grid_district.lv_load_areas():
             #    CALL FUTURE METHOD FOR LV connect_generators HERE
 
-        print('=====> Generators connected')
+        logger.info('=====> Generators connected')
 
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids, see
@@ -1266,7 +1284,7 @@ class NetworkDingo:
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.parametrize_grid(debug)
 
-        print('=====> MV Grids parametrized')
+        logger.info('=====> MV Grids parametrized')
 
     def set_branch_ids(self):
         """ Performs generation and setting of ids of branches for all MV and underlying LV grids, see
@@ -1276,7 +1294,7 @@ class NetworkDingo:
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.set_branch_ids()
 
-        print('=====> Branch IDs set')
+        logger.info('=====> Branch IDs set')
 
     def set_circuit_breakers(self, debug=False):
         """ Calculates the optimal position of the existing circuit breakers and relocates them within the graph for
@@ -1288,7 +1306,7 @@ class NetworkDingo:
         for grid_district in self.mv_grid_districts():
             grid_district.mv_grid.set_circuit_breakers(debug)
 
-        print('=====> MV Circuit Breakers relocated')
+        logger.info('=====> MV Circuit Breakers relocated')
 
     def control_circuit_breakers(self, mode=None):
         """ Opens or closes all circuit breakers of all MV grids.
@@ -1307,9 +1325,9 @@ class NetworkDingo:
                 raise ValueError('\'mode\' is invalid.')
 
         if mode is 'open':
-            print('=====> MV Circuit Breakers opened')
+            logger.info('=====> MV Circuit Breakers opened')
         elif mode is 'close':
-            print('=====> MV Circuit Breakers closed')
+            logger.info('=====> MV Circuit Breakers closed')
 
     def run_powerflow(self, conn, method='onthefly', export_pypsa=False, debug=False):
         """ Performs power flow calculation for all MV grids

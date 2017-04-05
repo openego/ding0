@@ -13,6 +13,10 @@
 from dingo.tools import config as cfg_dingo
 
 from math import pi, tan, acos
+from dingo.tools.logger import setup_logger
+
+
+logger = setup_logger()
 
 
 class Route(object):
@@ -185,10 +189,15 @@ class Route(object):
                 position = ctr
 
         if debug:
-            print('sum 1=', sum([node.demand() for node in self._nodes[0:position]]))
-            print('sum 2=', sum([node.demand() for node in self._nodes[position:len(self._nodes)]]))
-            print('Position of circuit breaker: ', self._nodes[position-1], '-', self._nodes[position],
-                  '(sumdiff=', demand_diff_min, ')')
+            logger.debug('sum 1={}'.format(
+                sum([node.demand() for node in self._nodes[0:position]])))
+            logger.debug('sum 2={}'.format(sum([node.demand() for node in
+                                                self._nodes[
+                                                position:len(self._nodes)]])))
+            logger.debug(
+                'Position of circuit breaker: {0}-{1} (sumdiff={2})'.format(
+                    self._nodes[position - 1], self._nodes[position],
+                    demand_diff_min))
 
         return position
         

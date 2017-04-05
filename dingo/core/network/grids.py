@@ -22,6 +22,10 @@ from datetime import datetime
 from shapely.ops import transform
 import pyproj
 from functools import partial
+from dingo.tools.logger import setup_logger
+
+
+logger = setup_logger()
 
 
 class MVGridDingo(GridDingo):
@@ -143,7 +147,8 @@ class MVGridDingo(GridDingo):
         for circ_breaker in self.circuit_breakers():
             if circ_breaker.status is 'open':
                 circ_breaker.close()
-                print('Circuit breakers were closed in order to find MV rings')
+                logger.info('Circuit breakers were closed in order to find MV '
+                            'rings')
 
         for ring in nx.cycle_basis(self._graph, root=self._station):
             if not include_root_node:
@@ -239,27 +244,27 @@ class MVGridDingo(GridDingo):
         self._graph = mv_routing.solve(graph=self._graph,
                                        debug=debug,
                                        anim=anim)
-        print('==> MV Routing for', repr(self), 'done')
+        logger.info('==> MV Routing for {} done'.format(repr(self)))
 
         # connect satellites (step 1, with restrictions like max. string length, max peak load per string)
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
                                                        graph=self._graph,
                                                        mode='normal',
                                                        debug=debug)
-        print('==> MV Sat1 for', repr(self), 'done')
+        logger.info('==> MV Sat1 for {} done'.format(repr(self)))
 
         # connect satellites to closest line/station on a MV ring that have not been connected in step 1
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
                                                        graph=self._graph,
                                                        mode='isolated',
                                                        debug=debug)
-        print('==> MV Sat2 for', repr(self), 'done')
+        logger.info('==> MV Sat2 for {} done'.format(repr(self)))
 
         # connect stations
         self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
                                                      graph=self._graph,
                                                      debug=debug)
-        print('==> MV Stations for', repr(self), 'done')
+        logger.info('==> MV Stations for {} done'.format(repr(self)))
 
     def connect_generators(self, debug=False):
         """ Connects MV generators (graph nodes) to grid (graph)
@@ -434,11 +439,11 @@ class MVGridDingo(GridDingo):
             half_ring_count = round(peak_current_sum / (row['I_max_th'] * load_factor_normal))
 
             if debug:
-                print('=== Selection of default branch type in', self, '===')
-                print('Peak load=', self.grid_district.peak_load, 'kVA')
-                print('Peak current=', peak_current_sum)
-                print('I_max_th=', row['I_max_th'])
-                print('Half ring count=', half_ring_count)
+                logger.debug('=== Selection of default branch type in {} ==='.format(self))
+                logger.debug('Peak load= {} kVA'.format(self.grid_district.peak_load))
+                logger.debug('Peak current={}'.format(peak_current_sum))
+                logger.debug('I_max_th={}'.format(row['I_max_th']))
+                logger.debug('Half ring count={}'.format(half_ring_count))
 
             # if count of half rings is below or equal max. allowed count, use current branch type as default
             if half_ring_count <= mv_half_ring_count_max:
@@ -463,7 +468,9 @@ class MVGridDingo(GridDingo):
         # no equipment was found, return largest available line/cable
 
         if debug:
-            print('No appropriate line/cable type could be found for', self, ', declare some load areas as aggregated.')
+            logger.debug('No appropriate line/cable type could be found for '
+                         '{}, declare some load areas as aggregated.'.format(
+                self))
 
         if self.default_branch_kind == 'line':
             branch_type_settle_max = branch_parameters_settle.loc[branch_parameters_settle['I_max_th'].idxmax()]

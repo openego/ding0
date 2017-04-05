@@ -8,6 +8,10 @@ from dingo.core.network.stations import *
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
 from dingo.core.network.cable_distributors import MVCableDistributorDingo
+from dingo.tools.logger import setup_logger
+
+
+logger = setup_logger()
 
 
 def dingo_graph_to_routing_specs(graph):
@@ -190,7 +194,8 @@ def routing_solution_to_dingo_graph(graph, solution):
             graph.add_edges_from(edges_graph)
 
     except:
-        print('unexpected error while converting routing solution to DINGO graph (NetworkX).')
+        logger.exception(
+            'unexpected error while converting routing solution to DINGO graph (NetworkX).')
 
     return graph
 
@@ -231,9 +236,9 @@ def solve(graph, debug=False, anim=None):
     #    print('=== Solution is not a complete solution! ===')
 
     if debug:
-        print('ClarkeWrightSolver solution:')
+        logger.debug('ClarkeWrightSolver solution:')
         util.print_solution(savings_solution)
-        print('Elapsed time (seconds): {}'.format(time.time() - start))
+        logger.debug('Elapsed time (seconds): {}'.format(time.time() - start))
         #savings_solution.draw_network()
 
     # improve initial solution using local search
@@ -241,9 +246,9 @@ def solve(graph, debug=False, anim=None):
     #local_search_solution = savings_solution
 
     if debug:
-        print('Local Search solution:')
+        logger.debug('Local Search solution:')
         util.print_solution(local_search_solution)
-        print('Elapsed time (seconds): {}'.format(time.time() - start))
+        logger.debug('Elapsed time (seconds): {}'.format(time.time() - start))
         #local_search_solution.draw_network()
 
     return routing_solution_to_dingo_graph(graph, local_search_solution)

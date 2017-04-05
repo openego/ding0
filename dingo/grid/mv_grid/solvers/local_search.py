@@ -17,6 +17,10 @@ from dingo.grid.mv_grid.models import models
 from dingo.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
 
 from dingo.tools import config as cfg_dingo
+from dingo.tools.logger import setup_logger
+
+
+logger = setup_logger()
 
 
 class LocalSearchSolution(BaseSolution):
@@ -429,7 +433,11 @@ class LocalSearchSolver(BaseSolver):
             solution = op[0](graph, solution, op_diff_round_digits)
             solution = op[1](graph, solution, op_diff_round_digits)
             solution = op[2](graph, solution, op_diff_round_digits)
-            print(operators[op[0]], '+', operators[op[1]], '+', operators[op[2]], '=> Length:', solution.length())
+            logger.info("{0} {1} {2} => Length: {3}".format(
+                operators[op[0]],
+                operators[op[1]],
+                operators[op[2]],
+                solution.length()))
 
     def solve(self, graph, savings_solution, timeout, debug=False, anim=None):
         """Improve initial savings solution using local search
@@ -458,19 +466,22 @@ class LocalSearchSolver(BaseSolver):
             solution = self.operator_exchange(graph, solution, op_diff_round_digits, anim)
             time1 = time.time()
             if debug:
-                print('Elapsed time (exchange, run {1}): {0}'.format(time1 - start, str(run)), ',',
-                      'Solution\'s length: {}'.format(solution.length()))
+                logger.debug('Elapsed time (exchange, run {1}): {0}, '
+                             'Solution\'s length: {2}'.format(
+                    time1 - start, str(run), solution.length()))
 
             solution = self.operator_relocate(graph, solution, op_diff_round_digits, anim)
             time2 = time.time()
             if debug:
-                print('Elapsed time (relocate, run {1}): {0}'.format(time2 - time1, str(run)), ',',
-                      'Solution\'s length: {}'.format(solution.length()))
+                logger.debug('Elapsed time (relocate, run {1}): {0}, '
+                             'Solution\'s length: {2}'.format(
+                    time2 - time1, str(run), solution.length()))
 
             solution = self.operator_oropt(graph, solution, op_diff_round_digits, anim)
             time3 = time.time()
             if debug:
-                print('Elapsed time (oropt, run {1}): {0}'.format(time3 - time2, str(run)), ',',
-                      'Solution\'s length: {}'.format(solution.length()))
+                logger.debug('Elapsed time (oropt, run {1}): {0}, '
+                             'Solution\'s length: {2}'.format(
+                    time3 - time2, str(run), solution.length()))
 
         return solution

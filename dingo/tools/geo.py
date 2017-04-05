@@ -6,6 +6,10 @@ import pyproj
 from functools import partial
 
 from dingo.tools import config as cfg_dingo
+from dingo.tools.logger import setup_logger
+
+
+logger = setup_logger()
 
 
 def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
@@ -85,7 +89,8 @@ def calc_geo_dist_vincenty(node_source, node_target):
     # line is 0. See issue #76
     if branch_length == 0:
         branch_length = 1
-        print('Geo distance is zero, check objects\' positions. Distance is set to 1m')
+        logger.warning('Geo distance is zero, check objects\' positions. '
+                       'Distance is set to 1m')
     # ===================================================================
 
     return branch_length
