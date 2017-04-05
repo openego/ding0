@@ -63,7 +63,7 @@ def setup_logger(log_dir=None):
     if log_dir is None:
         log_dir = os.path.join(get_default_home_dir(), 'log')
 
-    logger = logging.getLogger(__name__) # use filename as name in log
+    logger = logging.getLogger('dingo') # use filename as name in log
     logger.setLevel(logging.DEBUG)
 
     # create a file handler

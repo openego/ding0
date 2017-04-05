@@ -53,11 +53,11 @@ import pyproj
 from shapely.ops import transform
 from math import isnan
 import random
-from dingo.tools.logger import setup_logger
+import logging
 
 package_path = dingo.__path__[0]
 
-logger = setup_logger()
+logger = logging.getLogger('dingo')
 
 
 class NetworkDingo:

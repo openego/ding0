@@ -6,10 +6,10 @@ import pyproj
 from functools import partial
 
 from dingo.tools import config as cfg_dingo
-from dingo.tools.logger import setup_logger
+import logging
 
 
-logger = setup_logger()
+logger = logging.getLogger('dingo')
 
 
 def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):

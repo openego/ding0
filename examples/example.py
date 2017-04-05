@@ -14,6 +14,9 @@ import time
 
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo
+from dingo.tools.logger import setup_logger
+
+logger = setup_logger()
 
 plt.close('all')
 

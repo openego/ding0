@@ -22,10 +22,10 @@ from datetime import datetime
 from shapely.ops import transform
 import pyproj
 from functools import partial
-from dingo.tools.logger import setup_logger
+import logging
 
 
-logger = setup_logger()
+logger = logging.getLogger('dingo')
 
 
 class MVGridDingo(GridDingo):

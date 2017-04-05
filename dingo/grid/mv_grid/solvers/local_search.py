@@ -17,10 +17,10 @@ from dingo.grid.mv_grid.models import models
 from dingo.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
 
 from dingo.tools import config as cfg_dingo
-from dingo.tools.logger import setup_logger
+import logging
 
 
-logger = setup_logger()
+logger = logging.getLogger('dingo')
 
 
 class LocalSearchSolution(BaseSolution):

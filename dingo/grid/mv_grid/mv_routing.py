@@ -8,10 +8,10 @@ from dingo.core.network.stations import *
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
 from dingo.core.network.cable_distributors import MVCableDistributorDingo
-from dingo.tools.logger import setup_logger
+import logging
 
 
-logger = setup_logger()
+logger = logging.getLogger('dingo')
 
 
 def dingo_graph_to_routing_specs(graph):

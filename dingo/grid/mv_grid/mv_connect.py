@@ -14,10 +14,10 @@ import pyproj
 from functools import partial
 
 import time
-from dingo.tools.logger import setup_logger
+import logging
 
 
-logger = setup_logger()
+logger = logging.getLogger('dingo')
 
 
 def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug, branches_only=False):

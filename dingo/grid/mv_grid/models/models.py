@@ -13,10 +13,10 @@
 from dingo.tools import config as cfg_dingo
 
 from math import pi, tan, acos
-from dingo.tools.logger import setup_logger
+import logging
 
 
-logger = setup_logger()
+logger = logging.getLogger('dingo')
 
 
 class Route(object):
