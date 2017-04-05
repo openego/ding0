@@ -25,6 +25,10 @@ from pypsa.io import import_series_from_dataframe
 from datetime import datetime
 import sys
 import os
+import logging
+
+
+logger = logging.getLogger('dingo')
 
 
 def delete_powerflow_tables(session):
@@ -108,7 +112,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set_mv)
                 if lv_transformer is True:
                     # Add transformer to bus
-                    print("Regarding x, r and s_nom LV station {} only " \
+                    logger.info("Regarding x, r and s_nom LV station {} only " \
                           "first transformer in considered in PF " \
                           "analysis".format(node))
                     # TODO: consider multiple transformers and remove above warning
@@ -195,7 +199,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus)
                 session.add(bus_pq_set)
             elif isinstance(node, MVStationDingo):
-                print('Only MV side bus of MVStation will be added.')
+                logger.info('Only MV side bus of MVStation will be added.')
                 bus_mv_station = orm_pypsa.EgoGridPfMvBu(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
@@ -249,8 +253,8 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
             else:
                 raise TypeError("Node of type", node, "cannot be handled here")
         else:
-            print("Node {} is not connected to the graph and will be omitted " \
-                  "in power flow analysis".format(node))
+            logger.warning("Node {} is not connected to the graph and will " \
+                  "be omitted in power flow analysis".format(node))
 
     # write changes to database
     session.commit()
@@ -425,7 +429,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             elif isinstance(node, tuple(generator_instances)):
                 # slack generator
                 if isinstance(node, MVStationDingo):
-                    print('Only MV side bus of MVStation will be added.')
+                    logger.info('Only MV side bus of MVStation will be added.')
                     generator['generator_id'].append(
                         '_'.join(['MV', str(grid.id_db), 'slack']))
                     generator['control'].append('Slack')
@@ -557,8 +561,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     node.lv_load_area.is_aggregated)
             else:
                 add_info = ""
-            print("Node {0} is not connected to the graph and will be omitted " \
-                  "in power flow analysis. {1}".format(
+            logger.warning("Node {0} is not connected to the graph and will " \
+                  "be omitted in power flow analysis. {1}".format(
                 node, add_info))
 
     components = {'Bus': DataFrame(buses).set_index('bus_id'),
@@ -847,7 +851,7 @@ def data_integrity(components, components_data):
     # print short report to user and exit program if not integer
     for comp in list(data_check.keys()):
         if data_check[comp]['length_diff'] != 0:
-            print("{comp} data is invalid. You supplied {no_comp} {comp} "
+            logger.exception("{comp} data is invalid. You supplied {no_comp} {comp} "
                   "objects and {no_data} datasets. Check you grid data "
                   "and try again".format(comp=comp,
                                          no_comp=len(components[comp]),
@@ -992,7 +996,8 @@ def assign_bus_results(grid, bus_data):
             elif not isinstance(node, CircuitBreakerDingo):
                 node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
             else:
-                print("Object {} has been skipped while importing results!")
+                logger.warning("Object {} has been skipped while importing "
+                               "results!")
 
 
 def assign_line_results(grid, line_data):

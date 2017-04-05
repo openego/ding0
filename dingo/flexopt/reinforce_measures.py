@@ -3,7 +3,10 @@ import os
 import dingo
 import pandas as pd
 from dingo.tools import config as cfg_dingo
+import logging
+
 package_path = dingo.__path__[0]
+logger = logging.getLogger('dingo')
 
 
 def reinforce_branches_current(grid, crit_branches):
@@ -30,12 +33,14 @@ def reinforce_branches_current(grid, crit_branches):
             branch['branch'].type = type
             branch_ctr += 1
         except:
-            print('Branch', branch, 'could not be reinforced (current issues) as there is no appropriate',
-                  'cable type available. Original type is retained.')
+            logger.warning('Branch {} could not be reinforced (current '
+                           'issues) as there is no appropriate cable type '
+                           'available. Original type is retained.'.format(
+                branch))
             pass
 
     if branch_ctr:
-        print('==>', str(branch_ctr), 'branches were reinforced.')
+        logger.info('==> {} branches were reinforced.'.format(str(branch_ctr)))
 
 def reinforce_branches_voltage(grid, crit_branches):
     """ Reinforce MV or LV grid by installing a new branch/line type
@@ -61,13 +66,15 @@ def reinforce_branches_voltage(grid, crit_branches):
             branch.type = type
             branch_ctr += 1
         except:
-            print('Branch', branch, 'could not be reinforced (voltage issues) as there is no appropriate',
-                  'cable type available. Original type is retained.')
+            logger.warning('Branch {} could not be reinforced (voltage '
+                           'issues) as there is no appropriate cable type '
+                           'available. Original type is retained.'.format(
+                branch))
             pass
 
 
     if branch_ctr:
-        print('==>', str(branch_ctr), 'branches were reinforced.')
+        logger.info('==> {} branches were reinforced.'.format(str(branch_ctr)))
 
 def extend_substation(grid):
     """ Reinforce MV or LV substation by exchanging the existing trafo and installing a parallel one if necessary with

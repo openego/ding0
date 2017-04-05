@@ -72,7 +72,8 @@ nd.run_powerflow(conn, method='onthefly', export_pypsa=False)
 nd.reinforce_grid()
 
 #objgraph.show_refs([nd], filename='nd.png')
-print('Elapsed time for', str(len(mv_grid_districts)), 'MV grid districts (seconds): {}'.format(time.time() - start))
+logger.info('Elapsed time for {0} MV grid districts (seconds): {1}'.format(
+    str(len(mv_grid_districts)), time.time() - start))
 
 # export grids
 nd.export_mv_grid(conn, mv_grid_districts)

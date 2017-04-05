@@ -1,6 +1,10 @@
 from dingo.core.network.stations import LVStationDingo
 from dingo.core.network import CableDistributorDingo
 from dingo.tools.geo import calc_geo_centre_point
+import logging
+
+
+logger = logging.getLogger('dingo')
 
 
 def set_circuit_breakers(mv_grid, debug=False):
@@ -89,8 +93,10 @@ def set_circuit_breakers(mv_grid, debug=False):
         circ_breaker.geo_data = calc_geo_centre_point(node1, node2)
 
         if debug:
-            print('Ring:', ring)
-            print('Circuit breaker', circ_breaker, 'was relocated to edge', node1, '-', node2,
-                  '(position on route=', position, ')')
-            print('Peak load sum:', sum(nodes_peak_load))
-            print('Peak loads:', nodes_peak_load)
+            logger.debug('Ring: {}'.format(ring))
+            logger.debug('Circuit breaker {0} was relocated to edge {1}-{2} '
+                  '(position on route={3})'.format(
+                    circ_breaker, node1, node2, position)
+                )
+            logger.debug('Peak load sum: {}'.format(sum(nodes_peak_load)))
+            logger.debug('Peak loads: {}'.format(nodes_peak_load))

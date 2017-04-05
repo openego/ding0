@@ -1,5 +1,9 @@
 from .check_tech_constraints import check_load, check_voltage
 from .reinforce_measures import reinforce_branches_current, reinforce_branches_voltage, extend_substation, new_substation
+import logging
+
+
+logger = logging.getLogger('dingo')
 
 
 def reinforce_grid(grid, mode):
@@ -47,14 +51,18 @@ def reinforce_grid(grid, mode):
 
             # if there are critical nodes left but no larger cable available, stop reinforcement
             if len(crit_nodes) == crit_nodes_count_prev_step:
-                print('==> There are', len(grid.find_and_union_paths(grid.station(), crit_nodes)),
-                      'branches that cannot be reinforced (no appropriate cable available).')
+                logger.warning('==> There are {0} branches that cannot be '
+                               'reinforced (no appropriate cable '
+                               'available).'.format(
+                    len(grid.find_and_union_paths(grid.station(),
+                                                        crit_nodes))))
                 break
 
             crit_nodes_count_prev_step = len(crit_nodes)
 
         if not crit_nodes:
-            print('==> All voltage issues could be solved using reinforcement.')
+            logger.info('==> All voltage issues could be solved using '
+                        'reinforcement.')
 
     elif mode == 'LV':
         raise NotImplementedError

@@ -1,6 +1,10 @@
 # check technical constraints of distribution grids (shared lib)
 
 from dingo.tools import config as cfg_dingo
+import logging
+
+
+logger = logging.getLogger('dingo')
 
 
 def check_load(grid, mode):
@@ -94,9 +98,11 @@ def check_load(grid, mode):
         raise NotImplementedError
 
     if crit_branches:
-        print('==>', len(crit_branches), 'branches have load issues.')
+        logger.info('==> {} branches have load issues.'.format(
+            len(crit_branches)))
     if crit_stations:
-        print('==>', len(crit_stations), 'stations have load issues.')
+        logger.info('==> {} stations have load issues.'.format(
+            len(crit_stations)))
 
     return crit_branches, crit_stations
 
@@ -143,6 +149,6 @@ def check_voltage(grid, mode):
         raise NotImplementedError
 
     if crit_nodes:
-        print('==>', len(crit_nodes), 'nodes have voltage issues.')
+        logger.info('==> {} nodes have voltage issues.'.format(len(crit_nodes)))
 
     return [_['node'] for _ in sorted(crit_nodes.values(), key=lambda _: _['v_diff'], reverse=True)]
