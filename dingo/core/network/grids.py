@@ -726,23 +726,22 @@ class LVGridDingo(GridDingo):
             Parameters of chosen Transformer
         """
 
-        #TODO: consider apartment_house_branch_ratio when calculating population_per_apartment
-        # apartment_house_branch_ratio describes number of apartments per house branch connections
         apartment_house_branch_ratio = cfg_dingo.get("assumptions",
             "apartment_house_branch_ratio")
         population_per_apartment = cfg_dingo.get("assumptions",
             "population_per_apartment")
 
-        apartments = round(population / population_per_apartment)
+        house_branches = round(population / (population_per_apartment *
+                                         apartment_house_branch_ratio))
 
-        if apartments <= 0:
-            apartments = 1
+        if house_branches <= 0:
+            house_branches = 1
 
-        if apartments > 196:
-            apartments = 196
+        if house_branches > 196:
+            house_branches = 196
 
         # select set of strings that represent one type of model grid
-        strings = apartment_string.loc[apartments]
+        strings = apartment_string.loc[house_branches]
         selected_strings = [int(s) for s in strings[strings >= 1].index.tolist()]
 
         # slice dataframe of string parameters
@@ -752,7 +751,7 @@ class LVGridDingo(GridDingo):
         occurence_selector = [str(i) for i in selected_strings]
         selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
 
-        transformer = apartment_trafo.loc[apartments]
+        transformer = apartment_trafo.loc[house_branches]
 
         transformer['x'] = trafo_parameters.loc[
             transformer['trafo_apparent_power'], 'x']
