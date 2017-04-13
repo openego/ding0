@@ -32,7 +32,7 @@ from egoio.db_tables import model_draft as orm_model_draft,\
     supply as orm_supply,\
     demand as orm_demand,\
     grid as orm_grid
-if data_source is 'model_draft':
+if data_source == 'model_draft':
     orm_mv_grid_districts = orm_model_draft.__getattribute__(mv_grid_districts_name)
     orm_mv_stations = orm_model_draft.__getattribute__(mv_stations_name)
     orm_lv_load_areas = orm_model_draft.__getattribute__(lv_load_areas_name)
@@ -41,7 +41,7 @@ if data_source is 'model_draft':
     orm_conv_generators = orm_model_draft.__getattribute__(conv_generators_name)
     orm_re_generators = orm_model_draft.__getattribute__(re_generators_name)
     version_condition = 1 == 1
-elif data_source is 'versioned':
+elif data_source == 'versioned':
     orm_mv_grid_districts = orm_grid.__getattribute__(mv_grid_districts_name)
     orm_mv_stations = orm_grid.__getattribute__(mv_stations_name)
     orm_lv_load_areas = orm_demand.__getattribute__(lv_load_areas_name)
