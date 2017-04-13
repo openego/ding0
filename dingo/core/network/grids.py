@@ -715,6 +715,15 @@ class LVGridDingo(GridDingo):
         population: Int
             Population within LV grid district
 
+        Notes
+        -----
+        In total 196 distinct LV grid topologies are available that are chosen
+        by population in the LV grid district. Population is translated to
+        number of house branches. Each grid model fits a number of house
+        branches. If this number exceed 196, still the grid topology of 196
+        house branches is used. The peak load of the LV grid district is
+        uniformly distributed across house branches.
+
         Returns
         -------
         selected_strings_df: DataFrame
