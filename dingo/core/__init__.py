@@ -334,10 +334,6 @@ class NetworkDingo:
                              lv_stations):
         """imports load_areas (load areas) from database for a single MV grid_district
 
-        Table definition for load areas can be found here:
-        http://vernetzen.uni-flensburg.de/redmine/projects/open_ego/wiki/
-        Methoden_AP_26_DataProc
-
         Parameters
         ----------
         conn: Database connection
