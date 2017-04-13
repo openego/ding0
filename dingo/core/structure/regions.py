@@ -203,7 +203,14 @@ class LVGridDistrictDingo(RegionDingo):
         self.peak_load = kwargs.get('peak_load', None)
         self.lv_load_area = kwargs.get('lv_load_area', None)
         self.lv_grid = kwargs.get('lv_grid', None)
+
         self.population = kwargs.get('population', None)
+
+        self.peak_load_residential = kwargs.get('peak_load_residential', None)
+        self.peak_load_retail = kwargs.get('peak_load_retail', None)
+        self.peak_load_industrial = kwargs.get('peak_load_industrial', None)
+        self.peak_load_agricultural = kwargs.get('peak_load_agricultural', None)
+        self.peak_load_sum = kwargs.get('peak_load_sum', None)
 
     def __repr__(self):
         return 'lv_grid_district_' + str(self.id_db)
