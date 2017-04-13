@@ -51,9 +51,8 @@ Method for residential LV-branches
 ----------------------------------
 #. LV-Branches
   We are using the LV-Branches of Kerber from the grids. They should be assigned to the most plausible types of settlement areas.
-
 #. Define the type of settlement area
-  To decide if a LV-grid district is most likely a rural, village or suburban settlement area we are using the population value combined with statistical data. Statisticly, there are 2.3 persons per appartment and 1.5 appartments per house. [see BBR Tabelle B12 http://www.ggr-planung.de/fileadmin/pdf-projekte/SiedEntw_und_InfrastrFolgekosten_Teil_2.pdf] [DEMIREL Seite 37-41, average has been coosen]. (This is not valid for urban areas.) With this we estimate the amount aus house connections (HC).
+  To decide if a LV-grid district is most likely a rural, village or suburban settlement area we are using the population value combined with statistical data. Statisticly, there are 2.3 persons per appartment and 1.5 appartments per house. [see BBR Tabelle B12 http://www.ggr-planung.de/fileadmin/pdf-projekte/SiedEntw_und_InfrastrFolgekosten_Teil_2.pdf] [DEMIREL page 37-41, average has been coosen]. (This is not valid for urban areas.) With this we estimate the amount aus house connections (HC).
 This value can also be found at the explenation of the database of the "Kerber"-grids and is assinged to the type of settlement area:
 Rural: 622 HC at 43 MV/LV substations results in an average amount of 14.5 HC/substation
 Village: 2807 HC at 51 MV/LV substations results in an average amount of 55 HC/substation
@@ -63,11 +62,16 @@ With the resulting trendline of this three point,  [the Polynomial degree 2 [ 16
   * Rural <31 HC/substation
   * Village <87 HC/substation
   * Suburban >=87 HC/substation
-
-#. Categorising grid branches form "Kerber" model grids
-  Hinzu kommen auf Basis von kerber interpolierte stränge um Lücken in der Vollständigkeit zu schließen
-
 #. Assinging grid branches to the Substations
+  within the "Kerber"-model-grids several grid branches are found. 
+  
+  * Rural: 5 branches (with l>=78m & l<=676m)
+  * Village: 7 branches (with l>=102m & l<=588m)
+  * Suburban: 15 branches (with l>=85 & l<=610m)
+  
+  
   Strangzuweisung
     Zu jeder ONS werden in Abhängigkeit von Netztyp und HA, NS-Stränge zugewiesen
    Eine Verteilung des Aufkommens der Stränge anhand von der Gesamtstranglänge geschieht mit Hilfe der Scheffler Angaben (Abbildung      Länge der Netzstrahlen für ausgewählte Siedlungstypen [44])
+   #. Categorising grid branches form "Kerber" model grids
+  Hinzu kommen auf Basis von kerber interpolierte stränge um Lücken in der Vollständigkeit zu schließen
