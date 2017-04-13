@@ -506,26 +506,38 @@ class NetworkDingo:
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
         #srid = '3035'
 
+        gw2kw = 10**6  # load in database is in GW -> scale to kW
+
         # 1. filter grid districts of relevant load area
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        #load_areas = list(self.get_mvgd_lvla_lvgd_obj_from_id()[1])
-
-        lv_grid_districs_sqla = session.query(orm_lv_grid_district.la_id,
+        lv_grid_districs_sqla = session.query(orm_lv_grid_district.mvlv_subst_id,
+                                              orm_lv_grid_district.la_id,
                                               orm_lv_grid_district.zensus_sum.label('population'),
+                                              func.round(orm_lv_grid_district.sector_peakload_residential * gw2kw).
+                                                label('peak_load_residential'),
+                                              func.round(orm_lv_grid_district.sector_peakload_retail * gw2kw).
+                                                label('peak_load_retail'),
+                                              func.round(orm_lv_grid_district.sector_peakload_industrial * gw2kw).
+                                                label('peak_load_industrial'),
+                                              func.round(orm_lv_grid_district.sector_peakload_agricultural * gw2kw).
+                                                label('peak_load_agricultural'),
+                                              func.round((orm_lv_grid_district.sector_peakload_residential
+                                                          + orm_lv_grid_district.sector_peakload_retail
+                                                          + orm_lv_grid_district.sector_peakload_industrial
+                                                          + orm_lv_grid_district.sector_peakload_agricultural)
+                                                         * gw2kw).label('peak_load_sum'),
                                               func.ST_AsText(func.ST_Transform(
-                                                orm_lv_grid_district.geom, srid)).label('geom'),
-                                              orm_lv_grid_district.mvlv_subst_id). \
+                                                orm_lv_grid_district.geom, srid)).label('geom')). \
             filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist()))
-            #filter(orm_lv_grid_district.load_area_id.in_(load_areas))
 
         # read data from db
-        lv_grid_districs = pd.read_sql_query(lv_grid_districs_sqla.statement,
-                                             session.bind,
-                                             index_col='mvlv_subst_id')
+        lv_grid_districts = pd.read_sql_query(lv_grid_districs_sqla.statement,
+                                              session.bind,
+                                              index_col='mvlv_subst_id')
 
-        return lv_grid_districs
+        return lv_grid_districts
 
     def import_lv_stations(self, conn):
         """
