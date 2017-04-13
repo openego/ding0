@@ -10,15 +10,12 @@ Derivation of the 180m: There are different lengths of cable found in LV-Grids: 
 Furthermore, we foud a difference between the cable length and the line over ground is 72% (1.39 Umwegfaktor), see master thesis Jonas Gütter. This seems plausible compared to the value for the MV grid of 77% (1.3).
 The chosen value concludes in cable lengths of 250m at the shortest distance and 283m at the longest distance between the middle point of the square and its outer line.
 
-1. Finding LV-Grid districts (LV-GD):
+* Finding LV-Grid districts (LV-GD):
 We define Voronoi polygons within the load areas based on a grid of points with an interval of 180m.
-
-1. Assign consumption to the LV-GD:
+* Assign consumption to the LV-GD:
 This works analogously to the methods for the MV-GD, as described in "Allocation of annual electricity consumption and power generation capacities across multi voltage levels in a high spatial resolution" (Huelk)
-
-1. Assign peak load
-
-1. Define transformer
+* Assign peak load
+* Define transformer
 
 ## Generating LV-Grids
 
