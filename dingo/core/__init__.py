@@ -368,7 +368,7 @@ class NetworkDingo:
         # load area
         lv_loads_threshold = cfg_dingo.get('mv_routing', 'load_area_threshold')
 
-        load_scaling_factor = 10**6  # load in database is in GW -> scale to kW
+        gw2kw = 10**6  # load in database is in GW -> scale to kW
 
         # build SQL query
         Session = sessionmaker(bind=conn)
@@ -409,19 +409,19 @@ class NetworkDingo:
                 label('geo_area'),
             func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom_centre, srid)).\
                 label('geo_centre'),
-            func.round(orm_lv_loads.residential * load_scaling_factor).\
+            func.round(orm_lv_loads.residential * gw2kw).\
                 label('peak_load_residential'),
-            func.round(orm_lv_loads.retail * load_scaling_factor).\
+            func.round(orm_lv_loads.retail * gw2kw).\
                 label('peak_load_retail'),
-            func.round(orm_lv_loads.industrial * load_scaling_factor).\
+            func.round(orm_lv_loads.industrial * gw2kw).\
                 label('peak_load_industrial'),
-            func.round(orm_lv_loads.agricultural * load_scaling_factor).\
+            func.round(orm_lv_loads.agricultural * gw2kw).\
                 label('peak_load_agricultural'),
             func.round((orm_lv_loads.residential
                         + orm_lv_loads.retail
                         + orm_lv_loads.industrial
                         + orm_lv_loads.agricultural)
-                       * load_scaling_factor).label('peak_load_sum')). \
+                       * gw2kw).label('peak_load_sum')). \
             join(orm_lv_loads, orm_lv_load_areas.id
                  == orm_lv_loads.id).\
             filter(orm_lv_load_areas.subst_id == mv_grid_district. \
@@ -430,7 +430,7 @@ class NetworkDingo:
                      + orm_lv_loads.retail
                      + orm_lv_loads.industrial
                      + orm_lv_loads.agricultural)
-                       * load_scaling_factor) > lv_loads_threshold)
+                       * gw2kw) > lv_loads_threshold)
 
         # read data from db
         lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
@@ -513,6 +513,7 @@ class NetworkDingo:
         #load_areas = list(self.get_mvgd_lvla_lvgd_obj_from_id()[1])
 
         lv_grid_districs_sqla = session.query(orm_lv_grid_district.la_id,
+                                              orm_lv_grid_district.zensus_sum.label('population'),
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
                                               orm_lv_grid_district.mvlv_subst_id). \
