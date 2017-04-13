@@ -24,7 +24,7 @@ This works analogously to the methods for the MV-GD, as described in "Allocation
 
 ### Introduction/Literature
 Information on LV-Grids in Germany can be found on several sources:
-* [Kerber](http://oep.iks.cs.ovgu.de/literature/entry/17/) describes 8 rural and 3 village and 8 suburban LV Grids; each with several branch lines. The exemplary grids are based on 132 real MV/LV Substations data in south Germany.
+*  - [Kerber](http://oep.iks.cs.ovgu.de/literature/entry/17/) describes 8 rural and 3 village and 8 suburban LV Grids; each with several branch lines. The exemplary grids are based on 132 real MV/LV Substations data in south Germany.
 * [Scheffler] (http://oep.iks.cs.ovgu.de/literature/entry/18/) gives statistical data about technical parameters of LV grids divided on 8 types of settlement areas.
 * [Mohrmann] (http://oep.iks.cs.ovgu.de/literature/entry/19/) discribes statistical data about technical parameters of LV grids based on 2700 LV-Grids.
 * Demirel
@@ -56,9 +56,11 @@ With the resulting trendline of this three point,  [the Polynomial degree 2 [ 16
 *Village <87 HC/substation
 *Suburban >=87 HC/substation
 
-Strangzuweisung
+1. Categorising grid branches form "Kerber" model grids
 
+Hinzu kommen auf Basis von kerber interpolierte stränge um Lücken in der Vollständigkeit zu schließen
+
+1. Assinging grid branches to the Substations
+Strangzuweisung
     Zu jeder ONS werden in Abhängigkeit von Netztyp und HA, NS-Stränge zugewiesen
-        Grundlage bilden die Kerber-Stränge in den Kategorien
-        Hinzu kommen auf Basis von kerber interpolierte stränge um Lücken in der Vollständigkeit zu schließen
-        Eine Verteilung des Aufkommens der Stränge anhand von der Gesamtstranglänge geschieht mit Hilfe der Scheffler Angaben (Abbildung 2.11: Länge der Netzstrahlen für ausgewählte Siedlungstypen [44])
+   Eine Verteilung des Aufkommens der Stränge anhand von der Gesamtstranglänge geschieht mit Hilfe der Scheffler Angaben (Abbildung      Länge der Netzstrahlen für ausgewählte Siedlungstypen [44])
