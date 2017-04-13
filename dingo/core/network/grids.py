@@ -726,6 +726,8 @@ class LVGridDingo(GridDingo):
             Parameters of chosen Transformer
         """
 
+        #TODO: consider apartment_house_branch_ratio when calculating population_per_apartment
+        # apartment_house_branch_ratio describes number of apartments per house branch connections
         apartment_house_branch_ratio = cfg_dingo.get("assumptions",
             "apartment_house_branch_ratio")
         population_per_apartment = cfg_dingo.get("assumptions",
