@@ -43,16 +43,16 @@ Given data on MV/LV substations:
 We are using the LV-Branches of Kerber from the grids. They should be assigned to the most plausible types of settlement areas.
 
 1. Define the type of settlement area
-To decide if a LV-grid district is most likely a rural, village or suburban settlement area we are using the population value combined with statistical data. Statisticly, there are 2.3 persons per appartment and 1.5 appartments per house. [see BBR Tabelle B12 http://www.ggr-planung.de/fileadmin/pdf-projekte/SiedEntw_und_InfrastrFolgekosten_Teil_2.pdf] [DEMIREL Seite 37-41, average has been coosen]. This is not valid for urban areas. 
+To decide if a LV-grid district is most likely a rural, village or suburban settlement area we are using the population value combined with statistical data. Statisticly, there are 2.3 persons per appartment and 1.5 appartments per house. [see BBR Tabelle B12 http://www.ggr-planung.de/fileadmin/pdf-projekte/SiedEntw_und_InfrastrFolgekosten_Teil_2.pdf] [DEMIREL Seite 37-41, average has been coosen]. (This is not valid for urban areas.) With this we estimate the amount aus house connections (HC).
+This value can also be found at the explenation of the database of the "Kerber"-grids and is assinged to the type of settlement area:
+Rural: 622 HC at 43 MV/LV substations results in an average amount of 14.5 HC/substation
+Village: 2807 HC at 51 MV/LV substations results in an average amount of 55 HC/substation
+Suburban: 4856 HC at 38 MV/LV substations results in an average amount of 128 HC/substationTher
+With the resulting trendline of this three point,  [the Polynomial degree 2 [ 16.127*(x^2)-7.847*x+6.1848 ] whereas x is the type of of settlement area], we difine the border values for the typ of settlement area at:
+*Rural <31 HC/substation
+*Village <87 HC/substation
+*Suburban >=87 HC/substation
 
-...
-
-
-    Grundsätzliche Zuordnung Anzahl der Hausanschlüsse (HA) -> Netztyp (Kerber):
-        Landnetz (Mittel 15 HA/ONS) --> bis 31 HA
-        Dorfnetz (Mittel 55 HA/ONS) --> bis 87 HA
-        Vorstadtnetz (Mittel 128 HA/ONS) --> Begrenzung ist durch EWD2 gegeben (theoretisch liegt sie bei 176)
-        [siehe Kerber Anhang 3 und darausfolgende Trendlinie im Polynom 2 Grades]
 
 Strangzuweisung
 
