@@ -1,9 +1,14 @@
 # Discover dingo in depth
 ~~~~~~~~~~~~~~~~~~~~~~~
-## Generating MV/LV Substations
+
+****************************
+Generating MV/LV Substations
+****************************
 Find a method description also at: "The eGo grid model: An open-source and open-data based synthetic medium-voltage grid model for distribution power supply systems" (Amme, J)
 
-### Method
+=======
+Method
+=======
 1. Placing LV/MV substations:
 The substations are based on a grid of points with an interval of 180m within the load areas.
 Derivation of the 180m: There are different lengths of cable found in LV-Grids: 100-1.500m (see Kerber, Scheffler, Mohrmann). As described by Scheffler, length between 200-300m is found most often.
@@ -11,15 +16,19 @@ Furthermore, we foud a difference between the cable length and the line over gro
 The chosen value concludes in cable lengths of 250m at the shortest distance and 283m at the longest distance between the middle point of the square and its outer line.
 
 * Finding LV-Grid districts (LV-GD):
-We define Voronoi polygons within the load areas based on a grid of points with an interval of 180m.
+  We define Voronoi polygons within the load areas based on a grid of points with an interval of 180m.
 * Assign consumption to the LV-GD:
-This works analogously to the methods for the MV-GD, as described in "Allocation of annual electricity consumption and power generation capacities across multi voltage levels in a high spatial resolution" (Huelk)
+  This works analogously to the methods for the MV-GD, as described in "Allocation of annual electricity consumption and power  generation capacities across multi voltage levels in a high spatial resolution" (Huelk)
 * Assign peak load
 * Define transformer
 
-## Generating LV-Grids
+=======
+Generating LV-Grids
+=======
 
-### Introduction/Literature
+=======
+Introduction/Literature
+=======
 Information on LV-Grids in Germany can be found on several sources:
 *  - [Kerber](http://oep.iks.cs.ovgu.de/literature/entry/17/) describes 8 rural and 3 village and 8 suburban LV Grids; each with several branch lines. The exemplary grids are based on 132 real MV/LV Substations data in south Germany.
 * [Scheffler] (http://oep.iks.cs.ovgu.de/literature/entry/18/) gives statistical data about technical parameters of LV grids divided on 8 types of settlement areas.
@@ -32,9 +41,12 @@ Given data on MV/LV substations:
 * population
 * --> peak load
 
-### Method
-
-#### Method for residential LV-branches
+=======
+Method
+=======
+----------------------------------
+Method for residential LV-branches
+----------------------------------
 
 1. LV-Branches
 
