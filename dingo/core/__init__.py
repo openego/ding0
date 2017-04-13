@@ -293,50 +293,47 @@ class NetworkDingo:
                                     index_col='subst_id')
 
         # iterate over grid_district/station datasets and initiate objects
-        try:
-            for poly_id, row in mv_data.iterrows():
-                subst_id = poly_id
-                region_geo_data = wkt_loads(row['poly_geom'])
+        for poly_id, row in mv_data.iterrows():
+            subst_id = poly_id
+            region_geo_data = wkt_loads(row['poly_geom'])
 
-                # transform `region_geo_data` to epsg 3035
-                # to achieve correct area calculation of mv_grid_district
-                station_geo_data = wkt_loads(row['subs_geom'])
-                # projection = partial(
-                #     pyproj.transform,
-                #     pyproj.Proj(init='epsg:4326'),  # source coordinate system
-                #     pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-                #
-                # region_geo_data = transform(projection, region_geo_data)
+            # transform `region_geo_data` to epsg 3035
+            # to achieve correct area calculation of mv_grid_district
+            station_geo_data = wkt_loads(row['subs_geom'])
+            # projection = partial(
+            #     pyproj.transform,
+            #     pyproj.Proj(init='epsg:4326'),  # source coordinate system
+            #     pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+            #
+            # region_geo_data = transform(projection, region_geo_data)
 
-                mv_grid_district = self.build_mv_grid_district(poly_id,
-                                                 subst_id,
-                                                 region_geo_data,
-                                                 station_geo_data)
+            mv_grid_district = self.build_mv_grid_district(poly_id,
+                                             subst_id,
+                                             region_geo_data,
+                                             station_geo_data)
 
-                # import all lv_stations within mv_grid_district
-                lv_stations = self.import_lv_stations(conn)
+            # import all lv_stations within mv_grid_district
+            lv_stations = self.import_lv_stations(conn)
 
-                # import all lv_grid_districts within mv_grid_district
-                lv_grid_districts = self.import_lv_grid_districts(conn, lv_stations)
-                lv_grid_districts['population'] = [random.randrange(1, 450) for x in lv_grid_districts.index.values]
+            # import all lv_grid_districts within mv_grid_district
+            lv_grid_districts = self.import_lv_grid_districts(conn, lv_stations)
+            lv_grid_districts['population'] = [random.randrange(1, 450) for x in lv_grid_districts.index.values]
 
-                # lv_grid_districts = pd.DataFrame(
-                #     columns=['load_area_id', 'population'],
-                #     index=list(lv_stations.index.values))
-                # lv_grid_districts['load_area_id'] = lv_stations['load_area_id'].tolist()
-                # lv_grid_districts['population'] = [random.randrange(1, 450) for x in lv_grid_districts.index.values]
-                # lv_grid_districts['geom'] = lv_stations[
-                #     'geom'].tolist()
+            # lv_grid_districts = pd.DataFrame(
+            #     columns=['load_area_id', 'population'],
+            #     index=list(lv_stations.index.values))
+            # lv_grid_districts['load_area_id'] = lv_stations['load_area_id'].tolist()
+            # lv_grid_districts['population'] = [random.randrange(1, 450) for x in lv_grid_districts.index.values]
+            # lv_grid_districts['geom'] = lv_stations[
+            #     'geom'].tolist()
 
-                self.import_lv_load_areas(conn,
-                                          mv_grid_district,
-                                          lv_grid_districts,
-                                          lv_stations)
+            self.import_lv_load_areas(conn,
+                                      mv_grid_district,
+                                      lv_grid_districts,
+                                      lv_stations)
 
-                # add sum of peak loads of underlying lv grid_districts to mv_grid_district
-                mv_grid_district.add_peak_demand()
-        except:
-            raise ValueError('unexpected error while initiating MV grid_districts from DB dataset.')
+            # add sum of peak loads of underlying lv grid_districts to mv_grid_district
+            mv_grid_district.add_peak_demand()
 
         logger.info('=====> MV Grid Districts imported')
 
