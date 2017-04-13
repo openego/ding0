@@ -734,7 +734,7 @@ class NetworkDingo:
                     capacity = 0
                     for geno in lv_load_area.genos_collected_temp:
                         capacity += geno.capacity
-                    lv_load_area.peak_generation += geno.capacity
+                    lv_load_area.peak_generation = capacity
                     logger.error('No LV grid district found in {}. '
                                  'Generators omitted.'.format(repr(
                         lv_load_area)))
