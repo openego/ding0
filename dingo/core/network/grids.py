@@ -699,7 +699,6 @@ class LVGridDingo(GridDingo):
     def select_typified_grid_model(self,
                                    string_properties,
                                    apartment_string,
-                                   apartment_trafo,
                                    trafo_parameters,
                                    population):
         """
@@ -711,8 +710,6 @@ class LVGridDingo(GridDingo):
             Properties of LV typified model grids
         apartment_string: DataFrame
             Relational table of apartment count and strings of model grid
-        apartment_trafo: DataFrame
-            Relational table of apartment count and trafo size
         trafo_parameters: DataFrame
             Equipment parameters of LV transformers
         population: Int
@@ -751,7 +748,9 @@ class LVGridDingo(GridDingo):
         occurence_selector = [str(i) for i in selected_strings]
         selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
 
-        transformer = apartment_trafo.loc[house_branches]
+        #transformer = apartment_trafo.loc[house_branches]
+        # TODO: WORKAROUND! Use peak load of LVGD to determine trafo size
+        transformer = 630
 
         transformer['x'] = trafo_parameters.loc[
             transformer['trafo_apparent_power'], 'x']
