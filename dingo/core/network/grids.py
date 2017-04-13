@@ -841,7 +841,7 @@ class LVGridDingo(GridDingo):
                         branch=BranchDingo(
                             length=row['length house branch {}'.format(
                                 variant)],
-                            type=dingo.core.lv_cable_parameters. \
+                            type=self.network.static_data['LV_cables']. \
                                 loc[house_cable_name]))
 
     def reinforce_grid(self):

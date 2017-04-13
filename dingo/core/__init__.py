@@ -362,17 +362,6 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        cable_parameters_file = cfg_dingo.get("equipment",
-                                              "equipment_lv_parameters_cables")
-
-        global lv_cable_parameters
-        lv_cable_parameters = pd.read_csv(os.path.join(
-            package_path,
-            'data',
-            cable_parameters_file),
-            comment='#',
-            index_col='name')
-
         lv_load_areas_sqla = session.query(
             orm_lv_load_areas.id.label('id_db'),
             orm_lv_load_areas.zensus_sum,
@@ -857,7 +846,13 @@ class NetworkDingo:
                                         comment='#',
                                         converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
 
-        # TODO: Include LV equipment
+        equipment_parameters_file = cfg_dingo.get('equipment',
+                                                  'equipment_lv_parameters_cables')
+        self.static_data['LV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
+                                        equipment_parameters_file),
+                                        comment='#',
+                                        index_col='name',
+                                        converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
 
     def validate_grid_districts(self):
         """ Tests MV grid districts for validity concerning imported data such as:
