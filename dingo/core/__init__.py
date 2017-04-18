@@ -196,18 +196,12 @@ class NetworkDingo:
                                   id_db=id,
                                   geo_data=wkt_loads(row['geom']))
 
-            # TODO: assign "real" peak_load value to lv_station when available
             lv_station = LVStationDingo(
                 id_db=id,
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
-                #peak_load=int(lv_load_area.peak_load_sum * lv_grid_district.geo_data.area / lv_load_area.geo_area.area))
-                peak_load=int(lv_load_area.peak_load_sum * transform(projection,
-                                                                     lv_grid_district.geo_data).area /
-                                                                     transform(projection, lv_load_area.geo_area).area))
-                # TODO: current state: use area share (based on total area of LA)
-                #peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
+                peak_load=lv_grid_district.peak_load_sum)
 
             # Choice of typified lv model grid depends on population within lv
             # grid district. If no population is given, lv grid is omitted and
