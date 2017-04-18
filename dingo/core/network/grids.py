@@ -761,12 +761,12 @@ class LVGridDingo(GridDingo):
         transformer_temp = 630
         transformer = {}
 
-        transformer['trafo_apparent_power'] = trafo_parameters.loc[
+        transformer['S_max'] = trafo_parameters.loc[
             transformer_temp].name
         transformer['x'] = trafo_parameters.loc[
-            transformer_temp, 'x']
+            transformer_temp, 'X']
         transformer['r'] = trafo_parameters.loc[
-            transformer_temp, 'r']
+            transformer_temp, 'R']
 
         return selected_strings_df, transformer
 

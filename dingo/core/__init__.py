@@ -221,7 +221,7 @@ class NetworkDingo:
                 lv_transformer = TransformerDingo(
                     equip_trans_id=id,
                     v_level=0.4,
-                    s_max_longterm=transformer['trafo_apparent_power'],
+                    s_max_longterm=transformer['S_max'],
                     r=transformer['r'],
                     x=transformer['x'])
 
@@ -796,8 +796,8 @@ class NetworkDingo:
                                         comment='#',
                                         delimiter=',',
                                         decimal='.',
-                                        index_col='transformer_size',
-                                        converters={'transformer_size': lambda x: int(x)})
+                                        index_col='S_max',
+                                        converters={'S_max': lambda x: int(x)})
 
         # import LV model grids
         model_grids_lv_string_properties = cfg_dingo.get('model_grids',
