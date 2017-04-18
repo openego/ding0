@@ -183,10 +183,12 @@ class NetworkDingo:
                 id_db=id,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(row['geom']),
-                population=row['population'],
-                # TODO: current state: use LVGD count to calc peak load of station -> equal distribution (temporarily)
-                # TODO: use area share (based on total area of LA)
-                peak_load=lv_load_area.peak_load_sum / len(lv_grid_districts))
+                population=0 if isnan(row['population']) else int(row['population']),
+                peak_load_residential=int(row['peak_load_residential']),
+                peak_load_retail=int(row['peak_load_retail']),
+                peak_load_industrial=int(row['peak_load_industrial']),
+                peak_load_agricultural=int(row['peak_load_agricultural']),
+                peak_load_sum=int(row['peak_load_sum']))
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(network=self,
