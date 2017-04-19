@@ -205,16 +205,19 @@ class NetworkDingo:
                 peak_load=lv_grid_district.peak_load_sum)
 
             # choose LV transformer and assign to LV station
-            transformer = lv_grid.select_transformer(lv_grid_district.peak_load_sum)
+            transformer, transformer_cnt = lv_grid.select_transformer(
+                lv_grid_district.peak_load_sum)
 
-            lv_transformer = TransformerDingo(
-                equip_trans_id=id,
-                v_level=0.4,
-                s_max_longterm=transformer['S_max'],
-                r=transformer['R'],
-                x=transformer['X'])
+            # create transformers and add them to station of LVGD
+            for t in range(0,transformer_cnt):
+                lv_transformer = TransformerDingo(
+                    equip_trans_id=id,
+                    v_level=0.4,
+                    s_max_longterm=transformer['S_max'],
+                    r=transformer['R'],
+                    x=transformer['X'])
 
-            lv_station.add_transformer(lv_transformer)
+                lv_station.add_transformer(lv_transformer)
 
             # Choice of typified lv model grid depends on population within lv
             # grid district. If no population is given, lv grid is omitted and
