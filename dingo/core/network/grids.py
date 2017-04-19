@@ -696,6 +696,23 @@ class LVGridDingo(GridDingo):
         for load in self._loads:
             yield load
 
+    def select_transformer(self, peak_load):
+        """
+        Selects LV transformer according to peak load of LV grid district
+
+        Parameters
+        ----------
+        peak_load: int
+            Peak load of LV grid district
+        """
+
+        trafo_parameters = self.network.static_data['LV_trafos']
+        transformer = trafo_parameters.iloc[
+            trafo_parameters[
+                trafo_parameters['S_max'] > peak_load]['S_max'].idxmin()]
+
+        return transformer
+
     def select_typified_grid_model(self,
                                    string_properties,
                                    apartment_string,
