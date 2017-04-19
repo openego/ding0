@@ -196,6 +196,7 @@ class NetworkDingo:
                                   id_db=id,
                                   geo_data=wkt_loads(row['geom']))
 
+            # create LV station
             lv_station = LVStationDingo(
                 id_db=id,
                 grid=lv_grid,
@@ -203,32 +204,36 @@ class NetworkDingo:
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
                 peak_load=lv_grid_district.peak_load_sum)
 
+            # choose LV transformer and assign to LV station
+            transformer = lv_grid.select_transformer(lv_grid_district.peak_load_sum)
+
+            lv_transformer = TransformerDingo(
+                equip_trans_id=id,
+                v_level=0.4,
+                s_max_longterm=transformer['S_max'],
+                r=transformer['R'],
+                x=transformer['X'])
+
+            lv_station.add_transformer(lv_transformer)
+
             # Choice of typified lv model grid depends on population within lv
             # grid district. If no population is given, lv grid is omitted and
             # load is represented by lv station's peak load
             if lv_grid_district.population > 0:
 
-                model_grid, transformer = lv_grid.select_typified_grid_model(
-                    self.static_data['LV_model_grids_strings'],
-                    self.static_data['LV_model_grids_strings_per_grid'],
-                    self.static_data['LV_trafos'],
+                model_grid = lv_grid.select_typified_grid_model(
                     lv_grid_district.population)
-
-                lv_transformer = TransformerDingo(
-                    equip_trans_id=id,
-                    v_level=0.4,
-                    s_max_longterm=transformer['S_max'],
-                    r=transformer['r'],
-                    x=transformer['x'])
-
-                lv_station.add_transformer(lv_transformer)
-
 
                 lv_grid.build_lv_graph(model_grid)
 
+            # no residential load -> do not create grid structure,
+            # only grid object + station
+            # TODO: implement grid creation in this case
+            else:
+                logger.info('{} has got no residential load. No grid is created.'.format(repr(lv_grid_district)))
+
             lv_grid.add_station(lv_station)
             lv_grid_district.lv_grid = lv_grid
-
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
     def import_mv_grid_districts(self, conn, mv_grid_districts_no=None):
@@ -792,7 +797,7 @@ class NetworkDingo:
                                         comment='#',
                                         delimiter=',',
                                         decimal='.',
-                                        index_col='S_max',
+                                        #index_col='S_max',
                                         converters={'S_max': lambda x: int(x)})
 
         # import LV model grids
