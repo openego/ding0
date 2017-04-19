@@ -709,22 +709,42 @@ class LVGridDingo(GridDingo):
         -------
         transformer: DataFrame
             Parameters of chosen Transformer
+        transformer_cnt: int
+            Count of transformers
 
         Notes
         -----
         The LV transformer with the next higher available nominal apparent power is chosen.
         Therefore, a max. allowed transformer loading of 100% is implicitly assumed.
+        If the peak load exceeds the max. power of a single available transformer, use
+        multiple trafos.
         """
 
         # get equipment parameters of LV transformers
         trafo_parameters = self.network.static_data['LV_trafos']
 
-        # choose trafo
-        transformer = trafo_parameters.iloc[
-            trafo_parameters[
-                trafo_parameters['S_max'] > peak_load]['S_max'].idxmin()]
+        # get max. trafo
+        transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
 
-        return transformer
+        # peak load is smaller than max. available trafo
+        if peak_load < transformer_max['S_max']:
+            # choose trafo
+            transformer = trafo_parameters.iloc[
+                trafo_parameters[
+                    trafo_parameters['S_max'] > peak_load]['S_max'].idxmin()]
+            transformer_cnt = 1
+        # peak load is greater than max. available trafo -> use multiple trafos
+        else:
+            transformer_cnt = 2
+            # increase no. of trafos until peak load can be supplied
+            while not any(trafo_parameters['S_max'] > peak_load/transformer_cnt):
+                transformer_cnt += 1
+            transformer = trafo_parameters.iloc[
+                trafo_parameters[
+                    trafo_parameters['S_max'] > peak_load/transformer_cnt]
+                        ['S_max'].idxmin()]
+
+        return transformer, transformer_cnt
 
     def select_typified_grid_model(self, population):
         """
