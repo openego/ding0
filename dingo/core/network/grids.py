@@ -704,6 +704,11 @@ class LVGridDingo(GridDingo):
         ----------
         peak_load: int
             Peak load of LV grid district
+
+        Returns
+        -------
+        transformer: DataFrame
+            Parameters of chosen Transformer
         """
 
         trafo_parameters = self.network.static_data['LV_trafos']
