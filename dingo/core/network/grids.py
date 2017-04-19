@@ -726,21 +726,21 @@ class LVGridDingo(GridDingo):
 
         return transformer
 
-    def select_typified_grid_model(self,
-                                   string_properties,
-                                   apartment_string,
-                                   population):
+    def select_typified_grid_model(self, population):
         """
         Selects typified model grid based on population
 
         Parameters
         ----------
-        string_properties: DataFrame
-            Properties of LV typified model grids
-        apartment_string: DataFrame
-            Relational table of apartment count and strings of model grid
         population: Int
             Population within LV grid district
+
+        Returns
+        -------
+        selected_strings_df: DataFrame
+            Selected string of typified model grid
+        transformer: Dataframe
+            Parameters of chosen Transformer
 
         Notes
         -----
@@ -750,15 +750,14 @@ class LVGridDingo(GridDingo):
         branches. If this number exceed 196, still the grid topology of 196
         house branches is used. The peak load of the LV grid district is
         uniformly distributed across house branches.
-
-        Returns
-        -------
-        selected_strings_df: DataFrame
-            Selected string of typified model grid
-        transformer: Dataframe
-            Parameters of chosen Transformer
         """
 
+        # Load properties of LV typified model grids
+        string_properties = self.network.static_data['LV_model_grids_strings']
+        # Load relational table of apartment count and strings of model grid
+        apartment_string = self.network.static_data['LV_model_grids_strings_per_grid']
+
+        # load assumtions
         apartment_house_branch_ratio = cfg_dingo.get("assumptions",
             "apartment_house_branch_ratio")
         population_per_apartment = cfg_dingo.get("assumptions",
