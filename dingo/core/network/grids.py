@@ -698,7 +698,7 @@ class LVGridDingo(GridDingo):
 
     def select_transformer(self, peak_load):
         """
-        Selects LV transformer according to peak load of LV grid district
+        Selects LV transformer according to peak load of LV grid district.
 
         Parameters
         ----------
@@ -709,9 +709,17 @@ class LVGridDingo(GridDingo):
         -------
         transformer: DataFrame
             Parameters of chosen Transformer
+
+        Notes
+        -----
+        The LV transformer with the next higher available nominal apparent power is chosen.
+        Therefore, a max. allowed transformer loading of 100% is implicitly assumed.
         """
 
+        # get equipment parameters of LV transformers
         trafo_parameters = self.network.static_data['LV_trafos']
+
+        # choose trafo
         transformer = trafo_parameters.iloc[
             trafo_parameters[
                 trafo_parameters['S_max'] > peak_load]['S_max'].idxmin()]
