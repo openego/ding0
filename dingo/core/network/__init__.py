@@ -375,12 +375,8 @@ class TransformerDingo:
     """
     Transformers
     ------------
-    geo_data : shapely.geometry object
-        Geo-spatial data with informations for location/region-shape. The
-        geometry can be a polygon/multi-polygon for regions, a line for
-        transport objects or a point for objects such as transformer sources.
-    equip_trans_id : int
-        ID of transformer type according to DB table 'equip_trans'
+    id_db : int
+        id according to database table
     v_level : 
         voltage level	
     s_max_a : float
@@ -396,10 +392,7 @@ class TransformerDingo:
     """
 
     def __init__(self, **kwargs):
-        #inherit parameters from oemof's Transformer
-        # super().__init__(**kwargs)
-        #more params
-        self.equip_trans_id = kwargs.get('equip_trans_id', None)
+        self.id_db = kwargs.get('id_db', None)
         self.v_level = kwargs.get('v_level', None)
         self.s_max_a = kwargs.get('s_max_longterm', None)
         self.s_max_b = kwargs.get('s_max_shortterm', None)

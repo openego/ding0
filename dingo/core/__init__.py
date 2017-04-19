@@ -211,7 +211,7 @@ class NetworkDingo:
             # create transformers and add them to station of LVGD
             for t in range(0,transformer_cnt):
                 lv_transformer = TransformerDingo(
-                    equip_trans_id=id,
+                    id_db=id,
                     v_level=0.4,
                     s_max_longterm=transformer['S_max'],
                     r=transformer['R'],
