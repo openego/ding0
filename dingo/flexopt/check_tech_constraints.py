@@ -60,7 +60,7 @@ def check_load(grid, mode):
             else:
                 raise ValueError('Branch kind is invalid!')
 
-            # check loads only for non-aggregated LV load areas (aggregated ones are skipped raising except)
+            # check loads only for non-aggregated Load Areas (aggregated ones are skipped raising except)
             try:
                 if any([s*mw2kw >= s_max_th for s in branch['branch'].s_res]):
                     #crit_branches.append(branch)

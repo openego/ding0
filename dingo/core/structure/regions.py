@@ -33,7 +33,7 @@ class MVGridDistrictDingo(RegionDingo):
             yield load_area
 
     def add_lv_load_area(self, lv_load_area):
-        """ Adds a LV load area `lv_load_area` to _lv_load_areas if not already existing, and adds the associated centre
+        """ Adds a Load Area `lv_load_area` to _lv_load_areas if not already existing, and adds the associated centre
             object to MV grid's _graph as node.
 
         Args:

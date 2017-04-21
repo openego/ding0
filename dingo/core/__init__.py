@@ -429,15 +429,15 @@ class NetworkDingo:
                                         lv_grid_districts_per_load_area,
                                         lv_stations_per_load_area)
 
-            # create new centre object for LV load area
+            # create new centre object for Load Area
             lv_load_area_centre = LVLoadAreaCentreDingo(id_db=id_db,
                                                         geo_data=wkt_loads(row['geo_centre']),
                                                         lv_load_area=lv_load_area,
                                                         grid=mv_grid_district.mv_grid)
-            # links the centre object to LV load area
+            # links the centre object to Load Area
             lv_load_area.lv_load_area_centre = lv_load_area_centre
 
-            # add LV load area to MV grid district (and add centre object to MV gris district's graph)
+            # add Load Area to MV grid district (and add centre object to MV gris district's graph)
             mv_grid_district.add_lv_load_area(lv_load_area)
 
     def import_lv_grid_districts(self, conn, lv_stations):
@@ -586,7 +586,7 @@ class NetworkDingo:
                 mv_grid_district_id = row['subst_id']
                 mv_grid = mv_grid_districts_dict[mv_grid_district_id].mv_grid
 
-                # look up LV load area
+                # look up Load Area
                 lv_load_area_id = row['la_id']
                 if lv_load_area_id and not isnan(lv_load_area_id):
                     try:
@@ -689,7 +689,7 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        # build dicts to map MV grid district and LV load area ids to related objects
+        # build dicts to map MV grid district and Load Area ids to related objects
         mv_grid_districts_dict, lv_load_areas_dict, lv_grid_districts_dict = self.get_mvgd_lvla_lvgd_obj_from_id()
 
         # import renewable generators
@@ -851,7 +851,7 @@ class NetworkDingo:
                       grid_district.lv_load_areas()]):
                 invalid_mv_grid_districts.append(grid_district)
                 msg_invalidity.append("MV Grid District {} contains only " \
-                                 "aggregated LV Load Areas and was removed" \
+                                 "aggregated Load Areas and was removed" \
                                  "".format(grid_district))
 
         for grid_district in invalid_mv_grid_districts:

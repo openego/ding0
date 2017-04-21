@@ -475,7 +475,7 @@ class MVGridDingo(GridDingo):
         return branch_type_max, branch_type_max, branch_type_settle_max
 
     def set_nodes_aggregation_flag(self, peak_current_branch_max):
-        """ Set LV load areas with too high demand to aggregated type.
+        """ Set Load Areas with too high demand to aggregated type.
 
         Args:
             peak_current_branch_max: Max. allowed current for line/cable
@@ -489,7 +489,7 @@ class MVGridDingo(GridDingo):
             if peak_current_node > peak_current_branch_max:
                 lv_load_area.is_aggregated = True
 
-        # add peak demand for all LV load areas of aggregation type
+        # add peak demand for all Load Areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
 
     def export_to_pypsa(self, session, method='onthefly'):

@@ -125,7 +125,7 @@ class LocalSearchSolver(BaseSolver):
         
         for route in solution.routes():
 
-            # exclude routes with single high-demand nodes (LV load areas)
+            # exclude routes with single high-demand nodes (Load Areas)
             if len(route._nodes) == 1:
                 if solution._problem._is_aggregated[str(route._nodes[0])]:
                     continue
@@ -212,7 +212,7 @@ class LocalSearchSolver(BaseSolver):
             
             for route in solution.routes():
 
-                # exclude origin routes with single high-demand nodes (LV load areas)
+                # exclude origin routes with single high-demand nodes (Load Areas)
                 if len(route._nodes) == 1:
                     if solution._problem._is_aggregated[str(route._nodes[0])]:
                         continue
@@ -222,7 +222,7 @@ class LocalSearchSolver(BaseSolver):
                 
                 for target_route in solution.routes():
 
-                    # exclude (origin+target) routes with single high-demand nodes (LV load areas)
+                    # exclude (origin+target) routes with single high-demand nodes (Load Areas)
                     if len(target_route._nodes) == 1:
                         if solution._problem._is_aggregated[str(target_route._nodes[0])]:
                             continue
@@ -311,7 +311,7 @@ class LocalSearchSolver(BaseSolver):
             
             for route in solution.routes():
 
-                # exclude origin routes with single high-demand nodes (LV load areas)
+                # exclude origin routes with single high-demand nodes (Load Areas)
                 if len(route._nodes) == 1:
                     if solution._problem._is_aggregated[str(route._nodes[0])]:
                         continue
@@ -324,7 +324,7 @@ class LocalSearchSolver(BaseSolver):
                     if route == target_route:
                         continue
 
-                    # exclude (origin+target) routes with single high-demand nodes (LV load areas)
+                    # exclude (origin+target) routes with single high-demand nodes (Load Areas)
                     if len(target_route._nodes) == 1:
                         if solution._problem._is_aggregated[str(target_route._nodes[0])]:
                             continue
