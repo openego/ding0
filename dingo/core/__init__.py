@@ -338,8 +338,6 @@ class NetworkDingo:
             LV stations within this mv_grid_district
         """
 
-        package_path = dingo.__path__[0]
-
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
