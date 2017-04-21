@@ -1224,8 +1224,7 @@ class NetworkDingo:
                         # load is represented by lv station's peak load
                         if lv_grid_district.population > 0:
 
-                            model_grid = lv_grid_district.lv_grid.select_typified_grid_model(
-                                lv_grid_district.population)
+                            model_grid = lv_grid_district.lv_grid.select_typified_grid_model()
 
                             lv_grid_district.lv_grid.build_lv_graph(model_grid)
 

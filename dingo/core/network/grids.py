@@ -743,14 +743,13 @@ class LVGridDingo(GridDingo):
 
         return transformer, transformer_cnt
 
-    def select_typified_grid_model(self, population):
+    def select_typified_grid_model(self):
         """
         Selects typified model grid based on population
 
         Parameters
         ----------
-        population: Int
-            Population within LV grid district
+        None
 
         Returns
         -------
@@ -780,7 +779,7 @@ class LVGridDingo(GridDingo):
         population_per_apartment = cfg_dingo.get("assumptions",
             "population_per_apartment")
 
-        house_branches = round(population / (population_per_apartment *
+        house_branches = round(self.grid_district.population / (population_per_apartment *
                                          apartment_house_branch_ratio))
 
         if house_branches <= 0:
