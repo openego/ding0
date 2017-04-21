@@ -371,14 +371,13 @@ class MVGridDingo(GridDingo):
         ----------
         .. [1] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
         .. [2] René Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
-        .. [3] Helmut Alt, "Vorlesung Elektrische Energieerzeugung und -verteilung"
-            http://www.alt.fh-aachen.de/downloads//Vorlesung%20EV/Hilfsb%2044%20Netzdaten%20Leitung%20Kabel.pdf, 2010
+        .. [3] Südkabel GmbH, "Einadrige VPE-isolierte Mittelspannungskabel",
+            http://www.suedkabel.de/cms/upload/pdf/Garnituren/Einadrige_VPE-isolierte_Mittelspannungskabel.pdf, 2017
         .. [4] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012
         .. [5] Tao, X., "Automatisierte Grundsatzplanung von
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
-        # TODO: [3] ist tot, alternative Quelle nötig!
 
         package_path = dingo.__path__[0]
 
