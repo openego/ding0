@@ -379,8 +379,6 @@ class MVGridDingo(GridDingo):
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
 
-        package_path = dingo.__path__[0]
-
         # decide whether cable or line is used (initially for entire grid) and set grid's attribute
         if self.v_level == 20:
             self.default_branch_kind = 'line'
