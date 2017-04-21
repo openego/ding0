@@ -170,13 +170,6 @@ class NetworkDingo:
             Table containing lv_stations of according load_area
         """
 
-        # transform LVGD's and LA's area to epsg 3035
-        # to achieve correct area calculation
-        projection = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
         # Associate lv_grid_district to load_area
         for id, row in lv_grid_districts.iterrows():
             lv_grid_district = LVGridDistrictDingo(
