@@ -57,6 +57,8 @@ nd.mv_parametrize_grid()
 
 nd.validate_grid_districts()
 
+nd.build_lv_grids()
+
 nd.mv_routing(debug=False, animation=False)
 
 nd.connect_generators()
