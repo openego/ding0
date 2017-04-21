@@ -1212,27 +1212,33 @@ class NetworkDingo:
         logger.info('=====> MV Routing (Routing, Connection of Satellites & Stations) performed')
 
     def build_lv_grids(self):
-        """ Builds LV grids for every LA in every MV grid district """
+        """ Builds LV grids for every non-aggregated LA in every MV grid district """
 
         for mv_grid_district in self.mv_grid_districts():
             for load_area in mv_grid_district.lv_load_areas():
-                for lv_grid_district in load_area.lv_grid_districts():
+                if not load_area.is_aggregated:
+                    for lv_grid_district in load_area.lv_grid_districts():
 
-                    # Choice of typified lv model grid depends on population within lv
-                    # grid district. If no population is given, lv grid is omitted and
-                    # load is represented by lv station's peak load
-                    if lv_grid_district.population > 0:
+                        # Choice of typified lv model grid depends on population within lv
+                        # grid district. If no population is given, lv grid is omitted and
+                        # load is represented by lv station's peak load
+                        if lv_grid_district.population > 0:
 
-                        model_grid = lv_grid_district.lv_grid.select_typified_grid_model(
-                            lv_grid_district.population)
+                            model_grid = lv_grid_district.lv_grid.select_typified_grid_model(
+                                lv_grid_district.population)
 
-                        lv_grid_district.lv_grid.build_lv_graph(model_grid)
+                            lv_grid_district.lv_grid.build_lv_graph(model_grid)
 
-                    # no residential load -> do not create grid structure,
-                    # TODO: implement grid creation in this case
-                    else:
-                        logger.info(
-                            '{} has got no residential load. No grid is created.'.format(repr(lv_grid_district)))
+                        # no residential load -> do not create grid structure,
+                        # TODO: implement grid creation in this case
+                        else:
+                            logger.info(
+                                '{} has got no residential load. No grid is created.'.format(repr(lv_grid_district)))
+                else:
+                    logger.info(
+                        '{} is of type aggregated. No grid is created.'.format(repr(load_area)))
+
+        logger.info('=====> LV model grids created')
 
 
     def connect_generators(self, debug=False):
