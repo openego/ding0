@@ -779,16 +779,16 @@ class LVGridDingo(GridDingo):
         population_per_apartment = cfg_dingo.get("assumptions",
             "population_per_apartment")
 
-        house_branches = round(self.grid_district.population / (population_per_apartment *
-                                         apartment_house_branch_ratio))
+        # calc count of apartments to select string types
+        apartments = round(self.grid_district.population / population_per_apartment)
 
-        if house_branches <= 0:
-            house_branches = 1
-        elif house_branches > 196:
-            house_branches = 196
+        if apartments <= 0:
+            apartments = 1
+        elif apartments > 196:
+            apartments = 196
 
         # select set of strings that represent one type of model grid
-        strings = apartment_string.loc[house_branches]
+        strings = apartment_string.loc[apartments]
         selected_strings = [int(s) for s in strings[strings >= 1].index.tolist()]
 
         # slice dataframe of string parameters
