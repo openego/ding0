@@ -212,22 +212,9 @@ class NetworkDingo:
 
                 lv_station.add_transformer(lv_transformer)
 
-            # Choice of typified lv model grid depends on population within lv
-            # grid district. If no population is given, lv grid is omitted and
-            # load is represented by lv station's peak load
-            if lv_grid_district.population > 0:
-
-                model_grid = lv_grid.select_typified_grid_model(
-                    lv_grid_district.population)
-
-                lv_grid.build_lv_graph(model_grid)
-
-            # no residential load -> do not create grid structure,
-            # only grid object + station
-            # TODO: implement grid creation in this case
-            else:
-                logger.info('{} has got no residential load. No grid is created.'.format(repr(lv_grid_district)))
-
+            # assign created objects
+            # note: creation of LV grid is done separately,
+            # see NetworkDingo.build_lv_grids()
             lv_grid.add_station(lv_station)
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
@@ -1223,6 +1210,30 @@ class NetworkDingo:
             grid_district.mv_grid.routing(debug, anim)
 
         logger.info('=====> MV Routing (Routing, Connection of Satellites & Stations) performed')
+
+    def build_lv_grids(self):
+        """ Builds LV grids for every LA in every MV grid district """
+
+        for mv_grid_district in self.mv_grid_districts():
+            for load_area in mv_grid_district.lv_load_areas():
+                for lv_grid_district in load_area.lv_grid_districts():
+
+                    # Choice of typified lv model grid depends on population within lv
+                    # grid district. If no population is given, lv grid is omitted and
+                    # load is represented by lv station's peak load
+                    if lv_grid_district.population > 0:
+
+                        model_grid = lv_grid_district.lv_grid.select_typified_grid_model(
+                            lv_grid_district.population)
+
+                        lv_grid_district.lv_grid.build_lv_graph(model_grid)
+
+                    # no residential load -> do not create grid structure,
+                    # TODO: implement grid creation in this case
+                    else:
+                        logger.info(
+                            '{} has got no residential load. No grid is created.'.format(repr(lv_grid_district)))
+
 
     def connect_generators(self, debug=False):
         """ Connects generators (graph nodes) to grid (graph) for every MV grid district
