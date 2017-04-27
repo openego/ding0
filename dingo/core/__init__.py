@@ -583,10 +583,10 @@ class NetworkDingo:
                     except:
                         lv_load_area = random.choice(list(lv_load_areas_dict.values()))
                         geo_data = lv_load_area.geo_centre
-                        logger.error('Generator {} cannot be assigned to '
-                                     'non-existent load area and was '
-                                     'allocated to a random load area!'.format(
-                            id_db))
+                        logger.warning('Generator {} cannot be assigned to '
+                                       'non-existent load area and was '
+                                       'allocated to a random load area!'.format(
+                                       id_db))
                         pass
                     # TODO: current state: no alloc of geno to lvgd / lv grid
                     # TODO: id of LVGD (mvlv_subst_id) is used for alloc geno to lvgd / lv grid
