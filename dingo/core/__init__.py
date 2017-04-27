@@ -672,6 +672,9 @@ class NetworkDingo:
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
+        # get predefined random seed
+        seed = int(cfg_dingo.get('random', 'seed'))
+
         # make DB session
         Session = sessionmaker(bind=conn)
         session = Session()
