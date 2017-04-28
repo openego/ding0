@@ -183,7 +183,10 @@ class NetworkDingo:
                 peak_load_retail=int(row['peak_load_retail']),
                 peak_load_industrial=int(row['peak_load_industrial']),
                 peak_load_agricultural=int(row['peak_load_agricultural']),
-                peak_load_sum=int(row['peak_load_sum']))
+                peak_load_sum=(int(row['peak_load_residential']) +
+                               int(row['peak_load_retail']) +
+                               int(row['peak_load_industrial']) +
+                               int(row['peak_load_agricultural'])),
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(network=self,
