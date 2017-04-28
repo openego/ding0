@@ -100,21 +100,30 @@ class NetworkDingo:
         return self._static_data
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
-        """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object and
-                                         MVGridDistrictDingo id to MVGridDistrictDingo object
+        """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object,
+                                         MVGridDistrictDingo id to MVGridDistrictDingo object,
+                                         LVGridDistrictDingo id to LVGridDistrictDingo object and
+                                         LVStationDingo id to LVStationDingo object
 
         Returns:
-            mv_grid_districts:  dict with Format {mv_grid_district_id_1: mv_grid_district_obj_1,
-                                                  ...,
-                                                  mv_grid_district_id_n: mv_grid_district_obj_n}
-            lv_load_areas:      dict with Format {lv_load_area_id_1: lv_load_area_obj_1,
-                                                  ...,
-                                                  lv_load_area_id_n: lv_load_area_obj_n}
+            mv_grid_districts_dict: dict with Format {mv_grid_district_id_1: mv_grid_district_obj_1,
+                                                      ...,
+                                                      mv_grid_district_id_n: mv_grid_district_obj_n}
+            lv_load_areas_dict:     dict with Format {lv_load_area_id_1: lv_load_area_obj_1,
+                                                      ...,
+                                                      lv_load_area_id_n: lv_load_area_obj_n}
+            lv_grid_districts_dict: dict with Format {lv_grid_district_id_1: lv_grid_district_obj_1,
+                                                      ...,
+                                                      lv_grid_district_id_n: lv_grid_district_obj_n}
+            lv_stations_dict:       dict with Format {lv_station_id_1: lv_station_obj_1,
+                                                      ...,
+                                                      lv_station_id_n: lv_station_obj_n}
         """
 
         mv_grid_districts_dict = {}
         lv_load_areas_dict = {}
         lv_grid_districts_dict = {}
+        lv_stations_dict = {}
 
         for mv_grid_district in self.mv_grid_districts():
             mv_grid_districts_dict[mv_grid_district.id_db] = mv_grid_district
@@ -122,8 +131,9 @@ class NetworkDingo:
                 lv_load_areas_dict[lv_load_area.id_db] = lv_load_area
                 for lv_grid_district in lv_load_area.lv_grid_districts():
                     lv_grid_districts_dict[lv_grid_district.id_db] = lv_grid_district
+                    lv_stations_dict[lv_grid_district.lv_grid.station().id_db] = lv_grid_district.lv_grid.station()
 
-        return mv_grid_districts_dict, lv_load_areas_dict, lv_grid_districts_dict
+        return mv_grid_districts_dict, lv_load_areas_dict, lv_grid_districts_dict, lv_stations_dict
 
     def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
                         station_geo_data):
