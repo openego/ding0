@@ -187,6 +187,10 @@ class NetworkDingo:
                                int(row['peak_load_retail']) +
                                int(row['peak_load_industrial']) +
                                int(row['peak_load_agricultural'])),
+                sector_count_residential=int(row['sector_count_residential']),
+                sector_count_retail=int(row['sector_count_retail']),
+                sector_count_industrial=int(row['sector_count_industrial']),
+                sector_count_agricultural=int(row['sector_count_agricultural']))
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(network=self,
@@ -458,13 +462,27 @@ class NetworkDingo:
                                                           + orm_lv_grid_district.sector_peakload_agricultural)
                                                          * gw2kw).label('peak_load_sum'),
                                               func.ST_AsText(func.ST_Transform(
-                                                orm_lv_grid_district.geom, srid)).label('geom')). \
+                                                orm_lv_grid_district.geom, srid)).label('geom'),
+                                              orm_lv_grid_district.sector_count_residential,
+                                              orm_lv_grid_district.sector_count_retail,
+                                              orm_lv_grid_district.sector_count_industrial,
+                                              orm_lv_grid_district.sector_count_agricultural,). \
             filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist()))
 
         # read data from db
         lv_grid_districts = pd.read_sql_query(lv_grid_districs_sqla.statement,
                                               session.bind,
                                               index_col='mvlv_subst_id')
+
+        lv_grid_districts[
+            ['sector_count_residential',
+             'sector_count_retail',
+             'sector_count_industrial',
+             'sector_count_agricultural']] = lv_grid_districts[
+            ['sector_count_residential',
+             'sector_count_retail',
+             'sector_count_industrial',
+             'sector_count_agricultural']].fillna(0)
 
         return lv_grid_districts
 
