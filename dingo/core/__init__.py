@@ -534,6 +534,31 @@ class NetworkDingo:
             Connection of generators is done later on in NetworkDingo's method connect_generators()
         """
 
+        def choose_random_load_area(generator, lv_load_areas):
+            """
+            Selects random Load Area
+            
+            Parameters
+            ----------
+            generator: GeneratorDingo object
+            lv_load_areas: List of LVLoadAreaDingo objects
+            
+            Returns
+            -------
+            lv_load_area: LVLoadAreaDingo object
+                LA the generator was assigned to
+            
+            Notes
+            -----
+            Uses predefined seed to choose random LA.
+            Generator is moved to centroid of LA.
+            """
+            lv_load_area = random.choice(lv_load_areas)
+            generator.geo_data = lv_load_area.geo_centre
+
+            return lv_load_area
+
+
         def import_res_generators():
             """Imports renewable (res) generators"""
 
@@ -553,10 +578,6 @@ class NetworkDingo:
                                             ).\
                                             filter(orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))). \
                                             filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
-                                            #filter(orm_re_generators.voltage_level.in_([4, 5]))
-                                            #filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
-
-            # TODO: Currently only MV generators are imported, please include LV!
 
             # read data from db
             generators = pd.read_sql_query(generators_sqla.statement,
@@ -583,58 +604,64 @@ class NetworkDingo:
                 mv_grid_district_id = row['subst_id']
                 mv_grid = mv_grid_districts_dict[mv_grid_district_id].mv_grid
 
-                # look up Load Area
-                lv_load_area_id = row['la_id']
-                if lv_load_area_id and not isnan(lv_load_area_id):
-                    try:
-                        lv_load_area = lv_load_areas_dict[lv_load_area_id]
-                    # if LA does not exist, choose random LA and move generator to centroid of LA
-                    # this occurs due to exclusion of LA with P < 1kW
-                    except:
-                        lv_load_area = random.choice(list(lv_load_areas_dict.values()))
-                        geo_data = lv_load_area.geo_centre
-                        logger.warning('Generator {} cannot be assigned to '
-                                       'non-existent load area and was '
-                                       'allocated to a random load area!'.format(
-                                       id_db))
-                        pass
-                    # TODO: current state: no alloc of geno to lvgd / lv grid
-                    # TODO: id of LVGD (mvlv_subst_id) is used for alloc geno to lvgd / lv grid
-                    lv_grid_district = None
-                    #lv_grid_district = lv_grid_districts_dict[lv_grid_district_id]
-
-                else:
-                    lv_load_area = None
-                    lv_grid_district = None
-
                 # create generator object
                 generator = GeneratorDingo(id_db=id_db,
-                                           geo_data=geo_data,
                                            mv_grid=mv_grid,
-                                           lv_load_area=lv_load_area,
-                                           lv_grid=lv_grid_district,
                                            capacity=row['electrical_capacity'],
                                            type=row['generation_type'],
                                            subtype=row['generation_subtype'],
                                            v_level=int(row['voltage_level']))
 
-                # add generators to graph
+                # MV generators
                 if generator.v_level in [4, 5]:
                     mv_grid.add_generator(generator)
+
+                # LV generators
                 elif generator.v_level in [6, 7]:
-                    # TODO: current state: append LV genos to LA list "genos_collected_temp"
-                    if lv_load_area is not None:
-                        lv_load_area.genos_collected_temp.append(generator)
-                    # if there is no LA, choose random LA and move generator to centroid of LA
+
+                    # look up MV-LV substation id
+                    mvlv_subst_id = row['mvlv_subst_id']
+
+                    # if there's a LVGD id
+                    if mvlv_subst_id and not isnan(mvlv_subst_id):
+                        # assume that given LA exists
+                        try:
+                            # get LVGD
+                            lv_station = lv_stations_dict[mvlv_subst_id]
+                            lv_grid_district = lv_station.grid.grid_district
+                            generator.lv_grid = lv_station.grid
+
+                            # set geom (use original from db)
+                            generator.geo_data = geo_data
+
+                        # if LA/LVGD does not exist, choose random LVGD and move generator to station of LVGD
+                        # this occurs due to exclusion of LA with peak load < 1kW
+                        except:
+                            lv_grid_district = random.choice(list(lv_grid_districts_dict.values()))
+
+                            generator.lv_grid = lv_grid_district.lv_grid
+                            generator.geo_data = lv_grid_district.lv_grid.station().geo_data
+
+                            logger.warning('Generator {} cannot be assigned to '
+                                           'non-existent LV Grid District and was '
+                                           'allocated to a random LV Grid District ({}).'.format(
+                                            repr(generator), repr(lv_grid_district)))
+                            pass
+
                     else:
-                        lv_load_area_random = random.choice(list(lv_load_areas_dict.values()))
-                        generator.geo_data = lv_load_area_random.geo_centre
-                        lv_load_area_random.genos_collected_temp.append(generator)
-                        logger.warning('LV generator {} has no la_id and was '
-                                       'allocated to a random load area!'.format(
-                            id_db
-                        ))
-                    #lv_grid_district.lv_grid.add_generator(generator)
+                        lv_grid_district = random.choice(list(lv_grid_districts_dict.values()))
+
+                        generator.lv_grid = lv_grid_district.lv_grid
+                        generator.geo_data = lv_grid_district.lv_grid.station().geo_data
+
+                        logger.warning('Generator {} has no la_id and was '
+                                       'assigned to a random LV Grid District ({}).'.format(
+                                        repr(generator), repr(lv_grid_district)))
+
+                    # TODO: current state: append LV genos to LA list "genos_collected_temp"
+                    #lv_load_area.genos_collected_temp.append(generator)
+                    generator.lv_load_area = lv_grid_district.lv_load_area
+                    lv_grid_district.lv_grid.add_generator(generator)
 
         def import_conv_generators():
             """Imports conventional (conv) generators"""
@@ -682,57 +709,22 @@ class NetworkDingo:
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
-        # get predefined random seed
+        # get predefined random seed and initialize random generator
         seed = int(cfg_dingo.get('random', 'seed'))
+        random.seed(a=seed)
 
         # make DB session
         Session = sessionmaker(bind=conn)
         session = Session()
 
         # build dicts to map MV grid district and Load Area ids to related objects
-        mv_grid_districts_dict, lv_load_areas_dict, lv_grid_districts_dict = self.get_mvgd_lvla_lvgd_obj_from_id()
+        mv_grid_districts_dict,\
+        lv_load_areas_dict,\
+        lv_grid_districts_dict,\
+        lv_stations_dict = self.get_mvgd_lvla_lvgd_obj_from_id()
 
         # import renewable generators
         import_res_generators()
-
-        # TODO: current state: LV genos are collected in "genos_collected_temp" and distributed equally to LV stations
-        # TODO: this can be dropped as soon as genos's "mvlv_subst_id" is correct (+further modifications required!)
-        for grid_district in self.mv_grid_districts():
-            for lv_load_area in grid_district.lv_load_areas():
-                genos_count = len(lv_load_area.genos_collected_temp)
-                lv_grid_district_count = lv_load_area.lv_grid_districts_count()
-
-                # WORKAROUND FOR LA WITH NO LVGD (see DP issue #68)
-                if lv_grid_district_count > 0:
-                    genos_per_lvgd = genos_count // lv_grid_district_count
-
-                    # alloc genos to lvgds (equal chunks)
-                    genos = list(lv_load_area.genos_collected_temp)
-                    for lv_grid_district in lv_load_area.lv_grid_districts():
-                        for geno in genos[0:genos_per_lvgd]:
-                            lv_grid_district.lv_grid.add_generator(geno)
-                            lv_grid_district.lv_grid._station.peak_generation += geno.capacity
-                            lv_load_area.peak_generation += geno.capacity
-                            genos.remove(geno)
-                    # alloc genos to lvgds (rest)
-                    i = 0
-                    while genos != []:
-                        geno = genos[0]
-                        lv_grid_district = list(lv_load_area.lv_grid_districts())[i]
-                        lv_grid_district.lv_grid.add_generator(geno)
-                        lv_grid_district.lv_grid._station.peak_generation += geno.capacity
-                        lv_load_area.peak_generation += geno.capacity
-                        genos.remove(geno)
-                        i += 1
-                # PROBLEM: LA WITH NO LVGD -> aggregate genos capacity only
-                else:
-                    capacity = 0
-                    for geno in lv_load_area.genos_collected_temp:
-                        capacity += geno.capacity
-                    lv_load_area.peak_generation = capacity
-                    logger.error('No LV grid district found in {}. '
-                                 'Generators omitted.'.format(repr(
-                        lv_load_area)))
 
         # import conventional generators
         import_conv_generators()
