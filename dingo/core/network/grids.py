@@ -23,6 +23,7 @@ from shapely.ops import transform
 import pyproj
 from functools import partial
 import logging
+import math
 
 
 logger = logging.getLogger('dingo')
@@ -743,7 +744,7 @@ class LVGridDingo(GridDingo):
 
         return transformer, transformer_cnt
 
-    def select_typified_grid_model(self):
+    def select_grid_model_residential(self):
         """
         Selects typified model grid based on population
 
@@ -799,6 +800,79 @@ class LVGridDingo(GridDingo):
         selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
 
         return selected_strings_df
+
+    def select_grid_model_ria(self, sector):
+        """
+        Select a typified grid for retail/industrial and agricultural
+
+        Parameters
+        ----------
+        sector : str
+            Either 'retail/industrial' or 'agricultural'. Depending on choice
+            different parameters to grid topology apply
+
+        Returns
+        -------
+        grid_model : dict
+            Parameters that describe branch lines of a sector
+        """
+
+        max_lv_branch_line_load = cfg_dingo.get('assumptions',
+                                                'max_lv_branch_line')
+
+        # make a distinction between sectors
+        if sector == 'retail/industrial':
+            max_branch_length = cfg_dingo.get(
+                "assumptions",
+                "branch_line_length_retail_industrial")
+            peak_load = self.grid_district.peak_load_retail + \
+                        self.grid_district.peak_load_industrial
+            count_sector_areas = self.grid_district.sector_count_retail + \
+                                 self.grid_district.sector_count_industrial
+        elif sector == 'agricultural':
+            max_branch_length = cfg_dingo.get(
+                "assumptions",
+                "branch_line_length_agricultural")
+            peak_load = self.grid_district.peak_load_agricultural
+            count_sector_areas = self.grid_district.sector_count_agricultural
+        else:
+            raise ValueError('Sector {} does not exist!'.format(sector))
+
+        single_peak_load = peak_load / count_sector_areas
+
+        grid_model = {}
+
+        # identify aggregated loads
+        if single_peak_load >= max_lv_branch_line_load:
+            grid_model['aggregated'] = {}
+            grid_model['aggregated']['peak_load'] = single_peak_load
+            grid_model['aggregated']['number_of_loads'] = count_sector_areas
+        # if load is not aggregated, determine parameters of branches and loads
+        # connected to the branch line
+        elif 0 < single_peak_load < max_lv_branch_line_load:
+            grid_model['max_loads_per_branch'] = math.floor(
+                max_lv_branch_line_load / single_peak_load)
+            grid_model['single_peak_load'] = single_peak_load
+            grid_model['full_branches'] = math.floor(
+                count_sector_areas / grid_model['max_loads_per_branch'])
+            grid_model['remaining_loads'] = count_sector_areas - (
+                grid_model['full_branches'] * grid_model['max_loads_per_branch']
+            )
+            grid_model['load_distance'] = max_branch_length / (
+                grid_model['max_loads_per_branch'] + 1)
+            grid_model['load_distance_remaining'] = max_branch_length / (
+                grid_model['remaining_loads'] + 1)
+        else:
+            if count_sector_areas > 0:
+                logger.warning(
+                    'LVGD {lvgd} has in sector {sector} no load but area count'
+                    'is {count}. This is maybe related to #153'.format(
+                        lvgd=self.grid_district,
+                        sector=sector,
+                        count=count_sector_areas))
+                grid_model = None
+
+        return grid_model
 
     def build_lv_graph(self, selected_string_df):
         """
