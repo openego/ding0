@@ -839,21 +839,21 @@ class LVGridDingo(GridDingo):
             raise ValueError('Sector {} does not exist!'.format(sector))
 
         # determine size of a single load
-        single_peak_loads = peak_load / count_sector_areas
+        single_peak_load = peak_load / count_sector_areas
 
         # if this single load exceeds threshold of 300 kVA it is splitted
-        while single_peak_loads > max_lv_branch_line_load:
-            single_peak_loads = single_peak_loads / 2
+        while single_peak_load > max_lv_branch_line_load:
+            single_peak_load = single_peak_load / 2
             count_sector_areas = count_sector_areas * 2
 
         grid_model = {}
 
         # determine parameters of branches and loads connected to the branch
         # line
-        if 0 < single_peak_loads < max_lv_branch_line_load:
+        if 0 < single_peak_load < max_lv_branch_line_load:
             grid_model['max_loads_per_branch'] = math.floor(
-                max_lv_branch_line_load / single_peak_loads)
-            grid_model['single_peak_loads'] = single_peak_loads
+                max_lv_branch_line_load / single_peak_load)
+            grid_model['single_peak_load'] = single_peak_load
             grid_model['full_branches'] = math.floor(
                 count_sector_areas / grid_model['max_loads_per_branch'])
             grid_model['remaining_loads'] = count_sector_areas - (
