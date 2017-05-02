@@ -1258,17 +1258,22 @@ class NetworkDingo:
                                 lv_grid_district.sector_count_industrial > 0) or
                             (lv_grid_district.peak_load_retail +
                                     lv_grid_district.peak_load_industrial > 0)):
-                            model_params_ria['retail/industrial'] = lv_grid_district.lv_grid.\
+                            model_params_ria['retail/industrial'] = lv_grid_district.lv_grid. \
                                 select_grid_model_ria('retail/industrial')
                         else:
                             model_params_ria['retail/industrial'] = None
 
                         if ((lv_grid_district.sector_count_agricultural > 0) or
                             (lv_grid_district.peak_load_agricultural > 0)):
-                            model_params_ria['agricultural'] = lv_grid_district.lv_grid.\
+                            model_params_ria['agricultural'] = lv_grid_district.lv_grid. \
                                 select_grid_model_ria('agricultural')
                         else:
                             model_params_ria['agricultural'] = None
+
+                        # attach branches for sectors retail/industrial and
+                        # agricultural to lv grid graph
+                        lv_grid_district.lv_grid.build_lv_graph_ria(
+                            model_params_ria)
 
                         # Choice of typified lv model grid depends on population within lv
                         # grid district. If no population is given, lv grid is omitted and
