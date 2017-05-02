@@ -946,7 +946,11 @@ class LVGridDingo(GridDingo):
                             lv_cable_dist,
                             branch=BranchDingo(
                                 length=row['distance house branch'],
-                                type=cable_name
+                                type=cable_name,
+                                id_db='branch_{sector}{branch}_{load}'.format(
+                                    branch=hh_branch,
+                                    load=house_branch,
+                                    sector='HH')
                             ))
                     # connect current lv_cable_dist to last one
                     else:
@@ -955,7 +959,11 @@ class LVGridDingo(GridDingo):
                             lv_cable_dist,
                             branch=BranchDingo(
                                 length=row['distance house branch'],
-                                type=cable_name))
+                                type=cable_name),
+                                id_db='branch_{sector}{branch}_{load}'.format(
+                                    branch=hh_branch,
+                                    load=house_branch,
+                                    sector='HH'))
 
                     # connect house to cable distributor
                     house_cable_name = row['cable type {}'.format(variant)] + \
@@ -967,7 +975,12 @@ class LVGridDingo(GridDingo):
                             length=row['length house branch {}'.format(
                                 variant)],
                             type=self.network.static_data['LV_cables']. \
-                                loc[house_cable_name]))
+                                loc[house_cable_name]),
+                            id_db='branch_{sector}{branch}_{load}'.format(
+                                branch=hh_branch,
+                                load=house_branch,
+                                sector='HH')
+                    )
 
     def build_lv_graph_ria(self, grid_model_params):
         """
@@ -1052,8 +1065,10 @@ class LVGridDingo(GridDingo):
                     branch=BranchDingo(
                         length=val['load_distance'],
                         type=cable_type,
-                        id_db='branch_{branch}_{load}'.format(branch=branch_no,
-                                                              load=load_no)
+                        id_db='branch_{sector}{branch}_{load}'.format(
+                            branch=branch_no,
+                            load=load_no,
+                            sector=sector_short)
                     ))
             else:
                 # case b: cable dist <-> cable dist
@@ -1063,8 +1078,10 @@ class LVGridDingo(GridDingo):
                     branch=BranchDingo(
                         length=val['load_distance'],
                         type=cable_type,
-                        id_db='branch_{branch}_{load}'.format(branch=branch_no,
-                                                              load=load_no)))
+                        id_db='branch_{sector}{branch}_{load}'.format(
+                            branch=branch_no,
+                            load=load_no,
+                            sector=sector_short)))
 
             # create branch stub that connects the load to the
             # lv_cable_dist located in the branch line
@@ -1076,11 +1093,19 @@ class LVGridDingo(GridDingo):
                         'assumptions',
                         'lv_ria_branch_connection_distance'),
                     type=cable_type_stub,
-                    id_db='stub_{branch}_{load}'.format(branch=branch_no,
-                                                        load=load_no)))
+                    id_db='stub_{sector}{branch}_{load}'.format(
+                        branch=branch_no,
+                        load=load_no,
+                        sector=sector_short)))
 
         # iterate over branches for sectors retail/industrial and agricultural
         for sector, val in grid_model_params.items():
+            if sector == 'retail/industrial':
+                sector_short = 'RETIND'
+            elif sector == 'agricultural':
+                sector_short = 'AGR'
+            else:
+                sector_short = ''
             if val is not None:
                 for branch_no in list(range(1, val['full_branches'] + 1)):
 
@@ -1113,7 +1138,7 @@ class LVGridDingo(GridDingo):
                     cable_type = suitable_cables.ix[
                         suitable_cables['I_max_th'].idxmin()]
 
-                    branch_no = 1
+                    branch_no = branch_no + 1
 
                     for load_no in list(range(1, val['remaining_loads'] + 1)):
                         # create a LV grid string and attach to station
