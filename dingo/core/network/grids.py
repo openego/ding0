@@ -718,6 +718,9 @@ class LVGridDingo(GridDingo):
         multiple trafos.
         """
 
+        trafo_lf = cfg_dingo.get('assumptions',
+                                 'load_factor_lv_trans_lc_normal')
+
         # get equipment parameters of LV transformers
         trafo_parameters = self.network.static_data['LV_trafos']
 
@@ -725,21 +728,21 @@ class LVGridDingo(GridDingo):
         transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
 
         # peak load is smaller than max. available trafo
-        if peak_load < transformer_max['S_max']:
+        if peak_load < transformer_max['S_max'] * trafo_lf:
             # choose trafo
             transformer = trafo_parameters.iloc[
                 trafo_parameters[
-                    trafo_parameters['S_max'] > peak_load]['S_max'].idxmin()]
+                    trafo_parameters['S_max'] > peak_load / trafo_lf]['S_max'].idxmin()]
             transformer_cnt = 1
         # peak load is greater than max. available trafo -> use multiple trafos
         else:
             transformer_cnt = 2
             # increase no. of trafos until peak load can be supplied
-            while not any(trafo_parameters['S_max'] > peak_load/transformer_cnt):
+            while not any(trafo_parameters['S_max'] * trafo_lf > peak_load/transformer_cnt):
                 transformer_cnt += 1
             transformer = trafo_parameters.iloc[
                 trafo_parameters[
-                    trafo_parameters['S_max'] > peak_load/transformer_cnt]
+                    trafo_parameters['S_max'] * trafo_lf > peak_load/transformer_cnt]
                         ['S_max'].idxmin()]
 
         return transformer, transformer_cnt
