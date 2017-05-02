@@ -848,7 +848,7 @@ class LVGridDingo(GridDingo):
 
         # determine parameters of branches and loads connected to the branch
         # line
-        if 0 < single_peak_load < max_lv_branch_line_load:
+        if 0 < single_peak_load:
             grid_model['max_loads_per_branch'] = math.floor(
                 max_lv_branch_line_load / single_peak_load)
             grid_model['single_peak_load'] = single_peak_load
@@ -1127,6 +1127,8 @@ class LVGridDingo(GridDingo):
 
                 # add remaining branch
                 if val['remaining_loads'] > 0:
+                    if 'branch_no' not in locals():
+                        branch_no = 0
                     # determine maximum current occuring due to peak load of branch
                     I_max_branch = (val['max_loads_per_branch'] *
                                     val['single_peak_load']) / (3 ** 0.5 * 0.4)
