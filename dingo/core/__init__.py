@@ -1271,24 +1271,42 @@ class NetworkDingo:
                             model_params_ria['agricultural'] = None
 
                         # attach branches for sectors retail/industrial and
-                        # agricultural to lv grid graph
+                        # agricultural
                         lv_grid_district.lv_grid.build_lv_graph_ria(
                             model_params_ria)
 
                         # Choice of typified lv model grid depends on population within lv
                         # grid district. If no population is given, lv grid is omitted and
                         # load is represented by lv station's peak load
-                        if lv_grid_district.population > 0:
-
+                        if lv_grid_district.population > 0 \
+                                and lv_grid_district.peak_load_residential > 0:
                             model_grid = lv_grid_district.lv_grid.select_grid_model_residential()
 
-                            lv_grid_district.lv_grid.build_lv_graph_residential(model_grid)
+                            lv_grid_district.lv_grid.build_lv_graph_residential(
+                                model_grid)
 
-                        # no residential load -> do not create grid structure,
-                        # TODO: implement grid creation in this case
+                        # no residential load but population
+                        elif lv_grid_district.population > 0 \
+                                and lv_grid_district.peak_load_residential == 0:
+                            logger.warning(
+                                '{} has population but no residential load. '
+                                'No grid is created.'.format(
+                                    repr(lv_grid_district)))
+
+                        # residential load but no population
+                        elif lv_grid_district.population == 0 \
+                                and lv_grid_district.peak_load_residential > 0:
+                            logger.warning(
+                                '{} has no population but residential load. '
+                                'No grid is created and thus this load is '
+                                'missing in overall balance!'.format(
+                                    repr(lv_grid_district)))
+
                         else:
                             logger.info(
-                                '{} has got no residential load. No grid is created.'.format(repr(lv_grid_district)))
+                                '{} has got no residential load. '
+                                'No grid is created.'.format(
+                                    repr(lv_grid_district)))
                 else:
                     logger.info(
                         '{} is of type aggregated. No grid is created.'.format(repr(load_area)))

@@ -783,9 +783,7 @@ class LVGridDingo(GridDingo):
         # calc count of apartments to select string types
         apartments = round(self.grid_district.population / population_per_apartment)
 
-        if apartments <= 0:
-            apartments = 1
-        elif apartments > 196:
+        if apartments > 196:
             apartments = 196
 
         # select set of strings that represent one type of model grid
