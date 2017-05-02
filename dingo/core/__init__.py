@@ -169,7 +169,9 @@ class NetworkDingo:
                                lv_grid_districts,
                                lv_stations):
         """
-        Instantiates and associates lv_grid_district incl grid and station
+        Instantiates and associates lv_grid_district incl grid and station.
+        The instantiation creates more or less empty objects including relevant
+        data for transformer choice and grid creation
 
         Parameters
         ----------
@@ -191,7 +193,14 @@ class NetworkDingo:
                 peak_load_retail=int(row['peak_load_retail']),
                 peak_load_industrial=int(row['peak_load_industrial']),
                 peak_load_agricultural=int(row['peak_load_agricultural']),
-                peak_load_sum=int(row['peak_load_sum']))
+                peak_load_sum=(int(row['peak_load_residential']) +
+                               int(row['peak_load_retail']) +
+                               int(row['peak_load_industrial']) +
+                               int(row['peak_load_agricultural'])),
+                sector_count_residential=int(row['sector_count_residential']),
+                sector_count_retail=int(row['sector_count_retail']),
+                sector_count_industrial=int(row['sector_count_industrial']),
+                sector_count_agricultural=int(row['sector_count_agricultural']))
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(network=self,
@@ -206,21 +215,6 @@ class NetworkDingo:
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
                 peak_load=lv_grid_district.peak_load_sum)
-
-            # choose LV transformer and assign to LV station
-            transformer, transformer_cnt = lv_grid.select_transformer(
-                lv_grid_district.peak_load_sum)
-
-            # create transformers and add them to station of LVGD
-            for t in range(0,transformer_cnt):
-                lv_transformer = TransformerDingo(
-                    id_db=id,
-                    v_level=0.4,
-                    s_max_longterm=transformer['S_max'],
-                    r=transformer['R'],
-                    x=transformer['X'])
-
-                lv_station.add_transformer(lv_transformer)
 
             # assign created objects
             # note: creation of LV grid is done separately,
@@ -478,13 +472,27 @@ class NetworkDingo:
                                                           + orm_lv_grid_district.sector_peakload_agricultural)
                                                          * gw2kw).label('peak_load_sum'),
                                               func.ST_AsText(func.ST_Transform(
-                                                orm_lv_grid_district.geom, srid)).label('geom')). \
+                                                orm_lv_grid_district.geom, srid)).label('geom'),
+                                              orm_lv_grid_district.sector_count_residential,
+                                              orm_lv_grid_district.sector_count_retail,
+                                              orm_lv_grid_district.sector_count_industrial,
+                                              orm_lv_grid_district.sector_count_agricultural,). \
             filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist()))
 
         # read data from db
         lv_grid_districts = pd.read_sql_query(lv_grid_districs_sqla.statement,
                                               session.bind,
                                               index_col='mvlv_subst_id')
+
+        lv_grid_districts[
+            ['sector_count_residential',
+             'sector_count_retail',
+             'sector_count_industrial',
+             'sector_count_agricultural']] = lv_grid_districts[
+            ['sector_count_residential',
+             'sector_count_retail',
+             'sector_count_industrial',
+             'sector_count_agricultural']].fillna(0)
 
         return lv_grid_districts
 
@@ -1217,27 +1225,93 @@ class NetworkDingo:
         logger.info('=====> MV Routing (Routing, Connection of Satellites & Stations) performed')
 
     def build_lv_grids(self):
-        """ Builds LV grids for every non-aggregated LA in every MV grid district """
+        """ Builds LV grids for every non-aggregated LA in every MV grid
+        district
+
+        The procedure that applies for each LV grid district is as follows
+
+        1. Number and size of transformer is determined
+        2. A decision on the typified grid model is drawn
+        TODO: put a link here to the text description about LV grids
+        3. A graph is build implementing the chosen LV grid model
+        """
 
         for mv_grid_district in self.mv_grid_districts():
             for load_area in mv_grid_district.lv_load_areas():
                 if not load_area.is_aggregated:
                     for lv_grid_district in load_area.lv_grid_districts():
 
+                        # 1. choose LV transformer and assign to LV station
+                        transformer, transformer_cnt = lv_grid_district.lv_grid.select_transformer(
+                            lv_grid_district.peak_load_sum)
+
+                        # create transformers and add them to station of LVGD
+                        for t in range(0,transformer_cnt):
+                            lv_transformer = TransformerDingo(
+                                id_db=id,
+                                v_level=0.4,
+                                s_max_longterm=transformer['S_max'],
+                                r=transformer['R'],
+                                x=transformer['X'])
+
+                            lv_grid_district.lv_grid._station.add_transformer(
+                                lv_transformer)
+
+                        # Choose retail/industrial and agricultural grid model
+                        model_params_ria = {}
+                        if ((lv_grid_district.sector_count_retail +
+                                lv_grid_district.sector_count_industrial > 0) or
+                            (lv_grid_district.peak_load_retail +
+                                    lv_grid_district.peak_load_industrial > 0)):
+                            model_params_ria['retail/industrial'] = lv_grid_district.lv_grid. \
+                                select_grid_model_ria('retail/industrial')
+                        else:
+                            model_params_ria['retail/industrial'] = None
+
+                        if ((lv_grid_district.sector_count_agricultural > 0) or
+                            (lv_grid_district.peak_load_agricultural > 0)):
+                            model_params_ria['agricultural'] = lv_grid_district.lv_grid. \
+                                select_grid_model_ria('agricultural')
+                        else:
+                            model_params_ria['agricultural'] = None
+
+                        # attach branches for sectors retail/industrial and
+                        # agricultural
+                        lv_grid_district.lv_grid.build_lv_graph_ria(
+                            model_params_ria)
+
                         # Choice of typified lv model grid depends on population within lv
                         # grid district. If no population is given, lv grid is omitted and
                         # load is represented by lv station's peak load
-                        if lv_grid_district.population > 0:
+                        if lv_grid_district.population > 0 \
+                                and lv_grid_district.peak_load_residential > 0:
+                            model_grid = lv_grid_district.lv_grid.select_grid_model_residential()
 
-                            model_grid = lv_grid_district.lv_grid.select_typified_grid_model()
+                            lv_grid_district.lv_grid.build_lv_graph_residential(
+                                model_grid)
 
-                            lv_grid_district.lv_grid.build_lv_graph(model_grid)
+                        # no residential load but population
+                        elif lv_grid_district.population > 0 \
+                                and lv_grid_district.peak_load_residential == 0:
+                            logger.warning(
+                                '{} has population but no residential load. '
+                                'No grid is created.'.format(
+                                    repr(lv_grid_district)))
 
-                        # no residential load -> do not create grid structure,
-                        # TODO: implement grid creation in this case
+                        # residential load but no population
+                        elif lv_grid_district.population == 0 \
+                                and lv_grid_district.peak_load_residential > 0:
+                            logger.warning(
+                                '{} has no population but residential load. '
+                                'No grid is created and thus this load is '
+                                'missing in overall balance!'.format(
+                                    repr(lv_grid_district)))
+
                         else:
                             logger.info(
-                                '{} has got no residential load. No grid is created.'.format(repr(lv_grid_district)))
+                                '{} has got no residential load. '
+                                'No grid is created.'.format(
+                                    repr(lv_grid_district)))
                 else:
                     logger.info(
                         '{} is of type aggregated. No grid is created.'.format(repr(load_area)))

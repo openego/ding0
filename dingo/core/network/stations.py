@@ -3,6 +3,7 @@ from dingo.core.network import TransformerDingo
 from dingo.tools import config as cfg_dingo
 
 from itertools import compress
+import numpy as np
 
 
 class MVStationDingo(StationDingo):
@@ -136,6 +137,13 @@ class LVStationDingo(StationDingo):
         return '_'.join(['MV', str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
                 id_db), 'tru', str(self.id_db)])
+
+    @property
+    def peak_load(self):
+        """
+        Peak load of loads connected to underlying LV grid
+        """
+        return np.array([x.peak_load for x in self.grid.loads()]).sum()
 
     def __repr__(self):
         return 'lv_station_' + str(self.id_db)

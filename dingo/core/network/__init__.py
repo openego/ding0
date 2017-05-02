@@ -272,7 +272,6 @@ class StationDingo:
         self.grid = kwargs.get('grid', None)
         self._transformers = []
         self.busbar = None
-        self.peak_load = kwargs.get('peak_load', None)
         self.v_level_operation = kwargs.get('v_level_operation', None)
 
     def transformers(self):
@@ -452,6 +451,9 @@ class LoadDingo:
         self.id_db = kwargs.get('id', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
+        self.peak_load = kwargs.get('peak_load', None)
+
+        self.id_db = self.grid.loads_count() + 1
 
 
 class CircuitBreakerDingo:

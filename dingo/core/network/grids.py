@@ -23,6 +23,7 @@ from shapely.ops import transform
 import pyproj
 from functools import partial
 import logging
+import math
 
 
 logger = logging.getLogger('dingo')
@@ -717,6 +718,9 @@ class LVGridDingo(GridDingo):
         multiple trafos.
         """
 
+        trafo_lf = cfg_dingo.get('assumptions',
+                                 'load_factor_lv_trans_lc_normal')
+
         # get equipment parameters of LV transformers
         trafo_parameters = self.network.static_data['LV_trafos']
 
@@ -724,26 +728,26 @@ class LVGridDingo(GridDingo):
         transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
 
         # peak load is smaller than max. available trafo
-        if peak_load < transformer_max['S_max']:
+        if peak_load < transformer_max['S_max'] * trafo_lf:
             # choose trafo
             transformer = trafo_parameters.iloc[
                 trafo_parameters[
-                    trafo_parameters['S_max'] > peak_load]['S_max'].idxmin()]
+                    trafo_parameters['S_max'] > peak_load / trafo_lf]['S_max'].idxmin()]
             transformer_cnt = 1
         # peak load is greater than max. available trafo -> use multiple trafos
         else:
             transformer_cnt = 2
             # increase no. of trafos until peak load can be supplied
-            while not any(trafo_parameters['S_max'] > peak_load/transformer_cnt):
+            while not any(trafo_parameters['S_max'] * trafo_lf > peak_load/transformer_cnt):
                 transformer_cnt += 1
             transformer = trafo_parameters.iloc[
                 trafo_parameters[
-                    trafo_parameters['S_max'] > peak_load/transformer_cnt]
+                    trafo_parameters['S_max'] * trafo_lf > peak_load/transformer_cnt]
                         ['S_max'].idxmin()]
 
         return transformer, transformer_cnt
 
-    def select_typified_grid_model(self):
+    def select_grid_model_residential(self):
         """
         Selects typified model grid based on population
 
@@ -782,9 +786,7 @@ class LVGridDingo(GridDingo):
         # calc count of apartments to select string types
         apartments = round(self.grid_district.population / population_per_apartment)
 
-        if apartments <= 0:
-            apartments = 1
-        elif apartments > 196:
+        if apartments > 196:
             apartments = 196
 
         # select set of strings that represent one type of model grid
@@ -800,7 +802,81 @@ class LVGridDingo(GridDingo):
 
         return selected_strings_df
 
-    def build_lv_graph(self, selected_string_df):
+    def select_grid_model_ria(self, sector):
+        """
+        Select a typified grid for retail/industrial and agricultural
+
+        Parameters
+        ----------
+        sector : str
+            Either 'retail/industrial' or 'agricultural'. Depending on choice
+            different parameters to grid topology apply
+
+        Returns
+        -------
+        grid_model : dict
+            Parameters that describe branch lines of a sector
+        """
+
+        max_lv_branch_line_load = cfg_dingo.get('assumptions',
+                                                'max_lv_branch_line')
+
+        # make a distinction between sectors
+        if sector == 'retail/industrial':
+            max_branch_length = cfg_dingo.get(
+                "assumptions",
+                "branch_line_length_retail_industrial")
+            peak_load = self.grid_district.peak_load_retail + \
+                        self.grid_district.peak_load_industrial
+            count_sector_areas = self.grid_district.sector_count_retail + \
+                                 self.grid_district.sector_count_industrial
+        elif sector == 'agricultural':
+            max_branch_length = cfg_dingo.get(
+                "assumptions",
+                "branch_line_length_agricultural")
+            peak_load = self.grid_district.peak_load_agricultural
+            count_sector_areas = self.grid_district.sector_count_agricultural
+        else:
+            raise ValueError('Sector {} does not exist!'.format(sector))
+
+        # determine size of a single load
+        single_peak_load = peak_load / count_sector_areas
+
+        # if this single load exceeds threshold of 300 kVA it is splitted
+        while single_peak_load > max_lv_branch_line_load:
+            single_peak_load = single_peak_load / 2
+            count_sector_areas = count_sector_areas * 2
+
+        grid_model = {}
+
+        # determine parameters of branches and loads connected to the branch
+        # line
+        if 0 < single_peak_load:
+            grid_model['max_loads_per_branch'] = math.floor(
+                max_lv_branch_line_load / single_peak_load)
+            grid_model['single_peak_load'] = single_peak_load
+            grid_model['full_branches'] = math.floor(
+                count_sector_areas / grid_model['max_loads_per_branch'])
+            grid_model['remaining_loads'] = count_sector_areas - (
+                grid_model['full_branches'] * grid_model['max_loads_per_branch']
+            )
+            grid_model['load_distance'] = max_branch_length / (
+                grid_model['max_loads_per_branch'] + 1)
+            grid_model['load_distance_remaining'] = max_branch_length / (
+                grid_model['remaining_loads'] + 1)
+        else:
+            if count_sector_areas > 0:
+                logger.warning(
+                    'LVGD {lvgd} has in sector {sector} no load but area count'
+                    'is {count}. This is maybe related to #153'.format(
+                        lvgd=self.grid_district,
+                        sector=sector,
+                        count=count_sector_areas))
+                grid_model = None
+
+        return grid_model
+
+    def build_lv_graph_residential(self, selected_string_df):
         """
         Builds nxGraph based on the LV grid model
 
@@ -826,10 +902,20 @@ class LVGridDingo(GridDingo):
         respectively different cable widths.
         """
 
+        houses_connected = (
+        selected_string_df['occurence'] * selected_string_df[
+            'count house branch']).sum()
+
+        average_load = self.grid_district.peak_load_residential / \
+                       houses_connected
+
+        hh_branch = 0
+
         # iterate over each type of branch
         for i, row in selected_string_df.iterrows():
             # iterate over it's occurences
             for branch_no in range(1, int(row['occurence']) + 1):
+                hh_branch += 1
                 # iterate over house branches
                 for house_branch in range(1, row['count house branch'] + 1):
                     if house_branch % 2 == 0:
@@ -845,7 +931,8 @@ class LVGridDingo(GridDingo):
                     lv_load = LVLoadDingo(grid=self,
                                           string_id=i,
                                           branch_no=branch_no,
-                                          load_no=house_branch)
+                                          load_no=house_branch,
+                                          peak_load=average_load)
 
                     # add lv_load and lv_cable_dist to graph
                     self.add_load(lv_load)
@@ -854,7 +941,7 @@ class LVGridDingo(GridDingo):
                     cable_name = row['cable type'] + \
                                        ' 4x1x{}'.format(row['cable width'])
 
-                    # connect current lv_cable_dist to last one
+                    # connect current lv_cable_dist to station
                     if house_branch == 1:
                         # edge connect first house branch in branch with the station
                         self._graph.add_edge(
@@ -862,15 +949,24 @@ class LVGridDingo(GridDingo):
                             lv_cable_dist,
                             branch=BranchDingo(
                                 length=row['distance house branch'],
-                                type=cable_name
-                                ))
+                                type=cable_name,
+                                id_db='branch_{sector}{branch}_{load}'.format(
+                                    branch=hh_branch,
+                                    load=house_branch,
+                                    sector='HH')
+                            ))
+                    # connect current lv_cable_dist to last one
                     else:
                         self._graph.add_edge(
                             self._cable_distributors[-2],
                             lv_cable_dist,
                             branch=BranchDingo(
                                 length=row['distance house branch'],
-                                type=cable_name))
+                                type=cable_name,
+                                id_db='branch_{sector}{branch}_{load}'.format(
+                                    branch=hh_branch,
+                                    load=house_branch,
+                                    sector='HH')))
 
                     # connect house to cable distributor
                     house_cable_name = row['cable type {}'.format(variant)] + \
@@ -882,7 +978,176 @@ class LVGridDingo(GridDingo):
                             length=row['length house branch {}'.format(
                                 variant)],
                             type=self.network.static_data['LV_cables']. \
-                                loc[house_cable_name]))
+                                loc[house_cable_name],
+                            id_db='branch_{sector}{branch}_{load}'.format(
+                                branch=hh_branch,
+                                load=house_branch,
+                                sector='HH'))
+                    )
+
+    def build_lv_graph_ria(self, grid_model_params):
+        """
+        Build graph for LV grid of sectors retail/industrial and agricultural
+
+        Based on structural description of LV grid topology for sectors
+        retail/industrial and agricultural (RIA) branches for these sectors are
+        created and attached to the LV grid's MV-LV substation bus bar.
+
+        LV loads of the sectors retail/industrial and agricultural are located
+        in separat branches for each sector (in case of large load multiple of
+        these).
+        These loads are distributed across the branches by an equidistant
+        distribution.
+
+        This function accepts the dict `grid_model_params` with particular
+        structure
+
+        >>> grid_model_params = {
+        >>> ... 'agricultural': {
+        >>> ...     'max_loads_per_branch': 2
+        >>> ...     'single_peak_load': 140,
+        >>> ...     'full_branches': 2,
+        >>> ...     'remaining_loads': 1,
+        >>> ...     'load_distance': 800/3,
+        >>> ...     'load_distance_remaining': 400}}
+
+        Parameters
+        ----------
+        grid_model_params : dict
+            Dict of structural information of sectoral LV grid branch
+
+        Notes
+        -----
+        We assume a distance from the load to the branch it is connected to of
+        30 m. This assumption is defined in the config files
+        """
+
+        cfg_dingo.get('assumptions', 'lv_ria_branch_connection_distance')
+
+        def lv_graph_attach_branch():
+            """
+            Attach a single branch including its equipment (cable dist, loads
+            and line segments) to graph of `lv_grid`
+            """
+
+            # determine maximum current occuring due to peak load
+            # of this load load_no
+            I_max_load = val['single_peak_load'] / (3 ** 0.5 * 0.4)
+
+            # determine suitable cable for this current
+            suitable_cables_stub = self.network.static_data['LV_cables'][
+                self.network.static_data['LV_cables'][
+                    'I_max_th'] > I_max_load]
+            cable_type_stub = suitable_cables_stub.ix[
+                suitable_cables_stub['I_max_th'].idxmin()]
+
+            # create a LV cable distributor for each load
+            lv_cable_dist = LVCableDistributorDingo(
+                grid=self,
+                branch_no=branch_no,
+                load_no=load_no)
+
+            # create an instance of Dingo LV load
+            lv_load = LVLoadDingo(grid=self,
+                                  branch_no=branch_no,
+                                  load_no=load_no,
+                                  peak_load=val['single_peak_load'])
+
+            # add load and related cable dist to graph
+            self.add_load(lv_load)
+            self.add_cable_dist(lv_cable_dist)
+
+            # create branch line segment between either (a) station
+            # and cable distributor or (b) between neighboring cable
+            # distributors
+            if load_no == 1:
+                # case a: cable dist <-> station
+                self._graph.add_edge(
+                    self.station(),
+                    lv_cable_dist,
+                    branch=BranchDingo(
+                        length=val['load_distance'],
+                        type=cable_type,
+                        id_db='branch_{sector}{branch}_{load}'.format(
+                            branch=branch_no,
+                            load=load_no,
+                            sector=sector_short)
+                    ))
+            else:
+                # case b: cable dist <-> cable dist
+                self._graph.add_edge(
+                    self._cable_distributors[-2],
+                    lv_cable_dist,
+                    branch=BranchDingo(
+                        length=val['load_distance'],
+                        type=cable_type,
+                        id_db='branch_{sector}{branch}_{load}'.format(
+                            branch=branch_no,
+                            load=load_no,
+                            sector=sector_short)))
+
+            # create branch stub that connects the load to the
+            # lv_cable_dist located in the branch line
+            self._graph.add_edge(
+                lv_cable_dist,
+                lv_load,
+                branch=BranchDingo(
+                    length=cfg_dingo.get(
+                        'assumptions',
+                        'lv_ria_branch_connection_distance'),
+                    type=cable_type_stub,
+                    id_db='stub_{sector}{branch}_{load}'.format(
+                        branch=branch_no,
+                        load=load_no,
+                        sector=sector_short)))
+
+        # iterate over branches for sectors retail/industrial and agricultural
+        for sector, val in grid_model_params.items():
+            if sector == 'retail/industrial':
+                sector_short = 'RETIND'
+            elif sector == 'agricultural':
+                sector_short = 'AGR'
+            else:
+                sector_short = ''
+            if val is not None:
+                for branch_no in list(range(1, val['full_branches'] + 1)):
+
+                    # determine maximum current occuring due to peak load of branch
+                    I_max_branch = (val['max_loads_per_branch'] *
+                                    val['single_peak_load']) / (3 ** 0.5 * 0.4)
+
+                    # determine suitable cable for this current
+                    suitable_cables = self.network.static_data['LV_cables'][
+                        self.network.static_data['LV_cables'][
+                            'I_max_th'] > I_max_branch]
+                    cable_type = suitable_cables.ix[
+                        suitable_cables['I_max_th'].idxmin()]
+
+                    # create Dingo grid objects and add to graph
+                    for load_no in list(range(1, val['max_loads_per_branch'] + 1)):
+                        # create a LV grid string and attached to station
+                        lv_graph_attach_branch()
+
+                # add remaining branch
+                if val['remaining_loads'] > 0:
+                    if 'branch_no' not in locals():
+                        branch_no = 0
+                    # determine maximum current occuring due to peak load of branch
+                    I_max_branch = (val['max_loads_per_branch'] *
+                                    val['single_peak_load']) / (3 ** 0.5 * 0.4)
+
+                    # determine suitable cable for this current
+                    suitable_cables = self.network.static_data['LV_cables'][
+                        self.network.static_data['LV_cables'][
+                            'I_max_th'] > I_max_branch]
+                    cable_type = suitable_cables.ix[
+                        suitable_cables['I_max_th'].idxmin()]
+
+                    branch_no = branch_no + 1
+
+                    for load_no in list(range(1, val['remaining_loads'] + 1)):
+                        # create a LV grid string and attach to station
+                        lv_graph_attach_branch()
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid
