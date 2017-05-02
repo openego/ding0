@@ -452,6 +452,7 @@ class LoadDingo:
         self.id_db = kwargs.get('id', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
+        self.peak_load = kwargs.get('peak_load', None)
 
 
 class CircuitBreakerDingo:
