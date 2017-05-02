@@ -901,10 +901,20 @@ class LVGridDingo(GridDingo):
         respectively different cable widths.
         """
 
+        houses_connected = (
+        selected_string_df['occurence'] * selected_string_df[
+            'count house branch']).sum()
+
+        average_load = self.grid_district.peak_load_residential / \
+                       houses_connected
+
+        hh_branch = 0
+
         # iterate over each type of branch
         for i, row in selected_string_df.iterrows():
             # iterate over it's occurences
             for branch_no in range(1, int(row['occurence']) + 1):
+                hh_branch += 1
                 # iterate over house branches
                 for house_branch in range(1, row['count house branch'] + 1):
                     if house_branch % 2 == 0:
@@ -920,7 +930,8 @@ class LVGridDingo(GridDingo):
                     lv_load = LVLoadDingo(grid=self,
                                           string_id=i,
                                           branch_no=branch_no,
-                                          load_no=house_branch)
+                                          load_no=house_branch,
+                                          peak_load=average_load)
 
                     # add lv_load and lv_cable_dist to graph
                     self.add_load(lv_load)
@@ -1025,7 +1036,8 @@ class LVGridDingo(GridDingo):
             # create an instance of Dingo LV load
             lv_load = LVLoadDingo(grid=self,
                                   branch_no=branch_no,
-                                  load_no=load_no)
+                                  load_no=load_no,
+                                  peak_load=val['single_peak_load'])
 
             # add load and related cable dist to graph
             self.add_load(lv_load)
