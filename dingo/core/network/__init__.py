@@ -272,7 +272,6 @@ class StationDingo:
         self.grid = kwargs.get('grid', None)
         self._transformers = []
         self.busbar = None
-        self.peak_load = kwargs.get('peak_load', None)
         self.v_level_operation = kwargs.get('v_level_operation', None)
 
     def transformers(self):
