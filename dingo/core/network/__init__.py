@@ -454,6 +454,8 @@ class LoadDingo:
         self.grid = kwargs.get('grid', None)
         self.peak_load = kwargs.get('peak_load', None)
 
+        self.id_db = self.grid.loads_count() + 1
+
 
 class CircuitBreakerDingo:
     """ Class for modelling a circuit breaker
