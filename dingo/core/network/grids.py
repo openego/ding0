@@ -875,7 +875,7 @@ class LVGridDingo(GridDingo):
 
         return grid_model
 
-    def build_lv_graph(self, selected_string_df):
+    def build_lv_graph_residential(self, selected_string_df):
         """
         Builds nxGraph based on the LV grid model
 
@@ -929,7 +929,7 @@ class LVGridDingo(GridDingo):
                     cable_name = row['cable type'] + \
                                        ' 4x1x{}'.format(row['cable width'])
 
-                    # connect current lv_cable_dist to last one
+                    # connect current lv_cable_dist to station
                     if house_branch == 1:
                         # edge connect first house branch in branch with the station
                         self._graph.add_edge(
@@ -938,7 +938,8 @@ class LVGridDingo(GridDingo):
                             branch=BranchDingo(
                                 length=row['distance house branch'],
                                 type=cable_name
-                                ))
+                            ))
+                    # connect current lv_cable_dist to last one
                     else:
                         self._graph.add_edge(
                             self._cable_distributors[-2],

@@ -1277,7 +1277,7 @@ class NetworkDingo:
 
                             model_grid = lv_grid_district.lv_grid.select_grid_model_residential()
 
-                            lv_grid_district.lv_grid.build_lv_graph(model_grid)
+                            lv_grid_district.lv_grid.build_lv_graph_residential(model_grid)
 
                         # no residential load -> do not create grid structure,
                         # TODO: implement grid creation in this case
