@@ -959,11 +959,11 @@ class LVGridDingo(GridDingo):
                             lv_cable_dist,
                             branch=BranchDingo(
                                 length=row['distance house branch'],
-                                type=cable_name),
+                                type=cable_name,
                                 id_db='branch_{sector}{branch}_{load}'.format(
                                     branch=hh_branch,
                                     load=house_branch,
-                                    sector='HH'))
+                                    sector='HH')))
 
                     # connect house to cable distributor
                     house_cable_name = row['cable type {}'.format(variant)] + \
@@ -975,11 +975,11 @@ class LVGridDingo(GridDingo):
                             length=row['length house branch {}'.format(
                                 variant)],
                             type=self.network.static_data['LV_cables']. \
-                                loc[house_cable_name]),
+                                loc[house_cable_name],
                             id_db='branch_{sector}{branch}_{load}'.format(
                                 branch=hh_branch,
                                 load=house_branch,
-                                sector='HH')
+                                sector='HH'))
                     )
 
     def build_lv_graph_ria(self, grid_model_params):
