@@ -960,6 +960,155 @@ class LVGridDingo(GridDingo):
                             type=self.network.static_data['LV_cables']. \
                                 loc[house_cable_name]))
 
+    def build_lv_graph_ria(self, grid_model_params):
+        """
+        Build graph for LV grid of sectors retail/industrial and agricultural
+
+        Based on structural description of LV grid topology for sectors
+        retail/industrial and agricultural (RIA) branches for these sectors are
+        created and attached to the LV grid's MV-LV substation bus bar.
+
+        LV loads of the sectors retail/industrial and agricultural are located
+        in separat branches for each sector (in case of large load multiple of
+        these).
+        These loads are distributed across the branches by an equidistant
+        distribution.
+
+        This function accepts the dict `grid_model_params` with particular
+        structure
+
+        >>> grid_model_params = {
+        >>> ... 'agricultural': {
+        >>> ...     'max_loads_per_branch': 2
+        >>> ...     'single_peak_load': 140,
+        >>> ...     'full_branches': 2,
+        >>> ...     'remaining_loads': 1,
+        >>> ...     'load_distance': 800/3,
+        >>> ...     'load_distance_remaining': 400}}
+
+        Parameters
+        ----------
+        grid_model_params : dict
+            Dict of structural information of sectoral LV grid branch
+
+        Notes
+        -----
+        We assume a distance from the load to the branch it is connected to of
+        30 m. This assumption is defined in the config files
+        """
+
+        cfg_dingo.get('assumptions', 'lv_ria_branch_connection_distance')
+
+        def lv_graph_attach_branch():
+            """
+            Attach a single branch including its equipment (cable dist, loads
+            and line segments) to graph of `lv_grid`
+            """
+
+            # determine maximum current occuring due to peak load
+            # of this load load_no
+            I_max_load = val['single_peak_load'] / (3 ** 0.5 * 0.4)
+
+            # determine suitable cable for this current
+            suitable_cables_stub = self.network.static_data['LV_cables'][
+                self.network.static_data['LV_cables'][
+                    'I_max_th'] > I_max_load]
+            cable_type_stub = suitable_cables_stub.ix[
+                suitable_cables_stub['I_max_th'].idxmin()]
+
+            # create a LV cable distributor for each load
+            lv_cable_dist = LVCableDistributorDingo(
+                grid=self,
+                branch_no=branch_no,
+                load_no=load_no)
+
+            # create an instance of Dingo LV load
+            lv_load = LVLoadDingo(grid=self,
+                                  branch_no=branch_no,
+                                  load_no=load_no)
+
+            # add load and related cable dist to graph
+            self.add_load(lv_load)
+            self.add_cable_dist(lv_cable_dist)
+
+            # create branch line segment between either (a) station
+            # and cable distributor or (b) between neighboring cable
+            # distributors
+            if load_no == 1:
+                # case a: cable dist <-> station
+                self._graph.add_edge(
+                    self.station(),
+                    lv_cable_dist,
+                    branch=BranchDingo(
+                        length=val['load_distance'],
+                        type=cable_type,
+                        id_db='branch_{branch}_{load}'.format(branch=branch_no,
+                                                              load=load_no)
+                    ))
+            else:
+                # case b: cable dist <-> cable dist
+                self._graph.add_edge(
+                    self._cable_distributors[-2],
+                    lv_cable_dist,
+                    branch=BranchDingo(
+                        length=val['load_distance'],
+                        type=cable_type,
+                        id_db='branch_{branch}_{load}'.format(branch=branch_no,
+                                                              load=load_no)))
+
+            # create branch stub that connects the load to the
+            # lv_cable_dist located in the branch line
+            self._graph.add_edge(
+                lv_cable_dist,
+                lv_load,
+                branch=BranchDingo(
+                    length=cfg_dingo.get(
+                        'assumptions',
+                        'lv_ria_branch_connection_distance'),
+                    type=cable_type_stub,
+                    id_db='stub_{branch}_{load}'.format(branch=branch_no,
+                                                        load=load_no)))
+
+        # iterate over branches for sectors retail/industrial and agricultural
+        for sector, val in grid_model_params.items():
+            if val is not None:
+                for branch_no in list(range(1, val['full_branches'] + 1)):
+
+                    # determine maximum current occuring due to peak load of branch
+                    I_max_branch = (val['max_loads_per_branch'] *
+                                    val['single_peak_load']) / (3 ** 0.5 * 0.4)
+
+                    # determine suitable cable for this current
+                    suitable_cables = self.network.static_data['LV_cables'][
+                        self.network.static_data['LV_cables'][
+                            'I_max_th'] > I_max_branch]
+                    cable_type = suitable_cables.ix[
+                        suitable_cables['I_max_th'].idxmin()]
+
+                    # create Dingo grid objects and add to graph
+                    for load_no in list(range(1, val['max_loads_per_branch'] + 1)):
+                        # create a LV grid string and attached to station
+                        lv_graph_attach_branch()
+
+                # add remaining branch
+                if val['remaining_loads'] > 0:
+                    # determine maximum current occuring due to peak load of branch
+                    I_max_branch = (val['max_loads_per_branch'] *
+                                    val['single_peak_load']) / (3 ** 0.5 * 0.4)
+
+                    # determine suitable cable for this current
+                    suitable_cables = self.network.static_data['LV_cables'][
+                        self.network.static_data['LV_cables'][
+                            'I_max_th'] > I_max_branch]
+                    cable_type = suitable_cables.ix[
+                        suitable_cables['I_max_th'].idxmin()]
+
+                    branch_no = 1
+
+                    for load_no in list(range(1, val['remaining_loads'] + 1)):
+                        # create a LV grid string and attach to station
+                        lv_graph_attach_branch()
+
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid
         Args:
