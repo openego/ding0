@@ -622,6 +622,7 @@ class NetworkDingo:
 
                 # MV generators
                 if generator.v_level in [4, 5]:
+                    generator.geo_data = geo_data
                     mv_grid.add_generator(generator)
 
                 # LV generators
