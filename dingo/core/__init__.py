@@ -182,6 +182,10 @@ class NetworkDingo:
             Table containing lv_stations of according load_area
         """
 
+        # There's no LVGD for current LA, see #155 for details
+        if len(lv_grid_districts) == 0:
+            raise ValueError('Load Area {} has no LVGD - please re-open #155'.format(repr(lv_load_area)))
+
         # Associate lv_grid_district to load_area
         for id, row in lv_grid_districts.iterrows():
             lv_grid_district = LVGridDistrictDingo(
