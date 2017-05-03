@@ -582,10 +582,10 @@ class NetworkDingo:
                                             func.ST_AsText(func.ST_Transform(
                                             orm_re_generators.rea_geom_new, srid)).label('geom_new'),
                                             func.ST_AsText(func.ST_Transform(
-                                            orm_re_generators.geom, srid)).label('geom')
-                                            ).\
+                                            orm_re_generators.geom, srid)).label('geom')). \
                                             filter(orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))). \
-                                            filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
+                                            filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7])). \
+                                            order_by(orm_re_generators.id.asc())
 
             # read data from db
             generators = pd.read_sql_query(generators_sqla.statement,
@@ -683,9 +683,10 @@ class NetworkDingo:
                                             orm_conv_generators.fuel,
                                             orm_conv_generators.voltage_level,
                                             func.ST_AsText(func.ST_Transform(
-                                            orm_conv_generators.geom, srid)).label('geom')).\
-                                            filter(orm_conv_generators.subst_id.in_(list(mv_grid_districts_dict))).\
-                                            filter(orm_conv_generators.voltage_level.in_([4, 5, 6]))
+                                            orm_conv_generators.geom, srid)).label('geom')). \
+                                            filter(orm_conv_generators.subst_id.in_(list(mv_grid_districts_dict))). \
+                                            filter(orm_conv_generators.voltage_level.in_([4, 5, 6])). \
+                                            order_by(orm_conv_generators.gid.asc())
 
             # read data from db
             generators = pd.read_sql_query(generators_sqla.statement,
