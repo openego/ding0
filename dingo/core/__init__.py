@@ -1248,7 +1248,6 @@ class NetworkDingo:
 
         logger.info('=====> LV model grids created')
 
-
     def connect_generators(self, debug=False):
         """ Connects generators (graph nodes) to grid (graph) for every MV grid district
 
