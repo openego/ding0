@@ -279,10 +279,8 @@ class StationDingo:
 
     def add_transformer(self, transformer):
         """Adds a transformer to _transformers if not already existing"""
-        # TODO: check arg
         if transformer not in self.transformers() and isinstance(transformer, TransformerDingo):
             self._transformers.append(transformer)
-        # TODO: what if it exists? -> error message
 
     @property
     def peak_load(self):
