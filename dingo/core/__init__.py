@@ -197,7 +197,7 @@ class NetworkDingo:
                 peak_load_retail=row['peak_load_retail'],
                 peak_load_industrial=row['peak_load_industrial'],
                 peak_load_agricultural=row['peak_load_agricultural'],
-                peak_load_sum=(row['peak_load_residential'] +
+                peak_load=(row['peak_load_residential'] +
                                row['peak_load_retail'] +
                                row['peak_load_industrial'] +
                                row['peak_load_agricultural']),
@@ -218,7 +218,7 @@ class NetworkDingo:
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
-                peak_load=lv_grid_district.peak_load_sum)
+                peak_load=lv_grid_district.peak_load)
 
             # assign created objects
             # note: creation of LV grid is done separately,
@@ -377,7 +377,7 @@ class NetworkDingo:
               + orm_lv_loads.retail
               + orm_lv_loads.industrial
               + orm_lv_loads.agricultural)
-             * gw2kw).label('peak_load_sum')). \
+             * gw2kw).label('peak_load')). \
             join(orm_lv_loads, orm_lv_load_areas.id
                  == orm_lv_loads.id).\
             filter(orm_lv_load_areas.subst_id == mv_grid_district. \
@@ -400,7 +400,7 @@ class NetworkDingo:
             lv_load_area = LVLoadAreaDingo(id_db=id_db,
                                            db_data=row,
                                            mv_grid_district=mv_grid_district,
-                                           peak_load_sum=row['peak_load_sum'])
+                                           peak_load=row['peak_load'])
 
             # sub-selection of lv_grid_districts/lv_stations within one
             # specific load area
@@ -474,7 +474,7 @@ class NetworkDingo:
                                                           + orm_lv_grid_district.sector_peakload_retail
                                                           + orm_lv_grid_district.sector_peakload_industrial
                                                           + orm_lv_grid_district.sector_peakload_agricultural)
-                                                         * gw2kw).label('peak_load_sum'),
+                                                         * gw2kw).label('peak_load'),
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
                                               orm_lv_grid_district.sector_count_residential,

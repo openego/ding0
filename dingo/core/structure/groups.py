@@ -12,7 +12,7 @@ class LoadAreaGroupDingo:
         self.id_db = kwargs.get('id_db', None)
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
         self._lv_load_areas = []
-        self.peak_load_sum = 0
+        self.peak_load = 0
         self.branch_length_sum = 0
         # threshold: max. allowed peak load of satellite string
         self.peak_load_max = cfg_dingo.get('mv_connect', 'load_area_sat_string_load_threshold')
@@ -32,7 +32,7 @@ class LoadAreaGroupDingo:
         """Adds a LV load_area to _lv_load_areas if not already existing"""
         self._lv_load_areas.append(lv_load_area)
         if not isinstance(lv_load_area, MVCableDistributorDingo):
-            self.peak_load_sum += lv_load_area.peak_load_sum
+            self.peak_load += lv_load_area.peak_load
 
     def can_add_lv_load_area(self, node):
         """Sums up peak load of LV stations = total peak load for satellite string"""
@@ -40,7 +40,7 @@ class LoadAreaGroupDingo:
         if lv_load_area not in self.lv_load_areas():  # and isinstance(lv_load_area, LVLoadAreaDingo):
             path_length_to_root = lv_load_area.mv_grid_district.mv_grid.graph_path_length(self.root_node, node)
             if ((path_length_to_root <= self.branch_length_max) and
-                (lv_load_area.peak_load_sum + self.peak_load_sum) <= self.peak_load_max):
+                (lv_load_area.peak_load + self.peak_load) <= self.peak_load_max):
                 return True
             else:
                 return False

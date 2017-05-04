@@ -45,7 +45,7 @@ def dingo_graph_to_routing_specs(graph):
             if not node.lv_load_area.is_satellite or satellites_only:
                 # get demand and position of node
                 # convert node's demand to int for performance purposes
-                nodes_demands[str(node)] = int(node.lv_load_area.peak_load_sum)
+                nodes_demands[str(node)] = int(node.lv_load_area.peak_load)
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
                 # get aggregation flag
                 if node.lv_load_area.is_aggregated:

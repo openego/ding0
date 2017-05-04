@@ -36,7 +36,7 @@ def select_transformer(grid):
     trafo_lf = cfg_dingo.get('assumptions',
                              'load_factor_lv_trans_lc_normal')
 
-    peak_load = grid.grid_district.peak_load_sum
+    peak_load = grid.grid_district.peak_load
 
     # get equipment parameters of LV transformers
     trafo_parameters = grid.network.static_data['LV_trafos']

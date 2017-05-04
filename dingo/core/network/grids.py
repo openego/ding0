@@ -487,7 +487,7 @@ class MVGridDingo(GridDingo):
         """
 
         for lv_load_area in self.grid_district.lv_load_areas():
-            peak_current_node = (lv_load_area.peak_load_sum / (3**0.5) / self.v_level)  # units: kVA / kV = A
+            peak_current_node = (lv_load_area.peak_load / (3**0.5) / self.v_level)  # units: kVA / kV = A
             if peak_current_node > peak_current_branch_max:
                 lv_load_area.is_aggregated = True
 
