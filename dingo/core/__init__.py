@@ -546,31 +546,6 @@ class NetworkDingo:
             Connection of generators is done later on in NetworkDingo's method connect_generators()
         """
 
-        def choose_random_load_area(generator, lv_load_areas):
-            """
-            Selects random Load Area
-            
-            Parameters
-            ----------
-            generator: GeneratorDingo object
-            lv_load_areas: List of LVLoadAreaDingo objects
-            
-            Returns
-            -------
-            lv_load_area: LVLoadAreaDingo object
-                LA the generator was assigned to
-            
-            Notes
-            -----
-            Uses predefined seed to choose random LA.
-            Generator is moved to centroid of LA.
-            """
-            lv_load_area = random.choice(lv_load_areas)
-            generator.geo_data = lv_load_area.geo_centre
-
-            return lv_load_area
-
-
         def import_res_generators():
             """Imports renewable (res) generators"""
 
