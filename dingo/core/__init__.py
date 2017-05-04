@@ -193,14 +193,14 @@ class NetworkDingo:
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(row['geom']),
                 population=0 if isnan(row['population']) else int(row['population']),
-                peak_load_residential=int(row['peak_load_residential']),
-                peak_load_retail=int(row['peak_load_retail']),
-                peak_load_industrial=int(row['peak_load_industrial']),
-                peak_load_agricultural=int(row['peak_load_agricultural']),
-                peak_load_sum=(int(row['peak_load_residential']) +
-                               int(row['peak_load_retail']) +
-                               int(row['peak_load_industrial']) +
-                               int(row['peak_load_agricultural'])),
+                peak_load_residential=row['peak_load_residential'],
+                peak_load_retail=row['peak_load_retail'],
+                peak_load_industrial=row['peak_load_industrial'],
+                peak_load_agricultural=row['peak_load_agricultural'],
+                peak_load_sum=(row['peak_load_residential'] +
+                               row['peak_load_retail'] +
+                               row['peak_load_industrial'] +
+                               row['peak_load_agricultural']),
                 sector_count_residential=int(row['sector_count_residential']),
                 sector_count_retail=int(row['sector_count_retail']),
                 sector_count_industrial=int(row['sector_count_industrial']),
@@ -365,19 +365,19 @@ class NetworkDingo:
                 label('geo_area'),
             func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom_centre, srid)).\
                 label('geo_centre'),
-            func.round(orm_lv_loads.residential * gw2kw).\
+            (orm_lv_loads.residential * gw2kw).\
                 label('peak_load_residential'),
-            func.round(orm_lv_loads.retail * gw2kw).\
+            (orm_lv_loads.retail * gw2kw).\
                 label('peak_load_retail'),
-            func.round(orm_lv_loads.industrial * gw2kw).\
+            (orm_lv_loads.industrial * gw2kw).\
                 label('peak_load_industrial'),
-            func.round(orm_lv_loads.agricultural * gw2kw).\
+            (orm_lv_loads.agricultural * gw2kw).\
                 label('peak_load_agricultural'),
-            func.round((orm_lv_loads.residential
-                        + orm_lv_loads.retail
-                        + orm_lv_loads.industrial
-                        + orm_lv_loads.agricultural)
-                       * gw2kw).label('peak_load_sum')). \
+            ((orm_lv_loads.residential
+              + orm_lv_loads.retail
+              + orm_lv_loads.industrial
+              + orm_lv_loads.agricultural)
+             * gw2kw).label('peak_load_sum')). \
             join(orm_lv_loads, orm_lv_load_areas.id
                  == orm_lv_loads.id).\
             filter(orm_lv_load_areas.subst_id == mv_grid_district. \
@@ -462,15 +462,15 @@ class NetworkDingo:
         lv_grid_districs_sqla = session.query(orm_lv_grid_district.mvlv_subst_id,
                                               orm_lv_grid_district.la_id,
                                               orm_lv_grid_district.zensus_sum.label('population'),
-                                              func.round(orm_lv_grid_district.sector_peakload_residential * gw2kw).
+                                              (orm_lv_grid_district.sector_peakload_residential * gw2kw).
                                                 label('peak_load_residential'),
-                                              func.round(orm_lv_grid_district.sector_peakload_retail * gw2kw).
+                                              (orm_lv_grid_district.sector_peakload_retail * gw2kw).
                                                 label('peak_load_retail'),
-                                              func.round(orm_lv_grid_district.sector_peakload_industrial * gw2kw).
+                                              (orm_lv_grid_district.sector_peakload_industrial * gw2kw).
                                                 label('peak_load_industrial'),
-                                              func.round(orm_lv_grid_district.sector_peakload_agricultural * gw2kw).
+                                              (orm_lv_grid_district.sector_peakload_agricultural * gw2kw).
                                                 label('peak_load_agricultural'),
-                                              func.round((orm_lv_grid_district.sector_peakload_residential
+                                              ((orm_lv_grid_district.sector_peakload_residential
                                                           + orm_lv_grid_district.sector_peakload_retail
                                                           + orm_lv_grid_district.sector_peakload_industrial
                                                           + orm_lv_grid_district.sector_peakload_agricultural)
