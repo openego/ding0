@@ -140,7 +140,7 @@ class LVStationDingo(StationDingo):
         """
         Cumulative peak load of loads connected to underlying LV grid
         """
-        return np.array([x.peak_load for x in self.grid.loads()]).sum()
+        return sum([_.peak_load for _ in self.grid.loads()])
 
     @property
     def peak_generation(self):
