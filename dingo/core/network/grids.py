@@ -660,7 +660,6 @@ class LVGridDingo(GridDingo):
 
         self.default_branch_kind = kwargs.get('default_branch_kind', 'cable')
         self._station = None
-        self._loads = []
         self.population = kwargs.get('population', None)
 
     def station(self):
@@ -689,11 +688,6 @@ class LVGridDingo(GridDingo):
                                                                         LVCableDistributorDingo):
             self._cable_distributors.append(lv_cable_dist)
             self.graph_add_node(lv_cable_dist)
-
-    def loads(self):
-        """Returns a generator for iterating over LV _load"""
-        for load in self._loads:
-            yield load
 
     def build_grid(self):
         """
