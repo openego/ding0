@@ -44,7 +44,6 @@ class GridDingo:
 
     def generators(self):
         """Returns a generator for iterating over grid's generators"""
-        # TODO: Is this method really needed?
         for generator in self._generators:
             yield generator
 
