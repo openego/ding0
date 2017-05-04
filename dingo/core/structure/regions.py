@@ -101,9 +101,6 @@ class LVLoadAreaDingo(RegionDingo):
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
         self.is_aggregated = kwargs.get('is_aggregated', False)
-        # TODO: attr. to agg. generation from underlying genos
-        # (this attr. is used in LA of type aggregated only when applying PF)
-        self.peak_generation = kwargs.get('peak_generation', 0)
 
         # threshold: load area peak load, if peak load < threshold => treat load area as satellite
         load_area_sat_load_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_load_threshold')
@@ -154,6 +151,18 @@ class LVLoadAreaDingo(RegionDingo):
         if lv_grid_district not in self._lv_grid_districts and \
                 isinstance(lv_grid_district, LVGridDistrictDingo):
             self._lv_grid_districts.append(lv_grid_district)
+
+    @property
+    def peak_generation(self):
+        """
+        Cumulative peak generation of generators connected to LV grids of underlying LVGDs
+        """
+        cum_peak_generation = 0
+
+        for lv_grid_district in self._lv_grid_districts:
+            cum_peak_generation += lv_grid_district.lv_grid.station().peak_generation
+
+        return cum_peak_generation
 
     def __repr__(self):
         return 'lv_load_area_' + str(self.id_db)
