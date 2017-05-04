@@ -572,20 +572,22 @@ class NetworkDingo:
                                            index_col='id')
 
             for id_db, row in generators.iterrows():
-                # ===== DEBUG STUFF (NOT ALL GENERATOR GEOMS IN DATABASE YET -> catch empty geoms) =====
-                # TODO: Remove when fixed! And delete column 'geom' (original geom from EnergyMap) from query above
+
+                # treat generators' geom:
+                # use geom_new (relocated genos from data processing)
+                # otherwise use original geom from EnergyMap
                 if not row['geom_new']:
                     geo_data = wkt_loads(row['geom'])
-                    logger.error(
-                        'Generator {} has no geom_new entry, bad day dude! '
-                        '(EnergyMap\'s geom entry will be used)'.format(
+                    logger.warning(
+                        'Generator {} has no geom_new entry,'
+                        'EnergyMap\'s geom entry will be used.'.format(
                         id_db))
-                elif not row['geom_new']:
-                    logger.error('Generator {} has no geom entry either, your '
-                                 'day is getting worse dude!'.format(id_db))
-                else:
-                    geo_data = wkt_loads(row['geom_new'])
-                # ======================================================================================
+                # if no geom is available at all, skip generator
+                elif not row['geom']:
+                    #geo_data =
+                    logger.error('Generator {} has no geom entry either'
+                                 'and will be skipped.'.format(id_db))
+                    continue
 
                 # look up MV grid
                 mv_grid_district_id = row['subst_id']
