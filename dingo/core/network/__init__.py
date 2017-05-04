@@ -286,9 +286,9 @@ class StationDingo:
     def peak_load(self):
         """
         Cumulative peak load of loads connected to underlying LV grid
+        (taken from LV Grid District -> top-down)
         """
         return self.grid.grid_district.peak_load
-        #return sum([_.peak_load for _ in self.grid.loads()])
 
     @property
     def peak_generation(self):
