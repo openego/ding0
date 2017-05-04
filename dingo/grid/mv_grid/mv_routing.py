@@ -43,9 +43,9 @@ def dingo_graph_to_routing_specs(graph):
             # only major stations are connected via MV ring
             # (satellites in case of there're only satellites in grid district)
             if not node.lv_load_area.is_satellite or satellites_only:
-                # OLD: prior issue #51
-                # nodes_demands[str(node)] = node.grid.grid_district.peak_load_sum
-                nodes_demands[str(node)] = node.lv_load_area.peak_load_sum
+                # get demand and position of node
+                # convert node's demand to int for performance purposes
+                nodes_demands[str(node)] = int(node.lv_load_area.peak_load_sum)
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
                 # get aggregation flag
                 if node.lv_load_area.is_aggregated:
