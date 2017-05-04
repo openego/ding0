@@ -374,7 +374,6 @@ class LocalSearchSolver(BaseSolver):
                                          target_node_best, target_route_best,
                                          round(length_diff_best, 5)]:
                         length_diff_best = 0
-                        #print('FUCKED UP!')
                     else:
                         # save current exchange configuration
                         exchange_step = [node_best, route_best,
