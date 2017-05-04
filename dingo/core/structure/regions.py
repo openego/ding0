@@ -101,8 +101,6 @@ class LVLoadAreaDingo(RegionDingo):
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
         self.is_aggregated = kwargs.get('is_aggregated', False)
-        # TODO: attr. to collect LV genos
-        self.genos_collected_temp = []
         # TODO: attr. to agg. generation from underlying genos
         # (this attr. is used in LA of type aggregated only when applying PF)
         self.peak_generation = kwargs.get('peak_generation', 0)

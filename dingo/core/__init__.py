@@ -648,8 +648,6 @@ class NetworkDingo:
                                        'assigned to a random LV Grid District ({}).'.format(
                                         repr(generator), repr(lv_grid_district)))
 
-                    # TODO: current state: append LV genos to LA list "genos_collected_temp"
-                    #lv_load_area.genos_collected_temp.append(generator)
                     generator.lv_load_area = lv_grid_district.lv_load_area
                     lv_grid_district.lv_grid.add_generator(generator)
 
