@@ -284,6 +284,20 @@ class StationDingo:
             self._transformers.append(transformer)
         # TODO: what if it exists? -> error message
 
+    @property
+    def peak_load(self):
+        """
+        Cumulative peak load of loads connected to underlying LV grid
+        """
+        return sum([_.peak_load for _ in self.grid.loads()])
+
+    @property
+    def peak_generation(self):
+        """
+        Cumulative peak generation of generators connected to underlying LV grid
+        """
+        return sum([_.capacity for _ in self.grid.generators()])
+
 
 class BusDingo:
     """ Create new pypower Bus class as child from oemof Bus used to define

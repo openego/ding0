@@ -135,19 +135,5 @@ class LVStationDingo(StationDingo):
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
                 id_db), 'tru', str(self.id_db)])
 
-    @property
-    def peak_load(self):
-        """
-        Cumulative peak load of loads connected to underlying LV grid
-        """
-        return sum([_.peak_load for _ in self.grid.loads()])
-
-    @property
-    def peak_generation(self):
-        """
-        Cumulative peak generation of generators connected to underlying LV grid
-        """
-        return sum([_.capacity for _ in self.grid.generators()])
-
     def __repr__(self):
         return 'lv_station_' + str(self.id_db)
