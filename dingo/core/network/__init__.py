@@ -262,7 +262,6 @@ class StationDingo:
                        usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids.
 
     """
-    # TODO: add method remove_transformer()
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
