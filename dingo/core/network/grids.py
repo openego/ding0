@@ -703,6 +703,8 @@ class LVGridDingo(GridDingo):
         # add branches of sector residential
         build_grid.build_residential_branches(self.grid_district)
 
+        #self.graph_draw(mode='LV')
+
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid
         Args:
