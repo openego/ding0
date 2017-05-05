@@ -488,8 +488,13 @@ def build_lv_graph_residential(lvgd, selected_string_df):
 
     # iterate over each type of branch
     for i, row in selected_string_df.iterrows():
+
+        # get overall count of branches to set unique branch_no
+        branch_count_sum = len(lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station()))
+
         # iterate over it's occurences
         for branch_no in range(1, int(row['occurence']) + 1):
+
             hh_branch += 1
             # iterate over house branches
             for house_branch in range(1, row['count house branch'] + 1):
@@ -500,12 +505,12 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                 lv_cable_dist = LVCableDistributorDingo(
                     grid=lvgd.lv_grid,
                     string_id=i,
-                    branch_no=branch_no,
+                    branch_no=branch_no + branch_count_sum,
                     load_no=house_branch)
 
                 lv_load = LVLoadDingo(grid=lvgd.lv_grid,
                                       string_id=i,
-                                      branch_no=branch_no,
+                                      branch_no=branch_no + branch_count_sum,
                                       load_no=house_branch,
                                       peak_load=average_load)
 
