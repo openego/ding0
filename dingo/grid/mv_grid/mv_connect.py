@@ -627,7 +627,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
     """ Connect LV stations to MV grid
 
     Args:
-        mv_grid_district: MVGridDistrictDingo object fore which the connection process has to be done
+        mv_grid_district: MVGridDistrictDingo object for which the connection process has to be done
         graph: NetworkX graph object with nodes
         debug: If True, information is printed during process
 
@@ -804,7 +804,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
     """ Connect MV generators to MV grid
 
     Args:
-        mv_grid_district: MVGridDistrictDingo object fore which the connection process has to be done
+        mv_grid_district: MVGridDistrictDingo object for which the connection process has to be done
         graph: NetworkX graph object with nodes
         debug: If True, information is printed during process
 
@@ -902,7 +902,5 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                         'increase the parameter `generator_buffer_radius` in '
                         'config file `config_calc.cfg` to gain more possible '
                         'connection points.'.format(node))
-
-
 
     return graph
