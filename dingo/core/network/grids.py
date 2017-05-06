@@ -5,9 +5,8 @@ from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
 from dingo.core.network.loads import *
 from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
-from dingo.grid.mv_grid import mv_routing
-from dingo.grid.mv_grid import mv_connect
-from dingo.grid.lv_grid import build_grid
+from dingo.grid.mv_grid import mv_routing, mv_connect
+from dingo.grid.lv_grid import build_grid, lv_connect
 import dingo
 from dingo.tools import config as cfg_dingo, pypsa_io, tools
 from dingo.tools import config as cfg_dingo, tools
@@ -704,6 +703,15 @@ class LVGridDingo(GridDingo):
         build_grid.build_residential_branches(self.grid_district)
 
         #self.graph_draw(mode='LV')
+
+    def connect_generators(self, debug=False):
+        """ Connects LV generators (graph nodes) to grid (graph)
+
+        Args:
+            debug: If True, information is printed during process
+        """
+
+        self._graph = lv_connect.lv_connect_generators(self.grid_district, self._graph, debug)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid
