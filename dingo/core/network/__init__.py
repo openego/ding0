@@ -121,10 +121,15 @@ class GridDingo:
 
                 # set positions
                 if isinstance(node, CableDistributorDingo):
-                    nodes_pos[node] = (x_pos_start + node.branch_no - 1, -node.load_no - 2)
-                    nodes_color.append((0.5, 0.5, 0.5))
+                    if node.in_building:
+                        nodes_pos[node] = (x_pos_start + node.branch_no - 1 + 0.25, -node.load_no - 2)
+                        nodes_color.append((0.5, 0.5, 0.5))
+                    else:
+                        nodes_pos[node] = (x_pos_start + node.branch_no - 1, -node.load_no - 2)
+                        nodes_color.append((0.5, 0.5, 0.5))
+
                 elif isinstance(node, LoadDingo):
-                    nodes_pos[node] = (x_pos_start + node.branch_no - 1 + 0.5, -node.load_no - 2)
+                    nodes_pos[node] = (x_pos_start + node.branch_no - 1 + 0.5, -node.load_no - 2 - 0.25)
                     nodes_color.append((0.5, 0.5, 1))
                 elif isinstance(node, GeneratorDingo):
                     nodes_pos[node] = (1, 1)
