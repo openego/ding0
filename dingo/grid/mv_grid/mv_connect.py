@@ -827,80 +827,77 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
             pyproj.Proj(init='epsg:3035'),  # source coordinate system
             pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
-    for node in sorted(graph.nodes(), key=lambda x: repr(x)):
+    for generator in sorted(mv_grid_district.mv_grid.generators(), key=lambda x: repr(x)):
 
-        # node is generator (since method is called from MV grid, there are only MV generators in graph.
-        if isinstance(node, GeneratorDingo):
+        # ===== voltage level 4: generator has to be connected to MV station =====
+        if generator.v_level == 4:
+            mv_station = mv_grid_district.mv_grid.station()
 
-            # ===== voltage level 4: generator has to be connected to MV station =====
-            if node.v_level == 4:
-                mv_station = mv_grid_district.mv_grid.station()
+            branch_length = calc_geo_dist_vincenty(generator, mv_station)
 
-                branch_length = calc_geo_dist_vincenty(node, mv_station)
+            # TODO: set branch type to something reasonable (to be calculated)
+            branch_kind = mv_grid_district.mv_grid.default_branch_kind
+            branch_type = mv_grid_district.mv_grid.default_branch_type
 
-                # TODO: set branch type to something reasonable (to be calculated)
-                branch_kind = mv_grid_district.mv_grid.default_branch_kind
-                branch_type = mv_grid_district.mv_grid.default_branch_type
+            branch = BranchDingo(length=branch_length,
+                                 kind=branch_kind,
+                                 type=branch_type,
+                                 ring=None)
+            graph.add_edge(generator, mv_station, branch=branch)
 
-                branch = BranchDingo(length=branch_length,
-                                     kind=branch_kind,
-                                     type=branch_type,
-                                     ring=None)
-                graph.add_edge(node, mv_station, branch=branch)
+            if debug:
+                logger.debug('Generator {0} was connected to {1}'.format(
+                    generator, mv_station))
 
-                if debug:
-                    logger.debug('Generator {0} was connected to {1}'.format(
-                        node, mv_station))
+        # ===== voltage level 5: generator has to be connected to MV grid =====
+        elif generator.v_level == 5:
+            generator_shp = transform(proj1, generator.geo_data)
 
-            # ===== voltage level 5: generator has to be connected to MV grid =====
-            elif node.v_level == 5:
-                node_shp = transform(proj1, node.geo_data)
+            # get branches within a the predefined radius `generator_buffer_radius`
+            branches = calc_geo_branches_in_buffer(generator,
+                                                   mv_grid_district.mv_grid,
+                                                   generator_buffer_radius,
+                                                   generator_buffer_radius_inc, proj1)
 
-                # get branches within a the predefined radius `generator_buffer_radius`
-                branches = calc_geo_branches_in_buffer(node,
-                                                       mv_grid_district.mv_grid,
-                                                       generator_buffer_radius,
-                                                       generator_buffer_radius_inc, proj1)
+            # calc distance between generator and grid's lines -> find nearest line
+            conn_objects_min_stack = find_nearest_conn_objects(generator_shp,
+                                                               branches,
+                                                               proj1,
+                                                               conn_dist_weight=1,
+                                                               debug=debug,
+                                                               branches_only=False)
 
-                # calc distance between node and grid's lines -> find nearest line
-                conn_objects_min_stack = find_nearest_conn_objects(node_shp,
-                                                                   branches,
-                                                                   proj1,
-                                                                   conn_dist_weight=1,
-                                                                   debug=debug,
-                                                                   branches_only=False)
+            # connect!
+            # go through the stack (from nearest to most far connection target object)
+            generator_connected = False
+            for dist_min_obj in conn_objects_min_stack:
+                # Note 1: conn_dist_ring_mod=0 to avoid re-routing of existent lines
+                # Note 2: In connect_node(), the default cable/line type of grid is used. This is reasonable since
+                #         the max. allowed power of the smallest possible cable/line type (3.64 MVA for overhead
+                #         line of type 48-AL1/8-ST1A) exceeds the max. allowed power of a generator (4.5 MVA (dena))
+                #         (if connected separately!)
+                target_obj_result = connect_node(generator,
+                                                 generator_shp,
+                                                 mv_grid_district.mv_grid,
+                                                 dist_min_obj,
+                                                 proj2,
+                                                 graph,
+                                                 conn_dist_ring_mod=0,
+                                                 debug=debug)
 
-                # connect!
-                # go through the stack (from nearest to most far connection target object)
-                node_connected = False
-                for dist_min_obj in conn_objects_min_stack:
-                    # Note 1: conn_dist_ring_mod=0 to avoid re-routing of existent lines
-                    # Note 2: In connect_node(), the default cable/line type of grid is used. This is reasonable since
-                    #         the max. allowed power of the smallest possible cable/line type (3.64 MVA for overhead
-                    #         line of type 48-AL1/8-ST1A) exceeds the max. allowed power of a generator (4.5 MVA (dena))
-                    #         (if connected separately!)
-                    target_obj_result = connect_node(node,
-                                                     node_shp,
-                                                     mv_grid_district.mv_grid,
-                                                     dist_min_obj,
-                                                     proj2,
-                                                     graph,
-                                                     conn_dist_ring_mod=0,
-                                                     debug=debug)
+                if target_obj_result is not None:
+                    if debug:
+                        logger.debug(
+                            'Generator {0} was connected to {1}'.format(
+                                generator, target_obj_result))
+                    generator_connected = True
+                    break
 
-                    if target_obj_result is not None:
-                        if debug:
-                            logger.debug(
-                                'Generator {0} was connected to {1}'.format(
-                                    node, target_obj_result))
-                        node_connected = True
-                        break
-
-                if not node_connected and debug:
-                    logger.debug(
-                        'Generator {0} could not be connected, try to '
-                        'increase the parameter `generator_buffer_radius` in '
-                        'config file `config_calc.cfg` to gain more possible '
-                        'connection points.'.format(node))
+            if not generator_connected and debug:
+                logger.debug(
+                    'Generator {0} could not be connected, try to '
+                    'increase the parameter `generator_buffer_radius` in '
+                    'config file `config_calc.cfg` to gain more possible '
+                    'connection points.'.format(generator))
 
     return graph
