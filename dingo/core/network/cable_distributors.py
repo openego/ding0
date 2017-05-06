@@ -30,6 +30,7 @@ class LVCableDistributorDingo(CableDistributorDingo):
         self.branch_no = kwargs.get('branch_no', None)
         self.load_no = kwargs.get('load_no', None)
         self.id_db = self.grid.cable_distributors_count() + 1
+        self.in_building = kwargs.get('in_building', False)
 
     def __repr__(self):
         return 'lv_cable_dist_' + str(self.id_db)
