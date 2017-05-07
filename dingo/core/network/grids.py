@@ -674,6 +674,27 @@ class LVGridDingo(GridDingo):
             self.graph_add_node(lv_station)
             self.grid_district.lv_load_area.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
+    def loads_sector(self, sector='res'):
+        """
+        Returns a generator for iterating over grid's sectoral loads
+        
+        Parameters
+        ----------
+        sector: String
+            possible values: 'res' (residential),
+                             'ria' (retail, industrial, agricultural)
+
+        Returns
+        -------
+        Generator for iterating over loads of the type specified in `sector`. 
+        """
+        
+        for load in self._loads:
+            if (sector == 'res') and (load.string_id is not None):
+                yield load
+            elif (sector == 'ria') and (load.string_id is None):
+                yield load
+
     def add_load(self, lv_load):
         """Adds a LV load to _loads and grid graph if not already existing"""
         if lv_load not in self._loads and isinstance(lv_load,
