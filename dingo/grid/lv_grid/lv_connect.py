@@ -50,7 +50,6 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
         # generator is of v_level 6 -> connect to LV station
         if generator.v_level == 6:
             lv_station = lv_grid_district.lv_grid.station()
-            #generator.geo_data = lv_station.geo_data
 
             branch_length = calc_geo_dist_vincenty(generator, lv_station)
 
@@ -67,24 +66,28 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
             # connect to residential (P <= 30kW)
             if (generator.capacity <= 30) and (lv_loads_res_rnd is not None):
                 if len(lv_loads_res_rnd) > 0:
-                    lv_conn_target = lv_loads_res_rnd.pop()
+                    lv_load = lv_loads_res_rnd.pop()
                 # if random load list is empty, create new one
                 else:
                     lv_loads_res_rnd = set(random.sample(lv_loads_res,
                                                      len(lv_loads_res))
                                        )
-                    lv_conn_target = lv_loads_res_rnd.pop()
+                    lv_load = lv_loads_res_rnd.pop()
+
+                lv_conn_target = graph.neighbors(lv_load)
 
             # connect to retail, industrial, agricultural (30kW <= P <= 100kW)
             elif (generator.capacity > 30) and (lv_loads_ria_rnd is not None):
                 if len(lv_loads_ria_rnd) > 0:
-                    lv_conn_target = lv_loads_ria_rnd.pop()
+                    lv_load = lv_loads_ria_rnd.pop()
                 # if random load list is empty, create new one
                 else:
                     lv_loads_ria_rnd = set(random.sample(lv_loads_ria,
                                                          len(lv_loads_ria))
                                            )
-                    lv_conn_target = lv_loads_ria_rnd.pop()
+                    lv_load = lv_loads_ria_rnd.pop()
+
+                lv_conn_target = graph.neighbors(lv_load)
 
             # fallback: connect to station
             else:
