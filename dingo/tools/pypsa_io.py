@@ -177,9 +177,9 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 load_pq_set = orm_pypsa.EgoGridPfMvLoadPqSet(
                     load_id=node.pypsa_id,
                     temp_id=temp_id,
-                    p_set=[node.lv_load_area.peak_load_sum * kw2mw,
+                    p_set=[node.lv_load_area.peak_load * kw2mw,
                            load_in_generation_case * kw2mw],
-                    q_set=[node.lv_load_area.peak_load_sum
+                    q_set=[node.lv_load_area.peak_load
                            * Q_factor_load * kw2mw,
                            load_in_generation_case * kw2mw],
                     grid_id=grid.id_db)
@@ -476,10 +476,10 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 load_pq_set['load_id'].append(node.pypsa_id)
                 load_pq_set['temp_id'].append(1)
                 load_pq_set['p_set'].append(
-                    [node.lv_load_area.peak_load_sum * kw2mw,
+                    [node.lv_load_area.peak_load * kw2mw,
                      load_in_generation_case * kw2mw])
                 load_pq_set['q_set'].append(
-                    [node.lv_load_area.peak_load_sum
+                    [node.lv_load_area.peak_load
                      * Q_factor_load * kw2mw,
                      load_in_generation_case * kw2mw])
                 load_pq_set['grid_id'].append(grid.id_db)

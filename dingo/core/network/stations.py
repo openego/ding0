@@ -129,21 +129,11 @@ class LVStationDingo(StationDingo):
 
         self.lv_load_area = kwargs.get('lv_load_area', None)
 
-        # TODO: attr. to agg. generation from underlying genos
-        self.peak_generation = kwargs.get('peak_generation', 0)
-
     @property
     def pypsa_id(self):
         return '_'.join(['MV', str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
                 id_db), 'tru', str(self.id_db)])
-
-    @property
-    def peak_load(self):
-        """
-        Peak load of loads connected to underlying LV grid
-        """
-        return np.array([x.peak_load for x in self.grid.loads()]).sum()
 
     def __repr__(self):
         return 'lv_station_' + str(self.id_db)

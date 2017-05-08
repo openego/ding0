@@ -64,9 +64,9 @@ class MVGridDistrictDingo(RegionDingo):
         """Summarizes peak loads of underlying load_areas in kVA (peak load sum and peak load of satellites)"""
         peak_load = peak_load_satellites = 0
         for lv_load_area in self.lv_load_areas():
-            peak_load += lv_load_area.peak_load_sum
+            peak_load += lv_load_area.peak_load
             if lv_load_area.is_satellite:
-                peak_load_satellites += lv_load_area.peak_load_sum
+                peak_load_satellites += lv_load_area.peak_load
         self.peak_load = peak_load
         self.peak_load_satellites = peak_load_satellites
 
@@ -75,7 +75,7 @@ class MVGridDistrictDingo(RegionDingo):
         peak_load_aggregated = 0
         for lv_load_area in self.lv_load_areas():
             if lv_load_area.is_aggregated:
-                peak_load_aggregated += lv_load_area.peak_load_sum
+                peak_load_aggregated += lv_load_area.peak_load
         self.peak_load_aggregated = peak_load_aggregated
 
     def __repr__(self):
@@ -101,11 +101,6 @@ class LVLoadAreaDingo(RegionDingo):
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.is_satellite = kwargs.get('is_satellite', False)
         self.is_aggregated = kwargs.get('is_aggregated', False)
-        # TODO: attr. to collect LV genos
-        self.genos_collected_temp = []
-        # TODO: attr. to agg. generation from underlying genos
-        # (this attr. is used in LA of type aggregated only when applying PF)
-        self.peak_generation = kwargs.get('peak_generation', 0)
 
         # threshold: load area peak load, if peak load < threshold => treat load area as satellite
         load_area_sat_load_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_load_threshold')
@@ -127,18 +122,18 @@ class LVLoadAreaDingo(RegionDingo):
 
         # convert load values (rounded floats) to int
         if hasattr(self, 'peak_load_residential'):
-            self.peak_load_residential = int(self.peak_load_residential)
+            self.peak_load_residential = self.peak_load_residential
         if hasattr(self, 'peak_load_retail'):
-            self.peak_load_retail = int(self.peak_load_retail)
+            self.peak_load_retail = self.peak_load_retail
         if hasattr(self, 'peak_load_industrial'):
-            self.peak_load_industrial = int(self.peak_load_industrial)
+            self.peak_load_industrial = self.peak_load_industrial
         if hasattr(self, 'peak_load_agricultural'):
-            self.peak_load_agricultural = int(self.peak_load_agricultural)
-        if hasattr(self, 'peak_load_sum'):
-            self.peak_load_sum = int(self.peak_load_sum)
+            self.peak_load_agricultural = self.peak_load_agricultural
+        if hasattr(self, 'peak_load'):
+            self.peak_load = self.peak_load
 
             # if load area has got a peak load less than load_area_sat_threshold, it's a satellite
-            if self.peak_load_sum < load_area_sat_load_threshold:
+            if self.peak_load < load_area_sat_load_threshold:
                 self.is_satellite = True
 
     def lv_grid_districts(self):
@@ -156,6 +151,18 @@ class LVLoadAreaDingo(RegionDingo):
         if lv_grid_district not in self._lv_grid_districts and \
                 isinstance(lv_grid_district, LVGridDistrictDingo):
             self._lv_grid_districts.append(lv_grid_district)
+
+    @property
+    def peak_generation(self):
+        """
+        Cumulative peak generation of generators connected to LV grids of underlying LVGDs
+        """
+        cum_peak_generation = 0
+
+        for lv_grid_district in self._lv_grid_districts:
+            cum_peak_generation += lv_grid_district.lv_grid.station().peak_generation
+
+        return cum_peak_generation
 
     def __repr__(self):
         return 'lv_load_area_' + str(self.id_db)
@@ -209,7 +216,7 @@ class LVGridDistrictDingo(RegionDingo):
         self.peak_load_retail = kwargs.get('peak_load_retail', None)
         self.peak_load_industrial = kwargs.get('peak_load_industrial', None)
         self.peak_load_agricultural = kwargs.get('peak_load_agricultural', None)
-        self.peak_load_sum = kwargs.get('peak_load_sum', None)
+        self.peak_load = kwargs.get('peak_load', None)
 
         self.sector_count_residential = kwargs.get('sector_count_residential',
                                                    None)

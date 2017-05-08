@@ -35,7 +35,6 @@ class GridDingo:
 
     def loads(self):
         """Returns a generator for iterating over grid's loads"""
-        # TODO: Is this method really needed?
         for load in self._loads:
             yield load
 
@@ -45,7 +44,6 @@ class GridDingo:
 
     def generators(self):
         """Returns a generator for iterating over grid's generators"""
-        # TODO: Is this method really needed?
         for generator in self._generators:
             yield generator
 
@@ -66,8 +64,7 @@ class GridDingo:
                                       GeneratorDingo)))):
             self._graph.add_node(node_object)
 
-    # TODO: UPDATE DRAW FUNCTION -> make draw method work for both MV and load_areas!
-    def graph_draw(self):
+    def graph_draw(self, mode):
         """ Draws grid graph using networkx
 
         caution: The geo coords (for used crs see database import in class `NetworkDingo`) are used as positions for
@@ -77,35 +74,81 @@ class GridDingo:
 
         g = self._graph
 
-        # get draw params from nodes and edges (coordinates, colors, demands, etc.)
-        nodes_pos = {}; demands = {}; demands_pos = {}
-        nodes_color = []
-        for node in g.nodes():
-            if isinstance(node, (StationDingo,
-                                 LVLoadAreaCentreDingo,
-                                 CableDistributorDingo,
-                                 GeneratorDingo,
-                                 CircuitBreakerDingo)):
-                nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
-                # TODO: MOVE draw/color settings to config
-            if node == self.station():
-                nodes_color.append((1, 0.5, 0.5))
-            else:
-                #demands[node] = 'd=' + '{:.3f}'.format(node.grid.region.peak_load_sum)
-                #demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [0.003]*len(nodes_pos[node]))])
-                nodes_color.append((0.5, 0.5, 1))
+        if mode == 'MV':
+            # get draw params from nodes and edges (coordinates, colors, demands, etc.)
+            nodes_pos = {}; demands = {}; demands_pos = {}
+            nodes_color = []
+            for node in g.nodes():
+                if isinstance(node, (StationDingo,
+                                     LVLoadAreaCentreDingo,
+                                     CableDistributorDingo,
+                                     GeneratorDingo,
+                                     CircuitBreakerDingo)):
+                    nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
+                    # TODO: MOVE draw/color settings to config
+                if node == self.station():
+                    nodes_color.append((1, 0.5, 0.5))
+                else:
+                    #demands[node] = 'd=' + '{:.3f}'.format(node.grid.region.peak_load_sum)
+                    #demands_pos[node] = tuple([a+b for a, b in zip(nodes_pos[node], [0.003]*len(nodes_pos[node]))])
+                    nodes_color.append((0.5, 0.5, 1))
 
-        edges_color = []
-        for edge in self.graph_edges():
-            if edge['branch'].critical:
-                edges_color.append((1, 0, 0))
-            else:
-                edges_color.append((0, 0, 0))
+            edges_color = []
+            for edge in self.graph_edges():
+                if edge['branch'].critical:
+                    edges_color.append((1, 0, 0))
+                else:
+                    edges_color.append((0, 0, 0))
 
-        plt.figure()
-        nx.draw_networkx(g, nodes_pos, node_color=nodes_color, edge_color=edges_color, font_size=8)
-        #nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
-        plt.show()
+            plt.figure()
+            nx.draw_networkx(g, nodes_pos, node_color=nodes_color, edge_color=edges_color, font_size=8)
+            #nx.draw_networkx_labels(g, demands_pos, labels=demands, font_size=8)
+            plt.show()
+
+        elif mode == 'LV':
+            nodes_pos = {}
+            nodes_color = []
+
+            for node in g.nodes():
+                # get neighbors of station (=first node of each branch)
+                station_neighbors = sorted(g.neighbors(self.station()), key=lambda _: repr(_))
+
+                # set x-offset according to count of branches
+                if len(station_neighbors) % 2 == 0:
+                    x_pos_start = -(len(station_neighbors) // 2 - 0.5)
+                else:
+                    x_pos_start = -(len(station_neighbors) // 2)
+
+                # set positions
+                if isinstance(node, CableDistributorDingo):
+                    if node.in_building:
+                        nodes_pos[node] = (x_pos_start + node.branch_no - 1 + 0.25, -node.load_no - 2)
+                        nodes_color.append((0.5, 0.5, 0.5))
+                    else:
+                        nodes_pos[node] = (x_pos_start + node.branch_no - 1, -node.load_no - 2)
+                        nodes_color.append((0.5, 0.5, 0.5))
+
+                elif isinstance(node, LoadDingo):
+                    nodes_pos[node] = (x_pos_start + node.branch_no - 1 + 0.5, -node.load_no - 2 - 0.25)
+                    nodes_color.append((0.5, 0.5, 1))
+                elif isinstance(node, GeneratorDingo):
+                    # get neighbor of geno
+                    neighbor = g.neighbors(node)[0]
+
+                    # neighbor is cable distributor of building
+                    if isinstance(neighbor, CableDistributorDingo):
+                        nodes_pos[node] = (x_pos_start + neighbor.branch_no - 1 + 0.5, -neighbor.load_no - 2 + 0.25)
+                    else:
+                        nodes_pos[node] = (1,1)
+
+                    nodes_color.append((0.5, 1, 0.5))
+                elif isinstance(node, StationDingo):
+                    nodes_pos[node] = (0, 0)
+                    nodes_color.append((1, 0.5, 0.5))
+
+            plt.figure()
+            nx.draw_networkx(g, nodes_pos, node_color=nodes_color, font_size=8, node_size=100)
+            plt.show()
 
     def graph_nodes_sorted(self):
         """ Returns an (ascending) sorted list of graph's nodes (name is used as key).
@@ -264,7 +307,6 @@ class StationDingo:
                        usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids.
 
     """
-    # TODO: add method remove_transformer()
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
@@ -281,10 +323,24 @@ class StationDingo:
 
     def add_transformer(self, transformer):
         """Adds a transformer to _transformers if not already existing"""
-        # TODO: check arg
         if transformer not in self.transformers() and isinstance(transformer, TransformerDingo):
             self._transformers.append(transformer)
-        # TODO: what if it exists? -> error message
+
+    @property
+    def peak_load(self):
+        """
+        Cumulative peak load of loads connected to underlying LV grid
+        (taken from LV Grid District -> top-down)
+        """
+        return self.grid.grid_district.peak_load
+
+    @property
+    def peak_generation(self):
+        """
+        Cumulative peak generation of generators connected to underlying LV grid
+        (instantaneously calculated -> bottom-up)
+        """
+        return sum([_.capacity for _ in self.grid.generators()])
 
 
 class BusDingo:

@@ -5,9 +5,8 @@ from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
 from dingo.core.network.loads import *
 from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
-from dingo.grid.mv_grid import mv_routing
-from dingo.grid.mv_grid import mv_connect
-from dingo.grid.lv_grid import build_grid
+from dingo.grid.mv_grid import mv_routing, mv_connect
+from dingo.grid.lv_grid import build_grid, lv_connect
 import dingo
 from dingo.tools import config as cfg_dingo, pypsa_io, tools
 from dingo.tools import config as cfg_dingo, tools
@@ -487,7 +486,7 @@ class MVGridDingo(GridDingo):
         """
 
         for lv_load_area in self.grid_district.lv_load_areas():
-            peak_current_node = (lv_load_area.peak_load_sum / (3**0.5) / self.v_level)  # units: kVA / kV = A
+            peak_current_node = (lv_load_area.peak_load / (3**0.5) / self.v_level)  # units: kVA / kV = A
             if peak_current_node > peak_current_branch_max:
                 lv_load_area.is_aggregated = True
 
@@ -660,7 +659,6 @@ class LVGridDingo(GridDingo):
 
         self.default_branch_kind = kwargs.get('default_branch_kind', 'cable')
         self._station = None
-        self._loads = []
         self.population = kwargs.get('population', None)
 
     def station(self):
@@ -676,6 +674,27 @@ class LVGridDingo(GridDingo):
             self.graph_add_node(lv_station)
             self.grid_district.lv_load_area.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
+    def loads_sector(self, sector='res'):
+        """
+        Returns a generator for iterating over grid's sectoral loads
+        
+        Parameters
+        ----------
+        sector: String
+            possible values: 'res' (residential),
+                             'ria' (retail, industrial, agricultural)
+
+        Returns
+        -------
+        Generator for iterating over loads of the type specified in `sector`. 
+        """
+        
+        for load in self._loads:
+            if (sector == 'res') and (load.string_id is not None):
+                yield load
+            elif (sector == 'ria') and (load.string_id is None):
+                yield load
+
     def add_load(self, lv_load):
         """Adds a LV load to _loads and grid graph if not already existing"""
         if lv_load not in self._loads and isinstance(lv_load,
@@ -690,11 +709,6 @@ class LVGridDingo(GridDingo):
             self._cable_distributors.append(lv_cable_dist)
             self.graph_add_node(lv_cable_dist)
 
-    def loads(self):
-        """Returns a generator for iterating over LV _load"""
-        for load in self._loads:
-            yield load
-
     def build_grid(self):
         """
         Create LV grid graph
@@ -708,6 +722,17 @@ class LVGridDingo(GridDingo):
 
         # add branches of sector residential
         build_grid.build_residential_branches(self.grid_district)
+
+        #self.graph_draw(mode='LV')
+
+    def connect_generators(self, debug=False):
+        """ Connects LV generators (graph nodes) to grid (graph)
+
+        Args:
+            debug: If True, information is printed during process
+        """
+
+        self._graph = lv_connect.lv_connect_generators(self.grid_district, self._graph, debug)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid

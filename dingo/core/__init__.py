@@ -193,14 +193,14 @@ class NetworkDingo:
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(row['geom']),
                 population=0 if isnan(row['population']) else int(row['population']),
-                peak_load_residential=int(row['peak_load_residential']),
-                peak_load_retail=int(row['peak_load_retail']),
-                peak_load_industrial=int(row['peak_load_industrial']),
-                peak_load_agricultural=int(row['peak_load_agricultural']),
-                peak_load_sum=(int(row['peak_load_residential']) +
-                               int(row['peak_load_retail']) +
-                               int(row['peak_load_industrial']) +
-                               int(row['peak_load_agricultural'])),
+                peak_load_residential=row['peak_load_residential'],
+                peak_load_retail=row['peak_load_retail'],
+                peak_load_industrial=row['peak_load_industrial'],
+                peak_load_agricultural=row['peak_load_agricultural'],
+                peak_load=(row['peak_load_residential'] +
+                               row['peak_load_retail'] +
+                               row['peak_load_industrial'] +
+                               row['peak_load_agricultural']),
                 sector_count_residential=int(row['sector_count_residential']),
                 sector_count_retail=int(row['sector_count_retail']),
                 sector_count_industrial=int(row['sector_count_industrial']),
@@ -218,7 +218,7 @@ class NetworkDingo:
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
-                peak_load=lv_grid_district.peak_load_sum)
+                peak_load=lv_grid_district.peak_load)
 
             # assign created objects
             # note: creation of LV grid is done separately,
@@ -365,19 +365,19 @@ class NetworkDingo:
                 label('geo_area'),
             func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom_centre, srid)).\
                 label('geo_centre'),
-            func.round(orm_lv_loads.residential * gw2kw).\
+            (orm_lv_loads.residential * gw2kw).\
                 label('peak_load_residential'),
-            func.round(orm_lv_loads.retail * gw2kw).\
+            (orm_lv_loads.retail * gw2kw).\
                 label('peak_load_retail'),
-            func.round(orm_lv_loads.industrial * gw2kw).\
+            (orm_lv_loads.industrial * gw2kw).\
                 label('peak_load_industrial'),
-            func.round(orm_lv_loads.agricultural * gw2kw).\
+            (orm_lv_loads.agricultural * gw2kw).\
                 label('peak_load_agricultural'),
-            func.round((orm_lv_loads.residential
-                        + orm_lv_loads.retail
-                        + orm_lv_loads.industrial
-                        + orm_lv_loads.agricultural)
-                       * gw2kw).label('peak_load_sum')). \
+            ((orm_lv_loads.residential
+              + orm_lv_loads.retail
+              + orm_lv_loads.industrial
+              + orm_lv_loads.agricultural)
+             * gw2kw).label('peak_load')). \
             join(orm_lv_loads, orm_lv_load_areas.id
                  == orm_lv_loads.id).\
             filter(orm_lv_load_areas.subst_id == mv_grid_district. \
@@ -400,7 +400,7 @@ class NetworkDingo:
             lv_load_area = LVLoadAreaDingo(id_db=id_db,
                                            db_data=row,
                                            mv_grid_district=mv_grid_district,
-                                           peak_load_sum=row['peak_load_sum'])
+                                           peak_load=row['peak_load'])
 
             # sub-selection of lv_grid_districts/lv_stations within one
             # specific load area
@@ -462,19 +462,19 @@ class NetworkDingo:
         lv_grid_districs_sqla = session.query(orm_lv_grid_district.mvlv_subst_id,
                                               orm_lv_grid_district.la_id,
                                               orm_lv_grid_district.zensus_sum.label('population'),
-                                              func.round(orm_lv_grid_district.sector_peakload_residential * gw2kw).
+                                              (orm_lv_grid_district.sector_peakload_residential * gw2kw).
                                                 label('peak_load_residential'),
-                                              func.round(orm_lv_grid_district.sector_peakload_retail * gw2kw).
+                                              (orm_lv_grid_district.sector_peakload_retail * gw2kw).
                                                 label('peak_load_retail'),
-                                              func.round(orm_lv_grid_district.sector_peakload_industrial * gw2kw).
+                                              (orm_lv_grid_district.sector_peakload_industrial * gw2kw).
                                                 label('peak_load_industrial'),
-                                              func.round(orm_lv_grid_district.sector_peakload_agricultural * gw2kw).
+                                              (orm_lv_grid_district.sector_peakload_agricultural * gw2kw).
                                                 label('peak_load_agricultural'),
-                                              func.round((orm_lv_grid_district.sector_peakload_residential
+                                              ((orm_lv_grid_district.sector_peakload_residential
                                                           + orm_lv_grid_district.sector_peakload_retail
                                                           + orm_lv_grid_district.sector_peakload_industrial
                                                           + orm_lv_grid_district.sector_peakload_agricultural)
-                                                         * gw2kw).label('peak_load_sum'),
+                                                         * gw2kw).label('peak_load'),
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
                                               orm_lv_grid_district.sector_count_residential,
@@ -546,31 +546,6 @@ class NetworkDingo:
             Connection of generators is done later on in NetworkDingo's method connect_generators()
         """
 
-        def choose_random_load_area(generator, lv_load_areas):
-            """
-            Selects random Load Area
-            
-            Parameters
-            ----------
-            generator: GeneratorDingo object
-            lv_load_areas: List of LVLoadAreaDingo objects
-            
-            Returns
-            -------
-            lv_load_area: LVLoadAreaDingo object
-                LA the generator was assigned to
-            
-            Notes
-            -----
-            Uses predefined seed to choose random LA.
-            Generator is moved to centroid of LA.
-            """
-            lv_load_area = random.choice(lv_load_areas)
-            generator.geo_data = lv_load_area.geo_centre
-
-            return lv_load_area
-
-
         def import_res_generators():
             """Imports renewable (res) generators"""
 
@@ -597,20 +572,22 @@ class NetworkDingo:
                                            index_col='id')
 
             for id_db, row in generators.iterrows():
-                # ===== DEBUG STUFF (NOT ALL GENERATOR GEOMS IN DATABASE YET -> catch empty geoms) =====
-                # TODO: Remove when fixed! And delete column 'geom' (original geom from EnergyMap) from query above
+
+                # treat generators' geom:
+                # use geom_new (relocated genos from data processing)
+                # otherwise use original geom from EnergyMap
                 if not row['geom_new']:
                     geo_data = wkt_loads(row['geom'])
-                    logger.error(
-                        'Generator {} has no geom_new entry, bad day dude! '
-                        '(EnergyMap\'s geom entry will be used)'.format(
+                    logger.warning(
+                        'Generator {} has no geom_new entry,'
+                        'EnergyMap\'s geom entry will be used.'.format(
                         id_db))
-                elif not row['geom_new']:
-                    logger.error('Generator {} has no geom entry either, your '
-                                 'day is getting worse dude!'.format(id_db))
-                else:
-                    geo_data = wkt_loads(row['geom_new'])
-                # ======================================================================================
+                # if no geom is available at all, skip generator
+                elif not row['geom']:
+                    #geo_data =
+                    logger.error('Generator {} has no geom entry either'
+                                 'and will be skipped.'.format(id_db))
+                    continue
 
                 # look up MV grid
                 mv_grid_district_id = row['subst_id']
@@ -671,8 +648,6 @@ class NetworkDingo:
                                        'assigned to a random LV Grid District ({}).'.format(
                                         repr(generator), repr(lv_grid_district)))
 
-                    # TODO: current state: append LV genos to LA list "genos_collected_temp"
-                    #lv_load_area.genos_collected_temp.append(generator)
                     generator.lv_load_area = lv_grid_district.lv_load_area
                     lv_grid_district.lv_grid.add_generator(generator)
 
@@ -1248,7 +1223,6 @@ class NetworkDingo:
 
         logger.info('=====> LV model grids created')
 
-
     def connect_generators(self, debug=False):
         """ Connects generators (graph nodes) to grid (graph) for every MV grid district
 
@@ -1259,9 +1233,19 @@ class NetworkDingo:
         for mv_grid_district in self.mv_grid_districts():
             mv_grid_district.mv_grid.connect_generators(debug)
 
-            # TODO: Currently only MV generators are connected, use following snippet to call connect LV generators
-            #for lv_load_area in mv_grid_district.lv_load_areas():
-            #    CALL FUTURE METHOD FOR LV connect_generators HERE
+            # get predefined random seed and initialize random generator
+            seed = int(cfg_dingo.get('random', 'seed'))
+            random.seed(a=seed)
+
+            for load_area in mv_grid_district.lv_load_areas():
+                if not load_area.is_aggregated:
+                    for lv_grid_district in load_area.lv_grid_districts():
+
+                        lv_grid_district.lv_grid.connect_generators(debug)
+                        lv_grid_district.lv_grid.graph_draw(mode='LV')
+                else:
+                    logger.info(
+                        '{} is of type aggregated. LV generators are not connected to LV grids.'.format(repr(load_area)))
 
         logger.info('=====> Generators connected')
 

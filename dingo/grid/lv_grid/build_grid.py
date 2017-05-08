@@ -36,7 +36,7 @@ def select_transformer(grid):
     trafo_lf = cfg_dingo.get('assumptions',
                              'load_factor_lv_trans_lc_normal')
 
-    peak_load = grid.grid_district.peak_load_sum
+    peak_load = grid.grid_district.peak_load
 
     # get equipment parameters of LV transformers
     trafo_parameters = grid.network.static_data['LV_trafos']
@@ -262,11 +262,22 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         cable_type_stub = suitable_cables_stub.ix[
             suitable_cables_stub['I_max_th'].idxmin()]
 
-        # create a LV cable distributor for each load
+        # cable distributor to divert from main branch
         lv_cable_dist = LVCableDistributorDingo(
             grid=lvgd.lv_grid,
             branch_no=branch_no,
             load_no=load_no)
+        # add lv_cable_dist to graph
+        lvgd.lv_grid.add_cable_dist(lv_cable_dist)
+
+        # cable distributor within building (to connect load+geno)
+        lv_cable_dist_building = LVCableDistributorDingo(
+            grid=lvgd.lv_grid,
+            branch_no=branch_no,
+            load_no=load_no,
+            in_building=True)
+        # add lv_cable_dist_building to graph
+        lvgd.lv_grid.add_cable_dist(lv_cable_dist_building)
 
         # create an instance of Dingo LV load
         lv_load = LVLoadDingo(grid=lvgd.lv_grid,
@@ -274,9 +285,8 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                               load_no=load_no,
                               peak_load=val['single_peak_load'])
 
-        # add load and related cable dist to graph
+        # add lv_load to graph
         lvgd.lv_grid.add_load(lv_load)
-        lvgd.lv_grid.add_cable_dist(lv_cable_dist)
 
         # create branch line segment between either (a) station
         # and cable distributor or (b) between neighboring cable
@@ -288,6 +298,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 lv_cable_dist,
                 branch=BranchDingo(
                     length=val['load_distance'],
+                    kind='cable',
                     type=cable_type,
                     id_db='branch_{sector}{branch}_{load}'.format(
                         branch=branch_no,
@@ -297,10 +308,11 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         else:
             # case b: cable dist <-> cable dist
             lvgd.lv_grid._graph.add_edge(
-                lvgd.lv_grid._cable_distributors[-2],
+                lvgd.lv_grid._cable_distributors[-4],
                 lv_cable_dist,
                 branch=BranchDingo(
                     length=val['load_distance'],
+                    kind='cable',
                     type=cable_type,
                     id_db='branch_{sector}{branch}_{load}'.format(
                         branch=branch_no,
@@ -311,16 +323,31 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         # lv_cable_dist located in the branch line
         lvgd.lv_grid._graph.add_edge(
             lv_cable_dist,
-            lv_load,
+            lv_cable_dist_building,
             branch=BranchDingo(
                 length=cfg_dingo.get(
                     'assumptions',
                     'lv_ria_branch_connection_distance'),
+                kind='cable',
                 type=cable_type_stub,
                 id_db='stub_{sector}{branch}_{load}'.format(
                     branch=branch_no,
                     load=load_no,
-                    sector=sector_short)))
+                    sector=sector_short))
+        )
+
+        lvgd.lv_grid._graph.add_edge(
+            lv_cable_dist_building,
+            lv_load,
+            branch=BranchDingo(
+                length=1,
+                kind='cable',
+                type=cable_type_stub,
+                id_db='stub_{sector}{branch}_{load}'.format(
+                    branch=branch_no,
+                    load=load_no,
+                    sector=sector_short))
+        )
 
     # iterate over branches for sectors retail/industrial and agricultural
     for sector, val in grid_model_params.items():
@@ -486,8 +513,13 @@ def build_lv_graph_residential(lvgd, selected_string_df):
 
     # iterate over each type of branch
     for i, row in selected_string_df.iterrows():
+
+        # get overall count of branches to set unique branch_no
+        branch_count_sum = len(lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station()))
+
         # iterate over it's occurences
         for branch_no in range(1, int(row['occurence']) + 1):
+
             hh_branch += 1
             # iterate over house branches
             for house_branch in range(1, row['count house branch'] + 1):
@@ -495,21 +527,34 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                     variant = 'B'
                 else:
                     variant = 'A'
+
+                # cable distributor to divert from main branch
                 lv_cable_dist = LVCableDistributorDingo(
                     grid=lvgd.lv_grid,
                     string_id=i,
-                    branch_no=branch_no,
+                    branch_no=branch_no + branch_count_sum,
                     load_no=house_branch)
+                # add lv_cable_dist to graph
+                lvgd.lv_grid.add_cable_dist(lv_cable_dist)
+
+                # cable distributor within building (to connect load+geno)
+                lv_cable_dist_building = LVCableDistributorDingo(
+                    grid=lvgd.lv_grid,
+                    string_id=i,
+                    branch_no=branch_no + branch_count_sum,
+                    load_no=house_branch,
+                    in_building=True)
+                # add lv_cable_dist_building to graph
+                lvgd.lv_grid.add_cable_dist(lv_cable_dist_building)
 
                 lv_load = LVLoadDingo(grid=lvgd.lv_grid,
                                       string_id=i,
-                                      branch_no=branch_no,
+                                      branch_no=branch_no + branch_count_sum,
                                       load_no=house_branch,
                                       peak_load=average_load)
 
-                # add lv_load and lv_cable_dist to graph
+                # add lv_load to graph
                 lvgd.lv_grid.add_load(lv_load)
-                lvgd.lv_grid.add_cable_dist(lv_cable_dist)
 
                 cable_name = row['cable type'] + \
                              ' 4x1x{}'.format(row['cable width'])
@@ -522,6 +567,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                         lv_cable_dist,
                         branch=BranchDingo(
                             length=row['distance house branch'],
+                            kind='cable',
                             type=cable_name,
                             id_db='branch_{sector}{branch}_{load}'.format(
                                 branch=hh_branch,
@@ -531,10 +577,11 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                 # connect current lv_cable_dist to last one
                 else:
                     lvgd.lv_grid._graph.add_edge(
-                        lvgd.lv_grid._cable_distributors[-2],
+                        lvgd.lv_grid._cable_distributors[-4],
                         lv_cable_dist,
                         branch=BranchDingo(
                             length=row['distance house branch'],
+                            kind='cable',
                             type=cable_name,
                             id_db='branch_{sector}{branch}_{load}'.format(
                                 branch=hh_branch,
@@ -547,10 +594,25 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                                        row['cable width {}'.format(variant)])
                 lvgd.lv_grid._graph.add_edge(
                     lv_cable_dist,
-                    lv_load,
+                    lv_cable_dist_building,
                     branch=BranchDingo(
                         length=row['length house branch {}'.format(
                             variant)],
+                        kind='cable',
+                        type=lvgd.lv_grid.network.static_data['LV_cables']. \
+                            loc[house_cable_name],
+                        id_db='branch_{sector}{branch}_{load}'.format(
+                            branch=hh_branch,
+                            load=house_branch,
+                            sector='HH'))
+                )
+
+                lvgd.lv_grid._graph.add_edge(
+                    lv_cable_dist_building,
+                    lv_load,
+                    branch=BranchDingo(
+                        length=1,
+                        kind='cable',
                         type=lvgd.lv_grid.network.static_data['LV_cables']. \
                             loc[house_cable_name],
                         id_db='branch_{sector}{branch}_{load}'.format(
