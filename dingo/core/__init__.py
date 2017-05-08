@@ -389,21 +389,19 @@ class NetworkDingo:
                 label('geo_area'),
             func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom_centre, srid)).\
                 label('geo_centre'),
-            (orm_lv_loads.residential * gw2kw).\
+            (orm_lv_load_areas.sector_peakload_residential * gw2kw).\
                 label('peak_load_residential'),
-            (orm_lv_loads.retail * gw2kw).\
+            (orm_lv_load_areas.sector_peakload_retail * gw2kw).\
                 label('peak_load_retail'),
-            (orm_lv_loads.industrial * gw2kw).\
+            (orm_lv_load_areas.sector_peakload_industrial * gw2kw).\
                 label('peak_load_industrial'),
-            (orm_lv_loads.agricultural * gw2kw).\
+            (orm_lv_load_areas.sector_peakload_agricultural * gw2kw).\
                 label('peak_load_agricultural'),
-            ((orm_lv_loads.residential
-              + orm_lv_loads.retail
-              + orm_lv_loads.industrial
-              + orm_lv_loads.agricultural)
+            ((orm_lv_load_areas.sector_peakload_residential
+              + orm_lv_load_areas.sector_peakload_retail
+              + orm_lv_load_areas.sector_peakload_industrial
+              + orm_lv_load_areas.sector_peakload_agricultural)
              * gw2kw).label('peak_load')). \
-            join(orm_lv_loads, orm_lv_load_areas.id
-                 == orm_lv_loads.id).\
             filter(orm_lv_load_areas.subst_id == mv_grid_district. \
                    mv_grid._station.id_db).\
             filter(((orm_lv_load_areas.sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
