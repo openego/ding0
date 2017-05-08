@@ -245,8 +245,6 @@ def build_lv_graph_ria(lvgd, grid_model_params):
     30 m. This assumption is defined in the config files
     """
 
-    cfg_dingo.get('assumptions', 'lv_ria_branch_connection_distance')
-
     def lv_graph_attach_branch():
         """
         Attach a single branch including its equipment (cable dist, loads
