@@ -610,6 +610,8 @@ class NetworkDingo:
                 # treat generators' geom:
                 # use geom_new (relocated genos from data processing)
                 # otherwise use original geom from EnergyMap
+                if row['geom_new']:
+                    geo_data = wkt_loads(row['geom_new'])
                 if not row['geom_new']:
                     geo_data = wkt_loads(row['geom'])
                     logger.warning(
