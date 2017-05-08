@@ -40,7 +40,12 @@ if data_source == 'model_draft':
     orm_lv_stations = orm_model_draft.__getattribute__(lv_stations_name)
     orm_conv_generators = orm_model_draft.__getattribute__(conv_generators_name)
     orm_re_generators = orm_model_draft.__getattribute__(re_generators_name)
-    version_condition = 1 == 1
+    version_condition_mvgd = 1 == 1
+    version_condition_la = 1 == 1
+    version_condition_lvgd = 1 == 1
+    version_condition_mvlvst = 1 == 1
+    version_condition_re = 1 == 1
+    version_condition_conv = 1 == 1
 elif data_source == 'versioned':
     orm_mv_grid_districts = orm_grid.__getattribute__(mv_grid_districts_name)
     orm_mv_stations = orm_grid.__getattribute__(mv_stations_name)
@@ -50,7 +55,12 @@ elif data_source == 'versioned':
     orm_conv_generators = orm_supply.__getattribute__(conv_generators_name)
     orm_re_generators = orm_supply.__getattribute__(re_generators_name)
     data_version = cfg_dingo.get(data_source, 'version')
-    version_condition = orm_lv_load_areas.version == data_version
+    version_condition_mvgd = orm_mv_grid_districts.version == data_version
+    version_condition_la = orm_lv_load_areas.version == data_version
+    version_condition_lvgd = orm_lv_grid_district.version == data_version
+    version_condition_mvlvst = orm_lv_stations.version == data_version
+    version_condition_re = orm_re_generators.version == data_version
+    version_condition_conv = orm_conv_generators.version == data_version
 else:
     logger.error("Invalid data source {} provided. Please re-check the file "
                  "`config_db_tables.cfg`".format(data_source))
@@ -281,7 +291,7 @@ class NetworkDingo:
             join(orm_mv_stations, orm_mv_grid_districts.subst_id ==
                  orm_mv_stations.subst_id).\
             filter(orm_mv_grid_districts.subst_id.in_(mv_grid_districts_no)). \
-            filter(version_condition)
+            filter(version_condition_mvgd)
 
         # read MV data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
@@ -379,27 +389,27 @@ class NetworkDingo:
                 label('geo_area'),
             func.ST_AsText(func.ST_Transform(orm_lv_load_areas.geom_centre, srid)).\
                 label('geo_centre'),
-            func.round(orm_lv_load_areas.sector_peakload_residential * load_scaling_factor).\
+            func.round(orm_lv_load_areas.sector_peakload_residential * gw2kw).\
                 label('peak_load_residential'),
-            func.round(orm_lv_load_areas.sector_peakload_retail * load_scaling_factor).\
+            func.round(orm_lv_load_areas.sector_peakload_retail * gw2kw).\
                 label('peak_load_retail'),
-            func.round(orm_lv_load_areas.sector_peakload_industrial * load_scaling_factor).\
+            func.round(orm_lv_load_areas.sector_peakload_industrial * gw2kw).\
                 label('peak_load_industrial'),
-            func.round(orm_lv_load_areas.sector_peakload_agricultural * load_scaling_factor).\
+            func.round(orm_lv_load_areas.sector_peakload_agricultural * gw2kw).\
                 label('peak_load_agricultural'),
             func.round((orm_lv_load_areas.sector_peakload_residential
                         + orm_lv_load_areas.sector_peakload_retail
                         + orm_lv_load_areas.sector_peakload_industrial
                         + orm_lv_load_areas.sector_peakload_agricultural)
-                       * load_scaling_factor).label('peak_load_sum')). \
+                       * gw2kw).label('peak_load_sum')). \
             filter(orm_lv_load_areas.subst_id == mv_grid_district. \
                    mv_grid._station.id_db).\
             filter(((orm_lv_load_areas.sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
                      + orm_lv_load_areas.sector_peakload_retail
                      + orm_lv_load_areas.sector_peakload_industrial
                      + orm_lv_load_areas.sector_peakload_agricultural)
-                       * load_scaling_factor) > lv_loads_threshold). \
-            filter(version_condition)
+                       * gw2kw) > lv_loads_threshold). \
+            filter(version_condition_la)
 
         # read data from db
         lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
@@ -492,7 +502,7 @@ class NetworkDingo:
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
                                               orm_lv_grid_district.mvlv_subst_id). \
             filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist())). \
-            filter(version_condition)
+            filter(version_condition_lvgd)
             #filter(orm_lv_grid_district.load_area_id.in_(load_areas))
 
         # read data from db
@@ -540,7 +550,7 @@ class NetworkDingo:
                                            orm_lv_stations.geom, srid)). \
                                          label('geom')).\
             filter(orm_lv_stations.subst_id.in_(mv_grid_districts)). \
-            filter(version_condition)
+            filter(version_condition_mvlvst)
 
         # read data from db
         lv_grid_stations = pd.read_sql_query(lv_stations_sqla.statement,
@@ -605,7 +615,7 @@ class NetworkDingo:
                 filter(
                 orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))). \
                 filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7])). \
-                filter(version_condition)
+                filter(version_condition_re)
             # filter(orm_re_generators.voltage_level.in_([4, 5]))
             # filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
 
@@ -712,7 +722,7 @@ class NetworkDingo:
                 filter(
                 orm_conv_generators.subst_id.in_(list(mv_grid_districts_dict))). \
                 filter(orm_conv_generators.voltage_level.in_([4, 5, 6])). \
-                filter(version_condition)
+                filter(version_condition_conv)
 
             # read data from db
             generators = pd.read_sql_query(generators_sqla.statement,
