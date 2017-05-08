@@ -20,10 +20,6 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
         graph: NetworkX graph object with nodes and newly created branches
     """
 
-    # get predefined random seed and initialize random generator
-    seed = int(cfg_dingo.get('random', 'seed'))
-    random.seed(a=seed)
-
     # generate random list (without replacement => unique elements)
     # of loads (residential) to connect genos (P <= 30kW) to.
     lv_loads_res = sorted(lv_grid_district.lv_grid.loads_sector(sector='res'),

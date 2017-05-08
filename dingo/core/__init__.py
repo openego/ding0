@@ -1233,6 +1233,10 @@ class NetworkDingo:
         for mv_grid_district in self.mv_grid_districts():
             mv_grid_district.mv_grid.connect_generators(debug)
 
+            # get predefined random seed and initialize random generator
+            seed = int(cfg_dingo.get('random', 'seed'))
+            random.seed(a=seed)
+
             for load_area in mv_grid_district.lv_load_areas():
                 if not load_area.is_aggregated:
                     for lv_grid_district in load_area.lv_grid_districts():
