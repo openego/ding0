@@ -57,6 +57,8 @@ nd.mv_parametrize_grid()
 
 nd.validate_grid_districts()
 
+nd.build_lv_grids()
+
 nd.mv_routing(debug=False, animation=False)
 
 nd.connect_generators()
@@ -79,8 +81,9 @@ logger.info('Elapsed time for {0} MV grid districts (seconds): {1}'.format(
     str(len(mv_grid_districts)), time.time() - start))
 
 # export grids
-nd.export_mv_grid(conn, mv_grid_districts)
-nd.export_mv_grid_new(conn, mv_grid_districts)
+nd.control_circuit_breakers(mode='close')
+#nd.export_mv_grid(conn, mv_grid_districts)
+#nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
 

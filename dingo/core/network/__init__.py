@@ -272,7 +272,6 @@ class StationDingo:
         self.grid = kwargs.get('grid', None)
         self._transformers = []
         self.busbar = None
-        self.peak_load = kwargs.get('peak_load', None)
         self.v_level_operation = kwargs.get('v_level_operation', None)
 
     def transformers(self):
@@ -375,12 +374,8 @@ class TransformerDingo:
     """
     Transformers
     ------------
-    geo_data : shapely.geometry object
-        Geo-spatial data with informations for location/region-shape. The
-        geometry can be a polygon/multi-polygon for regions, a line for
-        transport objects or a point for objects such as transformer sources.
-    equip_trans_id : int
-        ID of transformer type according to DB table 'equip_trans'
+    id_db : int
+        id according to database table
     v_level : 
         voltage level	
     s_max_a : float
@@ -396,10 +391,7 @@ class TransformerDingo:
     """
 
     def __init__(self, **kwargs):
-        #inherit parameters from oemof's Transformer
-        # super().__init__(**kwargs)
-        #more params
-        self.equip_trans_id = kwargs.get('equip_trans_id', None)
+        self.id_db = kwargs.get('id_db', None)
         self.v_level = kwargs.get('v_level', None)
         self.s_max_a = kwargs.get('s_max_longterm', None)
         self.s_max_b = kwargs.get('s_max_shortterm', None)
@@ -459,6 +451,9 @@ class LoadDingo:
         self.id_db = kwargs.get('id', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
+        self.peak_load = kwargs.get('peak_load', None)
+
+        self.id_db = self.grid.loads_count() + 1
 
 
 class CircuitBreakerDingo:

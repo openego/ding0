@@ -2,7 +2,7 @@ from . import CableDistributorDingo
 
 
 class MVCableDistributorDingo(CableDistributorDingo):
-    """ Cable distributor (connection point) """
+    """ MV Cable distributor (connection point) """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -21,7 +21,7 @@ class MVCableDistributorDingo(CableDistributorDingo):
 
 
 class LVCableDistributorDingo(CableDistributorDingo):
-    """LV Cable distributor (connection point) """
+    """ LV Cable distributor (connection point) """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

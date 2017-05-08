@@ -7,6 +7,7 @@ from dingo.core import MVCableDistributorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
 from dingo.grid.mv_grid import mv_routing
 from dingo.grid.mv_grid import mv_connect
+from dingo.grid.lv_grid import build_grid
 import dingo
 from dingo.tools import config as cfg_dingo, pypsa_io, tools
 from dingo.tools import config as cfg_dingo, tools
@@ -23,6 +24,7 @@ from shapely.ops import transform
 import pyproj
 from functools import partial
 import logging
+import math
 
 
 logger = logging.getLogger('dingo')
@@ -371,16 +373,13 @@ class MVGridDingo(GridDingo):
         ----------
         .. [1] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
         .. [2] René Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
-        .. [3] Helmut Alt, "Vorlesung Elektrische Energieerzeugung und -verteilung"
-            http://www.alt.fh-aachen.de/downloads//Vorlesung%20EV/Hilfsb%2044%20Netzdaten%20Leitung%20Kabel.pdf, 2010
+        .. [3] Südkabel GmbH, "Einadrige VPE-isolierte Mittelspannungskabel",
+            http://www.suedkabel.de/cms/upload/pdf/Garnituren/Einadrige_VPE-isolierte_Mittelspannungskabel.pdf, 2017
         .. [4] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012
         .. [5] Tao, X., "Automatisierte Grundsatzplanung von
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
-        # TODO: [3] ist tot, alternative Quelle nötig!
-
-        package_path = dingo.__path__[0]
 
         # decide whether cable or line is used (initially for entire grid) and set grid's attribute
         if self.v_level == 20:
@@ -478,7 +477,7 @@ class MVGridDingo(GridDingo):
         return branch_type_max, branch_type_max, branch_type_settle_max
 
     def set_nodes_aggregation_flag(self, peak_current_branch_max):
-        """ Set LV load areas with too high demand to aggregated type.
+        """ Set Load Areas with too high demand to aggregated type.
 
         Args:
             peak_current_branch_max: Max. allowed current for line/cable
@@ -492,7 +491,7 @@ class MVGridDingo(GridDingo):
             if peak_current_node > peak_current_branch_max:
                 lv_load_area.is_aggregated = True
 
-        # add peak demand for all LV load areas of aggregation type
+        # add peak demand for all Load Areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
 
     def export_to_pypsa(self, session, method='onthefly'):
@@ -696,154 +695,19 @@ class LVGridDingo(GridDingo):
         for load in self._loads:
             yield load
 
-    def select_typified_grid_model(self,
-                                   string_properties,
-                                   apartment_string,
-                                   apartment_trafo,
-                                   trafo_parameters,
-                                   population):
+    def build_grid(self):
         """
-        Selects typified model grid based on population
-
-        Parameters
-        ----------
-        string_properties: DataFrame
-            Properties of LV typified model grids
-        apartment_string: DataFrame
-            Relational table of apartment count and strings of model grid
-        apartment_trafo: DataFrame
-            Relational table of apartment count and trafo size
-        trafo_parameters: DataFrame
-            Equipment parameters of LV transformers
-        population: Int
-            Population within LV grid district
-
-        Returns
-        -------
-        selected_strings_df: DataFrame
-            Selected string of typified model grid
-        transformer: Dataframe
-            Parameters of chosen Transformer
+        Create LV grid graph
         """
 
-        #TODO: consider apartment_house_branch_ratio when calculating population_per_apartment
-        # apartment_house_branch_ratio describes number of apartments per house branch connections
-        apartment_house_branch_ratio = cfg_dingo.get("assumptions",
-            "apartment_house_branch_ratio")
-        population_per_apartment = cfg_dingo.get("assumptions",
-            "population_per_apartment")
+        # add required transformers
+        build_grid.transformer(self)
 
-        apartments = round(population / population_per_apartment)
+        # add branches of sectors retail/industrial and agricultural
+        build_grid.build_ret_ind_agr_branches(self.grid_district)
 
-        if apartments <= 0:
-            apartments = 1
-
-        if apartments > 196:
-            apartments = 196
-
-        # select set of strings that represent one type of model grid
-        strings = apartment_string.loc[apartments]
-        selected_strings = [int(s) for s in strings[strings >= 1].index.tolist()]
-
-        # slice dataframe of string parameters
-        selected_strings_df = string_properties.loc[selected_strings]
-
-        # add number of occurences of each branch to df
-        occurence_selector = [str(i) for i in selected_strings]
-        selected_strings_df['occurence'] = strings.loc[occurence_selector].tolist()
-
-        transformer = apartment_trafo.loc[apartments]
-
-        transformer['x'] = trafo_parameters.loc[
-            transformer['trafo_apparent_power'], 'x']
-        transformer['r'] = trafo_parameters.loc[
-            transformer['trafo_apparent_power'], 'r']
-
-        return selected_strings_df, transformer
-
-    def build_lv_graph(self, selected_string_df):
-        """
-        Builds nxGraph based on the LV grid model
-
-        Parameter
-        ---------
-        selected_string_df: Dataframe
-            Table of strings of the selected grid model
-
-        Notes
-        -----
-        To understand what is happening in this method a few data table columns
-        are explained here
-
-        * `count house branch`: number of houses connected to a string
-        * `distance house branch`: distance on a string between two house
-            branches
-        * `string length`: total length of a string
-        * `length house branch A|B`: cable from string to connection point of a
-            house
-
-        A|B in general brings some variation in to the typified model grid and
-        refer to different length of house branches and different cable types
-        respectively different cable widths.
-        """
-
-        # iterate over each type of branch
-        for i, row in selected_string_df.iterrows():
-            # iterate over it's occurences
-            for branch_no in range(1, int(row['occurence']) + 1):
-                # iterate over house branches
-                for house_branch in range(1, row['count house branch'] + 1):
-                    if house_branch % 2 == 0:
-                        variant = 'B'
-                    else:
-                        variant = 'A'
-                    lv_cable_dist = LVCableDistributorDingo(
-                        grid=self,
-                        string_id=i,
-                        branch_no=branch_no,
-                        load_no=house_branch)
-
-                    lv_load = LVLoadDingo(grid=self,
-                                          string_id=i,
-                                          branch_no=branch_no,
-                                          load_no=house_branch)
-
-                    # add lv_load and lv_cable_dist to graph
-                    self.add_load(lv_load)
-                    self.add_cable_dist(lv_cable_dist)
-
-                    cable_name = row['cable type'] + \
-                                       ' 4x1x{}'.format(row['cable width'])
-
-                    # connect current lv_cable_dist to last one
-                    if house_branch == 1:
-                        # edge connect first house branch in branch with the station
-                        self._graph.add_edge(
-                            self.station(),
-                            lv_cable_dist,
-                            branch=BranchDingo(
-                                length=row['distance house branch'],
-                                type=cable_name
-                                ))
-                    else:
-                        self._graph.add_edge(
-                            self._cable_distributors[-2],
-                            lv_cable_dist,
-                            branch=BranchDingo(
-                                length=row['distance house branch'],
-                                type=cable_name))
-
-                    # connect house to cable distributor
-                    house_cable_name = row['cable type {}'.format(variant)] + \
-                        ' 4x1x{}'.format(row['cable width {}'.format(variant)])
-                    self._graph.add_edge(
-                        lv_cable_dist,
-                        lv_load,
-                        branch=BranchDingo(
-                            length=row['length house branch {}'.format(
-                                variant)],
-                            type=dingo.core.lv_cable_parameters. \
-                                loc[house_cable_name]))
+        # add branches of sector residential
+        build_grid.build_residential_branches(self.grid_district)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid

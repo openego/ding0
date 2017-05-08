@@ -33,7 +33,7 @@ class MVGridDistrictDingo(RegionDingo):
             yield load_area
 
     def add_lv_load_area(self, lv_load_area):
-        """ Adds a LV load area `lv_load_area` to _lv_load_areas if not already existing, and adds the associated centre
+        """ Adds a Load Area `lv_load_area` to _lv_load_areas if not already existing, and adds the associated centre
             object to MV grid's _graph as node.
 
         Args:
@@ -200,10 +200,24 @@ class LVGridDistrictDingo(RegionDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.geo_data = kwargs.get('geo_data', None)
-        self.peak_load = kwargs.get('peak_load', None)
         self.lv_load_area = kwargs.get('lv_load_area', None)
         self.lv_grid = kwargs.get('lv_grid', None)
+
         self.population = kwargs.get('population', None)
+
+        self.peak_load_residential = kwargs.get('peak_load_residential', None)
+        self.peak_load_retail = kwargs.get('peak_load_retail', None)
+        self.peak_load_industrial = kwargs.get('peak_load_industrial', None)
+        self.peak_load_agricultural = kwargs.get('peak_load_agricultural', None)
+        self.peak_load_sum = kwargs.get('peak_load_sum', None)
+
+        self.sector_count_residential = kwargs.get('sector_count_residential',
+                                                   None)
+        self.sector_count_retail = kwargs.get('sector_count_retail', None)
+        self.sector_count_industrial = kwargs.get('sector_count_industrial',
+                                                  None)
+        self.sector_count_agricultural = kwargs.get('sector_count_agricultural',
+                                                    None)
 
     def __repr__(self):
         return 'lv_grid_district_' + str(self.id_db)
