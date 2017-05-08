@@ -132,7 +132,15 @@ class GridDingo:
                     nodes_pos[node] = (x_pos_start + node.branch_no - 1 + 0.5, -node.load_no - 2 - 0.25)
                     nodes_color.append((0.5, 0.5, 1))
                 elif isinstance(node, GeneratorDingo):
-                    nodes_pos[node] = (1, 1)
+                    # get neighbor of geno
+                    neighbor = g.neighbors(node)[0]
+
+                    # neighbor is cable distributor of building
+                    if isinstance(neighbor, CableDistributorDingo):
+                        nodes_pos[node] = (x_pos_start + neighbor.branch_no - 1 + 0.5, -neighbor.load_no - 2 + 0.25)
+                    else:
+                        nodes_pos[node] = (1,1)
+
                     nodes_color.append((0.5, 1, 0.5))
                 elif isinstance(node, StationDingo):
                     nodes_pos[node] = (0, 0)
