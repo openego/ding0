@@ -63,7 +63,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
         # generator is of v_level 7 -> assign geno to load
         elif generator.v_level == 7:
 
-            # connect to residential (P <= 30kW)
+            # connect genos with P <= 30kW to residential loads, if available
             if (generator.capacity <= 30) and (lv_loads_res_rnd is not None):
                 if len(lv_loads_res_rnd) > 0:
                     lv_load = lv_loads_res_rnd.pop()
@@ -74,9 +74,11 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                                        )
                     lv_load = lv_loads_res_rnd.pop()
 
-                lv_conn_target = graph.neighbors(lv_load)
+                # get cable distributor of building
+                lv_conn_target = graph.neighbors(lv_load)[0]
 
-            # connect to retail, industrial, agricultural (30kW <= P <= 100kW)
+            # connect genos with 30kW <= P <= 100kW to residential loads
+            # to retail, industrial, agricultural loads, if available
             elif (generator.capacity > 30) and (lv_loads_ria_rnd is not None):
                 if len(lv_loads_ria_rnd) > 0:
                     lv_load = lv_loads_ria_rnd.pop()
@@ -87,7 +89,8 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                                            )
                     lv_load = lv_loads_ria_rnd.pop()
 
-                lv_conn_target = graph.neighbors(lv_load)
+                # get cable distributor of building
+                lv_conn_target = graph.neighbors(lv_load)[0]
 
             # fallback: connect to station
             else:
