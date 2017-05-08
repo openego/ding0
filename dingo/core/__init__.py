@@ -500,6 +500,10 @@ class NetworkDingo:
                                                          * gw2kw).label('peak_load_sum'),
                                               func.ST_AsText(func.ST_Transform(
                                                 orm_lv_grid_district.geom, srid)).label('geom'),
+                                              orm_lv_grid_district.sector_count_residential,
+                                              orm_lv_grid_district.sector_count_retail,
+                                              orm_lv_grid_district.sector_count_industrial,
+                                              orm_lv_grid_district.sector_count_agricultural,
                                               orm_lv_grid_district.mvlv_subst_id). \
             filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist())). \
             filter(version_condition_lvgd)
