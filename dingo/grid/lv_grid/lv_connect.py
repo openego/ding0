@@ -2,6 +2,7 @@ from dingo.core.network import BranchDingo
 
 from dingo.tools import config as cfg_dingo
 from dingo.tools.geo import calc_geo_dist_vincenty
+from dingo.grid.tools import cable_type
 import logging
 import random
 
@@ -48,11 +49,14 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
             lv_station = lv_grid_district.lv_grid.station()
 
             branch_length = calc_geo_dist_vincenty(generator, lv_station)
+            branch_type = cable_type(
+                generator.capacity,
+                0.4,
+                lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
-            # TODO: Set type of cable
             branch = BranchDingo(length=branch_length,
                                  kind='cable',
-                                 type=None)
+                                 type=branch_type)
 
             graph.add_edge(generator, lv_station, branch=branch)
 
@@ -98,13 +102,17 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                         repr(generator),
                         repr(lv_conn_target)
                     ))
-                    
+
+            # determine appropriate type of cable
+            branch_type = cable_type(
+                generator.capacity,
+                0.4,
+                lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
             # connect to cable dist. of building
-            # TODO: Set type of cable
             branch = BranchDingo(length=1,
                                  kind='cable',
-                                 type=None)
+                                 type=branch_type)
 
             graph.add_edge(generator, lv_conn_target, branch=branch)
 
