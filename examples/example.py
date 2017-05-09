@@ -61,7 +61,7 @@ nd.build_lv_grids()
 
 nd.mv_routing(debug=False, animation=False)
 
-nd.connect_generators()
+nd.connect_generators(debug=False)
 
 nd.set_branch_ids()
 

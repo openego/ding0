@@ -1280,7 +1280,8 @@ class NetworkDingo:
                     for lv_grid_district in load_area.lv_grid_districts():
 
                         lv_grid_district.lv_grid.connect_generators(debug)
-                        lv_grid_district.lv_grid.graph_draw(mode='LV')
+                        if debug:
+                            lv_grid_district.lv_grid.graph_draw(mode='LV')
                 else:
                     logger.info(
                         '{} is of type aggregated. LV generators are not connected to LV grids.'.format(repr(load_area)))
