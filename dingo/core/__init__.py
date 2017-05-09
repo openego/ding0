@@ -612,7 +612,7 @@ class NetworkDingo:
                 # otherwise use original geom from EnergyMap
                 if row['geom_new']:
                     geo_data = wkt_loads(row['geom_new'])
-                if not row['geom_new']:
+                elif not row['geom_new']:
                     geo_data = wkt_loads(row['geom'])
                     logger.warning(
                         'Generator {} has no geom_new entry,'
