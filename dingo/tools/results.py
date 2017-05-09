@@ -308,3 +308,37 @@ class ResultsDingo:
 
         plt.savefig(os.path.join(self.base_path, 'plots',
                                  'Scatter_cables_lines.pdf'))
+
+def lv_grid_stats(nd):
+    """
+    Calculate statistics about LV grids
+
+    Parameters
+    ----------
+    nd : dingo.NetworkDingo
+        Network container object
+
+    Returns
+    -------
+    lv_stats : dict
+        Dict with keys of LV grid repr() on first level. Each of the grids has
+        a set of statistical information about its topology
+    """
+
+    lv_stats = {}
+
+    for la in nd._mv_grid_districts[0].lv_load_areas():
+        for lvgd in la.lv_grid_districts():
+
+            station_neighbors = list(lvgd.lv_grid._graph[
+                                         lvgd.lv_grid._station].keys())
+
+            # check if nodes of a statio are members of list generators
+            station_generators = [x for x in station_neighbors
+                                  if x in lvgd.lv_grid.generators()]
+
+            lv_stats[repr(lvgd.lv_grid._station)] = station_generators
+
+
+    return lv_stats
+

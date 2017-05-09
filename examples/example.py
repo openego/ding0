@@ -13,7 +13,7 @@ import time
 # import objgraph
 
 from dingo.core import NetworkDingo
-from dingo.tools import config as cfg_dingo
+from dingo.tools import config as cfg_dingo, results
 from dingo.tools.logger import setup_logger
 
 logger = setup_logger()
@@ -86,6 +86,11 @@ nd.control_circuit_breakers(mode='close')
 #nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
+
+stations_generators = results.lv_grid_stats(nd)
+print('Generators directly connected to the substation')
+for k, v in stations_generators.items():
+    print(k, v)
 
 # branch types
 branch_types = []
