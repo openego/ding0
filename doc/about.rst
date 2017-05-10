@@ -43,6 +43,8 @@ The chosen value concludes in cable lengths of 250m at the shortest distance and
 Medium-voltage grids
 ====================
 
+Methodological details and exemplary results are presented in [Amme2017]_.
+
 Low-voltage grids
 =================
 
