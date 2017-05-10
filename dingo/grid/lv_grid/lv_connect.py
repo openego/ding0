@@ -23,6 +23,8 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
 
     cable_lf = cfg_dingo.get('assumptions',
                              'load_factor_lv_cable_fc_normal')
+    cos_phi_gen = cfg_dingo.get('assumptions',
+                                 'lv_cos_phi_gen')
 
     # generate random list (without replacement => unique elements)
     # of loads (residential) to connect genos (P <= 30kW) to.
@@ -53,7 +55,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
 
             branch_length = calc_geo_dist_vincenty(generator, lv_station)
             branch_type = cable_type(
-                generator.capacity / cable_lf,
+                generator.capacity / (cable_lf * cos_phi_gen),
                 0.4,
                 lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
@@ -108,7 +110,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
 
             # determine appropriate type of cable
             branch_type = cable_type(
-                generator.capacity / cable_lf,
+                generator.capacity / (cable_lf * cos_phi_gen),
                 0.4,
                 lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
