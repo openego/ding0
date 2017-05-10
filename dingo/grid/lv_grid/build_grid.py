@@ -112,6 +112,9 @@ def select_grid_model_ria(lvgd, sector):
         Parameters that describe branch lines of a sector
     """
 
+    cable_lf = cfg_dingo.get('assumptions',
+                             'load_factor_lv_cable_lc_normal')
+
     max_lv_branch_line_load = cfg_dingo.get('assumptions',
                                             'max_lv_branch_line')
 
@@ -137,7 +140,7 @@ def select_grid_model_ria(lvgd, sector):
     single_peak_load = peak_load / count_sector_areas
 
     # if this single load exceeds threshold of 300 kVA it is splitted
-    while single_peak_load > max_lv_branch_line_load:
+    while single_peak_load > (max_lv_branch_line_load * cable_lf):
         single_peak_load = single_peak_load / 2
         count_sector_areas = count_sector_areas * 2
 
@@ -147,7 +150,7 @@ def select_grid_model_ria(lvgd, sector):
     # line
     if 0 < single_peak_load:
         grid_model['max_loads_per_branch'] = math.floor(
-            max_lv_branch_line_load / single_peak_load)
+            (max_lv_branch_line_load * cable_lf) / single_peak_load)
         grid_model['single_peak_load'] = single_peak_load
         grid_model['full_branches'] = math.floor(
             count_sector_areas / grid_model['max_loads_per_branch'])
@@ -258,7 +261,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         # determine suitable cable for this current
         suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
             lvgd.lv_grid.network.static_data['LV_cables'][
-                'I_max_th'] > I_max_load]
+                'I_max_th'] > (I_max_load * cable_lf)]
         cable_type_stub = suitable_cables_stub.ix[
             suitable_cables_stub['I_max_th'].idxmin()]
 
@@ -349,6 +352,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     sector=sector_short))
         )
 
+    cable_lf = cfg_dingo.get('assumptions',
+                             'load_factor_lv_cable_lc_normal')
+
     # iterate over branches for sectors retail/industrial and agricultural
     for sector, val in grid_model_params.items():
         if sector == 'retail/industrial':
@@ -367,7 +373,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 # determine suitable cable for this current
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
                     lvgd.lv_grid.network.static_data['LV_cables'][
-                        'I_max_th'] > I_max_branch]
+                        'I_max_th'] > (I_max_branch * cable_lf)]
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
@@ -387,7 +393,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 # determine suitable cable for this current
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
                     lvgd.lv_grid.network.static_data['LV_cables'][
-                        'I_max_th'] > I_max_branch]
+                        'I_max_th'] > (I_max_branch * cable_lf)]
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
@@ -582,7 +588,8 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                         branch=BranchDingo(
                             length=row['distance house branch'],
                             kind='cable',
-                            type=cable_name,
+                            type=lvgd.lv_grid.network.static_data[
+                                'LV_cables'].loc[cable_name],
                             id_db='branch_{sector}{branch}_{load}'.format(
                                 branch=hh_branch,
                                 load=house_branch,
