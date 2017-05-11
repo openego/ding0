@@ -16,7 +16,7 @@ in the sections below.
 :ref:`definition-of-terms` introduces terms we stick to in the following text.
 
 .. _definition-of-terms:
-.. figure:: images/mvgd_la_lvgd-LA_types.png
+.. figure:: images/mvgd_la_lvgd-mit_ortsnamen.png
 
     Definition of names
 
