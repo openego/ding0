@@ -20,8 +20,10 @@ in the sections below.
 
     Definition of names
 
-MV/LV Substations
------------------
+.. _lv-trafo-and-grid-district:
+
+MV/LV Substations and LV grid district
+--------------------------------------
 
 Medium-voltage/low-voltage (MV/LV) substations are located on a equidistant
 grid of points with an interval of 180m within the load areas.
@@ -47,6 +49,16 @@ Methodological details and exemplary results are presented in [Amme2017]_.
 
 Low-voltage grids
 =================
+
+The topology of low-voltage grids is determined on the basis of typified grid
+models that are vastly available for the residential sector and partially
+available for other sector retail, industrial and agricultural.
+The mentioned sectors are modeled differently: the grid topology of residential
+sector loads founds on typified grid models from [Kerber]_. Retail and
+industrial sector are treated as a single sector and use same methodology to
+determine grid topology as applied for the agricultural sector.
+Loads of each sector are located in separate branches - one for each sector.
+In the following its creation is described in detail.
 
 
 .. Kerber describes 8 rural and 3 village and 8 suburban LV Grids; each with several branch lines. The exemplary grids are based on 132 real MV/LV Substations data in south Germany.
@@ -98,8 +110,57 @@ With the resulting trendline of this three point,  [the Polynomial degree 2 [ 16
 Branches of sector retail/industrial and agricultural
 -----------------------------------------------------
 
-.. TODO: Guido
+Creating individual LV grid branches for the sectors retail/industrial and
+agricultural applies the same methodology.
+The topology of these grid branches determines by the sectoral peak load that
+is available at
+high spatial resolution (see [Huelk2017]_). Furthermore the number of land-use
+areas (taken from [OSM]_) of each of the sectors determines the number
+individual loads connected to one or more of these sectoral branches.
 
+The topology of each sectoral branch is affected largely by assumptions on
+parameters that are provided in the table below.
+
+.. _assumptions:
+========================================================= =====
+Parameter                                                 Value
+========================================================= =====
+Max. load in each branch                                  290 kVA
+Max. branch length retail/industrial :math:`L_{R/I,max}`  400 m
+Max. branch length agricultural :math:`L_{A,max}`         800 m
+Length of branch stub                                     30 m
+PV peak power <= 30 kW                                    residential
+PV peak power > 30 kW <= 100 kW                           retail/industrial or agricultural
+PV peak power > 100 kW                                    MV/LV station bus bar
+========================================================= =====
+
+In each LV grid district (LVGD) (see :ref:`lv-trafo-and-grid-district`) sectoral
+peak load of sectors retail+industrial and agricultural are analyzed. The
+number loads of each sectors determines by dividing sectoral peak load by
+number of land-use area found in this grid district.
+
+.. math::
+   N_{loads} = P_{sector} \cdot N_{land-use}
+
+In the next step individual loads are allocated to branches considering the
+limit of max. 290 kVA peak load connected to a single branch. If a single load
+exceeds the limit of 290 kVA, it is halved until it is smaller than or equal
+to 290 kVA.
+Loads are distributed equidistant on the branches while the branch does not
+necessarily take the maximum length defined in the table above.
+The distance defines as
+
+.. math::
+   d_{sector} = \frac{L_{sector,max}}{N_{loads} + 1}
+
+Single loads are connected to the branch line by stubs of a length of 30 m.
+
+Photovoltaic (PV) power plants are allocated to different sectoral LV grid branches
+depending on the nominal power. The allocation by the nominal power is provided
+in the above table. It follows a simple assumption: smaller PV power plants are
+allocated to LV grid branches of sector residential, larger power plants
+are allocated to branches of the other sector, and really large ones are
+directly connected to the bus bar of the MV-LV substation.
 
 
 .. TODO: complete details of references
@@ -115,3 +176,4 @@ Branches of sector retail/industrial and agricultural
 .. [Kerber] G. Kerber: http://oep.iks.cs.ovgu.de/literature/entry/17/
 .. [Scheffler] Scheffler: http://oep.iks.cs.ovgu.de/literature/entry/18/
 .. [Mohrmann] Mohrmann: http://oep.iks.cs.ovgu.de/literature/entry/19/
+.. [OSM] https://www.openstreetmap.org/#map
