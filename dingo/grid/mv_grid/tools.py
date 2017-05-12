@@ -22,6 +22,10 @@ def set_circuit_breakers(mv_grid, debug=False):
     Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
     breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
     the route. Instead of the peak current, the peak load is used here (assuming a constant voltage).
+    
+    If a ring is dominated by loads (peak load > peak capacity of generators), only loads are used for determining
+    the location of circuit breaker. If generators are prevailing (peak load < peak capacity of generators),
+    only generators are considered for relocation.
 
     The core of this function (calculation of the optimal circuit breaker position) is the same as in
     dingo.grid.mv_grid.models.Route.calc_circuit_breaker_position but here it is
@@ -48,9 +52,8 @@ def set_circuit_breakers(mv_grid, debug=False):
 
             # node is LV station -> get peak load and peak generation
             if isinstance(node, LVStationDingo):
-                #nodes_peak_load.append(node.peak_load)
-                #nodes_peak_generation.append(node.peak_generation)
-                nodes_peak_load.append(node.peak_load - node.peak_generation)
+                nodes_peak_load.append(node.peak_load)
+                nodes_peak_generation.append(node.peak_generation)
 
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
             elif isinstance(node, CableDistributorDingo):
@@ -69,19 +72,18 @@ def set_circuit_breakers(mv_grid, debug=False):
                     if isinstance(node_subtree, GeneratorDingo):
                         nodes_subtree_peak_generation += node_subtree.capacity
 
-                #nodes_peak_load.append(nodes_subtree_peak_load)
-                #nodes_peak_generation.append(nodes_subtree_peak_generation)
-                nodes_peak_load.append(nodes_subtree_peak_load - nodes_subtree_peak_generation)
+                nodes_peak_load.append(nodes_subtree_peak_load)
+                nodes_peak_generation.append(nodes_subtree_peak_generation)
 
             else:
                 raise ValueError('Ring node has got invalid type.')
 
         # is ring dominated by load or generation?
         # (check if there's more load than generation in ring or vice versa)
-        #if sum(nodes_peak_load) > sum(nodes_peak_generation):
-        node_peak_data = nodes_peak_load
-        #else:
-        #    node_peak_data = nodes_peak_generation
+        if sum(nodes_peak_load) > sum(nodes_peak_generation):
+            node_peak_data = nodes_peak_load
+        else:
+            node_peak_data = nodes_peak_generation
 
         # calc optimal circuit breaker position
 
