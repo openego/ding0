@@ -412,7 +412,7 @@ class MVGridDingo(GridDingo):
         # select appropriate branch params according to voltage level, sorted ascending by max. current
         # use <240mm2 only (ca. 420A) for initial rings and for disambiguation of agg. LA
         branch_parameters = branch_parameters[branch_parameters['U_n'] == self.v_level]
-        branch_parameters = branch_parameters[branch_parameters['I_max_th'] < 420].sort_values('I_max_th')
+        branch_parameters = branch_parameters[branch_parameters['reinforce_only'] == 0].sort_values('I_max_th')
 
         # get largest line/cable type
         branch_type_max = branch_parameters.loc[branch_parameters['I_max_th'].idxmax()]

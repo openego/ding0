@@ -786,14 +786,18 @@ class NetworkDingo:
         self.static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
                                                 equipment_mv_parameters_lines),
                                                 comment='#',
-                                                converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+                                                converters={'I_max_th': lambda x: int(x),
+                                                            'U_n': lambda x: int(x),
+                                                            'reinforce_only': lambda x: int(x)})
 
         equipment_mv_parameters_cables = cfg_dingo.get('equipment',
                                                        'equipment_mv_parameters_cables')
         self.static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
                                         equipment_mv_parameters_cables),
                                         comment='#',
-                                        converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+                                        converters={'I_max_th': lambda x: int(x),
+                                                    'U_n': lambda x: int(x),
+                                                    'reinforce_only': lambda x: int(x)})
 
         equipment_lv_parameters_cables = cfg_dingo.get('equipment',
                                                        'equipment_lv_parameters_cables')
