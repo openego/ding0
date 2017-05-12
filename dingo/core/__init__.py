@@ -291,7 +291,8 @@ class NetworkDingo:
             join(orm_mv_stations, orm_mv_grid_districts.subst_id ==
                  orm_mv_stations.subst_id).\
             filter(orm_mv_grid_districts.subst_id.in_(mv_grid_districts_no)). \
-            filter(version_condition_mvgd)
+            filter(version_condition_mvgd). \
+            distinct()
 
         # read MV data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
