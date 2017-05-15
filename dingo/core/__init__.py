@@ -781,6 +781,15 @@ class NetworkDingo:
 
         package_path = dingo.__path__[0]
 
+        equipment_mv_parameters_trafos = cfg_dingo.get('equipment',
+                                                       'equipment_mv_parameters_trafos')
+        self.static_data['MV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
+                                        equipment_mv_parameters_trafos),
+                                        comment='#',
+                                        delimiter=',',
+                                        decimal='.',
+                                        converters={'S_max': lambda x: int(x)})
+
         # import equipment
         equipment_mv_parameters_lines = cfg_dingo.get('equipment',
                                                       'equipment_mv_parameters_lines')
