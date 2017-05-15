@@ -323,7 +323,6 @@ class MVGridDingo(GridDingo):
         .. [1] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger Referenznetze im Verteilnetzsektor zur
             Überprüfung der Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
         """
-        # TODO: more references!
 
         load_density_threshold = float(cfg_dingo.get('assumptions',
                                                      'load_density_threshold'))
@@ -336,9 +335,10 @@ class MVGridDingo(GridDingo):
             pyproj.Proj(init='epsg:3035'))  # destination coordinate system
 
         # calculate load density
-        # TODO: Move constant 1e6 to config file
-        load_density = ((self.grid_district.peak_load / 1e3) /
-                        (transform(projection, self.grid_district.geo_data).area / 1e6)) # unit MVA/km^2
+        kw2mw = 1e3
+        sqm2sqkm = 1e6
+        load_density = ((self.grid_district.peak_load / kw2mw) /
+                        (transform(projection, self.grid_district.geo_data).area / sqm2sqkm)) # unit MVA/km^2
 
         # identify voltage level
         if load_density < load_density_threshold:
