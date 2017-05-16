@@ -42,6 +42,7 @@ def reinforce_branches_current(grid, crit_branches):
     if branch_ctr:
         logger.info('==> {} branches were reinforced.'.format(str(branch_ctr)))
 
+
 def reinforce_branches_voltage(grid, crit_branches):
     """ Reinforce MV or LV grid by installing a new branch/line type
 
@@ -75,6 +76,7 @@ def reinforce_branches_voltage(grid, crit_branches):
 
     if branch_ctr:
         logger.info('==> {} branches were reinforced.'.format(str(branch_ctr)))
+
 
 def extend_substation(grid):
     """ Reinforce MV or LV substation by exchanging the existing trafo and installing a parallel one if necessary with
