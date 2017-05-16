@@ -10,7 +10,6 @@ from dingo.tools import pypsa_io, config as cfg_dingo
 from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *
-from egoio.tools.db import change_owner_to
 
 import os
 import logging
@@ -118,6 +117,8 @@ class NetworkDingo:
     def static_data(self):
         """Returns static data"""
         return self._static_data
+
+    def run_dingo(self):
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
         """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object,
@@ -255,7 +256,8 @@ class NetworkDingo:
         ----------
         conn : sqlalchemy.engine.base.Connection object
                Database connection
-        mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
+        mv_grid_districts_no : List of Integers
+            List of MV grid_districts/stations to be imported (if empty,
             all grid_districts & stations are imported)
 
         See Also
