@@ -74,9 +74,6 @@ from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 
-from functools import partial
-import pyproj
-from shapely.ops import transform
 from math import isnan
 import random
 
