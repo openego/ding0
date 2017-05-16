@@ -15,7 +15,6 @@ class MVStationDingo(StationDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @property
     def peak_generation(self, mode):
         """
         Calculates cumulative peak generation of generators connected to
