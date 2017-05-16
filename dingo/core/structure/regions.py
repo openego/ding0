@@ -10,7 +10,6 @@ class MVGridDistrictDingo(RegionDingo):
     ----------------------------
 
     """
-    # TODO: add method remove_lv_load_area()
 
     def __init__(self, **kwargs):
         #inherit branch parameters from Region
