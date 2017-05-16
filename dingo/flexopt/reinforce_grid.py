@@ -7,7 +7,8 @@ logger = logging.getLogger('dingo')
 
 
 def reinforce_grid(grid, mode):
-    """ Evaluates grid reinforcement needs and performs measures
+    """ Evaluates grid reinforcement needs and performs measures. This function
+        is the parent function for all grid reinforcements.
 
     Parameters
     ----------
@@ -15,12 +16,10 @@ def reinforce_grid(grid, mode):
     mode: String
         kind of grid ('MV' or 'LV')
 
-    Returns
-    -------
-
     Notes
     -----
-    Currently only MV branch reinforcement is implemented. HV-MV stations are
+    Currently only MV branch reinforcement is implemented. HV-MV stations are not
+    reinforced since not required for status-quo scenario.
 
     References
     ----------

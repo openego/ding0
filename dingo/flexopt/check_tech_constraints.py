@@ -18,8 +18,8 @@ def check_load(grid, mode):
 
     Returns
     -------
-    Dict of critical branches with max. relative overloading
-    List of critical transformers,
+    Dict of critical branches (BranchDingo objects) with max. relative overloading
+    List of critical transformers (TransformerDingo objects),
     Format: {branch_1: rel_overloading_1, ..., branch_n: rel_overloading_n},
             [trafo_1, ..., trafo_m]
 
@@ -113,19 +113,19 @@ def check_load(grid, mode):
 def check_voltage(grid, mode):
     """ Checks for voltage stability issues at all nodes for MV or LV grid
 
-    Args:
-        grid: GridDingo object
-        mode: kind of grid ('MV' or 'LV')
+    Parameters
+    ----------
+    grid: GridDingo object
+    mode: String
+        kind of grid ('MV' or 'LV')
 
-    Returns:
-        List of critical nodes, sorted descending by voltage difference
+    Returns
+    -------
+    List of critical nodes, sorted descending by voltage difference
 
-    Notes:
-        The examination is done in two steps, according to [1]_:
-        1. It is checked
-
-    References:
-    .. [1] dena VNS
+    Notes
+    -----
+    The voltage is checked against a max. allowed voltage deviation.
     """
 
     crit_nodes = {}
@@ -135,7 +135,7 @@ def check_voltage(grid, mode):
         mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                          'mv_max_v_level_diff_normal'))
 
-        # 1. check nodes' voltages
+        # check nodes' voltages
         voltage_station = grid._station.voltage_res
         for node in grid.graph_nodes_sorted():
             try:
