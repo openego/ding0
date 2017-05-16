@@ -312,7 +312,9 @@ class MVGridDingo(GridDingo):
 
         Parameters
         ----------
-            mode: mode how voltage is determined
+            mode: String
+                determines how voltage level is determined:
+
                 'load_density':         Decision on voltage level is determined by load density
                                         of the considered region. Urban areas (load density of
                                         >= 1 MW/km2 according to [1]_) usually got a voltage of
