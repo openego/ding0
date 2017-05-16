@@ -67,7 +67,7 @@ nd.set_branch_ids()
 
 nd.set_circuit_breakers()
 
-# Open all circuit breakers in grid
+# Open all circuit breakers in grid to allow powerflow for half-rings
 nd.control_circuit_breakers(mode='open')
 
 # Analyze grid by power flow analysis

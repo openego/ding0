@@ -652,7 +652,7 @@ def edges_to_dict_of_dataframes(grid, edges):
 
 def run_powerflow(session, export_pypsa_dir=None):
     """
-    Run powerflow to test grid stability
+    Run power flow to test grid stability
 
     Two cases are defined to be tested here:
      i) load case
