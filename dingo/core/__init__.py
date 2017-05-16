@@ -12,6 +12,16 @@ from dingo.flexopt.reinforce_grid import *
 
 import os
 import logging
+import pandas as pd
+import random
+import time
+from math import isnan
+
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
+from geoalchemy2.shape import from_shape
+from shapely.wkt import loads as wkt_loads
+from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 
 logger = logging.getLogger('dingo')
 
@@ -63,17 +73,6 @@ else:
     logger.error("Invalid data source {} provided. Please re-check the file "
                  "`config_db_tables.cfg`".format(data_source))
     raise NameError("{} is no valid data source!".format(data_source))
-
-import pandas as pd
-
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func, or_
-from geoalchemy2.shape import from_shape
-from shapely.wkt import loads as wkt_loads
-from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
-
-from math import isnan
-import random
 
 package_path = dingo.__path__[0]
 
