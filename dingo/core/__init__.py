@@ -117,7 +117,58 @@ class NetworkDingo:
         """Returns static data"""
         return self._static_data
 
-    def run_dingo(self):
+    def run_dingo(self, conn, mv_grid_districts_no=None):
+        """ Let DINGO run by shouting at this method (or just call
+            it from NetworkDingo instance). This method is a wrapper
+            for the main functionality of DINGO.
+
+        Parameters
+        ----------
+        conn : sqlalchemy.engine.base.Connection object
+            Database connection
+        mv_grid_districts_no : List of Integers
+            List of MV grid_districts/stations to be imported (if empty,
+            all grid_districts & stations are imported)
+
+        Notes
+        -----
+        The steps performed in this method are to be kept in the given order
+        since there are hard dependencies between.
+
+        """
+
+        # STEP 1: Import MV Grid Districts and subjacent objects
+        self.import_mv_grid_districts(conn,
+                                      mv_grid_districts_no=mv_grid_districts_no)
+
+        # STEP 2: Import generators
+        self.import_generators(conn)
+
+        # STEP 3: Parametrize grid
+        self.mv_parametrize_grid()
+
+        # STEP 4: Validate MV Grid Districts
+        self.validate_grid_districts()
+
+        #
+        self.build_lv_grids()
+    
+        self.mv_routing(debug=False, animation=False)
+    
+        self.connect_generators(debug=False)
+    
+        self.set_branch_ids()
+    
+        self.set_circuit_breakers()
+    
+        # Open all circuit breakers in grid to allow powerflow for half-rings
+        self.control_circuit_breakers(mode='open')
+    
+        # Analyze grid by power flow analysis
+        self.run_powerflow(conn, method='onthefly', export_pypsa=False)
+    
+        # reinforce MV grid
+        self.reinforce_grid()
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
         """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object,
@@ -254,7 +305,7 @@ class NetworkDingo:
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
-               Database connection
+            Database connection
         mv_grid_districts_no : List of Integers
             List of MV grid_districts/stations to be imported (if empty,
             all grid_districts & stations are imported)
