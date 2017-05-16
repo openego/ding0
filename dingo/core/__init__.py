@@ -1504,15 +1504,6 @@ class NetworkDingo:
                                                     export_pypsa_dir=export_pypsa_dir,
                                                     debug=debug)
 
-    def control_generators(self):
-        """
-        Returns:
-
-        """
-
-        for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.reinforce_grid()
-
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for all MV and LV grids
         Args:
