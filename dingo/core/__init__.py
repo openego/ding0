@@ -1514,9 +1514,12 @@ class NetworkDingo:
         # TODO: Finish method and enable LV case
 
         for grid_district in self.mv_grid_districts():
+
+            # reinforce MV grid
             grid_district.mv_grid.reinforce_grid()
 
-            # ===== LV PART (currently disabled) =====
+            # reinforce LV grids (currently disabled)
+
             # for lv_load_area in grid_district.lv_load_areas():
             #     for lv_grid_district in lv_load_area.lv_grid_districts():
             #         lv_grid_district.lv_grid.reinforce_grid()

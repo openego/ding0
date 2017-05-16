@@ -666,13 +666,7 @@ class MVGridDingo(GridDingo):
         # transformer data
 
     def reinforce_grid(self):
-        """ Performs grid reinforcement measures for current MV grid
-        Args:
-
-        Returns:
-
-        """
-        # TODO: Finalize docstring
+        """ Performs grid reinforcement measures for current MV grid """
 
         reinforce_grid(self, mode='MV')
 
@@ -780,13 +774,7 @@ class LVGridDingo(GridDingo):
         self._graph = lv_connect.lv_connect_generators(self.grid_district, self._graph, debug)
 
     def reinforce_grid(self):
-        """ Performs grid reinforcement measures for current LV grid
-        Args:
-
-        Returns:
-
-        """
-        # TODO: Finalize docstring
+        """ Performs grid reinforcement measures for current LV grid """
 
         reinforce_grid(self, mode='LV')
 
