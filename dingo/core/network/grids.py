@@ -347,9 +347,9 @@ class MVGridDingo(GridDingo):
                 pyproj.Proj(init='epsg:3035'))  # destination coordinate system
 
             # calculate load density
-            kw2mw = 1e3
+            kw2mw = 1e-3
             sqm2sqkm = 1e6
-            load_density = ((self.grid_district.peak_load / kw2mw) /
+            load_density = ((self.grid_district.peak_load * kw2mw) /
                             (transform(projection, self.grid_district.geo_data).area / sqm2sqkm)) # unit MVA/km^2
 
             # identify voltage level

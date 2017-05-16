@@ -57,8 +57,8 @@ class MVStationDingo(StationDingo):
         trafo_parameters = self.grid.network.static_data['MV_trafos']
 
         # determine number and size of required transformers
-        kw2mw = 1e3
-        residual_apparent_power = self.grid.grid_district.peak_load / kw2mw
+        kw2mw = 1e-3
+        residual_apparent_power = self.grid.grid_district.peak_load * kw2mw
 
         # get max. trafo
         transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
