@@ -387,7 +387,7 @@ class MVGridDingo(GridDingo):
                 self.v_level = 10
 
         else:
-            raise ValueError('\'mode\' is invalid!')
+            raise ValueError('parameter \'mode\' is invalid!')
 
     def set_default_branch_type(self, debug=False):
         """ Determines default branch type according to grid district's peak load and standard equipment.

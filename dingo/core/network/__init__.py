@@ -336,24 +336,12 @@ class StationDingo:
 
         Notes
         -----
-        Different from peak_generation(), this peak load includes all(!) loads which are
-        located within Grid District. When called from MV station, all loads of all
-        Load Areas are considered.
+        This peak load includes all loads which are located within Grid District:
+        When called from MV station, all loads of all Load Areas are considered
+        (peak load was calculated in MVGridDistrictDingo.add_peak_demand()).
+        When called from LV station, all loads of the LVGridDistrict are considered.
         """
         return self.grid.grid_district.peak_load
-
-    @property
-    def peak_generation(self):
-        """
-        Cumulative peak generation of generators connected to underlying MV or LV grid
-        (instantaneously calculated -> bottom-up)
-
-        Notes
-        -----
-        Only generation capacities of the respected voltage level are considered!
-        (e.g. called from MV station, method returns MV generation capacities only!)
-        """
-        return sum([_.capacity for _ in self.grid.generators()])
 
 
 class BusDingo:

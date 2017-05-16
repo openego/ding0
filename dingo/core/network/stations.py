@@ -15,6 +15,44 @@ class MVStationDingo(StationDingo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    @property
+    def peak_generation(self, mode):
+        """
+        Calculates cumulative peak generation of generators connected to
+        underlying MV grid or MV+LV grids (controlled by parameter `mode`).
+        This is done instantaneously using bottom-up approach.
+
+        Parameters
+        ----------
+        mode: String
+            determines which generators are included:
+
+            'MV':   Only generation capacities of MV level are considered.
+            'MVLV': Generation capacities of MV and LV are considered
+                    (= cumulative generation capacities in entire MVGD).
+
+        Returns
+        -------
+        capacity: Float
+            Cumulative peak generation
+        """
+
+        if mode == 'MV':
+            return sum([_.capacity for _ in self.grid.generators()])
+
+        elif mode == 'MVLV':
+            # calc MV geno capacities
+            cum_mv_peak_generation = sum([_.capacity for _ in self.grid.generators()])
+            # calc LV geno capacities
+            cum_lv_peak_generation = 0
+            for load_area in self.grid.grid_district.lv_load_areas():
+                cum_lv_peak_generation += load_area.peak_generation
+
+            return cum_mv_peak_generation + cum_lv_peak_generation
+
+        else:
+            raise ValueError('parameter \'mode\' is invalid!')
+
     def set_operation_voltage_level(self):
 
         mv_station_v_level_operation = float(cfg_dingo.get('mv_routing_tech_constraints',
@@ -109,6 +147,21 @@ class LVStationDingo(StationDingo):
         super().__init__(**kwargs)
 
         self.lv_load_area = kwargs.get('lv_load_area', None)
+
+    @property
+    def peak_generation(self):
+        """
+        Calculates cumulative peak generation of generators connected to
+        underlying LV grid. This is done instantaneously using bottom-up
+        approach.
+
+        Returns
+        -------
+        capacity: Float
+            Cumulative peak generation
+        """
+
+        return sum([_.capacity for _ in self.grid.generators()])
 
     @property
     def pypsa_id(self):
