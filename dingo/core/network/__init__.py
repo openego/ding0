@@ -298,8 +298,10 @@ class GridDingo:
 
 class StationDingo:
     """
-    Defines a MV/LVstation in DINGO
-    -------------------------------
+    Defines a HV-MV or MV-LV station in DINGO
+
+    Parameters
+    ----------
 
     id_db: id according to database table
     v_level_operation: operation voltage level at station (the station's voltage level differs from the nominal voltage
