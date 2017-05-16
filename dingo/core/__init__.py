@@ -299,8 +299,8 @@ class NetworkDingo:
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
     def import_mv_grid_districts(self, conn, mv_grid_districts_no=None):
-        """Imports MV grid_districts and MV stations from database, reprojects geodata
-        and and initiates objects.
+        """ Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
+            and MV-LV stations, instantiates and initiates objects.
 
         Parameters
         ----------
@@ -908,7 +908,7 @@ class NetworkDingo:
                                                                              **converters_ids))
 
     def validate_grid_districts(self):
-        """ Tests MV grid districts for validity concerning imported data such as:
+        """ Tests MV grid districts for validity concerning imported data such as count of Load Areas.
 
         Invalid MV grid districts are subsequently deleted from Network.
         """
@@ -1278,10 +1278,9 @@ class NetworkDingo:
 
         return nodes_df, edges_df
 
-
     def mv_routing(self, debug=False, animation=False):
-        """ Performs routing on all MV grids, see method `routing` in class
-        `MVGridDingo` for details.
+        """ Performs routing on Load Area centres to build MV grid with ring topology,
+            see method `routing` in class `MVGridDingo` for details.
 
         Parameters
         ----------
@@ -1305,7 +1304,7 @@ class NetworkDingo:
 
     def build_lv_grids(self):
         """ Builds LV grids for every non-aggregated LA in every MV grid
-        district
+        district using model grids.
         """
 
         for mv_grid_district in self.mv_grid_districts():
@@ -1321,7 +1320,7 @@ class NetworkDingo:
         logger.info('=====> LV model grids created')
 
     def connect_generators(self, debug=False):
-        """ Connects generators (graph nodes) to grid (graph) for every MV grid district
+        """ Connects generators (graph nodes) to grid (graph) for every MV and LV Grid District
 
         Args:
             debug: If True, information is printed during process

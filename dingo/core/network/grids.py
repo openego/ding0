@@ -219,7 +219,11 @@ class MVGridDingo(GridDingo):
         return list(nodes_subtree)
 
     def set_branch_ids(self):
-        """ Generates and sets ids of branches for MV and underlying LV grids """
+        """ Generates and sets ids of branches for MV and underlying LV grids.
+        
+        While IDs of imported objects can be derived from dataset's ID, branches
+        are created within DINGO and need unique IDs (e.g. for PF calculation).
+        """
 
         # MV grid:
         ctr = 1
@@ -236,7 +240,7 @@ class MVGridDingo(GridDingo):
                     ctr += 1
 
     def routing(self, debug=False, anim=None):
-        """ Performs routing on grid graph nodes
+        """ Performs routing on Load Area centres to build MV grid with ring topology.
 
         Args:
             debug: If True, information is printed while routing
