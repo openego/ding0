@@ -8,15 +8,22 @@ logger = logging.getLogger('dingo')
 
 def reinforce_grid(grid, mode):
     """ Evaluates grid reinforcement needs and performs measures
-    Args:
-        grid: GridDingo object
-        mode: kind of grid ('MV' or 'LV')
 
-    Returns:
+    Parameters
+    ----------
+    grid: GridDingo object
+    mode: String
+        kind of grid ('MV' or 'LV')
 
-    Notes:
+    Returns
+    -------
 
-    References:
+    Notes
+    -----
+    Currently only MV branch reinforcement is implemented. HV-MV stations are
+
+    References
+    ----------
     .. [1] dena VNS
     .. [2] Ackermann et al. (RP VNS)
 
@@ -25,6 +32,8 @@ def reinforce_grid(grid, mode):
     # kind of grid to be evaluated (MV or LV)
     if mode == 'MV':
         crit_branches, crit_stations = check_load(grid, mode)
+
+        # STEP 1: reinforce branches
 
         # do reinforcement
         reinforce_branches_current(grid, crit_branches)
@@ -63,6 +72,11 @@ def reinforce_grid(grid, mode):
         if not crit_nodes:
             logger.info('==> All voltage issues could be solved using '
                         'reinforcement.')
+
+        # STEP 2: reinforce HV-MV station
+        # NOTE: HV-MV station reinforcement is not required for status-quo
+        # scenario since HV-MV trafos already sufficient for load+generation
+        # case as done in MVStationDingo.choose_transformers()
 
     elif mode == 'LV':
         raise NotImplementedError

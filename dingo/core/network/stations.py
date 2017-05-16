@@ -74,6 +74,8 @@ class MVStationDingo(StationDingo):
 
         Notes
         -----
+        The transformers are chosen according to max. of load case and feedin-case
+        considering load factors.
         Potential HV-MV transformers are chosen according to [2]_.
         Parametrization of transformers bases on [1]_.
 
@@ -87,21 +89,39 @@ class MVStationDingo(StationDingo):
 
         """
 
+        # get trafo load factors
         load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
                                                              'load_factor_mv_trans_lc_normal'))
+        load_factor_mv_trans_fc_normal = float(cfg_dingo.get('assumptions',
+                                                             'load_factor_mv_trans_fc_normal'))
 
         # get equipment parameters of MV transformers
         trafo_parameters = self.grid.network.static_data['MV_trafos']
 
-        # determine number and size of required transformers
+        # get peak load and peak generation
+        cum_peak_load = self.peak_load
+        cum_peak_generation = self.peak_generation(mode='MVLV')
+
         kw2mw = 1e-3
-        residual_apparent_power = self.grid.grid_district.peak_load * kw2mw
+
+        # check if load or generation is greater respecting corresponding load factor
+        if (cum_peak_load / load_factor_mv_trans_lc_normal) > \
+           (cum_peak_generation / load_factor_mv_trans_fc_normal):
+            # use peak load and load factor from load case
+            load_factor_mv_trans = load_factor_mv_trans_lc_normal
+            residual_apparent_power = cum_peak_load * kw2mw
+        else:
+            # use peak generation and load factor for feedin case
+            load_factor_mv_trans = load_factor_mv_trans_fc_normal
+            residual_apparent_power = cum_peak_generation * kw2mw
+
+        # determine number and size of required transformers
 
         # get max. trafo
         transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
 
         while residual_apparent_power > 0:
-            if residual_apparent_power > load_factor_mv_trans_lc_normal * transformer_max['S_max']:
+            if residual_apparent_power > load_factor_mv_trans * transformer_max['S_max']:
                 transformer = transformer_max
             else:
                 # choose trafo
@@ -113,7 +133,7 @@ class MVStationDingo(StationDingo):
             self.add_transformer(TransformerDingo(**{'v_level': self.grid.v_level,
                                                      's_max_longterm': transformer['S_max']}))
             # calc residual load
-            residual_apparent_power -= (load_factor_mv_trans_lc_normal *
+            residual_apparent_power -= (load_factor_mv_trans *
                                         transformer['S_max'])
 
         # if no transformer was selected (no load in grid district), use smallest one
