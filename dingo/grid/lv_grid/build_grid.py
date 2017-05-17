@@ -9,7 +9,7 @@ import math
 logger = logging.getLogger('dingo')
 
 
-def select_transformer(grid):
+def select_transformers(grid):
     """
     Selects LV transformer according to peak load of LV grid district.
 
@@ -85,7 +85,7 @@ def transformer(grid):
     """
 
     # choose size and amount of transformers
-    transformer, transformer_cnt = select_transformer(grid)
+    transformer, transformer_cnt = select_transformers(grid)
 
     # create transformers and add them to station of LVGD
     for t in range(0, transformer_cnt):
