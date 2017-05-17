@@ -60,10 +60,15 @@ class MVStationDingo(StationDingo):
         self.v_level_operation = mv_station_v_level_operation * self.grid.v_level
 
     def select_transformers(self):
-        """Chooses appropriate transformers for the MV sub-station
+        """ Selects appropriate transformers for the HV-MV substation.
 
-        Choice bases on voltage level (depends on load density), apparent power
-        and general planning principles for MV distribution grids.
+        The transformers are chosen according to max. of load case and feedin-case
+        considering load factors.
+        The HV-MV transformer with the next higher available nominal apparent power is
+        chosen. If one trafo is not sufficient, multiple trafos are used. Additionally,
+        in a second step an redundant trafo is installed with max. capacity of the
+        selected trafos of the first step according to general planning principles for
+        MV distribution grids (n-1).
 
         Parameters
         ----------
@@ -74,8 +79,6 @@ class MVStationDingo(StationDingo):
 
         Notes
         -----
-        The transformers are chosen according to max. of load case and feedin-case
-        considering load factors.
         Potential HV-MV transformers are chosen according to [2]_.
         Parametrization of transformers bases on [1]_.
 
