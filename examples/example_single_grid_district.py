@@ -45,3 +45,5 @@ nd.run_dingo(conn=conn,
 nd.control_circuit_breakers(mode='close')
 nd.export_mv_grid(conn, mv_grid_districts)
 nd.export_mv_grid_new(conn, mv_grid_districts)
+
+conn.close()
