@@ -9,9 +9,15 @@ import math
 logger = logging.getLogger('dingo')
 
 
-def select_transformer(grid):
-    """
-    Selects LV transformer according to peak load of LV grid district.
+def select_transformers(grid):
+    """ Selects MV-LV transformers for the MV-LV substation.
+
+    The transformers are chosen according to max. of load case and feedin-case
+    considering load factors and power factor.
+    The MV-LV transformer with the next higher available nominal apparent power is
+    chosen. Therefore, a max. allowed transformer loading of 100% is implicitly
+    assumed. If the peak load exceeds the max. power of a single available
+    transformer, use multiple trafos.
 
     Parameters
     ----------
@@ -24,51 +30,57 @@ def select_transformer(grid):
         Parameters of chosen Transformer
     transformer_cnt: int
         Count of transformers
-
-    Notes
-    -----
-    The LV transformer with the next higher available nominal apparent power is
-    chosen. Therefore, a max. allowed transformer loading of 100% is implicitly
-    assumed. If the peak load exceeds the max. power of a single available
-    transformer, use multiple trafos.
     """
 
-    trafo_lf = cfg_dingo.get('assumptions',
-                             'load_factor_lv_trans_lc_normal')
+    load_factor_lv_trans_lc_normal = cfg_dingo.get('assumptions',
+                                                   'load_factor_lv_trans_lc_normal')
+    load_factor_lv_trans_fc_normal = cfg_dingo.get('assumptions',
+                                                   'load_factor_lv_trans_fc_normal')
 
     cos_phi_load = cfg_dingo.get('assumptions',
                                  'lv_cos_phi_load')
 
-    peak_load = grid.grid_district.peak_load
-
     # get equipment parameters of LV transformers
     trafo_parameters = grid.network.static_data['LV_trafos']
+
+    # get peak load and peak generation
+    cum_peak_load = grid.grid_district.peak_load
+    cum_peak_generation = grid.station().peak_generation
+
+    # check if load or generation is greater respecting corresponding load factor
+    if (cum_peak_load / load_factor_lv_trans_lc_normal) > \
+            (cum_peak_generation / load_factor_lv_trans_fc_normal):
+        # use peak load and load factor from load case
+        load_factor_lv_trans = load_factor_lv_trans_lc_normal
+        peak_data = cum_peak_load
+    else:
+        # use peak generation and load factor for feedin case
+        load_factor_lv_trans = load_factor_lv_trans_fc_normal
+        peak_data = cum_peak_generation
 
     # get max. trafo
     transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
 
     # peak load is smaller than max. available trafo
-    if peak_load < transformer_max['S_max'] * (trafo_lf * cos_phi_load):
+    if peak_data < transformer_max['S_max'] * (load_factor_lv_trans * cos_phi_load):
         # choose trafo
         transformer = trafo_parameters.iloc[
             trafo_parameters[
-                trafo_parameters['S_max'] > peak_load / (
-                trafo_lf * cos_phi_load)][
+                trafo_parameters['S_max'] > peak_data / (
+                load_factor_lv_trans * cos_phi_load)][
                 'S_max'].idxmin()]
         transformer_cnt = 1
     # peak load is greater than max. available trafo -> use multiple trafos
     else:
         transformer_cnt = 2
         # increase no. of trafos until peak load can be supplied
-        while not any(trafo_parameters[
-                          'S_max'] * (
-            trafo_lf * cos_phi_load) > peak_load / transformer_cnt):
+        while not any(trafo_parameters['S_max'] * (
+                    load_factor_lv_trans * cos_phi_load) > (peak_data / transformer_cnt)):
             transformer_cnt += 1
         transformer = trafo_parameters.iloc[
             trafo_parameters[
-                trafo_parameters[
-                    'S_max'] * (
-                trafo_lf * cos_phi_load) > peak_load / transformer_cnt]
+                trafo_parameters['S_max'] * (
+                    load_factor_lv_trans * cos_phi_load) > (peak_data / transformer_cnt)]
             ['S_max'].idxmin()]
 
     return transformer, transformer_cnt
@@ -85,7 +97,7 @@ def transformer(grid):
     """
 
     # choose size and amount of transformers
-    transformer, transformer_cnt = select_transformer(grid)
+    transformer, transformer_cnt = select_transformers(grid)
 
     # create transformers and add them to station of LVGD
     for t in range(0, transformer_cnt):

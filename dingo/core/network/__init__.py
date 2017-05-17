@@ -298,8 +298,10 @@ class GridDingo:
 
 class StationDingo:
     """
-    Defines a MV/LVstation in DINGO
-    -------------------------------
+    Defines a HV-MV or MV-LV station in DINGO
+
+    Parameters
+    ----------
 
     id_db: id according to database table
     v_level_operation: operation voltage level at station (the station's voltage level differs from the nominal voltage
@@ -329,18 +331,17 @@ class StationDingo:
     @property
     def peak_load(self):
         """
-        Cumulative peak load of loads connected to underlying LV grid
-        (taken from LV Grid District -> top-down)
+        Cumulative peak load of loads connected to underlying MV or LV grid
+        (taken from MV or LV Grid District -> top-down)
+
+        Notes
+        -----
+        This peak load includes all loads which are located within Grid District:
+        When called from MV station, all loads of all Load Areas are considered
+        (peak load was calculated in MVGridDistrictDingo.add_peak_demand()).
+        When called from LV station, all loads of the LVGridDistrict are considered.
         """
         return self.grid.grid_district.peak_load
-
-    @property
-    def peak_generation(self):
-        """
-        Cumulative peak generation of generators connected to underlying LV grid
-        (instantaneously calculated -> bottom-up)
-        """
-        return sum([_.capacity for _ in self.grid.generators()])
 
 
 class BusDingo:

@@ -10,6 +10,7 @@ from dingo.grid.lv_grid import build_grid, lv_connect
 import dingo
 from dingo.tools import config as cfg_dingo, pypsa_io, tools
 from dingo.tools import config as cfg_dingo, tools
+from dingo.tools.geo import calc_geo_dist_vincenty
 from dingo.grid.mv_grid.tools import set_circuit_breakers
 from dingo.flexopt.reinforce_grid import *
 import dingo.core
@@ -218,7 +219,11 @@ class MVGridDingo(GridDingo):
         return list(nodes_subtree)
 
     def set_branch_ids(self):
-        """ Generates and sets ids of branches for MV and underlying LV grids """
+        """ Generates and sets ids of branches for MV and underlying LV grids.
+        
+        While IDs of imported objects can be derived from dataset's ID, branches
+        are created within DINGO and need unique IDs (e.g. for PF calculation).
+        """
 
         # MV grid:
         ctr = 1
@@ -235,7 +240,7 @@ class MVGridDingo(GridDingo):
                     ctr += 1
 
     def routing(self, debug=False, anim=None):
-        """ Performs routing on grid graph nodes
+        """ Performs routing on Load Area centres to build MV grid with ring topology.
 
         Args:
             debug: If True, information is printed while routing
@@ -303,50 +308,90 @@ class MVGridDingo(GridDingo):
         self.default_branch_kind_settle = 'cable'
 
         # choose appropriate transformers for each HV/MV sub-station
-        self._station.choose_transformers()
+        self._station.select_transformers()
 
-    def set_voltage_level(self):
-        """ Sets voltage level of MV grid according to load density.
+    def set_voltage_level(self, mode='distance'):
+        """ Sets voltage level of MV grid according to load density of MV Grid District or max.
+            distance between station and Load Area.
 
-        Args:
-            none
-        Returns:
-            nothing
+        Parameters
+        ----------
+            mode: String
+                determines how voltage level is determined:
 
-        Notes
-        -----
-        Decision on voltage level is determined by load density of the considered region. Urban areas (load density of
-        >= 1 MW/km2 according to [1]_) usually got a voltage of 10 kV whereas rural areas mostly use 20 kV.
+                'load_density':         Decision on voltage level is determined by load density
+                                        of the considered region. Urban areas (load density of
+                                        >= 1 MW/km2 according to [1]_) usually got a voltage of
+                                        10 kV whereas rural areas mostly use 20 kV.
+
+                'distance' (default):   Decision on voltage level is determined by the max.
+                                        distance between Grid District's HV-MV station and Load
+                                        Areas (LA's centre is used). According to [2]_ a value of
+                                        1kV/kV can be assumed. The `voltage_per_km_threshold`
+                                        defines the distance threshold for distinction.
+                                        (default in config = (20km+10km)/2 = 15km)
 
         References
         ----------
         .. [1] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger Referenznetze im Verteilnetzsektor zur
             Überprüfung der Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
+        .. [2] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
+
         """
-        # TODO: more references!
 
-        load_density_threshold = float(cfg_dingo.get('assumptions',
-                                                     'load_density_threshold'))
+        if mode == 'load_density':
 
-        # transform MVGD's area to epsg 3035
-        # to achieve correct area calculation
-        projection = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+            # get load density
+            load_density_threshold = float(cfg_dingo.get('assumptions',
+                                                         'load_density_threshold'))
 
-        # calculate load density
-        # TODO: Move constant 1e6 to config file
-        load_density = ((self.grid_district.peak_load / 1e3) /
-                        (transform(projection, self.grid_district.geo_data).area / 1e6)) # unit MVA/km^2
+            # transform MVGD's area to epsg 3035
+            # to achieve correct area calculation
+            projection = partial(
+                pyproj.transform,
+                pyproj.Proj(init='epsg:4326'),  # source coordinate system
+                pyproj.Proj(init='epsg:3035'))  # destination coordinate system
 
-        # identify voltage level
-        if load_density < load_density_threshold:
-            self.v_level = 20
-        elif load_density >= load_density_threshold:
-            self.v_level = 10
+            # calculate load density
+            kw2mw = 1e-3
+            sqm2sqkm = 1e6
+            load_density = ((self.grid_district.peak_load * kw2mw) /
+                            (transform(projection, self.grid_district.geo_data).area / sqm2sqkm)) # unit MVA/km^2
+
+            # identify voltage level
+            if load_density < load_density_threshold:
+                self.v_level = 20
+            elif load_density >= load_density_threshold:
+                self.v_level = 10
+            else:
+                raise ValueError('load_density is invalid!')
+
+        elif mode == 'distance':
+
+            # get threshold for 20/10kV disambiguation
+            voltage_per_km_threshold = float(cfg_dingo.get('assumptions',
+                                                           'voltage_per_km_threshold'))
+
+            # initial distance
+            dist_max = 0
+            import time
+            start = time.time()
+            for node in self.graph_nodes_sorted():
+                if isinstance(node, LVLoadAreaCentreDingo):
+                    # calc distance from MV-LV station to LA centre
+                    dist_node = calc_geo_dist_vincenty(self.station(), node) / 1e3
+                    if dist_node > dist_max:
+                        dist_max = dist_node
+
+            # max. occurring distance to a Load Area exceeds threshold => grid operates at 20kV
+            if dist_max >= voltage_per_km_threshold:
+                self.v_level = 20
+            # not: grid operates at 10kV
+            else:
+                self.v_level = 10
+
         else:
-            raise ValueError('load_density is invalid!')
+            raise ValueError('parameter \'mode\' is invalid!')
 
     def set_default_branch_type(self, debug=False):
         """ Determines default branch type according to grid district's peak load and standard equipment.
@@ -412,7 +457,7 @@ class MVGridDingo(GridDingo):
         # select appropriate branch params according to voltage level, sorted ascending by max. current
         # use <240mm2 only (ca. 420A) for initial rings and for disambiguation of agg. LA
         branch_parameters = branch_parameters[branch_parameters['U_n'] == self.v_level]
-        branch_parameters = branch_parameters[branch_parameters['I_max_th'] < 420].sort_values('I_max_th')
+        branch_parameters = branch_parameters[branch_parameters['reinforce_only'] == 0].sort_values('I_max_th')
 
         # get largest line/cable type
         branch_type_max = branch_parameters.loc[branch_parameters['I_max_th'].idxmax()]
@@ -621,13 +666,7 @@ class MVGridDingo(GridDingo):
         # transformer data
 
     def reinforce_grid(self):
-        """ Performs grid reinforcement measures for current MV grid
-        Args:
-
-        Returns:
-
-        """
-        # TODO: Finalize docstring
+        """ Performs grid reinforcement measures for current MV grid """
 
         reinforce_grid(self, mode='MV')
 
@@ -735,13 +774,7 @@ class LVGridDingo(GridDingo):
         self._graph = lv_connect.lv_connect_generators(self.grid_district, self._graph, debug)
 
     def reinforce_grid(self):
-        """ Performs grid reinforcement measures for current LV grid
-        Args:
-
-        Returns:
-
-        """
-        # TODO: Finalize docstring
+        """ Performs grid reinforcement measures for current LV grid """
 
         reinforce_grid(self, mode='LV')
 

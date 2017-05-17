@@ -13,20 +13,25 @@ logger = logging.getLogger('dingo')
 def check_load(grid, mode):
     """ Checks for over-loading of branches and transformers for MV or LV grid
 
-    Args:
-        grid: GridDingo object
-        mode: kind of grid ('MV' or 'LV')
+    Parameters
+    ----------
+    grid: GridDingo object
+    mode: String
+        kind of grid ('MV' or 'LV')
 
-    Returns:
-        Dict of critical branches with max. relative overloading
-        List of critical transformers,
-        Format: {branch_1: rel_overloading_1, ..., branch_n: rel_overloading_n},
-                [trafo_1, ..., trafo_m]
+    Returns
+    -------
+    Dict of critical branches (BranchDingo objects) with max. relative overloading
+    List of critical transformers (TransformerDingo objects),
+    Format: {branch_1: rel_overloading_1, ..., branch_n: rel_overloading_n},
+            [trafo_1, ..., trafo_m]
 
-    Notes:
-        Lines'/cables' max. capacity (load case and feed-in case) are taken from [1]_.
+    Notes
+    -----
+    Lines'/cables' max. capacity (load case and feed-in case) are taken from [1]_.
 
-    References:
+    References
+    ----------
     .. [1] dena VNS
 
     """
@@ -36,8 +41,9 @@ def check_load(grid, mode):
 
     if mode == 'MV':
         # load load factors (conditions) for cables, lines and trafos for load- and feedin case
-        load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
-                                                             'load_factor_mv_trans_lc_normal'))
+
+        # load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
+        #                                                      'load_factor_mv_trans_lc_normal'))
         load_factor_mv_line_lc_normal = float(cfg_dingo.get('assumptions',
                                                              'load_factor_mv_line_lc_normal'))
         load_factor_mv_cable_lc_normal = float(cfg_dingo.get('assumptions',
@@ -52,10 +58,10 @@ def check_load(grid, mode):
         mw2kw = 1e3
         kw2mw = 1e-3
 
-        # 1. check branches' loads
+        # STEP 1: check branches' loads
         for branch in grid.graph_edges():
             s_max_th = 3**0.5 * branch['branch'].type['U_n'] * branch['branch'].type['I_max_th']
-            # TODO: Add type attribute to branch for checking type !!!!
+            # TODO: Check LOAD FACTOR!
             if branch['branch'].kind is 'line':
                 s_max_th *= load_factor_mv_line_lc_normal
             elif branch['branch'].kind is 'cable':
@@ -66,36 +72,33 @@ def check_load(grid, mode):
             # check loads only for non-aggregated Load Areas (aggregated ones are skipped raising except)
             try:
                 if any([s*mw2kw >= s_max_th for s in branch['branch'].s_res]):
-                    #crit_branches.append(branch)
                     # save max. relative overloading
                     crit_branches[branch] = max(branch['branch'].s_res) * mw2kw / s_max_th
             except:
                 pass
 
-        # TODO: temporarily do not reinforce HV-MV stations
+        # STEP 2: check HV-MV station's load
 
-        # # 2. check trafos' loads
-        # # get power flow case count
-        # # TODO: This way is odd, as soon as there's a central place where PF settings are stored, get it from there
-        # pf_case_count = len(branch['branch'].s_res)
+        # NOTE: HV-MV station reinforcement is not required for status-quo
+        # scenario since HV-MV trafos already sufficient for load+generation
+        # case as done in MVStationDingo.choose_transformers()
+
+        # OLD snippet:
+        # cum_peak_load = grid.grid_district.peak_load
+        # cum_peak_generation = grid.station().peak_generation(mode='MVLV')
         #
-        # # max. allowed load of trafo
-        # s_max_th_trafo = sum(trafo.s_max_a for trafo in grid._station.transformers())
+        # # reinforcement necessary only if generation > load
+        # if cum_peak_generation > cum_peak_load:
+        #     grid.station().choose_transformers
         #
-        # s_max_th_branch = [0] * pf_case_count
-        # for node in grid._graph.edge[grid._station]:
-        #     branch = grid._graph.edge[grid._station][node]['branch']
-        #     if not branch.connects_aggregated:
-        #         s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch, branch.s_res)]
-        #     else:
-        #         # TODO: Currently, peak load is assumed for aggregated LV for all cases!
-        #         s_max_th_branch = [sum(_) for _ in zip(s_max_th_branch,
-        #                                                pf_case_count * [kw2mw * node.lv_load_area.peak_load_sum])]
+        # cum_trafo_capacity = sum((_.s_max_a for _ in grid.station().transformers()))
         #
-        # #print(s_max_th_branch)
-        # if any([s*mw2kw >= s_max_th_trafo for s in s_max_th_branch]):
-        #     crit_stations.append(grid._station)
-        #     # PUT MORE STUFF IN HERE
+        # max_trafo = max((_.s_max_a for _ in grid.station().transformers()))
+        #
+        # # determine number and size of required transformers
+        # kw2mw = 1e-3
+        # residual_apparent_power = cum_generation_sum * kw2mw - \
+        #                           cum_trafo_capacity
 
     elif mode == 'LV':
         raise NotImplementedError
@@ -113,19 +116,19 @@ def check_load(grid, mode):
 def check_voltage(grid, mode):
     """ Checks for voltage stability issues at all nodes for MV or LV grid
 
-    Args:
-        grid: GridDingo object
-        mode: kind of grid ('MV' or 'LV')
+    Parameters
+    ----------
+    grid: GridDingo object
+    mode: String
+        kind of grid ('MV' or 'LV')
 
-    Returns:
-        List of critical nodes, sorted descending by voltage difference
+    Returns
+    -------
+    List of critical nodes, sorted descending by voltage difference
 
-    Notes:
-        The examination is done in two steps, according to [1]_:
-        1. It is checked
-
-    References:
-    .. [1] dena VNS
+    Notes
+    -----
+    The voltage is checked against a max. allowed voltage deviation.
     """
 
     crit_nodes = {}
@@ -135,7 +138,7 @@ def check_voltage(grid, mode):
         mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                          'mv_max_v_level_diff_normal'))
 
-        # 1. check nodes' voltages
+        # check nodes' voltages
         voltage_station = grid._station.voltage_res
         for node in grid.graph_nodes_sorted():
             try:

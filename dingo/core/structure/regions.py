@@ -10,7 +10,6 @@ class MVGridDistrictDingo(RegionDingo):
     ----------------------------
 
     """
-    # TODO: add method remove_lv_load_area()
 
     def __init__(self, **kwargs):
         #inherit branch parameters from Region
@@ -22,10 +21,14 @@ class MVGridDistrictDingo(RegionDingo):
         self._lv_load_area_groups = []
         self.geo_data = kwargs.get('geo_data', None)
 
-        # INSERT LOAD PARAMS
-        self.peak_load = kwargs.get('peak_load', None)  # in kVA
-        self.peak_load_satellites = kwargs.get('peak_load_satellites', None)  # in kVA
-        self.peak_load_aggregated = kwargs.get('peak_load_aggregated', None)  # in kVA
+        # peak load sum in kVA
+        self.peak_load = kwargs.get('peak_load', 0)
+
+        # peak load (satellites only) in kVA
+        self.peak_load_satellites = kwargs.get('peak_load_satellites', 0)
+
+        # peak load (aggregated only) in kVA
+        self.peak_load_aggregated = kwargs.get('peak_load_aggregated', 0)
 
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""

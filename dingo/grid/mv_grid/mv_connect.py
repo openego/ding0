@@ -849,7 +849,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                 logger.debug('Generator {0} was connected to {1}'.format(
                     generator, mv_station))
 
-        # ===== voltage level 5: generator has to be connected to MV grid =====
+        # ===== voltage level 5: generator has to be connected to MV grid (next-neighbor) =====
         elif generator.v_level == 5:
             generator_shp = transform(proj1, generator.geo_data)
 

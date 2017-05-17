@@ -1,4 +1,3 @@
-import dingo
 from dingo.config import config_db_interfaces as db_int
 from dingo.core.network import GeneratorDingo
 from dingo.core.network.cable_distributors import MVCableDistributorDingo
@@ -6,14 +5,23 @@ from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.core.powerflow import *
-from dingo.tools import pypsa_io, config as cfg_dingo
+from dingo.tools import pypsa_io
 from dingo.tools import config as cfg_dingo
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *
-from egoio.tools.db import change_owner_to
 
 import os
 import logging
+import pandas as pd
+import random
+import time
+from math import isnan
+
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
+from geoalchemy2.shape import from_shape
+from shapely.wkt import loads as wkt_loads
+from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 
 logger = logging.getLogger('dingo')
 
@@ -66,20 +74,6 @@ else:
                  "`config_db_tables.cfg`".format(data_source))
     raise NameError("{} is no valid data source!".format(data_source))
 
-import pandas as pd
-
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func, or_
-from geoalchemy2.shape import from_shape
-from shapely.wkt import loads as wkt_loads
-from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
-
-from functools import partial
-import pyproj
-from shapely.ops import transform
-from math import isnan
-import random
-
 package_path = dingo.__path__[0]
 
 
@@ -121,6 +115,120 @@ class NetworkDingo:
     def static_data(self):
         """Returns static data"""
         return self._static_data
+
+    def run_dingo(self, conn, mv_grid_districts_no=None, debug=False):
+        """ Let DINGO run by shouting at this method (or just call
+            it from NetworkDingo instance). This method is a wrapper
+            for the main functionality of DINGO.
+
+        Parameters
+        ----------
+        conn : sqlalchemy.engine.base.Connection object
+            Database connection
+        mv_grid_districts_no : List of Integers
+            List of MV grid_districts/stations to be imported (if empty,
+            all grid_districts & stations are imported)
+        debug : Boolean
+            If True, information is printed during process
+
+        Notes
+        -----
+        The steps performed in this method are to be kept in the given order
+        since there are hard dependencies between them. Short description of
+        all steps performed:
+        
+        STEP 1: Import MV Grid Districts and subjacent objects
+            Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
+            and MV-LV stations, instantiates and initiates objects.
+            
+        STEP 2: Import generators
+            Conventional and renewable generators of voltage levels 4..7 are imported
+            and added to corresponding grid.
+        
+        STEP 3: Parametrize grid
+            Parameters of MV grid are set such as voltage level and cable/line types
+            according to MV Grid District's characteristics.
+        
+        STEP 4: Validate MV Grid Districts
+            Tests MV grid districts for validity concerning imported data such as
+            count of Load Areas.
+        
+        STEP 5: Build LV grids
+            Builds LV grids for every non-aggregated LA in every MV Grid District
+            using model grids.
+        
+        STEP 6: Build MV grids
+            Builds MV grid by performing a routing on Load Area centres to build
+            ring topology.
+        
+        STEP 7: Connect MV and LV generators
+            Generators are connected to grids, used approach depends on voltage
+            level.
+        
+        STEP 8: Set IDs for all branches in MV and LV grids
+            While IDs of imported objects can be derived from dataset's ID, branches
+            are created in steps 5+6 and need unique IDs (e.g. for PF calculation).
+        
+        STEP 9: Relocate switch disconnectors in MV grid
+            Switch disconnectors are set during routing process (step 6) according
+            to the load distribution within a ring. After further modifications of
+            the grid within step 6+7 they have to be relocated (note: switch
+            disconnectors are called circuit breakers in DINGO for historical reasons).
+        
+        STEP 10: Open all switch disconnectors in MV grid
+            Under normal conditions, rings are operated in open state (half-rings).
+            Furthermore, this is required to allow powerflow for MV grid.
+        
+        STEP 11: Do power flow analysis of MV grid
+            The technically working MV grid created in step 6 was extended by satellite
+            loads and generators. It is finally tested again using powerflow calculation.
+        
+        STEP 12: Reinforce MV grid
+            MV grid is eventually reinforced persuant to results from step 11.
+        """
+        if debug:
+            start = time.time()
+
+        # STEP 1: Import MV Grid Districts and subjacent objects
+        self.import_mv_grid_districts(conn,
+                                      mv_grid_districts_no=mv_grid_districts_no)
+
+        # STEP 2: Import generators
+        self.import_generators(conn, debug=debug)
+
+        # STEP 3: Parametrize MV grid
+        self.mv_parametrize_grid(debug=debug)
+
+        # STEP 4: Validate MV Grid Districts
+        self.validate_grid_districts()
+
+        # STEP 5: Build LV grids
+        self.build_lv_grids()
+
+        # STEP 6: Build MV grids
+        self.mv_routing(debug=False, animation=False)
+
+        # STEP 7: Connect MV and LV generators
+        self.connect_generators(debug=False)
+
+        # STEP 8: Set IDs for all branches in MV and LV grids
+        self.set_branch_ids()
+
+        # STEP 9: Relocate switch disconnectors in MV grid
+        self.set_circuit_breakers(debug=debug)
+    
+        # STEP 10: Open all switch disconnectors in MV grid
+        self.control_circuit_breakers(mode='open')
+    
+        # STEP 11: Do power flow analysis of MV grid
+        self.run_powerflow(conn, method='onthefly', export_pypsa=False, debug=debug)
+    
+        # STEP 12: Reinforce MV grid
+        self.reinforce_grid()
+
+        if debug:
+            logger.info('Elapsed time for {0} MV Grid Districts (seconds): {1}'.format(
+                str(len(mv_grid_districts_no)), time.time() - start))
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
         """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object,
@@ -251,14 +359,15 @@ class NetworkDingo:
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
     def import_mv_grid_districts(self, conn, mv_grid_districts_no=None):
-        """Imports MV grid_districts and MV stations from database, reprojects geodata
-        and and initiates objects.
+        """ Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
+            and MV-LV stations, instantiates and initiates objects.
 
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
-               Database connection
-        mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
+            Database connection
+        mv_grid_districts_no : List of Integers
+            List of MV grid_districts/stations to be imported (if empty,
             all grid_districts & stations are imported)
 
         See Also
@@ -291,7 +400,8 @@ class NetworkDingo:
             join(orm_mv_stations, orm_mv_grid_districts.subst_id ==
                  orm_mv_stations.subst_id).\
             filter(orm_mv_grid_districts.subst_id.in_(mv_grid_districts_no)). \
-            filter(version_condition_mvgd)
+            filter(version_condition_mvgd). \
+            distinct()
 
         # read MV data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
@@ -775,20 +885,33 @@ class NetworkDingo:
 
         package_path = dingo.__path__[0]
 
+        equipment_mv_parameters_trafos = cfg_dingo.get('equipment',
+                                                       'equipment_mv_parameters_trafos')
+        self.static_data['MV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
+                                        equipment_mv_parameters_trafos),
+                                        comment='#',
+                                        delimiter=',',
+                                        decimal='.',
+                                        converters={'S_max': lambda x: int(x)})
+
         # import equipment
         equipment_mv_parameters_lines = cfg_dingo.get('equipment',
                                                       'equipment_mv_parameters_lines')
         self.static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
                                                 equipment_mv_parameters_lines),
                                                 comment='#',
-                                                converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+                                                converters={'I_max_th': lambda x: int(x),
+                                                            'U_n': lambda x: int(x),
+                                                            'reinforce_only': lambda x: int(x)})
 
         equipment_mv_parameters_cables = cfg_dingo.get('equipment',
                                                        'equipment_mv_parameters_cables')
         self.static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
                                         equipment_mv_parameters_cables),
                                         comment='#',
-                                        converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+                                        converters={'I_max_th': lambda x: int(x),
+                                                    'U_n': lambda x: int(x),
+                                                    'reinforce_only': lambda x: int(x)})
 
         equipment_lv_parameters_cables = cfg_dingo.get('equipment',
                                                        'equipment_lv_parameters_cables')
@@ -844,7 +967,7 @@ class NetworkDingo:
                                                                              **converters_ids))
 
     def validate_grid_districts(self):
-        """ Tests MV grid districts for validity concerning imported data such as:
+        """ Tests MV grid districts for validity concerning imported data such as count of Load Areas.
 
         Invalid MV grid districts are subsequently deleted from Network.
         """
@@ -1214,10 +1337,9 @@ class NetworkDingo:
 
         return nodes_df, edges_df
 
-
     def mv_routing(self, debug=False, animation=False):
-        """ Performs routing on all MV grids, see method `routing` in class
-        `MVGridDingo` for details.
+        """ Performs routing on Load Area centres to build MV grid with ring topology,
+            see method `routing` in class `MVGridDingo` for details.
 
         Parameters
         ----------
@@ -1241,7 +1363,7 @@ class NetworkDingo:
 
     def build_lv_grids(self):
         """ Builds LV grids for every non-aggregated LA in every MV grid
-        district
+        district using model grids.
         """
 
         for mv_grid_district in self.mv_grid_districts():
@@ -1257,7 +1379,7 @@ class NetworkDingo:
         logger.info('=====> LV model grids created')
 
     def connect_generators(self, debug=False):
-        """ Connects generators (graph nodes) to grid (graph) for every MV grid district
+        """ Connects generators (graph nodes) to grid (graph) for every MV and LV Grid District
 
         Args:
             debug: If True, information is printed during process
@@ -1381,15 +1503,6 @@ class NetworkDingo:
                                                     export_pypsa_dir=export_pypsa_dir,
                                                     debug=debug)
 
-    def control_generators(self):
-        """
-        Returns:
-
-        """
-
-        for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.reinforce_grid()
-
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for all MV and LV grids
         Args:
@@ -1400,9 +1513,11 @@ class NetworkDingo:
         # TODO: Finish method and enable LV case
 
         for grid_district in self.mv_grid_districts():
+
+            # reinforce MV grid
             grid_district.mv_grid.reinforce_grid()
 
-            # ===== LV PART (currently disabled) =====
+            # reinforce LV grids
             for lv_load_area in grid_district.lv_load_areas():
                 for lv_grid_district in lv_load_area.lv_grid_districts():
                     lv_grid_district.lv_grid.reinforce_grid()
