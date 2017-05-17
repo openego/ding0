@@ -1,5 +1,7 @@
-from .check_tech_constraints import check_load, check_voltage
-from .reinforce_measures import reinforce_branches_current, reinforce_branches_voltage, extend_substation, new_substation
+from .check_tech_constraints import check_load, check_voltage, \
+    assign_line_loading
+from .reinforce_measures import reinforce_branches_current, \
+    reinforce_branches_voltage
 import logging
 
 
@@ -65,4 +67,5 @@ def reinforce_grid(grid, mode):
                         'reinforcement.')
 
     elif mode == 'LV':
-        raise NotImplementedError
+        assign_line_loading(grid)
+        # raise NotImplementedError

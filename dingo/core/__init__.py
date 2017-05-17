@@ -1408,9 +1408,9 @@ class NetworkDingo:
             grid_district.mv_grid.reinforce_grid()
 
             # ===== LV PART (currently disabled) =====
-            # for lv_load_area in grid_district.lv_load_areas():
-            #     for lv_grid_district in lv_load_area.lv_grid_districts():
-            #         lv_grid_district.lv_grid.reinforce_grid()
+            for lv_load_area in grid_district.lv_load_areas():
+                for lv_grid_district in lv_load_area.lv_grid_districts():
+                    lv_grid_district.lv_grid.reinforce_grid()
 
     def __repr__(self):
         return str(self.name)
