@@ -308,7 +308,7 @@ class MVGridDingo(GridDingo):
         self.default_branch_kind_settle = 'cable'
 
         # choose appropriate transformers for each HV/MV sub-station
-        self._station.choose_transformers()
+        self._station.select_transformers()
 
     def set_voltage_level(self, mode='distance'):
         """ Sets voltage level of MV grid according to load density of MV Grid District or max.

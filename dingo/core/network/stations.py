@@ -59,7 +59,7 @@ class MVStationDingo(StationDingo):
 
         self.v_level_operation = mv_station_v_level_operation * self.grid.v_level
 
-    def choose_transformers(self):
+    def select_transformers(self):
         """Chooses appropriate transformers for the MV sub-station
 
         Choice bases on voltage level (depends on load density), apparent power
