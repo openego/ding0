@@ -507,7 +507,6 @@ class NetworkDingo:
                                               orm_lv_grid_district.mvlv_subst_id). \
             filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist())). \
             filter(version_condition_lvgd)
-            #filter(orm_lv_grid_district.load_area_id.in_(load_areas))
 
         # read data from db
         lv_grid_districts = pd.read_sql_query(lv_grid_districs_sqla.statement,
@@ -595,10 +594,6 @@ class NetworkDingo:
                 orm_re_generators.subst_id.in_(list(mv_grid_districts_dict))). \
                 filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7])). \
                 filter(version_condition_re)
-            # filter(orm_re_generators.voltage_level.in_([4, 5]))
-            # filter(orm_re_generators.voltage_level.in_([4, 5, 6, 7]))
-
-            # TODO: Currently only MV generators are imported, please include LV!
 
             # read data from db
             generators = pd.read_sql_query(generators_sqla.statement,
