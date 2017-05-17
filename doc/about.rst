@@ -169,7 +169,7 @@ directly connected to the bus bar of the MV-LV substation.
     grid model for distribution power supply systems*.
     Journal of Physics: Conference Series 2017 (submitted)
 .. [Huelk2017] L. Hülk, L. Wienholt, I. Cussmann, U. Mueller, C. Matke and E.
-    Koetter: *Allocation of annual electricity consumption and power
+    Kötter: *Allocation of annual electricity consumption and power
     generation capacities across multi voltage levels in a high spatial
     resolution* International Journal of Sustainable Energy Planning and
     Management 2017 (submitted)

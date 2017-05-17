@@ -617,7 +617,6 @@ class NetworkDingo:
                                               orm_lv_grid_district.mvlv_subst_id). \
             filter(orm_lv_grid_district.mvlv_subst_id.in_(lv_stations.index.tolist())). \
             filter(version_condition_lvgd)
-            #filter(orm_lv_grid_district.load_area_id.in_(load_areas))
 
         # read data from db
         lv_grid_districts = pd.read_sql_query(lv_grid_districs_sqla.statement,
@@ -1518,11 +1517,10 @@ class NetworkDingo:
             # reinforce MV grid
             grid_district.mv_grid.reinforce_grid()
 
-            # reinforce LV grids (currently disabled)
-
-            # for lv_load_area in grid_district.lv_load_areas():
-            #     for lv_grid_district in lv_load_area.lv_grid_districts():
-            #         lv_grid_district.lv_grid.reinforce_grid()
+            # reinforce LV grids
+            for lv_load_area in grid_district.lv_load_areas():
+                for lv_grid_district in lv_load_area.lv_grid_districts():
+                    lv_grid_district.lv_grid.reinforce_grid()
 
     def __repr__(self):
         return str(self.name)

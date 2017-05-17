@@ -2,6 +2,9 @@
 
 from dingo.tools import config as cfg_dingo
 import logging
+from dingo.core.network.loads import LVLoadDingo
+from dingo.core.network import GeneratorDingo
+import networkx as nx
 
 
 logger = logging.getLogger('dingo')
@@ -155,3 +158,82 @@ def check_voltage(grid, mode):
         logger.info('==> {} nodes have voltage issues.'.format(len(crit_nodes)))
 
     return [_['node'] for _ in sorted(crit_nodes.values(), key=lambda _: _['v_diff'], reverse=True)]
+
+
+def assign_line_loading(grid):
+    """
+    Assign line loading to each branch determined by peak load and peak
+    generation of descendant branches
+
+    The attribute `s_res` is a list of two elements
+    1. apparent power in load case
+    2. apparent power in feed-in case
+
+    Parameters
+    ----------
+    grid : dingo.core.network.grids.LVGridDingo
+        Dingo LV grid object
+    """
+
+    # Convert grid to a tree (is a directed graph)
+    # based on this tree, descendants of each node are accessible
+    # grid_branches = get_branches(grid)
+
+    station = grid._station
+
+    tree = nx.dfs_tree(grid._graph, station)
+
+    for node in tree.nodes():
+
+        # list of descendant nodes including the node itself
+        descendants = list(nx.descendants(tree, node))
+        descendants.append(node)
+
+        # preceeding node of node
+        predecessors = tree.predecessors(node)
+
+        # assing cumulative peak load and generation
+        if len(predecessors) > 0:
+
+            # a non-meshed grid topology returns a list with only 1 item
+            predecessor = predecessors[0]
+
+            # get preceeding
+            branches = grid.graph_branches_from_node(node)
+            preceeding_branch = [branch for branch in branches
+                                if branch[0] is predecessor][0]
+
+            # determine cumulative peak load at node and assign to branch
+            peak_load, peak_gen = peak_load_generation_at_node(descendants)
+            preceeding_branch[1]['branch'].s_res = [peak_load, peak_gen]
+
+
+def peak_load_generation_at_node(nodes):
+    """
+    Get maximum occuring load and generation at a certain node
+
+    Summarizes peak loads and nominal generation power of descendant nodes
+    of a branch
+
+    Parameters
+    ----------
+    nodes : list
+        Any LV grid Dingo node object that is part of the grid topology
+
+    Return
+    ------
+    peak_load : numeric
+        Sum of peak loads of descendant nodes
+    peak_generation : numeric
+        Sum of nominal power of generation at descendant nodes
+    """
+
+    loads = [node.peak_load for node in nodes
+             if isinstance(node, LVLoadDingo)]
+    peak_load = sum(loads)
+
+    generation = [node.capacity for node in nodes
+             if isinstance(node, GeneratorDingo)]
+    peak_generation = sum(generation)
+
+    return peak_load, peak_generation
