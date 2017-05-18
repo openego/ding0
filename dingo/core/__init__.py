@@ -121,6 +121,11 @@ class NetworkDingo:
             self._mv_grid_districts.append(mv_grid_district)
 
     @property
+    def config(self):
+        """Returns config object"""
+        return self._config
+
+    @property
     def pf_config(self):
         """Returns PF config object"""
         return self._pf_config
