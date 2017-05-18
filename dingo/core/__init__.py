@@ -104,17 +104,10 @@ class NetworkDingo:
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', None)
         self._mv_grid_districts = []
-        self._pf_config = kwargs.get('pf_config', None)
-        self._static_data = kwargs.get('static_data', {})
 
-        # import general configs
-        self.import_config()
-
-        # import powerflow config
-        self.import_pf_config()
-
-        # import equipment
-        self.import_static_data()
+        self._config = self.import_config()
+        self._pf_config = self.import_pf_config()
+        self._static_data = self.import_static_data()
 
     def mv_grid_districts(self):
         """Returns a generator for iterating over MV grid_districts"""
@@ -885,7 +878,12 @@ class NetworkDingo:
         logger.info('=====> Generators imported')
 
     def import_config(self):
-        """ Loads parameters from config files """
+        """ Loads parameters from config files
+
+        Returns
+        -------
+        config object
+        """
 
         # load parameters from configs
         cfg_dingo.load_config('config_db_tables.cfg')
@@ -893,8 +891,15 @@ class NetworkDingo:
         cfg_dingo.load_config('config_files.cfg')
         cfg_dingo.load_config('config_misc.cfg')
 
+        return cfg_dingo
+
     def import_pf_config(self):
-        """ Creates power flow config class and imports config from file """
+        """ Creates power flow config class and imports config from file
+
+        Returns
+        -------
+        PFConfigDingo object
+        """
 
         scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
         start_hour = int(cfg_dingo.get("powerflow", "start_hour"))
@@ -904,97 +909,106 @@ class NetworkDingo:
         resolution = cfg_dingo.get("powerflow", "resolution")
         srid = str(int(cfg_dingo.get('geo', 'srid')))
 
-        self._pf_config = PFConfigDingo(scenarios=[scenario],
-                                        timestep_start=start_time,
-                                        timesteps_count=end_hour-start_hour,
-                                        srid=srid,
-                                        resolution=resolution)
+        return PFConfigDingo(scenarios=[scenario],
+                             timestep_start=start_time,
+                             timesteps_count=end_hour-start_hour,
+                             srid=srid,
+                             resolution=resolution)
 
     def import_static_data(self):
-        """ Imports static data into NetworkDingo such as equipment."""
+        """ Imports static data into NetworkDingo such as equipment.
+
+        Returns
+        -------
+        Dictionary with equipment data
+        """
 
         package_path = dingo.__path__[0]
 
+        static_data = {}
+
         equipment_mv_parameters_trafos = cfg_dingo.get('equipment',
                                                        'equipment_mv_parameters_trafos')
-        self.static_data['MV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
-                                        equipment_mv_parameters_trafos),
-                                        comment='#',
-                                        delimiter=',',
-                                        decimal='.',
-                                        converters={'S_max': lambda x: int(x)})
+        static_data['MV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
+                                   equipment_mv_parameters_trafos),
+                                   comment='#',
+                                   delimiter=',',
+                                   decimal='.',
+                                   converters={'S_max': lambda x: int(x)})
 
         # import equipment
         equipment_mv_parameters_lines = cfg_dingo.get('equipment',
                                                       'equipment_mv_parameters_lines')
-        self.static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
-                                                equipment_mv_parameters_lines),
-                                                comment='#',
-                                                converters={'I_max_th': lambda x: int(x),
-                                                            'U_n': lambda x: int(x),
-                                                            'reinforce_only': lambda x: int(x)})
+        static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
+                                           equipment_mv_parameters_lines),
+                                           comment='#',
+                                           converters={'I_max_th': lambda x: int(x),
+                                                       'U_n': lambda x: int(x),
+                                                       'reinforce_only': lambda x: int(x)})
 
         equipment_mv_parameters_cables = cfg_dingo.get('equipment',
                                                        'equipment_mv_parameters_cables')
-        self.static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
-                                        equipment_mv_parameters_cables),
-                                        comment='#',
-                                        converters={'I_max_th': lambda x: int(x),
-                                                    'U_n': lambda x: int(x),
-                                                    'reinforce_only': lambda x: int(x)})
+        static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
+                                   equipment_mv_parameters_cables),
+                                   comment='#',
+                                   converters={'I_max_th': lambda x: int(x),
+                                               'U_n': lambda x: int(x),
+                                               'reinforce_only': lambda x: int(x)})
 
         equipment_lv_parameters_cables = cfg_dingo.get('equipment',
                                                        'equipment_lv_parameters_cables')
-        self.static_data['LV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
-                                        equipment_lv_parameters_cables),
-                                        comment='#',
-                                        index_col='name',
-                                        converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+        static_data['LV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
+                                   equipment_lv_parameters_cables),
+                                   comment='#',
+                                   index_col='name',
+                                   converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
 
         equipment_lv_parameters_trafos = cfg_dingo.get('equipment',
                                                        'equipment_lv_parameters_trafos')
-        self.static_data['LV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
-                                        equipment_lv_parameters_trafos),
-                                        comment='#',
-                                        delimiter=',',
-                                        decimal='.',
-                                        #index_col='S_max',
-                                        converters={'S_max': lambda x: int(x)})
+        static_data['LV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
+                                   equipment_lv_parameters_trafos),
+                                   comment='#',
+                                   delimiter=',',
+                                   decimal='.',
+                                   #index_col='S_max',
+                                   converters={'S_max': lambda x: int(x)})
 
         # import LV model grids
         model_grids_lv_string_properties = cfg_dingo.get('model_grids',
                                                          'model_grids_lv_string_properties')
-        self.static_data['LV_model_grids_strings'] = pd.read_csv(os.path.join(package_path, 'data',
-                                                     model_grids_lv_string_properties),
-                                                     comment='#',
-                                                     delimiter=';',
-                                                     decimal=',',
-                                                     index_col='string_id',
-                                                     converters={'string_id': lambda x: int(x),
-                                                                 'type': lambda x: int(x),
-                                                                 'Kerber Original': lambda x: int(x),
-                                                                 'count house branch': lambda x: int(x),
-                                                                 'distance house branch': lambda x: int(x),
-                                                                 'cable width': lambda x: int(x),
-                                                                 'string length': lambda x: int(x),
-                                                                 'length house branch A': lambda x: int(x),
-                                                                 'length house branch B': lambda x: int(x),
-                                                                 'cable width A': lambda x: int(x),
-                                                                 'cable width B': lambda x: int(x)})
+        static_data['LV_model_grids_strings'] = pd.read_csv(os.path.join(package_path, 'data',
+                                                model_grids_lv_string_properties),
+                                                comment='#',
+                                                delimiter=';',
+                                                decimal=',',
+                                                index_col='string_id',
+                                                converters={'string_id': lambda x: int(x),
+                                                            'type': lambda x: int(x),
+                                                            'Kerber Original': lambda x: int(x),
+                                                            'count house branch': lambda x: int(x),
+                                                            'distance house branch': lambda x: int(x),
+                                                            'cable width': lambda x: int(x),
+                                                            'string length': lambda x: int(x),
+                                                            'length house branch A': lambda x: int(x),
+                                                            'length house branch B': lambda x: int(x),
+                                                            'cable width A': lambda x: int(x),
+                                                            'cable width B': lambda x: int(x)})
 
         model_grids_lv_apartment_string = cfg_dingo.get('model_grids',
                                                         'model_grids_lv_apartment_string')
         converters_ids = {}
         for id in range(1,47):  # create int() converter for columns 1..46
             converters_ids[str(id)] = lambda x: int(x)
-        self.static_data['LV_model_grids_strings_per_grid'] = pd.read_csv(os.path.join(package_path, 'data',
-                                                              model_grids_lv_apartment_string),
-                                                              comment='#',
-                                                              delimiter=';',
-                                                              decimal=',',
-                                                              index_col='apartment_count',
-                                                              converters=dict({'apartment_count': lambda x: int(x)},
-                                                                             **converters_ids))
+        static_data['LV_model_grids_strings_per_grid'] = pd.read_csv(os.path.join(package_path, 'data',
+                                                         model_grids_lv_apartment_string),
+                                                         comment='#',
+                                                         delimiter=';',
+                                                         decimal=',',
+                                                         index_col='apartment_count',
+                                                         converters=dict({'apartment_count': lambda x: int(x)},
+                                                                         **converters_ids))
+
+        return static_data
 
     def validate_grid_districts(self):
         """ Tests MV grid districts for validity concerning imported data such as count of Load Areas.
