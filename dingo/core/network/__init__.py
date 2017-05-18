@@ -333,6 +333,10 @@ class StationDingo:
         self.busbar = None
         self.v_level_operation = kwargs.get('v_level_operation', None)
 
+    @property
+    def network(self):
+        return self.grid.network
+
     def transformers(self):
         """Returns a generator for iterating over transformers"""
         for trans in self._transformers:
@@ -399,6 +403,10 @@ class RingDingo:
         # add circ breaker to grid and graph
         self._grid.add_ring(self)
 
+    @property
+    def network(self):
+        return self._grid.network
+
     def branches(self):
         for branch in self._grid.graph_edges():
             if branch['branch'].ring == self:
@@ -438,6 +446,10 @@ class BranchDingo:
 
         self.critical = False
 
+    @property
+    def network(self):
+        return self.ring.network
+
     def __repr__(self):
         return 'branch_' + str(self.id_db)
 
@@ -474,6 +486,10 @@ class TransformerDingo:
         self.r = kwargs.get('r', None)
         self.x = kwargs.get('x', None)
 
+    @property
+    def network(self):
+        return self.grid.network
+
 
 class GeneratorDingo:
     """ Generators (power plants of any kind)
@@ -492,6 +508,10 @@ class GeneratorDingo:
         self.type = kwargs.get('type', None)
         self.subtype = kwargs.get('subtype', None)
         self.v_level = kwargs.get('v_level', None)
+
+    @property
+    def network(self):
+        return self.mv_grid.network
 
     @property
     def pypsa_id(self):
@@ -516,6 +536,10 @@ class CableDistributorDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
 
+    @property
+    def network(self):
+        return self.grid.network
+
 
 class LoadDingo:
     """ Class for modelling a load """
@@ -528,6 +552,9 @@ class LoadDingo:
 
         self.id_db = self.grid.loads_count() + 1
 
+    @property
+    def network(self):
+        return self.grid.network
 
 class CircuitBreakerDingo:
     """ Class for modelling a circuit breaker
@@ -561,6 +588,10 @@ class CircuitBreakerDingo:
     def close(self):
         self.grid._graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
         self.status = 'closed'
+
+    @property
+    def network(self):
+        return self.grid.network
 
     def __repr__(self):
         return 'circuit_breaker_' + str(self.id_db)
