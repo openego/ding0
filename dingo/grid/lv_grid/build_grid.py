@@ -117,6 +117,7 @@ def transformer(grid):
     # create transformers and add them to station of LVGD
     for t in range(0, transformer_cnt):
         lv_transformer = TransformerDingo(
+            grid=grid,
             id_db=id,
             v_level=0.4,
             s_max_longterm=transformer['S_max'],

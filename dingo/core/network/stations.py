@@ -148,7 +148,8 @@ class MVStationDingo(StationDingo):
                                      residual_apparent_power]['S_max'].idxmin()]
 
             # add transformer on determined size with according parameters
-            self.add_transformer(TransformerDingo(**{'v_level': self.grid.v_level,
+            self.add_transformer(TransformerDingo(**{'grid': self.grid,
+                                                     'v_level': self.grid.v_level,
                                                      's_max_longterm': transformer['S_max']}))
             # calc residual load
             residual_apparent_power -= (load_factor_mv_trans *
@@ -158,12 +159,14 @@ class MVStationDingo(StationDingo):
         if len(self._transformers) == 0:
             transformer = trafo_parameters.iloc[trafo_parameters['S_max'].idxmin()]
 
-            self.add_transformer(TransformerDingo(**{'v_level': self.grid.v_level,
+            self.add_transformer(TransformerDingo(**{'grid': self.grid,
+                                                     'v_level': self.grid.v_level,
                                                      's_max_longterm': transformer['S_max']}))
 
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))
-        self.add_transformer(TransformerDingo(**{'v_level': self.grid.v_level,
+        self.add_transformer(TransformerDingo(**{'grid': self.grid,
+                                                 'v_level': self.grid.v_level,
                                                  's_max_longterm': s_max_max}))
 
     @property

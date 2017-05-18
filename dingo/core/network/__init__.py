@@ -464,6 +464,7 @@ class TransformerDingo:
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
+        self.grid = kwargs.get('grid', None)
         self.v_level = kwargs.get('v_level', None)
         self.s_max_a = kwargs.get('s_max_longterm', None)
         self.s_max_b = kwargs.get('s_max_shortterm', None)
