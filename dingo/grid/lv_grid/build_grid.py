@@ -587,6 +587,8 @@ def build_lv_graph_residential(lvgd, selected_string_df):
 
                 cable_name = row['cable type'] + \
                              ' 4x1x{}'.format(row['cable width'])
+                cable_type = lvgd.lv_grid.network.static_data[
+                    'LV_cables'].loc[cable_name]
 
                 # connect current lv_cable_dist to station
                 if house_branch == 1:
@@ -597,7 +599,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                         branch=BranchDingo(
                             length=row['distance house branch'],
                             kind='cable',
-                            type=cable_name,
+                            type=cable_type,
                             id_db='branch_{sector}{branch}_{load}'.format(
                                 branch=hh_branch,
                                 load=house_branch,
