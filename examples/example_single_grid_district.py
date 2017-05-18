@@ -22,7 +22,6 @@ import oemof.db as db
 
 # import required modules of DINGO
 from dingo.core import NetworkDingo
-from dingo.tools import config as cfg_dingo, results
 from dingo.tools.logger import setup_logger
 
 # define logger
