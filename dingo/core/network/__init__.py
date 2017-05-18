@@ -217,13 +217,15 @@ class GridDingo:
         for edge in edges_sorted:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
-    def find_path(self, node_source, node_target):
+    def find_path(self, node_source, node_target, type='nodes'):
         """ Determines the shortest path from `node_source` to `node_target` in _graph using networkx' shortest path
             algorithm.
 
         Args:
             node_source: source node (Dingo object), member of _graph
             node_target: target node (Dingo object), member of _graph
+            type : str, Specify if nodes or edges should be returned. Default
+            is `nodes`
 
         Returns:
             path: shortest path from `node_source` to `node_target` (list of nodes in _graph)
@@ -232,8 +234,13 @@ class GridDingo:
             path = nx.shortest_path(self._graph, node_source, node_target)
         else:
             raise Exception('At least one of the nodes is not a member of graph.')
-
-        return path
+        if type == 'nodes':
+            return path
+        elif type == 'edges':
+            return [_ for _ in self._graph.edges_iter(nbunch=path, data=True)
+                    if (_[0] in path and _[1] in path)]
+        else:
+            raise ValueError('Please specify type as nodes or edges')
 
     def find_and_union_paths(self, node_source, nodes_target):
         """ Determines shortest paths from `node_source` to all nodes in `node_target` in _graph using find_path().

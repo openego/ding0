@@ -1,5 +1,5 @@
 from .check_tech_constraints import check_load, check_voltage, \
-    assign_line_loading
+    assign_line_loading, assign_voltage_at_nodes
 from .reinforce_measures import reinforce_branches_current, \
     reinforce_branches_voltage
 import logging
@@ -81,4 +81,4 @@ def reinforce_grid(grid, mode):
 
     elif mode == 'LV':
         assign_line_loading(grid)
-        # raise NotImplementedError
+        critical_voltage = assign_voltage_at_nodes(grid)
