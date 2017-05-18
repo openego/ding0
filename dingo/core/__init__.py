@@ -107,7 +107,13 @@ class NetworkDingo:
         self._pf_config = kwargs.get('pf_config', None)
         self._static_data = kwargs.get('static_data', {})
 
+        # import general configs
+        self.import_config()
+
+        # import powerflow config
         self.import_pf_config()
+
+        # import equipment
         self.import_static_data()
 
     def mv_grid_districts(self):
@@ -877,6 +883,15 @@ class NetworkDingo:
         import_conv_generators()
 
         logger.info('=====> Generators imported')
+
+    def import_config(self):
+        """ Loads parameters from config files """
+
+        # load parameters from configs
+        cfg_dingo.load_config('config_db_tables.cfg')
+        cfg_dingo.load_config('config_calc.cfg')
+        cfg_dingo.load_config('config_files.cfg')
+        cfg_dingo.load_config('config_misc.cfg')
 
     def import_pf_config(self):
         """ Creates power flow config class and imports config from file """

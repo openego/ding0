@@ -28,12 +28,6 @@ from dingo.tools.logger import setup_logger
 # define logger
 logger = setup_logger()
 
-# load parameters from configs
-cfg_dingo.load_config('config_db_tables.cfg')
-cfg_dingo.load_config('config_calc.cfg')
-cfg_dingo.load_config('config_files.cfg')
-cfg_dingo.load_config('config_misc.cfg')
-
 # ===== MAIN =====
 
 # database connection
