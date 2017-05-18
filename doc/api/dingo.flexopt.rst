@@ -28,6 +28,14 @@ dingo.flexopt.reinforce_measures module
     :undoc-members:
     :show-inheritance:
 
+dingo.flexopt.reinforce_measures_dena module
+--------------------------------------------
+
+.. automodule:: dingo.flexopt.reinforce_measures_dena
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
