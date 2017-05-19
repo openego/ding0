@@ -13,6 +13,7 @@ __url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
+import dingo
 from dingo.config import config_db_interfaces as db_int
 from dingo.core.network import GeneratorDingo
 from dingo.core.network.cable_distributors import MVCableDistributorDingo
