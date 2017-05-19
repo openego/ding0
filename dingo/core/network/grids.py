@@ -21,24 +21,18 @@ from dingo.core.network.loads import *
 from dingo.core.network.cable_distributors import MVCableDistributorDingo, LVCableDistributorDingo
 from dingo.grid.mv_grid import mv_routing, mv_connect
 from dingo.grid.lv_grid import build_grid, lv_connect
-import dingo
 from dingo.tools import config as cfg_dingo, pypsa_io, tools
-from dingo.tools import config as cfg_dingo, tools
 from dingo.tools.geo import calc_geo_dist_vincenty
 from dingo.grid.mv_grid.tools import set_circuit_breakers
 from dingo.flexopt.reinforce_grid import *
-import dingo.core
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 
 import networkx as nx
-import pandas as pd
-import os
 from datetime import datetime
 from shapely.ops import transform
 import pyproj
 from functools import partial
 import logging
-import math
 
 
 logger = logging.getLogger('dingo')
