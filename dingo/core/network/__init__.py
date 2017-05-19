@@ -535,6 +535,7 @@ class LoadDingo:
     def network(self):
         return self.grid.network
 
+
 class CircuitBreakerDingo:
     """ Class for modelling a circuit breaker
 
@@ -559,6 +560,10 @@ class CircuitBreakerDingo:
         # add circ breaker to grid and graph
         self.grid.add_circuit_breaker(self)
 
+    @property
+    def network(self):
+        return self.grid.network
+
     def open(self):
         self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)
         self.grid._graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])
@@ -567,10 +572,6 @@ class CircuitBreakerDingo:
     def close(self):
         self.grid._graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
         self.status = 'closed'
-
-    @property
-    def network(self):
-        return self.grid.network
 
     def __repr__(self):
         return 'circuit_breaker_' + str(self.id_db)
