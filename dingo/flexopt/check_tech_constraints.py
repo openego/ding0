@@ -190,12 +190,19 @@ def assign_line_loading(grid):
     ----------
     grid : dingo.core.network.grids.LVGridDingo
         Dingo LV grid object
+
+    Returns
+    -------
+    critical_branches : list
+        List of critical branches incl. its line loading
     """
+    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
+    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+
+    critical_branches = []
 
     # Convert grid to a tree (is a directed graph)
     # based on this tree, descendants of each node are accessible
-    # grid_branches = get_branches(grid)
-
     station = grid._station
 
     tree = nx.dfs_tree(grid._graph, station)
@@ -222,7 +229,17 @@ def assign_line_loading(grid):
 
             # determine cumulative peak load at node and assign to branch
             peak_load, peak_gen = peak_load_generation_at_node(descendants)
-            preceeding_branch[1]['branch'].s_res = [peak_load, peak_gen]
+            s_max_th = 3 ** 0.5 * preceeding_branch[1]['branch'].type['U_n'] * \
+                       preceeding_branch[1]['branch'].type['I_max_th'] / 1e3
+
+            if (((peak_load / cos_phi_load) > s_max_th) or
+                ((peak_gen / cos_phi_feedin) > s_max_th)):
+                critical_branches.append({'branch': preceeding_branch[1],
+                                          's_max': [
+                                              peak_load / cos_phi_load,
+                                              peak_gen / cos_phi_feedin]})
+
+    return critical_branches
 
 
 def peak_load_generation_at_node(nodes):

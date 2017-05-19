@@ -95,5 +95,5 @@ def reinforce_grid(grid, mode):
         # case as done in MVStationDingo.choose_transformers()
 
     elif mode == 'LV':
-        assign_line_loading(grid)
-        critical_voltage = assign_voltage_at_nodes(grid)
+        critical_branches = assign_line_loading(grid) # overloading issues
+        critical_nodes = assign_voltage_at_nodes(grid) #over-voltage issues
