@@ -1,3 +1,18 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -325,6 +340,10 @@ class StationDingo:
         self.busbar = None
         self.v_level_operation = kwargs.get('v_level_operation', None)
 
+    @property
+    def network(self):
+        return self.grid.network
+
     def transformers(self):
         """Returns a generator for iterating over transformers"""
         for trans in self._transformers:
@@ -391,6 +410,10 @@ class RingDingo:
         # add circ breaker to grid and graph
         self._grid.add_ring(self)
 
+    @property
+    def network(self):
+        return self._grid.network
+
     def branches(self):
         for branch in self._grid.graph_edges():
             if branch['branch'].ring == self:
@@ -430,6 +453,10 @@ class BranchDingo:
 
         self.critical = False
 
+    @property
+    def network(self):
+        return self.ring.network
+
     def __repr__(self):
         return 'branch_' + str(self.id_db)
 
@@ -456,6 +483,7 @@ class TransformerDingo:
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
+        self.grid = kwargs.get('grid', None)
         self.v_level = kwargs.get('v_level', None)
         self.s_max_a = kwargs.get('s_max_longterm', None)
         self.s_max_b = kwargs.get('s_max_shortterm', None)
@@ -464,6 +492,10 @@ class TransformerDingo:
         self.tap_ratio = kwargs.get('tap_ratio', None)
         self.r = kwargs.get('r', None)
         self.x = kwargs.get('x', None)
+
+    @property
+    def network(self):
+        return self.grid.network
 
 
 class GeneratorDingo:
@@ -483,6 +515,10 @@ class GeneratorDingo:
         self.type = kwargs.get('type', None)
         self.subtype = kwargs.get('subtype', None)
         self.v_level = kwargs.get('v_level', None)
+
+    @property
+    def network(self):
+        return self.mv_grid.network
 
     @property
     def pypsa_id(self):
@@ -507,6 +543,10 @@ class CableDistributorDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
 
+    @property
+    def network(self):
+        return self.grid.network
+
 
 class LoadDingo:
     """ Class for modelling a load """
@@ -519,6 +559,9 @@ class LoadDingo:
 
         self.id_db = self.grid.loads_count() + 1
 
+    @property
+    def network(self):
+        return self.grid.network
 
 class CircuitBreakerDingo:
     """ Class for modelling a circuit breaker
@@ -552,6 +595,10 @@ class CircuitBreakerDingo:
     def close(self):
         self.grid._graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
         self.status = 'closed'
+
+    @property
+    def network(self):
+        return self.grid.network
 
     def __repr__(self):
         return 'circuit_breaker_' + str(self.id_db)
