@@ -1,5 +1,10 @@
-dingo.core package
-==================
+dingo\.core package
+===================
+
+.. automodule:: dingo.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Subpackages
 -----------
@@ -7,12 +12,6 @@ Subpackages
 .. toctree::
 
     dingo.core.network
+    dingo.core.powerflow
     dingo.core.structure
 
-Module contents
----------------
-
-.. automodule:: dingo.core
-    :members:
-    :undoc-members:
-    :show-inheritance:

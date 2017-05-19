@@ -1,3 +1,6 @@
+""" Core Package of dingo.
+
+    """
 import dingo
 from dingo.config import config_db_interfaces as db_int
 from dingo.core.network import GeneratorDingo
@@ -86,9 +89,8 @@ package_path = dingo.__path__[0]
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.
-
-    Parameters
-    ----------
+    
+    #TODO: test
 
     """
 

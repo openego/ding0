@@ -9,7 +9,8 @@ Welcome to dingo's documentation!
 Choose you favorite topic from the list of content
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 7
+   :titlesonly:
 
    welcome
    getting_started
@@ -18,7 +19,7 @@ Choose you favorite topic from the list of content
    calculation
    development
    whatsnew
-   api
+   dingo API <api/modules>
 
 
 

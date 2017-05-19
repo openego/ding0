@@ -213,9 +213,10 @@ class Route(object):
             checked using load factors from [1]_. Due to the high amount of steps the voltage rating cannot be checked
             using load flow calculation. Therefore we use a simple method which determines the voltage change between
             two consecutive nodes according to [2]_.
-            Furthermore it is checked if new route has got more nodes than allowed (typ. 2*10 according to _[3]).
+            Furthermore it is checked if new route has got more nodes than allowed (typ. 2*10 according to [3]_).
 
         References:
+            
         .. [1] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012
         .. [2] M. Sakulin, W. Hipp, "Netzaspekte von dezentralen Erzeugungseinheiten,

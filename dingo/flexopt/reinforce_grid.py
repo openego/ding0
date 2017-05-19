@@ -7,17 +7,28 @@ logger = logging.getLogger('dingo')
 
 
 def reinforce_grid(grid, mode):
+    #TODO: finish docstring
     """ Evaluates grid reinforcement needs and performs measures
-    Args:
-        grid: GridDingo object
-        mode: kind of grid ('MV' or 'LV')
+    
+    Parameters
+    ----------
+    grid : GridDingo
+        Grid identifier.
+    mode : str
+        Kind of grid ('MV' or 'LV').
 
-    Returns:
+    Returns
+    -------
+    type 
+        #TODO: Description of return. Change type in the previous line accordingly
 
-    Notes:
+    Notes
+    -----
+        note one [1]_ links to an already defined reference in flexopt pack, note two [2]_ is new
 
-    References:
-    .. [1] dena VNS
+    References
+    ----------
+    
     .. [2] Ackermann et al. (RP VNS)
 
     """

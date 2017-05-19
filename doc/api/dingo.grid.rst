@@ -1,5 +1,10 @@
-dingo.grid package
-==================
+dingo\.grid package
+===================
+
+.. automodule:: dingo.grid
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Subpackages
 -----------
@@ -9,10 +14,12 @@ Subpackages
     dingo.grid.lv_grid
     dingo.grid.mv_grid
 
-Module contents
----------------
+Submodules
+----------
 
-.. automodule:: dingo.grid
+.. automodule:: dingo.grid.tools
     :members:
     :undoc-members:
     :show-inheritance:
+
+

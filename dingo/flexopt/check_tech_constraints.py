@@ -8,24 +8,41 @@ logger = logging.getLogger('dingo')
 
 
 def check_load(grid, mode):
-    """ Checks for over-loading of branches and transformers for MV or LV grid
+    """ Checks for over-loading of branches and transformers for MV or LV grid.
 
-    Args:
-        grid: GridDingo object
-        mode: kind of grid ('MV' or 'LV')
+    Parameters
+    ----------
+    grid : GridDingo
+        Grid identifier.
+    mode : str
+        Kind of grid ('MV' or 'LV').
 
-    Returns:
-        Dict of critical branches with max. relative overloading
-        List of critical transformers,
-        Format: {branch_1: rel_overloading_1, ..., branch_n: rel_overloading_n},
-                [trafo_1, ..., trafo_m]
+    Returns
+    -------
+    :obj:`dict`
+        Dict of critical branches with max. relative overloading.
+        
+        {branch_1: rel_overloading_1, ..., branch_n: rel_overloading_n}
+    :obj:`list` of :obj:`int`
+        List of critical transformers.
+        
+        [trafo_1, ..., trafo_m]
 
-    Notes:
+    Notes
+    -----
         Lines'/cables' max. capacity (load case and feed-in case) are taken from [1]_.
+        
 
-    References:
+    References
+    ----------
     .. [1] dena VNS
-
+    
+    See Also
+    --------
+    dingo.flexopt.reinforce_measures.reinforce_branches_current :
+    dingo.flexopt.reinforce_measures.reinforce_branches_voltage :
+    check_voltage :
+    
     """
 
     crit_branches = {}
@@ -108,21 +125,29 @@ def check_load(grid, mode):
 
 
 def check_voltage(grid, mode):
-    """ Checks for voltage stability issues at all nodes for MV or LV grid
+    #TODO: finish docstring
+    """ Checks for voltage stability issues at all nodes for MV or LV grid.
 
-    Args:
-        grid: GridDingo object
-        mode: kind of grid ('MV' or 'LV')
+    Parameters
+    ----------
+    grid : GridDingo
+        Grid identifier.
+    mode : str
+        Kind of grid ('MV' or 'LV').
 
-    Returns:
-        List of critical nodes, sorted descending by voltage difference
+    Returns
+    -------
+    :obj:`list` of :obj:`int`
+        List of critical nodes, sorted descending by voltage difference.
 
-    Notes:
-        The examination is done in two steps, according to [1]_:
-        1. It is checked
+    Notes
+    -----
+        The examination is done in two steps, according to [1]_ :
+        
+        1. It is checked #TODO: what?
+        
+        2. #TODO: what's next?
 
-    References:
-    .. [1] dena VNS
     """
 
     crit_nodes = {}

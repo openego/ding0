@@ -1,11 +1,13 @@
-dingo.grid.mv_grid.models package
-=================================
+dingo\.grid\.mv\_grid\.models package
+=====================================
+
+.. automodule:: dingo.grid.mv_grid.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 ----------
-
-dingo.grid.mv_grid.models.models module
----------------------------------------
 
 .. automodule:: dingo.grid.mv_grid.models.models
     :members:
@@ -13,10 +15,3 @@ dingo.grid.mv_grid.models.models module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: dingo.grid.mv_grid.models
-    :members:
-    :undoc-members:
-    :show-inheritance:
