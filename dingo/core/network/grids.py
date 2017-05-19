@@ -18,8 +18,7 @@ from . import GridDingo
 from dingo.core.network.stations import *
 from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
 from dingo.core.network.loads import *
-from dingo.core import MVCableDistributorDingo
-from dingo.core.network.cable_distributors import LVCableDistributorDingo
+from dingo.core.network.cable_distributors import MVCableDistributorDingo, LVCableDistributorDingo
 from dingo.grid.mv_grid import mv_routing, mv_connect
 from dingo.grid.lv_grid import build_grid, lv_connect
 import dingo
