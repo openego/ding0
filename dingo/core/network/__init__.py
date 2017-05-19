@@ -370,34 +370,6 @@ class StationDingo:
         return self.grid.grid_district.peak_load
 
 
-class BusDingo:
-    """ Create new pypower Bus class as child from oemof Bus used to define
-    busses and generators data
-    """
-
-    def __init__(self, **kwargs):
-        """Assigned minimal required pypower input parameters of the bus and
-        generator as arguments
-
-        Keyword description of bus arguments:
-        bus_id -- the bus number (also used as GEN_BUS parameter for generator)
-        bus_type -- the bus type (1 = PQ, 2 = PV, 3 = ref, 4 = Isolated)
-        PD -- the real power demand in MW
-        QD -- the reactive power demand in MVAr
-        GS -- the shunt conductance (demanded at V = 1.0 p.u.) in MW
-        BS -- the shunt susceptance (injected at V = 1.0 p.u.) in MVAr
-        bus_area -- area number (positive integer)
-        VM -- the voltage magnitude in p.u.
-        VA -- the voltage angle in degrees
-        base_kv -- the base voltage in kV
-        zone -- loss zone (positive integer)
-        vmax -- the maximum allowed voltage magnitude in p.u.
-        vmin -- the minimum allowed voltage magnitude in p.u.
-        """
-
-        # Bus Data parameters
-
-
 class RingDingo:
     """ Represents a medium voltage Ring
     """
