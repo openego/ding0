@@ -233,11 +233,12 @@ def assign_line_loading(grid):
                        preceeding_branch[1]['branch'].type['I_max_th'] / 1e3
 
             if (((peak_load / cos_phi_load) > s_max_th) or
-                ((peak_gen / cos_phi_feedin) > s_max_th)):
-                critical_branches.append({'branch': preceeding_branch[1],
-                                          's_max': [
-                                              peak_load / cos_phi_load,
-                                              peak_gen / cos_phi_feedin]})
+                    ((peak_gen / cos_phi_feedin) > s_max_th)):
+                critical_branches.append(
+                    {'branch': preceeding_branch[1]['branch'],
+                     's_max': [
+                         peak_load / cos_phi_load,
+                         peak_gen / cos_phi_feedin]})
 
     return critical_branches
 

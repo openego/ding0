@@ -77,7 +77,8 @@ def select_transformers(grid):
     transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
 
     # peak load is smaller than max. available trafo
-    if peak_data < transformer_max['S_max'] * (load_factor_lv_trans * cos_phi_load):
+    if (peak_data / cos_phi_load) < (
+                transformer_max['S_max'] * load_factor_lv_trans ):
         # choose trafo
         transformer = trafo_parameters.iloc[
             trafo_parameters[
@@ -293,12 +294,12 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
         # determine maximum current occuring due to peak load
         # of this load load_no
-        I_max_load = val['single_peak_load'] / (3 ** 0.5 * 0.4)
+        I_max_load = val['single_peak_load'] / (3 ** 0.5 * 0.4) / cos_phi_load
 
         # determine suitable cable for this current
         suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
-            lvgd.lv_grid.network.static_data['LV_cables'][
-                'I_max_th'] > (I_max_load * (cable_lf * cos_phi_load))]
+            (lvgd.lv_grid.network.static_data['LV_cables'][
+                'I_max_th'] * cable_lf) > I_max_load]
         cable_type_stub = suitable_cables_stub.ix[
             suitable_cables_stub['I_max_th'].idxmin()]
 
@@ -407,12 +408,13 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
                 # determine maximum current occuring due to peak load of branch
                 I_max_branch = (val['max_loads_per_branch'] *
-                                val['single_peak_load']) / (3 ** 0.5 * 0.4)
+                                val['single_peak_load']) / (3 ** 0.5 * 0.4) / (
+                    cos_phi_load)
 
                 # determine suitable cable for this current
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
-                    lvgd.lv_grid.network.static_data['LV_cables'][
-                        'I_max_th'] > (I_max_branch * (cable_lf * cos_phi_load))]
+                    (lvgd.lv_grid.network.static_data['LV_cables'][
+                        'I_max_th'] * cable_lf) > I_max_branch]
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
@@ -427,12 +429,13 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     branch_no = 0
                 # determine maximum current occuring due to peak load of branch
                 I_max_branch = (val['max_loads_per_branch'] *
-                                val['single_peak_load']) / (3 ** 0.5 * 0.4)
+                                val['single_peak_load']) / (3 ** 0.5 * 0.4) / (
+                    cos_phi_load)
 
                 # determine suitable cable for this current
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
-                    lvgd.lv_grid.network.static_data['LV_cables'][
-                        'I_max_th'] > (I_max_branch * (cable_lf * cos_phi_load))]
+                    (lvgd.lv_grid.network.static_data['LV_cables'][
+                        'I_max_th'] * cable_lf) > I_max_branch]
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
