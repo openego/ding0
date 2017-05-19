@@ -45,6 +45,10 @@ class MVGridDistrictDingo(RegionDingo):
         # peak load (aggregated only) in kVA
         self.peak_load_aggregated = kwargs.get('peak_load_aggregated', 0)
 
+    @property
+    def network(self):
+        return self.mv_grid.network
+
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""
         for load_area in sorted(self._lv_load_areas, key=lambda _: repr(_)):
@@ -154,6 +158,10 @@ class LVLoadAreaDingo(RegionDingo):
             if self.peak_load < load_area_sat_load_threshold:
                 self.is_satellite = True
 
+    @property
+    def network(self):
+        return self.mv_grid_district.network
+
     def lv_grid_districts(self):
         """Returns a generator for iterating over LV grid districts"""
         for lv_grid_district in sorted(self._lv_grid_districts, key=lambda _: repr(_)):
@@ -205,6 +213,10 @@ class LVLoadAreaCentreDingo:
         self.lv_load_area = kwargs.get('lv_load_area', None)
 
     @property
+    def network(self):
+        return self.lv_load_area.network
+
+    @property
     def pypsa_id(self):
         return '_'.join(['MV', str(self.grid.id_db), 'lac', str(self.id_db)])
 
@@ -243,6 +255,10 @@ class LVGridDistrictDingo(RegionDingo):
                                                   None)
         self.sector_count_agricultural = kwargs.get('sector_count_agricultural',
                                                     None)
+
+    @property
+    def network(self):
+        return self.lv_load_area.network
 
     def __repr__(self):
         return 'lv_grid_district_' + str(self.id_db)

@@ -38,6 +38,10 @@ class LoadAreaGroupDingo:
         # get id from count of load area groups in associated MV grid district
         self.id_db = self.mv_grid_district.lv_load_area_groups_count() + 1
 
+    @property
+    def network(self):
+        return self.mv_grid_district.network
+
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""
         for load_area in self._lv_load_areas:

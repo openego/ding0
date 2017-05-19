@@ -13,8 +13,6 @@ __url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-
-
 class RegionDingo():
     """
     Defines a region in DINGO
