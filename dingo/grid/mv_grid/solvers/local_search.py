@@ -25,7 +25,6 @@ import itertools as it
 from dingo.grid.mv_grid.models import models
 from dingo.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
 
-from dingo.tools import config as cfg_dingo
 import logging
 
 
@@ -462,7 +461,7 @@ class LocalSearchSolver(BaseSolver):
         # TODO: If necessary, use timeout to set max processing time of local search
 
         # load threshold for operator (see exchange or relocate operator's description for more information)
-        op_diff_round_digits = int(cfg_dingo.get('mv_routing', 'operator_diff_round_digits'))
+        op_diff_round_digits = int(graph.network.config.get('mv_routing', 'operator_diff_round_digits'))
 
         solution = LocalSearchSolution(graph, savings_solution)
 

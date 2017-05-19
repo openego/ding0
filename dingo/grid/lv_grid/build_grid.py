@@ -13,8 +13,6 @@ __url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from dingo.tools import config as cfg_dingo
-
 from dingo.core.network import TransformerDingo, BranchDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
 from dingo.core.network.loads import LVLoadDingo
@@ -47,12 +45,12 @@ def select_transformers(grid):
         Count of transformers
     """
 
-    load_factor_lv_trans_lc_normal = cfg_dingo.get('assumptions',
+    load_factor_lv_trans_lc_normal = grid.network.config.get('assumptions',
                                                    'load_factor_lv_trans_lc_normal')
-    load_factor_lv_trans_fc_normal = cfg_dingo.get('assumptions',
+    load_factor_lv_trans_fc_normal = grid.network.config.get('assumptions',
                                                    'load_factor_lv_trans_fc_normal')
 
-    cos_phi_load = cfg_dingo.get('assumptions',
+    cos_phi_load = grid.network.config.get('assumptions',
                                  'lv_cos_phi_load')
 
     # get equipment parameters of LV transformers
@@ -147,18 +145,18 @@ def select_grid_model_ria(lvgd, sector):
         Parameters that describe branch lines of a sector
     """
 
-    cable_lf = cfg_dingo.get('assumptions',
+    cable_lf = lvgd.network.config.get('assumptions',
                              'load_factor_lv_cable_lc_normal')
 
-    cos_phi_load = cfg_dingo.get('assumptions',
+    cos_phi_load = lvgd.network.config.get('assumptions',
                                  'lv_cos_phi_load')
 
-    max_lv_branch_line_load = cfg_dingo.get('assumptions',
+    max_lv_branch_line_load = lvgd.network.config.get('assumptions',
                                             'max_lv_branch_line')
 
     # make a distinction between sectors
     if sector == 'retail/industrial':
-        max_branch_length = cfg_dingo.get(
+        max_branch_length = lvgd.network.config.get(
             "assumptions",
             "branch_line_length_retail_industrial")
         peak_load = lvgd.peak_load_retail + \
@@ -166,7 +164,7 @@ def select_grid_model_ria(lvgd, sector):
         count_sector_areas = lvgd.sector_count_retail + \
                              lvgd.sector_count_industrial
     elif sector == 'agricultural':
-        max_branch_length = cfg_dingo.get(
+        max_branch_length = lvgd.network.config.get(
             "assumptions",
             "branch_line_length_agricultural")
         peak_load = lvgd.peak_load_agricultural
@@ -366,7 +364,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
             lv_cable_dist,
             lv_cable_dist_building,
             branch=BranchDingo(
-                length=cfg_dingo.get(
+                length=lvgd.network.config.get(
                     'assumptions',
                     'lv_ria_branch_connection_distance'),
                 kind='cable',
@@ -390,9 +388,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     sector=sector_short))
         )
 
-    cable_lf = cfg_dingo.get('assumptions',
+    cable_lf = lvgd.network.config.get('assumptions',
                              'load_factor_lv_cable_lc_normal')
-    cos_phi_load = cfg_dingo.get('assumptions',
+    cos_phi_load = lvgd.network.config.get('assumptions',
                                 'lv_cos_phi_load')
 
     # iterate over branches for sectors retail/industrial and agricultural
@@ -497,9 +495,9 @@ def select_grid_model_residential(lvgd):
         'LV_model_grids_strings_per_grid']
 
     # load assumtions
-    apartment_house_branch_ratio = cfg_dingo.get("assumptions",
+    apartment_house_branch_ratio = lvgd.network.config.get("assumptions",
                                                  "apartment_house_branch_ratio")
-    population_per_apartment = cfg_dingo.get("assumptions",
+    population_per_apartment = lvgd.network.config.get("assumptions",
                                              "population_per_apartment")
 
     # calc count of apartments to select string types

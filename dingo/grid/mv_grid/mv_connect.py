@@ -19,7 +19,6 @@ from dingo.core.network import BranchDingo, GeneratorDingo
 from dingo.core import MVCableDistributorDingo
 from dingo.core.structure.groups import LoadAreaGroupDingo
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
-from dingo.tools import config as cfg_dingo
 from dingo.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist_vincenty,\
                             calc_geo_centre_point, calc_geo_branches_in_polygon
 
@@ -558,13 +557,13 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     # Example: The distance from satellite to line is 1km, to station1 1.2km, to station2 2km.
     # With conn_dist_threshold=0.75, the 'virtual' distance to station1 would be 1.2km * 0.75 = 0.9km, so this conn.
     # point would be preferred.
-    conn_dist_weight = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_weight')
+    conn_dist_weight = mv_grid.network.config.get('mv_connect', 'load_area_sat_conn_dist_weight')
 
     # conn_dist_ring_mod: Allow re-routing of ring main route if node is closer than this threshold (in m) to ring.
-    conn_dist_ring_mod = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_ring_mod')
+    conn_dist_ring_mod = mv_grid.network.config.get('mv_connect', 'load_area_sat_conn_dist_ring_mod')
 
-    load_area_sat_buffer_radius = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius')
-    load_area_sat_buffer_radius_inc = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius_inc')
+    load_area_sat_buffer_radius = mv_grid.network.config.get('mv_connect', 'load_area_sat_buffer_radius')
+    load_area_sat_buffer_radius_inc = mv_grid.network.config.get('mv_connect', 'load_area_sat_buffer_radius_inc')
 
     start = time.time()
 
@@ -662,8 +661,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
             pyproj.Proj(init='epsg:3035'),  # source coordinate system
             pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
-    conn_dist_weight = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_weight')
-    conn_dist_ring_mod = cfg_dingo.get('mv_connect', 'load_area_stat_conn_dist_ring_mod')
+    conn_dist_weight = mv_grid_district.network.config.get('mv_connect', 'load_area_sat_conn_dist_weight')
+    conn_dist_ring_mod = mv_grid_district.network.config.get('mv_connect', 'load_area_stat_conn_dist_ring_mod')
 
     for lv_load_area in mv_grid_district.lv_load_areas():
 
@@ -827,8 +826,8 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
         graph: NetworkX graph object with nodes and newly created branches
     """
 
-    generator_buffer_radius = cfg_dingo.get('mv_connect', 'generator_buffer_radius')
-    generator_buffer_radius_inc = cfg_dingo.get('mv_connect', 'generator_buffer_radius_inc')
+    generator_buffer_radius = mv_grid_district.network.config.get('mv_connect', 'generator_buffer_radius')
+    generator_buffer_radius_inc = mv_grid_district.network.config.get('mv_connect', 'generator_buffer_radius_inc')
 
     # WGS84 (conformal) to ETRS (equidistant) projection
     proj1 = partial(

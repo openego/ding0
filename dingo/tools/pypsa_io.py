@@ -25,7 +25,6 @@ from egoio.db_tables.model_draft import EgoGridPfMvBu, EgoGridPfMvResBu, EgoGrid
     EgoGridPfMvResLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, \
     EgoGridPfMvTransformer, EgoGridPfMvResTransformer, EgoGridPfMvTempResolution, EgoGridPfMvBusVMagSet, EgoGridPfMvGeneratorPqSet, EgoGridPfMvLoadPqSet
 
-from dingo.tools import config as cfg_dingo
 from dingo.core.network.stations import LVStationDingo, MVStationDingo
 from dingo.core.network import BranchDingo, CircuitBreakerDingo, GeneratorDingo
 from dingo.core import MVCableDistributorDingo
@@ -85,16 +84,16 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
     """
 
     mv_routing_loads_cos_phi = float(
-        cfg_dingo.get('mv_routing_tech_constraints',
+        grid.network.config.get('mv_routing_tech_constraints',
                       'mv_routing_loads_cos_phi'))
-    srid = int(cfg_dingo.get('geo', 'srid'))
+    srid = int(grid.network.config.get('geo', 'srid'))
 
-    load_in_generation_case = cfg_dingo.get('assumptions',
+    load_in_generation_case = grid.network.config.get('assumptions',
                                             'load_in_generation_case')
 
     Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
 
-    voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
+    voltage_set_slack = grid.network.config.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
 
     kw2mw = 1e-3
@@ -286,7 +285,7 @@ def export_edges(grid, session, edges):
     """
 
     omega = 2 * pi * 50
-    srid = int(cfg_dingo.get('geo', 'srid'))
+    srid = int(grid.network.config.get('geo', 'srid'))
 
     # iterate over edges and add them one by one
     for edge in edges:
@@ -387,16 +386,16 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     # TODO: MVStationDingo has a slack generator
 
     mv_routing_loads_cos_phi = float(
-        cfg_dingo.get('mv_routing_tech_constraints',
+        grid.network.config.get('mv_routing_tech_constraints',
                       'mv_routing_loads_cos_phi'))
-    srid = int(cfg_dingo.get('geo', 'srid'))
+    srid = int(grid.network.config.get('geo', 'srid'))
 
-    load_in_generation_case = cfg_dingo.get('assumptions',
+    load_in_generation_case = grid.network.config.get('assumptions',
                                             'load_in_generation_case')
 
     Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
 
-    voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
+    voltage_set_slack = grid.network.config.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
 
     kw2mw = 1e-3
@@ -610,7 +609,7 @@ def edges_to_dict_of_dataframes(grid, edges):
     edges_dict: dict
     """
     omega = 2 * pi * 50
-    srid = int(cfg_dingo.get('geo', 'srid'))
+    srid = int(grid.network.config.get('geo', 'srid'))
 
     lines = {'line_id': [], 'bus0': [], 'bus1': [], 'x': [], 'r': [],
              's_nom': [], 'length': [], 'cables': [], 'geom': [],
@@ -665,7 +664,7 @@ def edges_to_dict_of_dataframes(grid, edges):
     return {'Line': DataFrame(lines).set_index('line_id')}
 
 
-def run_powerflow(session, export_pypsa_dir=None):
+def run_powerflow(network, session, export_pypsa_dir=None):
     """
     Run power flow to test grid stability
 
@@ -675,6 +674,7 @@ def run_powerflow(session, export_pypsa_dir=None):
 
     Parameters
     ----------
+    network: NetworkDingo object
     session: SQLalchemy database session
     export_pypsa_dir: str
         Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
@@ -682,9 +682,9 @@ def run_powerflow(session, export_pypsa_dir=None):
 
     """
 
-    scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
-    start_hour = cfg_dingo.get("powerflow", "start_hour")
-    end_hour = cfg_dingo.get("powerflow", "end_hour")
+    scenario = network.config.get("powerflow", "test_grid_stability_scenario")
+    start_hour = network.config.get("powerflow", "start_hour")
+    end_hour = network.config.get("powerflow", "end_hour")
 
     # choose temp_id
     temp_id_set = 1
@@ -769,9 +769,9 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
         Export is omitted if argument is empty.
     """
 
-    scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
-    start_hour = cfg_dingo.get("powerflow", "start_hour")
-    end_hour = cfg_dingo.get("powerflow", "end_hour")
+    scenario = grid.network.config.get("powerflow", "test_grid_stability_scenario")
+    start_hour = grid.network.config.get("powerflow", "start_hour")
+    end_hour = grid.network.config.get("powerflow", "end_hour")
 
     # choose temp_id
     temp_id_set = 1

@@ -14,7 +14,6 @@ __author__     = "nesnoj, gplssm"
 
 
 from dingo.core import MVCableDistributorDingo
-from dingo.tools import config as cfg_dingo
 
 
 class LoadAreaGroupDingo:
@@ -30,8 +29,8 @@ class LoadAreaGroupDingo:
         self.peak_load = 0
         self.branch_length_sum = 0
         # threshold: max. allowed peak load of satellite string
-        self.peak_load_max = cfg_dingo.get('mv_connect', 'load_area_sat_string_load_threshold')
-        self.branch_length_max = cfg_dingo.get('mv_connect', 'load_area_sat_string_length_threshold')
+        self.peak_load_max = self.network.config.get('mv_connect', 'load_area_sat_string_load_threshold')
+        self.branch_length_max = self.network.config.get('mv_connect', 'load_area_sat_string_length_threshold')
         self.root_node = kwargs.get('root_node', None)  # root node (Dingo object) = start of string on MV main route
         # TODO: Value is read from file every time a LV load_area is created -> move to associated NetworkDingo class?
 

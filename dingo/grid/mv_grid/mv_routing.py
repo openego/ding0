@@ -16,7 +16,7 @@ __author__     = "nesnoj, gplssm"
 import time
 
 from dingo.grid.mv_grid.models.models import Graph, Node
-from dingo.grid.mv_grid.util import util, data_input
+from dingo.grid.mv_grid.util import util
 from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty, calc_geo_centre_point
 from dingo.core.network.stations import *
@@ -73,6 +73,7 @@ def dingo_graph_to_routing_specs(graph):
             nodes_demands[str(node)] = 0
             nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
             specs['DEPOT'] = str(node)
+            network = node.network
             specs['BRANCH_KIND'] = node.grid.default_branch_kind
             specs['BRANCH_TYPE'] = node.grid.default_branch_type
             specs['V_LEVEL'] = node.grid.v_level
@@ -80,7 +81,7 @@ def dingo_graph_to_routing_specs(graph):
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands
-    specs['MATRIX'] = calc_geo_dist_matrix_vincenty(nodes_pos)
+    specs['MATRIX'] = calc_geo_dist_matrix_vincenty(network, nodes_pos)
     specs['IS_AGGREGATED'] = nodes_agg
 
     return specs
@@ -215,10 +216,11 @@ def routing_solution_to_dingo_graph(graph, solution):
     return graph
 
 
-def solve(graph, debug=False, anim=None):
+def solve(network, graph, debug=False, anim=None):
     """ Do MV routing for given nodes in `graph`. Translate data from node objects to appropriate format before.
 
     Args:
+        network: NetworkDingo object
         graph: NetworkX graph object with nodes
         debug: If True, information is printed while routing
         anim: AnimationDingo object (refer to class 'AnimationDingo()' for a more detailed description)
@@ -233,7 +235,8 @@ def solve(graph, debug=False, anim=None):
     specs = dingo_graph_to_routing_specs(graph)
 
     # create routing graph using specs
-    RoutingGraph = Graph(specs)
+    RoutingGraph = Graph(network=network,
+                         data=specs)
 
     timeout = 30000
 

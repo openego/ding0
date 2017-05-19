@@ -15,7 +15,6 @@ __author__     = "nesnoj, gplssm"
 
 from . import StationDingo
 from dingo.core.network import TransformerDingo
-from dingo.tools import config as cfg_dingo
 
 from itertools import compress
 import numpy as np
@@ -69,8 +68,8 @@ class MVStationDingo(StationDingo):
 
     def set_operation_voltage_level(self):
 
-        mv_station_v_level_operation = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                           'mv_station_v_level_operation'))
+        mv_station_v_level_operation = float(self.network.config.get('mv_routing_tech_constraints',
+                                                                     'mv_station_v_level_operation'))
 
         self.v_level_operation = mv_station_v_level_operation * self.grid.v_level
 
@@ -108,13 +107,13 @@ class MVStationDingo(StationDingo):
         """
 
         # get trafo load factors
-        load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
-                                                             'load_factor_mv_trans_lc_normal'))
-        load_factor_mv_trans_fc_normal = float(cfg_dingo.get('assumptions',
-                                                             'load_factor_mv_trans_fc_normal'))
+        load_factor_mv_trans_lc_normal = float(self.network.config.get('assumptions',
+                                                                       'load_factor_mv_trans_lc_normal'))
+        load_factor_mv_trans_fc_normal = float(self.network.config.get('assumptions',
+                                                                       'load_factor_mv_trans_fc_normal'))
 
         # get equipment parameters of MV transformers
-        trafo_parameters = self.grid.network.static_data['MV_trafos']
+        trafo_parameters = self.network.static_data['MV_trafos']
 
         # get peak load and peak generation
         cum_peak_load = self.peak_load

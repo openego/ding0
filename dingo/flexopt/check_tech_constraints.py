@@ -15,7 +15,6 @@ __author__     = "nesnoj, gplssm"
 
 # check technical constraints of distribution grids (shared lib)
 
-from dingo.tools import config as cfg_dingo
 import logging
 from dingo.core.network.loads import LVLoadDingo
 from dingo.core.network import GeneratorDingo
@@ -59,17 +58,17 @@ def check_load(grid, mode):
     if mode == 'MV':
         # load load factors (conditions) for cables, lines and trafos for load- and feedin case
 
-        # load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
+        # load_factor_mv_trans_lc_normal = float(grid.network.config.get('assumptions',
         #                                                      'load_factor_mv_trans_lc_normal'))
-        load_factor_mv_line_lc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_line_lc_normal = float(grid.network.config.get('assumptions',
                                                              'load_factor_mv_line_lc_normal'))
-        load_factor_mv_cable_lc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_cable_lc_normal = float(grid.network.config.get('assumptions',
                                                              'load_factor_mv_cable_lc_normal'))
-        load_factor_mv_trans_fc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_trans_fc_normal = float(grid.network.config.get('assumptions',
                                                              'load_factor_mv_trans_fc_normal'))
-        load_factor_mv_line_fc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_line_fc_normal = float(grid.network.config.get('assumptions',
                                                              'load_factor_mv_line_fc_normal'))
-        load_factor_mv_cable_fc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_cable_fc_normal = float(grid.network.config.get('assumptions',
                                                              'load_factor_mv_cable_fc_normal'))
 
         mw2kw = 1e3
@@ -152,7 +151,7 @@ def check_voltage(grid, mode):
 
     if mode == 'MV':
         # load max. voltage difference
-        mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+        mv_max_v_level_diff_normal = float(grid.network.config.get('mv_routing_tech_constraints',
                                                          'mv_max_v_level_diff_normal'))
 
         # check nodes' voltages
@@ -196,8 +195,8 @@ def assign_line_loading(grid):
     critical_branches : list
         List of critical branches incl. its line loading
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    cos_phi_load = grid.network.config.get('assumptions', 'lv_cos_phi_load')
+    cos_phi_feedin = grid.network.config.get('assumptions', 'lv_cos_phi_gen')
 
     critical_branches = []
 
@@ -333,7 +332,7 @@ def assign_voltage_at_nodes(grid):
     in the main branch cable distributor.
     """
 
-    v_delta_tolerable = cfg_dingo.get('assumptions',
+    v_delta_tolerable = grid.network.config.get('assumptions',
                                       'lv_max_v_level_diff_normal')
     omega = 2 * math.pi * 50
 
@@ -365,9 +364,9 @@ def assign_voltage_at_nodes(grid):
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
 
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
-    v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+    cos_phi_load = grid.network.config.get('assumptions', 'lv_cos_phi_load')
+    cos_phi_feedin = grid.network.config.get('assumptions', 'lv_cos_phi_gen')
+    v_nom = grid.network.config.get('assumptions', 'lv_nominal_voltage')
 
     # loads and generators connected to bus bar
     bus_bar_load = sum(
@@ -572,9 +571,9 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     delta_voltage : float
         Delta voltage for node
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
-    v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+    cos_phi_load = grid.network.config.get('assumptions', 'lv_cos_phi_load')
+    cos_phi_feedin = grid.network.config.get('assumptions', 'lv_cos_phi_gen')
+    v_nom = grid.network.config.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
     # add resitance/ reactance to preceeding
@@ -649,9 +648,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
     delta_voltage : float
         Delta voltage for node
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
-    v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+    cos_phi_load = grid.network.config.get('assumptions', 'lv_cos_phi_load')
+    cos_phi_feedin = grid.network.config.get('assumptions', 'lv_cos_phi_gen')
+    v_nom = grid.network.config.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
     stub_branch = [_ for _ in grid.graph_branches_from_node(main_branch_node) if

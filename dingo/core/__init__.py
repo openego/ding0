@@ -21,7 +21,7 @@ from dingo.core.network.grids import *
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import *
 from dingo.core.powerflow import *
-from dingo.tools import pypsa_io
+from dingo.tools import config as cfg_dingo, pypsa_io
 from dingo.tools.animation import AnimationDingo
 from dingo.flexopt.reinforce_grid import *
 
@@ -359,7 +359,7 @@ class NetworkDingo:
 
         # get srid settings from config
         try:
-            srid = str(int(cfg_dingo.get('geo', 'srid')))
+            srid = str(int(self.config.get('geo', 'srid')))
         except OSError:
             logger.exception('cannot open config file.')
 
@@ -437,13 +437,13 @@ class NetworkDingo:
         """
 
         # get dingos' standard CRS (SRID)
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(self.config.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
         #srid = '3035'
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
-        lv_loads_threshold = cfg_dingo.get('mv_routing', 'load_area_threshold')
+        lv_loads_threshold = self.config.get('mv_routing', 'load_area_threshold')
 
         gw2kw = 10**6  # load in database is in GW -> scale to kW
 
@@ -558,7 +558,7 @@ class NetworkDingo:
         """
 
         # get dingos' standard CRS (SRID)
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(self.config.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
         #srid = '3035'
 
@@ -625,7 +625,7 @@ class NetworkDingo:
         """
 
         # get dingos' standard CRS (SRID)
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(self.config.get('geo', 'srid')))
 
         Session = sessionmaker(bind=conn)
         session = Session()
@@ -815,10 +815,10 @@ class NetworkDingo:
                     mv_grid.add_generator(generator)
 
         # get dingos' standard CRS (SRID)
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(self.config.get('geo', 'srid')))
 
         # get predefined random seed and initialize random generator
-        seed = int(cfg_dingo.get('random', 'seed'))
+        seed = int(self.config.get('random', 'seed'))
         random.seed(a=seed)
 
         # make DB session
@@ -863,13 +863,13 @@ class NetworkDingo:
         PFConfigDingo object
         """
 
-        scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
-        start_hour = int(cfg_dingo.get("powerflow", "start_hour"))
-        end_hour = int(cfg_dingo.get("powerflow", "end_hour"))
+        scenario = self.config.get("powerflow", "test_grid_stability_scenario")
+        start_hour = int(self.config.get("powerflow", "start_hour"))
+        end_hour = int(self.config.get("powerflow", "end_hour"))
         start_time = datetime(1970, 1, 1, 00, 00, 0)
 
-        resolution = cfg_dingo.get("powerflow", "resolution")
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        resolution = self.config.get("powerflow", "resolution")
+        srid = str(int(self.config.get('geo', 'srid')))
 
         return PFConfigDingo(scenarios=[scenario],
                              timestep_start=start_time,
@@ -889,7 +889,7 @@ class NetworkDingo:
 
         static_data = {}
 
-        equipment_mv_parameters_trafos = cfg_dingo.get('equipment',
+        equipment_mv_parameters_trafos = self.config.get('equipment',
                                                        'equipment_mv_parameters_trafos')
         static_data['MV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
                                    equipment_mv_parameters_trafos),
@@ -899,7 +899,7 @@ class NetworkDingo:
                                    converters={'S_max': lambda x: int(x)})
 
         # import equipment
-        equipment_mv_parameters_lines = cfg_dingo.get('equipment',
+        equipment_mv_parameters_lines = self.config.get('equipment',
                                                       'equipment_mv_parameters_lines')
         static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
                                            equipment_mv_parameters_lines),
@@ -908,7 +908,7 @@ class NetworkDingo:
                                                        'U_n': lambda x: int(x),
                                                        'reinforce_only': lambda x: int(x)})
 
-        equipment_mv_parameters_cables = cfg_dingo.get('equipment',
+        equipment_mv_parameters_cables = self.config.get('equipment',
                                                        'equipment_mv_parameters_cables')
         static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
                                    equipment_mv_parameters_cables),
@@ -917,7 +917,7 @@ class NetworkDingo:
                                                'U_n': lambda x: int(x),
                                                'reinforce_only': lambda x: int(x)})
 
-        equipment_lv_parameters_cables = cfg_dingo.get('equipment',
+        equipment_lv_parameters_cables = self.config.get('equipment',
                                                        'equipment_lv_parameters_cables')
         static_data['LV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
                                    equipment_lv_parameters_cables),
@@ -925,7 +925,7 @@ class NetworkDingo:
                                    index_col='name',
                                    converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
 
-        equipment_lv_parameters_trafos = cfg_dingo.get('equipment',
+        equipment_lv_parameters_trafos = self.config.get('equipment',
                                                        'equipment_lv_parameters_trafos')
         static_data['LV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
                                    equipment_lv_parameters_trafos),
@@ -936,7 +936,7 @@ class NetworkDingo:
                                    converters={'S_max': lambda x: int(x)})
 
         # import LV model grids
-        model_grids_lv_string_properties = cfg_dingo.get('model_grids',
+        model_grids_lv_string_properties = self.config.get('model_grids',
                                                          'model_grids_lv_string_properties')
         static_data['LV_model_grids_strings'] = pd.read_csv(os.path.join(package_path, 'data',
                                                 model_grids_lv_string_properties),
@@ -956,7 +956,7 @@ class NetworkDingo:
                                                             'cable width A': lambda x: int(x),
                                                             'cable width B': lambda x: int(x)})
 
-        model_grids_lv_apartment_string = cfg_dingo.get('model_grids',
+        model_grids_lv_apartment_string = self.config.get('model_grids',
                                                         'model_grids_lv_apartment_string')
         converters_ids = {}
         for id in range(1,47):  # create int() converter for columns 1..46
@@ -1083,7 +1083,7 @@ class NetworkDingo:
         if not all(isinstance(_, int) for _ in mv_grid_districts):
             raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(self.config.get('geo', 'srid')))
 
         Session = sessionmaker(bind=conn)
         session = Session()
@@ -1206,7 +1206,7 @@ class NetworkDingo:
         if not all(isinstance(_, int) for _ in mv_grid_districts):
             raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(self.config.get('geo', 'srid')))
 
         Session = sessionmaker(bind=conn)
         session = Session()
@@ -1333,7 +1333,7 @@ class NetworkDingo:
         nodes_df = pd.DataFrame(columns=node_cols)
         edges_df = pd.DataFrame(columns=edges_cols)
 
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(self.config.get('geo', 'srid')))
 
         for grid_district in self.mv_grid_districts():
 
@@ -1420,7 +1420,7 @@ class NetworkDingo:
         """
 
         if animation:
-            anim = AnimationDingo()
+            anim = AnimationDingo(network=self)
         else:
             anim = None
 
@@ -1458,7 +1458,7 @@ class NetworkDingo:
             mv_grid_district.mv_grid.connect_generators(debug)
 
             # get predefined random seed and initialize random generator
-            seed = int(cfg_dingo.get('random', 'seed'))
+            seed = int(self.config.get('random', 'seed'))
             random.seed(a=seed)
 
             for load_area in mv_grid_district.lv_load_areas():

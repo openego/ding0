@@ -14,8 +14,6 @@ __author__     = "nesnoj, gplssm"
 
 
 from dingo.core.network import BranchDingo
-
-from dingo.tools import config as cfg_dingo
 from dingo.tools.geo import calc_geo_dist_vincenty
 from dingo.grid.tools import cable_type
 import logging
@@ -36,10 +34,10 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
         graph: NetworkX graph object with nodes and newly created branches
     """
 
-    cable_lf = cfg_dingo.get('assumptions',
-                             'load_factor_lv_cable_fc_normal')
-    cos_phi_gen = cfg_dingo.get('assumptions',
-                                 'lv_cos_phi_gen')
+    cable_lf = lv_grid_district.network.config.get('assumptions',
+                                                   'load_factor_lv_cable_fc_normal')
+    cos_phi_gen = lv_grid_district.network.config.get('assumptions',
+                                                      'lv_cos_phi_gen')
 
     # generate random list (without replacement => unique elements)
     # of loads (residential) to connect genos (P <= 30kW) to.

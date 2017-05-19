@@ -21,7 +21,7 @@ from dingo.core.network.loads import *
 from dingo.core.network.cable_distributors import MVCableDistributorDingo, LVCableDistributorDingo
 from dingo.grid.mv_grid import mv_routing, mv_connect
 from dingo.grid.lv_grid import build_grid, lv_connect
-from dingo.tools import config as cfg_dingo, pypsa_io, tools
+from dingo.tools import pypsa_io, tools
 from dingo.tools.geo import calc_geo_dist_vincenty
 from dingo.grid.mv_grid.tools import set_circuit_breakers
 from dingo.flexopt.reinforce_grid import *
@@ -255,7 +255,8 @@ class MVGridDingo(GridDingo):
         """
 
         # do the routing
-        self._graph = mv_routing.solve(graph=self._graph,
+        self._graph = mv_routing.solve(network=self.network,
+                                       graph=self._graph,
                                        debug=debug,
                                        anim=anim)
         logger.info('==> MV Routing for {} done'.format(repr(self)))
@@ -350,7 +351,7 @@ class MVGridDingo(GridDingo):
         if mode == 'load_density':
 
             # get load density
-            load_density_threshold = float(cfg_dingo.get('assumptions',
+            load_density_threshold = float(self.network.config.get('assumptions',
                                                          'load_density_threshold'))
 
             # transform MVGD's area to epsg 3035
@@ -377,7 +378,7 @@ class MVGridDingo(GridDingo):
         elif mode == 'distance':
 
             # get threshold for 20/10kV disambiguation
-            voltage_per_km_threshold = float(cfg_dingo.get('assumptions',
+            voltage_per_km_threshold = float(self.network.config.get('assumptions',
                                                            'voltage_per_km_threshold'))
 
             # initial distance
@@ -440,13 +441,13 @@ class MVGridDingo(GridDingo):
             self.default_branch_kind = 'cable'
 
         # get max. count of half rings per MV grid district
-        mv_half_ring_count_max = int(cfg_dingo.get('mv_routing_tech_constraints',
+        mv_half_ring_count_max = int(self.network.config.get('mv_routing_tech_constraints',
                                                    'mv_half_ring_count_max'))
         #mv_half_ring_count_max=20
 
         # load cable/line assumptions, file_names and parameter
         if self.default_branch_kind == 'line':
-            load_factor_normal = float(cfg_dingo.get('assumptions',
+            load_factor_normal = float(self.network.config.get('assumptions',
                                                      'load_factor_mv_line_lc_normal'))
             branch_parameters = self.network.static_data['MV_overhead_lines']
 
@@ -456,7 +457,7 @@ class MVGridDingo(GridDingo):
             branch_parameters_settle = branch_parameters_settle[branch_parameters_settle['U_n'] == self.v_level]
 
         elif self.default_branch_kind == 'cable':
-            load_factor_normal = float(cfg_dingo.get('assumptions',
+            load_factor_normal = float(self.network.config.get('assumptions',
                                                      'load_factor_mv_cable_lc_normal'))
             branch_parameters = self.network.static_data['MV_cables']
         else:
@@ -640,7 +641,7 @@ class MVGridDingo(GridDingo):
             self.export_to_pypsa(session, method=method)
 
             # run the power flow problem
-            pypsa_io.run_powerflow(session, export_pypsa_dir=export_pypsa_dir)
+            pypsa_io.run_powerflow(self.network, session, export_pypsa_dir=export_pypsa_dir)
 
             # import results from db
             self.import_powerflow_results(session)

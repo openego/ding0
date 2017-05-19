@@ -17,7 +17,6 @@ __author__     = "nesnoj, gplssm"
 import os
 import dingo
 import pandas as pd
-from dingo.tools import config as cfg_dingo
 import logging
 
 package_path = dingo.__path__[0]

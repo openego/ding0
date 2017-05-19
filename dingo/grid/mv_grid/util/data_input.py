@@ -345,4 +345,5 @@ def read_file(filename):
     specs['CABLETYPE'] = 1
 
     #return (Graph(specs), specs)
-    return Graph(specs)
+    return Graph(network=None,
+                 data=specs)

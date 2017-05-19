@@ -14,7 +14,6 @@ __author__     = "nesnoj, gplssm"
 
 
 from . import RegionDingo
-from dingo.tools import config as cfg_dingo
 
 from shapely.wkt import loads as wkt_loads
 
@@ -125,7 +124,7 @@ class LVLoadAreaDingo(RegionDingo):
         self.is_aggregated = kwargs.get('is_aggregated', False)
 
         # threshold: load area peak load, if peak load < threshold => treat load area as satellite
-        load_area_sat_load_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_load_threshold')
+        load_area_sat_load_threshold = self.network.config.get('mv_connect', 'load_area_sat_load_threshold')
         # TODO: Value is read from file every time a LV load_area is created -> move to associated NetworkDingo class?
 
         db_data = kwargs.get('db_data', None)

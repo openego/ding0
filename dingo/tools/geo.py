@@ -92,7 +92,7 @@ def calc_geo_dist_vincenty(node_source, node_target):
         Distance in m
     """
 
-    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+    branch_detour_factor = node_source.network.config.get('assumptions', 'branch_detour_factor')
 
     # notice: vincenty takes (lat,lon)
     branch_length = branch_detour_factor * vincenty((node_source.geo_data.y, node_source.geo_data.x),
@@ -111,7 +111,7 @@ def calc_geo_dist_vincenty(node_source, node_target):
     return branch_length
 
 
-def calc_geo_dist_matrix_vincenty(nodes_pos):
+def calc_geo_dist_matrix_vincenty(network, nodes_pos):
     """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor in
         config_calc.cfg. For every two points/coord it uses geopy's vincenty function (formula devised by Thaddeus Vincenty,
         with an accurate ellipsoidal model of the earth). As default ellipsoidal model of the earth WGS-84 is used.
@@ -136,7 +136,7 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
         x=longitude, y=latitude
     """
 
-    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+    branch_detour_factor = network.config.get('assumptions', 'branch_detour_factor')
 
     matrix = {}
 

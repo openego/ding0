@@ -19,8 +19,6 @@ __url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from dingo.tools import config as cfg_dingo
-
 from math import pi, tan, acos
 import logging
 
@@ -46,6 +44,10 @@ class Route(object):
         self._problem = cvrp_problem
         self._demand = 0
         self._nodes = []
+
+    @property
+    def network(self):
+        return self._problem.network
 
     def clone(self):
         """Returns a deep copy of self
@@ -233,28 +235,28 @@ class Route(object):
         """
 
         # load parameters
-        load_area_count_per_ring = float(cfg_dingo.get('mv_routing',
+        load_area_count_per_ring = float(self.network.config.get('mv_routing',
                                                        'load_area_count_per_ring'))
 
         if self._problem._branch_kind == 'line':
-            load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_mv_line_lc_normal'))
-            load_factor_malfunc = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_mv_line_lc_malfunc'))
+            load_factor_normal = float(self.network.config.get('assumptions',
+                                                               'load_factor_mv_line_lc_normal'))
+            load_factor_malfunc = float(self.network.config.get('assumptions',
+                                                                'load_factor_mv_line_lc_malfunc'))
         elif self._problem._branch_kind == 'cable':
-            load_factor_normal = float(cfg_dingo.get('assumptions',
-                                                     'load_factor_mv_cable_lc_normal'))
-            load_factor_malfunc = float(cfg_dingo.get('assumptions',
-                                                      'load_factor_mv_cable_lc_malfunc'))
+            load_factor_normal = float(self.network.config.get('assumptions',
+                                                               'load_factor_mv_cable_lc_normal'))
+            load_factor_malfunc = float(self.network.config.get('assumptions',
+                                                                'load_factor_mv_cable_lc_malfunc'))
         else:
             raise ValueError('Grid\'s _branch_kind is invalid, could not use branch parameters.')
 
-        mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                         'mv_max_v_level_diff_normal'))
-        mv_max_v_level_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                          'mv_max_v_level_diff_malfunc'))
-        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                       'mv_routing_loads_cos_phi'))
+        mv_max_v_level_diff_normal = float(self.network.config.get('mv_routing_tech_constraints',
+                                                                   'mv_max_v_level_diff_normal'))
+        mv_max_v_level_diff_malfunc = float(self.network.config.get('mv_routing_tech_constraints',
+                                                                    'mv_max_v_level_diff_malfunc'))
+        mv_routing_loads_cos_phi = float(self.network.config.get('mv_routing_tech_constraints',
+                                                                 'mv_routing_loads_cos_phi'))
 
 
         # step 0: check if route has got more nodes than allowed
@@ -359,6 +361,10 @@ class Node(object):
         self._demand = demand
         self._allocation = None
 
+    @property
+    def network(self):
+        return self.route_allocation()._problem.network
+
     def clone(self):
         """Returns a deep copy of self
 
@@ -407,15 +413,17 @@ class Graph(object):
     bla
     """
 
-    def __init__(self, data):
+    def __init__(self, network, data):
         """Class constructor
 
         Initialize all nodes, edges and depot
 
         Parameters:
+            network: NetworkDingo object
             data: TSPLIB parsed data
         """
-        
+        self._network = network
+
         self._coord = data['NODE_COORD_SECTION']
         self._nodes = {i: Node(i, data['DEMAND'][i]) for i in data['MATRIX']}
         self._matrix = {}
@@ -441,6 +449,10 @@ class Graph(object):
 
         if self._depot is None:
             raise Exception('Depot not found')
+
+    @property
+    def network(self):
+        return self._network
 
     def nodes(self):
         """Returns a generator for iterating over nodes"""

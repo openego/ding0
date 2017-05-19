@@ -35,6 +35,10 @@ class BaseSolution(object):
         self._problem = cvrp_problem
         self._allocated = 0
 
+    @property
+    def network(self):
+        return self._problem.network
+
     def get_pair(self, pair):
         i, j = pair
         return (self._nodes[i.name()], self._nodes[j.name()])
