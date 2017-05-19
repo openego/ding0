@@ -1519,8 +1519,9 @@ class NetworkDingo:
 
             # reinforce LV grids
             for lv_load_area in grid_district.lv_load_areas():
-                for lv_grid_district in lv_load_area.lv_grid_districts():
-                    lv_grid_district.lv_grid.reinforce_grid()
+                if not lv_load_area.is_aggregated:
+                    for lv_grid_district in lv_load_area.lv_grid_districts():
+                        lv_grid_district.lv_grid.reinforce_grid()
 
     def __repr__(self):
         return str(self.name)
