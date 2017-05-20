@@ -96,7 +96,9 @@ def reinforce_grid(grid, mode):
 
     elif mode == 'LV':
         # get overloaded branches
-        critical_branches = get_critical_line_loading(grid) # overloading issues
+        # overloading issues
+        critical_branches, critical_stations = get_critical_line_loading(grid)
+
 
         # reinforce overloaded lines by increasing size
         unresolved = reinforce_lv_branches_overloading(grid, critical_branches)

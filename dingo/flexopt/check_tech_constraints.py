@@ -20,6 +20,7 @@ import logging
 from dingo.core.network.loads import LVLoadDingo
 from dingo.core.network import GeneratorDingo
 from dingo.core.network.cable_distributors import LVCableDistributorDingo
+from dingo.core.network.stations import LVStationDingo
 import networkx as nx
 import math
 
@@ -195,11 +196,14 @@ def get_critical_line_loading(grid):
     -------
     critical_branches : list
         List of critical branches incl. its line loading
+    critical_stations : list
+        List of critical stations incl. its transformer loading
     """
     cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
     cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
 
     critical_branches = []
+    critical_stations = []
 
     # Convert grid to a tree (is a directed graph)
     # based on this tree, descendants of each node are accessible
@@ -213,11 +217,28 @@ def get_critical_line_loading(grid):
         descendants = list(nx.descendants(tree, node))
         descendants.append(node)
 
-        # preceeding node of node
-        predecessors = tree.predecessors(node)
+        if isinstance(node, LVStationDingo):
+            # determine cumulative peak load at node and assign to branch
+            peak_load, peak_gen = peak_load_generation_at_node(descendants)
 
-        # assing cumulative peak load and generation
-        if len(predecessors) > 0:
+            if grid.id_db == 61107:
+                if isinstance(node, LVStationDingo):
+                    print(node)
+            # get trafos cumulative apparent power
+            s_max_trafos = sum([_.s_max_a for _ in node._transformers])
+
+            # compare with load and generation connected to
+            if (((peak_load / cos_phi_load) > s_max_trafos) or
+                    ((peak_gen / cos_phi_feedin) > s_max_trafos)):
+                critical_stations.append(
+                    {'station': node,
+                     's_max': [
+                         peak_load / cos_phi_load,
+                         peak_gen / cos_phi_feedin]})
+
+        else:
+            # preceeding node of node
+            predecessors = tree.predecessors(node)
 
             # a non-meshed grid topology returns a list with only 1 item
             predecessor = predecessors[0]
@@ -225,10 +246,11 @@ def get_critical_line_loading(grid):
             # get preceeding
             branches = grid.graph_branches_from_node(node)
             preceeding_branch = [branch for branch in branches
-                                if branch[0] is predecessor][0]
+                                 if branch[0] is predecessor][0]
 
             # determine cumulative peak load at node and assign to branch
             peak_load, peak_gen = peak_load_generation_at_node(descendants)
+
             s_max_th = 3 ** 0.5 * preceeding_branch[1]['branch'].type['U_n'] * \
                        preceeding_branch[1]['branch'].type['I_max_th'] / 1e3
 
@@ -240,7 +262,7 @@ def get_critical_line_loading(grid):
                          peak_load / cos_phi_load,
                          peak_gen / cos_phi_feedin]})
 
-    return critical_branches
+    return critical_branches, critical_stations
 
 
 def peak_load_generation_at_node(nodes):
