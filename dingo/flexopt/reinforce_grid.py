@@ -16,7 +16,7 @@ __author__     = "nesnoj, gplssm"
 from .check_tech_constraints import check_load, check_voltage, \
     assign_line_loading, assign_voltage_at_nodes
 from .reinforce_measures import reinforce_branches_current, \
-    reinforce_branches_voltage
+    reinforce_branches_voltage, reinforce_lv_branches_overloading
 import logging
 
 
@@ -95,5 +95,22 @@ def reinforce_grid(grid, mode):
         # case as done in MVStationDingo.choose_transformers()
 
     elif mode == 'LV':
+        # get overloaded branches
         critical_branches = assign_line_loading(grid) # overloading issues
+
+        # reinforce overloaded lines by increasing size
+        unresolved = reinforce_lv_branches_overloading(grid, critical_branches)
+        logger.info(
+            "Out of {crit_branches} with overloading {unresolved} remain "
+            "with unresolved issues due to line overloading. "
+            "LV grid: {grid}".format(
+                crit_branches=len(critical_branches),
+                unresolved=len(unresolved),
+                grid=grid))
+
+        # get node with over-voltage
         critical_nodes = assign_voltage_at_nodes(grid) #over-voltage issues
+
+        # TODO: reinforce branch adjacent of critical_nodes iteratively with checking for voltage issues
+        # TODO: if largest cable is reached, put element to non-resolvable list
+
