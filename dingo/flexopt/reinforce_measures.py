@@ -170,11 +170,13 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
             cable_type_max = cables.ix[cables['I_max_th'].idxmax()]
             unsolved_branches.append(branch)
             branch['branch'].type = cable_type_max
-            logging.error("No suitable cable type could be found for {branch} "
+            logger.error("No suitable cable type could be found for {branch} "
                           "with I_th_max = {current}. "
                           "Cable of type {cable} is chosen during "
                           "reinforcement.".format(
-                branch=branch['node'], cable=cable_type, current=I_max_branch
+                branch=branch['branch'],
+                cable=cable_type_max.name,
+                current=I_max_branch
             ))
 
     return unsolved_branches
