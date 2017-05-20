@@ -39,6 +39,9 @@ def cable_type(nom_power, nom_voltage, avail_cables):
 
     # determine suitable cable for this current
     suitable_cables = avail_cables[avail_cables['I_max_th'] > I_max_load]
-    cable_type = suitable_cables.ix[suitable_cables['I_max_th'].idxmin()]
+    if not suitable_cables.empty:
+        cable_type = suitable_cables.ix[suitable_cables['I_max_th'].idxmin()]
+    else:
+        cable_type = avail_cables.ix[avail_cables['I_max_th'].idxmax()]
 
     return cable_type
