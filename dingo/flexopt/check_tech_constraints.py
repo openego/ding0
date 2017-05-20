@@ -177,7 +177,7 @@ def check_voltage(grid, mode):
     return [_['node'] for _ in sorted(crit_nodes.values(), key=lambda _: _['v_diff'], reverse=True)]
 
 
-def assign_line_loading(grid):
+def get_critical_line_loading(grid):
     """
     Assign line loading to each branch determined by peak load and peak
     generation of descendant branches
@@ -274,7 +274,7 @@ def peak_load_generation_at_node(nodes):
     return peak_load, peak_generation
 
 
-def assign_voltage_at_nodes(grid):
+def get_critical_voltage_at_nodes(grid):
     """
     Estimate voltage drop/increase induced by loads/generators connected to the
     grid.

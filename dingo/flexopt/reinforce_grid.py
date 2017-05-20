@@ -14,7 +14,7 @@ __author__     = "nesnoj, gplssm"
 
 
 from .check_tech_constraints import check_load, check_voltage, \
-    assign_line_loading, assign_voltage_at_nodes
+    get_critical_line_loading, get_critical_voltage_at_nodes
 from .reinforce_measures import reinforce_branches_current, \
     reinforce_branches_voltage, reinforce_lv_branches_overloading
 import logging
@@ -96,7 +96,7 @@ def reinforce_grid(grid, mode):
 
     elif mode == 'LV':
         # get overloaded branches
-        critical_branches = assign_line_loading(grid) # overloading issues
+        critical_branches = get_critical_line_loading(grid) # overloading issues
 
         # reinforce overloaded lines by increasing size
         unresolved = reinforce_lv_branches_overloading(grid, critical_branches)
@@ -109,7 +109,7 @@ def reinforce_grid(grid, mode):
                 grid=grid))
 
         # get node with over-voltage
-        critical_nodes = assign_voltage_at_nodes(grid) #over-voltage issues
+        critical_nodes = get_critical_voltage_at_nodes(grid) #over-voltage issues
 
         # TODO: reinforce branch adjacent of critical_nodes iteratively with checking for voltage issues
         # TODO: if largest cable is reached, put element to non-resolvable list
