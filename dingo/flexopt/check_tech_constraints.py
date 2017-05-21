@@ -390,29 +390,32 @@ def get_critical_voltage_at_nodes(grid):
 
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
+    #
+    # cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
+    # cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    # v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+    #
+    # # loads and generators connected to bus bar
+    # bus_bar_load = sum(
+    #     [node.peak_load for node in tree.successors(grid._station)
+    #      if isinstance(node, LVLoadDingo)]) / cos_phi_load
+    # bus_bar_generation = sum(
+    #     [node.capacity for node in tree.successors(grid._station)
+    #      if isinstance(node, GeneratorDingo)]) / cos_phi_feedin
+    #
+    # v_delta_load_case_bus_bar = voltage_delta_vde(v_nom,
+    #                                               bus_bar_load,
+    #                                               (r_mv_grid + r_trafo),
+    #                                               (x_mv_grid + x_trafo),
+    #                                               cos_phi_load)
+    # v_delta_gen_case_bus_bar = voltage_delta_vde(v_nom,
+    #                                              bus_bar_generation,
+    #                                              (r_mv_grid + r_trafo),
+    #                                              -(x_mv_grid + x_trafo),
+    #                                              cos_phi_feedin)
+    v_delta_load_case_bus_bar, \
+    v_delta_gen_case_bus_bar = get_voltage_at_bus_bar(grid, tree)
 
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
-    v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
-
-    # loads and generators connected to bus bar
-    bus_bar_load = sum(
-        [node.peak_load for node in tree.successors(grid._station)
-         if isinstance(node, LVLoadDingo)]) / cos_phi_load
-    bus_bar_generation = sum(
-        [node.capacity for node in tree.successors(grid._station)
-         if isinstance(node, GeneratorDingo)]) / cos_phi_feedin
-
-    v_delta_load_case_bus_bar = voltage_delta_vde(v_nom,
-                                                  bus_bar_load,
-                                                  (r_mv_grid + r_trafo),
-                                                  (x_mv_grid + x_trafo),
-                                                  cos_phi_load)
-    v_delta_gen_case_bus_bar = voltage_delta_vde(v_nom,
-                                                 bus_bar_generation,
-                                                 (r_mv_grid + r_trafo),
-                                                 -(x_mv_grid + x_trafo),
-                                                 cos_phi_feedin)
     if (abs(v_delta_gen_case_bus_bar) > v_delta_tolerable
         or abs(v_delta_load_case_bus_bar) > v_delta_tolerable):
         crit_nodes.append({'node': grid._station,
@@ -707,3 +710,51 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
         v_delta_stub_load = 0
 
     return [v_delta_stub_load, v_delta_stub_gen]
+
+
+def get_voltage_at_bus_bar(grid, tree):
+    """
+    Determine voltage level at bus bar of MV-LV substation
+
+    grid : dingo.core.network.grids.LVGridDingo
+        Dingo grid object
+    tree : networkx.DiGraph
+        Tree of grid topology:
+
+    Returns
+    -------
+    voltage_levels : list
+        Voltage at bus bar. First item refers to load case, second item refers
+        to voltage in feedin (generation) case
+    """
+
+    # voltage at substation bus bar
+    r_mv_grid, x_mv_grid = get_mv_impedance(grid)
+
+    r_trafo = sum([tr.r for tr in grid._station._transformers])
+    x_trafo = sum([tr.x for tr in grid._station._transformers])
+
+    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
+    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+
+    # loads and generators connected to bus bar
+    bus_bar_load = sum(
+        [node.peak_load for node in tree.successors(grid._station)
+         if isinstance(node, LVLoadDingo)]) / cos_phi_load
+    bus_bar_generation = sum(
+        [node.capacity for node in tree.successors(grid._station)
+         if isinstance(node, GeneratorDingo)]) / cos_phi_feedin
+
+    v_delta_load_case_bus_bar = voltage_delta_vde(v_nom,
+                                                  bus_bar_load,
+                                                  (r_mv_grid + r_trafo),
+                                                  (x_mv_grid + x_trafo),
+                                                  cos_phi_load)
+    v_delta_gen_case_bus_bar = voltage_delta_vde(v_nom,
+                                                 bus_bar_generation,
+                                                 (r_mv_grid + r_trafo),
+                                                 -(x_mv_grid + x_trafo),
+                                                 cos_phi_feedin)
+
+    return v_delta_load_case_bus_bar, v_delta_gen_case_bus_bar
