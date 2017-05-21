@@ -11,8 +11,6 @@ The fundamental data basis is decribed in [Huelk2017]_ and its extension is
 detailed by [Amme2017]_. Further extensions and additional details are provided
 in the sections below.
 
-.. TODO: find figure with right definitions
-
 :ref:`definition-of-terms` introduces terms we stick to in the following text.
 
 .. _definition-of-terms:
@@ -162,8 +160,41 @@ allocated to LV grid branches of sector residential, larger power plants
 are allocated to branches of the other sector, and really large ones are
 directly connected to the bus bar of the MV-LV substation.
 
+Grid stability and equipment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. TODO: complete details of references
+During build of LV grid topology equipment is chosen with respect to max.
+occurring load and generation according to current grid codes (see [VDE-AR]_).
+Nevertheless, some overloading issues may remain. In addition, voltage issues
+may arise that can't be considered during grid topology creation. Following
+steps do apply during reinforcement of Dingo LV grids
+
+#. Checks for **overloading** issues at branches and MV-LV transformers first
+#. Critical branches (those with line overloading) are extended to appropriate
+   size of cable to transport connected load and generation. Note, if connected load or
+   generation capacity is still exceeding capacity of largest cable type. We keep
+   largest available cable type and the issue most probably will remain
+#. Stations are tested for overloading issues for generation and load case as
+   well. If nominal apparent power of transformers of a substation is not
+   sufficient a two-step procedure is applied
+
+   #. Existing transformers are extended (replaced) to comply with load and
+      generation conencted to subsequent grid.
+   #. If Step 1 does not resolve all issues additional transformers are build
+      in the substation
+#. Subsequently **over-voltage issues** are analyzed for all grid nodes
+#. For each node where voltage exceeds 3 % of nominal voltage, branch segments
+   connecting the node with the substation are reinforce until no further issues
+   remain. If a over-voltage issue cannot be solved by installing largest
+   availabe cable (NAYY 4x1x300) this type of cable still remains as well as
+   the overvoltage issue
+#. Substations are checked for over-voltage issues at the bus bar individually.
+   Identified issues are resolved by extending nominal apparent power of
+   existing transformer. A ultimately build up to two new transformers in the
+   substation.
+
+References
+----------
 .. [Amme2017] J. Amme, G. Pleßmann, J. Bühler, L. Hülk, E. Kötter, P. Schwaegerl:
     *The eGo grid model: An open-source and open-data based synthetic medium-voltage
     grid model for distribution power supply systems*.
@@ -173,7 +204,17 @@ directly connected to the bus bar of the MV-LV substation.
     generation capacities across multi voltage levels in a high spatial
     resolution* International Journal of Sustainable Energy Planning and
     Management 2017 (submitted)
-.. [Kerber] G. Kerber: http://oep.iks.cs.ovgu.de/literature/entry/17/
-.. [Scheffler] Scheffler: http://oep.iks.cs.ovgu.de/literature/entry/18/
-.. [Mohrmann] Mohrmann: http://oep.iks.cs.ovgu.de/literature/entry/19/
-.. [OSM] https://www.openstreetmap.org/#map
+.. [Kerber] G. Kerber: Aufnahmefähigkeit von Niederspannungsverteilnetzen für
+    die Einspeisung aus Photovoltaikkleinanlagen, Dissertation, TU München,
+    2011
+.. [Scheffler] J. Scheffler: Bestimmung der maximal zulässigen
+    Netzanschlussleistung photovoltaischer Energiewandlungsanlagen in
+    Wohnsiedlungsgebieten, Dissertation, TU Chemnitz, 2002
+.. [Mohrmann] M. Mohrmann, C. Reese, L. Hofmann, J. Schmiesing: Untersuchung
+    von Niederspannungsverteilnetzen anhand synthetische Netzstrukturen. In:
+    Proceedings of VDE ETG Kongress, 2013
+.. [OSM] OpenStreetMap contributors:
+    `Open street map <https://www.openstreetmap.org>`_, 2017
+.. [VDE-AR] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
+        Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
+        Erzeugungsanlagen am Niederspannungsnetz, 2011
