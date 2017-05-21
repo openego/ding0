@@ -15,7 +15,6 @@ __author__     = "nesnoj, gplssm"
 
 from setuptools import find_packages, setup
 import os
-import dingo
 
 # import subprocess
 #
