@@ -112,11 +112,41 @@ def reinforce_grid(grid, mode):
                 grid=grid))
 
         # reinforce substations
-        extend_substation(grid, critical_stations, 'LV')
+        extend_substation(grid, critical_stations, mode)
 
         # get node with over-voltage
-        critical_nodes = get_critical_voltage_at_nodes(grid) #over-voltage issues
+        crit_nodes = get_critical_voltage_at_nodes(grid) #over-voltage issues
 
-        # TODO: reinforce branch adjacent of critical_nodes iteratively with checking for voltage issues
-        # TODO: if largest cable is reached, put element to non-resolvable list
+        crit_nodes_count_prev_step = len(crit_nodes)
+
+        logger.info('{cnt_crit_branches} in {grid} have voltage issues'.format(
+            cnt_crit_branches=crit_nodes_count_prev_step,
+            grid=grid))
+
+        # as long as there are voltage issues, do reinforcement
+        while crit_nodes:
+            # determine all branches on the way from HV-MV substation to crit. nodes
+            crit_branches_v = grid.find_and_union_paths(
+                grid.station(),
+                [_['node'] for _ in crit_nodes])
+
+            # do reinforcement
+            reinforce_branches_voltage(grid, crit_branches_v, mode)
+
+            # get node with over-voltage
+            crit_nodes = get_critical_voltage_at_nodes(grid)
+
+            # if there are critical nodes left but no larger cable available, stop reinforcement
+            if len(crit_nodes) == crit_nodes_count_prev_step:
+                logger.warning('==> There are {0} branches that cannot be '
+                               'reinforced (no appropriate cable '
+                               'available).'.format(
+                    len(crit_branches_v)))
+                break
+
+            crit_nodes_count_prev_step = len(crit_nodes)
+
+        if not crit_nodes:
+            logger.info('==> All voltage issues in {mode} grid could be '
+                        'solved using reinforcement.'.format(mode=mode))
 

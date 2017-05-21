@@ -293,6 +293,8 @@ class NetworkDingo:
         if len(lv_grid_districts) == 0:
             raise ValueError('Load Area {} has no LVGD - please re-open #155'.format(repr(lv_load_area)))
 
+        lv_nominal_voltage = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+
         # Associate lv_grid_district to load_area
         for id, row in lv_grid_districts.iterrows():
             lv_grid_district = LVGridDistrictDingo(
@@ -317,7 +319,8 @@ class NetworkDingo:
             lv_grid = LVGridDingo(network=self,
                                   grid_district=lv_grid_district,
                                   id_db=id,
-                                  geo_data=wkt_loads(row['geom']))
+                                  geo_data=wkt_loads(row['geom']),
+                                  v_level=lv_nominal_voltage)
 
             # create LV station
             lv_station = LVStationDingo(
