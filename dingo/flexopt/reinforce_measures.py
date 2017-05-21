@@ -60,7 +60,7 @@ def reinforce_branches_current(grid, crit_branches):
         logger.info('==> {} branches were reinforced.'.format(str(branch_ctr)))
 
 
-def reinforce_branches_voltage(grid, crit_branches):
+def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
     """ Reinforce MV or LV grid by installing a new branch/line type
 
     Parameters
@@ -80,7 +80,8 @@ def reinforce_branches_voltage(grid, crit_branches):
     """
 
     # load cable data, file_names and parameter
-    branch_parameters = grid.network.static_data['MV_cables']
+    branch_parameters = grid.network.static_data['{gridlevel}_cables'.format(
+        gridlevel=grid_level)]
     branch_parameters = branch_parameters[branch_parameters['U_n'] == grid.v_level].sort_values('I_max_th')
 
     branch_ctr = 0

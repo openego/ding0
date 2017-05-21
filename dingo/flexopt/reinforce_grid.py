@@ -87,8 +87,8 @@ def reinforce_grid(grid, mode):
             crit_nodes_count_prev_step = len(crit_nodes)
 
         if not crit_nodes:
-            logger.info('==> All voltage issues could be solved using '
-                        'reinforcement.')
+            logger.info('==> All voltage issues in {mode} grid could be '
+                        'solved using reinforcement.'.format(mode=mode))
 
         # STEP 2: reinforce HV-MV station
         # NOTE: HV-MV station reinforcement is not required for status-quo
