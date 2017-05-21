@@ -16,7 +16,8 @@ __author__     = "nesnoj, gplssm"
 from .check_tech_constraints import check_load, check_voltage, \
     get_critical_line_loading, get_critical_voltage_at_nodes
 from .reinforce_measures import reinforce_branches_current, \
-    reinforce_branches_voltage, reinforce_lv_branches_overloading
+    reinforce_branches_voltage, reinforce_lv_branches_overloading, \
+    extend_substation
 import logging
 
 
@@ -109,6 +110,9 @@ def reinforce_grid(grid, mode):
                 crit_branches=len(critical_branches),
                 unresolved=len(unresolved),
                 grid=grid))
+
+        # reinforce substations
+        extend_substation(grid, critical_stations, 'LV')
 
         # get node with over-voltage
         critical_nodes = get_critical_voltage_at_nodes(grid) #over-voltage issues

@@ -18,6 +18,8 @@ import os
 import dingo
 import pandas as pd
 from dingo.tools import config as cfg_dingo
+from dingo.grid.lv_grid.build_grid import select_transformers
+from dingo.core.network import TransformerDingo
 import logging
 
 package_path = dingo.__path__[0]
@@ -101,16 +103,104 @@ def reinforce_branches_voltage(grid, crit_branches):
         logger.info('==> {} branches were reinforced.'.format(str(branch_ctr)))
 
 
-def extend_substation(grid):
-    """ Reinforce MV or LV substation by exchanging the existing trafo and installing a parallel one if necessary with
+def extend_substation(grid, critical_stations, grid_level):
+    """ Reinforce MV or LV substation by exchanging the existing trafo and
+    installing a parallel one if necessary.
 
-    Args:
-        grid: GridDingo object
+    First, all available transformers in a `critical_stations` are extended to
+    maximum power. If this does not solve all present issues, additional
+    transformers are build.
 
-    Returns:
+    Parameters
+    ----------
+        grid: GridDingo
+            Dingo grid container
+        critical_stations : list
+            List of stations with overloading or voltage issues
+        grid_level : str
+            Either "LV" or "MV". Basis to select right equipment.
+
+    Notes
+    -----
+    Curently straight forward implemented for LV stations
 
     """
-    pass
+    load_factor_lv_trans_lc_normal = cfg_dingo.get(
+        'assumptions',
+        'load_factor_lv_trans_lc_normal')
+    load_factor_lv_trans_fc_normal = cfg_dingo.get(
+        'assumptions',
+        'load_factor_lv_trans_fc_normal')
+
+    trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
+        grid_level=grid_level)]
+    trafo_s_max_max = max(trafo_params['S_max'])
+
+
+    for station in critical_stations:
+        # determine if load or generation case and apply load factor
+        if station['s_max'][0] > station['s_max'][1]:
+            case = 'load'
+            lf_lv_trans_normal = load_factor_lv_trans_lc_normal
+        else:
+            case = 'gen'
+            lf_lv_trans_normal = load_factor_lv_trans_fc_normal
+
+
+        # cumulative maximum power of transformers installed
+        s_max_trafos = sum([_.s_max_a
+                            for _ in station['station']._transformers])
+
+        # determine missing trafo power to solve overloading issue
+        s_trafo_missing = max(station['s_max']) - (
+            s_max_trafos * lf_lv_trans_normal)
+
+        # list of trafos with rated apparent power below `trafo_s_max_max`
+        extendable_trafos = [_ for _ in station['station']._transformers
+                             if _.s_max_a < trafo_s_max_max]
+
+        # try to extend power of existing trafos
+        while (s_trafo_missing > 0) and extendable_trafos:
+
+            # extend power of first trafo to next higher size available
+            trafo = extendable_trafos[0]
+            trafo_s_max_a_before = trafo.s_max_a
+            trafo_nearest_larger = trafo_params.ix[
+                trafo_params.loc[trafo_params['S_max'] > trafo_s_max_a_before][
+                    'S_max'].idxmin()]
+            trafo.s_max_a = trafo_nearest_larger['S_max']
+            trafo.r = trafo_nearest_larger['R']
+            trafo.x = trafo_nearest_larger['X']
+
+            # diminish missing trafo power by extended trafo power and update
+            # extendable trafos list
+            s_trafo_missing -= ((trafo.s_max_a * lf_lv_trans_normal) -
+                                trafo_s_max_a_before)
+            extendable_trafos = [_ for _ in station['station']._transformers
+                                 if _.s_max_a < trafo_s_max_max]
+
+        # build new trafos inside station until
+        if s_trafo_missing > 0:
+            trafo_type, trafo_cnt = select_transformers(grid, s_max={
+                's_max': s_trafo_missing,
+                'case': case
+            })
+            
+            # create transformers and add them to station of LVGD
+            for t in range(0, trafo_cnt):
+                lv_transformer = TransformerDingo(
+                    grid=grid,
+                    id_db=id,
+                    v_level=0.4,
+                    s_max_longterm=trafo_type['S_max'],
+                    r=trafo_type['R'],
+                    x=trafo_type['X'])
+
+                # add each transformer to its station
+                grid._station.add_transformer(lv_transformer)
+
+    logger.info("{stations_cnt} have been reinforced due to overloading "
+                "issues.".format(stations_cnt=len(critical_stations)))
 
 
 def new_substation(grid):
