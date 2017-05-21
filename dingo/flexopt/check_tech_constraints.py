@@ -201,6 +201,10 @@ def get_critical_line_loading(grid):
     """
     cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
     cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    lf_trafo_load = cfg_dingo.get('assumptions',
+                                  "load_factor_lv_trans_lc_normal")
+    lf_trafo_gen = cfg_dingo.get('assumptions',
+                                  "load_factor_lv_trans_fc_normal")
 
     critical_branches = []
     critical_stations = []
@@ -228,8 +232,8 @@ def get_critical_line_loading(grid):
             s_max_trafos = sum([_.s_max_a for _ in node._transformers])
 
             # compare with load and generation connected to
-            if (((peak_load / cos_phi_load) > s_max_trafos) or
-                    ((peak_gen / cos_phi_feedin) > s_max_trafos)):
+            if (((peak_load / cos_phi_load) > s_max_trafos * lf_trafo_load) or
+                    ((peak_gen / cos_phi_feedin) > s_max_trafos * lf_trafo_gen)):
                 critical_stations.append(
                     {'station': node,
                      's_max': [
