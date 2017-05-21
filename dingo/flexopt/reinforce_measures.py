@@ -20,6 +20,7 @@ import pandas as pd
 from dingo.tools import config as cfg_dingo
 from dingo.grid.lv_grid.build_grid import select_transformers
 from dingo.core.network import TransformerDingo
+import networkx as nx
 import logging
 
 package_path = dingo.__path__[0]
@@ -117,7 +118,7 @@ def extend_substation(grid, critical_stations, grid_level):
         grid: GridDingo
             Dingo grid container
         critical_stations : list
-            List of stations with overloading or voltage issues
+            List of stations with overloading
         grid_level : str
             Either "LV" or "MV". Basis to select right equipment.
 
@@ -162,16 +163,12 @@ def extend_substation(grid, critical_stations, grid_level):
 
         # try to extend power of existing trafos
         while (s_trafo_missing > 0) and extendable_trafos:
-
-            # extend power of first trafo to next higher size available
+            # only work with first of potentially multiple trafos
             trafo = extendable_trafos[0]
             trafo_s_max_a_before = trafo.s_max_a
-            trafo_nearest_larger = trafo_params.ix[
-                trafo_params.loc[trafo_params['S_max'] > trafo_s_max_a_before][
-                    'S_max'].idxmin()]
-            trafo.s_max_a = trafo_nearest_larger['S_max']
-            trafo.r = trafo_nearest_larger['R']
-            trafo.x = trafo_nearest_larger['X']
+
+            # extend power of first trafo to next higher size available
+            extend_trafo_power(extendable_trafos, trafo_params)
 
             # diminish missing trafo power by extended trafo power and update
             # extendable trafos list
@@ -270,4 +267,22 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
                 current=I_max_branch
             ))
 
-    return unsolved_branches
+    return unsolved_branchesdef extend_trafo_power(extendable_trafos, trafo_params):
+    """
+    Extend power of first trafo in list of extendable trafos
+
+    Parameters
+    ----------
+    extendable_trafos : list
+        Trafos with rated power below maximum size available trafo
+    trafo_params : pandas.DataFrame
+        Transformer parameters
+    """
+    trafo = extendable_trafos[0]
+    trafo_s_max_a_before = trafo.s_max_a
+    trafo_nearest_larger = trafo_params.ix[
+        trafo_params.loc[trafo_params['S_max'] > trafo_s_max_a_before][
+            'S_max'].idxmin()]
+    trafo.s_max_a = trafo_nearest_larger['S_max']
+    trafo.r = trafo_nearest_larger['R']
+    trafo.x = trafo_nearest_larger['X']
