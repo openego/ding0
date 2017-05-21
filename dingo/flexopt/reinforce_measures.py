@@ -20,6 +20,7 @@ import pandas as pd
 from dingo.tools import config as cfg_dingo
 from dingo.grid.lv_grid.build_grid import select_transformers
 from dingo.core.network import TransformerDingo
+from dingo.flexopt.check_tech_constraints import get_voltage_at_bus_bar
 import networkx as nx
 import logging
 
@@ -201,6 +202,84 @@ def extend_substation(grid, critical_stations, grid_level):
                 "issues.".format(stations_cnt=len(critical_stations)))
 
 
+def extend_substation_voltage(crit_stations, grid_level='LV'):
+    """
+    Extend substation if voltage issues at the substation occur
+
+    Follows a two-step procedure
+    #. Existing transformers are extended by replacement with large nominal
+        apparent power
+    #. New additional transformers added to substation (see ``Notes``)
+
+    Parameters
+    ----------
+    critical_stations : list
+            List of stations with overloading or voltage issues
+
+    Arguments
+    ---------
+    grid_level : str
+        Specifiy grid level: 'MV' or 'LV'
+
+    Notes
+    -----
+    At maximum 2 new of largest (currently 630 kVA) transformer are additionally
+    built to resolve voltage issues at MV-LV substation bus bar.
+    """
+    grid = crit_stations[0]['node'].grid
+    trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
+        grid_level=grid_level)]
+    trafo_s_max_max = max(trafo_params['S_max'])
+    trafo_min_size = trafo_params.ix[trafo_params['S_max'].idxmin()]
+
+    v_diff_max = cfg_dingo.get('assumptions', 'lv_max_v_level_diff_normal')
+
+    tree = nx.dfs_tree(grid._graph, grid._station)
+
+    for station in crit_stations:
+        v_delta = max(station['v_diff'])
+
+        # get list of nodes of main branch in right order
+        extendable_trafos = [_ for _ in station['node']._transformers
+                             if _.s_max_a < trafo_s_max_max]
+
+        v_delta_initially = v_delta
+        new_transformers_cnt = 0
+
+        # extend existing trafo power while voltage issues exist and larger trafos
+        # are available
+        while v_delta > v_diff_max:
+            if extendable_trafos:
+                # extend power of first trafo to next higher size available
+                extend_trafo_power(extendable_trafos, trafo_params)
+            elif new_transformers_cnt < 2:
+                # build a new transformer
+                lv_transformer = TransformerDingo(
+                    grid=grid,
+                    id_db=id,
+                    v_level=0.4,
+                    s_max_longterm=trafo_min_size['S_max'],
+                    r=trafo_min_size['R'],
+                    x=trafo_min_size['X'])
+
+                # add each transformer to its station
+                grid._station.add_transformer(lv_transformer)
+
+                new_transformers_cnt += 1
+
+            # update break criteria
+            v_delta = max(get_voltage_at_bus_bar(grid, tree))
+            extendable_trafos = [_ for _ in station['node']._transformers
+                                 if _.s_max_a < trafo_s_max_max]
+
+            if v_delta == v_delta_initially:
+                logger.warning("Extension of {station} has no effect on "
+                               "voltage delta at bus bar. Transformation power "
+                               "extension is halted.".format(
+                    station=station['node']))
+                break
+
+
 def new_substation(grid):
     """ Reinforce MV grid by installing a new primary substation opposite to the existing one
 
@@ -267,7 +346,10 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
                 current=I_max_branch
             ))
 
-    return unsolved_branchesdef extend_trafo_power(extendable_trafos, trafo_params):
+    return unsolved_branches
+
+
+def extend_trafo_power(extendable_trafos, trafo_params):
     """
     Extend power of first trafo in list of extendable trafos
 

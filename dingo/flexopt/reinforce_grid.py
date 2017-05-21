@@ -17,7 +17,8 @@ from .check_tech_constraints import check_load, check_voltage, \
     get_critical_line_loading, get_critical_voltage_at_nodes
 from .reinforce_measures import reinforce_branches_current, \
     reinforce_branches_voltage, reinforce_lv_branches_overloading, \
-    extend_substation
+    extend_substation, extend_substation_voltage
+from dingo.core.network.stations import LVStationDingo
 import logging
 
 
@@ -149,4 +150,10 @@ def reinforce_grid(grid, mode):
         if not crit_nodes:
             logger.info('==> All voltage issues in {mode} grid could be '
                         'solved using reinforcement.'.format(mode=mode))
+
+        # reinforcement of LV stations on voltage issues
+        crit_stations_voltage = [_ for _ in crit_nodes
+                        if isinstance(_['node'], LVStationDingo)]
+        if crit_stations_voltage:
+            extend_substation_voltage(crit_stations_voltage, grid_level='LV')
 
