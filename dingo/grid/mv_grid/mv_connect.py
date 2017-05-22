@@ -668,13 +668,6 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
         if not lv_load_area.is_aggregated and \
            lv_load_area.lv_load_area_centre not in mv_grid_district.mv_grid.graph_isolated_nodes():
 
-            # ===== DEBUG STUFF (BUG JONAS) =====
-            # TODO: Remove when fixed!
-            if lv_load_area.lv_grid_districts_count() == 0:
-                logger.error('No station for {} found! (Bug jong42)'.format(
-                    lv_load_area))
-            # ===================================
-
             lv_load_area_centre = lv_load_area.lv_load_area_centre
 
             # there's only one station: Replace Load Area centre by station in graph

@@ -521,17 +521,6 @@ class NetworkDingo:
             lv_stations_per_load_area = lv_stations.\
                 loc[lv_stations['la_id'] == id_db]
 
-            # # ===== DEBUG STUFF (BUG jong42) =====
-            # TODO: Remove when fixed!
-            if len(lv_grid_districts_per_load_area) == 0:
-                logger.error(
-                    'No LV grid district for {} found! (Bug jong42)'.format(
-                        lv_load_area))
-            if len(lv_stations_per_load_area) == 0:
-                logger.error('No station for {} found! (Bug jong42)'.format(
-                    lv_load_area))
-            # ===================================
-
             self.build_lv_grid_district(lv_load_area,
                                         lv_grid_districts_per_load_area,
                                         lv_stations_per_load_area)
