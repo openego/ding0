@@ -21,17 +21,12 @@ import time
 # import objgraph
 
 from dingo.core import NetworkDingo
-from dingo.tools import config as cfg_dingo, results
+from dingo.tools import results
 from dingo.tools.logger import setup_logger
 
 logger = setup_logger()
 
 plt.close('all')
-
-cfg_dingo.load_config('config_db_tables.cfg')
-cfg_dingo.load_config('config_calc.cfg')
-cfg_dingo.load_config('config_files.cfg')
-cfg_dingo.load_config('config_misc.cfg')
 
 start = time.time()
 
@@ -90,8 +85,8 @@ logger.info('Elapsed time for {0} MV grid districts (seconds): {1}'.format(
 
 # export grids
 nd.control_circuit_breakers(mode='close')
-#nd.export_mv_grid(conn, mv_grid_districts)
-#nd.export_mv_grid_new(conn, mv_grid_districts)
+nd.export_mv_grid(conn, mv_grid_districts)
+nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
 
