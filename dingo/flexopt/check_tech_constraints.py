@@ -66,8 +66,8 @@ def check_load(grid, mode):
                                                              'load_factor_mv_line_lc_normal'))
         load_factor_mv_cable_lc_normal = float(cfg_dingo.get('assumptions',
                                                              'load_factor_mv_cable_lc_normal'))
-        load_factor_mv_trans_fc_normal = float(cfg_dingo.get('assumptions',
-                                                             'load_factor_mv_trans_fc_normal'))
+        #load_factor_mv_trans_fc_normal = float(cfg_dingo.get('assumptions',
+        #                                                     'load_factor_mv_trans_fc_normal'))
         load_factor_mv_line_fc_normal = float(cfg_dingo.get('assumptions',
                                                              'load_factor_mv_line_fc_normal'))
         load_factor_mv_cable_fc_normal = float(cfg_dingo.get('assumptions',

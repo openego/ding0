@@ -580,10 +580,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
             pyproj.Proj(init='epsg:3035'),  # source coordinate system
             pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
-    # TODO: create generators in grid class for iterating over satellites and non-satellites (nice-to-have) instead
-    # TODO: of iterating over all nodes
     # check all nodes
-
     if mode is 'normal':
         #nodes = sorted(graph.nodes(), key=lambda x: repr(x))
         nodes = mv_grid.graph_isolated_nodes()
