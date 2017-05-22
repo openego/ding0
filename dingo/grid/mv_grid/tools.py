@@ -76,8 +76,8 @@ def set_circuit_breakers(mv_grid, debug=False):
 
             # node is LV station -> get peak load and peak generation
             if isinstance(node, LVStationDingo):
-                nodes_peak_load.append(node.peak_load) / mv_routing_loads_cos_phi
-                nodes_peak_generation.append(node.peak_generation) / mv_routing_generators_cos_phi
+                nodes_peak_load.append(node.peak_load / mv_routing_loads_cos_phi)
+                nodes_peak_generation.append(node.peak_generation / mv_routing_generators_cos_phi)
 
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
             elif isinstance(node, CableDistributorDingo):
