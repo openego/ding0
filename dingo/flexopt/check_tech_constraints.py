@@ -79,17 +79,21 @@ def check_load(grid, mode):
         # STEP 1: check branches' loads
         for branch in grid.graph_edges():
             s_max_th = 3**0.5 * branch['branch'].type['U_n'] * branch['branch'].type['I_max_th']
-            # TODO: Check LOAD FACTOR!
+
             if branch['branch'].kind is 'line':
-                s_max_th *= load_factor_mv_line_lc_normal
+                s_max_th_lcfc = [s_max_th * load_factor_mv_line_lc_normal,
+                                 s_max_th * load_factor_mv_line_fc_normal]
             elif branch['branch'].kind is 'cable':
-                s_max_th *= load_factor_mv_cable_lc_normal
+                s_max_th_lcfc = [s_max_th * load_factor_mv_cable_lc_normal,
+                                 s_max_th * load_factor_mv_cable_fc_normal]
             else:
                 raise ValueError('Branch kind is invalid!')
 
             # check loads only for non-aggregated Load Areas (aggregated ones are skipped raising except)
             try:
-                if any([s*mw2kw >= s_max_th for s in branch['branch'].s_res]):
+                # check if s_res exceeds allowed values for laod and feedin case
+                # CAUTION: The order of values is fix! (1. load case, 2. feedin case)
+                if any([s_res * mw2kw > _ for s_res, _ in zip(branch['branch'].s_res, s_max_th_lcfc)]):
                     # save max. relative overloading
                     crit_branches[branch] = max(branch['branch'].s_res) * mw2kw / s_max_th
             except:
