@@ -329,9 +329,6 @@ class Route(object):
 
         return True
 
-        # TODO (mv_routing): create circuit breaker object, open ring after routing
-
-
     def __str__(self):
         return str(self._nodes)
 
