@@ -305,13 +305,27 @@ class Route(object):
             v_level_op =\
             self._problem._v_level_operation * 1e3
 
+        # set initial r and x
+        r_hring1 =\
+            r_hring2 =\
+            x_hring1 =\
+            x_hring2 =\
+            r_ring_dir1 =\
+            r_ring_dir2 =\
+            x_ring_dir1 =\
+            x_ring_dir2 = 0
+
         for n1, n2 in zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]):
-            v_level_hring1 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring1
+            r_hring1 += self._problem.distance(n1, n2) * r
+            x_hring1 += self._problem.distance(n1, n2) * x
+            v_level_hring1 -= n2.demand() * 1e3 * (r_hring1 + x_hring1*Q_factor) / v_level_hring1
             if (v_level_op - v_level_hring1) > (v_level_op * mv_max_v_level_diff_normal):
                 return False
 
         for n1, n2 in zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)]):
-            v_level_hring2 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring2
+            r_hring2 += self._problem.distance(n1, n2) * r
+            x_hring2 += self._problem.distance(n1, n2) * x
+            v_level_hring2 -= n2.demand() * 1e3 * (r_hring2 + x_hring2 * Q_factor) / v_level_hring2
             if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_diff_normal):
                 return False
 
@@ -319,10 +333,12 @@ class Route(object):
         # (for full ring calculating both directions simultaneously using max. voltage diff. for malfunction operation)
         for (n1, n2), (n3, n4) in zip(zip(nodes_ring1[0:len(nodes_ring1)-1], nodes_ring1[1:len(nodes_ring1)]),
                                       zip(nodes_ring2[0:len(nodes_ring2)-1], nodes_ring2[1:len(nodes_ring2)])):
-            v_level_ring_dir1 -= (n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) /
-                                  v_level_ring_dir1)
-            v_level_ring_dir2 -= (n4.demand() * 1e3 * self._problem.distance(n3, n4) * (r + x*Q_factor) /
-                                  v_level_ring_dir2)
+            r_ring_dir1 += self._problem.distance(n1, n2) * r
+            r_ring_dir2 += self._problem.distance(n3, n4) * r
+            x_ring_dir1 += self._problem.distance(n1, n2) * x
+            x_ring_dir2 += self._problem.distance(n3, n4) * x
+            v_level_ring_dir1 -= (n2.demand() * 1e3 * (r_ring_dir1 + x_ring_dir1 * Q_factor) / v_level_ring_dir1)
+            v_level_ring_dir2 -= (n4.demand() * 1e3 * (r_ring_dir2 + x_ring_dir2 * Q_factor) / v_level_ring_dir2)
             if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_diff_malfunc) or
                 (v_level_op - v_level_ring_dir2) > (v_level_op * mv_max_v_level_diff_malfunc)):
                 return False
