@@ -13,6 +13,9 @@ __url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
+from dingo.tools import config as cfg_dingo
+cfg_dingo.load_config('config_files.cfg')
+
 import os
 import logging
 
@@ -36,7 +39,7 @@ def create_dir(dirpath):
 
 def create_home_dir(dingo_path=None):
     """
-    Check in ~/.dingo exists, otherwise create it
+    Check in ~/<DINGO_DIR> exists, otherwise create it
 
     Parameters
     ----------
@@ -59,7 +62,9 @@ def get_default_home_dir():
     homedir : str
         Default home directory including its path
     """
-    return os.path.join(os.path.expanduser('~'), '.dingo')
+    dingo_dir = str(cfg_dingo.get('config',
+                                  'config_dir'))
+    return os.path.join(os.path.expanduser('~'), dingo_dir)
 
 
 def setup_logger(log_dir=None):
