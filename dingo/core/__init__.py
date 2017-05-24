@@ -855,8 +855,10 @@ class NetworkDingo:
         cfg_dingo.load_config('config_calc.cfg')
         cfg_dingo.load_config('config_files.cfg')
         cfg_dingo.load_config('config_misc.cfg')
+        
+        cfg_dict = cfg_dingo.cfg._sections
 
-        return cfg_dingo
+        return cfg_dict
 
     def import_pf_config(self):
         """ Creates power flow config class and imports config from file
@@ -982,14 +984,14 @@ class NetworkDingo:
 
         orm = {}
 
-        data_source = self.config.get('input_data_source', 'input_data')
-        mv_grid_districts_name = self.config.get(data_source, 'mv_grid_districts')
-        mv_stations_name = self.config.get(data_source, 'mv_stations')
-        lv_load_areas_name = self.config.get(data_source, 'lv_load_areas')
-        lv_grid_district_name = self.config.get(data_source, 'lv_grid_district')
-        lv_stations_name = self.config.get(data_source, 'lv_stations')
-        conv_generators_name = self.config.get(data_source, 'conv_generators')
-        re_generators_name = self.config.get(data_source, 're_generators')
+        data_source = self.config['input_data_source']['input_data']
+        mv_grid_districts_name = self.config[data_source]['mv_grid_districts']
+        mv_stations_name = self.config[data_source]['mv_stations']
+        lv_load_areas_name = self.config[data_source]['lv_load_areas']
+        lv_grid_district_name = self.config[data_source]['lv_grid_district']
+        lv_stations_name = self.config[data_source]['lv_stations']
+        conv_generators_name = self.config[data_source]['conv_generators']
+        re_generators_name = self.config[data_source]['re_generators']
 
         from egoio.db_tables import model_draft as orm_model_draft, \
             supply as orm_supply, \
@@ -1018,7 +1020,7 @@ class NetworkDingo:
             orm['orm_lv_stations'] = orm_grid.__getattribute__(lv_stations_name)
             orm['orm_conv_generators'] = orm_supply.__getattribute__(conv_generators_name)
             orm['orm_re_generators'] = orm_supply.__getattribute__(re_generators_name)
-            orm['data_version'] = self.config.get(data_source, 'version')
+            orm['data_version'] = self.config[data_source]['version']
             orm['version_condition_mvgd'] =\
                 orm['orm_mv_grid_districts'].version == orm['data_version']
             orm['version_condition_la'] =\
@@ -1336,7 +1338,7 @@ class NetworkDingo:
         nodes_df = pd.DataFrame(columns=node_cols)
         edges_df = pd.DataFrame(columns=edges_cols)
 
-        srid = str(int(cfg_dingo.get('geo', 'srid')))
+        srid = str(int(self.config['geo']['srid']))
 
         for grid_district in self.mv_grid_districts():
 
