@@ -23,7 +23,7 @@ import oemof.db as db
 # import required modules of DINGO
 from dingo.core import NetworkDingo
 from dingo.tools.logger import setup_logger
-from dingo.tools.results_new import save_nd_to_pickle
+from dingo.tools.results import save_nd_to_pickle
 
 # define logger
 logger = setup_logger()

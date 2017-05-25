@@ -231,6 +231,22 @@ class ResultsDingo:
         )
 
 
+
+
+    def global_stats(self):
+
+        if self.global_stats is None:
+            self.global_stats = self.calculate_global_stats()
+
+        return self.global_stats
+
+    def mvdg_stats(self):
+
+        if self.mvgd_stats is None:
+            self.mvgd_stats = self.calculate_mvgd_stats()
+
+        return self.mvgd_stats
+
     def calculate_global_stats(self):
 
         global_stats = {
@@ -242,6 +258,71 @@ class ResultsDingo:
 
         return global_stats
 
+    def calculate_mvgd_stats(self):
+
+        mvgd_stats = self.nodes.groupby('grid_id').sum()[
+            ['peak_load', 'generation_capacity']] / 1e3
+        mvgd_stats['v_nom'] = self.nodes.groupby('grid_id').mean()['v_nom']
+        cable_line_km = self.edges['length'].groupby(
+            [self.edges['grid_id'], self.edges['type_kind']]).sum().unstack(
+            level=-1).fillna(0)
+        cable_line_km.columns.name = None
+        mvgd_stats[['km_cable', 'km_line']] = cable_line_km
+        mvgd_stats['rings'] = self.nodes.groupby('grid_id').mean()['rings']
+        type = self.nodes.groupby(['grid_id','type']).count()['node_id'].unstack(level=-1).fillna(0)
+        type.columns.name= None
+        mvgd_stats = pd.concat([mvgd_stats, type], axis=1)
+
+
+        return mvgd_stats
+
+    def plot_cable_length(self):
+        """
+        Cable length per MV grid district
+        """
+
+        stats = self.calculate_mvgd_stats().rename(columns={'v_nom': 'Voltage level'})
+
+        # cable and line kilometer distribution
+        f, axarr = plt.subplots(2, sharex=True)
+        stats.hist(column=['km_cable'], bins=5, alpha=0.5, ax=axarr[0])
+        stats.hist(column=['km_line'], bins=5, alpha=0.5, ax=axarr[1])
+
+        plt.savefig(os.path.join(self.base_path, 'plots',
+                                 'Histogram_cable_line_length.pdf'))
+
+        # Generation capacity vs. peak load
+        sns.set_context("paper", font_scale=1.1)
+        sns.set_style("ticks")
+
+        sns.lmplot('generation_capacity', 'peak_load',
+                   data=stats,
+                   fit_reg=False,
+                   hue='Voltage level',
+                   scatter_kws={"marker": "D",
+                                "s": 100},
+                   aspect=2)
+        plt.title('Peak load vs. generation capcity')
+        plt.xlabel('Generation capacity in MW')
+        plt.ylabel('Peak load in MW')
+
+        plt.savefig(os.path.join(self.base_path, 'plots',
+                                 'Scatter_generation_load.pdf'))
+
+        # Cable vs. line kilometer scatter
+        sns.lmplot('km_cable', 'km_line',
+                   data=stats,
+                   fit_reg=False,
+                   hue='Voltage level',
+                   scatter_kws={"marker": "D",
+                                "s": 100},
+                   aspect=2)
+        plt.title('Kilometer of cable/line')
+        plt.xlabel('Km of cables')
+        plt.ylabel('Km of overhead lines')
+
+        plt.savefig(os.path.join(self.base_path, 'plots',
+                                 'Scatter_cables_lines.pdf'))
 
 def lv_grid_stats(nd):
     """
@@ -276,172 +357,3 @@ def lv_grid_stats(nd):
 
     return lv_stats
 
-
-def calculate_mvgd_stats(nodes_df, edges_df):
-    """
-    Statistics for each MV grid district
-
-    Parameters
-    ----------
-    nodes_df : pandas.DataFrame
-        Statistics on nodes of a MVGD
-    edges_df : pandas.DataFrame
-        Statistics on edges of a MVGD
-
-    Returns
-    -------
-    mvgd_stats : pandas.DataFrame
-        Dataframe containing several statistical numbers about MVGD
-
-    Notes
-    -----
-    Power data (i.e. peak load/ generation capacity) is returned in MW
-    """
-
-    # get peak load/generation capacity in MW
-    mvgd_stats = nodes_df.groupby('grid_id').sum()[
-                     ['peak_load', 'generation_capacity']] / 1e3
-
-    # Nominal voltage of MV grid district
-    mvgd_stats['v_nom'] = nodes_df.groupby('grid_id').mean()['v_nom']
-
-    # Cable and overhead lines lengths
-    cable_line_km = edges_df['length'].groupby(
-        [edges_df['grid_id'], edges_df['type_kind']]).sum().unstack(
-        level=-1).fillna(0)
-    cable_line_km.columns.name = None
-    mvgd_stats[['km_cable', 'km_line']] = cable_line_km
-
-    # Amount of rings
-    mvgd_stats['rings'] = nodes_df.groupby('grid_id').mean()['rings']
-
-    # Number of aggr. LA, stations, generators, etc. connected at MV level
-    type = nodes_df.groupby(['grid_id', 'type']).count()['node_id'].unstack(
-        level=-1).fillna(0)
-    type.columns.name = None
-    mvgd_stats = pd.concat([mvgd_stats, type], axis=1)
-
-    return mvgd_stats
-
-
-def save_nd_to_pickle(nd, path='', filename=None):
-    """
-    Use pickle to save the whole nd-object to disc
-
-    Parameters
-    ----------
-    nd : NetworkDingo
-        Dingo grid container object
-    path : str
-        Absolute or relative path where pickle should be saved. Default is ''
-        which means pickle is save to PWD
-    """
-
-    abs_path = os.path.abspath(path)
-
-    if len(nd._mv_grid_districts) > 1:
-        name_extension = '_{number}-{number2}'.format(
-            number=nd._mv_grid_districts[0],
-            number2=nd._mv_grid_districts[-1])
-    else:
-        name_extension = '_{number}'.format(number=nd._mv_grid_districts[0])
-
-    if filename is None:
-        filename = "dingo_grids_{ext}.pkl".format(
-            ext=name_extension)
-
-    # delete attributes of `nd` in order to make pickling work
-    # del nd._config
-    del nd._orm
-
-    pickle.dump(nd, open(os.path.join(abs_path, filename),"wb"))
-
-
-def load_nd_from_pickle(filename=None, path=''):
-    """
-    Use pickle to save the whole nd-object to disc
-
-    Parameters
-    ----------
-    filename : str
-        Filename of nd pickle
-    path : str
-        Absolute or relative path where pickle should be saved. Default is ''
-        which means pickle is save to PWD
-
-    Returns
-    -------
-    nd : NetworkDingo
-        Dingo grid container object
-    """
-
-    abs_path = os.path.abspath(path)
-
-    if filename is None:
-        raise NotImplementedError
-
-    return pickle.load(open(os.path.join(abs_path, filename),"rb"))
-
-
-def plot_cable_length(stats, plotpath):
-    """
-    Cable length per MV grid district
-    """
-
-    # cable and line kilometer distribution
-    f, axarr = plt.subplots(2, sharex=True)
-    stats.hist(column=['km_cable'], bins=5, alpha=0.5, ax=axarr[0])
-    stats.hist(column=['km_line'], bins=5, alpha=0.5, ax=axarr[1])
-
-    plt.savefig(os.path.join(plotpath,
-                             'Histogram_cable_line_length.pdf'))
-
-def plot_generation_over_load(stats, plotpath):
-    """
-
-    :param stats:
-    :param plotpath:
-    :return:
-    """
-
-    # Generation capacity vs. peak load
-    sns.set_context("paper", font_scale=1.1)
-    sns.set_style("ticks")
-
-    sns.lmplot('generation_capacity', 'peak_load',
-               data=stats,
-               fit_reg=False,
-               hue='Voltage level',
-               scatter_kws={"marker": "D",
-                            "s": 100},
-               aspect=2)
-    plt.title('Peak load vs. generation capcity')
-    plt.xlabel('Generation capacity in MW')
-    plt.ylabel('Peak load in MW')
-
-    plt.savefig(os.path.join(plotpath,
-                             'Scatter_generation_load.pdf'))
-
-
-def plot_km_cable_vs_line(stats, plotpath):
-    """
-
-    :param stats:
-    :param plotpath:
-    :return:
-    """
-
-    # Cable vs. line kilometer scatter
-    sns.lmplot('km_cable', 'km_line',
-               data=stats,
-               fit_reg=False,
-               hue='Voltage level',
-               scatter_kws={"marker": "D",
-                            "s": 100},
-               aspect=2)
-    plt.title('Kilometer of cable/line')
-    plt.xlabel('Km of cables')
-    plt.ylabel('Km of overhead lines')
-
-    plt.savefig(os.path.join(plotpath,
-                             'Scatter_cables_lines.pdf'))
