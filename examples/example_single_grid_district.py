@@ -17,13 +17,11 @@ __author__     = "nesnoj, gplssm"
 
 # ===== IMPORTS AND CONFIGURATION =====
 
-# import DB interface from oemof
-import oemof.db as db
-
 # import required modules of DINGO
 from dingo.core import NetworkDingo
 from dingo.tools.logger import setup_logger
 from dingo.tools.results_new import save_nd_to_pickle
+import dingo.tools.db as db
 
 # define logger
 logger = setup_logger()
@@ -31,7 +29,7 @@ logger = setup_logger()
 # ===== MAIN =====
 
 # database connection
-conn = db.connection(section='oedb')
+conn = db.connection(section='oedb_remote')
 
 # instantiate new dingo network object
 nd = NetworkDingo(name='network')
