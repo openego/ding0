@@ -19,6 +19,7 @@ from dingo.grid.mv_grid.models.models import Graph, Node
 from dingo.grid.mv_grid.util import util, data_input
 from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty, calc_geo_centre_point
+from dingo.tools import config as cfg_dingo
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
@@ -38,6 +39,10 @@ def dingo_graph_to_routing_specs(graph):
     Returns:
         specs: Data dictionary for routing, See class `Graph()` in routing's model definition for keys
     """
+
+    # get power factor for loads
+    mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                   'mv_routing_loads_cos_phi'))
 
     specs = {}
     nodes_demands = {}
@@ -59,8 +64,9 @@ def dingo_graph_to_routing_specs(graph):
             # (satellites in case of there're only satellites in grid district)
             if not node.lv_load_area.is_satellite or satellites_only:
                 # get demand and position of node
-                # convert node's demand to int for performance purposes
-                nodes_demands[str(node)] = int(node.lv_load_area.peak_load)
+                # convert node's demand to int for performance purposes and to avoid that node
+                # allocation with subsequent deallocation results in demand<0 due to rounding errors.
+                nodes_demands[str(node)] = int(node.lv_load_area.peak_load / mv_routing_loads_cos_phi)
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
                 # get aggregation flag
                 if node.lv_load_area.is_aggregated:

@@ -16,6 +16,7 @@ __author__     = "nesnoj, gplssm"
 from dingo.core.network.stations import LVStationDingo
 from dingo.core.network import CableDistributorDingo, GeneratorDingo
 from dingo.tools.geo import calc_geo_centre_point
+from dingo.tools import config as cfg_dingo
 import logging
 
 
@@ -58,6 +59,12 @@ def set_circuit_breakers(mv_grid, debug=False):
 
     """
 
+    # get power factor for loads and generators
+    mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                   'mv_routing_loads_cos_phi'))
+    mv_routing_generators_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                        'mv_routing_generators_cos_phi'))
+
     # iterate over all rings and circuit breakers
     for ring, circ_breaker in zip(mv_grid.rings_nodes(include_root_node=False), mv_grid.circuit_breakers()):
 
@@ -69,8 +76,8 @@ def set_circuit_breakers(mv_grid, debug=False):
 
             # node is LV station -> get peak load and peak generation
             if isinstance(node, LVStationDingo):
-                nodes_peak_load.append(node.peak_load)
-                nodes_peak_generation.append(node.peak_generation)
+                nodes_peak_load.append(node.peak_load / mv_routing_loads_cos_phi)
+                nodes_peak_generation.append(node.peak_generation / mv_routing_generators_cos_phi)
 
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
             elif isinstance(node, CableDistributorDingo):
@@ -82,12 +89,15 @@ def set_circuit_breakers(mv_grid, debug=False):
 
                     # node is LV station -> get peak load and peak generation
                     if isinstance(node_subtree, LVStationDingo):
-                        nodes_subtree_peak_load += node_subtree.peak_load
-                        nodes_subtree_peak_generation += node_subtree.peak_generation
+                        nodes_subtree_peak_load += node_subtree.peak_load /\
+                                                   mv_routing_loads_cos_phi
+                        nodes_subtree_peak_generation += node_subtree.peak_generation /\
+                                                         mv_routing_generators_cos_phi
 
                     # node is LV station -> get peak load and peak generation
                     if isinstance(node_subtree, GeneratorDingo):
-                        nodes_subtree_peak_generation += node_subtree.capacity
+                        nodes_subtree_peak_generation += node_subtree.capacity /\
+                                                         mv_routing_generators_cos_phi
 
                 nodes_peak_load.append(nodes_subtree_peak_load)
                 nodes_peak_generation.append(nodes_subtree_peak_generation)

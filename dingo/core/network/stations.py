@@ -107,6 +107,12 @@ class MVStationDingo(StationDingo):
 
         """
 
+        # get power factor for loads and generators
+        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                       'mv_routing_loads_cos_phi'))
+        mv_routing_generators_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                            'mv_routing_generators_cos_phi'))
+
         # get trafo load factors
         load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
                                                              'load_factor_mv_trans_lc_normal'))
@@ -117,8 +123,8 @@ class MVStationDingo(StationDingo):
         trafo_parameters = self.grid.network.static_data['MV_trafos']
 
         # get peak load and peak generation
-        cum_peak_load = self.peak_load
-        cum_peak_generation = self.peak_generation(mode='MVLV')
+        cum_peak_load = self.peak_load / mv_routing_loads_cos_phi
+        cum_peak_generation = self.peak_generation(mode='MVLV') / mv_routing_generators_cos_phi
 
         kw2mw = 1e-3
 
