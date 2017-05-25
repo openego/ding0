@@ -23,6 +23,7 @@ import oemof.db as db
 # import required modules of DINGO
 from dingo.core import NetworkDingo
 from dingo.tools.logger import setup_logger
+from dingo.tools.results_new import save_nd_to_pickle
 
 # define logger
 logger = setup_logger()
@@ -48,3 +49,6 @@ nd.export_mv_grid(conn, mv_grid_districts)
 nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
+
+# export grid to file (pickle)
+save_nd_to_pickle(nd, filename='dingo_grids_example.pkl')
