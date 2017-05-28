@@ -107,6 +107,11 @@ class NetworkDingo:
         debug : Boolean
             If True, information is printed during process
 
+        Returns
+        -------
+        msg : str
+            Message of invalidity of a grid district
+
         Notes
         -----
         The steps performed in this method are to be kept in the given order
@@ -176,7 +181,7 @@ class NetworkDingo:
         self.mv_parametrize_grid(debug=debug)
 
         # STEP 4: Validate MV Grid Districts
-        self.validate_grid_districts()
+        msg = self.validate_grid_districts()
 
         # STEP 5: Build LV grids
         self.build_lv_grids()
@@ -205,6 +210,8 @@ class NetworkDingo:
         if debug:
             logger.info('Elapsed time for {0} MV Grid Districts (seconds): {1}'.format(
                 str(len(mv_grid_districts_no)), time.time() - start))
+
+        return msg
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
         """ Build dict with mapping from LVLoadAreaDingo id to LVLoadAreaDingo object,

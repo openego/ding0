@@ -90,7 +90,7 @@ nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
 
-stations_generators = results.lv_grid_stats(nd)
+stations_generators = results.lv_grid_generators_bus_bar(nd)
 print('Generators directly connected to the substation')
 for k, v in stations_generators.items():
     print(k, v)
