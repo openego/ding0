@@ -478,7 +478,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
-                branch_no = branch_no + 1
+                branch_no += 1
 
                 for load_no in list(range(1, val['remaining_loads'] + 1)):
                     # create a LV grid string and attach to station
