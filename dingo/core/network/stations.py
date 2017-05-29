@@ -150,7 +150,7 @@ class MVStationDingo(StationDingo):
             else:
                 # choose trafo
                 transformer = trafo_parameters.iloc[
-                    trafo_parameters[trafo_parameters['S_max'] >
+                    trafo_parameters[trafo_parameters['S_max'] * load_factor_mv_trans >
                                      residual_apparent_power]['S_max'].idxmin()]
 
             # add transformer on determined size with according parameters
