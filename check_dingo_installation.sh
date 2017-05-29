@@ -5,9 +5,10 @@
 #
 # Note: in this script all docker commands are executed as root (via sudo) as this is required on debian (solydX) systems
 
-# make dingo install script executable
+# make dingo install script and dependency install script executable
 chmod +x install_dingo.sh
+chmod +x dingo_system_dependencies.sh
 
 # create fresh container with ubuntu OS and run dingo install script within it
 # sudo docker run -t -i ubuntu install_dingo.sh
-sudo docker run --rm -v $(pwd)/:/dingo/ -v $(pwd)/install_dingo.sh:/install_dingo.sh ubuntu bash /install_dingo.sh
+sudo docker run --rm -v $(pwd)/:/dingo/ -v $(pwd)/install_dingo.sh:/install_dingo.sh -v $(pwd)/dingo_system_dependencies.sh:/dingo_system_dependencies.sh ubuntu bash /install_dingo.sh
