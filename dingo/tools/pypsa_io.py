@@ -21,7 +21,7 @@ from egopowerflow.tools.io import get_timerange, import_components, \
 from egopowerflow.tools.plot import add_coordinates, plot_line_loading
 
 from egoio.db_tables import model_draft as orm_pypsa
-from egoio.db_tables.model_draft import EgoGridPfMvBu, EgoGridPfMvResBu, EgoGridPfMvLine,\
+from egoio.db_tables.model_draft import EgoGridPfMvBus, EgoGridPfMvResBus, EgoGridPfMvLine,\
     EgoGridPfMvResLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, \
     EgoGridPfMvTransformer, EgoGridPfMvResTransformer, EgoGridPfMvTempResolution, EgoGridPfMvBusVMagSet, EgoGridPfMvGeneratorPqSet, EgoGridPfMvLoadPqSet
 
@@ -53,7 +53,7 @@ def delete_powerflow_tables(session):
     ----------
     session: SQLAlchemy session object
     """
-    tables = [orm_pypsa.EgoGridPfMvBu, orm_pypsa.EgoGridPfMvBusVMagSet, orm_pypsa.EgoGridPfMvLoad,
+    tables = [orm_pypsa.EgoGridPfMvBus, orm_pypsa.EgoGridPfMvBusVMagSet, orm_pypsa.EgoGridPfMvLoad,
               orm_pypsa.EgoGridPfMvLoadPqSet, orm_pypsa.EgoGridPfMvGenerator,
               orm_pypsa.EgoGridPfMvGeneratorPqSet, orm_pypsa.EgoGridPfMvLine, orm_pypsa.EgoGridPfMvTransformer,
               orm_pypsa.EgoGridPfMvTempResolution]
@@ -113,7 +113,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
         if node not in grid.graph_isolated_nodes():
             if isinstance(node, LVStationDingo):
                 # MV side bus
-                bus_mv = orm_pypsa.EgoGridPfMvBu(
+                bus_mv = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
@@ -145,7 +145,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                         grid_id=grid.id_db)
                     session.add(transformer)
                     # Add bus on transformer's LV side
-                    bus_lv = orm_pypsa.EgoGridPfMvBu(
+                    bus_lv = orm_pypsa.EgoGridPfMvBus(
                         bus_id='_'.join(
                             ['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         v_nom=node._transformers[0].v_level,
@@ -201,7 +201,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(load)
                 session.add(load_pq_set)
             elif isinstance(node, MVCableDistributorDingo):
-                bus = orm_pypsa.EgoGridPfMvBu(
+                bus = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
@@ -215,7 +215,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set)
             elif isinstance(node, MVStationDingo):
                 logger.info('Only MV side bus of MVStation will be added.')
-                bus_mv_station = orm_pypsa.EgoGridPfMvBu(
+                bus_mv_station = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
@@ -234,7 +234,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set_mv_station)
                 session.add(slack_gen)
             elif isinstance(node, GeneratorDingo):
-                bus_gen = orm_pypsa.EgoGridPfMvBu(
+                bus_gen = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
@@ -693,7 +693,7 @@ def run_powerflow(session, export_pypsa_dir=None):
     timerange = get_timerange(session, temp_id_set, EgoGridPfMvTempResolution)
 
     # define relevant tables
-    tables = [EgoGridPfMvBu, EgoGridPfMvLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, EgoGridPfMvTransformer]
+    tables = [EgoGridPfMvBus, EgoGridPfMvLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, EgoGridPfMvTransformer]
 
     # get components from database tables
     components = import_components(tables, session, scenario)
@@ -896,10 +896,10 @@ def import_pfa_bus_results(session, grid):
     """
 
     # get bus data from database
-    bus_query = session.query(EgoGridPfMvResBu.bus_id,
-                              EgoGridPfMvResBu.v_mag_pu). \
-        join(EgoGridPfMvBu, EgoGridPfMvResBu.bus_id == EgoGridPfMvBu.bus_id). \
-        filter(EgoGridPfMvBu.grid_id == grid.id_db)
+    bus_query = session.query(EgoGridPfMvResBus.bus_id,
+                              EgoGridPfMvResBus.v_mag_pu). \
+        join(EgoGridPfMvBus, EgoGridPfMvResBus.bus_id == EgoGridPfMvBus.bus_id). \
+        filter(EgoGridPfMvBus.grid_id == grid.id_db)
 
     bus_data = read_sql_query(bus_query.statement,
                               session.bind,
