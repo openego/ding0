@@ -203,8 +203,8 @@ def get_critical_line_loading(grid):
     critical_stations : list
         List of critical stations incl. its transformer loading
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
     lf_trafo_load = cfg_dingo.get('assumptions',
                                   "load_factor_lv_trans_lc_normal")
     lf_trafo_gen = cfg_dingo.get('assumptions',
@@ -395,8 +395,8 @@ def get_critical_voltage_at_nodes(grid):
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
     #
-    # cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    # cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    # cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+    # cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
     # v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
     #
     # # loads and generators connected to bus bar
@@ -605,8 +605,8 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     delta_voltage : float
         Delta voltage for node
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
     v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
@@ -682,8 +682,8 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
     delta_voltage : float
         Delta voltage for node
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
     v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
@@ -738,8 +738,8 @@ def get_voltage_at_bus_bar(grid, tree):
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
 
-    cos_phi_load = cfg_dingo.get('assumptions', 'lv_cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'lv_cos_phi_gen')
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
     v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
 
     # loads and generators connected to bus bar

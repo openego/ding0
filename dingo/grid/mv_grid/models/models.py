@@ -253,8 +253,7 @@ class Route(object):
                                                          'mv_max_v_level_diff_normal'))
         mv_max_v_level_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                           'mv_max_v_level_diff_malfunc'))
-        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                       'mv_routing_loads_cos_phi'))
+        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
 
 
         # step 0: check if route has got more nodes than allowed
@@ -272,7 +271,7 @@ class Route(object):
         nodes_ring1 = [self._problem._depot] + self._nodes
         nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
         # factor to calc reactive from active power
-        Q_factor = tan(acos(mv_routing_loads_cos_phi))
+        Q_factor = tan(acos(cos_phi_load))
         # line/cable params per km
         r = self._problem._branch_type['R']  # unit for r: ohm/km
         x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km

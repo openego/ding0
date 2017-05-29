@@ -41,8 +41,7 @@ def dingo_graph_to_routing_specs(graph):
     """
 
     # get power factor for loads
-    mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                   'mv_routing_loads_cos_phi'))
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
 
     specs = {}
     nodes_demands = {}
@@ -66,7 +65,7 @@ def dingo_graph_to_routing_specs(graph):
                 # get demand and position of node
                 # convert node's demand to int for performance purposes and to avoid that node
                 # allocation with subsequent deallocation results in demand<0 due to rounding errors.
-                nodes_demands[str(node)] = int(node.lv_load_area.peak_load / mv_routing_loads_cos_phi)
+                nodes_demands[str(node)] = int(node.lv_load_area.peak_load / cos_phi_load)
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
                 # get aggregation flag
                 if node.lv_load_area.is_aggregated:

@@ -57,14 +57,13 @@ class LoadAreaGroupDingo:
         """Sums up peak load of LV stations = total peak load for satellite string"""
 
         # get power factor for loads
-        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                       'mv_routing_loads_cos_phi'))
+        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
 
         lv_load_area = node.lv_load_area
         if lv_load_area not in self.lv_load_areas():  # and isinstance(lv_load_area, LVLoadAreaDingo):
             path_length_to_root = lv_load_area.mv_grid_district.mv_grid.graph_path_length(self.root_node, node)
             if ((path_length_to_root <= self.branch_length_max) and
-                (lv_load_area.peak_load + self.peak_load) / mv_routing_loads_cos_phi <= self.peak_load_max):
+                (lv_load_area.peak_load + self.peak_load) / cos_phi_load <= self.peak_load_max):
                 return True
             else:
                 return False

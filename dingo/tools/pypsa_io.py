@@ -84,15 +84,13 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
 
     """
 
-    mv_routing_loads_cos_phi = float(
-        cfg_dingo.get('mv_routing_tech_constraints',
-                      'mv_routing_loads_cos_phi'))
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
     srid = int(cfg_dingo.get('geo', 'srid'))
 
     load_in_generation_case = cfg_dingo.get('assumptions',
                                             'load_in_generation_case')
 
-    Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
+    Q_factor_load = tan(acos(cos_phi_load))
 
     voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
@@ -386,15 +384,13 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     generator_instances = [MVStationDingo, GeneratorDingo]
     # TODO: MVStationDingo has a slack generator
 
-    mv_routing_loads_cos_phi = float(
-        cfg_dingo.get('mv_routing_tech_constraints',
-                      'mv_routing_loads_cos_phi'))
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
     srid = int(cfg_dingo.get('geo', 'srid'))
 
     load_in_generation_case = cfg_dingo.get('assumptions',
                                             'load_in_generation_case')
 
-    Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
+    Q_factor_load = tan(acos(cos_phi_load))
 
     voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
