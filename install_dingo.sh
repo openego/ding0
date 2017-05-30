@@ -1,3 +1,5 @@
+./dingo_system_dependencies.sh
+
 # update package index
 apt-get update
 
