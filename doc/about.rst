@@ -164,10 +164,30 @@ Grid stability and equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 During build of LV grid topology equipment is chosen with respect to max.
-occurring load and generation according to current grid codes (see [VDE-AR]_).
+occurring load and generation according to current grid codes (see [VDEAR]_).
 Nevertheless, some overloading issues may remain. In addition, voltage issues
-may arise that can't be considered during grid topology creation. Following
-steps do apply during reinforcement of Dingo LV grids
+may arise that can't be considered during grid topology creation. Therefore, we
+adhere to the regulatory framework of [DINEN50160]_ which is simplified by
+[VDEAR]_.
+According to [DINEN50160]_ voltage deviation is limited to +/-10 % of nominal
+that is for practical use divided into voltage drop/increase for each voltage
+level and the associated transformers. The allowed voltage increase in the LV
+grid level is limited to 3 % of nominal voltage. The allowed voltage drop is
+limited to 5 % as detailed in [Zdrallek]_.
+
+.. as detail by :numref:`Image of Sphinx (Fig. %s) <voltage-deviation>`.
+
+
+
+.. .. _voltage-deviation:
+.. .. figure:: images/DIN_EN_50160_voltage_drop_scheme.png
+..
+..    Allowed voltage bandwidth in distrivution grids detailed for each grid
+..    level. Source [Zdrallek]_
+
+
+
+Following steps do apply during reinforcement of Dingo LV grids
 
 #. Checks for **overloading** issues at branches and MV-LV transformers first
 #. Critical branches (those with line overloading) are extended to appropriate
@@ -183,7 +203,8 @@ steps do apply during reinforcement of Dingo LV grids
    #. If Step 1 does not resolve all issues additional transformers are build
       in the substation
 #. Subsequently **over-voltage issues** are analyzed for all grid nodes
-#. For each node where voltage exceeds 3 % of nominal voltage, branch segments
+#. For each node where voltage exceeds 3 % of nominal voltage in feed-in case or
+    5 % of nominal voltage in load case, branch segments
    connecting the node with the substation are reinforce until no further issues
    remain. If a over-voltage issue cannot be solved by installing largest
    availabe cable (NAYY 4x1x300) this type of cable still remains as well as
@@ -215,6 +236,10 @@ References
     Proceedings of VDE ETG Kongress, 2013
 .. [OSM] OpenStreetMap contributors:
     `Open street map <https://www.openstreetmap.org>`_, 2017
-.. [VDE-AR] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
+.. [VDEAR] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
         Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
         Erzeugungsanlagen am Niederspannungsnetz, 2011
+.. [DINEN50160] DIN EN 50160 Merkmale der Spannung in öffentlichen
+    Elektrizitätsversorgungsnetzen, 2011
+.. [Zdrallek] Planungs und Betriebsgrundsätze für ländliche Verteilungsnetze --
+    Leitfaden zur Ausrichtung der Netze an ihren zukünftigen Anforderungen, 2016
