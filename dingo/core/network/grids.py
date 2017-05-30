@@ -350,8 +350,7 @@ class MVGridDingo(GridDingo):
         if mode == 'load_density':
 
             # get power factor for loads
-            mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                           'mv_routing_loads_cos_phi'))
+            cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
 
             # get load density
             load_density_threshold = float(cfg_dingo.get('assumptions',
@@ -367,7 +366,7 @@ class MVGridDingo(GridDingo):
             # calculate load density
             kw2mw = 1e-3
             sqm2sqkm = 1e6
-            load_density = ((self.grid_district.peak_load * kw2mw / mv_routing_loads_cos_phi) /
+            load_density = ((self.grid_district.peak_load * kw2mw / cos_phi_load) /
                             (transform(projection, self.grid_district.geo_data).area / sqm2sqkm)) # unit MVA/km^2
 
             # identify voltage level
@@ -444,8 +443,7 @@ class MVGridDingo(GridDingo):
             self.default_branch_kind = 'cable'
 
         # get power factor for loads
-        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                       'mv_routing_loads_cos_phi'))
+        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
 
         # get max. count of half rings per MV grid district
         mv_half_ring_count_max = int(cfg_dingo.get('mv_routing_tech_constraints',
@@ -486,7 +484,7 @@ class MVGridDingo(GridDingo):
         peak_current_sum = ((self.grid_district.peak_load -
                              self.grid_district.peak_load_satellites -
                              self.grid_district.peak_load_aggregated) /
-                            mv_routing_loads_cos_phi /
+                            cos_phi_load /
                             (3**0.5) / self.v_level)  # units: kVA / kV = A
 
         branch_type_settle = branch_type_settle_max = None

@@ -108,10 +108,8 @@ class MVStationDingo(StationDingo):
         """
 
         # get power factor for loads and generators
-        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                       'mv_routing_loads_cos_phi'))
-        mv_routing_generators_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                            'mv_routing_generators_cos_phi'))
+        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+        cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
 
         # get trafo load factors
         load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
@@ -123,8 +121,8 @@ class MVStationDingo(StationDingo):
         trafo_parameters = self.grid.network.static_data['MV_trafos']
 
         # get peak load and peak generation
-        cum_peak_load = self.peak_load / mv_routing_loads_cos_phi
-        cum_peak_generation = self.peak_generation(mode='MVLV') / mv_routing_generators_cos_phi
+        cum_peak_load = self.peak_load / cos_phi_load
+        cum_peak_generation = self.peak_generation(mode='MVLV') / cos_phi_feedin
 
         kw2mw = 1e-3
 
@@ -150,7 +148,7 @@ class MVStationDingo(StationDingo):
             else:
                 # choose trafo
                 transformer = trafo_parameters.iloc[
-                    trafo_parameters[trafo_parameters['S_max'] >
+                    trafo_parameters[trafo_parameters['S_max'] * load_factor_mv_trans >
                                      residual_apparent_power]['S_max'].idxmin()]
 
             # add transformer on determined size with according parameters

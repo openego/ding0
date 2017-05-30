@@ -82,9 +82,9 @@ def select_transformers(grid, s_max=None):
                                                    'load_factor_lv_trans_fc_normal')
 
     cos_phi_load = cfg_dingo.get('assumptions',
-                                 'lv_cos_phi_load')
+                                 'cos_phi_load')
     cos_phi_gen = cfg_dingo.get('assumptions',
-                                'lv_cos_phi_gen')
+                                'cos_phi_gen')
 
     # get equipment parameters of LV transformers
     trafo_parameters = grid.network.static_data['LV_trafos']
@@ -190,7 +190,7 @@ def select_grid_model_ria(lvgd, sector):
                              'load_factor_lv_cable_lc_normal')
 
     cos_phi_load = cfg_dingo.get('assumptions',
-                                 'lv_cos_phi_load')
+                                 'cos_phi_load')
 
     max_lv_branch_line_load = cfg_dingo.get('assumptions',
                                             'max_lv_branch_line')
@@ -432,7 +432,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
     cable_lf = cfg_dingo.get('assumptions',
                              'load_factor_lv_cable_lc_normal')
     cos_phi_load = cfg_dingo.get('assumptions',
-                                'lv_cos_phi_load')
+                                 'cos_phi_load')
 
     # iterate over branches for sectors retail/industrial and agricultural
     for sector, val in grid_model_params.items():
@@ -478,7 +478,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
-                branch_no = branch_no + 1
+                branch_no += 1
 
                 for load_no in list(range(1, val['remaining_loads'] + 1)):
                     # create a LV grid string and attach to station
