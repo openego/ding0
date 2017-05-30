@@ -394,29 +394,7 @@ def get_critical_voltage_at_nodes(grid):
 
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
-    #
-    # cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
-    # cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
-    # v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
-    #
-    # # loads and generators connected to bus bar
-    # bus_bar_load = sum(
-    #     [node.peak_load for node in tree.successors(grid._station)
-    #      if isinstance(node, LVLoadDingo)]) / cos_phi_load
-    # bus_bar_generation = sum(
-    #     [node.capacity for node in tree.successors(grid._station)
-    #      if isinstance(node, GeneratorDingo)]) / cos_phi_feedin
-    #
-    # v_delta_load_case_bus_bar = voltage_delta_vde(v_nom,
-    #                                               bus_bar_load,
-    #                                               (r_mv_grid + r_trafo),
-    #                                               (x_mv_grid + x_trafo),
-    #                                               cos_phi_load)
-    # v_delta_gen_case_bus_bar = voltage_delta_vde(v_nom,
-    #                                              bus_bar_generation,
-    #                                              (r_mv_grid + r_trafo),
-    #                                              -(x_mv_grid + x_trafo),
-    #                                              cos_phi_feedin)
+
     v_delta_load_case_bus_bar, \
     v_delta_gen_case_bus_bar = get_voltage_at_bus_bar(grid, tree)
 
