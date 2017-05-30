@@ -363,8 +363,11 @@ def get_critical_voltage_at_nodes(grid):
     in the main branch cable distributor.
     """
 
-    v_delta_tolerable = cfg_dingo.get('assumptions',
-                                      'lv_max_v_level_diff_normal')
+    v_delta_tolerable_fc = cfg_dingo.get('assumptions',
+                                      'lv_max_v_level_fc_diff_normal')
+    v_delta_tolerable_lc = cfg_dingo.get('assumptions',
+                                      'lv_max_v_level_lc_diff_normal')
+
     omega = 2 * math.pi * 50
 
     crit_nodes = []
@@ -398,8 +401,8 @@ def get_critical_voltage_at_nodes(grid):
     v_delta_load_case_bus_bar, \
     v_delta_gen_case_bus_bar = get_voltage_at_bus_bar(grid, tree)
 
-    if (abs(v_delta_gen_case_bus_bar) > v_delta_tolerable
-        or abs(v_delta_load_case_bus_bar) > v_delta_tolerable):
+    if (abs(v_delta_gen_case_bus_bar) > v_delta_tolerable_fc
+        or abs(v_delta_load_case_bus_bar) > v_delta_tolerable_lc):
         crit_nodes.append({'node': grid._station,
                            'v_diff': [v_delta_load_case_bus_bar,
                                       v_delta_gen_case_bus_bar]})
@@ -436,8 +439,8 @@ def get_critical_voltage_at_nodes(grid):
         v_delta_load_cum += voltage_delta_load
         v_delta_gen_cum += voltage_delta_gen
 
-        if (abs(v_delta_gen_cum) > (v_delta_tolerable - v_delta_gen_stub)
-            or abs(v_delta_load_cum) > (v_delta_tolerable - v_delta_load_stub)):
+        if (abs(v_delta_gen_cum) > (v_delta_tolerable_fc - v_delta_gen_stub)
+            or abs(v_delta_load_cum) > (v_delta_tolerable_lc - v_delta_load_stub)):
             crit_nodes.append({'node': first_node,
                                'v_diff': [v_delta_load_cum,
                                           v_delta_gen_cum]})
@@ -471,9 +474,9 @@ def get_critical_voltage_at_nodes(grid):
                 r,
                 x)
 
-            if (abs(v_delta_gen_cum) > (v_delta_tolerable - v_delta_gen_stub)
+            if (abs(v_delta_gen_cum) > (v_delta_tolerable_fc - v_delta_gen_stub)
                 or abs(v_delta_load_cum) > (
-                            v_delta_tolerable - v_delta_load_stub)):
+                            v_delta_tolerable_lc - v_delta_load_stub)):
                 crit_nodes.append({'node': successor,
                                    'v_diff': [v_delta_load_cum,
                                               v_delta_gen_cum]})

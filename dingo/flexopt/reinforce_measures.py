@@ -232,7 +232,8 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     trafo_s_max_max = max(trafo_params['S_max'])
     trafo_min_size = trafo_params.ix[trafo_params['S_max'].idxmin()]
 
-    v_diff_max = cfg_dingo.get('assumptions', 'lv_max_v_level_diff_normal')
+    v_diff_max_fc = cfg_dingo.get('assumptions', 'lv_max_v_level_fc_diff_normal')
+    v_diff_max_lc = cfg_dingo.get('assumptions', 'lv_max_v_level_lc_diff_normal')
 
     tree = nx.dfs_tree(grid._graph, grid._station)
 
@@ -243,12 +244,14 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
         extendable_trafos = [_ for _ in station['node']._transformers
                              if _.s_max_a < trafo_s_max_max]
 
-        v_delta_initially = v_delta
+        v_delta_initially_lc = v_delta[0]
+        v_delta_initially_fc = v_delta[1]
+
         new_transformers_cnt = 0
 
         # extend existing trafo power while voltage issues exist and larger trafos
         # are available
-        while v_delta > v_diff_max:
+        while (v_delta[0] > v_diff_max_lc) or (v_delta[1] > v_diff_max_fc):
             if extendable_trafos:
                 # extend power of first trafo to next higher size available
                 extend_trafo_power(extendable_trafos, trafo_params)
@@ -268,11 +271,12 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                 new_transformers_cnt += 1
 
             # update break criteria
-            v_delta = max(get_voltage_at_bus_bar(grid, tree))
+            v_delta = get_voltage_at_bus_bar(grid, tree)
             extendable_trafos = [_ for _ in station['node']._transformers
                                  if _.s_max_a < trafo_s_max_max]
 
-            if v_delta == v_delta_initially:
+            if (v_delta[0] == v_delta_initially_lc) or (
+                v_delta[1] == v_delta_initially_fc):
                 logger.warning("Extension of {station} has no effect on "
                                "voltage delta at bus bar. Transformation power "
                                "extension is halted.".format(
