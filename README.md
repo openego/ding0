@@ -5,8 +5,8 @@ DINGO
 DIstribution Network GeneratOr -- A tool to generate synthetic medium and low
 voltage power distribution grids based on open (or at least accessible) data.
 
-! Note, currently the data source Dingo relies on - the
-[Open Energy Database](http://oep.iks.cs.ovgu.de/dataedit/) has no public
+WARNING: Note, currently the data source Dingo relies on - the
+[Open Energy Database](http://oep.iks.cs.ovgu.de/dataedit/) - has no public
 accessible API, yet. Thus, currently you won't be able to run Dingo without
 modifications.
 
