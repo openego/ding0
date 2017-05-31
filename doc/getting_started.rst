@@ -8,6 +8,8 @@ Getting started
     access (SQL queries wrapped by HTML) to the `OEDB` will be provided soon
 
 
+.. _installation:
+
 Installation
 ============
 
