@@ -15,7 +15,8 @@ Choose you favorite topic from the list of content
    getting_started
    usage_details
    about
-   calculation
+   .. calculation
+
    development
    whatsnew
    api
