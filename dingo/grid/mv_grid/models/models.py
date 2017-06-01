@@ -24,6 +24,8 @@ from dingo.tools import config as cfg_dingo
 from math import pi, tan, acos
 import logging
 
+from dingo.tools.debug_topo import result_ring
+
 
 logger = logging.getLogger('dingo')
 
@@ -258,6 +260,7 @@ class Route(object):
 
         # step 0: check if route has got more nodes than allowed
         if len(self._nodes) > load_area_count_per_ring:
+            result_ring.constraint_reason_list.append('LA count')
             return False
 
         # step 1: calc circuit breaker position
@@ -285,12 +288,14 @@ class Route(object):
 
         if (peak_current_sum_hring1 > (self._problem._branch_type['I_max_th'] * load_factor_normal) or
             peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_normal)):
+            result_ring.constraint_reason_list.append('current hring')
             return False
 
         # step 3b: check if current rating of default cable/line is violated
         # (for full ring using load factor for malfunction operation)
         peak_current_sum_ring = self._demand / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
         if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_malfunc):
+            result_ring.constraint_reason_list.append('current ring')
             return False
 
         # step 4a: check voltage stability at all nodes
@@ -319,6 +324,7 @@ class Route(object):
             x_hring1 += self._problem.distance(n1, n2) * x
             v_level_hring1 -= n2.demand() * 1e3 * (r_hring1 + x_hring1*Q_factor) / v_level_op
             if (v_level_op - v_level_hring1) > (v_level_op * mv_max_v_level_lc_diff_normal):
+                result_ring.constraint_reason_list.append('voltage hring')
                 return False
 
         for n1, n2 in zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)]):
@@ -326,6 +332,7 @@ class Route(object):
             x_hring2 += self._problem.distance(n1, n2) * x
             v_level_hring2 -= n2.demand() * 1e3 * (r_hring2 + x_hring2 * Q_factor) / v_level_op
             if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_lc_diff_normal):
+                result_ring.constraint_reason_list.append('voltage hring')
                 return False
 
         # step 4b: check voltage stability at all nodes
@@ -340,6 +347,7 @@ class Route(object):
             v_level_ring_dir2 -= (n4.demand() * 1e3 * (r_ring_dir2 + x_ring_dir2 * Q_factor) / v_level_op)
             if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_lc_diff_malfunc) or
                 (v_level_op - v_level_ring_dir2) > (v_level_op * mv_max_v_level_lc_diff_malfunc)):
+                result_ring.constraint_reason_list.append('voltage ring')
                 return False
 
         return True

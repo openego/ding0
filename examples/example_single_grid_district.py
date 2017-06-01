@@ -25,6 +25,10 @@ from dingo.core import NetworkDingo
 from dingo.tools.logger import setup_logger
 from dingo.tools.results import save_nd_to_pickle
 
+import pandas
+from collections import Counter
+from dingo.tools.debug_topo import result_ring
+
 # define logger
 logger = setup_logger()
 
@@ -37,7 +41,8 @@ conn = db.connection(section='oedb')
 nd = NetworkDingo(name='network')
 
 # choose MV Grid Districts to import
-mv_grid_districts = [3545]
+#mv_grid_districts = [3545]
+mv_grid_districts = [3537]
 
 # run DINGO on selected MV Grid District
 nd.run_dingo(conn=conn,
@@ -51,4 +56,8 @@ nd.export_mv_grid_new(conn, mv_grid_districts)
 conn.close()
 
 # export grid to file (pickle)
-save_nd_to_pickle(nd, filename='dingo_grids_example.pkl')
+#save_nd_to_pickle(nd, filename='dingo_grids_example.pkl')
+
+# debug topo - categorize reasons
+df = pandas.DataFrame.from_dict(Counter(result_ring.constraint_reason_list), orient='index')
+print(df)
