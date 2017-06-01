@@ -81,7 +81,6 @@ def dingo_graph_to_routing_specs(graph):
             specs['BRANCH_KIND'] = node.grid.default_branch_kind
             specs['BRANCH_TYPE'] = node.grid.default_branch_type
             specs['V_LEVEL'] = node.grid.v_level
-            specs['V_LEVEL_OP'] = node.v_level_operation
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands

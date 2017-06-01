@@ -328,7 +328,11 @@ class StationDingo:
     id_db: id according to database table
     v_level_operation: operation voltage level at station (the station's voltage level differs from the nominal voltage
                        level of the grid (see attribute `v_level` in class MVGridDingo) due to grid losses. It is
-                       usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids.
+                       usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids
+                       (unit: V).
+    v_level_operation_dev: the actual operation voltage differs from the set operation voltage
+                           `v_level_operation` due to control deviation. This parameter reflects
+                           the deviation (unit: V).
 
     """
 
@@ -339,6 +343,7 @@ class StationDingo:
         self._transformers = []
         self.busbar = None
         self.v_level_operation = kwargs.get('v_level_operation', None)
+        self.v_level_operation_dev = kwargs.get('v_level_operation_dev', None)
 
     @property
     def network(self):
