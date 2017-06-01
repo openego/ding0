@@ -72,11 +72,7 @@ class MVStationDingo(StationDingo):
         mv_station_v_level_operation = float(cfg_dingo.get('mv_routing_tech_constraints',
                                                            'mv_station_v_level_operation'))
 
-        mv_station_v_level_operation_dev = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                               'mv_station_v_level_operation_dev'))
-
         self.v_level_operation = mv_station_v_level_operation * self.grid.v_level
-        self.v_level_operation_dev =  mv_station_v_level_operation_dev * self.grid.v_level
 
     def select_transformers(self):
         """ Selects appropriate transformers for the HV-MV substation.
