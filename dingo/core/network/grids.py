@@ -506,18 +506,14 @@ class MVGridDingo(GridDingo):
             # if count of half rings is below or equal max. allowed count, use current branch type as default
             if half_ring_count <= mv_half_ring_count_max:
                 if self.default_branch_kind == 'line':
-                    # TODO: Newly installed cable has a greater I_max_th than former line, check with grid planning
-                    # TODO: principles and add to documentation
-                    # OLD:
-                    # branch_type_settle = branch_parameters_settle.ix\
-                    #                      [branch_parameters_settle\
-                    #                      [branch_parameters_settle['I_max_th'] - row['I_max_th'] > 0].\
-                    #                      sort_values(by='I_max_th')['I_max_th'].idxmin()]
 
                     # take only cables that can handle at least the current of the line
                     branch_parameters_settle_filter = branch_parameters_settle[\
                                                       branch_parameters_settle['I_max_th'] - row['I_max_th'] > 0]
+
                     # get cable type with similar (but greater) I_max_th
+                    # note: only grids with lines as default branch kind get cables in settlements
+                    # (not required in grids with cables as default branch kind)
                     branch_type_settle = branch_parameters_settle_filter.loc[\
                                          branch_parameters_settle_filter['I_max_th'].idxmin()]
 
@@ -527,8 +523,7 @@ class MVGridDingo(GridDingo):
 
         if debug:
             logger.debug('No appropriate line/cable type could be found for '
-                         '{}, declare some load areas as aggregated.'.format(
-                self))
+                         '{}, declare some load areas as aggregated.'.format(self))
 
         if self.default_branch_kind == 'line':
             branch_type_settle_max = branch_parameters_settle.loc[branch_parameters_settle['I_max_th'].idxmax()]
