@@ -337,7 +337,6 @@ class StationDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self._transformers = []
-        self.busbar = None
         self.v_level_operation = kwargs.get('v_level_operation', None)
 
     @property
