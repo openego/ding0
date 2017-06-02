@@ -156,20 +156,22 @@ def check_voltage(grid, mode):
     crit_nodes = {}
 
     if mode == 'MV':
-        # load max. voltage difference
-        mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                         'mv_max_v_level_diff_normal'))
+        # load max. voltage difference for load and feedin case
+        mv_max_v_level_lc_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                            'mv_max_v_level_lc_diff_normal'))
+        mv_max_v_level_fc_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                            'mv_max_v_level_fc_diff_normal'))
 
         # check nodes' voltages
         voltage_station = grid._station.voltage_res
         for node in grid.graph_nodes_sorted():
             try:
-                # compare node's voltage with max. allowed voltage difference
-                if any([(v1/v2 > (1 + mv_max_v_level_diff_normal)) or
-                        (v1/v2 < (1 - mv_max_v_level_diff_normal))
-                        for v1, v2 in zip(node.voltage_res, voltage_station)]):
+                # compare node's voltage with max. allowed voltage difference for load and feedin case
+                if (abs(voltage_station[0] - node.voltage_res[0]) > mv_max_v_level_lc_diff_normal) or\
+                   (abs(voltage_station[1] - node.voltage_res[1]) > mv_max_v_level_fc_diff_normal):
+
                     crit_nodes[node] = {'node': node,
-                                        'v_diff': max([(v1/v2) for v1, v2 in zip(node.voltage_res, voltage_station)])}
+                                        'v_diff': max([abs(v2-v1) for v1, v2 in zip(node.voltage_res, voltage_station)])}
             except:
                 pass
 
