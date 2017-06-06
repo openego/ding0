@@ -1,5 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/dingo/badge/?version=dev)](http://dingo.readthedocs.io/en/dev/?badge=dev)
 
+<img align="right" width="300" height="300" src="https://github.com/openego/dingo/blob/dev/doc/images/DINGO_Logo_300px.png">
+
 DINGO
 =====
 DIstribution Network GeneratOr -- A tool to generate synthetic medium and low
