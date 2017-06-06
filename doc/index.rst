@@ -6,6 +6,8 @@
 Welcome to dingo's documentation!
 =================================
 
+.. figure:: images/DINGO_Logo_300px.png
+
 Choose you favorite topic from the list of content
 
 .. toctree::
