@@ -1,3 +1,5 @@
+<img align="right" width="300" height="300" src="https://github.com/openego/dingo/blob/dev/doc/images/DINGO_Logo_300px.png">
+
 [![Documentation Status](https://readthedocs.org/projects/dingo/badge/?version=dev)](http://dingo.readthedocs.io/en/dev/?badge=dev)
 
 DINGO

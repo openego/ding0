@@ -43,17 +43,17 @@ def create_results_dirs(base_path):
     """
 
 
-    if not os.path.exists(BASEPATH):
+    if not os.path.exists(base_path):
         print("Creating directory {} for results data.".format(base_path))
         os.mkdir(base_path)
-    if not os.path.exists(os.path.join(BASEPATH, 'results')):
-        os.mkdir(os.path.join(BASEPATH, 'results'))
-    if not os.path.exists(os.path.join(BASEPATH, 'plots')):
-        os.mkdir(os.path.join(BASEPATH, 'plots'))
-    if not os.path.exists(os.path.join(BASEPATH, 'info')):
-        os.mkdir(os.path.join(BASEPATH, 'info'))
-    if not os.path.exists(os.path.join(BASEPATH, 'log')):
-        os.mkdir(os.path.join(BASEPATH, 'log'))
+    if not os.path.exists(os.path.join(base_path, 'results')):
+        os.mkdir(os.path.join(base_path, 'results'))
+    if not os.path.exists(os.path.join(base_path, 'plots')):
+        os.mkdir(os.path.join(base_path, 'plots'))
+    if not os.path.exists(os.path.join(base_path, 'info')):
+        os.mkdir(os.path.join(base_path, 'info'))
+    if not os.path.exists(os.path.join(base_path, 'log')):
+        os.mkdir(os.path.join(base_path, 'log'))
 
 
 def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=None):
