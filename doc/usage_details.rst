@@ -49,3 +49,12 @@ districts
     stats = results.calculate_mvgd_stats(nodes, edges)
 
 Thereof, you can create plot and additional analyses. Feel free to add yours!
+
+Explanation of key figures
+--------------------------
+
+========= ======================================= ====
+Parameter Description                             Unit
+========= ======================================= ====
+km_cable  Cumulative length of underground cables km
+========= ======================================= ====
