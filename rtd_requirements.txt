@@ -10,3 +10,4 @@ pyproj
 egoio
 pandas
 egopowerflow
+mock
