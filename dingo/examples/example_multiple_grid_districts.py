@@ -16,13 +16,13 @@ __author__     = "nesnoj, gplssm"
 
 
 import matplotlib.pyplot as plt
-import oemof.db as db
+# import oemof.db as db
 import time
 import os
 import pandas as pd
 
 from dingo.core import NetworkDingo
-from dingo.tools import config as cfg_dingo, results
+from dingo.tools import config as cfg_dingo, results, db
 
 plt.close('all')
 cfg_dingo.load_config('config_db_tables.cfg')
@@ -156,7 +156,8 @@ if __name__ == '__main__':
     create_results_dirs(BASEPATH)
 
     # define grid district by its id (int)
-    mv_grid_districts = list(range(1, 100))
+    mv_grid_districts = list(range(1, 3608))
 
     # run grid districts
-    run_multiple_grid_districts(mv_grid_districts, failsafe=True)
+    #run_multiple_grid_districts(mv_grid_districts, failsafe=True)
+    run_multiple_grid_districts(mv_grid_districts, failsafe=True, base_path='/home/guido/git-repos/dingo/tmp_dingo')
