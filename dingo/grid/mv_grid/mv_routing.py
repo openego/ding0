@@ -1,9 +1,25 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 import time
 
 from dingo.grid.mv_grid.models.models import Graph, Node
 from dingo.grid.mv_grid.util import util, data_input
 from dingo.grid.mv_grid.solvers import savings, local_search
 from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty, calc_geo_centre_point
+from dingo.tools import config as cfg_dingo
 from dingo.core.network.stations import *
 from dingo.core.structure.regions import LVLoadAreaCentreDingo
 from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
@@ -23,6 +39,9 @@ def dingo_graph_to_routing_specs(graph):
     Returns:
         specs: Data dictionary for routing, See class `Graph()` in routing's model definition for keys
     """
+
+    # get power factor for loads
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
 
     specs = {}
     nodes_demands = {}
@@ -44,8 +63,9 @@ def dingo_graph_to_routing_specs(graph):
             # (satellites in case of there're only satellites in grid district)
             if not node.lv_load_area.is_satellite or satellites_only:
                 # get demand and position of node
-                # convert node's demand to int for performance purposes
-                nodes_demands[str(node)] = int(node.lv_load_area.peak_load)
+                # convert node's demand to int for performance purposes and to avoid that node
+                # allocation with subsequent deallocation results in demand<0 due to rounding errors.
+                nodes_demands[str(node)] = int(node.lv_load_area.peak_load / cos_phi_load)
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
                 # get aggregation flag
                 if node.lv_load_area.is_aggregated:
@@ -61,7 +81,6 @@ def dingo_graph_to_routing_specs(graph):
             specs['BRANCH_KIND'] = node.grid.default_branch_kind
             specs['BRANCH_TYPE'] = node.grid.default_branch_type
             specs['V_LEVEL'] = node.grid.v_level
-            specs['V_LEVEL_OP'] = node.v_level_operation
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands

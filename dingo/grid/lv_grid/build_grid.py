@@ -1,3 +1,18 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 from dingo.tools import config as cfg_dingo
 
 from dingo.core.network import TransformerDingo, BranchDingo
@@ -9,14 +24,49 @@ import math
 logger = logging.getLogger('dingo')
 
 
-def select_transformer(grid):
-    """
-    Selects LV transformer according to peak load of LV grid district.
+def select_transformers(grid, s_max=None):
+    """ Selects MV-LV transformers for the MV-LV substation.
+
+    The transformers are chosen according to max. of load case and feedin-case
+    considering load factors and power factor.
+    The MV-LV transformer with the next higher available nominal apparent power is
+    chosen. Therefore, a max. allowed transformer loading of 100% is implicitly
+    assumed. If the peak load exceeds the max. power of a single available
+    transformer, multiple transformer are build.
+
+    By default `peak_load` and `peak_generation` are taken from `grid` instance.
+    The behavior can be overridden providing `s_max` as explained in
+    ``Arguments``.
 
     Parameters
     ----------
     grid: dingo.core.network.LVGridDingo
         LV grid data
+
+    Arguments
+    ---------
+    s_max : dict
+        dict containing maximum apparent power of load or generation case and
+        str describing the case. For example
+
+        .. code-block:: python
+
+            {
+                's_max': 480,
+                'case': 'load'
+            }
+
+        or
+
+        .. code-block:: python
+
+            {
+                's_max': 120,
+                'case': 'gen'
+            }
+
+        s_max passed overrides `grid.grid_district.peak_load` respectively
+        `grid.station().peak_generation`.
 
     Returns
     -------
@@ -24,52 +74,69 @@ def select_transformer(grid):
         Parameters of chosen Transformer
     transformer_cnt: int
         Count of transformers
-
-    Notes
-    -----
-    The LV transformer with the next higher available nominal apparent power is
-    chosen. Therefore, a max. allowed transformer loading of 100% is implicitly
-    assumed. If the peak load exceeds the max. power of a single available
-    transformer, use multiple trafos.
     """
 
-    trafo_lf = cfg_dingo.get('assumptions',
-                             'load_factor_lv_trans_lc_normal')
+    load_factor_lv_trans_lc_normal = cfg_dingo.get('assumptions',
+                                                   'load_factor_lv_trans_lc_normal')
+    load_factor_lv_trans_fc_normal = cfg_dingo.get('assumptions',
+                                                   'load_factor_lv_trans_fc_normal')
 
     cos_phi_load = cfg_dingo.get('assumptions',
-                                 'lv_cos_phi_load')
-
-    peak_load = grid.grid_district.peak_load
+                                 'cos_phi_load')
+    cos_phi_gen = cfg_dingo.get('assumptions',
+                                'cos_phi_gen')
 
     # get equipment parameters of LV transformers
     trafo_parameters = grid.network.static_data['LV_trafos']
+
+    # determine s_max from grid object if not provided via arguments
+    if s_max is None:
+        # get maximum from peak load and peak generation
+        s_max_load = grid.grid_district.peak_load / cos_phi_load
+        s_max_gen = grid.station().peak_generation / cos_phi_gen
+
+        # check if load or generation is greater respecting corresponding load factor
+        if s_max_load > s_max_gen:
+            # use peak load and load factor from load case
+            load_factor_lv_trans = load_factor_lv_trans_lc_normal
+            s_max = s_max_load
+        else:
+            # use peak generation and load factor for feedin case
+            load_factor_lv_trans = load_factor_lv_trans_fc_normal
+            s_max = s_max_gen
+    else:
+        if s_max['case'] == 'load':
+            load_factor_lv_trans = load_factor_lv_trans_lc_normal
+        elif s_max['case'] == 'gen':
+            load_factor_lv_trans = load_factor_lv_trans_fc_normal
+        else:
+            logger.error('No proper \'case\' provided for argument s_max')
+            raise ValueError('Please provide proper \'case\' for argument '
+                             '`s_max`.')
+        s_max = s_max['s_max']
 
     # get max. trafo
     transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
 
     # peak load is smaller than max. available trafo
-    if peak_load < transformer_max['S_max'] * (trafo_lf * cos_phi_load):
+    if s_max < (transformer_max['S_max'] * load_factor_lv_trans ):
         # choose trafo
         transformer = trafo_parameters.iloc[
             trafo_parameters[
-                trafo_parameters['S_max'] > peak_load / (
-                trafo_lf * cos_phi_load)][
+                trafo_parameters['S_max'] * load_factor_lv_trans > s_max][
                 'S_max'].idxmin()]
         transformer_cnt = 1
     # peak load is greater than max. available trafo -> use multiple trafos
     else:
         transformer_cnt = 2
         # increase no. of trafos until peak load can be supplied
-        while not any(trafo_parameters[
-                          'S_max'] * (
-            trafo_lf * cos_phi_load) > peak_load / transformer_cnt):
+        while not any(trafo_parameters['S_max'] * load_factor_lv_trans > (
+                    s_max / transformer_cnt)):
             transformer_cnt += 1
         transformer = trafo_parameters.iloc[
             trafo_parameters[
-                trafo_parameters[
-                    'S_max'] * (
-                trafo_lf * cos_phi_load) > peak_load / transformer_cnt]
-            ['S_max'].idxmin()]
+                trafo_parameters['S_max'] * load_factor_lv_trans
+                > (s_max / transformer_cnt)]['S_max'].idxmin()]
 
     return transformer, transformer_cnt
 
@@ -85,11 +152,12 @@ def transformer(grid):
     """
 
     # choose size and amount of transformers
-    transformer, transformer_cnt = select_transformer(grid)
+    transformer, transformer_cnt = select_transformers(grid)
 
     # create transformers and add them to station of LVGD
     for t in range(0, transformer_cnt):
         lv_transformer = TransformerDingo(
+            grid=grid,
             id_db=id,
             v_level=0.4,
             s_max_longterm=transformer['S_max'],
@@ -122,7 +190,7 @@ def select_grid_model_ria(lvgd, sector):
                              'load_factor_lv_cable_lc_normal')
 
     cos_phi_load = cfg_dingo.get('assumptions',
-                                 'lv_cos_phi_load')
+                                 'cos_phi_load')
 
     max_lv_branch_line_load = cfg_dingo.get('assumptions',
                                             'max_lv_branch_line')
@@ -265,12 +333,12 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
         # determine maximum current occuring due to peak load
         # of this load load_no
-        I_max_load = val['single_peak_load'] / (3 ** 0.5 * 0.4)
+        I_max_load = val['single_peak_load'] / (3 ** 0.5 * 0.4) / cos_phi_load
 
         # determine suitable cable for this current
         suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
-            lvgd.lv_grid.network.static_data['LV_cables'][
-                'I_max_th'] > (I_max_load * (cable_lf * cos_phi_load))]
+            (lvgd.lv_grid.network.static_data['LV_cables'][
+                'I_max_th'] * cable_lf) > I_max_load]
         cable_type_stub = suitable_cables_stub.ix[
             suitable_cables_stub['I_max_th'].idxmin()]
 
@@ -364,7 +432,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
     cable_lf = cfg_dingo.get('assumptions',
                              'load_factor_lv_cable_lc_normal')
     cos_phi_load = cfg_dingo.get('assumptions',
-                                'lv_cos_phi_load')
+                                 'cos_phi_load')
 
     # iterate over branches for sectors retail/industrial and agricultural
     for sector, val in grid_model_params.items():
@@ -379,12 +447,13 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
                 # determine maximum current occuring due to peak load of branch
                 I_max_branch = (val['max_loads_per_branch'] *
-                                val['single_peak_load']) / (3 ** 0.5 * 0.4)
+                                val['single_peak_load']) / (3 ** 0.5 * 0.4) / (
+                    cos_phi_load)
 
                 # determine suitable cable for this current
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
-                    lvgd.lv_grid.network.static_data['LV_cables'][
-                        'I_max_th'] > (I_max_branch * (cable_lf * cos_phi_load))]
+                    (lvgd.lv_grid.network.static_data['LV_cables'][
+                        'I_max_th'] * cable_lf) > I_max_branch]
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
@@ -399,16 +468,17 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     branch_no = 0
                 # determine maximum current occuring due to peak load of branch
                 I_max_branch = (val['max_loads_per_branch'] *
-                                val['single_peak_load']) / (3 ** 0.5 * 0.4)
+                                val['single_peak_load']) / (3 ** 0.5 * 0.4) / (
+                    cos_phi_load)
 
                 # determine suitable cable for this current
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
-                    lvgd.lv_grid.network.static_data['LV_cables'][
-                        'I_max_th'] > (I_max_branch * (cable_lf * cos_phi_load))]
+                    (lvgd.lv_grid.network.static_data['LV_cables'][
+                        'I_max_th'] * cable_lf) > I_max_branch]
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
-                branch_no = branch_no + 1
+                branch_no += 1
 
                 for load_no in list(range(1, val['remaining_loads'] + 1)):
                     # create a LV grid string and attach to station
@@ -575,6 +645,8 @@ def build_lv_graph_residential(lvgd, selected_string_df):
 
                 cable_name = row['cable type'] + \
                              ' 4x1x{}'.format(row['cable width'])
+                cable_type = lvgd.lv_grid.network.static_data[
+                    'LV_cables'].loc[cable_name]
 
                 # connect current lv_cable_dist to station
                 if house_branch == 1:
@@ -585,7 +657,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                         branch=BranchDingo(
                             length=row['distance house branch'],
                             kind='cable',
-                            type=cable_name,
+                            type=cable_type,
                             id_db='branch_{sector}{branch}_{load}'.format(
                                 branch=hh_branch,
                                 load=house_branch,

@@ -1,6 +1,22 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 from dingo.core.network.stations import LVStationDingo
 from dingo.core.network import CableDistributorDingo, GeneratorDingo
 from dingo.tools.geo import calc_geo_centre_point
+from dingo.tools import config as cfg_dingo
 import logging
 
 
@@ -43,6 +59,10 @@ def set_circuit_breakers(mv_grid, debug=False):
 
     """
 
+    # get power factor for loads and generators
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
+
     # iterate over all rings and circuit breakers
     for ring, circ_breaker in zip(mv_grid.rings_nodes(include_root_node=False), mv_grid.circuit_breakers()):
 
@@ -54,8 +74,8 @@ def set_circuit_breakers(mv_grid, debug=False):
 
             # node is LV station -> get peak load and peak generation
             if isinstance(node, LVStationDingo):
-                nodes_peak_load.append(node.peak_load)
-                nodes_peak_generation.append(node.peak_generation)
+                nodes_peak_load.append(node.peak_load / cos_phi_load)
+                nodes_peak_generation.append(node.peak_generation / cos_phi_feedin)
 
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
             elif isinstance(node, CableDistributorDingo):
@@ -67,12 +87,15 @@ def set_circuit_breakers(mv_grid, debug=False):
 
                     # node is LV station -> get peak load and peak generation
                     if isinstance(node_subtree, LVStationDingo):
-                        nodes_subtree_peak_load += node_subtree.peak_load
-                        nodes_subtree_peak_generation += node_subtree.peak_generation
+                        nodes_subtree_peak_load += node_subtree.peak_load / \
+                                                   cos_phi_load
+                        nodes_subtree_peak_generation += node_subtree.peak_generation / \
+                                                         cos_phi_feedin
 
                     # node is LV station -> get peak load and peak generation
                     if isinstance(node_subtree, GeneratorDingo):
-                        nodes_subtree_peak_generation += node_subtree.capacity
+                        nodes_subtree_peak_generation += node_subtree.capacity / \
+                                                         cos_phi_feedin
 
                 nodes_peak_load.append(nodes_subtree_peak_load)
                 nodes_peak_generation.append(nodes_subtree_peak_generation)

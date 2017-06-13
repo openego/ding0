@@ -17,6 +17,9 @@ Subpackages
 Submodules
 ----------
 
+dingo.grid.tools module
+-----------------------
+
 .. automodule:: dingo.grid.tools
     :members:
     :undoc-members:

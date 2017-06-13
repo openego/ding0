@@ -1,3 +1,18 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 import dingo
 
 from egopowerflow.tools.io import get_timerange, import_components, \
@@ -6,7 +21,7 @@ from egopowerflow.tools.io import get_timerange, import_components, \
 from egopowerflow.tools.plot import add_coordinates, plot_line_loading
 
 from egoio.db_tables import model_draft as orm_pypsa
-from egoio.db_tables.model_draft import EgoGridPfMvBu, EgoGridPfMvResBu, EgoGridPfMvLine,\
+from egoio.db_tables.model_draft import EgoGridPfMvBus, EgoGridPfMvResBus, EgoGridPfMvLine,\
     EgoGridPfMvResLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, \
     EgoGridPfMvTransformer, EgoGridPfMvResTransformer, EgoGridPfMvTempResolution, EgoGridPfMvBusVMagSet, EgoGridPfMvGeneratorPqSet, EgoGridPfMvLoadPqSet
 
@@ -38,7 +53,7 @@ def delete_powerflow_tables(session):
     ----------
     session: SQLAlchemy session object
     """
-    tables = [orm_pypsa.EgoGridPfMvBu, orm_pypsa.EgoGridPfMvBusVMagSet, orm_pypsa.EgoGridPfMvLoad,
+    tables = [orm_pypsa.EgoGridPfMvBus, orm_pypsa.EgoGridPfMvBusVMagSet, orm_pypsa.EgoGridPfMvLoad,
               orm_pypsa.EgoGridPfMvLoadPqSet, orm_pypsa.EgoGridPfMvGenerator,
               orm_pypsa.EgoGridPfMvGeneratorPqSet, orm_pypsa.EgoGridPfMvLine, orm_pypsa.EgoGridPfMvTransformer,
               orm_pypsa.EgoGridPfMvTempResolution]
@@ -69,15 +84,13 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
 
     """
 
-    mv_routing_loads_cos_phi = float(
-        cfg_dingo.get('mv_routing_tech_constraints',
-                      'mv_routing_loads_cos_phi'))
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
     srid = int(cfg_dingo.get('geo', 'srid'))
 
     load_in_generation_case = cfg_dingo.get('assumptions',
                                             'load_in_generation_case')
 
-    Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
+    Q_factor_load = tan(acos(cos_phi_load))
 
     voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
@@ -98,7 +111,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
         if node not in grid.graph_isolated_nodes():
             if isinstance(node, LVStationDingo):
                 # MV side bus
-                bus_mv = orm_pypsa.EgoGridPfMvBu(
+                bus_mv = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
@@ -130,7 +143,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                         grid_id=grid.id_db)
                     session.add(transformer)
                     # Add bus on transformer's LV side
-                    bus_lv = orm_pypsa.EgoGridPfMvBu(
+                    bus_lv = orm_pypsa.EgoGridPfMvBus(
                         bus_id='_'.join(
                             ['MV', str(grid.id_db), 'trd', str(node.id_db)]),
                         v_nom=node._transformers[0].v_level,
@@ -186,7 +199,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(load)
                 session.add(load_pq_set)
             elif isinstance(node, MVCableDistributorDingo):
-                bus = orm_pypsa.EgoGridPfMvBu(
+                bus = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
@@ -200,7 +213,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set)
             elif isinstance(node, MVStationDingo):
                 logger.info('Only MV side bus of MVStation will be added.')
-                bus_mv_station = orm_pypsa.EgoGridPfMvBu(
+                bus_mv_station = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
@@ -219,7 +232,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set_mv_station)
                 session.add(slack_gen)
             elif isinstance(node, GeneratorDingo):
-                bus_gen = orm_pypsa.EgoGridPfMvBu(
+                bus_gen = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
                     geom=from_shape(node.geo_data, srid=srid),
@@ -371,15 +384,13 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     generator_instances = [MVStationDingo, GeneratorDingo]
     # TODO: MVStationDingo has a slack generator
 
-    mv_routing_loads_cos_phi = float(
-        cfg_dingo.get('mv_routing_tech_constraints',
-                      'mv_routing_loads_cos_phi'))
+    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
     srid = int(cfg_dingo.get('geo', 'srid'))
 
     load_in_generation_case = cfg_dingo.get('assumptions',
                                             'load_in_generation_case')
 
-    Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
+    Q_factor_load = tan(acos(cos_phi_load))
 
     voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
@@ -652,7 +663,7 @@ def edges_to_dict_of_dataframes(grid, edges):
 
 def run_powerflow(session, export_pypsa_dir=None):
     """
-    Run powerflow to test grid stability
+    Run power flow to test grid stability
 
     Two cases are defined to be tested here:
      i) load case
@@ -678,7 +689,7 @@ def run_powerflow(session, export_pypsa_dir=None):
     timerange = get_timerange(session, temp_id_set, EgoGridPfMvTempResolution)
 
     # define relevant tables
-    tables = [EgoGridPfMvBu, EgoGridPfMvLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, EgoGridPfMvTransformer]
+    tables = [EgoGridPfMvBus, EgoGridPfMvLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, EgoGridPfMvTransformer]
 
     # get components from database tables
     components = import_components(tables, session, scenario)
@@ -881,10 +892,10 @@ def import_pfa_bus_results(session, grid):
     """
 
     # get bus data from database
-    bus_query = session.query(EgoGridPfMvResBu.bus_id,
-                              EgoGridPfMvResBu.v_mag_pu). \
-        join(EgoGridPfMvBu, EgoGridPfMvResBu.bus_id == EgoGridPfMvBu.bus_id). \
-        filter(EgoGridPfMvBu.grid_id == grid.id_db)
+    bus_query = session.query(EgoGridPfMvResBus.bus_id,
+                              EgoGridPfMvResBus.v_mag_pu). \
+        join(EgoGridPfMvBus, EgoGridPfMvResBus.bus_id == EgoGridPfMvBus.bus_id). \
+        filter(EgoGridPfMvBus.grid_id == grid.id_db)
 
     bus_data = read_sql_query(bus_query.statement,
                               session.bind,

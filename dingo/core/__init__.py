@@ -89,8 +89,9 @@ package_path = dingo.__path__[0]
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.
-    
-    #TODO: test
+
+    Parameters
+    ----------
 
     """
 

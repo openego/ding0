@@ -1,3 +1,18 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 
 from dingo.core.network.stations import *
 from dingo.core.network import BranchDingo, GeneratorDingo
@@ -565,10 +580,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
             pyproj.Proj(init='epsg:3035'),  # source coordinate system
             pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
-    # TODO: create generators in grid class for iterating over satellites and non-satellites (nice-to-have) instead
-    # TODO: of iterating over all nodes
     # check all nodes
-
     if mode is 'normal':
         #nodes = sorted(graph.nodes(), key=lambda x: repr(x))
         nodes = mv_grid.graph_isolated_nodes()
@@ -655,13 +667,6 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
         # exclude aggregated Load Areas and choose only load areas that were connected to grid before
         if not lv_load_area.is_aggregated and \
            lv_load_area.lv_load_area_centre not in mv_grid_district.mv_grid.graph_isolated_nodes():
-
-            # ===== DEBUG STUFF (BUG JONAS) =====
-            # TODO: Remove when fixed!
-            if lv_load_area.lv_grid_districts_count() == 0:
-                logger.error('No station for {} found! (Bug jong42)'.format(
-                    lv_load_area))
-            # ===================================
 
             lv_load_area_centre = lv_load_area.lv_load_area_centre
 
@@ -849,7 +854,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                 logger.debug('Generator {0} was connected to {1}'.format(
                     generator, mv_station))
 
-        # ===== voltage level 5: generator has to be connected to MV grid =====
+        # ===== voltage level 5: generator has to be connected to MV grid (next-neighbor) =====
         elif generator.v_level == 5:
             generator_shp = transform(proj1, generator.geo_data)
 
