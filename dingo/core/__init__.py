@@ -1370,7 +1370,7 @@ class NetworkDingo:
         for grid_district in self.mv_grid_districts():
 
             # get nodes from grid's graph and create datasets
-            for node in grid_district.mv_grid._graph.nodes():
+            for node in grid_district.mv_grid.graph_nodes_sorted():
                 if hasattr(node, 'voltage_res'):
                     node_name = '_'.join(['MV',
                                           str(grid_district.mv_grid.id_db),
@@ -1421,23 +1421,23 @@ class NetworkDingo:
 
                     edges_df = edges_df.append(pd.Series(
                         {'branch_id': branch_name,
-                         'grid_id': grid_district.mv_grid.id_db,
-                         'type_name': branch['branch'].type['name'],
-                         'type_kind': branch['branch'].kind,
-                         'type_v_nom': branch['branch'].type['U_n'],
-                         'type_s_nom': 3 ** 0.5 * branch['branch'].type[
-                             'I_max_th'] * branch['branch'].type['U_n'],
-                         'length': branch['branch'].length / 1e3,
-                         'geom': from_shape(
-                             LineString([branch['adj_nodes'][0].geo_data,
-                                         branch['adj_nodes'][
-                                             1].geo_data]),
-                             srid=srid),
-                         's_res0': branch['branch'].s_res[0],
-                         's_res1': branch['branch'].s_res[1]}),
-                        ignore_index=True)
+                        'grid_id': grid_district.mv_grid.id_db,
+                        'type_name': branch['branch'].type['name'],
+                        'type_kind': branch['branch'].kind,
+                        'type_v_nom': branch['branch'].type['U_n'],
+                        'type_s_nom': 3 ** 0.5 * branch['branch'].type[
+                            'I_max_th'] * branch['branch'].type['U_n'],
+                        'length': branch['branch'].length / 1e3,
+                        'geom': from_shape(
+                            LineString([branch['adj_nodes'][0].geo_data,
+                                        branch['adj_nodes'][
+                                            1].geo_data]),
+                            srid=srid),
+                        's_res0': branch['branch'].s_res[0],
+                        's_res1': branch['branch'].s_res[1]}), ignore_index=True)
 
-        return nodes_df, edges_df
+        return nodes_df, edges_df.sort_values(
+            'branch_id', axis = 0, kind= 'mergesort').reset_index(drop=True)
 
     def mv_routing(self, debug=False, animation=False):
         """ Performs routing on Load Area centres to build MV grid with ring topology,
