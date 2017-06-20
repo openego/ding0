@@ -20,11 +20,17 @@ import os.path as path
 import networkx as nx
 
 
-def compare_graphs(graph, mode):
+def compare_graphs(graph1, mode, graph2=None):
     """ Compares graph with saved one which is loaded via networkx' gpickle
-    Args:
-        graph:
-        mode: 'write' or 'compare'
+
+    Parameters
+    ----------
+    graph1 : networkx.graph
+        First Dingo MV graph for comparison
+    graph2 : networkx.graph
+        Second Dingo MV graph for comparison. If a second graph is not provided
+        it will be laoded from disk with hard-coded file name.
+    mode: 'write' or 'compare'
 
     Returns:
 
@@ -32,26 +38,27 @@ def compare_graphs(graph, mode):
 
     # get path
     package_path = dingo.__path__[0]
-    file = path.join(package_path, 'output', 'debug', 'graph.gpickle')
+    file = path.join(package_path, 'output', 'debug', 'graph1.gpickle')
 
     if mode is 'write':
         try:
-            nx.write_gpickle(graph, file)
+            nx.write_gpickle(graph1, file)
             print('=====> DEBUG: Graph written to', file)
         except:
             raise FileNotFoundError('Could not write to file', file)
 
     elif mode is 'compare':
-        try:
-            graph2 = nx.read_gpickle(file)
-            print('=====> DEBUG: Graph read from', file)
-        except:
-            raise FileNotFoundError('File not found:', file)
+        if graph2 is None:
+            try:
+                graph2 = nx.read_gpickle(file)
+                print('=====> DEBUG: Graph read from', file)
+            except:
+                raise FileNotFoundError('File not found:', file)
 
         # get data
-        nodes1 = sorted(graph.nodes(), key=lambda _: repr(_))
+        nodes1 = sorted(graph1.nodes(), key=lambda _: repr(_))
         nodes2 = sorted(graph2.nodes(), key=lambda _: repr(_))
-        edges1 = sorted(graph.edges(), key=lambda _: repr(_))
+        edges1 = sorted(graph1.edges(), key=lambda _: repr(_))
         edges2 = sorted(graph2.edges(), key=lambda _: repr(_))
 
         graphs_are_isomorphic = True
