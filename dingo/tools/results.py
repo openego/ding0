@@ -146,8 +146,8 @@ def save_nd_to_pickle(nd, path='', filename=None):
 
     if len(nd._mv_grid_districts) > 1:
         name_extension = '_{number}-{number2}'.format(
-            number=nd._mv_grid_districts[0],
-            number2=nd._mv_grid_districts[-1])
+            number=nd._mv_grid_districts[0].id_db,
+            number2=nd._mv_grid_districts[-1].id_db)
     else:
         name_extension = '_{number}'.format(number=nd._mv_grid_districts[0].id_db)
 
