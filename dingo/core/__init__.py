@@ -387,6 +387,7 @@ class NetworkDingo:
                  self.orm['orm_mv_stations'].subst_id).\
             filter(self.orm['orm_mv_grid_districts'].subst_id.in_(mv_grid_districts_no)). \
             filter(self.orm['version_condition_mvgd']). \
+            filter(self.orm['version_condition_mv_stations']). \
             distinct()
 
         # read MV data from db
@@ -1003,6 +1004,7 @@ class NetworkDingo:
             orm['orm_conv_generators'] = orm_model_draft.__getattribute__(conv_generators_name)
             orm['orm_re_generators'] = orm_model_draft.__getattribute__(re_generators_name)
             orm['version_condition_mvgd'] = 1 == 1
+            orm['version_condition_mv_stations'] = 1 == 1
             orm['version_condition_la'] = 1 == 1
             orm['version_condition_lvgd'] = 1 == 1
             orm['version_condition_mvlvst'] = 1 == 1
@@ -1019,6 +1021,8 @@ class NetworkDingo:
             orm['data_version'] = self.config[data_source]['version']
             orm['version_condition_mvgd'] =\
                 orm['orm_mv_grid_districts'].version == orm['data_version']
+            orm['version_condition_mv_stations'] = \
+                orm['orm_mv_stations'].version == orm['data_version']
             orm['version_condition_la'] =\
                 orm['orm_lv_load_areas'].version == orm['data_version']
             orm['version_condition_lvgd'] =\
