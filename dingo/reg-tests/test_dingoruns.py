@@ -5,51 +5,128 @@ from test import support
 import oemof.db as db
 # import other dingo stuff
 from dingo.core import NetworkDingo
-from dingo.tools import results
 from dingo.tools.logger import setup_logger
 from dingo.tools.results import save_nd_to_pickle
+from dingo.tools.results import load_nd_from_pickle
 
 from geoalchemy2.shape import to_shape
+import logging
 
 
-logger = setup_logger()
+logger = setup_logger(loglevel=logging.CRITICAL)
 
 class DingoRunTest(unittest.TestCase):
 
     def setUp(self):
-        print("setup")
-        self.file1 = results.load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
-        self.file2 = results.load_nd_from_pickle(filename='dingo_tests_grids_2.pkl')
+        print('\n')
 
-    def tearDown(self):
-        print("cleanup")
+    #def tearDown(self):
+    #    print("cleanup")
 
-    def test_equal(self):
-        equals, msg = self.dingo_equal(self.file1,self.file1)
-        self.assertTrue(equals,msg=msg)
-    def test_different(self):
-        equals, msg = self.dingo_equal(self.file1,self.file2)
-        self.assertFalse(equals,msg=msg)
+    def test_files(self):
+        print('Test File vs File')
+        print('  Loading data...')
+        nw_1 = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
+        nw_2 = load_nd_from_pickle(filename='dingo_tests_grids_2.pkl')
+        #test equality
+        print('  Testing equality...')
+        equals_e, msg = self.dataframe_equal(nw_1,nw_1)
+        print('  ...'+msg)
+        #test difference
+        print('  Testing difference...')
+        equals_d, msg = self.dataframe_equal(nw_1,nw_2)
+        print('  ...'+msg)
 
-    def dingo_equal(self, file_1, file_2):
+        #compare results
+        if equals_e and not equals_d:
+            msg    = 'No failure'
+            passed = True
+        elif equals_e and equals_d:
+            msg    = 'Only difference failed'
+            passed = False
+        elif not equals_e and not equals_d:
+            msg    = 'Only equality failed'
+            passed = False
+        elif not equals_e and equals_d:
+            msg    = 'Both failed'
+            passed = False
+        print('    '+msg)
+        self.assertTrue(passed,msg=msg)
+
+    #def test_dingo_file(self):
+    #    print('Test dingo vs File')
+    #    print('  Loading data...')
+    #    nw_1 = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
+
+    #    print('  Running dingo for the same configuration...')
+    #    # database connection
+    #    conn = db.connection(section='oedb')
+    #    mv_grid_districts = [3545]
+
+    #    nw_2 = NetworkDingo(name='network')
+    #    nw_2.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
+    #    nw_2.control_circuit_breakers(mode='close')
+    #    nw_2.export_mv_grid(conn, mv_grid_districts)
+    #    nw_2.export_mv_grid_new(conn, mv_grid_districts)
+
+    #    conn.close()
+
+    #    #test equality
+    #    print('  Testing equality...')
+    #    passed, msg = self.dataframe_equal(nw_1,nw_2)
+    #    print('    ...'+msg)
+
+    #    self.assertTrue(passed,msg=msg)
+
+    def test_dingo(self):
+        print('Test dingo vs dingo')
+        conn = db.connection(section='oedb')
+        mv_grid_districts = [3545]
+
+        print('  Running dingo once...')
+        nw_1 = NetworkDingo(name='network')
+        nw_1.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
+        #nw_1.control_circuit_breakers(mode='close')
+        #nw_1.export_mv_grid(conn, mv_grid_districts)
+        #nw_1.export_mv_grid_new(conn, mv_grid_districts)
+
+        print('  Running dingo twice...')
+        nw_2 = NetworkDingo(name='network')
+        nw_2.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
+        #nw_2.control_circuit_breakers(mode='close')
+        #nw_2.export_mv_grid(conn, mv_grid_districts)
+        #nw_2.export_mv_grid_new(conn, mv_grid_districts)
+
+        conn.close()
+
+        #test equality
+        print('  Testing equality...')
+        passed, msg = self.dataframe_equal(nw_1,nw_2)
+        print('    ...'+msg)
+
+        self.assertTrue(passed,msg=msg)
+
+    def dataframe_equal(self, network_one, network_two):
         #initiate dataframes through to_dataframe method
-        nodes_one_df, edges_one_df = file_1.to_dataframe()
-        nodes_two_df, edges_two_df = file_2.to_dataframe()
-        #future: take the to_dataframe functions out of this function
+        nodes_one_df, edges_one_df = network_one.to_dataframe()
+        nodes_two_df, edges_two_df = network_two.to_dataframe()
+
+        #print(nodes_one_df['node_id'].size)
+        #print(nodes_two_df['node_id'].size)
         #First, check if sizes of both are the same
-        if nodes_one_df.size!=nodes_two_df.size:
-            msg = 'Different number of nodes!'
+        if nodes_one_df['node_id'].size!=nodes_two_df['node_id'].size:
+            msg = 'Different number of nodes'
             return False, msg
-        elif edges_one_df.size!=edges_two_df.size:
-            msg = 'Different number of edges!'
+        elif edges_one_df['branch_id'].size!=edges_two_df['branch_id'].size:
+            msg = 'Different number of edges'
             return False, msg
 
         #Second, check if IDs of both are the same
         if not nodes_one_df['node_id'].equals(nodes_two_df['node_id']):
-            msg = 'Same number of nodes with different IDs!'
+            msg = 'Same number of nodes with different IDs'
             return False, msg
         elif not edges_one_df['branch_id'].equals(edges_two_df['branch_id']):
-            msg = 'Same number of branches with different IDs!'
+            msg = 'Same number of branches with different IDs'
             return False, msg
 
         #workaround because 'geom' is strange
@@ -77,13 +154,14 @@ class DingoRunTest(unittest.TestCase):
                 #if nodes are inverted, force both to be equal
                 edges_two_df.loc[idx,'geom'] = edges_one_df.loc[idx,'geom']
 
+
         # compare things
         flag_nodes = nodes_one_df.equals(nodes_two_df)
         flag_edges = edges_one_df.equals(edges_two_df)
         passed     = flag_nodes and flag_edges
 
         #return result of test
-        msg = 'Data sets are'
+        msg = 'Data sets are '
         if passed:
             msg = msg + 'identical.'
         else:
