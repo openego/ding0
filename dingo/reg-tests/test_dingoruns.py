@@ -23,35 +23,35 @@ class DingoRunTest(unittest.TestCase):
     #def tearDown(self):
     #    print("cleanup")
 
-    def test_files(self):
-        print('Test File vs File')
-        print('  Loading data...')
-        nw_1 = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
-        nw_2 = load_nd_from_pickle(filename='dingo_tests_grids_2.pkl')
-        #test equality
-        print('  Testing equality...')
-        equals_e, msg = self.dataframe_equal(nw_1,nw_1)
-        print('  ...'+msg)
-        #test difference
-        print('  Testing difference...')
-        equals_d, msg = self.dataframe_equal(nw_1,nw_2)
-        print('  ...'+msg)
+    #def test_files(self):
+    #    print('Test File vs File')
+    #    print('  Loading data...')
+    #    nw_1 = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
+    #    nw_2 = load_nd_from_pickle(filename='dingo_tests_grids_2.pkl')
+    #    #test equality
+    #    print('  Testing equality...')
+    #    equals_e, msg = self.dataframe_equal(nw_1,nw_1)
+    #    print('  ...'+msg)
+    #    #test difference
+    #    print('  Testing difference...')
+    #    equals_d, msg = self.dataframe_equal(nw_1,nw_2)
+    #    print('  ...'+msg)
 
-        #compare results
-        if equals_e and not equals_d:
-            msg    = 'No failure'
-            passed = True
-        elif equals_e and equals_d:
-            msg    = 'Only difference failed'
-            passed = False
-        elif not equals_e and not equals_d:
-            msg    = 'Only equality failed'
-            passed = False
-        elif not equals_e and equals_d:
-            msg    = 'Both failed'
-            passed = False
-        print('    '+msg)
-        self.assertTrue(passed,msg=msg)
+    #    #compare results
+    #    if equals_e and not equals_d:
+    #        msg    = 'No failure'
+    #        passed = True
+    #    elif equals_e and equals_d:
+    #        msg    = 'Only difference failed'
+    #        passed = False
+    #    elif not equals_e and not equals_d:
+    #        msg    = 'Only equality failed'
+    #        passed = False
+    #    elif not equals_e and equals_d:
+    #        msg    = 'Both failed'
+    #        passed = False
+    #    print('    '+msg)
+    #    self.assertTrue(passed,msg=msg)
 
     #def test_dingo_file(self):
     #    print('Test dingo vs File')
@@ -83,6 +83,7 @@ class DingoRunTest(unittest.TestCase):
         conn = db.connection(section='oedb')
         mv_grid_districts = [3545]
 
+        print('\n########################################')
         print('  Running dingo once...')
         nw_1 = NetworkDingo(name='network')
         nw_1.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
@@ -90,6 +91,7 @@ class DingoRunTest(unittest.TestCase):
         #nw_1.export_mv_grid(conn, mv_grid_districts)
         #nw_1.export_mv_grid_new(conn, mv_grid_districts)
 
+        print('\n########################################')
         print('  Running dingo twice...')
         nw_2 = NetworkDingo(name='network')
         nw_2.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
@@ -100,6 +102,7 @@ class DingoRunTest(unittest.TestCase):
         conn.close()
 
         #test equality
+        print('\n########################################')
         print('  Testing equality...')
         passed, msg = self.dataframe_equal(nw_1,nw_2)
         print('    ...'+msg)
@@ -111,11 +114,11 @@ class DingoRunTest(unittest.TestCase):
         nodes_one_df, edges_one_df = network_one.to_dataframe()
         nodes_two_df, edges_two_df = network_two.to_dataframe()
 
-        #print(nodes_one_df['node_id'].size)
-        #print(nodes_two_df['node_id'].size)
         #First, check if sizes of both are the same
         if nodes_one_df['node_id'].size!=nodes_two_df['node_id'].size:
             msg = 'Different number of nodes'
+            print('  One: ', nodes_one_df['node_id'].size)
+            print('  Two: ', nodes_two_df['node_id'].size)
             return False, msg
         elif edges_one_df['branch_id'].size!=edges_two_df['branch_id'].size:
             msg = 'Different number of edges'
@@ -125,9 +128,9 @@ class DingoRunTest(unittest.TestCase):
         if not nodes_one_df['node_id'].equals(nodes_two_df['node_id']):
             msg = 'Same number of nodes with different IDs'
             return False, msg
-        elif not edges_one_df['branch_id'].equals(edges_two_df['branch_id']):
-            msg = 'Same number of branches with different IDs'
-            return False, msg
+        #elif not edges_one_df['branch_id'].equals(edges_two_df['branch_id']):
+        #    msg = 'Same number of branches with different IDs'
+        #    return False, msg
 
         #workaround because 'geom' is strange
         #    shapy geo information is in format WKB, which also includes somehow
@@ -154,6 +157,20 @@ class DingoRunTest(unittest.TestCase):
                 #if nodes are inverted, force both to be equal
                 edges_two_df.loc[idx,'geom'] = edges_one_df.loc[idx,'geom']
 
+        #Branches IDs are not necessarily equal, so get rid of them
+        del edges_one_df['branch_id']
+        del edges_two_df['branch_id']
+
+        # Round branches' s_res and nodes' v_res
+        rounder = int(100000) #with 10000 it does't work anymore
+        edges_one_df['s_res0'] = edges_one_df['s_res0'].apply(lambda x: int(rounder*x)/rounder)
+        edges_two_df['s_res0'] = edges_two_df['s_res0'].apply(lambda x: int(rounder*x)/rounder)
+        edges_one_df['s_res1'] = edges_one_df['s_res1'].apply(lambda x: int(rounder*x)/rounder)
+        edges_two_df['s_res1'] = edges_two_df['s_res1'].apply(lambda x: int(rounder*x)/rounder)
+        nodes_one_df['v_res0'] = nodes_one_df['v_res0'].apply(lambda x: int(rounder*x)/rounder)
+        nodes_two_df['v_res0'] = nodes_two_df['v_res0'].apply(lambda x: int(rounder*x)/rounder)
+        nodes_one_df['v_res1'] = nodes_one_df['v_res1'].apply(lambda x: int(rounder*x)/rounder)
+        nodes_two_df['v_res1'] = nodes_two_df['v_res1'].apply(lambda x: int(rounder*x)/rounder)
 
         # compare things
         flag_nodes = nodes_one_df.equals(nodes_two_df)
@@ -164,8 +181,16 @@ class DingoRunTest(unittest.TestCase):
         msg = 'Data sets are '
         if passed:
             msg = msg + 'identical.'
-        else:
-            msg = msg + 'different.'
+        elif (not flag_edges) and (not flag_nodes):
+            msg = msg + 'different in nodes and edges'
+            #print(nodes_one_df == nodes_two_df)
+            #print(edges_one_df == edges_two_df)
+        elif not flag_edges:
+            msg = msg + 'different in edges'
+            #print(edges_one_df == edges_two_df)
+        elif not flag_nodes:
+            msg = msg + 'different in nodes'
+            #print(nodes_one_df == nodes_two_df)
         return passed, msg
 
 def init_files_for_tests():

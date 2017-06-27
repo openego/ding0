@@ -1437,7 +1437,7 @@ class NetworkDingo:
                         's_res1': branch['branch'].s_res[1]}), ignore_index=True)
 
         return nodes_df, edges_df.sort_values(
-            'branch_id', axis = 0, kind= 'mergesort').reset_index(drop=True)
+            'length', axis = 0, kind= 'mergesort').reset_index(drop=True)
 
     def mv_routing(self, debug=False, animation=False):
         """ Performs routing on Load Area centres to build MV grid with ring topology,
