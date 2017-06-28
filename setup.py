@@ -38,9 +38,8 @@ setup(name='dingo',
                         'matplotlib  >= 1.5.3, <= 1.5.3',
                         'egoio >= 0.2.0, <= 0.2.0',
                         'oemof.db  >= 0.0.4, <= 0.0.4',
-                        'egopowerflow >= 0.0.2, <= 0.0.2',
                         'shapely >= 1.5.12, <= 1.5.12',
-                        'pypsa >= 0.7.1, <= 0.8.0',
+                        'pypsa >= 0.8.0, <= 0.8.0',
 			'seaborn'
                         ],
       package_data={

@@ -67,7 +67,7 @@ def get_default_home_dir():
     return os.path.join(os.path.expanduser('~'), dingo_dir)
 
 
-def setup_logger(log_dir=None):
+def setup_logger(log_dir=None, loglevel=logging.DEBUG):
     """
     Instantiate logger
 
@@ -84,7 +84,7 @@ def setup_logger(log_dir=None):
         log_dir = os.path.join(get_default_home_dir(), 'log')
 
     logger = logging.getLogger('dingo') # use filename as name in log
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(loglevel)
 
     # create a file handler
     handler = logging.FileHandler(os.path.join(log_dir, 'dingo.log'))

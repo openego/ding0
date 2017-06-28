@@ -156,7 +156,8 @@ if __name__ == '__main__':
     create_results_dirs(BASEPATH)
 
     # define grid district by its id (int)
-    mv_grid_districts = list(range(1, 100))
+    # mv_grid_districts = list(range(105, 108))
+    mv_grid_districts = list(range(1728, 1732))
 
     # run grid districts
     run_multiple_grid_districts(mv_grid_districts, failsafe=True)

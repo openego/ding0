@@ -9,5 +9,4 @@ geopy
 pyproj
 egoio
 pandas
-egopowerflow
 mock
