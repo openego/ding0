@@ -992,6 +992,7 @@ def assign_bus_results(grid, bus_data):
     bus_data: pandas.DataFrame
         DataFrame containing voltage levels obtained from PF analysis
     """
+    decimal_places = 6
 
     # iterate of nodes and assign voltage obtained from power flow analysis
     for node in grid._graph.nodes():
@@ -1000,16 +1001,24 @@ def assign_bus_results(grid, bus_data):
             and not isinstance(node,
                                LVLoadAreaCentreDingo)):
             if isinstance(node, LVStationDingo):
-                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                voltage_res = [round(voltage_res[0],decimal_places),
+                               round(voltage_res[1],decimal_places)]
+                node.voltage_res = voltage_res
             elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
                 if node.lv_load_area.is_aggregated:
-                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                    voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                    voltage_res = [round(voltage_res[0],decimal_places),
+                                   round(voltage_res[1],decimal_places)]
+                    node.voltage_res = voltage_res
             elif not isinstance(node, CircuitBreakerDingo):
-                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                voltage_res = [round(voltage_res[0],decimal_places),
+                               round(voltage_res[1],decimal_places)]
+                node.voltage_res = voltage_res
             else:
                 logger.warning("Object {} has been skipped while importing "
                                "results!")
-
 
 def assign_line_results(grid, line_data):
     """
@@ -1033,9 +1042,10 @@ def assign_line_results(grid, line_data):
     line_data.to_csv(os.path.join(package_path,
                                   'line_data_after.csv'))
 
+    decimal_places = 6
     for edge in edges:
         s_res = [
-            sqrt(
+            round(sqrt(
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'p0'][0]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
@@ -1043,8 +1053,8 @@ def assign_line_results(grid, line_data):
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'q0'][0]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][0])) ** 2),
-            sqrt(
+                        'branch'].id_db), 'q1'][0])) ** 2),decimal_places),
+            round(sqrt(
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'p0'][1]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
@@ -1052,6 +1062,6 @@ def assign_line_results(grid, line_data):
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'q0'][1]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][1])) ** 2)]
+                        'branch'].id_db), 'q1'][1])) ** 2),decimal_places)]
 
         edge['branch'].s_res = s_res
