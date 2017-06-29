@@ -773,7 +773,7 @@ class NetworkDingo:
 
             # build query
             generators_sqla = session.query(
-                self.orm['orm_conv_generators'].gid,
+                self.orm['orm_conv_generators'].id,
                 self.orm['orm_conv_generators'].subst_id,
                 self.orm['orm_conv_generators'].name,
                 self.orm['orm_conv_generators'].capacity,
@@ -789,7 +789,7 @@ class NetworkDingo:
             # read data from db
             generators = pd.read_sql_query(generators_sqla.statement,
                                            session.bind,
-                                           index_col='gid')
+                                           index_col='id')
 
             for id_db, row in generators.iterrows():
 
