@@ -123,8 +123,20 @@ def dataframe_equal(network_one, network_two):
     #First, check if sizes of both are the same
     if nodes_one_df['node_id'].size!=nodes_two_df['node_id'].size:
         msg = 'Different number of nodes'
+        #print('  ',msg)
         #print('  One: ', nodes_one_df['node_id'].size)
         #print('  Two: ', nodes_two_df['node_id'].size)
+        #minimo = min(nodes_one_df['node_id'].size, nodes_two_df['node_id'].size)
+        #for idx in range(0,minimo-1):
+        #    if not nodes_one_df.loc[idx,'node_id'] == nodes_two_df.loc[idx,'node_id']:
+        #        print('     ', nodes_one_df.loc[idx,'node_id'],' not equal to ', nodes_two_df.loc[idx,'node_id'])
+
+        ## plot grids
+        #for grid_district in network_one.mv_grid_districts():
+        #    grid_district.mv_grid.graph_draw(mode='MV')
+        #for grid_district in network_two.mv_grid_districts():
+        #    grid_district.mv_grid.graph_draw(mode='MV')
+
         return False, msg
     elif edges_one_df['branch_id'].size!=edges_two_df['branch_id'].size:
         msg = 'Different number of edges'
