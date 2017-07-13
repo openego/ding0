@@ -308,19 +308,27 @@ class NetworkDingo:
                 id_db=id,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(row['geom']),
-                population=0 if isnan(row['population']) else int(row['population']),
+                population=0 if isnan(row['population']) else int(
+                    row['population']),
                 peak_load_residential=row['peak_load_residential'],
                 peak_load_retail=row['peak_load_retail'],
                 peak_load_industrial=row['peak_load_industrial'],
                 peak_load_agricultural=row['peak_load_agricultural'],
                 peak_load=(row['peak_load_residential'] +
-                               row['peak_load_retail'] +
-                               row['peak_load_industrial'] +
-                               row['peak_load_agricultural']),
+                           row['peak_load_retail'] +
+                           row['peak_load_industrial'] +
+                           row['peak_load_agricultural']),
                 sector_count_residential=int(row['sector_count_residential']),
                 sector_count_retail=int(row['sector_count_retail']),
                 sector_count_industrial=int(row['sector_count_industrial']),
-                sector_count_agricultural=int(row['sector_count_agricultural']))
+                sector_count_agricultural=int(row['sector_count_agricultural']),
+                sector_consumption_residential=row[
+                    'sector_consumption_residential'],
+                sector_consumption_retail=row['sector_consumption_retail'],
+                sector_consumption_industrial=row[
+                    'sector_consumption_industrial'],
+                sector_consumption_agricultural=row[
+                    'sector_consumption_agricultural'])
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(network=self,
@@ -568,30 +576,46 @@ class NetworkDingo:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        lv_grid_districs_sqla = session.query(self.orm['orm_lv_grid_district'].mvlv_subst_id,
-                                              self.orm['orm_lv_grid_district'].la_id,
-                                              self.orm['orm_lv_grid_district'].zensus_sum.label('population'),
-                                              (self.orm['orm_lv_grid_district'].sector_peakload_residential * gw2kw).
-                                                label('peak_load_residential'),
-                                              (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
-                                                label('peak_load_retail'),
-                                              (self.orm['orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
-                                                label('peak_load_industrial'),
-                                              (self.orm['orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
-                                                label('peak_load_agricultural'),
-                                              ((self.orm['orm_lv_grid_district'].sector_peakload_residential
-                                                          + self.orm['orm_lv_grid_district'].sector_peakload_retail
-                                                          + self.orm['orm_lv_grid_district'].sector_peakload_industrial
-                                                          + self.orm['orm_lv_grid_district'].sector_peakload_agricultural)
-                                                         * gw2kw).label('peak_load'),
-                                              func.ST_AsText(func.ST_Transform(
-                                                self.orm['orm_lv_grid_district'].geom, srid)).label('geom'),
-                                              self.orm['orm_lv_grid_district'].sector_count_residential,
-                                              self.orm['orm_lv_grid_district'].sector_count_retail,
-                                              self.orm['orm_lv_grid_district'].sector_count_industrial,
-                                              self.orm['orm_lv_grid_district'].sector_count_agricultural,
-                                              self.orm['orm_lv_grid_district'].mvlv_subst_id). \
-            filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(lv_stations.index.tolist())). \
+        lv_grid_districs_sqla = session.query(
+            self.orm['orm_lv_grid_district'].mvlv_subst_id,
+            self.orm['orm_lv_grid_district'].la_id,
+            self.orm['orm_lv_grid_district'].zensus_sum.label('population'),
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_residential * gw2kw).
+                label('peak_load_residential'),
+            (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
+                label('peak_load_retail'),
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
+                label('peak_load_industrial'),
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
+                label('peak_load_agricultural'),
+            ((self.orm['orm_lv_grid_district'].sector_peakload_residential
+              + self.orm['orm_lv_grid_district'].sector_peakload_retail
+              + self.orm['orm_lv_grid_district'].sector_peakload_industrial
+              + self.orm['orm_lv_grid_district'].sector_peakload_agricultural)
+             * gw2kw).label('peak_load'),
+            func.ST_AsText(func.ST_Transform(
+                self.orm['orm_lv_grid_district'].geom, srid)).label('geom'),
+            self.orm['orm_lv_grid_district'].sector_count_residential,
+            self.orm['orm_lv_grid_district'].sector_count_retail,
+            self.orm['orm_lv_grid_district'].sector_count_industrial,
+            self.orm['orm_lv_grid_district'].sector_count_agricultural,
+            (self.orm[
+                 'orm_lv_grid_district'].sector_consumption_residential * gw2kw). \
+                label('sector_consumption_residential'),
+            (self.orm['orm_lv_grid_district'].sector_consumption_retail * gw2kw). \
+                label('sector_consumption_retail'),
+            (self.orm[
+                'orm_lv_grid_district'].sector_consumption_industrial * gw2kw). \
+                label('sector_consumption_industrial'),
+            (self.orm[
+                'orm_lv_grid_district'].sector_consumption_agricultural * gw2kw). \
+                label('sector_consumption_agricultural'),
+            self.orm['orm_lv_grid_district'].mvlv_subst_id). \
+            filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(
+            lv_stations.index.tolist())). \
             filter(self.orm['version_condition_lvgd'])
 
         # read data from db

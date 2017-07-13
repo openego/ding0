@@ -527,6 +527,7 @@ class LoadDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self.peak_load = kwargs.get('peak_load', None)
+        self.consumption = kwargs.get('consumption', None)
 
         self.id_db = self.grid.loads_count() + 1
 
