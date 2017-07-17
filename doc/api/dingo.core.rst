@@ -15,3 +15,22 @@ Subpackages
     dingo.core.powerflow
     dingo.core.structure
 
+Submodules
+----------
+
+dingo.core.upload_to_zenodo module
+----------------------------------
+
+.. automodule:: dingo.core.upload_to_zenodo
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: dingo.core
+    :members:
+    :undoc-members:
+    :show-inheritance:

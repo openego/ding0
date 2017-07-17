@@ -6,7 +6,17 @@
 Welcome to dingo's documentation!
 =================================
 
-Choose you favorite topic from the list of content
+
+.. figure:: images/DINGO_Logo_300px.png
+   :align: right
+   :scale: 80%
+
+DIstribution Network GeneratOr -- A tool to generate synthetic medium and low voltage power distribution grids based on open (or at least accessible) data.
+
+.. warning:: Note, currently the data source Dingo relies on - the Open Energy Database - has no public accessible API, yet. Thus, currently you won't be able to run Dingo without modifications.
+
+
+
 
 .. toctree::
    :maxdepth: 7
@@ -16,7 +26,8 @@ Choose you favorite topic from the list of content
    getting_started
    usage_details
    about
-   calculation
+   .. calculation
+
    development
    whatsnew
    dingo API <api/modules>

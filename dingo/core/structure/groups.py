@@ -1,3 +1,18 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 from dingo.core import MVCableDistributorDingo
 from dingo.tools import config as cfg_dingo
 
@@ -23,6 +38,10 @@ class LoadAreaGroupDingo:
         # get id from count of load area groups in associated MV grid district
         self.id_db = self.mv_grid_district.lv_load_area_groups_count() + 1
 
+    @property
+    def network(self):
+        return self.mv_grid_district.network
+
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""
         for load_area in self._lv_load_areas:
@@ -36,11 +55,15 @@ class LoadAreaGroupDingo:
 
     def can_add_lv_load_area(self, node):
         """Sums up peak load of LV stations = total peak load for satellite string"""
+
+        # get power factor for loads
+        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+
         lv_load_area = node.lv_load_area
         if lv_load_area not in self.lv_load_areas():  # and isinstance(lv_load_area, LVLoadAreaDingo):
             path_length_to_root = lv_load_area.mv_grid_district.mv_grid.graph_path_length(self.root_node, node)
             if ((path_length_to_root <= self.branch_length_max) and
-                (lv_load_area.peak_load + self.peak_load) <= self.peak_load_max):
+                (lv_load_area.peak_load + self.peak_load) / cos_phi_load <= self.peak_load_max):
                 return True
             else:
                 return False

@@ -11,8 +11,6 @@ The fundamental data basis is decribed in [Huelk2017]_ and its extension is
 detailed by [Amme2017]_. Further extensions and additional details are provided
 in the sections below.
 
-.. TODO: find figure with right definitions
-
 :ref:`definition-of-terms` introduces terms we stick to in the following text.
 
 .. _definition-of-terms:
@@ -84,23 +82,39 @@ Branches of sector residential
   We are using the LV-Branches of Kerber from the grids. They should be assigned to the most plausible types of settlement areas.
 #. Define the type of settlement area
   To decide if a LV-grid district is most likely a rural, village or suburban settlement area we are using the population value combined with statistical data. Statisticly, there are 2.3 persons per appartment and 1.5 appartments per house. [see BBR Tabelle B12 http://www.ggr-planung.de/fileadmin/pdf-projekte/SiedEntw_und_InfrastrFolgekosten_Teil_2.pdf] [DEMIREL page 37-41, average has been coosen]. (This is not valid for urban areas.) With this we estimate the amount aus house connections (HC).
-This value can also be found at the explenation of the database of the "Kerber"-grids and is assinged to the type of settlement area:
+    This value can also be found at the explenation of the database of the "Kerber"-grids and is assinged to the type of settlement area:
 Rural: 622 HC at 43 MV/LV substations results in an average amount of 14.5 HC/substation
 Village: 2807 HC at 51 MV/LV substations results in an average amount of 55 HC/substation
 Suburban: 4856 HC at 38 MV/LV substations results in an average amount of 128 HC/substationTher
 With the resulting trendline of this three point,  [the Polynomial degree 2 [ 16.127*(x^2)-7.847*x+6.1848 ] whereas x is the type of of settlement area], we difine the border values for the typ of settlement area at:
-
   * Rural <31 HC/substation
   * Village <87 HC/substation
   * Suburban >=87 HC/substation
-#. Assinging grid branches to the Substations
-  within the "Kerber"-model-grids several grid branches are found. 
-  
+#. Define LV-grid branches  
+    within the "Kerber"-model-grids several grid branches are found:
   * Rural: 5 branches (with l>=78m & l<=676m)
   * Village: 7 branches (with l>=102m & l<=588m)
   * Suburban: 15 branches (with l>=85 & l<=610m)
-  
-  
+    Moreover Scheffler evaluated exsiting LV-grids and provides statistics on the prevalence of LV-cable lenght divided in settelment area "type C: Detached house settlement with low densety" and "type D: Detached house settlement with higher densety":
+
+.. prevalence of LV-cable lenght:
+================    ======================= ====================
+cable length        prevalence in Typ C	    prevalence in Typ D
+================    ======================= ====================
+>0	                2%	                    1%
+>100	            17%	                    16%
+>200	            22%	                    31%
+>300	            9%	                    17%
+>400	            16%	                    23%
+>500	            16%	                    12%
+>600	            11%	                    0
+>700	            5%	                    0
+>800	            2%	                    0
+================    ======================= ====================
+    
+    
+    
+#. Assinging grid branches to the Substations  
   Strangzuweisung
     Zu jeder ONS werden in Abhängigkeit von Netztyp und HA, NS-Stränge zugewiesen
    Eine Verteilung des Aufkommens der Stränge anhand von der Gesamtstranglänge geschieht mit Hilfe der Scheffler Angaben (Abbildung      Länge der Netzstrahlen für ausgewählte Siedlungstypen [44])
@@ -162,18 +176,86 @@ allocated to LV grid branches of sector residential, larger power plants
 are allocated to branches of the other sector, and really large ones are
 directly connected to the bus bar of the MV-LV substation.
 
+Grid stability and equipment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. TODO: complete details of references
+During build of LV grid topology equipment is chosen with respect to max.
+occurring load and generation according to current grid codes (see [VDEAR]_).
+Nevertheless, some overloading issues may remain. In addition, voltage issues
+may arise that can't be considered during grid topology creation. Therefore, we
+adhere to the regulatory framework of [DINEN50160]_ which is simplified by
+[VDEAR]_.
+According to [DINEN50160]_ voltage deviation is limited to +/-10 % of nominal
+that is for practical use divided into voltage drop/increase for each voltage
+level and the associated transformers. The allowed voltage increase in the LV
+grid level is limited to 3 % of nominal voltage. The allowed voltage drop is
+limited to 5 % as detailed in [Zdrallek]_.
+
+.. as detail by :numref:`Image of Sphinx (Fig. %s) <voltage-deviation>`.
+
+
+
+.. .. _voltage-deviation:
+.. .. figure:: images/DIN_EN_50160_voltage_drop_scheme.png
+..
+..    Allowed voltage bandwidth in distrivution grids detailed for each grid
+..    level. Source [Zdrallek]_
+
+
+
+Following steps do apply during reinforcement of Dingo LV grids
+
+#. Checks for **overloading** issues at branches and MV-LV transformers first
+#. Critical branches (those with line overloading) are extended to appropriate
+   size of cable to transport connected load and generation. Note, if connected load or
+   generation capacity is still exceeding capacity of largest cable type. We keep
+   largest available cable type and the issue most probably will remain
+#. Stations are tested for overloading issues for generation and load case as
+   well. If nominal apparent power of transformers of a substation is not
+   sufficient a two-step procedure is applied
+
+   #. Existing transformers are extended (replaced) to comply with load and
+      generation conencted to subsequent grid.
+   #. If Step 1 does not resolve all issues additional transformers are build
+      in the substation
+#. Subsequently **over-voltage issues** are analyzed for all grid nodes
+#. For each node where voltage exceeds 3 % of nominal voltage in feed-in case or
+    5 % of nominal voltage in load case, branch segments
+   connecting the node with the substation are reinforce until no further issues
+   remain. If a over-voltage issue cannot be solved by installing largest
+   availabe cable (NAYY 4x1x300) this type of cable still remains as well as
+   the overvoltage issue
+#. Substations are checked for over-voltage issues at the bus bar individually.
+   Identified issues are resolved by extending nominal apparent power of
+   existing transformer. A ultimately build up to two new transformers in the
+   substation.
+
+References
+----------
 .. [Amme2017] J. Amme, G. Pleßmann, J. Bühler, L. Hülk, E. Kötter, P. Schwaegerl:
     *The eGo grid model: An open-source and open-data based synthetic medium-voltage
     grid model for distribution power supply systems*.
     Journal of Physics: Conference Series 2017 (submitted)
 .. [Huelk2017] L. Hülk, L. Wienholt, I. Cussmann, U. Mueller, C. Matke and E.
-    Koetter: *Allocation of annual electricity consumption and power
+    Kötter: *Allocation of annual electricity consumption and power
     generation capacities across multi voltage levels in a high spatial
     resolution* International Journal of Sustainable Energy Planning and
     Management 2017 (submitted)
-.. [Kerber] G. Kerber: http://oep.iks.cs.ovgu.de/literature/entry/17/
-.. [Scheffler] Scheffler: http://oep.iks.cs.ovgu.de/literature/entry/18/
-.. [Mohrmann] Mohrmann: http://oep.iks.cs.ovgu.de/literature/entry/19/
-.. [OSM] https://www.openstreetmap.org/#map
+.. [Kerber] G. Kerber: Aufnahmefähigkeit von Niederspannungsverteilnetzen für
+    die Einspeisung aus Photovoltaikkleinanlagen, Dissertation, TU München,
+    2011
+.. [Scheffler] J. Scheffler: Bestimmung der maximal zulässigen
+    Netzanschlussleistung photovoltaischer Energiewandlungsanlagen in
+    Wohnsiedlungsgebieten, Dissertation, TU Chemnitz, 2002
+.. [Mohrmann] M. Mohrmann, C. Reese, L. Hofmann, J. Schmiesing: Untersuchung
+    von Niederspannungsverteilnetzen anhand synthetische Netzstrukturen. In:
+    Proceedings of VDE ETG Kongress, 2013
+.. [OSM] OpenStreetMap contributors:
+    `Open street map <https://www.openstreetmap.org>`_, 2017
+.. [VDEAR] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
+        Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
+        Erzeugungsanlagen am Niederspannungsnetz, 2011
+.. [DINEN50160] DIN EN 50160 Merkmale der Spannung in öffentlichen
+    Elektrizitätsversorgungsnetzen, 2011
+.. [Zdrallek] Planungs und Betriebsgrundsätze für ländliche Verteilungsnetze --
+    Leitfaden zur Ausrichtung der Netze an ihren zukünftigen Anforderungen, 2016

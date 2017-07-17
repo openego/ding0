@@ -1,3 +1,18 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 from . import RegionDingo
 from dingo.tools import config as cfg_dingo
 
@@ -10,7 +25,6 @@ class MVGridDistrictDingo(RegionDingo):
     ----------------------------
 
     """
-    # TODO: add method remove_lv_load_area()
 
     def __init__(self, **kwargs):
         #inherit branch parameters from Region
@@ -22,10 +36,18 @@ class MVGridDistrictDingo(RegionDingo):
         self._lv_load_area_groups = []
         self.geo_data = kwargs.get('geo_data', None)
 
-        # INSERT LOAD PARAMS
-        self.peak_load = kwargs.get('peak_load', None)  # in kVA
-        self.peak_load_satellites = kwargs.get('peak_load_satellites', None)  # in kVA
-        self.peak_load_aggregated = kwargs.get('peak_load_aggregated', None)  # in kVA
+        # peak load sum in kVA
+        self.peak_load = kwargs.get('peak_load', 0)
+
+        # peak load (satellites only) in kVA
+        self.peak_load_satellites = kwargs.get('peak_load_satellites', 0)
+
+        # peak load (aggregated only) in kVA
+        self.peak_load_aggregated = kwargs.get('peak_load_aggregated', 0)
+
+    @property
+    def network(self):
+        return self.mv_grid.network
 
     def lv_load_areas(self):
         """Returns a generator for iterating over load_areas"""
@@ -136,6 +158,10 @@ class LVLoadAreaDingo(RegionDingo):
             if self.peak_load < load_area_sat_load_threshold:
                 self.is_satellite = True
 
+    @property
+    def network(self):
+        return self.mv_grid_district.network
+
     def lv_grid_districts(self):
         """Returns a generator for iterating over LV grid districts"""
         for lv_grid_district in sorted(self._lv_grid_districts, key=lambda _: repr(_)):
@@ -187,6 +213,10 @@ class LVLoadAreaCentreDingo:
         self.lv_load_area = kwargs.get('lv_load_area', None)
 
     @property
+    def network(self):
+        return self.lv_load_area.network
+
+    @property
     def pypsa_id(self):
         return '_'.join(['MV', str(self.grid.id_db), 'lac', str(self.id_db)])
 
@@ -225,6 +255,22 @@ class LVGridDistrictDingo(RegionDingo):
                                                   None)
         self.sector_count_agricultural = kwargs.get('sector_count_agricultural',
                                                     None)
+
+        self.sector_consumption_residential = kwargs.get(
+            'sector_consumption_residential',
+            None)
+        self.sector_consumption_retail = kwargs.get('sector_consumption_retail',
+                                                    None)
+        self.sector_consumption_industrial = kwargs.get(
+            'sector_consumption_industrial',
+            None)
+        self.sector_consumption_agricultural = kwargs.get(
+            'sector_consumption_agricultural',
+            None)
+
+    @property
+    def network(self):
+        return self.lv_load_area.network
 
     def __repr__(self):
         return 'lv_grid_district_' + str(self.id_db)

@@ -1,3 +1,18 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
+
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -217,13 +232,15 @@ class GridDingo:
         for edge in edges_sorted:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
-    def find_path(self, node_source, node_target):
+    def find_path(self, node_source, node_target, type='nodes'):
         """ Determines the shortest path from `node_source` to `node_target` in _graph using networkx' shortest path
             algorithm.
 
         Args:
             node_source: source node (Dingo object), member of _graph
             node_target: target node (Dingo object), member of _graph
+            type : str, Specify if nodes or edges should be returned. Default
+            is `nodes`
 
         Returns:
             path: shortest path from `node_source` to `node_target` (list of nodes in _graph)
@@ -232,8 +249,13 @@ class GridDingo:
             path = nx.shortest_path(self._graph, node_source, node_target)
         else:
             raise Exception('At least one of the nodes is not a member of graph.')
-
-        return path
+        if type == 'nodes':
+            return path
+        elif type == 'edges':
+            return [_ for _ in self._graph.edges_iter(nbunch=path, data=True)
+                    if (_[0] in path and _[1] in path)]
+        else:
+            raise ValueError('Please specify type as nodes or edges')
 
     def find_and_union_paths(self, node_source, nodes_target):
         """ Determines shortest paths from `node_source` to all nodes in `node_target` in _graph using find_path().
@@ -298,14 +320,16 @@ class GridDingo:
 
 class StationDingo:
     """
-    Defines a MV/LVstation in DINGO
-    -------------------------------
+    Defines a HV-MV or MV-LV station in DINGO
+
+    Parameters
+    ----------
 
     id_db: id according to database table
     v_level_operation: operation voltage level at station (the station's voltage level differs from the nominal voltage
                        level of the grid (see attribute `v_level` in class MVGridDingo) due to grid losses. It is
-                       usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids.
-
+                       usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids
+                       (unit: V).
     """
 
     def __init__(self, **kwargs):
@@ -313,8 +337,11 @@ class StationDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self._transformers = []
-        self.busbar = None
         self.v_level_operation = kwargs.get('v_level_operation', None)
+
+    @property
+    def network(self):
+        return self.grid.network
 
     def transformers(self):
         """Returns a generator for iterating over transformers"""
@@ -329,46 +356,17 @@ class StationDingo:
     @property
     def peak_load(self):
         """
-        Cumulative peak load of loads connected to underlying LV grid
-        (taken from LV Grid District -> top-down)
+        Cumulative peak load of loads connected to underlying MV or LV grid
+        (taken from MV or LV Grid District -> top-down)
+
+        Notes
+        -----
+        This peak load includes all loads which are located within Grid District:
+        When called from MV station, all loads of all Load Areas are considered
+        (peak load was calculated in MVGridDistrictDingo.add_peak_demand()).
+        When called from LV station, all loads of the LVGridDistrict are considered.
         """
         return self.grid.grid_district.peak_load
-
-    @property
-    def peak_generation(self):
-        """
-        Cumulative peak generation of generators connected to underlying LV grid
-        (instantaneously calculated -> bottom-up)
-        """
-        return sum([_.capacity for _ in self.grid.generators()])
-
-
-class BusDingo:
-    """ Create new pypower Bus class as child from oemof Bus used to define
-    busses and generators data
-    """
-
-    def __init__(self, **kwargs):
-        """Assigned minimal required pypower input parameters of the bus and
-        generator as arguments
-
-        Keyword description of bus arguments:
-        bus_id -- the bus number (also used as GEN_BUS parameter for generator)
-        bus_type -- the bus type (1 = PQ, 2 = PV, 3 = ref, 4 = Isolated)
-        PD -- the real power demand in MW
-        QD -- the reactive power demand in MVAr
-        GS -- the shunt conductance (demanded at V = 1.0 p.u.) in MW
-        BS -- the shunt susceptance (injected at V = 1.0 p.u.) in MVAr
-        bus_area -- area number (positive integer)
-        VM -- the voltage magnitude in p.u.
-        VA -- the voltage angle in degrees
-        base_kv -- the base voltage in kV
-        zone -- loss zone (positive integer)
-        vmax -- the maximum allowed voltage magnitude in p.u.
-        vmin -- the minimum allowed voltage magnitude in p.u.
-        """
-
-        # Bus Data parameters
 
 
 class RingDingo:
@@ -382,6 +380,10 @@ class RingDingo:
 
         # add circ breaker to grid and graph
         self._grid.add_ring(self)
+
+    @property
+    def network(self):
+        return self._grid.network
 
     def branches(self):
         for branch in self._grid.graph_edges():
@@ -422,6 +424,10 @@ class BranchDingo:
 
         self.critical = False
 
+    @property
+    def network(self):
+        return self.ring.network
+
     def __repr__(self):
         return 'branch_' + str(self.id_db)
 
@@ -448,6 +454,7 @@ class TransformerDingo:
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
+        self.grid = kwargs.get('grid', None)
         self.v_level = kwargs.get('v_level', None)
         self.s_max_a = kwargs.get('s_max_longterm', None)
         self.s_max_b = kwargs.get('s_max_shortterm', None)
@@ -456,6 +463,10 @@ class TransformerDingo:
         self.tap_ratio = kwargs.get('tap_ratio', None)
         self.r = kwargs.get('r', None)
         self.x = kwargs.get('x', None)
+
+    @property
+    def network(self):
+        return self.grid.network
 
 
 class GeneratorDingo:
@@ -475,6 +486,10 @@ class GeneratorDingo:
         self.type = kwargs.get('type', None)
         self.subtype = kwargs.get('subtype', None)
         self.v_level = kwargs.get('v_level', None)
+
+    @property
+    def network(self):
+        return self.mv_grid.network
 
     @property
     def pypsa_id(self):
@@ -499,6 +514,10 @@ class CableDistributorDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
 
+    @property
+    def network(self):
+        return self.grid.network
+
 
 class LoadDingo:
     """ Class for modelling a load """
@@ -508,8 +527,13 @@ class LoadDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self.peak_load = kwargs.get('peak_load', None)
+        self.consumption = kwargs.get('consumption', None)
 
         self.id_db = self.grid.loads_count() + 1
+
+    @property
+    def network(self):
+        return self.grid.network
 
 
 class CircuitBreakerDingo:
@@ -535,6 +559,10 @@ class CircuitBreakerDingo:
 
         # add circ breaker to grid and graph
         self.grid.add_circuit_breaker(self)
+
+    @property
+    def network(self):
+        return self.grid.network
 
     def open(self):
         self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)

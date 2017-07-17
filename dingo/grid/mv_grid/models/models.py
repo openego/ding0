@@ -1,14 +1,23 @@
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+It is developed in the project open_eGo: https://openegoproject.wordpress.com
+
+DINGO lives at github: https://github.com/openego/dingo/
+The documentation is available on RTD: http://dingo.readthedocs.io
+
+Based on code by Romulo Oliveira copyright (C) 2015,
+https://github.com/RomuloOliveira/monte-carlo-cvrp
+Originally licensed under the Apache License, Version 2.0. You may obtain a
+copy of the license at http://www.apache.org/licenses/LICENSE-2.0
 """
-    Copyright 2016 openego development group
-    Licensed under GNU General Public License 3.0. See the LICENSE file at the
-    top-level directory of this distribution or obtain a copy of the license at
-    http://www.gnu.org/licenses/gpl-3.0.txt
-    
-    Based on code by Romulo Oliveira copyright (C) 2015,
-    https://github.com/RomuloOliveira/monte-carlo-cvrp
-    Originally licensed under the Apache License, Version 2.0. You may obtain a
-    copy of the license at http://www.apache.org/licenses/LICENSE-2.0
-"""
+
+__copyright__  = "Reiner Lemoine Institut gGmbH"
+__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__author__     = "nesnoj, gplssm"
+
 
 from dingo.tools import config as cfg_dingo
 
@@ -241,12 +250,11 @@ class Route(object):
         else:
             raise ValueError('Grid\'s _branch_kind is invalid, could not use branch parameters.')
 
-        mv_max_v_level_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                         'mv_max_v_level_diff_normal'))
-        mv_max_v_level_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                          'mv_max_v_level_diff_malfunc'))
-        mv_routing_loads_cos_phi = float(cfg_dingo.get('mv_routing_tech_constraints',
-                                                       'mv_routing_loads_cos_phi'))
+        mv_max_v_level_lc_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                            'mv_max_v_level_lc_diff_normal'))
+        mv_max_v_level_lc_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
+                                                             'mv_max_v_level_lc_diff_malfunc'))
+        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
 
 
         # step 0: check if route has got more nodes than allowed
@@ -264,7 +272,7 @@ class Route(object):
         nodes_ring1 = [self._problem._depot] + self._nodes
         nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
         # factor to calc reactive from active power
-        Q_factor = tan(acos(mv_routing_loads_cos_phi))
+        Q_factor = tan(acos(cos_phi_load))
         # line/cable params per km
         r = self._problem._branch_type['R']  # unit for r: ohm/km
         x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km
@@ -295,34 +303,47 @@ class Route(object):
             v_level_ring_dir1 =\
             v_level_ring_dir2 =\
             v_level_op =\
-            self._problem._v_level_operation * 1e3
+            self._problem._v_level * 1e3
+
+        # set initial r and x
+        r_hring1 =\
+            r_hring2 =\
+            x_hring1 =\
+            x_hring2 =\
+            r_ring_dir1 =\
+            r_ring_dir2 =\
+            x_ring_dir1 =\
+            x_ring_dir2 = 0
 
         for n1, n2 in zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]):
-            v_level_hring1 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring1
-            if (v_level_op - v_level_hring1) > (v_level_op * mv_max_v_level_diff_normal):
+            r_hring1 += self._problem.distance(n1, n2) * r
+            x_hring1 += self._problem.distance(n1, n2) * x
+            v_level_hring1 -= n2.demand() * 1e3 * (r_hring1 + x_hring1*Q_factor) / v_level_op
+            if (v_level_op - v_level_hring1) > (v_level_op * mv_max_v_level_lc_diff_normal):
                 return False
 
         for n1, n2 in zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)]):
-            v_level_hring2 -= n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) / v_level_hring2
-            if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_diff_normal):
+            r_hring2 += self._problem.distance(n1, n2) * r
+            x_hring2 += self._problem.distance(n1, n2) * x
+            v_level_hring2 -= n2.demand() * 1e3 * (r_hring2 + x_hring2 * Q_factor) / v_level_op
+            if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_lc_diff_normal):
                 return False
 
         # step 4b: check voltage stability at all nodes
         # (for full ring calculating both directions simultaneously using max. voltage diff. for malfunction operation)
         for (n1, n2), (n3, n4) in zip(zip(nodes_ring1[0:len(nodes_ring1)-1], nodes_ring1[1:len(nodes_ring1)]),
                                       zip(nodes_ring2[0:len(nodes_ring2)-1], nodes_ring2[1:len(nodes_ring2)])):
-            v_level_ring_dir1 -= (n2.demand() * 1e3 * self._problem.distance(n1, n2) * (r + x*Q_factor) /
-                                  v_level_ring_dir1)
-            v_level_ring_dir2 -= (n4.demand() * 1e3 * self._problem.distance(n3, n4) * (r + x*Q_factor) /
-                                  v_level_ring_dir2)
-            if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_diff_malfunc) or
-                (v_level_op - v_level_ring_dir2) > (v_level_op * mv_max_v_level_diff_malfunc)):
+            r_ring_dir1 += self._problem.distance(n1, n2) * r
+            r_ring_dir2 += self._problem.distance(n3, n4) * r
+            x_ring_dir1 += self._problem.distance(n1, n2) * x
+            x_ring_dir2 += self._problem.distance(n3, n4) * x
+            v_level_ring_dir1 -= (n2.demand() * 1e3 * (r_ring_dir1 + x_ring_dir1 * Q_factor) / v_level_op)
+            v_level_ring_dir2 -= (n4.demand() * 1e3 * (r_ring_dir2 + x_ring_dir2 * Q_factor) / v_level_op)
+            if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_lc_diff_malfunc) or
+                (v_level_op - v_level_ring_dir2) > (v_level_op * mv_max_v_level_lc_diff_malfunc)):
                 return False
 
         return True
-
-        # TODO (mv_routing): create circuit breaker object, open ring after routing
-
 
     def __str__(self):
         return str(self._nodes)
@@ -415,7 +436,6 @@ class Graph(object):
         self._branch_kind = data['BRANCH_KIND']
         self._branch_type = data['BRANCH_TYPE']
         self._v_level = data['V_LEVEL']
-        self._v_level_operation = data['V_LEVEL_OP']
         self._is_aggregated = data['IS_AGGREGATED']
 
         for i in data['MATRIX']:
