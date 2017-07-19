@@ -144,10 +144,27 @@ def save_nd_to_pickle(nd, path='', filename=None):
 
     abs_path = os.path.abspath(path)
 
-    def concat_and_save_csv(self, filenames, result_filename):
-        """
-        Concatenate and save multiple csv files in `base_path` specified by
-        filnames
+
+def save_nd_to_pickle(nd, path='', filename=None):
+    """
+    Use pickle to save the whole nd-object to disc
+    Parameters
+    ----------
+    nd : NetworkDingo
+        Dingo grid container object
+    path : str
+        Absolute or relative path where pickle should be saved. Default is ''
+        which means pickle is save to PWD
+    """
+
+    abs_path = os.path.abspath(path)
+
+    if len(nd._mv_grid_districts) > 1:
+        name_extension = '_{number}-{number2}'.format(
+            number=nd._mv_grid_districts[0].id_db,
+            number2=nd._mv_grid_districts[-1].id_db)
+    else:
+        name_extension = '_{number}'.format(number=nd._mv_grid_districts[0].id_db)
 
     if filename is None:
         filename = "dingo_grids_{ext}.pkl".format(
