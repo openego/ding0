@@ -563,9 +563,10 @@ def assign_line_results(grid, line_data):
     line_data.to_csv(os.path.join(package_path,
                                   'line_data_after.csv'))
 
+    decimal_places = 6
     for edge in edges:
         s_res = [
-            sqrt(
+            round(sqrt(
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'p0'][0]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
@@ -573,8 +574,8 @@ def assign_line_results(grid, line_data):
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'q0'][0]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][0])) ** 2),
-            sqrt(
+                        'branch'].id_db), 'q1'][0])) ** 2),decimal_places),
+            round(sqrt(
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'p0'][1]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
@@ -582,74 +583,6 @@ def assign_line_results(grid, line_data):
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'q0'][1]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][1])) ** 2)]
+                        'branch'].id_db), 'q1'][1])) ** 2),decimal_places)]
 
         edge['branch'].s_res = s_res
-
-
-def init_pypsa_network(time_range_lim):
-    """
-    Instantiate PyPSA network
-    Parameters
-    ----------
-    time_range_lim:
-    Returns
-    -------
-    network: PyPSA network object
-        Contains powerflow problem
-    snapshots: iterable
-        Contains snapshots to be analyzed by powerplow calculation
-    """
-    network = Network()
-    network.set_snapshots(time_range_lim)
-    snapshots = network.snapshots
-
-    return network, snapshots
-
-
-def transform_timeseries4pypsa(timeseries, timerange, column=None):
-    """
-    Transform pq-set timeseries to PyPSA compatible format
-    Parameters
-    ----------
-    timeseries: Pandas DataFrame
-        Containing timeseries
-    Returns
-    -------
-    pypsa_timeseries: Pandas DataFrame
-        Reformated pq-set timeseries
-    """
-    timeseries.index = [str(i) for i in timeseries.index]
-
-    if column is None:
-        pypsa_timeseries = timeseries.apply(
-            Series).transpose().set_index(timerange)
-    else:
-        pypsa_timeseries = timeseries[column].apply(
-            Series).transpose().set_index(timerange)
-
-    return pypsa_timeseries
-
-
-def create_powerflow_problem(timerange, components):
-    """
-    Create PyPSA network object and fill with data
-    Parameters
-    ----------
-    timerange: Pandas DatetimeIndex
-        Time range to be analyzed by PF
-    components: dict
-    Returns
-    -------
-    network: PyPSA powerflow problem object
-    """
-
-    # initialize powerflow problem
-    network, snapshots = init_pypsa_network(timerange)
-
-    # add components to network
-    for component in components.keys():
-        network.import_components_from_dataframe(components[component],
-                                                 component)
-
-    return network, snapshots

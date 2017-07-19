@@ -27,7 +27,7 @@ from dingo.tools.results import save_nd_to_pickle
 import logging
 
 # define logger
-logger = setup_logger(loglevel=logging.CRITICAL)
+logger = setup_logger()
 
 # ===== MAIN =====
 

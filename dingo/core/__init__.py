@@ -27,6 +27,7 @@ from dingo.flexopt.reinforce_grid import *
 
 import os
 import logging
+
 import pandas as pd
 import random
 import time
@@ -46,10 +47,8 @@ package_path = dingo.__path__[0]
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.
-
     Parameters
     ----------
-
     """
 
     def __init__(self, **kwargs):
@@ -298,7 +297,9 @@ class NetworkDingo:
 
         # There's no LVGD for current LA, see #155 for details
         if len(lv_grid_districts) == 0:
-            raise ValueError('Load Area {} has no LVGD - please re-open #155'.format(repr(lv_load_area)))
+            raise ValueError(
+                'Load Area {} has no LVGD - please re-open #155'.format(
+                    repr(lv_load_area)))
 
         lv_nominal_voltage = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
 
@@ -308,16 +309,15 @@ class NetworkDingo:
                 id_db=id,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(row['geom']),
-                population=0 if isnan(row['population']) else int(
-                    row['population']),
+                population=0 if isnan(row['population']) else int(row['population']),
                 peak_load_residential=row['peak_load_residential'],
                 peak_load_retail=row['peak_load_retail'],
                 peak_load_industrial=row['peak_load_industrial'],
                 peak_load_agricultural=row['peak_load_agricultural'],
                 peak_load=(row['peak_load_residential'] +
-                           row['peak_load_retail'] +
-                           row['peak_load_industrial'] +
-                           row['peak_load_agricultural']),
+                               row['peak_load_retail'] +
+                               row['peak_load_industrial'] +
+                               row['peak_load_agricultural']),
                 sector_count_residential=int(row['sector_count_residential']),
                 sector_count_retail=int(row['sector_count_retail']),
                 sector_count_industrial=int(row['sector_count_industrial']),
@@ -359,9 +359,8 @@ class NetworkDingo:
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
-            Database connection
-        mv_grid_districts_no : List of Integers
-            List of MV grid_districts/stations to be imported (if empty,
+               Database connection
+        mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
 
         See Also
@@ -464,7 +463,7 @@ class NetworkDingo:
         # load area
         lv_loads_threshold = cfg_dingo.get('mv_routing', 'load_area_threshold')
 
-        gw2kw = 10**6  # load in database is in GW -> scale to kW
+        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
 
         # build SQL query
         Session = sessionmaker(bind=conn)
@@ -568,9 +567,9 @@ class NetworkDingo:
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
-        #srid = '3035'
+        # srid = '3035'
 
-        gw2kw = 10**6  # load in database is in GW -> scale to kW
+        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
 
         # 1. filter grid districts of relevant load area
         Session = sessionmaker(bind=conn)
