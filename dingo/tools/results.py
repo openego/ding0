@@ -21,6 +21,11 @@ from dingo.tools import config as cfg_dingo
 from matplotlib import pyplot as plt
 import seaborn as sns
 
+# import DB interface from oemof
+import oemof.db as db
+from dingo.core import NetworkDingo
+#from dingo.core import to_dataframe
+
 
 def lv_grid_generators_bus_bar(nd):
     """
@@ -305,6 +310,56 @@ def concat_nd_pickles(self, mv_grid_districts):
         'results', 'mvgd_edges_stats_{0}-{1}.csv'.format(
             mv_grid_districts[0], mv_grid_districts[-1])),
         index=False)
+
+########################################################
+def init_file(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
+    '''Runs dingo over the districtis selected in mv_grid_districts and writes the result in filename.
+
+    Parameters
+    ----------
+    mv_grid_districts: :any:`list` of :obj:`int`
+        Districts IDs: Defaults to [3545]
+    filename: str
+        Defaults to 'dingo_tests_grids_1.pkl'
+
+    '''
+    print('\n########################################')
+    print('  Running dingo for district', mv_grid_districts)
+    # database connection
+    conn = db.connection(section='oedb')
+
+    # instantiate new dingo network object
+    nd = NetworkDingo(name='network')
+
+    # run DINGO on selected MV Grid District
+    nd.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
+
+    # export grid to file (pickle)
+    print('\n########################################')
+    filename = 'dingo/tools/'+filename
+    print('  Saving result in ', filename)
+    save_nd_to_pickle(nd, filename=filename)
+
+    conn.close()
+
+if __name__ == "__main__":
+    #init_file()
+    nw = load_nd_from_pickle(filename='dingo/tools/dingo_tests_grids_1.pkl')
+    nodes_df, edges_df = nw.to_dataframe()
+    #print(nodes_df)
+    #print(edges_df)
+
+    #stats = calculate_mvgd_stats(nodes_df, edges_df)
+    #print(stats)
+
+    #test = nodes_df.groupby('type')
+    #print(test.size())
+
+    generators = ['wind', 'solar', 'biomass', 'run_of_river', 'gas',
+                  'geothermal']
+
+    mv_generation = nodes_df[nodes_df['type'].isin(generators)]#.groupby(['grid_id', 'type'])['generation_capacity'].sum()
+    print(mv_generation)
 
 
 # TODO: old code, that may is used for re-implementation, @gplssm
