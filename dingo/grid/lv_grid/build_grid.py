@@ -662,7 +662,8 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                                       branch_no=branch_no + branch_count_sum,
                                       load_no=house_branch,
                                       peak_load=average_load,
-                                      consumption=average_consumption)
+                                      consumption={
+                                          'residential': average_consumption})
 
                 # add lv_load to graph
                 lvgd.lv_grid.add_load(lv_load)
