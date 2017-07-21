@@ -1,4 +1,4 @@
-sphinx-rtd-theme
+sphinx_rtd_theme
 numpy
 psycopg2
 matplotlib
@@ -9,5 +9,4 @@ geopy
 pyproj
 egoio
 pandas
-egopowerflow
 mock

@@ -23,6 +23,7 @@ def adapt_numpy_int64(numpy_int64):
 
     References
     ----------
+    
     .. [1] http://initd.org/psycopg/docs/advanced.html#adapting-new-python-types-to-sql-syntax
     """
     return AsIs(numpy_int64)

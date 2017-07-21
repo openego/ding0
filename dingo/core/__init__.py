@@ -27,6 +27,7 @@ from dingo.flexopt.reinforce_grid import *
 
 import os
 import logging
+
 import pandas as pd
 import random
 import time
@@ -37,6 +38,7 @@ from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+import subprocess
 
 logger = logging.getLogger('dingo')
 
@@ -46,10 +48,8 @@ package_path = dingo.__path__[0]
 class NetworkDingo:
     """ Defines the DINGO Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.
-
     Parameters
     ----------
-
     """
 
     def __init__(self, **kwargs):
@@ -298,7 +298,9 @@ class NetworkDingo:
 
         # There's no LVGD for current LA, see #155 for details
         if len(lv_grid_districts) == 0:
-            raise ValueError('Load Area {} has no LVGD - please re-open #155'.format(repr(lv_load_area)))
+            raise ValueError(
+                'Load Area {} has no LVGD - please re-open #155'.format(
+                    repr(lv_load_area)))
 
         lv_nominal_voltage = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
 
@@ -320,7 +322,14 @@ class NetworkDingo:
                 sector_count_residential=int(row['sector_count_residential']),
                 sector_count_retail=int(row['sector_count_retail']),
                 sector_count_industrial=int(row['sector_count_industrial']),
-                sector_count_agricultural=int(row['sector_count_agricultural']))
+                sector_count_agricultural=int(row['sector_count_agricultural']),
+                sector_consumption_residential=row[
+                    'sector_consumption_residential'],
+                sector_consumption_retail=row['sector_consumption_retail'],
+                sector_consumption_industrial=row[
+                    'sector_consumption_industrial'],
+                sector_consumption_agricultural=row[
+                    'sector_consumption_agricultural'])
 
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDingo(network=self,
@@ -351,9 +360,8 @@ class NetworkDingo:
         Parameters
         ----------
         conn : sqlalchemy.engine.base.Connection object
-            Database connection
-        mv_grid_districts_no : List of Integers
-            List of MV grid_districts/stations to be imported (if empty,
+               Database connection
+        mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
 
         See Also
@@ -456,7 +464,7 @@ class NetworkDingo:
         # load area
         lv_loads_threshold = cfg_dingo.get('mv_routing', 'load_area_threshold')
 
-        gw2kw = 10**6  # load in database is in GW -> scale to kW
+        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
 
         # build SQL query
         Session = sessionmaker(bind=conn)
@@ -560,38 +568,54 @@ class NetworkDingo:
         # get dingos' standard CRS (SRID)
         srid = str(int(cfg_dingo.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
-        #srid = '3035'
+        # srid = '3035'
 
-        gw2kw = 10**6  # load in database is in GW -> scale to kW
+        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
 
         # 1. filter grid districts of relevant load area
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        lv_grid_districs_sqla = session.query(self.orm['orm_lv_grid_district'].mvlv_subst_id,
-                                              self.orm['orm_lv_grid_district'].la_id,
-                                              self.orm['orm_lv_grid_district'].zensus_sum.label('population'),
-                                              (self.orm['orm_lv_grid_district'].sector_peakload_residential * gw2kw).
-                                                label('peak_load_residential'),
-                                              (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
-                                                label('peak_load_retail'),
-                                              (self.orm['orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
-                                                label('peak_load_industrial'),
-                                              (self.orm['orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
-                                                label('peak_load_agricultural'),
-                                              ((self.orm['orm_lv_grid_district'].sector_peakload_residential
-                                                          + self.orm['orm_lv_grid_district'].sector_peakload_retail
-                                                          + self.orm['orm_lv_grid_district'].sector_peakload_industrial
-                                                          + self.orm['orm_lv_grid_district'].sector_peakload_agricultural)
-                                                         * gw2kw).label('peak_load'),
-                                              func.ST_AsText(func.ST_Transform(
-                                                self.orm['orm_lv_grid_district'].geom, srid)).label('geom'),
-                                              self.orm['orm_lv_grid_district'].sector_count_residential,
-                                              self.orm['orm_lv_grid_district'].sector_count_retail,
-                                              self.orm['orm_lv_grid_district'].sector_count_industrial,
-                                              self.orm['orm_lv_grid_district'].sector_count_agricultural,
-                                              self.orm['orm_lv_grid_district'].mvlv_subst_id). \
-            filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(lv_stations.index.tolist())). \
+        lv_grid_districs_sqla = session.query(
+            self.orm['orm_lv_grid_district'].mvlv_subst_id,
+            self.orm['orm_lv_grid_district'].la_id,
+            self.orm['orm_lv_grid_district'].zensus_sum.label('population'),
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_residential * gw2kw).
+                label('peak_load_residential'),
+            (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
+                label('peak_load_retail'),
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
+                label('peak_load_industrial'),
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
+                label('peak_load_agricultural'),
+            ((self.orm['orm_lv_grid_district'].sector_peakload_residential
+              + self.orm['orm_lv_grid_district'].sector_peakload_retail
+              + self.orm['orm_lv_grid_district'].sector_peakload_industrial
+              + self.orm['orm_lv_grid_district'].sector_peakload_agricultural)
+             * gw2kw).label('peak_load'),
+            func.ST_AsText(func.ST_Transform(
+                self.orm['orm_lv_grid_district'].geom, srid)).label('geom'),
+            self.orm['orm_lv_grid_district'].sector_count_residential,
+            self.orm['orm_lv_grid_district'].sector_count_retail,
+            self.orm['orm_lv_grid_district'].sector_count_industrial,
+            self.orm['orm_lv_grid_district'].sector_count_agricultural,
+            (self.orm[
+                 'orm_lv_grid_district'].sector_consumption_residential * gw2kw). \
+                label('sector_consumption_residential'),
+            (self.orm['orm_lv_grid_district'].sector_consumption_retail * gw2kw). \
+                label('sector_consumption_retail'),
+            (self.orm[
+                'orm_lv_grid_district'].sector_consumption_industrial * gw2kw). \
+                label('sector_consumption_industrial'),
+            (self.orm[
+                'orm_lv_grid_district'].sector_consumption_agricultural * gw2kw). \
+                label('sector_consumption_agricultural'),
+            self.orm['orm_lv_grid_district'].mvlv_subst_id). \
+            filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(
+            lv_stations.index.tolist())). \
             filter(self.orm['version_condition_lvgd'])
 
         # read data from db
@@ -1596,6 +1620,63 @@ class NetworkDingo:
                 if not lv_load_area.is_aggregated:
                     for lv_grid_district in lv_load_area.lv_grid_districts():
                         lv_grid_district.lv_grid.reinforce_grid()
+
+    @property
+    def metadata(self, run_id=None):
+        """Provide metadata on a Dingo run
+
+        Parameters
+        ----------
+        run_id: str, (defaults to current date)
+            Distinguish multiple versions of Dingo data by a `run_id`. If not
+            set it defaults to current date in the format YYYYMMDDhhmmss
+
+        Returns
+        -------
+        dict
+            Metadata
+        """
+
+        # Get latest version and/or git commit hash
+        try:
+            version = subprocess.check_output(
+                ["git", "describe", "--tags", "--always"]).decode('utf8')
+        except:
+            version = None
+
+        # Collect names of database table used to run Dingo and data version
+        if self.config['input_data_source']['input_data'] == 'versioned':
+            data_version = self.config['versioned']['version']
+            database_tables = self.config['versioned']
+        elif self.config['input_data_source']['input_data'] == 'model_draft':
+            data_version = 'model_draft'
+            database_tables = self.config['model_draft']
+        else:
+            data_version = 'unknown'
+            database_tables = 'unknown'
+
+        # Collect assumptions
+        assumptions = {**self.config['assumptions'],
+                       **self.config['mv_connect'],
+                       **self.config['mv_routing'],
+                       **self.config['mv_routing_tech_constraints']}
+
+        # Determine run_id if not set
+        if not run_id:
+            run_id = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        # Assing data to dict
+        metadata = dict(
+            version=version,
+            mv_grid_districts=self._mv_grid_districts,
+            database_tables=database_tables,
+            data_version=data_version,
+            assumptions=assumptions,
+            run_id=run_id
+        )
+
+        return metadata
+
 
     def __repr__(self):
         return str(self.name)

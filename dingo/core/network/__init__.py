@@ -226,8 +226,9 @@ class GridDingo:
         # get edges with attributes
         edges = nx.get_edge_attributes(self._graph, 'branch').items()
 
+        #print(edges)
         # sort them according to connected nodes
-        edges_sorted = sorted(list(edges), key=lambda _: repr(_[0]))
+        edges_sorted = sorted(list(edges), key=lambda _: (''.join(sorted([repr(_[0][0]),repr(_[0][1])]))))
 
         for edge in edges_sorted:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
@@ -527,6 +528,7 @@ class LoadDingo:
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self.peak_load = kwargs.get('peak_load', None)
+        self.consumption = kwargs.get('consumption', None)
 
         self.id_db = self.grid.loads_count() + 1
 

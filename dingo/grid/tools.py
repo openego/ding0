@@ -29,6 +29,7 @@ def cable_type(nom_power, nom_voltage, avail_cables):
         Nominal voltage in kV
     avail_cables : pandas.DataFrame
         Available cable types including it's electrical parameters
+    
     Returns
     -------
     cable_type : pandas.DataFrame

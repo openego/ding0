@@ -256,6 +256,18 @@ class LVGridDistrictDingo(RegionDingo):
         self.sector_count_agricultural = kwargs.get('sector_count_agricultural',
                                                     None)
 
+        self.sector_consumption_residential = kwargs.get(
+            'sector_consumption_residential',
+            None)
+        self.sector_consumption_retail = kwargs.get('sector_consumption_retail',
+                                                    None)
+        self.sector_consumption_industrial = kwargs.get(
+            'sector_consumption_industrial',
+            None)
+        self.sector_consumption_agricultural = kwargs.get(
+            'sector_consumption_agricultural',
+            None)
+
     @property
     def network(self):
         return self.lv_load_area.network

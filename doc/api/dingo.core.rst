@@ -1,5 +1,10 @@
-dingo.core package
-==================
+dingo\.core package
+===================
+
+.. automodule:: dingo.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Subpackages
 -----------

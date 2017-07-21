@@ -2,7 +2,6 @@ dingo
 =====
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 7
 
    dingo
-   setup

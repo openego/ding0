@@ -248,6 +248,25 @@ def select_grid_model_ria(lvgd, sector):
                     count=count_sector_areas))
             grid_model = None
 
+    # add consumption to grid_model for assigning it to the load object
+    # consumption is given per sector and per individual load
+    if sector == 'retail/industrial':
+        grid_model['consumption'] = {
+            'retail': lvgd.sector_consumption_retail / (
+                grid_model['full_branches'] *
+                grid_model['max_loads_per_branch'] +
+                grid_model['remaining_loads']),
+            'industrial': lvgd.sector_consumption_industrial / (
+                grid_model['full_branches'] *
+                grid_model['max_loads_per_branch'] +
+                grid_model['remaining_loads'])}
+    elif sector == 'agricultural':
+        grid_model['consumption'] = {
+            'agricultural': lvgd.sector_consumption_agricultural / (
+                grid_model['full_branches'] *
+                grid_model['max_loads_per_branch'] +
+                grid_model['remaining_loads'])}
+
     return grid_model
 
 
@@ -363,7 +382,8 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         lv_load = LVLoadDingo(grid=lvgd.lv_grid,
                               branch_no=branch_no,
                               load_no=load_no,
-                              peak_load=val['single_peak_load'])
+                              peak_load=val['single_peak_load'],
+                              consumption=val['consumption'])
 
         # add lv_load to graph
         lvgd.lv_grid.add_load(lv_load)
@@ -596,6 +616,9 @@ def build_lv_graph_residential(lvgd, selected_string_df):
     average_load = lvgd.peak_load_residential / \
                    houses_connected
 
+    average_consumption = lvgd.sector_consumption_residential / \
+                   houses_connected
+
     hh_branch = 0
 
     # iterate over each type of branch
@@ -638,7 +661,9 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                                       string_id=i,
                                       branch_no=branch_no + branch_count_sum,
                                       load_no=house_branch,
-                                      peak_load=average_load)
+                                      peak_load=average_load,
+                                      consumption={
+                                          'residential': average_consumption})
 
                 # add lv_load to graph
                 lvgd.lv_grid.add_load(lv_load)

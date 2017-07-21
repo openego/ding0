@@ -25,6 +25,9 @@ Base = declarative_base()
 # ================ DEFINITIONS FOR EXPORTED DATA ===============
 class sqla_mv_grid_viz(Base):
     """ SQLAlchemy table definition for the export of MV grids for visualization purposes
+    
+    Notes
+    -----
     """
 
     __tablename__ = 'ego_grid_mv_visualization_bunch'

@@ -638,14 +638,7 @@ class MVGridDingo(GridDingo):
         """
 
         if method is 'db':
-            # export grid data to db (be ready for power flow analysis)
-            self.export_to_pypsa(session, method=method)
-
-            # run the power flow problem
-            pypsa_io.run_powerflow(session, export_pypsa_dir=export_pypsa_dir)
-
-            # import results from db
-            self.import_powerflow_results(session)
+            raise NotImplementedError("Please use 'onthefly'.")
 
         elif method is 'onthefly':
             components, components_data = self.export_to_pypsa(session, method)

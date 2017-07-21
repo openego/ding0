@@ -29,15 +29,30 @@ logger = logging.getLogger('dingo')
 
 
 def reinforce_branches_current(grid, crit_branches):
+    #TODO: finish docstring
     """ Reinforce MV or LV grid by installing a new branch/line type
+    
+    Parameters
+    ----------
+        grid : GridDingo 
+            Grid identifier.
+        crit_branches : dict
+            Dict of critical branches with max. relative overloading.
 
-    Args:
-        grid: GridDingo object
-        crit_branches; Dict of critical branches with max. relative overloading
-
-    Notes:
-        The branch type to be installed is determined per branch using the rel. overloading. According to Ackermann
+    Returns
+    -------
+    type 
+        #TODO: Description of return. Change type in the previous line accordingly
+        
+    Notes
+    -----
+        The branch type to be installed is determined per branch using the rel. overloading. According to [2]_ 
         only cables are installed.
+        
+    See Also
+    --------
+    dingo.flexopt.check_tech_constraints.check_load :
+    dingo.flexopt.reinforce_measures.reinforce_branches_voltage :
     """
     # load cable data, file_names and parameter
     branch_parameters = grid.network.static_data['MV_cables']
@@ -287,10 +302,15 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
 def new_substation(grid):
     """ Reinforce MV grid by installing a new primary substation opposite to the existing one
 
-    Args:
-        grid: MVGridDingo object
+    Parameters
+    ----------
+        grid : MVGridDingo 
+            MV Grid identifier.
 
-    Returns:
+    Returns
+    -------
+    type 
+        #TODO: Description of return. Change type in the previous line accordingly
 
     """
 

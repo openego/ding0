@@ -24,6 +24,7 @@ import oemof.db as db
 from dingo.core import NetworkDingo
 from dingo.tools.logger import setup_logger
 from dingo.tools.results import save_nd_to_pickle
+import logging
 
 # define logger
 logger = setup_logger()
@@ -45,8 +46,8 @@ nd.run_dingo(conn=conn,
 
 # export grids to database
 nd.control_circuit_breakers(mode='close')
-nd.export_mv_grid(conn, mv_grid_districts)
-nd.export_mv_grid_new(conn, mv_grid_districts)
+# nd.export_mv_grid(conn, mv_grid_districts)
+# nd.export_mv_grid_new(conn, mv_grid_districts)
 
 conn.close()
 

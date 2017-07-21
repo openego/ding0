@@ -77,6 +77,14 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
                                   'shp': line_shp,
                                   'dist': node_shp.distance(line_shp)}}
 
+            # remove branch if it is too close to a node
+            tol = 10**-4
+            if (
+                    abs(conn_objects['s1']['dist'] - conn_objects['b']['dist']) < tol
+                 or abs(conn_objects['s2']['dist'] - conn_objects['b']['dist']) < tol
+               ):
+                del conn_objects['b']
+
             # remove MV station as possible connection point
             if isinstance(conn_objects['s1']['obj'], MVStationDingo):
                 del conn_objects['s1']

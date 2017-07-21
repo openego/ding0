@@ -19,7 +19,8 @@ DIstribution Network GeneratOr -- A tool to generate synthetic medium and low vo
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 7
+   :titlesonly:
 
    welcome
    getting_started
@@ -29,7 +30,7 @@ DIstribution Network GeneratOr -- A tool to generate synthetic medium and low vo
 
    development
    whatsnew
-   api
+   dingo API <api/modules>
 
 
 
