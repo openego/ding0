@@ -24,6 +24,7 @@ import pandas as pd
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo, results, db
 import json
+from datetime import datetime
 
 plt.close('all')
 cfg_dingo.load_config('config_db_tables.cfg')
@@ -57,7 +58,8 @@ def create_results_dirs(base_path):
         os.mkdir(os.path.join(base_path, 'log'))
 
 
-def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=None):
+def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
+                                base_path=None):
     """
     Perform dingo run on given grid districts
 
@@ -65,6 +67,9 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
     ----------
     mv_grid_districs : list
         Integers describing grid districts
+    run_id: str
+        Identifier for a run of Dingo. For example it is used to create a
+        subdirectory of os.path.join(`base_path`, 'results')
     failsafe : bool
         Setting to True enables failsafe mode where corrupt grid districts
         (mostly due to data issues) are reported and skipped. Report is to be
@@ -102,9 +107,7 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
 
     for mvgd in mv_grid_districts:
         # instantiate dingo  network object
-        nd = NetworkDingo(name='network')
-
-        run_id = nd.metadata['run_id']
+        nd = NetworkDingo(name='network', run_id=run_id)
 
         if not os.path.exists(os.path.join(base_path, run_id)):
             os.mkdir(os.path.join(base_path, run_id))
@@ -142,6 +145,7 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
         # Merge metadata of multiple runs
         if 'metadata' not in locals():
             metadata = nd.metadata
+
         else:
             if isinstance(mvgd, list):
                 metadata['mv_grid_districts'].extend(mvgd)
@@ -150,7 +154,8 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
 
 
     # Save metadata to disk
-    with open(os.path.join(base_path, run_id), 'w') as f:
+    with open(os.path.join(base_path, run_id, 'Dingo_{}.meta'.format(run_id)),
+              'w') as f:
         json.dump(metadata, f)
 
     # report on unsuccessful runs
@@ -172,6 +177,8 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
 
 if __name__ == '__main__':
     base_path='/home/guido/mnt/rli-daten/Dingo/'
+    # set run_id to current timestamp
+    run_id = datetime.now().strftime("%Y%m%d%H%M%S")
 
     # create directories for local results data
     create_results_dirs(base_path)
@@ -180,4 +187,7 @@ if __name__ == '__main__':
     mv_grid_districts = list(range(1729, 1732))
 
     # run grid districts
-    run_multiple_grid_districts(mv_grid_districts, failsafe=True, base_path=base_path)
+    run_multiple_grid_districts(mv_grid_districts,
+                                run_id,
+                                failsafe=True,
+                                base_path=base_path)
