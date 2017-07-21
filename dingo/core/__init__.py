@@ -54,6 +54,7 @@ class NetworkDingo:
 
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', None)
+        self._run_id = kwargs.get('run_id', None)
         self._mv_grid_districts = []
 
         self._config = self.import_config()
@@ -1665,14 +1666,18 @@ class NetworkDingo:
         if not run_id:
             run_id = datetime.now().strftime("%Y%m%d%H%M%S")
 
+        # Set instance attribute run_id
+        if not self._run_id:
+            self._run_id = run_id
+
         # Assing data to dict
         metadata = dict(
             version=version,
-            mv_grid_districts=self._mv_grid_districts,
+            mv_grid_districts=[int(_.id_db) for _ in self._mv_grid_districts],
             database_tables=database_tables,
             data_version=data_version,
             assumptions=assumptions,
-            run_id=run_id
+            run_id=self._run_id
         )
 
         return metadata
