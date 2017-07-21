@@ -133,6 +133,12 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
 
                 continue
 
+        # Merge metadata of multiple runs
+        if 'metadata' not in locals():
+            metadata = nd.metadata
+        else:
+            metadata['mv_grid_districts'].extend(mvgd)
+
     # report on unsuccessful runs
     corrupt_grid_districts.to_csv(
         os.path.join(

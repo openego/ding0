@@ -1668,7 +1668,7 @@ class NetworkDingo:
         # Assing data to dict
         metadata = dict(
             version=version,
-            mv_grid_districts = self._mv_grid_districts,
+            mv_grid_districts=self._mv_grid_districts,
             database_tables=database_tables,
             data_version=data_version,
             assumptions=assumptions,
