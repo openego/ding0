@@ -23,6 +23,7 @@ import pandas as pd
 
 from dingo.core import NetworkDingo
 from dingo.tools import config as cfg_dingo, results, db
+import json
 
 plt.close('all')
 cfg_dingo.load_config('config_db_tables.cfg')
@@ -103,13 +104,18 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
         # instantiate dingo  network object
         nd = NetworkDingo(name='network')
 
+        run_id = nd.metadata['run_id']
+
+        if not os.path.exists(os.path.join(base_path, run_id)):
+            os.mkdir(os.path.join(base_path, run_id))
+
         if not failsafe:
             # run DINGO on selected MV Grid District
             msg = nd.run_dingo(conn=conn,
                          mv_grid_districts_no=[mvgd])
 
             # save results
-            results.save_nd_to_pickle(nd, os.path.join(base_path, 'results'))
+            results.save_nd_to_pickle(nd, os.path.join(base_path, run_id))
         else:
             # try to perform dingo run on grid district
             try:
@@ -124,7 +130,7 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
                 # if successful, save results
                 else:
                     results.save_nd_to_pickle(nd, os.path.join(base_path,
-                                                               'results'))
+                                                               run_id))
             except Exception as e:
                 corrupt_grid_districts = corrupt_grid_districts.append(
                     pd.Series({'id': mvgd,
@@ -137,13 +143,21 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
         if 'metadata' not in locals():
             metadata = nd.metadata
         else:
-            metadata['mv_grid_districts'].extend(mvgd)
+            if isinstance(mvgd, list):
+                metadata['mv_grid_districts'].extend(mvgd)
+            else:
+                metadata['mv_grid_districts'].append(mvgd)
+
+
+    # Save metadata to disk
+    with open(os.path.join(base_path, run_id), 'w') as f:
+        json.dump(metadata, f)
 
     # report on unsuccessful runs
     corrupt_grid_districts.to_csv(
         os.path.join(
             base_path,
-            'info',
+            run_id,
             'corrupt_mv_grid_districts.txt'),
         index=False,
         float_format='%.0f')
@@ -157,12 +171,13 @@ def run_multiple_grid_districts(mv_grid_districts, failsafe=False, base_path=Non
 
 
 if __name__ == '__main__':
+    base_path='/home/guido/mnt/rli-daten/Dingo/'
 
     # create directories for local results data
-    create_results_dirs(BASEPATH)
+    create_results_dirs(base_path)
 
     # define grid district by its id (int)
-    mv_grid_districts = list(range(1, 3608))
+    mv_grid_districts = list(range(1729, 1732))
 
     # run grid districts
-    run_multiple_grid_districts(mv_grid_districts, failsafe=True, base_path='/home/guido/git-repos/dingo/tmp_dingo')
+    run_multiple_grid_districts(mv_grid_districts, failsafe=True, base_path=base_path)
