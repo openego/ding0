@@ -38,6 +38,7 @@ from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+import subprocess
 
 logger = logging.getLogger('dingo')
 
@@ -1619,6 +1620,63 @@ class NetworkDingo:
                 if not lv_load_area.is_aggregated:
                     for lv_grid_district in lv_load_area.lv_grid_districts():
                         lv_grid_district.lv_grid.reinforce_grid()
+
+    @property
+    def metadata(self, run_id=None):
+        """Provide metadata on a Dingo run
+
+        Parameters
+        ----------
+        run_id: str, (defaults to current date)
+            Distinguish multiple versions of Dingo data by a `run_id`. If not
+            set it defaults to current date in the format YYYYMMDDhhmmss
+
+        Returns
+        -------
+        dict
+            Metadata
+        """
+
+        # Get latest version and/or git commit hash
+        try:
+            version = subprocess.check_output(
+                ["git", "describe", "--tags", "--always"]).decode('utf8')
+        except:
+            version = None
+
+        # Collect names of database table used to run Dingo and data version
+        if self.config['input_data_source']['input_data'] == 'versioned':
+            data_version = self.config['versioned']['version']
+            database_tables = self.config['versioned']
+        elif self.config['input_data_source']['input_data'] == 'model_draft':
+            data_version = 'model_draft'
+            database_tables = self.config['model_draft']
+        else:
+            data_version = 'unknown'
+            database_tables = 'unknown'
+
+        # Collect assumptions
+        assumptions = {**self.config['assumptions'],
+                       **self.config['mv_connect'],
+                       **self.config['mv_routing'],
+                       **self.config['mv_routing_tech_constraints']}
+
+        # Determine run_id if not set
+        if not run_id:
+            run_id = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        # Assing data to dict
+        metadata = dict(
+            version=version,
+            mv_grid_districts = self._mv_grid_districts,
+            database_tables=database_tables,
+            data_version=data_version,
+            assumptions=assumptions,
+            run_id=run_id
+        )
+
+        return metadata
+
 
     def __repr__(self):
         return str(self.name)
