@@ -24,7 +24,10 @@ import seaborn as sns
 # import DB interface from oemof
 import oemof.db as db
 from dingo.core import NetworkDingo
-#from dingo.core import to_dataframe
+
+from shapely.ops import transform
+import pyproj
+from functools import partial
 
 
 def lv_grid_generators_bus_bar(nd):
@@ -60,84 +63,27 @@ def lv_grid_generators_bus_bar(nd):
 
     return lv_stats
 
-
-def calculate_mvgd_stats(nodes_df, edges_df):
-    """
-    Statistics for each MV grid district
-
-    Parameters
-    ----------
-    nodes_df : pandas.DataFrame
-        Statistics on nodes of a MVGD
-    edges_df : pandas.DataFrame
-        Statistics on edges of a MVGD
-
-    Returns
-    -------
-    mvgd_stats : pandas.DataFrame
-        Dataframe containing several statistical numbers about MVGD
-
-    Notes
-    -----
-    Power data (i.e. peak load/ generation capacity) is returned in MW
-    """
-
-    generators = ['wind', 'solar', 'biomass', 'run_of_river', 'gas',
-                  'geothermal']
-
-    mv_generation = nodes_df[nodes_df['type'].isin(generators)].groupby(['grid_id', 'type'])[
-        'generation_capacity'].sum()
-
-    # get peak load/generation capacity in kW
-    mvgd_stats = nodes_df.groupby('grid_id').sum()[
-                     ['peak_load', 'generation_capacity']]
-
-    # add generation capacity per generator type in MV grid
-    mv_generation = nodes_df[nodes_df['type'].isin(generators)].groupby(
-        ['grid_id', 'type'])['generation_capacity'].sum().to_frame().unstack(level=-1)
-    mv_generation.columns = [_[1] if isinstance(_, tuple) else _
-                             for _ in mv_generation.columns]
-    mvgd_stats = pd.concat([mvgd_stats, mv_generation], axis=1)
-
-    # Cumulative generation capacity in MV
-    mvgd_stats['MV generation capacity'] = mvgd_stats[
-        list(mvgd_stats.columns[mvgd_stats.columns.isin(generators)])].sum(
-        axis=1)
-
-    # Cumulative generation capacity of subjacent LV grid
-    stations = nodes_df[nodes_df['type'] == 'LV Station']
-    mvgd_stats['LV generation capacity'] = stations['generation_capacity'].sum()
-
-    # Cumulative peak load of subjacent LV grid
-    mvgd_stats['LV peak load'] = stations['peak_load'].sum()
-
-    # Nominal voltage of MV grid district
-    mvgd_stats['v_nom'] = nodes_df.groupby('grid_id').mean()['v_nom']
-
-    # Cable and overhead lines lengths
-    cable_line_km = edges_df['length'].groupby(
-        [edges_df['grid_id'], edges_df['type_kind']]).sum().unstack(
-        level=-1).fillna(0)
-    cable_line_km.columns.name = None
-    mvgd_stats[['km_cable', 'km_line']] = cable_line_km
-
-    # Amount of rings
-    mvgd_stats['rings'] = nodes_df.groupby('grid_id').mean()['rings']
-
-    # Number of aggr. LA, stations, generators, etc. connected at MV level
-    type = nodes_df.groupby(['grid_id', 'type']).count()['node_id'].unstack(
-        level=-1).fillna(0)
-    type.columns.name = None
-    type.columns = [_ + ' count' for _ in type.columns]
-    mvgd_stats = pd.concat([mvgd_stats, type], axis=1)
-
-    return mvgd_stats
-
+#here original position of function mvgdstats
 
 def save_nd_to_pickle(nd, path='', filename=None):
     """
     Use pickle to save the whole nd-object to disc
 
+    Parameters
+    ----------
+    nd : NetworkDingo
+        Dingo grid container object
+    path : str
+        Absolute or relative path where pickle should be saved. Default is ''
+        which means pickle is save to PWD
+    """
+
+    abs_path = os.path.abspath(path)
+
+
+def save_nd_to_pickle(nd, path='', filename=None):
+    """
+    Use pickle to save the whole nd-object to disc
     Parameters
     ----------
     nd : NetworkDingo
@@ -311,6 +257,195 @@ def concat_nd_pickles(self, mv_grid_districts):
             mv_grid_districts[0], mv_grid_districts[-1])),
         index=False)
 
+####################################################
+def calculate_mvgd_stats(nw):
+    """
+    Statistics for each MV grid district
+
+    Parameters
+    ----------
+    nodes_df : pandas.DataFrame
+        Statistics on nodes of a MVGD
+    edges_df : pandas.DataFrame
+        Statistics on edges of a MVGD
+
+    Returns
+    -------
+    mvgd_stats : pandas.DataFrame
+        Dataframe containing several statistical numbers about MVGD
+
+    Notes
+    -----
+    Power data (i.e. peak load/ generation capacity) is returned in MW
+    """
+    #rescue data to dataframe
+    nodes_df, edges_df = nw.to_dataframe()
+
+    #for district in nw.mv_grid_districts():
+    #    print(district._lv_load_areas)
+    #    print('\n')
+    #    print(district.mv_grid.station().transformers())
+    #    print('\n')
+    #    print(district.mv_grid._graph.nodes())
+    #    print('\n')
+    #    print(district._lv_load_area_groups)
+    #    print('\n')
+    #    print(district.lv_load_area_groups_count())
+    #    print('\n')
+    #    print(district.peak_load)
+    #    print('\n')
+    #    print(district.peak_load_satellites)
+    #    print('\n')
+    #    print(district.peak_load_aggregated)
+    #    #print('\n')
+    #    #print(district.mv_grid._graph.edges())
+    #    print('\n')
+    #    print(district.mv_grid._rings)#
+
+    #    for ring in district.mv_grid._rings:
+    #        #print(ring.branches())
+    #        counter = 0
+    #        for branch in ring.branches():
+    #            #print('\n')
+    #            #print(branch)
+    #            counter = counter+1
+    #        print(counter)
+
+    ###############
+    #MV Generators
+    generators = ['wind', 'solar', 'biomass', 'run_of_river', 'gas',
+                  'geothermal']
+    # get peak load/generation capacity in kW
+    mvgd_stats = nodes_df.groupby('grid_id').sum()[['peak_load', 'generation_capacity']]
+
+    # add generation capacity per generator type in MV grid
+    mv_generation = nodes_df[nodes_df['type'].isin(generators)].groupby(
+        ['grid_id', 'type'])['generation_capacity'].sum().to_frame().unstack(level=-1)
+    mv_generation.columns = [_[1] if isinstance(_, tuple) else _
+                             for _ in mv_generation.columns]
+    mvgd_stats = pd.concat([mvgd_stats, mv_generation], axis=1)
+
+
+    # Cumulative generation capacity in MV
+    mvgd_stats['MV generation capacity'] = mvgd_stats[
+        list(mvgd_stats.columns[mvgd_stats.columns.isin(generators)])].sum(
+        axis=1)
+
+    # Mean Nominal voltage of MV grid district
+    mvgd_stats['v_nom'] = nodes_df.groupby('grid_id').mean()['v_nom']
+
+    ###############
+    #LV nodes
+    stations = nodes_df[nodes_df['type'] == 'LV Station']
+    # Cumulative generation capacity of subjacent LV grids
+    mvgd_stats['LV generation capacity'] = stations['generation_capacity'].sum()
+
+    # Cumulative peak load of subjacent LV grids
+    mvgd_stats['LV peak load'] = stations['peak_load'].sum()
+
+    ###############
+    # Edges
+    # Cable and overhead lines lengths
+    cable_line_km = edges_df['length'].groupby(
+        [edges_df['grid_id'], edges_df['type_kind']]).sum().unstack(
+        level=-1).fillna(0)
+    cable_line_km.columns.name = None
+
+    cable_line_km['cable_%'] = 100*cable_line_km['cable']/(cable_line_km['cable'] + cable_line_km['line'])
+    cable_line_km['line_%'] = 100*cable_line_km['line']/(cable_line_km['cable'] + cable_line_km['line'])
+    mvgd_stats[['km_cable', 'km_line','cable_%','line_%']] = cable_line_km
+
+    # N° of rings
+    mvgd_stats['rings'] = nodes_df.groupby('grid_id').mean()['rings']
+
+    ###############
+    # Number of aggr. LA, stations, generators, etc. connected at MV level
+    type = nodes_df.groupby(['grid_id', 'type']).count()['node_id'].unstack(
+        level=-1).fillna(0)
+    type.columns.name = None
+    type.columns = [_ + ' count' for _ in type.columns]
+    mvgd_stats = pd.concat([mvgd_stats, type], axis=1)
+
+    ##############################
+    # LV Data and Data that is not in the dataframes
+    district_info_dict = {}
+    for district in nw.mv_grid_districts():
+        # transformers in main station
+        n_trafos = 0
+        Acc_smax_a = 0
+        for trafo in district.mv_grid.station().transformers():
+            n_trafos+=1
+            Acc_smax_a += trafo.s_max_a
+        district_info_dict[district.mv_grid.id_db] = {'N HV/MV trafos':n_trafos, 'Acc Smax HV/MV Trafos':Acc_smax_a}
+
+        #Load Areas
+        LA_pop = 0
+        LA_agg = 0
+        LA_sat = 0
+        LA_nor = 0
+        LA_agg_peakload = 0
+        LA_agg_pop = 0
+        LV_districts = 0
+        residential_peak_load = 0
+        retail_peak_load = 0
+        industrial_peak_load = 0
+        agricultural_peak_load = 0
+        LV_peak_generation = 0
+        for LA in district.lv_load_areas():
+            LV_districts += LA.lv_grid_districts_count()
+            LV_peak_generation += LA.peak_generation
+            if LA.is_satellite:
+                LA_sat += 1
+            elif LA.is_aggregated:
+                LA_agg += 1
+            else:
+                LA_nor += 1
+
+            for lv_district in LA.lv_grid_districts():
+                LA_pop =+ lv_district.population
+                if LA.is_aggregated:
+                    LA_agg_pop += lv_district.population
+                    LA_agg_peakload += lv_district.peak_load
+                residential_peak_load += lv_district.peak_load_residential
+                retail_peak_load += lv_district.peak_load_retail
+                industrial_peak_load += lv_district.peak_load_industrial
+                agricultural_peak_load += lv_district.peak_load_agricultural
+
+        district_info_dict[district.mv_grid.id_db].update({'LV LA satellite':LA_sat})
+        district_info_dict[district.mv_grid.id_db].update({'LV LA aggregated':LA_agg})
+        district_info_dict[district.mv_grid.id_db].update({'LV LA normal':LA_nor})
+        district_info_dict[district.mv_grid.id_db].update({'LV LA agg. population':LA_agg_pop})
+        district_info_dict[district.mv_grid.id_db].update({'LV LA agg. peakload':LA_agg_peakload})
+        district_info_dict[district.mv_grid.id_db].update({'LV LA groups':district.lv_load_area_groups_count()})
+        district_info_dict[district.mv_grid.id_db].update({'LV LA population':LA_pop})
+        district_info_dict[district.mv_grid.id_db].update({'LV districts':LV_districts})
+        district_info_dict[district.mv_grid.id_db].update({'LV Peak Load Residential':residential_peak_load})
+        district_info_dict[district.mv_grid.id_db].update({'LV Peak Load Retail':retail_peak_load})
+        district_info_dict[district.mv_grid.id_db].update({'LV Peak Load Industrial':industrial_peak_load})
+        district_info_dict[district.mv_grid.id_db].update({'LV Peak Load Agricultural':agricultural_peak_load})
+        district_info_dict[district.mv_grid.id_db].update({'LV Peak Load Total':residential_peak_load+agricultural_peak_load+retail_peak_load+industrial_peak_load})
+        district_info_dict[district.mv_grid.id_db].update({'LV Peak Generation':LV_peak_generation})
+
+        # geographic
+        #print(district.geo_data.area)
+
+        # ETRS (equidistant) to WGS84 (conformal) projection
+        #proj = partial(
+        #    pyproj.transform,
+            #pyproj.Proj(init='epsg:3035'),  # source coordinate system
+            #pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+        #    pyproj.Proj(init='epsg:4326'),  # source coordinate system
+        #    pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+        #district_geo = transform(proj, district.geo_data)
+        #print(district_geo.area)
+
+    districts_df = pd.DataFrame.from_dict(district_info_dict,orient='index')
+    districts_df = districts_df[sorted(districts_df.columns.tolist())]
+
+    mvgd_stats = pd.concat([mvgd_stats, districts_df], axis=1)
+    #print(mvgd_stats)
+
+    return mvgd_stats
 ########################################################
 def init_file(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
     '''Runs dingo over the districtis selected in mv_grid_districts and writes the result in filename.
@@ -336,7 +471,7 @@ def init_file(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
 
     # export grid to file (pickle)
     print('\n########################################')
-    filename = 'dingo/tools/'+filename
+    #filename = 'dingo/tools/'+filename
     print('  Saving result in ', filename)
     save_nd_to_pickle(nd, filename=filename)
 
@@ -344,22 +479,16 @@ def init_file(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
 
 if __name__ == "__main__":
     #init_file()
-    nw = load_nd_from_pickle(filename='dingo/tools/dingo_tests_grids_1.pkl')
+    nw = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
+
     nodes_df, edges_df = nw.to_dataframe()
     #print(nodes_df)
     #print(edges_df)
 
-    #stats = calculate_mvgd_stats(nodes_df, edges_df)
-    #print(stats)
+    stats = calculate_mvgd_stats(nw)
+    print(stats.T)
 
-    #test = nodes_df.groupby('type')
-    #print(test.size())
 
-    generators = ['wind', 'solar', 'biomass', 'run_of_river', 'gas',
-                  'geothermal']
-
-    mv_generation = nodes_df[nodes_df['type'].isin(generators)]#.groupby(['grid_id', 'type'])['generation_capacity'].sum()
-    print(mv_generation)
 
 
 # TODO: old code, that may is used for re-implementation, @gplssm

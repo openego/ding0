@@ -226,8 +226,9 @@ class GridDingo:
         # get edges with attributes
         edges = nx.get_edge_attributes(self._graph, 'branch').items()
 
+        #print(edges)
         # sort them according to connected nodes
-        edges_sorted = sorted(list(edges), key=lambda _: (''.join(sorted([repr(_[0][0]), repr(_[0][1])]))))
+        edges_sorted = sorted(list(edges), key=lambda _: (''.join(sorted([repr(_[0][0]),repr(_[0][1])]))))
 
         for edge in edges_sorted:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}

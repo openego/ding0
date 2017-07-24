@@ -563,9 +563,10 @@ def assign_line_results(grid, line_data):
     line_data.to_csv(os.path.join(package_path,
                                   'line_data_after.csv'))
 
+    decimal_places = 6
     for edge in edges:
         s_res = [
-            sqrt(
+            round(sqrt(
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'p0'][0]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
@@ -573,8 +574,8 @@ def assign_line_results(grid, line_data):
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'q0'][0]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][0])) ** 2),
-            sqrt(
+                        'branch'].id_db), 'q1'][0])) ** 2),decimal_places),
+            round(sqrt(
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'p0'][1]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
@@ -582,7 +583,7 @@ def assign_line_results(grid, line_data):
                 max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
                     'branch'].id_db), 'q0'][1]),
                     abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][1])) ** 2)]
+                        'branch'].id_db), 'q1'][1])) ** 2),decimal_places)]
 
         edge['branch'].s_res = s_res
 
