@@ -23,13 +23,23 @@ import logging
 logger = logging.getLogger('dingo')
 
 
-def set_circuit_breakers(mv_grid, debug=False):
+def set_circuit_breakers(mv_grid, mode='load', debug=False):
     """ Calculates the optimal position of a circuit breaker on all routes of mv_grid, adds and connects them to graph.
     Args:
         mv_grid: MVGridDingo object
+        mode: String
+            determines the key parameter for relocation
+
+            'load' (default):       Only loads are used for determination of circuit breaker position.
+
+            'loadgen':              Both loads and generator capacities are used for determination of
+                                    circuit breaker position. If a ring is dominated by loads (peak load
+                                    > peak capacity of generators), only loads are used for determining
+                                    the location of circuit breaker. If generators are prevailing
+                                    (peak load < peak capacity of generators), only generator capacities
+                                    are considered for relocation.
+
         debug: If True, information is printed during process
-    Returns:
-        nothing
 
     Notes
     -----
@@ -38,10 +48,6 @@ def set_circuit_breakers(mv_grid, debug=False):
     Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
     breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
     the route. Instead of the peak current, the peak load is used here (assuming a constant voltage).
-    
-    If a ring is dominated by loads (peak load > peak capacity of generators), only loads are used for determining
-    the location of circuit breaker. If generators are prevailing (peak load < peak capacity of generators),
-    only generator capacities are considered for relocation.
 
     The core of this function (calculation of the optimal circuit breaker position) is the same as in
     dingo.grid.mv_grid.models.Route.calc_circuit_breaker_position but here it is
@@ -103,12 +109,18 @@ def set_circuit_breakers(mv_grid, debug=False):
             else:
                 raise ValueError('Ring node has got invalid type.')
 
-        # is ring dominated by load or generation?
-        # (check if there's more load than generation in ring or vice versa)
-        if sum(nodes_peak_load) > sum(nodes_peak_generation):
+
+        if mode == 'load':
             node_peak_data = nodes_peak_load
+        elif mode == 'loadgen':
+            # is ring dominated by load or generation?
+            # (check if there's more load than generation in ring or vice versa)
+            if sum(nodes_peak_load) > sum(nodes_peak_generation):
+                node_peak_data = nodes_peak_load
+            else:
+                node_peak_data = nodes_peak_generation
         else:
-            node_peak_data = nodes_peak_generation
+            raise ValueError('parameter \'mode\' is invalid!')
 
         # calc optimal circuit breaker position
 

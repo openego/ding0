@@ -1536,7 +1536,7 @@ class NetworkDingo:
         """
 
         for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.set_circuit_breakers(debug)
+            grid_district.mv_grid.set_circuit_breakers(debug=debug)
 
         logger.info('=====> MV Circuit Breakers relocated')
 

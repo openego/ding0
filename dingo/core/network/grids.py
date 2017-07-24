@@ -679,7 +679,7 @@ class MVGridDingo(GridDingo):
         Args:
             debug: If True, information is printed during process
         """
-        set_circuit_breakers(self, debug)
+        set_circuit_breakers(self, debug=debug)
 
     def __repr__(self):
         return 'mv_grid_' + str(self.id_db)
