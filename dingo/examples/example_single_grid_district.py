@@ -17,8 +17,8 @@ __author__     = "nesnoj, gplssm"
 
 # ===== IMPORTS AND CONFIGURATION =====
 
-# import DB interface from oemof
-import oemof.db as db
+# import DB interface
+from dingo.tools import db
 
 # import required modules of DINGO
 from dingo.core import NetworkDingo
