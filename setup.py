@@ -20,6 +20,7 @@ import os
 #
 # subprocess.call(["sudo", "apt-get", "install", "libgeos-dev"])
 
+
 setup(name='dingo',
       version='v0.1-pre',
       author='Reiner Lemoine Institut, openego development group',
@@ -82,5 +83,14 @@ setup(name='dingo',
                            'Vigo',
                            '*.vrp'),
 
-          ]}
+          ]},
+      classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Environment :: Console",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: GNU Affero General Public License v3",
+        "Natural Language :: English",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3.5"
+        "Topic :: Scientific/Engineering"],
       )
