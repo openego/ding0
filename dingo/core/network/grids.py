@@ -1,31 +1,31 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-# from dingo.core.network import GridDingo
-from . import GridDingo
-from dingo.core.network.stations import *
-from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
-from dingo.core.network.loads import *
-from dingo.core.network.cable_distributors import MVCableDistributorDingo, LVCableDistributorDingo
-from dingo.grid.mv_grid import mv_routing, mv_connect
-from dingo.grid.lv_grid import build_grid, lv_connect
-from dingo.tools import config as cfg_dingo, pypsa_io, tools
-from dingo.tools.geo import calc_geo_dist_vincenty
-from dingo.grid.mv_grid.tools import set_circuit_breakers
-from dingo.flexopt.reinforce_grid import *
-from dingo.core.structure.regions import LVLoadAreaCentreDingo
+# from ding0.core.network import GridDing0
+from . import GridDing0
+from ding0.core.network.stations import *
+from ding0.core.network import RingDing0, BranchDing0, CircuitBreakerDing0
+from ding0.core.network.loads import *
+from ding0.core.network.cable_distributors import MVCableDistributorDing0, LVCableDistributorDing0
+from ding0.grid.mv_grid import mv_routing, mv_connect
+from ding0.grid.lv_grid import build_grid, lv_connect
+from ding0.tools import config as cfg_ding0, pypsa_io, tools
+from ding0.tools.geo import calc_geo_dist_vincenty
+from ding0.grid.mv_grid.tools import set_circuit_breakers
+from ding0.flexopt.reinforce_grid import *
+from ding0.core.structure.regions import LVLoadAreaCentreDing0
 
 import networkx as nx
 from datetime import datetime
@@ -35,15 +35,15 @@ from functools import partial
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
-class MVGridDingo(GridDingo):
-    """ DINGO medium voltage grid
+class MVGridDing0(GridDing0):
+    """ DING0 medium voltage grid
 
     Parameters
     ----------
-    region : MV region (instance of MVGridDistrictDingo class) that is associated with grid
+    region : MV region (instance of MVGridDistrictDing0 class) that is associated with grid
     default_branch_kind: kind of branch (possible values: 'cable' or 'line')
     default_branch_type: type of branch (pandas Series object with cable/line parameters)
     """
@@ -83,9 +83,9 @@ class MVGridDingo(GridDingo):
         """ Creates circuit breaker object and ...
 
         Args:
-            circ_breaker: CircuitBreakerDingo object
+            circ_breaker: CircuitBreakerDing0 object
         """
-        if circ_breaker not in self._circuit_breakers and isinstance(circ_breaker, CircuitBreakerDingo):
+        if circ_breaker not in self._circuit_breakers and isinstance(circ_breaker, CircuitBreakerDing0):
             self._circuit_breakers.append(circ_breaker)
             self.graph_add_node(circ_breaker)
 
@@ -103,11 +103,11 @@ class MVGridDingo(GridDingo):
         """ Adds MV station if not already existing
 
         Args:
-            mv_station: MVStationDingo object
+            mv_station: MVStationDing0 object
             force: bool. If True, MV Station is set even though it's not empty (override)
         """
-        if not isinstance(mv_station, MVStationDingo):
-            raise Exception('Given MV station is not a MVStationDingo object.')
+        if not isinstance(mv_station, MVStationDing0):
+            raise Exception('Given MV station is not a MVStationDing0 object.')
         if self._station is None:
             self._station = mv_station
             self.graph_add_node(mv_station)
@@ -120,21 +120,21 @@ class MVGridDingo(GridDingo):
     def add_load(self, lv_load):
         """Adds a MV load to _loads and grid graph if not already existing"""
         if lv_load not in self._loads and isinstance(lv_load,
-                                                     MVLoadDingo):
+                                                     MVLoadDing0):
             self._loads.append(lv_load)
             self.graph_add_node(lv_load)
 
     def add_cable_distributor(self, cable_dist):
         """Adds a cable distributor to _cable_distributors if not already existing"""
         if cable_dist not in self.cable_distributors() and isinstance(cable_dist,
-                                                                      MVCableDistributorDingo):
+                                                                      MVCableDistributorDing0):
             # add to array and graph
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
 
     def add_ring(self, ring):
         """Adds a ring to _rings if not already existing"""
-        if ring not in self._rings and isinstance(ring, RingDingo):
+        if ring not in self._rings and isinstance(ring, RingDing0):
             self._rings.append(ring)
 
     def rings_count(self):
@@ -178,11 +178,11 @@ class MVGridDingo(GridDingo):
                 yield ring
 
     def get_ring_from_node(self, node):
-        """ Determines the ring (RingDingo object) which node is member of.
+        """ Determines the ring (RingDing0 object) which node is member of.
         Args:
-            node: Dingo object (member of graph)
+            node: Ding0 object (member of graph)
         Returns:
-            RingDingo object
+            RingDing0 object
         """
         try:
             return self.graph_branches_from_node(node)[0][1]['branch'].ring
@@ -196,10 +196,10 @@ class MVGridDingo(GridDingo):
             edges 3-6-7, 3-6-8-9 will return [6,7,8,9]
 
         Args:
-            node_source: source node (Dingo object), member of _graph
+            node_source: source node (Ding0 object), member of _graph
 
         Returns:
-            List of nodes (Dingo objects)
+            List of nodes (Ding0 objects)
         """
         if node_source in self._graph.nodes():
 
@@ -230,7 +230,7 @@ class MVGridDingo(GridDingo):
         """ Generates and sets ids of branches for MV and underlying LV grids.
         
         While IDs of imported objects can be derived from dataset's ID, branches
-        are created within DINGO and need unique IDs (e.g. for PF calculation).
+        are created within DING0 and need unique IDs (e.g. for PF calculation).
         """
 
         # MV grid:
@@ -350,10 +350,10 @@ class MVGridDingo(GridDingo):
         if mode == 'load_density':
 
             # get power factor for loads
-            cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+            cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
 
             # get load density
-            load_density_threshold = float(cfg_dingo.get('assumptions',
+            load_density_threshold = float(cfg_ding0.get('assumptions',
                                                          'load_density_threshold'))
 
             # transform MVGD's area to epsg 3035
@@ -380,7 +380,7 @@ class MVGridDingo(GridDingo):
         elif mode == 'distance':
 
             # get threshold for 20/10kV disambiguation
-            voltage_per_km_threshold = float(cfg_dingo.get('assumptions',
+            voltage_per_km_threshold = float(cfg_ding0.get('assumptions',
                                                            'voltage_per_km_threshold'))
 
             # initial distance
@@ -388,7 +388,7 @@ class MVGridDingo(GridDingo):
             import time
             start = time.time()
             for node in self.graph_nodes_sorted():
-                if isinstance(node, LVLoadAreaCentreDingo):
+                if isinstance(node, LVLoadAreaCentreDing0):
                     # calc distance from MV-LV station to LA centre
                     dist_node = calc_geo_dist_vincenty(self.station(), node) / 1e3
                     if dist_node > dist_max:
@@ -443,16 +443,16 @@ class MVGridDingo(GridDingo):
             self.default_branch_kind = 'cable'
 
         # get power factor for loads
-        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+        cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
 
         # get max. count of half rings per MV grid district
-        mv_half_ring_count_max = int(cfg_dingo.get('mv_routing_tech_constraints',
+        mv_half_ring_count_max = int(cfg_ding0.get('mv_routing_tech_constraints',
                                                    'mv_half_ring_count_max'))
         #mv_half_ring_count_max=20
 
         # load cable/line assumptions, file_names and parameter
         if self.default_branch_kind == 'line':
-            load_factor_normal = float(cfg_dingo.get('assumptions',
+            load_factor_normal = float(cfg_ding0.get('assumptions',
                                                      'load_factor_mv_line_lc_normal'))
             branch_parameters = self.network.static_data['MV_overhead_lines']
 
@@ -462,7 +462,7 @@ class MVGridDingo(GridDingo):
             branch_parameters_settle = branch_parameters_settle[branch_parameters_settle['U_n'] == self.v_level]
 
         elif self.default_branch_kind == 'cable':
-            load_factor_normal = float(cfg_dingo.get('assumptions',
+            load_factor_normal = float(cfg_ding0.get('assumptions',
                                                      'load_factor_mv_cable_lc_normal'))
             branch_parameters = self.network.static_data['MV_cables']
         else:
@@ -549,10 +549,10 @@ class MVGridDingo(GridDingo):
         self.grid_district.add_aggregated_peak_demand()
 
     def export_to_pypsa(self, session, method='onthefly'):
-        """Exports MVGridDingo grid to PyPSA database tables
+        """Exports MVGridDing0 grid to PyPSA database tables
 
         Peculiarities of MV grids are implemented here. Derive general export
-        method from this and adapt to needs of LVGridDingo
+        method from this and adapt to needs of LVGridDing0
 
         Parameters
         ----------
@@ -566,7 +566,7 @@ class MVGridDingo(GridDingo):
         -----
         It has to be proven that this method works for LV grids as well!
 
-        Dingo treats two stationary case of powerflow:
+        Ding0 treats two stationary case of powerflow:
         1) Full load: We assume no generation and loads to be set to peak load
         2) Generation worst case:
         """
@@ -581,9 +581,9 @@ class MVGridDingo(GridDingo):
 
         edges = [edge for edge in list(self.graph_edges())
                  if (edge['adj_nodes'][0] in nodes and not isinstance(
-                edge['adj_nodes'][0], LVLoadAreaCentreDingo))
+                edge['adj_nodes'][0], LVLoadAreaCentreDing0))
                  and (edge['adj_nodes'][1] in nodes and not isinstance(
-                edge['adj_nodes'][1], LVLoadAreaCentreDingo))]
+                edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
 
         if method is 'db':
 
@@ -632,7 +632,7 @@ class MVGridDingo(GridDingo):
         Notes:
             It has to be proven that this method works for LV grids as well!
 
-            Dingo treats two stationary case of powerflow:
+            Ding0 treats two stationary case of powerflow:
             1) Full load: We assume no generation and loads to be set to peak load
             2) Generation worst case:
         """
@@ -675,7 +675,7 @@ class MVGridDingo(GridDingo):
 
     def set_circuit_breakers(self, debug=False):
         """ Calculates the optimal position of the existing circuit breakers and relocates them within the graph,
-            see method `set_circuit_breakers` in dingo.grid.mv_grid.tools for details.
+            see method `set_circuit_breakers` in ding0.grid.mv_grid.tools for details.
         Args:
             debug: If True, information is printed during process
         """
@@ -685,12 +685,12 @@ class MVGridDingo(GridDingo):
         return 'mv_grid_' + str(self.id_db)
 
 
-class LVGridDingo(GridDingo):
-    """ DINGO low voltage grid
+class LVGridDing0(GridDing0):
+    """ DING0 low voltage grid
 
     Parameters
     ----------
-    region : LV region (instance of LVLoadAreaDingo class) that is associated with grid
+    region : LV region (instance of LVLoadAreaDing0 class) that is associated with grid
 
     Notes:
       It is assumed that LV grid have got cables only (attribute 'default_branch_kind')
@@ -709,8 +709,8 @@ class LVGridDingo(GridDingo):
 
     def add_station(self, lv_station):
         """Adds a LV station to _station and grid graph if not already existing"""
-        if not isinstance(lv_station, LVStationDingo):
-            raise Exception('Given LV station is not a LVStationDingo object.')
+        if not isinstance(lv_station, LVStationDing0):
+            raise Exception('Given LV station is not a LVStationDing0 object.')
         if self._station is None:
             self._station = lv_station
             self.graph_add_node(lv_station)
@@ -740,14 +740,14 @@ class LVGridDingo(GridDingo):
     def add_load(self, lv_load):
         """Adds a LV load to _loads and grid graph if not already existing"""
         if lv_load not in self._loads and isinstance(lv_load,
-                                                     LVLoadDingo):
+                                                     LVLoadDing0):
             self._loads.append(lv_load)
             self.graph_add_node(lv_load)
 
     def add_cable_dist(self, lv_cable_dist):
         """Adds a LV cable_dist to _cable_dists and grid graph if not already existing"""
         if lv_cable_dist not in self._cable_distributors and isinstance(lv_cable_dist,
-                                                                        LVCableDistributorDingo):
+                                                                        LVCableDistributorDing0):
             self._cable_distributors.append(lv_cable_dist)
             self.graph_add_node(lv_cable_dist)
 

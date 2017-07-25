@@ -1,15 +1,15 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
@@ -18,11 +18,11 @@ from .check_tech_constraints import check_load, check_voltage, \
 from .reinforce_measures import reinforce_branches_current, \
     reinforce_branches_voltage, reinforce_lv_branches_overloading, \
     extend_substation, extend_substation_voltage
-from dingo.core.network.stations import LVStationDingo
+from ding0.core.network.stations import LVStationDing0
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def reinforce_grid(grid, mode):
@@ -31,7 +31,7 @@ def reinforce_grid(grid, mode):
 
     Parameters
     ----------
-    grid: GridDingo object
+    grid: GridDing0 object
     mode: String
         kind of grid ('MV' or 'LV')
 
@@ -94,7 +94,7 @@ def reinforce_grid(grid, mode):
         # STEP 2: reinforce HV-MV station
         # NOTE: HV-MV station reinforcement is not required for status-quo
         # scenario since HV-MV trafos already sufficient for load+generation
-        # case as done in MVStationDingo.choose_transformers()
+        # case as done in MVStationDing0.choose_transformers()
 
     elif mode == 'LV':
         # get overloaded branches
@@ -153,7 +153,7 @@ def reinforce_grid(grid, mode):
 
         # reinforcement of LV stations on voltage issues
         crit_stations_voltage = [_ for _ in crit_nodes
-                        if isinstance(_['node'], LVStationDingo)]
+                        if isinstance(_['node'], LVStationDing0)]
         if crit_stations_voltage:
             extend_substation_voltage(crit_stations_voltage, grid_level='LV')
 

@@ -1,7 +1,7 @@
-dingo\.grid\.mv\_grid\.util package
+ding0\.grid\.mv\_grid\.util package
 ===================================
 
-.. automodule:: dingo.grid.mv_grid.util
+.. automodule:: ding0.grid.mv_grid.util
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,12 +9,12 @@ dingo\.grid\.mv\_grid\.util package
 Submodules
 ----------
 
-.. automodule:: dingo.grid.mv_grid.util.data_input
+.. automodule:: ding0.grid.mv_grid.util.data_input
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.grid.mv_grid.util.util
+.. automodule:: ding0.grid.mv_grid.util.util
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,7 +1,7 @@
-dingo\.grid package
+ding0\.grid package
 ===================
 
-.. automodule:: dingo.grid
+.. automodule:: ding0.grid
     :members:
     :undoc-members:
     :show-inheritance:
@@ -11,16 +11,16 @@ Subpackages
 
 .. toctree::
 
-    dingo.grid.lv_grid
-    dingo.grid.mv_grid
+    ding0.grid.lv_grid
+    ding0.grid.mv_grid
 
 Submodules
 ----------
 
-dingo.grid.tools module
+ding0.grid.tools module
 -----------------------
 
-.. automodule:: dingo.grid.tools
+.. automodule:: ding0.grid.tools
     :members:
     :undoc-members:
     :show-inheritance:

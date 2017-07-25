@@ -1,7 +1,7 @@
-dingo package
+ding0 package
 =============
 
-.. automodule:: dingo
+.. automodule:: ding0
     :members:
     :undoc-members:
     :show-inheritance:
@@ -11,9 +11,9 @@ Subpackages
 
 .. toctree::
 
-    dingo.config
-    dingo.core
-    dingo.flexopt
-    dingo.grid
-    dingo.tools
+    ding0.config
+    ding0.core
+    ding0.flexopt
+    ding0.grid
+    ding0.tools
 

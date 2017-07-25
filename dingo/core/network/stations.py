@@ -1,29 +1,29 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from . import StationDingo
-from dingo.core.network import TransformerDingo
-from dingo.tools import config as cfg_dingo
+from . import StationDing0
+from ding0.core.network import TransformerDing0
+from ding0.tools import config as cfg_ding0
 
 from itertools import compress
 import numpy as np
 
 
-class MVStationDingo(StationDingo):
+class MVStationDing0(StationDing0):
     """
-    Defines a MV station in DINGO
+    Defines a MV station in DING0
     -----------------------------
     """
 
@@ -69,7 +69,7 @@ class MVStationDingo(StationDingo):
 
     def set_operation_voltage_level(self):
 
-        mv_station_v_level_operation = float(cfg_dingo.get('mv_routing_tech_constraints',
+        mv_station_v_level_operation = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                            'mv_station_v_level_operation'))
 
         self.v_level_operation = mv_station_v_level_operation * self.grid.v_level
@@ -108,13 +108,13 @@ class MVStationDingo(StationDingo):
         """
 
         # get power factor for loads and generators
-        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
-        cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
+        cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+        cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
 
         # get trafo load factors
-        load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_trans_lc_normal = float(cfg_ding0.get('assumptions',
                                                              'load_factor_mv_trans_lc_normal'))
-        load_factor_mv_trans_fc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_trans_fc_normal = float(cfg_ding0.get('assumptions',
                                                              'load_factor_mv_trans_fc_normal'))
 
         # get equipment parameters of MV transformers
@@ -152,7 +152,7 @@ class MVStationDingo(StationDingo):
                                      residual_apparent_power]['S_max'].idxmin()]
 
             # add transformer on determined size with according parameters
-            self.add_transformer(TransformerDingo(**{'grid': self.grid,
+            self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                      'v_level': self.grid.v_level,
                                                      's_max_longterm': transformer['S_max']}))
             # calc residual load
@@ -163,13 +163,13 @@ class MVStationDingo(StationDingo):
         if len(self._transformers) == 0:
             transformer = trafo_parameters.iloc[trafo_parameters['S_max'].idxmin()]
 
-            self.add_transformer(TransformerDingo(**{'grid': self.grid,
+            self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                      'v_level': self.grid.v_level,
                                                      's_max_longterm': transformer['S_max']}))
 
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))
-        self.add_transformer(TransformerDingo(**{'grid': self.grid,
+        self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                  'v_level': self.grid.v_level,
                                                  's_max_longterm': s_max_max}))
 
@@ -181,9 +181,9 @@ class MVStationDingo(StationDingo):
         return 'mv_station_' + str(self.id_db)
 
 
-class LVStationDingo(StationDingo):
+class LVStationDing0(StationDing0):
     """
-    Defines a LV station in DINGO
+    Defines a LV station in DING0
     -----------------------------
     """
 

@@ -1,21 +1,21 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 # -*- coding: utf-8 -*-
 #
-# dingo documentation build configuration file, created by
+# ding0 documentation build configuration file, created by
 # sphinx-quickstart on Fri Dec 18 15:04:25 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -86,7 +86,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'dingo'
+project = u'ding0'
 copyright = u'2015-2016, open_eGo-Team'
 author = u'open_eGo-Team'
 
@@ -256,7 +256,7 @@ html_theme = 'sphinx_rtd_theme'
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'dingodoc'
+htmlhelp_basename = 'ding0doc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -278,7 +278,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'dingo.tex', u'dingo Documentation',
+  (master_doc, 'ding0.tex', u'ding0 Documentation',
    u'open_eGo-Team', 'manual'),
 ]
 
@@ -308,7 +308,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'dingo', u'dingo Documentation',
+    (master_doc, 'ding0', u'ding0 Documentation',
      [author], 1)
 ]
 
@@ -322,8 +322,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'dingo', u'dingo Documentation',
-   author, 'dingo', 'One line description of project.',
+  (master_doc, 'ding0', u'ding0 Documentation',
+   author, 'ding0', 'One line description of project.',
    'Miscellaneous'),
 ]
 

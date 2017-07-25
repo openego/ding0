@@ -1,31 +1,31 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 # reinforcement measures according to Ackermann
 import os
-import dingo
+import ding0
 import pandas as pd
-from dingo.tools import config as cfg_dingo
-from dingo.grid.lv_grid.build_grid import select_transformers
-from dingo.core.network import TransformerDingo
-from dingo.flexopt.check_tech_constraints import get_voltage_at_bus_bar
+from ding0.tools import config as cfg_ding0
+from ding0.grid.lv_grid.build_grid import select_transformers
+from ding0.core.network import TransformerDing0
+from ding0.flexopt.check_tech_constraints import get_voltage_at_bus_bar
 import networkx as nx
 import logging
 
-package_path = dingo.__path__[0]
-logger = logging.getLogger('dingo')
+package_path = ding0.__path__[0]
+logger = logging.getLogger('ding0')
 
 
 def reinforce_branches_current(grid, crit_branches):
@@ -34,7 +34,7 @@ def reinforce_branches_current(grid, crit_branches):
     
     Parameters
     ----------
-        grid : GridDingo 
+        grid : GridDing0
             Grid identifier.
         crit_branches : dict
             Dict of critical branches with max. relative overloading.
@@ -51,8 +51,8 @@ def reinforce_branches_current(grid, crit_branches):
         
     See Also
     --------
-    dingo.flexopt.check_tech_constraints.check_load :
-    dingo.flexopt.reinforce_measures.reinforce_branches_voltage :
+    ding0.flexopt.check_tech_constraints.check_load :
+    ding0.flexopt.reinforce_measures.reinforce_branches_voltage :
     """
     # load cable data, file_names and parameter
     branch_parameters = grid.network.static_data['MV_cables']
@@ -82,8 +82,8 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
 
     Parameters
     ----------
-    grid: GridDingo object
-    crit_branches: List of BranchDingo objects
+    grid: GridDing0 object
+    crit_branches: List of BranchDing0 objects
         list of critical branches
 
     Notes
@@ -131,8 +131,8 @@ def extend_substation(grid, critical_stations, grid_level):
 
     Parameters
     ----------
-        grid: GridDingo
-            Dingo grid container
+        grid: GridDing0
+            Ding0 grid container
         critical_stations : list
             List of stations with overloading
         grid_level : str
@@ -143,10 +143,10 @@ def extend_substation(grid, critical_stations, grid_level):
     Curently straight forward implemented for LV stations
 
     """
-    load_factor_lv_trans_lc_normal = cfg_dingo.get(
+    load_factor_lv_trans_lc_normal = cfg_ding0.get(
         'assumptions',
         'load_factor_lv_trans_lc_normal')
-    load_factor_lv_trans_fc_normal = cfg_dingo.get(
+    load_factor_lv_trans_fc_normal = cfg_ding0.get(
         'assumptions',
         'load_factor_lv_trans_fc_normal')
 
@@ -202,7 +202,7 @@ def extend_substation(grid, critical_stations, grid_level):
             
             # create transformers and add them to station of LVGD
             for t in range(0, trafo_cnt):
-                lv_transformer = TransformerDingo(
+                lv_transformer = TransformerDing0(
                     grid=grid,
                     id_db=id,
                     v_level=0.4,
@@ -247,8 +247,8 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     trafo_s_max_max = max(trafo_params['S_max'])
     trafo_min_size = trafo_params.ix[trafo_params['S_max'].idxmin()]
 
-    v_diff_max_fc = cfg_dingo.get('assumptions', 'lv_max_v_level_fc_diff_normal')
-    v_diff_max_lc = cfg_dingo.get('assumptions', 'lv_max_v_level_lc_diff_normal')
+    v_diff_max_fc = cfg_ding0.get('assumptions', 'lv_max_v_level_fc_diff_normal')
+    v_diff_max_lc = cfg_ding0.get('assumptions', 'lv_max_v_level_lc_diff_normal')
 
     tree = nx.dfs_tree(grid._graph, grid._station)
 
@@ -272,7 +272,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                 extend_trafo_power(extendable_trafos, trafo_params)
             elif new_transformers_cnt < 2:
                 # build a new transformer
-                lv_transformer = TransformerDingo(
+                lv_transformer = TransformerDing0(
                     grid=grid,
                     id_db=id,
                     v_level=0.4,
@@ -304,7 +304,7 @@ def new_substation(grid):
 
     Parameters
     ----------
-        grid : MVGridDingo 
+        grid : MVGridDing0
             MV Grid identifier.
 
     Returns
@@ -321,8 +321,8 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     Parameters
     ----------
-    grid : dingo.core.network.grids.LVGridDingo
-        Dingo LV grid object
+    grid : ding0.core.network.grids.LVGridDing0
+        Ding0 LV grid object
     crit_branches : list
         List of critical branches incl. its line loading
 
@@ -339,7 +339,7 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
     """
     unsolved_branches = []
 
-    cable_lf = cfg_dingo.get('assumptions',
+    cable_lf = cfg_ding0.get('assumptions',
                              'load_factor_lv_cable_lc_normal')
 
     cables = grid.network.static_data['LV_cables']

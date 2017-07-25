@@ -1,7 +1,7 @@
-dingo\.core\.structure package
+ding0\.core\.structure package
 ==============================
 
-.. automodule:: dingo.core.structure
+.. automodule:: ding0.core.structure
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,12 +9,12 @@ dingo\.core\.structure package
 Submodules
 ----------
 
-.. automodule:: dingo.core.structure.groups
+.. automodule:: ding0.core.structure.groups
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.core.structure.regions
+.. automodule:: ding0.core.structure.regions
     :members:
     :undoc-members:
     :show-inheritance:

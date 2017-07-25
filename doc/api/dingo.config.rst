@@ -1,7 +1,7 @@
-dingo\.config package
+ding0\.config package
 =====================
 
-.. automodule:: dingo.config
+.. automodule:: ding0.config
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,7 +9,7 @@ dingo\.config package
 Submodules
 ----------
 
-.. automodule:: dingo.config.config_db_interfaces
+.. automodule:: ding0.config.config_db_interfaces
     :members:
     :undoc-members:
     :show-inheritance:

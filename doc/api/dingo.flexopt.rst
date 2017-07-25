@@ -1,7 +1,7 @@
-dingo\.flexopt package
+ding0\.flexopt package
 ======================
 
-.. automodule:: dingo.flexopt
+.. automodule:: ding0.flexopt
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,25 +9,25 @@ dingo\.flexopt package
 Submodules
 ----------
 
-.. automodule:: dingo.flexopt.check_tech_constraints
+.. automodule:: ding0.flexopt.check_tech_constraints
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.flexopt.reinforce_grid
+.. automodule:: ding0.flexopt.reinforce_grid
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.flexopt.reinforce_measures
+.. automodule:: ding0.flexopt.reinforce_measures
     :members:
     :undoc-members:
     :show-inheritance:
 
-dingo.flexopt.reinforce_measures_dena module
+ding0.flexopt.reinforce_measures_dena module
 --------------------------------------------
 
-.. automodule:: dingo.flexopt.reinforce_measures_dena
+.. automodule:: ding0.flexopt.reinforce_measures_dena
     :members:
     :undoc-members:
     :show-inheritance:
@@ -36,7 +36,7 @@ dingo.flexopt.reinforce_measures_dena module
 Module contents
 ---------------
 
-.. automodule:: dingo.flexopt
+.. automodule:: ding0.flexopt
     :members:
     :undoc-members:
     :show-inheritance:

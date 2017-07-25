@@ -1,21 +1,21 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-# This file provides some useful functions for debugging DINGO
+# This file provides some useful functions for debugging DING0
 
-import dingo
+import ding0
 import os.path as path
 import networkx as nx
 
@@ -26,9 +26,9 @@ def compare_graphs(graph1, mode, graph2=None):
     Parameters
     ----------
     graph1 : networkx.graph
-        First Dingo MV graph for comparison
+        First Ding0 MV graph for comparison
     graph2 : networkx.graph
-        Second Dingo MV graph for comparison. If a second graph is not provided
+        Second Ding0 MV graph for comparison. If a second graph is not provided
         it will be laoded from disk with hard-coded file name.
     mode: 'write' or 'compare'
 
@@ -37,7 +37,7 @@ def compare_graphs(graph1, mode, graph2=None):
     """
 
     # get path
-    package_path = dingo.__path__[0]
+    package_path = ding0.__path__[0]
     file = path.join(package_path, 'output', 'debug', 'graph1.gpickle')
 
     if mode is 'write':

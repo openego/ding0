@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 import matplotlib.pyplot as plt
-from dingo.tools import db
+from ding0.tools import db
 import time
 # import objgraph
 
-from dingo.core import NetworkDingo
-from dingo.tools import results
-from dingo.tools.logger import setup_logger
+from ding0.core import NetworkDing0
+from ding0.tools import results
+from ding0.tools.logger import setup_logger
 
 logger = setup_logger()
 
@@ -33,8 +33,8 @@ start = time.time()
 # database connection
 conn = db.connection(section='oedb')
 
-# instantiate dingo network object
-nd = NetworkDingo(name='network')
+# instantiate ding0 network object
+nd = NetworkDing0(name='network')
 
 #mv_grid_districts = [386,372,406,371,402,415,480,424,489,367,359,569,591]
 #mv_grid_districts = [402, 406, 489, 480, 371]
@@ -108,10 +108,10 @@ for geno in nd._mv_grid_districts[0].mv_grid.generators():
 print('Cum. capacity of MV generators:', str(mv_cum_capacity))
 
 # LV generation capacity
-from dingo.core.network.stations import LVStationDingo
+from ding0.core.network.stations import LVStationDing0
 lv_cum_capacity = 0
 for node in nd._mv_grid_districts[0].mv_grid._graph.nodes():
-    if isinstance(node, LVStationDingo):
+    if isinstance(node, LVStationDing0):
         lv_cum_capacity += node.peak_generation
 print('Cum. capacity of LV generators:', str(lv_cum_capacity))
 

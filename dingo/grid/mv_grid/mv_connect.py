@@ -1,26 +1,26 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 
-from dingo.core.network.stations import *
-from dingo.core.network import BranchDingo, GeneratorDingo
-from dingo.core import MVCableDistributorDingo
-from dingo.core.structure.groups import LoadAreaGroupDingo
-from dingo.core.structure.regions import LVLoadAreaCentreDingo
-from dingo.tools import config as cfg_dingo
-from dingo.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist_vincenty,\
+from ding0.core.network.stations import *
+from ding0.core.network import BranchDing0, GeneratorDing0
+from ding0.core import MVCableDistributorDing0
+from ding0.core.structure.groups import LoadAreaGroupDing0
+from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.tools import config as cfg_ding0
+from ding0.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist_vincenty,\
                             calc_geo_centre_point, calc_geo_branches_in_polygon
 
 from shapely.geometry import LineString
@@ -32,7 +32,7 @@ import time
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug, branches_only=False):
@@ -42,7 +42,7 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
 
     Args:
         node_shp: Shapely Point object of node
-        branches: BranchDingo objects of MV region
+        branches: BranchDing0 objects of MV region
         proj: pyproj projection object: nodes' CRS to equidistant CRS (e.g. WGS84 -> ETRS)
         conn_dist_weight: length weighting to prefer stations instead of direct line connection,
                           see mv_connect_satellites() for details.
@@ -50,7 +50,7 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
         branches_only: If True, only branch objects are considered as connection objects
 
     Returns:
-        conn_objects_min_stack: List of connection objects (each object is represented by dict with Dingo object,
+        conn_objects_min_stack: List of connection objects (each object is represented by dict with Ding0 object,
                                 shapely object and distance to node.
 
     """
@@ -65,7 +65,7 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
         station2_shp = transform(proj, stations[1].geo_data)
         line_shp = LineString([station1_shp, station2_shp])
 
-        # create dict with DINGO objects (line & 2 adjacent stations), shapely objects and distances
+        # create dict with DING0 objects (line & 2 adjacent stations), shapely objects and distances
         if not branches_only:
             conn_objects = {'s1': {'obj': stations[0],
                                    'shp': station1_shp,
@@ -86,9 +86,9 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
                 del conn_objects['b']
 
             # remove MV station as possible connection point
-            if isinstance(conn_objects['s1']['obj'], MVStationDingo):
+            if isinstance(conn_objects['s1']['obj'], MVStationDing0):
                 del conn_objects['s1']
-            elif isinstance(conn_objects['s2']['obj'], MVStationDingo):
+            elif isinstance(conn_objects['s2']['obj'], MVStationDing0):
                 del conn_objects['s2']
 
         else:
@@ -120,26 +120,26 @@ def get_lv_load_area_group_from_node_pair(node1, node2):
     lv_load_area_group = None
 
     # both nodes are LV stations -> get group from 1 or 2
-    if (isinstance(node1, LVLoadAreaCentreDingo) and
-       isinstance(node2, LVLoadAreaCentreDingo)):
+    if (isinstance(node1, LVLoadAreaCentreDing0) and
+       isinstance(node2, LVLoadAreaCentreDing0)):
         if not node1.lv_load_area.lv_load_area_group:
             lv_load_area_group = node2.lv_load_area.lv_load_area_group
         else:
             lv_load_area_group = node1.lv_load_area.lv_load_area_group
 
     # node 1 is LV station and node 2 not -> get group from node 1
-    elif (isinstance(node1, LVLoadAreaCentreDingo) and
-          isinstance(node2, (MVStationDingo, MVCableDistributorDingo))):
+    elif (isinstance(node1, LVLoadAreaCentreDing0) and
+          isinstance(node2, (MVStationDing0, MVCableDistributorDing0))):
         lv_load_area_group = node1.lv_load_area.lv_load_area_group
 
     # node 2 is LV station and node 1 not -> get group from node 2
-    elif (isinstance(node1, (MVStationDingo, MVCableDistributorDingo)) and
-          isinstance(node2, LVLoadAreaCentreDingo)):
+    elif (isinstance(node1, (MVStationDing0, MVCableDistributorDing0)) and
+          isinstance(node2, LVLoadAreaCentreDing0)):
         lv_load_area_group = node2.lv_load_area.lv_load_area_group
 
     # both nodes are not a LV station -> no group
-    elif (isinstance(node1, (MVStationDingo, MVCableDistributorDingo)) and
-          isinstance(node2, (MVStationDingo, MVCableDistributorDingo))):
+    elif (isinstance(node1, (MVStationDing0, MVCableDistributorDing0)) and
+          isinstance(node2, (MVStationDing0, MVCableDistributorDing0))):
         lv_load_area_group = None
 
     return lv_load_area_group
@@ -150,11 +150,11 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
         object) and tries to connect `node` to one of them.
 
     Args:
-        node: origin node - Dingo object (e.g. LVLoadAreaCentreDingo)
+        node: origin node - Ding0 object (e.g. LVLoadAreaCentreDing0)
         node_shp: Shapely Point object of node
         graph: NetworkX graph object with nodes
         proj: pyproj projection object: equidistant CRS to conformal CRS (e.g. ETRS -> WGS84)
-        conn_objects_min_stack: List of connection objects (each object is represented by dict with Dingo object,
+        conn_objects_min_stack: List of connection objects (each object is represented by dict with Ding0 object,
                                 shapely object and distance to node), sorted ascending by distance.
         conn_dist_ring_mod: Max. distance when nodes are included into route instead of creating a new line,
                             see mv_connect() for details.
@@ -185,7 +185,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
         # target object is node
         else:
-            if isinstance(dist_min_obj['obj'], MVCableDistributorDingo):
+            if isinstance(dist_min_obj['obj'], MVCableDistributorDing0):
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area_group
             else:
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area.lv_load_area_group
@@ -206,7 +206,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
             # if node was connected via branch (target line not re-routed and not member of aggregated load area):
             # create new LV load_area group for current node
             if (target_obj_result is not None) and (target_obj_result != 're-routed'):
-                lv_load_area_group = LoadAreaGroupDingo(mv_grid_district=node.lv_load_area.mv_grid_district,
+                lv_load_area_group = LoadAreaGroupDing0(mv_grid_district=node.lv_load_area.mv_grid_district,
                                                         root_node=target_obj_result)
                 lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                 node.lv_load_area.lv_load_area_group = lv_load_area_group
@@ -255,7 +255,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
                     lv_load_area_group.add_lv_load_area(lv_load_area=node.lv_load_area)
                     node.lv_load_area.lv_load_area_group = lv_load_area_group
 
-                    if isinstance(target_obj_result, MVCableDistributorDingo):
+                    if isinstance(target_obj_result, MVCableDistributorDing0):
                         lv_load_area_group.add_lv_load_area(lv_load_area=target_obj_result)
                         target_obj_result.lv_load_area_group = lv_load_area_group
 
@@ -308,7 +308,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
     """ Connects `node` to `target_obj`
 
     Args:
-        node: origin node - Dingo object (e.g. LVLoadAreaCentreDingo)
+        node: origin node - Ding0 object (e.g. LVLoadAreaCentreDing0)
         node_shp: Shapely Point object of origin node
         target_obj: object that node shall be connected to
         proj: pyproj projection object: equidistant CRS to conformal CRS (e.g. ETRS -> WGS84)
@@ -318,8 +318,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
         debug: If True, information is printed during process
 
     Returns:
-        target_obj_result: object that node was connected to (instance of LVLoadAreaCentreDingo or
-                           MVCableDistributorDingo). If node is included into line instead of creating a new line (see arg
+        target_obj_result: object that node was connected to (instance of LVLoadAreaCentreDing0 or
+                           MVCableDistributorDing0). If node is included into line instead of creating a new line (see arg
                            `conn_dist_ring_mod`), `target_obj_result` is None.
     """
 
@@ -357,7 +357,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 graph.remove_edge(adj_node1, adj_node2)
 
                 branch_length = calc_geo_dist_vincenty(adj_node1, node)
-                branch = BranchDingo(length=branch_length,
+                branch = BranchDing0(length=branch_length,
                                      circuit_breaker=circ_breaker,
                                      kind=branch_kind,
                                      type=branch_type,
@@ -367,7 +367,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 graph.add_edge(adj_node1, node, branch=branch)
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, node)
-                graph.add_edge(adj_node2, node, branch=BranchDingo(length=branch_length,
+                graph.add_edge(adj_node2, node, branch=BranchDing0(length=branch_length,
                                                                    kind=branch_kind,
                                                                    type=branch_type,
                                                                    ring=branch_ring))
@@ -383,7 +383,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
             else:
 
                 # create cable distributor and add it to grid
-                cable_dist = MVCableDistributorDingo(geo_data=conn_point_shp,
+                cable_dist = MVCableDistributorDing0(geo_data=conn_point_shp,
                                                      grid=mv_grid)
                 mv_grid.add_cable_distributor(cable_dist)
 
@@ -404,7 +404,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 graph.remove_edge(adj_node1, adj_node2)
 
                 branch_length = calc_geo_dist_vincenty(adj_node1, cable_dist)
-                branch = BranchDingo(length=branch_length,
+                branch = BranchDing0(length=branch_length,
                                      circuit_breaker=circ_breaker,
                                      kind=branch_kind,
                                      type=branch_type,
@@ -414,7 +414,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 graph.add_edge(adj_node1, cable_dist, branch=branch)
 
                 branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
-                graph.add_edge(adj_node2, cable_dist, branch=BranchDingo(length=branch_length,
+                graph.add_edge(adj_node2, cable_dist, branch=BranchDing0(length=branch_length,
                                                                          kind=branch_kind,
                                                                          type=branch_type,
                                                                          ring=branch_ring))
@@ -427,7 +427,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_type = mv_grid.default_branch_type
 
                 branch_length = calc_geo_dist_vincenty(node, cable_dist)
-                graph.add_edge(node, cable_dist, branch=BranchDingo(length=branch_length,
+                graph.add_edge(node, cable_dist, branch=BranchDing0(length=branch_length,
                                                                     kind=branch_kind,
                                                                     type=branch_type,
                                                                     ring=branch_ring))
@@ -443,21 +443,21 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
     else:
 
         # what kind of node is to be connected? (which type is node of?)
-        #   LVLoadAreaCentreDingo: Connect to LVLoadAreaCentreDingo only
-        #   LVStationDingo: Connect to LVLoadAreaCentreDingo, LVStationDingo or MVCableDistributorDingo
-        #   GeneratorDingo: Connect to LVLoadAreaCentreDingo, LVStationDingo, MVCableDistributorDingo or GeneratorDingo
-        if isinstance(node, LVLoadAreaCentreDingo):
-            valid_conn_objects = LVLoadAreaCentreDingo
-        elif isinstance(node, LVStationDingo):
-            valid_conn_objects = (LVLoadAreaCentreDingo, LVStationDingo, MVCableDistributorDingo)
-        elif isinstance(node, GeneratorDingo):
-            valid_conn_objects = (LVLoadAreaCentreDingo, LVStationDingo, MVCableDistributorDingo, GeneratorDingo)
+        #   LVLoadAreaCentreDing0: Connect to LVLoadAreaCentreDing0 only
+        #   LVStationDing0: Connect to LVLoadAreaCentreDing0, LVStationDing0 or MVCableDistributorDing0
+        #   GeneratorDing0: Connect to LVLoadAreaCentreDing0, LVStationDing0, MVCableDistributorDing0 or GeneratorDing0
+        if isinstance(node, LVLoadAreaCentreDing0):
+            valid_conn_objects = LVLoadAreaCentreDing0
+        elif isinstance(node, LVStationDing0):
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVCableDistributorDing0)
+        elif isinstance(node, GeneratorDing0):
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVCableDistributorDing0, GeneratorDing0)
         else:
             raise ValueError('Oops, the node you are trying to connect is not a valid connection object')
 
         # if target is Load Area centre or LV station, check if it belongs to a load area of type aggregated
         # (=> connection not allowed)
-        if isinstance(target_obj['obj'], (LVLoadAreaCentreDingo, LVStationDingo)):
+        if isinstance(target_obj['obj'], (LVLoadAreaCentreDing0, LVStationDing0)):
             target_is_aggregated = target_obj['obj'].lv_load_area.is_aggregated
         else:
             target_is_aggregated = False
@@ -474,7 +474,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
             # add new branch for satellite (station to station)
             branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
-            graph.add_edge(node, target_obj['obj'], branch=BranchDingo(length=branch_length,
+            graph.add_edge(node, target_obj['obj'], branch=BranchDing0(length=branch_length,
                                                                        kind=branch_kind,
                                                                        type=branch_type,
                                                                        ring=branch_ring))
@@ -493,7 +493,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
     """ Disconnects `node` from `target_obj`
 
     Args:
-        node: node - Dingo object (e.g. LVLoadAreaCentreDingo)
+        node: node - Ding0 object (e.g. LVLoadAreaCentreDing0)
         target_obj_result:
         graph: NetworkX graph object with nodes and newly created branches
         debug: If True, information is printed during process
@@ -509,7 +509,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
 
     graph.remove_edge(node, target_obj_result)
 
-    if isinstance(target_obj_result, MVCableDistributorDingo):
+    if isinstance(target_obj_result, MVCableDistributorDing0):
 
         neighbor_nodes = graph.neighbors(target_obj_result)
 
@@ -517,7 +517,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
             graph.remove_node(target_obj_result)
 
             branch_length = calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
-            graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDingo(length=branch_length,
+            graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDing0(length=branch_length,
                                                                                     kind=branch_kind,
                                                                                     type=branch_type,
                                                                                     ring=branch_ring))
@@ -529,7 +529,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
 def parametrize_lines(mv_grid):
     """ Set unparametrized branches to default branch type
     Args:
-        mv_grid: MVGridDingo object
+        mv_grid: MVGridDing0 object
 
     Returns:
         nothing
@@ -549,7 +549,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     """ Connect satellites (small Load Areas) to MV grid
 
     Args:
-        mv_grid: MVGridDingo object
+        mv_grid: MVGridDing0 object
         graph: NetworkX graph object with nodes
         mode: 'normal' (step 1, do connection considering restrictions like max. string length, max peak load per
                         string) or
@@ -566,13 +566,13 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     # Example: The distance from satellite to line is 1km, to station1 1.2km, to station2 2km.
     # With conn_dist_threshold=0.75, the 'virtual' distance to station1 would be 1.2km * 0.75 = 0.9km, so this conn.
     # point would be preferred.
-    conn_dist_weight = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_weight')
+    conn_dist_weight = cfg_ding0.get('mv_connect', 'load_area_sat_conn_dist_weight')
 
     # conn_dist_ring_mod: Allow re-routing of ring main route if node is closer than this threshold (in m) to ring.
-    conn_dist_ring_mod = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_ring_mod')
+    conn_dist_ring_mod = cfg_ding0.get('mv_connect', 'load_area_sat_conn_dist_ring_mod')
 
-    load_area_sat_buffer_radius = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius')
-    load_area_sat_buffer_radius_inc = cfg_dingo.get('mv_connect', 'load_area_sat_buffer_radius_inc')
+    load_area_sat_buffer_radius = cfg_ding0.get('mv_connect', 'load_area_sat_buffer_radius')
+    load_area_sat_buffer_radius_inc = cfg_ding0.get('mv_connect', 'load_area_sat_buffer_radius_inc')
 
     start = time.time()
 
@@ -600,7 +600,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     for node in nodes:
 
         # node is Load Area centre
-        if isinstance(node, LVLoadAreaCentreDingo):
+        if isinstance(node, LVLoadAreaCentreDing0):
 
             # satellites only
             if node.lv_load_area.is_satellite:
@@ -647,7 +647,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
     """ Connect LV stations to MV grid
 
     Args:
-        mv_grid_district: MVGridDistrictDingo object for which the connection process has to be done
+        mv_grid_district: MVGridDistrictDing0 object for which the connection process has to be done
         graph: NetworkX graph object with nodes
         debug: If True, information is printed during process
 
@@ -667,8 +667,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
             pyproj.Proj(init='epsg:3035'),  # source coordinate system
             pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
-    conn_dist_weight = cfg_dingo.get('mv_connect', 'load_area_sat_conn_dist_weight')
-    conn_dist_ring_mod = cfg_dingo.get('mv_connect', 'load_area_stat_conn_dist_ring_mod')
+    conn_dist_weight = cfg_ding0.get('mv_connect', 'load_area_sat_conn_dist_weight')
+    conn_dist_ring_mod = cfg_ding0.get('mv_connect', 'load_area_stat_conn_dist_ring_mod')
 
     for lv_load_area in mv_grid_district.lv_load_areas():
 
@@ -702,7 +702,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     graph.remove_edge(lv_load_area_centre, node)
 
                     branch_length = calc_geo_dist_vincenty(lv_station, node)
-                    branch = BranchDingo(length=branch_length,
+                    branch = BranchDing0(length=branch_length,
                                          circuit_breaker=circ_breaker,
                                          kind=branch_kind,
                                          type=branch_type,
@@ -761,7 +761,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                 # Replace Load Area centre by cable distributor
                 # ================================================
                 # create cable distributor and add it to grid
-                cable_dist = MVCableDistributorDingo(geo_data=lv_load_area_centre.geo_data,
+                cable_dist = MVCableDistributorDing0(geo_data=lv_load_area_centre.geo_data,
                                                      grid=mv_grid_district.mv_grid)
                 mv_grid_district.mv_grid.add_cable_distributor(cable_dist)
 
@@ -784,7 +784,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     graph.remove_edge(lv_load_area_centre, node)
 
                     branch_length = calc_geo_dist_vincenty(cable_dist, node)
-                    branch = BranchDingo(length=branch_length,
+                    branch = BranchDing0(length=branch_length,
                                          circuit_breaker=circ_breaker,
                                          kind=branch_kind,
                                          type=branch_type,
@@ -817,7 +817,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
     """ Connect MV generators to MV grid
 
     Args:
-        mv_grid_district: MVGridDistrictDingo object for which the connection process has to be done
+        mv_grid_district: MVGridDistrictDing0 object for which the connection process has to be done
         graph: NetworkX graph object with nodes
         debug: If True, information is printed during process
 
@@ -825,8 +825,8 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
         graph: NetworkX graph object with nodes and newly created branches
     """
 
-    generator_buffer_radius = cfg_dingo.get('mv_connect', 'generator_buffer_radius')
-    generator_buffer_radius_inc = cfg_dingo.get('mv_connect', 'generator_buffer_radius_inc')
+    generator_buffer_radius = cfg_ding0.get('mv_connect', 'generator_buffer_radius')
+    generator_buffer_radius_inc = cfg_ding0.get('mv_connect', 'generator_buffer_radius_inc')
 
     # WGS84 (conformal) to ETRS (equidistant) projection
     proj1 = partial(
@@ -852,7 +852,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
             branch_kind = mv_grid_district.mv_grid.default_branch_kind
             branch_type = mv_grid_district.mv_grid.default_branch_type
 
-            branch = BranchDingo(length=branch_length,
+            branch = BranchDing0(length=branch_length,
                                  kind=branch_kind,
                                  type=branch_type,
                                  ring=None)

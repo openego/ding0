@@ -1,11 +1,11 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io
 
 Based on code by Romulo Oliveira copyright (C) 2015,
 https://github.com/RomuloOliveira/monte-carlo-cvrp
@@ -15,17 +15,17 @@ copy of the license at http://www.apache.org/licenses/LICENSE-2.0
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from dingo.tools import config as cfg_dingo
+from ding0.tools import config as cfg_ding0
 
 from math import pi, tan, acos
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 class Route(object):
@@ -175,7 +175,7 @@ class Route(object):
         the route. Instead of the peak current, the peak load is used here (assuming a constant voltage).
 
         The circuit breakers are used here for checking tech. constraints only and will be re-located after connection
-        of satellites and stations in dingo.grid.mv_grid.tools.set_circuit_breakers
+        of satellites and stations in ding0.grid.mv_grid.tools.set_circuit_breakers
 
         References
         ----------
@@ -238,30 +238,30 @@ class Route(object):
         """
 
         # load parameters
-        load_area_count_per_ring = float(cfg_dingo.get('mv_routing',
+        load_area_count_per_ring = float(cfg_ding0.get('mv_routing',
                                                        'load_area_count_per_ring'))
 
-        max_ring_length_factor = float(cfg_dingo.get('mv_routing',
+        max_ring_length_factor = float(cfg_ding0.get('mv_routing',
                                                      'max_ring_length_factor'))
 
         if self._problem._branch_kind == 'line':
-            load_factor_normal = float(cfg_dingo.get('assumptions',
+            load_factor_normal = float(cfg_ding0.get('assumptions',
                                                      'load_factor_mv_line_lc_normal'))
-            load_factor_malfunc = float(cfg_dingo.get('assumptions',
+            load_factor_malfunc = float(cfg_ding0.get('assumptions',
                                                       'load_factor_mv_line_lc_malfunc'))
         elif self._problem._branch_kind == 'cable':
-            load_factor_normal = float(cfg_dingo.get('assumptions',
+            load_factor_normal = float(cfg_ding0.get('assumptions',
                                                      'load_factor_mv_cable_lc_normal'))
-            load_factor_malfunc = float(cfg_dingo.get('assumptions',
+            load_factor_malfunc = float(cfg_ding0.get('assumptions',
                                                       'load_factor_mv_cable_lc_malfunc'))
         else:
             raise ValueError('Grid\'s _branch_kind is invalid, could not use branch parameters.')
 
-        mv_max_v_level_lc_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+        mv_max_v_level_lc_diff_normal = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                             'mv_max_v_level_lc_diff_normal'))
-        mv_max_v_level_lc_diff_malfunc = float(cfg_dingo.get('mv_routing_tech_constraints',
+        mv_max_v_level_lc_diff_malfunc = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                              'mv_max_v_level_lc_diff_malfunc'))
-        cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+        cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
 
 
         # step 0: check if route has got more nodes than allowed

@@ -1,7 +1,7 @@
-dingo\.core package
+ding0\.core package
 ===================
 
-.. automodule:: dingo.core
+.. automodule:: ding0.core
     :members:
     :undoc-members:
     :show-inheritance:
@@ -11,17 +11,17 @@ Subpackages
 
 .. toctree::
 
-    dingo.core.network
-    dingo.core.powerflow
-    dingo.core.structure
+    ding0.core.network
+    ding0.core.powerflow
+    ding0.core.structure
 
 Submodules
 ----------
 
-dingo.core.upload_to_zenodo module
+ding0.core.upload_to_zenodo module
 ----------------------------------
 
-.. automodule:: dingo.core.upload_to_zenodo
+.. automodule:: ding0.core.upload_to_zenodo
     :members:
     :undoc-members:
     :show-inheritance:
@@ -30,7 +30,7 @@ dingo.core.upload_to_zenodo module
 Module contents
 ---------------
 
-.. automodule:: dingo.core
+.. automodule:: ding0.core
     :members:
     :undoc-members:
     :show-inheritance:

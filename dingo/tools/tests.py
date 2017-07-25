@@ -3,11 +3,11 @@ from test import support
 
 # import DB interface from oemof
 import oemof.db as db
-# import other dingo stuff
-from dingo.core import NetworkDingo
-from dingo.tools.logger import setup_logger
-from dingo.tools.results import save_nd_to_pickle
-from dingo.tools.results import load_nd_from_pickle
+# import other ding0 stuff
+from ding0.core import NetworkDing0
+from ding0.tools.logger import setup_logger
+from ding0.tools.results import save_nd_to_pickle
+from ding0.tools.results import load_nd_from_pickle
 
 from geoalchemy2.shape import to_shape
 import logging
@@ -16,7 +16,7 @@ import pandas as pd
 
 logger = setup_logger(loglevel=logging.CRITICAL)
 
-class DingoRunTest(unittest.TestCase):
+class Ding0RunTest(unittest.TestCase):
     ''' '''
     def setUp(self):
         print('\n')
@@ -26,8 +26,8 @@ class DingoRunTest(unittest.TestCase):
         print('Test File vs File')
         print('\n########################################')
         print('  Loading data...')
-        nw_1 = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
-        nw_2 = load_nd_from_pickle(filename='dingo_tests_grids_2.pkl')
+        nw_1 = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
+        nw_2 = load_nd_from_pickle(filename='ding0_tests_grids_2.pkl')
         #test equality
         print('\n########################################')
         print('  Testing equality...')
@@ -55,21 +55,21 @@ class DingoRunTest(unittest.TestCase):
         print('    '+msg)
         self.assertTrue(passed,msg=msg)
 
-    def test_dingo_file(self):
+    def test_ding0_file(self):
         print('\n########################################')
-        print('Test dingo vs File')
+        print('Test ding0 vs File')
         print('\n########################################')
         print('  Loading data...')
-        nw_1 = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
+        nw_1 = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
 
         print('\n########################################')
-        print('  Running dingo for the same configuration...')
+        print('  Running ding0 for the same configuration...')
         # database connection
         conn = db.connection(section='oedb')
         mv_grid_districts = [3545]
 
-        nw_2 = NetworkDingo(name='network')
-        nw_2.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
+        nw_2 = NetworkDing0(name='network')
+        nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
 
         conn.close()
 
@@ -80,21 +80,21 @@ class DingoRunTest(unittest.TestCase):
 
         self.assertTrue(passed,msg=msg)
 
-    def test_dingo(self):
+    def test_ding0(self):
         print('\n########################################')
-        print('Test dingo vs dingo')
+        print('Test ding0 vs ding0')
         conn = db.connection(section='oedb')
         mv_grid_districts = [3545]
 
         print('\n########################################')
-        print('  Running dingo once...')
-        nw_1 = NetworkDingo(name='network')
-        nw_1.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
+        print('  Running ding0 once...')
+        nw_1 = NetworkDing0(name='network')
+        nw_1.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
 
         print('\n########################################')
-        print('  Running dingo twice...')
-        nw_2 = NetworkDingo(name='network')
-        nw_2.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
+        print('  Running ding0 twice...')
+        nw_2 = NetworkDing0(name='network')
+        nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
 
         conn.close()
 
@@ -111,8 +111,8 @@ def dataframe_equal(network_one, network_two):
     
     Parameters
     ----------
-    network_one: GridDingo
-    network_two: GridDingo
+    network_one: GridDing0
+    network_two: GridDing0
     
     Returns
     -------
@@ -204,27 +204,27 @@ def dataframe_equal(network_one, network_two):
         msg = msg + 'different in nodes'
     return passed, msg
 
-def init_files_for_tests( mv_grid_districts= [3545],filename='dingo_tests_grids_1.pkl'):
-    '''Runs dingo over the districtis selected in mv_grid_districts and writes the result in filename.
+def init_files_for_tests( mv_grid_districts= [3545],filename='ding0_tests_grids_1.pkl'):
+    '''Runs ding0 over the districtis selected in mv_grid_districts and writes the result in filename.
     
     Parameters
     ----------
     mv_grid_districts: :any:`list` of :obj:`int`
         Districts IDs: Defaults to [3545]
     filename: str
-        Defaults to 'dingo_tests_grids_1.pkl'
+        Defaults to 'ding0_tests_grids_1.pkl'
     
     '''
     print('\n########################################')
-    print('  Running dingo for district',mv_grid_districts)
+    print('  Running ding0 for district',mv_grid_districts)
     # database connection
     conn = db.connection(section='oedb')
 
-    # instantiate new dingo network object
-    nd = NetworkDingo(name='network')
+    # instantiate new ding0 network object
+    nd = NetworkDing0(name='network')
 
-    # run DINGO on selected MV Grid District
-    nd.run_dingo(conn=conn,mv_grid_districts_no=mv_grid_districts)
+    # run DING0 on selected MV Grid District
+    nd.run_ding0(conn=conn,mv_grid_districts_no=mv_grid_districts)
 
     # export grid to file (pickle)
     print('\n########################################')
@@ -233,29 +233,29 @@ def init_files_for_tests( mv_grid_districts= [3545],filename='dingo_tests_grids_
 
     conn.close()
 
-def manual_dingo_test( mv_grid_districts= [3545],filename='dingo_tests_grids_1.pkl'):
-    ''' Compares a new run of dingo over districts and an old one saved in filename.
+def manual_ding0_test( mv_grid_districts= [3545],filename='ding0_tests_grids_1.pkl'):
+    ''' Compares a new run of ding0 over districts and an old one saved in filename.
     
     Parameters
     ----------
     mv_grid_districts: :any:`list` of :obj:`int`
         Districts IDs: Defaults to [3545]
     filename: str
-        Defaults to 'dingo_tests_grids_1.pkl'
+        Defaults to 'ding0_tests_grids_1.pkl'
     '''
     print('\n########################################')
-    print('Test dingo vs File')
+    print('Test ding0 vs File')
     print('\n########################################')
     print('  Loading file', filename,'...')
     nw_1 = load_nd_from_pickle(filename=filename)
 
     print('\n########################################')
-    print('  Running dingo for district',mv_grid_districts, '...')
+    print('  Running ding0 for district',mv_grid_districts, '...')
     # database connection
     conn = db.connection(section='oedb')
 
-    nw_2 = NetworkDingo(name='network')
-    nw_2.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts)
+    nw_2 = NetworkDing0(name='network')
+    nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
 
     conn.close()
 
@@ -267,12 +267,12 @@ def manual_dingo_test( mv_grid_districts= [3545],filename='dingo_tests_grids_1.p
 
 if __name__ == "__main__":
     #To run default tests, decomment following line
-    #support.run_unittest(DingoRunTest)
+    #support.run_unittest(Ding0RunTest)
 
     #To initialize tests comparison files, decomment the following
     #init_files_for_tests()
-    #init_files_for_tests([438],'dingo_tests_grids_2.pkl')
+    #init_files_for_tests([438],'ding0_tests_grids_2.pkl')
 
-    #To test a dingo run with respect to a saved file
-    manual_dingo_test()
-    #manual_dingo_test([438],'dingo_tests_grids_2.pkl')
+    #To test a ding0 run with respect to a saved file
+    manual_ding0_test()
+    #manual_ding0_test([438],'ding0_tests_grids_2.pkl')

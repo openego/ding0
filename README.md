@@ -1,31 +1,31 @@
-<img align="right" width="300" height="300" src="https://github.com/openego/dingo/blob/dev/doc/images/DINGO_Logo_300px.png">
+<img align="right" width="300" height="300" src="https://github.com/openego/ding0/blob/dev/doc/images/DINGO_Logo_300px.png">
 
-[![Documentation Status](https://readthedocs.org/projects/dingo/badge/?version=dev)](http://dingo.readthedocs.io/en/dev/?badge=dev)
+[![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://ding0.readthedocs.io/en/dev/?badge=dev)
 
-DINGO
+DING0
 =====
 DIstribution Network GeneratOr -- A tool to generate synthetic medium and low
 voltage power distribution grids based on open (or at least accessible) data.
 
-WARNING: Note, currently the data source Dingo relies on - the
+WARNING: Note, currently the data source Ding0 relies on - the
 [Open Energy Database](http://oep.iks.cs.ovgu.de/dataedit/) - has no public
-accessible API, yet. Thus, currently you won't be able to run Dingo without
+accessible API, yet. Thus, currently you won't be able to run Ding0 without
 modifications.
 
 Installation and usage
 ----------------------
 
-Dingo is provided through the package management tool *pip*. Install it by
+Ding0 is provided through the package management tool *pip*. Install it by
 
 ```
-pip3 install dingo
+pip3 install ding0
 ```
 
 Further details regarding the installation including dependencies are provided
-in the [documentation](https://dingo.readthedocs.io)
+in the [documentation](https://ding0.readthedocs.io)
 
-A [set of examples](https://dingo.readthedocs.io/en/dev/usage_details.html#examples)
-is provided to show how to use Dingo.
+A [set of examples](https://ding0.readthedocs.io/en/dev/usage_details.html#examples)
+is provided to show how to use Ding0.
 
 LICENSE
 -------

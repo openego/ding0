@@ -1,7 +1,7 @@
-dingo\.grid\.mv\_grid\.models package
+ding0\.grid\.mv\_grid\.models package
 =====================================
 
-.. automodule:: dingo.grid.mv_grid.models
+.. automodule:: ding0.grid.mv_grid.models
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,7 +9,7 @@ dingo\.grid\.mv\_grid\.models package
 Submodules
 ----------
 
-.. automodule:: dingo.grid.mv_grid.models.models
+.. automodule:: ding0.grid.mv_grid.models.models
     :members:
     :undoc-members:
     :show-inheritance:

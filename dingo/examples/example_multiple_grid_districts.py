@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
@@ -20,18 +20,18 @@ import time
 import os
 import pandas as pd
 
-from dingo.core import NetworkDingo
-from dingo.tools import config as cfg_dingo, results, db
+from ding0.core import NetworkDing0
+from ding0.tools import config as cfg_ding0, results, db
 import json
 from datetime import datetime
 
 plt.close('all')
-cfg_dingo.load_config('config_db_tables.cfg')
-cfg_dingo.load_config('config_calc.cfg')
-cfg_dingo.load_config('config_files.cfg')
-cfg_dingo.load_config('config_misc.cfg')
+cfg_ding0.load_config('config_db_tables.cfg')
+cfg_ding0.load_config('config_calc.cfg')
+cfg_ding0.load_config('config_files.cfg')
+cfg_ding0.load_config('config_misc.cfg')
 
-BASEPATH = os.path.join(os.path.expanduser('~'), '.dingo')
+BASEPATH = os.path.join(os.path.expanduser('~'), '.ding0')
 
 
 def create_results_dirs(base_path):
@@ -60,22 +60,22 @@ def create_results_dirs(base_path):
 def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                                 base_path=None):
     """
-    Perform dingo run on given grid districts
+    Perform ding0 run on given grid districts
 
     Parameters
     ----------
     mv_grid_districs : list
         Integers describing grid districts
     run_id: str
-        Identifier for a run of Dingo. For example it is used to create a
+        Identifier for a run of Ding0. For example it is used to create a
         subdirectory of os.path.join(`base_path`, 'results')
     failsafe : bool
         Setting to True enables failsafe mode where corrupt grid districts
         (mostly due to data issues) are reported and skipped. Report is to be
-         found in the log dir under :code:`~/.dingo` . Default is False.
+         found in the log dir under :code:`~/.ding0` . Default is False.
     base_path : str
-        Base path for dingo data (input, results and logs).
-        Default is `None` which sets it to :code:`~/.dingo` (may deviate on
+        Base path for ding0 data (input, results and logs).
+        Default is `None` which sets it to :code:`~/.ding0` (may deviate on
         windows systems).
         Specify your own but keep in mind that it a required a particular
         structure of subdirectories.
@@ -105,23 +105,23 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
     corrupt_grid_districts = pd.DataFrame(columns=['id', 'message'])
 
     for mvgd in mv_grid_districts:
-        # instantiate dingo  network object
-        nd = NetworkDingo(name='network', run_id=run_id)
+        # instantiate ding0  network object
+        nd = NetworkDing0(name='network', run_id=run_id)
 
         if not os.path.exists(os.path.join(base_path, run_id)):
             os.mkdir(os.path.join(base_path, run_id))
 
         if not failsafe:
-            # run DINGO on selected MV Grid District
-            msg = nd.run_dingo(conn=conn,
+            # run DING0 on selected MV Grid District
+            msg = nd.run_ding0(conn=conn,
                          mv_grid_districts_no=[mvgd])
 
             # save results
             results.save_nd_to_pickle(nd, os.path.join(base_path, run_id))
         else:
-            # try to perform dingo run on grid district
+            # try to perform ding0 run on grid district
             try:
-                msg = nd.run_dingo(conn=conn,
+                msg = nd.run_ding0(conn=conn,
                          mv_grid_districts_no=[mvgd])
                 # if not successful, put grid district to report
                 if msg:
@@ -153,7 +153,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
 
 
     # Save metadata to disk
-    with open(os.path.join(base_path, run_id, 'Dingo_{}.meta'.format(run_id)),
+    with open(os.path.join(base_path, run_id, 'Ding0_{}.meta'.format(run_id)),
               'w') as f:
         json.dump(metadata, f)
 
@@ -175,7 +175,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
 
 
 if __name__ == '__main__':
-    base_path='/home/guido/mnt/rli-daten/Dingo/'
+    base_path='/home/guido/mnt/rli-daten/Ding0/'
     # set run_id to current timestamp
     run_id = datetime.now().strftime("%Y%m%d%H%M%S")
 

@@ -29,18 +29,18 @@ def openego_header():
     """
 
     # define header string
-    header = "\"\"\"This file is part of DINGO, the DIstribution Network GeneratOr.\n"\
-        "DINGO is a tool to generate synthetic medium and low voltage power\n"\
+    header = "\"\"\"This file is part of DING0, the DIstribution Network GeneratOr.\n"\
+        "DING0 is a tool to generate synthetic medium and low voltage power\n"\
         "distribution grids based on open data.\n" \
         "\n" \
         "It is developed in the project open_eGo: https://openegoproject.wordpress.com\n"\
         "\n" \
-        "DINGO lives at github: https://github.com/openego/dingo/\n"\
-        "The documentation is available on RTD: http://dingo.readthedocs.io\"\"\"\n"\
+        "DING0 lives at github: https://github.com/openego/ding0/\n"\
+        "The documentation is available on RTD: http://ding0.readthedocs.io\"\"\"\n"\
         "\n"\
         "__copyright__  = \"Reiner Lemoine Institut gGmbH\"\n"\
         "__license__    = \"GNU Affero General Public License Version 3 (AGPL-3.0)\"\n"\
-        "__url__        = \"https://github.com/openego/dingo/blob/master/LICENSE\"\n"\
+        "__url__        = \"https://github.com/openego/ding0/blob/master/LICENSE\"\n"\
         "__author__     = \"nesnoj, gplssm\""\
         "\n\n"
 

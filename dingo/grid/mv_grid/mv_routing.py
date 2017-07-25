@@ -1,36 +1,36 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 import time
 
-from dingo.grid.mv_grid.models.models import Graph, Node
-from dingo.grid.mv_grid.util import util, data_input
-from dingo.grid.mv_grid.solvers import savings, local_search
-from dingo.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty, calc_geo_centre_point
-from dingo.tools import config as cfg_dingo
-from dingo.core.network.stations import *
-from dingo.core.structure.regions import LVLoadAreaCentreDingo
-from dingo.core.network import RingDingo, BranchDingo, CircuitBreakerDingo
-from dingo.core.network.cable_distributors import MVCableDistributorDingo
+from ding0.grid.mv_grid.models.models import Graph, Node
+from ding0.grid.mv_grid.util import util, data_input
+from ding0.grid.mv_grid.solvers import savings, local_search
+from ding0.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty, calc_geo_centre_point
+from ding0.tools import config as cfg_ding0
+from ding0.core.network.stations import *
+from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.core.network import RingDing0, BranchDing0, CircuitBreakerDing0
+from ding0.core.network.cable_distributors import MVCableDistributorDing0
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
-def dingo_graph_to_routing_specs(graph):
+def ding0_graph_to_routing_specs(graph):
     """ Build data dictionary from graph nodes for routing (translation)
 
     Args:
@@ -41,7 +41,7 @@ def dingo_graph_to_routing_specs(graph):
     """
 
     # get power factor for loads
-    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
+    cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
 
     specs = {}
     nodes_demands = {}
@@ -52,13 +52,13 @@ def dingo_graph_to_routing_specs(graph):
     # -> treat satellites as normal load areas (allow for routing)
     satellites_only = True
     for node in graph.nodes():
-        if isinstance(node, LVLoadAreaCentreDingo):
+        if isinstance(node, LVLoadAreaCentreDing0):
             if not node.lv_load_area.is_satellite and not node.lv_load_area.is_aggregated:
                 satellites_only = False
 
     for node in graph.nodes():
         # station is LV station
-        if isinstance(node, LVLoadAreaCentreDingo):
+        if isinstance(node, LVLoadAreaCentreDing0):
             # only major stations are connected via MV ring
             # (satellites in case of there're only satellites in grid district)
             if not node.lv_load_area.is_satellite or satellites_only:
@@ -74,7 +74,7 @@ def dingo_graph_to_routing_specs(graph):
                     nodes_agg[str(node)] = False
 
         # station is MV station
-        elif isinstance(node, MVStationDingo):
+        elif isinstance(node, MVStationDing0):
             nodes_demands[str(node)] = 0
             nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
             specs['DEPOT'] = str(node)
@@ -90,7 +90,7 @@ def dingo_graph_to_routing_specs(graph):
     return specs
 
 
-def routing_solution_to_dingo_graph(graph, solution):
+def routing_solution_to_ding0_graph(graph, solution):
     """ Insert `solution` from routing into `graph`
 
     Args:
@@ -119,7 +119,7 @@ def routing_solution_to_dingo_graph(graph, solution):
             if len(r._nodes) == 1:
                 if not solution._problem._is_aggregated[r._nodes[0]._name]:
                     # create new cable dist
-                    cable_dist = MVCableDistributorDingo(geo_data=node_list[r._nodes[0]._name].geo_data,
+                    cable_dist = MVCableDistributorDing0(geo_data=node_list[r._nodes[0]._name].geo_data,
                                                          grid=depot_node.grid)
                     depot_node.grid.add_cable_distributor(cable_dist)
 
@@ -141,7 +141,7 @@ def routing_solution_to_dingo_graph(graph, solution):
             edges.append((r._nodes[-1], depot))
 
             # create MV Branch object for every edge in `edges`
-            mv_branches = [BranchDingo() for _ in edges]
+            mv_branches = [BranchDing0() for _ in edges]
             edges_with_branches = list(zip(edges, mv_branches))
 
             # recalculate circuit breaker positions for final solution, create it and set associated branch.
@@ -167,16 +167,16 @@ def routing_solution_to_dingo_graph(graph, solution):
             if not (node1 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][1].name()] or
                     node2 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][0].name()]):
                 branch = mv_branches[circ_breaker_pos - 1]
-                circ_breaker = CircuitBreakerDingo(grid=depot_node.grid, branch=branch,
+                circ_breaker = CircuitBreakerDing0(grid=depot_node.grid, branch=branch,
                                                    geo_data=calc_geo_centre_point(node1, node2))
                 branch.circuit_breaker = circ_breaker
 
             # create new ring object for route
-            ring = RingDingo(grid=depot_node.grid)
+            ring = RingDing0(grid=depot_node.grid)
 
             # translate solution's node names to graph node objects using dict created before
             # note: branch object is assigned to edge using an attribute ('branch' is used here), it can be accessed
-            # using the method `graph_edges()` of class `GridDingo`
+            # using the method `graph_edges()` of class `GridDing0`
             edges_graph = []
             for ((n1, n2), b) in edges_with_branches:
                 # get node objects
@@ -186,7 +186,7 @@ def routing_solution_to_dingo_graph(graph, solution):
                 # set branch's ring attribute
                 b.ring = ring
                 # set LVLA's ring attribute
-                if isinstance(node1, LVLoadAreaCentreDingo):
+                if isinstance(node1, LVLoadAreaCentreDing0):
                     node1.lv_load_area.ring = ring
 
                 # set branch length
@@ -214,7 +214,7 @@ def routing_solution_to_dingo_graph(graph, solution):
 
     except:
         logger.exception(
-            'unexpected error while converting routing solution to DINGO graph (NetworkX).')
+            'unexpected error while converting routing solution to DING0 graph (NetworkX).')
 
     return graph
 
@@ -225,7 +225,7 @@ def solve(graph, debug=False, anim=None):
     Args:
         graph: NetworkX graph object with nodes
         debug: If True, information is printed while routing
-        anim: AnimationDingo object (refer to class 'AnimationDingo()' for a more detailed description)
+        anim: AnimationDing0 object (refer to class 'AnimationDing0()' for a more detailed description)
 
     Returns:
         graph: NetworkX graph object with nodes and edges
@@ -233,8 +233,8 @@ def solve(graph, debug=False, anim=None):
 
     # TODO: Implement debug mode (pass to solver) to get more information while routing (print routes, draw network, ..)
 
-    # translate DINGO graph to routing specs
-    specs = dingo_graph_to_routing_specs(graph)
+    # translate DING0 graph to routing specs
+    specs = ding0_graph_to_routing_specs(graph)
 
     # create routing graph using specs
     RoutingGraph = Graph(specs)
@@ -270,4 +270,4 @@ def solve(graph, debug=False, anim=None):
         logger.debug('Elapsed time (seconds): {}'.format(time.time() - start))
         #local_search_solution.draw_network()
 
-    return routing_solution_to_dingo_graph(graph, local_search_solution)
+    return routing_solution_to_ding0_graph(graph, local_search_solution)

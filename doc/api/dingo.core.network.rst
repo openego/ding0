@@ -1,7 +1,7 @@
-dingo\.core\.network package
+ding0\.core\.network package
 ============================
 
-.. automodule:: dingo.core.network
+.. automodule:: ding0.core.network
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,27 +9,27 @@ dingo\.core\.network package
 Submodules
 ----------
 
-.. automodule:: dingo.core.network.cable_distributors
+.. automodule:: ding0.core.network.cable_distributors
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.core.network.grids
+.. automodule:: ding0.core.network.grids
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.core.network.loads
+.. automodule:: ding0.core.network.loads
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.core.network.stations
+.. automodule:: ding0.core.network.stations
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.core.network.transformers
+.. automodule:: ding0.core.network.transformers
     :members:
     :undoc-members:
     :show-inheritance:

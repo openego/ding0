@@ -1,7 +1,7 @@
-dingo\.grid\.mv\_grid package
+ding0\.grid\.mv\_grid package
 =============================
 
-.. automodule:: dingo.grid.mv_grid
+.. automodule:: ding0.grid.mv_grid
     :members:
     :undoc-members:
     :show-inheritance:
@@ -11,25 +11,25 @@ Subpackages
 
 .. toctree::
 
-    dingo.grid.mv_grid.models
-    dingo.grid.mv_grid.solvers
-    dingo.grid.mv_grid.tests
-    dingo.grid.mv_grid.util
+    ding0.grid.mv_grid.models
+    ding0.grid.mv_grid.solvers
+    ding0.grid.mv_grid.tests
+    ding0.grid.mv_grid.util
 
 Submodules
 ----------
 
-.. automodule:: dingo.grid.mv_grid.mv_connect
+.. automodule:: ding0.grid.mv_grid.mv_connect
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.grid.mv_grid.mv_routing
+.. automodule:: ding0.grid.mv_grid.mv_routing
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.grid.mv_grid.tools
+.. automodule:: ding0.grid.mv_grid.tools
     :members:
     :undoc-members:
     :show-inheritance:

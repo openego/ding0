@@ -1,7 +1,7 @@
-dingo\.grid\.lv\_grid package
+ding0\.grid\.lv\_grid package
 =============================
 
-.. automodule:: dingo.grid.lv_grid
+.. automodule:: ding0.grid.lv_grid
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,15 +9,15 @@ dingo\.grid\.lv\_grid package
 Submodules
 ----------
 
-.. automodule:: dingo.grid.lv_grid.check
+.. automodule:: ding0.grid.lv_grid.check
     :members:
     :undoc-members:
     :show-inheritance:
 
-dingo.grid.lv_grid.lv_connect module
+ding0.grid.lv_grid.lv_connect module
 ------------------------------------
 
-.. automodule:: dingo.grid.lv_grid.lv_connect
+.. automodule:: ding0.grid.lv_grid.lv_connect
     :members:
     :undoc-members:
     :show-inheritance:

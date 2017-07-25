@@ -1,4 +1,4 @@
-./dingo_system_dependencies.sh
+./ding0_system_dependencies.sh
 
 # update package index
 apt-get update
@@ -7,15 +7,15 @@ apt-get update
 apt-get install virtualenv -y
 
 # create new virtual environment
-virtualenv .virtualenvs/dingo --python=python3
-source .virtualenvs/dingo/bin/activate
+virtualenv .virtualenvs/ding0 --python=python3
+source .virtualenvs/ding0/bin/activate
 
 # test developer installation mode
-# TODO: get sources without github account. Currently it assumes dingo source
-# TODO: code is located in ./dingo
-pip3 install -e dingo
+# TODO: get sources without github account. Currently it assumes ding0 source
+# TODO: code is located in ./ding0
+pip3 install -e ding0
 
 # Test if installation worked correctly
-#python3 dingo/examples/example_single_grid_district.py
+#python3 ding0/examples/example_single_grid_district.py
 
-python3 -c "from dingo.core import NetworkDingo; nd = NetworkDingo(name='network'); print('\\nDingo was successfully installed!\\n\\n')"
+python3 -c "from ding0.core import NetworkDing0; nd = NetworkDing0(name='network'); print('\\nDing0 was successfully installed!\\n\\n')"

@@ -1,26 +1,26 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from dingo.core.structure.regions import LVLoadAreaDingo, LVLoadAreaCentreDingo
+from ding0.core.structure.regions import LVLoadAreaDing0, LVLoadAreaCentreDing0
 
 
-class GridDingo:
-    """ DINGO grid
+class GridDing0:
+    """ DING0 grid
 
     Parameters
     ----------
@@ -65,24 +65,24 @@ class GridDingo:
     def add_generator(self, generator):
         """Adds a generator to _generators and grid graph if not already existing"""
         if generator not in self._generators and isinstance(generator,
-                                                            GeneratorDingo):
+                                                            GeneratorDing0):
             self._generators.append(generator)
             self.graph_add_node(generator)
 
     def graph_add_node(self, node_object):
         """Adds a station or cable distributor object to grid graph if not already existing"""
         if ((node_object not in self._graph.nodes()) and
-            (isinstance(node_object, (StationDingo,
-                                      CableDistributorDingo,
-                                      LVLoadAreaCentreDingo,
-                                      CircuitBreakerDingo,
-                                      GeneratorDingo)))):
+            (isinstance(node_object, (StationDing0,
+                                      CableDistributorDing0,
+                                      LVLoadAreaCentreDing0,
+                                      CircuitBreakerDing0,
+                                      GeneratorDing0)))):
             self._graph.add_node(node_object)
 
     def graph_draw(self, mode):
         """ Draws grid graph using networkx
 
-        caution: The geo coords (for used crs see database import in class `NetworkDingo`) are used as positions for
+        caution: The geo coords (for used crs see database import in class `NetworkDing0`) are used as positions for
                  drawing but networkx uses cartesian crs. Since no coordinate transformation is performed, the drawn
                  graph representation is falsified!
         """
@@ -94,11 +94,11 @@ class GridDingo:
             nodes_pos = {}; demands = {}; demands_pos = {}
             nodes_color = []
             for node in g.nodes():
-                if isinstance(node, (StationDingo,
-                                     LVLoadAreaCentreDingo,
-                                     CableDistributorDingo,
-                                     GeneratorDingo,
-                                     CircuitBreakerDingo)):
+                if isinstance(node, (StationDing0,
+                                     LVLoadAreaCentreDing0,
+                                     CableDistributorDing0,
+                                     GeneratorDing0,
+                                     CircuitBreakerDing0)):
                     nodes_pos[node] = (node.geo_data.x, node.geo_data.y)
                     # TODO: MOVE draw/color settings to config
                 if node == self.station():
@@ -135,7 +135,7 @@ class GridDingo:
                     x_pos_start = -(len(station_neighbors) // 2)
 
                 # set positions
-                if isinstance(node, CableDistributorDingo):
+                if isinstance(node, CableDistributorDing0):
                     if node.in_building:
                         nodes_pos[node] = (x_pos_start + node.branch_no - 1 + 0.25, -node.load_no - 2)
                         nodes_color.append((0.5, 0.5, 0.5))
@@ -143,21 +143,21 @@ class GridDingo:
                         nodes_pos[node] = (x_pos_start + node.branch_no - 1, -node.load_no - 2)
                         nodes_color.append((0.5, 0.5, 0.5))
 
-                elif isinstance(node, LoadDingo):
+                elif isinstance(node, LoadDing0):
                     nodes_pos[node] = (x_pos_start + node.branch_no - 1 + 0.5, -node.load_no - 2 - 0.25)
                     nodes_color.append((0.5, 0.5, 1))
-                elif isinstance(node, GeneratorDingo):
+                elif isinstance(node, GeneratorDing0):
                     # get neighbor of geno
                     neighbor = g.neighbors(node)[0]
 
                     # neighbor is cable distributor of building
-                    if isinstance(neighbor, CableDistributorDingo):
+                    if isinstance(neighbor, CableDistributorDing0):
                         nodes_pos[node] = (x_pos_start + neighbor.branch_no - 1 + 0.5, -neighbor.load_no - 2 + 0.25)
                     else:
                         nodes_pos[node] = (1,1)
 
                     nodes_color.append((0.5, 1, 0.5))
-                elif isinstance(node, StationDingo):
+                elif isinstance(node, StationDing0):
                     nodes_pos[node] = (0, 0)
                     nodes_color.append((1, 0.5, 0.5))
 
@@ -175,9 +175,9 @@ class GridDingo:
         """ Returns nodes that are connected by `branch`
 
         Args:
-            branch: BranchDingo object
+            branch: BranchDing0 object
         Returns:
-            2-tuple of nodes (Dingo objects)
+            2-tuple of nodes (Ding0 objects)
         """
         edges = nx.get_edge_attributes(self._graph, 'branch')
         nodes = list(edges.keys())[list(edges.values()).index(branch)]
@@ -187,10 +187,10 @@ class GridDingo:
         """ Returns branches that are connected to `node`
 
         Args:
-            node: Dingo object (member of graph)
+            node: Ding0 object (member of graph)
         Returns:
-            branches: List of tuples (node, branch), content: node=Dingo object (member of graph),
-                                                              branch=BranchDingo object
+            branches: List of tuples (node, branch), content: node=Ding0 object (member of graph),
+                                                              branch=BranchDing0 object
         """
         # TODO: This method can be replaced and speed up by using NetworkX' neighbors()
 
@@ -238,8 +238,8 @@ class GridDingo:
             algorithm.
 
         Args:
-            node_source: source node (Dingo object), member of _graph
-            node_target: target node (Dingo object), member of _graph
+            node_source: source node (Ding0 object), member of _graph
+            node_target: target node (Ding0 object), member of _graph
             type : str, Specify if nodes or edges should be returned. Default
             is `nodes`
 
@@ -270,8 +270,8 @@ class GridDingo:
             The branches of all paths are stored in a set - the result is a list of unique branches.
 
         Args:
-            node_source: source node (Dingo object), member of _graph
-            nodes_target: list of target nodes (Dingo objects), members of _graph
+            node_source: source node (Ding0 object), member of _graph
+            nodes_target: list of target nodes (Ding0 objects), members of _graph
 
         Returns:
             branches: list of branches (list of nodes in _graph)
@@ -289,8 +289,8 @@ class GridDingo:
         """ Calculates the absolute distance between `node_source` and `node_target` in meters using find_path() and
             branches' length attribute.
         Args:
-            node_source: source node (Dingo object), member of _graph
-            node_target: target node (Dingo object), member of _graph
+            node_source: source node (Ding0 object), member of _graph
+            node_target: target node (Ding0 object), member of _graph
 
         Returns:
             path length in m
@@ -310,7 +310,7 @@ class GridDingo:
         Args:
             none
         Returns:
-            List of nodes (Dingo objects)
+            List of nodes (Ding0 objects)
         """
         return sorted(nx.isolates(self._graph), key=lambda x: repr(x))
 
@@ -326,16 +326,16 @@ class GridDingo:
             generator.capacity_factor = capacity_factor
 
 
-class StationDingo:
+class StationDing0:
     """
-    Defines a HV-MV or MV-LV station in DINGO
+    Defines a HV-MV or MV-LV station in DING0
 
     Parameters
     ----------
 
     id_db: id according to database table
     v_level_operation: operation voltage level at station (the station's voltage level differs from the nominal voltage
-                       level of the grid (see attribute `v_level` in class MVGridDingo) due to grid losses. It is
+                       level of the grid (see attribute `v_level` in class MVGridDing0) due to grid losses. It is
                        usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids
                        (unit: V).
     """
@@ -358,7 +358,7 @@ class StationDingo:
 
     def add_transformer(self, transformer):
         """Adds a transformer to _transformers if not already existing"""
-        if transformer not in self.transformers() and isinstance(transformer, TransformerDingo):
+        if transformer not in self.transformers() and isinstance(transformer, TransformerDing0):
             self._transformers.append(transformer)
 
     @property
@@ -371,13 +371,13 @@ class StationDingo:
         -----
         This peak load includes all loads which are located within Grid District:
         When called from MV station, all loads of all Load Areas are considered
-        (peak load was calculated in MVGridDistrictDingo.add_peak_demand()).
+        (peak load was calculated in MVGridDistrictDing0.add_peak_demand()).
         When called from LV station, all loads of the LVGridDistrict are considered.
         """
         return self.grid.grid_district.peak_load
 
 
-class RingDingo:
+class RingDing0:
     """ Represents a medium voltage Ring
     """
     def __init__(self, **kwargs):
@@ -400,7 +400,7 @@ class RingDingo:
 
     def lv_load_areas(self):
         for lv_load_area in self._grid._graph.nodes():
-            if isinstance(lv_load_area, LVLoadAreaDingo):
+            if isinstance(lv_load_area, LVLoadAreaDing0):
                 if lv_load_area.ring == self:
                     yield lv_load_area
 
@@ -408,7 +408,7 @@ class RingDingo:
         return 'mv_ring_' + str(self._id_db)
 
 
-class BranchDingo:
+class BranchDing0:
     """
     Parameter
     ----------------
@@ -440,7 +440,7 @@ class BranchDingo:
         return 'branch_' + str(self.id_db)
 
 
-class TransformerDingo:
+class TransformerDing0:
     """
     Transformers
     ------------
@@ -477,7 +477,7 @@ class TransformerDingo:
         return self.grid.network
 
 
-class GeneratorDingo:
+class GeneratorDing0:
     """ Generators (power plants of any kind)
     """
 
@@ -514,7 +514,7 @@ class GeneratorDingo:
                     '_mvgd' + str(self.mv_grid.id_db) + '_' + str(self.id_db))
 
 
-class CableDistributorDingo:
+class CableDistributorDing0:
     """ Cable distributor (connection point) """
 
     def __init__(self, **kwargs):
@@ -527,7 +527,7 @@ class CableDistributorDingo:
         return self.grid.network
 
 
-class LoadDingo:
+class LoadDing0:
     """ Class for modelling a load """
 
     def __init__(self, **kwargs):
@@ -544,7 +544,7 @@ class LoadDingo:
         return self.grid.network
 
 
-class CircuitBreakerDingo:
+class CircuitBreakerDing0:
     """ Class for modelling a circuit breaker
 
     Notes:

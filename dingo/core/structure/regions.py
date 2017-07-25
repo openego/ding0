@@ -1,27 +1,27 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from . import RegionDingo
-from dingo.tools import config as cfg_dingo
+from . import RegionDing0
+from ding0.tools import config as cfg_ding0
 
 from shapely.wkt import loads as wkt_loads
 
 
-class MVGridDistrictDingo(RegionDingo):
+class MVGridDistrictDing0(RegionDing0):
     """
-    Defines a MV-grid_district in DINGO
+    Defines a MV-grid_district in DING0
     ----------------------------
 
     """
@@ -59,12 +59,12 @@ class MVGridDistrictDingo(RegionDingo):
             object to MV grid's _graph as node.
 
         Args:
-            lv_load_area: instance of class LVLoadAreaDingo
+            lv_load_area: instance of class LVLoadAreaDing0
 
         Returns:
             nothing
         """
-        if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDingo):
+        if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDing0):
             self._lv_load_areas.append(lv_load_area)
             self.mv_grid.graph_add_node(lv_load_area.lv_load_area_centre)
 
@@ -104,9 +104,9 @@ class MVGridDistrictDingo(RegionDingo):
         return 'mv_grid_district_' + str(self.id_db)
 
 
-class LVLoadAreaDingo(RegionDingo):
+class LVLoadAreaDing0(RegionDing0):
     """
-    Defines a LV-load_area in DINGO
+    Defines a LV-load_area in DING0
     ----------------------------
 
     """
@@ -125,8 +125,8 @@ class LVLoadAreaDingo(RegionDingo):
         self.is_aggregated = kwargs.get('is_aggregated', False)
 
         # threshold: load area peak load, if peak load < threshold => treat load area as satellite
-        load_area_sat_load_threshold = cfg_dingo.get('mv_connect', 'load_area_sat_load_threshold')
-        # TODO: Value is read from file every time a LV load_area is created -> move to associated NetworkDingo class?
+        load_area_sat_load_threshold = cfg_ding0.get('mv_connect', 'load_area_sat_load_threshold')
+        # TODO: Value is read from file every time a LV load_area is created -> move to associated NetworkDing0 class?
 
         db_data = kwargs.get('db_data', None)
 
@@ -175,7 +175,7 @@ class LVLoadAreaDingo(RegionDingo):
         """Adds a LV grid district to _lv_grid_districts if not already existing"""
 
         if lv_grid_district not in self._lv_grid_districts and \
-                isinstance(lv_grid_district, LVGridDistrictDingo):
+                isinstance(lv_grid_district, LVGridDistrictDing0):
             self._lv_grid_districts.append(lv_grid_district)
 
     @property
@@ -194,9 +194,9 @@ class LVLoadAreaDingo(RegionDingo):
         return 'lv_load_area_' + str(self.id_db)
 
 
-class LVLoadAreaCentreDingo:
+class LVLoadAreaCentreDing0:
     """
-    Defines a region centre in Dingo
+    Defines a region centre in Ding0
     --------------------------------
     The centres are used in the MV routing as nodes.
     Note: Centre is a point within a region's polygon that is located most central (e.g. in a simple region shape like a
@@ -224,14 +224,14 @@ class LVLoadAreaCentreDingo:
         return 'lv_load_area_centre_' + str(self.id_db)
 
 
-class LVGridDistrictDingo(RegionDingo):
+class LVGridDistrictDing0(RegionDing0):
     """
     Describes region that is covered by a single LV grid
 
     Parameters
     ----------
-    RegionDingo: class
-        Dingo's region base class
+    RegionDing0: class
+        Ding0's region base class
     """
 
     def __init__(self, **kwargs):

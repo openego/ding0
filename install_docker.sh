@@ -2,7 +2,7 @@
 
 ### Script require sudo (root) priviledges ###
 
-# This scripts install docker to test installation of dingo on a fresh OS
+# This scripts install docker to test installation of ding0 on a fresh OS
 # It is adapted to needs of SolydX 8 respectively Debian 8 (Jessie). Level of adaptation is unknown ;-)
 #
 # Information taken from https://docs.docker.com/engine/installation/linux/debian/#install-using-the-repository

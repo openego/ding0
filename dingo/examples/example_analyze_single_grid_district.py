@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io
 
 Notes
 -----
@@ -20,11 +20,11 @@ below.
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from dingo.tools import results
+from ding0.tools import results
 from matplotlib import pyplot as plt
 
 
@@ -105,5 +105,5 @@ def example_stats(filename, plotpath=''):
                   'km')
 
 if __name__ == '__main__':
-    filename = 'dingo_grids_example.pkl'
+    filename = 'ding0_grids_example.pkl'
     example_stats(filename)

@@ -1,11 +1,11 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io
 
 Based on code by Romulo Oliveira copyright (C) 2015,
 https://github.com/RomuloOliveira/monte-carlo-cvrp
@@ -15,21 +15,21 @@ copy of the license at http://www.apache.org/licenses/LICENSE-2.0
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 import time
 import itertools as it
 
-from dingo.grid.mv_grid.models import models
-from dingo.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
+from ding0.grid.mv_grid.models import models
+from ding0.grid.mv_grid.solvers.base import BaseSolution, BaseSolver
 
-from dingo.tools import config as cfg_dingo
+from ding0.tools import config as cfg_ding0
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 class LocalSearchSolution(BaseSolution):
@@ -455,14 +455,14 @@ class LocalSearchSolver(BaseSolver):
             savings_solution: initial solution of CVRP problem (instance of `SavingsSolution` class)
             timeout: max processing time in seconds
             debug: If True, information is printed while routing
-            anim: AnimationDingo object (refer to class 'AnimationDingo()' for a more detailed description)
+            anim: AnimationDing0 object (refer to class 'AnimationDing0()' for a more detailed description)
 
         Returns a solution (LocalSearchSolution class))
         """
         # TODO: If necessary, use timeout to set max processing time of local search
 
         # load threshold for operator (see exchange or relocate operator's description for more information)
-        op_diff_round_digits = int(cfg_dingo.get('mv_routing', 'operator_diff_round_digits'))
+        op_diff_round_digits = int(cfg_ding0.get('mv_routing', 'operator_diff_round_digits'))
 
         solution = LocalSearchSolution(graph, savings_solution)
 

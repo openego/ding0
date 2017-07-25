@@ -1,11 +1,11 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io
 
 Based on code by oemof development team
 
@@ -32,16 +32,16 @@ Option2 = value2 \n
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 import os.path as path
-import dingo
+import ding0
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 try:
     import configparser as cp
@@ -53,7 +53,7 @@ cfg = cp.RawConfigParser()
 _loaded = False
 
 def load_config(filename):
-    package_path = dingo.__path__[0]
+    package_path = ding0.__path__[0]
     FILE = path.join(package_path, 'config', filename)
 
     try:

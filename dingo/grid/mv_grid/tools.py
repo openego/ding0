@@ -1,32 +1,32 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from dingo.core.network.stations import LVStationDingo
-from dingo.core.network import CableDistributorDingo, GeneratorDingo
-from dingo.tools.geo import calc_geo_centre_point
-from dingo.tools import config as cfg_dingo
+from ding0.core.network.stations import LVStationDing0
+from ding0.core.network import CableDistributorDing0, GeneratorDing0
+from ding0.tools.geo import calc_geo_centre_point
+from ding0.tools import config as cfg_ding0
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def set_circuit_breakers(mv_grid, mode='load', debug=False):
     """ Calculates the optimal position of a circuit breaker on all routes of mv_grid, adds and connects them to graph.
     Args:
-        mv_grid: MVGridDingo object
+        mv_grid: MVGridDing0 object
         mode: String
             determines the key parameter for relocation
 
@@ -50,7 +50,7 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
     the route. Instead of the peak current, the peak load is used here (assuming a constant voltage).
 
     The core of this function (calculation of the optimal circuit breaker position) is the same as in
-    dingo.grid.mv_grid.models.Route.calc_circuit_breaker_position but here it is
+    ding0.grid.mv_grid.models.Route.calc_circuit_breaker_position but here it is
     1. applied to a different data type (NetworkX Graph) and it
     2. adds circuit breakers to all rings.
 
@@ -66,8 +66,8 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
     """
 
     # get power factor for loads and generators
-    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
+    cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
 
     # iterate over all rings and circuit breakers
     for ring, circ_breaker in zip(mv_grid.rings_nodes(include_root_node=False), mv_grid.circuit_breakers()):
@@ -79,12 +79,12 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         for node in ring:
 
             # node is LV station -> get peak load and peak generation
-            if isinstance(node, LVStationDingo):
+            if isinstance(node, LVStationDing0):
                 nodes_peak_load.append(node.peak_load / cos_phi_load)
                 nodes_peak_generation.append(node.peak_generation / cos_phi_feedin)
 
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
-            elif isinstance(node, CableDistributorDingo):
+            elif isinstance(node, CableDistributorDing0):
                 nodes_subtree = mv_grid.graph_nodes_from_subtree(node)
                 nodes_subtree_peak_load = 0
                 nodes_subtree_peak_generation = 0
@@ -92,14 +92,14 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
                 for node_subtree in nodes_subtree:
 
                     # node is LV station -> get peak load and peak generation
-                    if isinstance(node_subtree, LVStationDingo):
+                    if isinstance(node_subtree, LVStationDing0):
                         nodes_subtree_peak_load += node_subtree.peak_load / \
                                                    cos_phi_load
                         nodes_subtree_peak_generation += node_subtree.peak_generation / \
                                                          cos_phi_feedin
 
                     # node is LV station -> get peak load and peak generation
-                    if isinstance(node_subtree, GeneratorDingo):
+                    if isinstance(node_subtree, GeneratorDing0):
                         nodes_subtree_peak_generation += node_subtree.capacity / \
                                                          cos_phi_feedin
 

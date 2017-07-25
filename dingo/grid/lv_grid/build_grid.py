@@ -1,27 +1,27 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from dingo.tools import config as cfg_dingo
+from ding0.tools import config as cfg_ding0
 
-from dingo.core.network import TransformerDingo, BranchDingo
-from dingo.core.network.cable_distributors import LVCableDistributorDingo
-from dingo.core.network.loads import LVLoadDingo
+from ding0.core.network import TransformerDing0, BranchDing0
+from ding0.core.network.cable_distributors import LVCableDistributorDing0
+from ding0.core.network.loads import LVLoadDing0
 import logging
 import math
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def select_transformers(grid, s_max=None):
@@ -40,7 +40,7 @@ def select_transformers(grid, s_max=None):
 
     Parameters
     ----------
-    grid: dingo.core.network.LVGridDingo
+    grid: ding0.core.network.LVGridDing0
         LV grid data
 
     Arguments
@@ -76,14 +76,14 @@ def select_transformers(grid, s_max=None):
         Count of transformers
     """
 
-    load_factor_lv_trans_lc_normal = cfg_dingo.get('assumptions',
+    load_factor_lv_trans_lc_normal = cfg_ding0.get('assumptions',
                                                    'load_factor_lv_trans_lc_normal')
-    load_factor_lv_trans_fc_normal = cfg_dingo.get('assumptions',
+    load_factor_lv_trans_fc_normal = cfg_ding0.get('assumptions',
                                                    'load_factor_lv_trans_fc_normal')
 
-    cos_phi_load = cfg_dingo.get('assumptions',
+    cos_phi_load = cfg_ding0.get('assumptions',
                                  'cos_phi_load')
-    cos_phi_gen = cfg_dingo.get('assumptions',
+    cos_phi_gen = cfg_ding0.get('assumptions',
                                 'cos_phi_gen')
 
     # get equipment parameters of LV transformers
@@ -147,7 +147,7 @@ def transformer(grid):
 
     Parameters
     ----------
-    grid: dingo.core.network.LVGridDingo
+    grid: ding0.core.network.LVGridDing0
         LV grid data
     """
 
@@ -156,7 +156,7 @@ def transformer(grid):
 
     # create transformers and add them to station of LVGD
     for t in range(0, transformer_cnt):
-        lv_transformer = TransformerDingo(
+        lv_transformer = TransformerDing0(
             grid=grid,
             id_db=id,
             v_level=0.4,
@@ -174,7 +174,7 @@ def select_grid_model_ria(lvgd, sector):
 
     Parameters
     ----------
-    lvgd : dingo.core.structure.regions.LVGridDistrictDingo
+    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
     sector : str
         Either 'retail/industrial' or 'agricultural'. Depending on choice
@@ -186,18 +186,18 @@ def select_grid_model_ria(lvgd, sector):
         Parameters that describe branch lines of a sector
     """
 
-    cable_lf = cfg_dingo.get('assumptions',
+    cable_lf = cfg_ding0.get('assumptions',
                              'load_factor_lv_cable_lc_normal')
 
-    cos_phi_load = cfg_dingo.get('assumptions',
+    cos_phi_load = cfg_ding0.get('assumptions',
                                  'cos_phi_load')
 
-    max_lv_branch_line_load = cfg_dingo.get('assumptions',
+    max_lv_branch_line_load = cfg_ding0.get('assumptions',
                                             'max_lv_branch_line')
 
     # make a distinction between sectors
     if sector == 'retail/industrial':
-        max_branch_length = cfg_dingo.get(
+        max_branch_length = cfg_ding0.get(
             "assumptions",
             "branch_line_length_retail_industrial")
         peak_load = lvgd.peak_load_retail + \
@@ -205,7 +205,7 @@ def select_grid_model_ria(lvgd, sector):
         count_sector_areas = lvgd.sector_count_retail + \
                              lvgd.sector_count_industrial
     elif sector == 'agricultural':
-        max_branch_length = cfg_dingo.get(
+        max_branch_length = cfg_ding0.get(
             "assumptions",
             "branch_line_length_agricultural")
         peak_load = lvgd.peak_load_agricultural
@@ -275,7 +275,7 @@ def grid_model_params_ria(lvgd):
     Determine grid model parameters for LV grids of sectors
     retail/industrial and agricultural
     
-    lvgd : dingo.core.structure.regions.LVGridDistrictDingo
+    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
 
     Returns
@@ -333,7 +333,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
     Parameters
     ----------
-    lvgd : dingo.core.structure.regions.LVGridDistrictDingo
+    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
     grid_model_params : dict
         Dict of structural information of sectoral LV grid branch
@@ -362,7 +362,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
             suitable_cables_stub['I_max_th'].idxmin()]
 
         # cable distributor to divert from main branch
-        lv_cable_dist = LVCableDistributorDingo(
+        lv_cable_dist = LVCableDistributorDing0(
             grid=lvgd.lv_grid,
             branch_no=branch_no,
             load_no=load_no)
@@ -370,7 +370,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         lvgd.lv_grid.add_cable_dist(lv_cable_dist)
 
         # cable distributor within building (to connect load+geno)
-        lv_cable_dist_building = LVCableDistributorDingo(
+        lv_cable_dist_building = LVCableDistributorDing0(
             grid=lvgd.lv_grid,
             branch_no=branch_no,
             load_no=load_no,
@@ -378,8 +378,8 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         # add lv_cable_dist_building to graph
         lvgd.lv_grid.add_cable_dist(lv_cable_dist_building)
 
-        # create an instance of Dingo LV load
-        lv_load = LVLoadDingo(grid=lvgd.lv_grid,
+        # create an instance of Ding0 LV load
+        lv_load = LVLoadDing0(grid=lvgd.lv_grid,
                               branch_no=branch_no,
                               load_no=load_no,
                               peak_load=val['single_peak_load'],
@@ -396,7 +396,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
             lvgd.lv_grid._graph.add_edge(
                 lvgd.lv_grid.station(),
                 lv_cable_dist,
-                branch=BranchDingo(
+                branch=BranchDing0(
                     length=val['load_distance'],
                     kind='cable',
                     type=cable_type,
@@ -410,7 +410,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
             lvgd.lv_grid._graph.add_edge(
                 lvgd.lv_grid._cable_distributors[-4],
                 lv_cable_dist,
-                branch=BranchDingo(
+                branch=BranchDing0(
                     length=val['load_distance'],
                     kind='cable',
                     type=cable_type,
@@ -424,8 +424,8 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         lvgd.lv_grid._graph.add_edge(
             lv_cable_dist,
             lv_cable_dist_building,
-            branch=BranchDingo(
-                length=cfg_dingo.get(
+            branch=BranchDing0(
+                length=cfg_ding0.get(
                     'assumptions',
                     'lv_ria_branch_connection_distance'),
                 kind='cable',
@@ -439,7 +439,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         lvgd.lv_grid._graph.add_edge(
             lv_cable_dist_building,
             lv_load,
-            branch=BranchDingo(
+            branch=BranchDing0(
                 length=1,
                 kind='cable',
                 type=cable_type_stub,
@@ -449,9 +449,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     sector=sector_short))
         )
 
-    cable_lf = cfg_dingo.get('assumptions',
+    cable_lf = cfg_ding0.get('assumptions',
                              'load_factor_lv_cable_lc_normal')
-    cos_phi_load = cfg_dingo.get('assumptions',
+    cos_phi_load = cfg_ding0.get('assumptions',
                                  'cos_phi_load')
 
     # iterate over branches for sectors retail/industrial and agricultural
@@ -477,7 +477,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 cable_type = suitable_cables.ix[
                     suitable_cables['I_max_th'].idxmin()]
 
-                # create Dingo grid objects and add to graph
+                # create Ding0 grid objects and add to graph
                 for load_no in list(range(1, val['max_loads_per_branch'] + 1)):
                     # create a LV grid string and attached to station
                     lv_graph_attach_branch()
@@ -512,7 +512,7 @@ def build_ret_ind_agr_branches(lvgd):
 
     Parameters
     ----------
-    lvgd : dingo.core.structure.regions.LVGridDistrictDingo
+    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
     """
 
@@ -529,7 +529,7 @@ def select_grid_model_residential(lvgd):
 
     Parameters
     ----------
-    lvgd : dingo.core.structure.regions.LVGridDistrictDingo
+    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
 
     Returns
@@ -556,9 +556,9 @@ def select_grid_model_residential(lvgd):
         'LV_model_grids_strings_per_grid']
 
     # load assumtions
-    apartment_house_branch_ratio = cfg_dingo.get("assumptions",
+    apartment_house_branch_ratio = cfg_ding0.get("assumptions",
                                                  "apartment_house_branch_ratio")
-    population_per_apartment = cfg_dingo.get("assumptions",
+    population_per_apartment = cfg_ding0.get("assumptions",
                                              "population_per_apartment")
 
     # calc count of apartments to select string types
@@ -587,7 +587,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
 
     Parameter
     ---------
-    lvgd : dingo.core.structure.regions.LVGridDistrictDingo
+    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
     selected_string_df: Dataframe
         Table of strings of the selected grid model
@@ -639,7 +639,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                     variant = 'A'
 
                 # cable distributor to divert from main branch
-                lv_cable_dist = LVCableDistributorDingo(
+                lv_cable_dist = LVCableDistributorDing0(
                     grid=lvgd.lv_grid,
                     string_id=i,
                     branch_no=branch_no + branch_count_sum,
@@ -648,7 +648,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                 lvgd.lv_grid.add_cable_dist(lv_cable_dist)
 
                 # cable distributor within building (to connect load+geno)
-                lv_cable_dist_building = LVCableDistributorDingo(
+                lv_cable_dist_building = LVCableDistributorDing0(
                     grid=lvgd.lv_grid,
                     string_id=i,
                     branch_no=branch_no + branch_count_sum,
@@ -657,7 +657,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                 # add lv_cable_dist_building to graph
                 lvgd.lv_grid.add_cable_dist(lv_cable_dist_building)
 
-                lv_load = LVLoadDingo(grid=lvgd.lv_grid,
+                lv_load = LVLoadDing0(grid=lvgd.lv_grid,
                                       string_id=i,
                                       branch_no=branch_no + branch_count_sum,
                                       load_no=house_branch,
@@ -679,7 +679,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                     lvgd.lv_grid._graph.add_edge(
                         lvgd.lv_grid.station(),
                         lv_cable_dist,
-                        branch=BranchDingo(
+                        branch=BranchDing0(
                             length=row['distance house branch'],
                             kind='cable',
                             type=cable_type,
@@ -693,7 +693,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                     lvgd.lv_grid._graph.add_edge(
                         lvgd.lv_grid._cable_distributors[-4],
                         lv_cable_dist,
-                        branch=BranchDingo(
+                        branch=BranchDing0(
                             length=row['distance house branch'],
                             kind='cable',
                             type=lvgd.lv_grid.network.static_data[
@@ -710,7 +710,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                 lvgd.lv_grid._graph.add_edge(
                     lv_cable_dist,
                     lv_cable_dist_building,
-                    branch=BranchDingo(
+                    branch=BranchDing0(
                         length=row['length house branch {}'.format(
                             variant)],
                         kind='cable',
@@ -725,7 +725,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                 lvgd.lv_grid._graph.add_edge(
                     lv_cable_dist_building,
                     lv_load,
-                    branch=BranchDingo(
+                    branch=BranchDing0(
                         length=1,
                         kind='cable',
                         type=lvgd.lv_grid.network.static_data['LV_cables']. \
@@ -744,7 +744,7 @@ def build_residential_branches(lvgd):
 
     Parameters
     ----------
-    lvgd : dingo.core.structure.regions.LVGridDistrictDingo
+    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
     """
 

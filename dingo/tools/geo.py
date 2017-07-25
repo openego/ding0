@@ -1,15 +1,15 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
@@ -20,11 +20,11 @@ from shapely.ops import transform
 import pyproj
 from functools import partial
 
-from dingo.tools import config as cfg_dingo
+from ding0.tools import config as cfg_ding0
 import logging
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
@@ -55,7 +55,7 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
         If there are no nodes, the buffer is successively extended by `radius_inc` until nodes are found.
 
     Args:
-        node: origin node (e.g. LVStationDingo object) with associated shapely object (attribute `geo_data`) in any CRS
+        node: origin node (e.g. LVStationDing0 object) with associated shapely object (attribute `geo_data`) in any CRS
               (e.g. WGS84)
         radius: buffer radius in m
         radius_inc: radius increment in m
@@ -85,14 +85,14 @@ def calc_geo_dist_vincenty(node_source, node_target):
     """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
         config_calc.cfg.
     Args:
-        node_source: source node (Dingo object), member of _graph
-        node_target: target node (Dingo object), member of _graph
+        node_source: source node (Ding0 object), member of _graph
+        node_target: target node (Ding0 object), member of _graph
 
     Returns:
         Distance in m
     """
 
-    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+    branch_detour_factor = cfg_ding0.get('assumptions', 'branch_detour_factor')
 
     # notice: vincenty takes (lat,lon)
     branch_length = branch_detour_factor * vincenty((node_source.geo_data.y, node_source.geo_data.x),
@@ -136,7 +136,7 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
         x=longitude, y=latitude
     """
 
-    branch_detour_factor = cfg_dingo.get('assumptions', 'branch_detour_factor')
+    branch_detour_factor = cfg_ding0.get('assumptions', 'branch_detour_factor')
 
     matrix = {}
 
@@ -158,8 +158,8 @@ def calc_geo_centre_point(node_source, node_target):
     """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
         config_calc.cfg.
     Args:
-        node_source: source node (Dingo object), member of _graph
-        node_target: target node (Dingo object), member of _graph
+        node_source: source node (Ding0 object), member of _graph
+        node_target: target node (Ding0 object), member of _graph
 
     Returns:
         Distance in m

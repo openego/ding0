@@ -1,20 +1,20 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from dingo.tools import config as cfg_dingo
-cfg_dingo.load_config('config_files.cfg')
+from ding0.tools import config as cfg_ding0
+cfg_ding0.load_config('config_files.cfg')
 
 import os
 import logging
@@ -33,38 +33,38 @@ def create_dir(dirpath):
     if not os.path.isdir(dirpath):
         os.mkdir(dirpath)
 
-        print("We create a directory for you and your Dingo data: {}".format(
+        print("We create a directory for you and your Ding0 data: {}".format(
             dirpath))
 
 
-def create_home_dir(dingo_path=None):
+def create_home_dir(ding0_path=None):
     """
-    Check in ~/<DINGO_DIR> exists, otherwise create it
+    Check in ~/<DING0_DIR> exists, otherwise create it
 
     Parameters
     ----------
-    dingo_path : str
-        Path to store Dingo related data (logging, etc)
+    ding0_path : str
+        Path to store Ding0 related data (logging, etc)
     """
 
-    if dingo_path is None:
-        dingo_path = get_default_home_dir()
+    if ding0_path is None:
+        ding0_path = get_default_home_dir()
 
-    create_dir(dingo_path)
+    create_dir(ding0_path)
 
 
 def get_default_home_dir():
     """
-    Return default home directory of Dingo
+    Return default home directory of Ding0
 
     Returns
     -------
     homedir : str
         Default home directory including its path
     """
-    dingo_dir = str(cfg_dingo.get('config',
+    ding0_dir = str(cfg_ding0.get('config',
                                   'config_dir'))
-    return os.path.join(os.path.expanduser('~'), dingo_dir)
+    return os.path.join(os.path.expanduser('~'), ding0_dir)
 
 
 def setup_logger(log_dir=None, loglevel=logging.DEBUG):
@@ -74,7 +74,7 @@ def setup_logger(log_dir=None, loglevel=logging.DEBUG):
     Parameters
     ----------
     log_dir : str
-        Directory to save log, default: ~/.dingo/logging/
+        Directory to save log, default: ~/.ding0/logging/
     """
 
     create_home_dir()
@@ -83,11 +83,11 @@ def setup_logger(log_dir=None, loglevel=logging.DEBUG):
     if log_dir is None:
         log_dir = os.path.join(get_default_home_dir(), 'log')
 
-    logger = logging.getLogger('dingo') # use filename as name in log
+    logger = logging.getLogger('ding0') # use filename as name in log
     logger.setLevel(loglevel)
 
     # create a file handler
-    handler = logging.FileHandler(os.path.join(log_dir, 'dingo.log'))
+    handler = logging.FileHandler(os.path.join(log_dir, 'ding0.log'))
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
         '%(asctime)s-%(funcName)s-%(message)s (%(levelname)s)')
@@ -104,6 +104,6 @@ def setup_logger(log_dir=None, loglevel=logging.DEBUG):
     logger.addHandler(handler)
     logger.addHandler(stream)
 
-    logger.info('########## New run of Dingo issued #############')
+    logger.info('########## New run of Ding0 issued #############')
 
     return logger

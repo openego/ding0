@@ -1,14 +1,14 @@
-.. _dingo-examples:
+.. _ding0-examples:
 
-How to use dingo?
+How to use ding0?
 ~~~~~~~~~~~~~~~~~
 
 Examples
 ========
 
-We provide two examples of how to use Dingo along with two example for analysis
+We provide two examples of how to use Ding0 along with two example for analysis
 of resulting data. The
-:download:`first example <../examples/example_single_grid_district.py>` shows how Dingo
+:download:`first example <../examples/example_single_grid_district.py>` shows how Ding0
 is applied to a single medium-voltage grid district. Grid topology for the
 medium- and low-voltage grid level is generated an export to the *OEDB* and
 save to file (.pkl).

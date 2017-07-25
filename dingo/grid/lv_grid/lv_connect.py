@@ -1,34 +1,34 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-from dingo.core.network import BranchDingo
+from ding0.core.network import BranchDing0
 
-from dingo.tools import config as cfg_dingo
-from dingo.tools.geo import calc_geo_dist_vincenty
-from dingo.grid.tools import cable_type
+from ding0.tools import config as cfg_ding0
+from ding0.tools.geo import calc_geo_dist_vincenty
+from ding0.grid.tools import cable_type
 import logging
 import random
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def lv_connect_generators(lv_grid_district, graph, debug=False):
     """ Connect LV generators to LV grid
 
     Args:
-        lv_grid_district: LVGridDistrictDingo object for which the connection process has to be done
+        lv_grid_district: LVGridDistrictDing0 object for which the connection process has to be done
         graph: NetworkX graph object with nodes
         debug: If True, information is printed during process
 
@@ -36,9 +36,9 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
         graph: NetworkX graph object with nodes and newly created branches
     """
 
-    cable_lf = cfg_dingo.get('assumptions',
+    cable_lf = cfg_ding0.get('assumptions',
                              'load_factor_lv_cable_fc_normal')
-    cos_phi_gen = cfg_dingo.get('assumptions',
+    cos_phi_gen = cfg_ding0.get('assumptions',
                                 'cos_phi_gen')
 
     # generate random list (without replacement => unique elements)
@@ -74,7 +74,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                 0.4,
                 lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
-            branch = BranchDingo(length=branch_length,
+            branch = BranchDing0(length=branch_length,
                                  kind='cable',
                                  type=branch_type)
 
@@ -130,7 +130,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                 lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
             # connect to cable dist. of building
-            branch = BranchDingo(length=1,
+            branch = BranchDing0(length=1,
                                  kind='cable',
                                  type=branch_type)
 

@@ -1,7 +1,7 @@
-dingo\.tools package
+ding0\.tools package
 ====================
 
-.. automodule:: dingo.tools
+.. automodule:: ding0.tools
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,47 +9,47 @@ dingo\.tools package
 Submodules
 ----------
 
-.. automodule:: dingo.tools.animation
+.. automodule:: ding0.tools.animation
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.tools.config
+.. automodule:: ding0.tools.config
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.tools.debug
+.. automodule:: ding0.tools.debug
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.tools.geo
+.. automodule:: ding0.tools.geo
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.tools.logger
+.. automodule:: ding0.tools.logger
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.tools.pypsa_io
+.. automodule:: ding0.tools.pypsa_io
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.tools.results
+.. automodule:: ding0.tools.results
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.tools.results_scigrid_2017
+.. automodule:: ding0.tools.results_scigrid_2017
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: dingo.tools.tools
+.. automodule:: ding0.tools.tools
     :members:
     :undoc-members:
     :show-inheritance:

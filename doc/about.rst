@@ -203,7 +203,7 @@ limited to 5 % as detailed in [Zdrallek]_.
 
 
 
-Following steps do apply during reinforcement of Dingo LV grids
+Following steps do apply during reinforcement of Ding0 LV grids
 
 #. Checks for **overloading** issues at branches and MV-LV transformers first
 #. Critical branches (those with line overloading) are extended to appropriate

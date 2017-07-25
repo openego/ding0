@@ -1,31 +1,31 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 # check technical constraints of distribution grids (shared lib)
 
-from dingo.tools import config as cfg_dingo
+from ding0.tools import config as cfg_ding0
 import logging
-from dingo.core.network.loads import LVLoadDingo
-from dingo.core.network import GeneratorDingo
-from dingo.core.network.cable_distributors import LVCableDistributorDingo
-from dingo.core.network.stations import LVStationDingo
+from ding0.core.network.loads import LVLoadDing0
+from ding0.core.network import GeneratorDing0
+from ding0.core.network.cable_distributors import LVCableDistributorDing0
+from ding0.core.network.stations import LVStationDing0
 import networkx as nx
 import math
 
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def check_load(grid, mode):
@@ -33,14 +33,14 @@ def check_load(grid, mode):
 
     Parameters
     ----------
-    grid: GridDingo object
+    grid: GridDing0 object
     mode: String
         kind of grid ('MV' or 'LV')
 
     Returns
     -------
-    Dict of critical branches (BranchDingo objects) with max. relative overloading
-    List of critical transformers (TransformerDingo objects),
+    Dict of critical branches (BranchDing0 objects) with max. relative overloading
+    List of critical transformers (TransformerDing0 objects),
     Format: {branch_1: rel_overloading_1, ..., branch_n: rel_overloading_n},
             [trafo_1, ..., trafo_m]
 
@@ -60,17 +60,17 @@ def check_load(grid, mode):
     if mode == 'MV':
         # load load factors (conditions) for cables, lines and trafos for load- and feedin case
 
-        # load_factor_mv_trans_lc_normal = float(cfg_dingo.get('assumptions',
+        # load_factor_mv_trans_lc_normal = float(cfg_ding0.get('assumptions',
         #                                                      'load_factor_mv_trans_lc_normal'))
-        load_factor_mv_line_lc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_line_lc_normal = float(cfg_ding0.get('assumptions',
                                                              'load_factor_mv_line_lc_normal'))
-        load_factor_mv_cable_lc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_cable_lc_normal = float(cfg_ding0.get('assumptions',
                                                              'load_factor_mv_cable_lc_normal'))
-        #load_factor_mv_trans_fc_normal = float(cfg_dingo.get('assumptions',
+        #load_factor_mv_trans_fc_normal = float(cfg_ding0.get('assumptions',
         #                                                     'load_factor_mv_trans_fc_normal'))
-        load_factor_mv_line_fc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_line_fc_normal = float(cfg_ding0.get('assumptions',
                                                              'load_factor_mv_line_fc_normal'))
-        load_factor_mv_cable_fc_normal = float(cfg_dingo.get('assumptions',
+        load_factor_mv_cable_fc_normal = float(cfg_ding0.get('assumptions',
                                                              'load_factor_mv_cable_fc_normal'))
 
         mw2kw = 1e3
@@ -103,7 +103,7 @@ def check_load(grid, mode):
 
         # NOTE: HV-MV station reinforcement is not required for status-quo
         # scenario since HV-MV trafos already sufficient for load+generation
-        # case as done in MVStationDingo.choose_transformers()
+        # case as done in MVStationDing0.choose_transformers()
 
         # OLD snippet:
         # cum_peak_load = grid.grid_district.peak_load
@@ -140,7 +140,7 @@ def check_voltage(grid, mode):
 
     Parameters
     ----------
-    grid: GridDingo object
+    grid: GridDing0 object
     mode: String
         kind of grid ('MV' or 'LV')
 
@@ -157,9 +157,9 @@ def check_voltage(grid, mode):
 
     if mode == 'MV':
         # load max. voltage difference for load and feedin case
-        mv_max_v_level_lc_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+        mv_max_v_level_lc_diff_normal = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                             'mv_max_v_level_lc_diff_normal'))
-        mv_max_v_level_fc_diff_normal = float(cfg_dingo.get('mv_routing_tech_constraints',
+        mv_max_v_level_fc_diff_normal = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                             'mv_max_v_level_fc_diff_normal'))
 
         # check nodes' voltages
@@ -195,8 +195,8 @@ def get_critical_line_loading(grid):
 
     Parameters
     ----------
-    grid : dingo.core.network.grids.LVGridDingo
-        Dingo LV grid object
+    grid : ding0.core.network.grids.LVGridDing0
+        Ding0 LV grid object
 
     Returns
     -------
@@ -205,11 +205,11 @@ def get_critical_line_loading(grid):
     critical_stations : list
         List of critical stations incl. its transformer loading
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
-    lf_trafo_load = cfg_dingo.get('assumptions',
+    cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    lf_trafo_load = cfg_ding0.get('assumptions',
                                   "load_factor_lv_trans_lc_normal")
-    lf_trafo_gen = cfg_dingo.get('assumptions',
+    lf_trafo_gen = cfg_ding0.get('assumptions',
                                   "load_factor_lv_trans_fc_normal")
 
     critical_branches = []
@@ -227,12 +227,12 @@ def get_critical_line_loading(grid):
         descendants = list(nx.descendants(tree, node))
         descendants.append(node)
 
-        if isinstance(node, LVStationDingo):
+        if isinstance(node, LVStationDing0):
             # determine cumulative peak load at node and assign to branch
             peak_load, peak_gen = peak_load_generation_at_node(descendants)
 
             if grid.id_db == 61107:
-                if isinstance(node, LVStationDingo):
+                if isinstance(node, LVStationDing0):
                     print(node)
             # get trafos cumulative apparent power
             s_max_trafos = sum([_.s_max_a for _ in node._transformers])
@@ -285,7 +285,7 @@ def peak_load_generation_at_node(nodes):
     Parameters
     ----------
     nodes : list
-        Any LV grid Dingo node object that is part of the grid topology
+        Any LV grid Ding0 node object that is part of the grid topology
 
     Return
     ------
@@ -296,11 +296,11 @@ def peak_load_generation_at_node(nodes):
     """
 
     loads = [node.peak_load for node in nodes
-             if isinstance(node, LVLoadDingo)]
+             if isinstance(node, LVLoadDing0)]
     peak_load = sum(loads)
 
     generation = [node.capacity for node in nodes
-             if isinstance(node, GeneratorDingo)]
+             if isinstance(node, GeneratorDing0)]
     peak_generation = sum(generation)
 
     return peak_load, peak_generation
@@ -348,8 +348,8 @@ def get_critical_voltage_at_nodes(grid):
 
     Parameters
     ----------
-    grid : dingo.core.network.grids.LVGridDingo
-        Dingo LV grid object
+    grid : ding0.core.network.grids.LVGridDing0
+        Ding0 LV grid object
 
     Notes
     -----
@@ -365,9 +365,9 @@ def get_critical_voltage_at_nodes(grid):
     in the main branch cable distributor.
     """
 
-    v_delta_tolerable_fc = cfg_dingo.get('assumptions',
+    v_delta_tolerable_fc = cfg_ding0.get('assumptions',
                                       'lv_max_v_level_fc_diff_normal')
-    v_delta_tolerable_lc = cfg_dingo.get('assumptions',
+    v_delta_tolerable_lc = cfg_ding0.get('assumptions',
                                       'lv_max_v_level_lc_diff_normal')
 
     omega = 2 * math.pi * 50
@@ -386,11 +386,11 @@ def get_critical_voltage_at_nodes(grid):
     # fill two above lists
     for node in list(nx.descendants(tree, grid._station)):
         successors = tree.successors(node)
-        if successors and all(isinstance(successor, LVCableDistributorDingo)
+        if successors and all(isinstance(successor, LVCableDistributorDing0)
                for successor in successors):
             main_branch.append(node)
-        elif (isinstance(node, LVCableDistributorDingo) and
-            all(isinstance(successor, (GeneratorDingo, LVLoadDingo))
+        elif (isinstance(node, LVCableDistributorDing0) and
+            all(isinstance(successor, (GeneratorDing0, LVLoadDing0))
                for successor in successors)):
             grid_conn_points.append(node)
 
@@ -559,9 +559,9 @@ def get_house_conn_gen_load(graph, node):
             if not isinstance(cus_2, list):
                 cus_2 = [cus_2]
             generation += sum([gen.capacity for gen in cus_2
-                          if isinstance(gen, GeneratorDingo)])
+                          if isinstance(gen, GeneratorDing0)])
             peak_load += sum([load.peak_load for load in cus_2
-                          if isinstance(load, LVLoadDingo)])
+                          if isinstance(load, LVLoadDing0)])
 
     return [peak_load, generation]
 
@@ -572,8 +572,8 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
 
     Parameters
     ----------
-    grid : dingo.core.network.grids.LVGridDingo
-        Dingo grid object
+    grid : ding0.core.network.grids.LVGridDing0
+        Ding0 grid object
     tree : networkx.DiGraph
         Tree of grid topology
     node : graph node
@@ -588,9 +588,9 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     delta_voltage : float
         Delta voltage for node
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
-    v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+    cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
     # add resitance/ reactance to preceeding
@@ -621,7 +621,7 @@ def get_mv_impedance(grid):
 
     Parameters
     ----------
-    grid : dingo.core.network.grids.LVGridDingo
+    grid : ding0.core.network.grids.LVGridDing0
 
     Returns
     -------
@@ -647,8 +647,8 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
 
     Parameters
     ----------
-    grid : dingo.core.network.grids.LVGridDingo
-        Dingo grid object
+    grid : ding0.core.network.grids.LVGridDing0
+        Ding0 grid object
     tree : networkx.DiGraph
         Tree of grid topology
     main_branch_node : graph node
@@ -665,9 +665,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
     delta_voltage : float
         Delta voltage for node
     """
-    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
-    v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+    cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
     stub_branch = [_ for _ in grid.graph_branches_from_node(main_branch_node) if
@@ -678,7 +678,7 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
              stub_branch['branch'].length / 1e3
     s_max_gen = [_.capacity / cos_phi_feedin
                  for _ in tree.successors(stub_node)
-                 if isinstance(_, GeneratorDingo)]
+                 if isinstance(_, GeneratorDing0)]
     if s_max_gen:
         s_max_gen = s_max_gen[0]
         v_delta_stub_gen = voltage_delta_vde(v_nom, s_max_gen, r_stub + r_preceeding,
@@ -688,7 +688,7 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
 
     s_max_load = [_.peak_load / cos_phi_load
                   for _ in tree.successors(stub_node)
-                  if isinstance(_, LVLoadDingo)]
+                  if isinstance(_, LVLoadDing0)]
     if s_max_load:
         s_max_load = s_max_load[0]
         v_delta_stub_load = voltage_delta_vde(v_nom, s_max_load, r_stub + r_preceeding,
@@ -703,8 +703,8 @@ def get_voltage_at_bus_bar(grid, tree):
     """
     Determine voltage level at bus bar of MV-LV substation
 
-    grid : dingo.core.network.grids.LVGridDingo
-        Dingo grid object
+    grid : ding0.core.network.grids.LVGridDing0
+        Ding0 grid object
     tree : networkx.DiGraph
         Tree of grid topology:
 
@@ -721,17 +721,17 @@ def get_voltage_at_bus_bar(grid, tree):
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
 
-    cos_phi_load = cfg_dingo.get('assumptions', 'cos_phi_load')
-    cos_phi_feedin = cfg_dingo.get('assumptions', 'cos_phi_gen')
-    v_nom = cfg_dingo.get('assumptions', 'lv_nominal_voltage')
+    cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
 
     # loads and generators connected to bus bar
     bus_bar_load = sum(
         [node.peak_load for node in tree.successors(grid._station)
-         if isinstance(node, LVLoadDingo)]) / cos_phi_load
+         if isinstance(node, LVLoadDing0)]) / cos_phi_load
     bus_bar_generation = sum(
         [node.capacity for node in tree.successors(grid._station)
-         if isinstance(node, GeneratorDingo)]) / cos_phi_feedin
+         if isinstance(node, GeneratorDing0)]) / cos_phi_feedin
 
     v_delta_load_case_bus_bar = voltage_delta_vde(v_nom,
                                                   bus_bar_load,

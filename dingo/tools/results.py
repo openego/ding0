@@ -1,15 +1,15 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
@@ -17,7 +17,7 @@ import pickle
 import os
 import pandas as pd
 
-from dingo.tools import config as cfg_dingo
+from ding0.tools import config as cfg_ding0
 from matplotlib import pyplot as plt
 import seaborn as sns
 
@@ -28,7 +28,7 @@ def lv_grid_generators_bus_bar(nd):
 
     Parameters
     ----------
-    nd : dingo.NetworkDingo
+    nd : ding0.NetworkDing0
         Network container object
 
     Returns
@@ -135,8 +135,8 @@ def save_nd_to_pickle(nd, path='', filename=None):
 
     Parameters
     ----------
-    nd : NetworkDingo
-        Dingo grid container object
+    nd : NetworkDing0
+        Ding0 grid container object
     path : str
         Absolute or relative path where pickle should be saved. Default is ''
         which means pickle is save to PWD
@@ -150,8 +150,8 @@ def save_nd_to_pickle(nd, path='', filename=None):
     Use pickle to save the whole nd-object to disc
     Parameters
     ----------
-    nd : NetworkDingo
-        Dingo grid container object
+    nd : NetworkDing0
+        Ding0 grid container object
     path : str
         Absolute or relative path where pickle should be saved. Default is ''
         which means pickle is save to PWD
@@ -167,7 +167,7 @@ def save_nd_to_pickle(nd, path='', filename=None):
         name_extension = '_{number}'.format(number=nd._mv_grid_districts[0].id_db)
 
     if filename is None:
-        filename = "dingo_grids_{ext}.pkl".format(
+        filename = "ding0_grids_{ext}.pkl".format(
             ext=name_extension)
 
     # delete attributes of `nd` in order to make pickling work
@@ -191,8 +191,8 @@ def load_nd_from_pickle(filename=None, path=''):
 
     Returns
     -------
-    nd : NetworkDingo
-        Dingo grid container object
+    nd : NetworkDing0
+        Ding0 grid container object
     """
 
     abs_path = os.path.abspath(path)
@@ -283,7 +283,7 @@ def concat_nd_pickles(self, mv_grid_districts):
         Ints describing MV grid districts
     """
 
-    pickle_name = cfg_dingo.get('output', 'nd_pickle')
+    pickle_name = cfg_ding0.get('output', 'nd_pickle')
     # self.nd = self.read_pickles_from_files(pickle_name)
 
 
@@ -303,7 +303,7 @@ def concat_nd_pickles(self, mv_grid_districts):
                 open(os.path.join(
                     self.base_path,
                     'results',
-                    "dingo_grids_{0}-{1}.pkl".format(
+                    "ding0_grids_{0}-{1}.pkl".format(
                         mv_grid_districts[0],
                         mv_grid_districts[-1])),
                     "wb"))
@@ -323,7 +323,7 @@ def concat_nd_pickles(self, mv_grid_districts):
 
 
 # TODO: old code, that may is used for re-implementation, @gplssm
-# that old code was part of the ResultsDingo class that was removed later
+# that old code was part of the ResultsDing0 class that was removed later
 #
 # def concat_nd_pickles(self, mv_grid_districts):
 #     """
@@ -335,7 +335,7 @@ def concat_nd_pickles(self, mv_grid_districts):
 #         Ints describing MV grid districts
 #     """
 #
-#     pickle_name = cfg_dingo.get('output', 'nd_pickle')
+#     pickle_name = cfg_ding0.get('output', 'nd_pickle')
 #     # self.nd = self.read_pickles_from_files(pickle_name)
 #
 #     mvgd_1 = pickle.load(
@@ -360,7 +360,7 @@ def concat_nd_pickles(self, mv_grid_districts):
 #                 open(os.path.join(
 #                     self.base_path,
 #                     'results',
-#                     "dingo_grids_{0}-{1}.pkl".format(
+#                     "ding0_grids_{0}-{1}.pkl".format(
 #                         mv_grid_districts[0],
 #                         mv_grid_districts[-1])),
 #                     "wb"))

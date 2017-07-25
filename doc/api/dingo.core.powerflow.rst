@@ -1,7 +1,7 @@
-dingo\.core\.powerflow package
+ding0\.core\.powerflow package
 ==============================
 
-.. automodule:: dingo.core.powerflow
+.. automodule:: ding0.core.powerflow
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,31 +1,31 @@
-"""This file is part of DINGO, the DIstribution Network GeneratOr.
-DINGO is a tool to generate synthetic medium and low voltage power
+"""This file is part of DING0, the DIstribution Network GeneratOr.
+DING0 is a tool to generate synthetic medium and low voltage power
 distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DING0 lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
 from oemof.db import engine
-from dingo.tools import config as cfg_dingo
-from dingo.tools.logger import get_default_home_dir
+from ding0.tools import config as cfg_ding0
+from ding0.tools.logger import get_default_home_dir
 import os
 
 import logging
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def connection(section='oedb'):
-    """DINGO-specific database connection method which uses oemof.db
+    """DING0-specific database connection method which uses oemof.db
     
-    This function checks if DINGO's config file for access to databases
+    This function checks if DING0's config file for access to databases
     exists and provides functionality to create this file.
     
     This function purely calls the `connect()` method of the engine object
@@ -35,7 +35,7 @@ def connection(section='oedb'):
     """
 
     # get name of DB config file
-    db_config_file = str(cfg_dingo.get('config',
+    db_config_file = str(cfg_ding0.get('config',
                                        'db_config_file'))
     db_config_file_path = os.path.join(get_default_home_dir(),
                                        db_config_file)
@@ -47,7 +47,7 @@ def connection(section='oedb'):
     # if not, ask to create with user input
     else:
         logger.warning('DB config file {} not found. '
-                       'This might be the first run of DINGO. '
+                       'This might be the first run of DING0. '
                        'Do you want me to create this file? (y/n): '
                        .format(db_config_file_path))
         choice = ''

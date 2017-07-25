@@ -1,7 +1,7 @@
-dingo\.grid\.mv\_grid\.tests package
+ding0\.grid\.mv\_grid\.tests package
 ====================================
 
-.. automodule:: dingo.grid.mv_grid.tests
+.. automodule:: ding0.grid.mv_grid.tests
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,7 +9,7 @@ dingo\.grid\.mv\_grid\.tests package
 Submodules
 ----------
 
-.. automodule:: dingo.grid.mv_grid.tests.run_test_case
+.. automodule:: ding0.grid.mv_grid.tests.run_test_case
     :members:
     :undoc-members:
     :show-inheritance:
