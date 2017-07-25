@@ -1,4 +1,4 @@
-<img align="right" width="300" height="300" src="https://github.com/openego/ding0/blob/dev/doc/images/DINGO_Logo_300px.png">
+<img align="right" width="300" height="300" src="https://github.com/openego/ding0/blob/dev/doc/images/DING0_Logo_300px.png">
 
 [![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://ding0.readthedocs.io/en/dev/?badge=dev)
 
