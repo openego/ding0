@@ -1,4 +1,4 @@
-v0.1.0 (<somemoth> <someday>, 2017)
+v0.1.0 (July 25, 2017)
 ++++++++++++++++++++++++++
 
 As this is the first release of dingo, we built everything from scratch.
