@@ -1455,7 +1455,7 @@ class NetworkDingo:
             anim = None
 
         for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.routing(debug, anim)
+            grid_district.mv_grid.routing(debug=debug, anim=anim)
 
         logger.info('=====> MV Routing (Routing, Connection of Satellites & '
                     'Stations) performed')
@@ -1485,7 +1485,7 @@ class NetworkDingo:
         """
 
         for mv_grid_district in self.mv_grid_districts():
-            mv_grid_district.mv_grid.connect_generators(debug)
+            mv_grid_district.mv_grid.connect_generators(debug=debug)
 
             # get predefined random seed and initialize random generator
             seed = int(cfg_dingo.get('random', 'seed'))
@@ -1495,7 +1495,7 @@ class NetworkDingo:
                 if not load_area.is_aggregated:
                     for lv_grid_district in load_area.lv_grid_districts():
 
-                        lv_grid_district.lv_grid.connect_generators(debug)
+                        lv_grid_district.lv_grid.connect_generators(debug=debug)
                         if debug:
                             lv_grid_district.lv_grid.graph_draw(mode='LV')
                 else:
@@ -1514,7 +1514,7 @@ class NetworkDingo:
         """
 
         for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.parametrize_grid(debug)
+            grid_district.mv_grid.parametrize_grid(debug=debug)
 
         logger.info('=====> MV Grids parametrized')
 
@@ -1536,7 +1536,7 @@ class NetworkDingo:
         """
 
         for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.set_circuit_breakers(debug)
+            grid_district.mv_grid.set_circuit_breakers(debug=debug)
 
         logger.info('=====> MV Circuit Breakers relocated')
 

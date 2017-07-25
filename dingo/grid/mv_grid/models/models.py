@@ -222,7 +222,11 @@ class Route(object):
             checked using load factors from [1]_. Due to the high amount of steps the voltage rating cannot be checked
             using load flow calculation. Therefore we use a simple method which determines the voltage change between
             two consecutive nodes according to [2]_.
-            Furthermore it is checked if new route has got more nodes than allowed (typ. 2*10 according to [3]_).
+            Furthermore it is checked:
+                * if new route has got more nodes than allowed (typ. 2*10 according to [3]_)
+                * if the length of the full ring exceeds a threshold of 2 * max_ring_length_factor * v_level
+                (e.g. in a 20kV grid assuming max_ring_length_factor=1.5 the max ring length would be 60km).
+                max_ring_length_factor is used to achieve more variance in the grids.
 
         References:
             
@@ -236,6 +240,9 @@ class Route(object):
         # load parameters
         load_area_count_per_ring = float(cfg_dingo.get('mv_routing',
                                                        'load_area_count_per_ring'))
+
+        max_ring_length_factor = float(cfg_dingo.get('mv_routing',
+                                                     'max_ring_length_factor'))
 
         if self._problem._branch_kind == 'line':
             load_factor_normal = float(cfg_dingo.get('assumptions',
@@ -261,10 +268,14 @@ class Route(object):
         if len(self._nodes) > load_area_count_per_ring:
             return False
 
-        # step 1: calc circuit breaker position
+        # step 1: check if the total length of the route exceeds max. allowed distance
+        if self.length() > self._problem._v_level * max_ring_length_factor * 2:
+            return False
+
+        # step 2: calc circuit breaker position
         position = self.calc_circuit_breaker_position()
 
-        # step 2: calc required values for checking current & voltage
+        # step 3: calc required values for checking current & voltage
         # get nodes of half-rings
         nodes_hring1 = [self._problem._depot] + self._nodes[0:position]
         nodes_hring2 = list(reversed(self._nodes[position:len(self._nodes)] + [self._problem._depot]))
@@ -277,7 +288,7 @@ class Route(object):
         r = self._problem._branch_type['R']  # unit for r: ohm/km
         x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km
 
-        # step 3a: check if current rating of default cable/line is violated
+        # step 4a: check if current rating of default cable/line is violated
         # (for every of the 2 half-rings using load factor for normal operation)
         demand_hring_1 = sum([node.demand() for node in self._nodes[0:position]])
         demand_hring_2 = sum([node.demand() for node in self._nodes[position:len(self._nodes)]])
@@ -288,13 +299,13 @@ class Route(object):
             peak_current_sum_hring2 > (self._problem._branch_type['I_max_th'] * load_factor_normal)):
             return False
 
-        # step 3b: check if current rating of default cable/line is violated
+        # step 4b: check if current rating of default cable/line is violated
         # (for full ring using load factor for malfunction operation)
         peak_current_sum_ring = self._demand / (3**0.5) / self._problem._v_level  # units: kVA / kV = A
         if peak_current_sum_ring > (self._problem._branch_type['I_max_th'] * load_factor_malfunc):
             return False
 
-        # step 4a: check voltage stability at all nodes
+        # step 5a: check voltage stability at all nodes
         # (for every of the 2 half-rings using max. voltage difference for normal operation)
 
         # get operation voltage level from station
@@ -329,7 +340,7 @@ class Route(object):
             if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_lc_diff_normal):
                 return False
 
-        # step 4b: check voltage stability at all nodes
+        # step 5b: check voltage stability at all nodes
         # (for full ring calculating both directions simultaneously using max. voltage diff. for malfunction operation)
         for (n1, n2), (n3, n4) in zip(zip(nodes_ring1[0:len(nodes_ring1)-1], nodes_ring1[1:len(nodes_ring1)]),
                                       zip(nodes_ring2[0:len(nodes_ring2)-1], nodes_ring2[1:len(nodes_ring2)])):

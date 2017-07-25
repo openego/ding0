@@ -16,7 +16,7 @@ __author__     = "nesnoj, gplssm"
 
 
 import matplotlib.pyplot as plt
-import oemof.db as db
+from dingo.tools import db
 import time
 # import objgraph
 

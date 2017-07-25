@@ -16,7 +16,6 @@ __author__     = "nesnoj, gplssm"
 
 
 import matplotlib.pyplot as plt
-# import oemof.db as db
 import time
 import os
 import pandas as pd
