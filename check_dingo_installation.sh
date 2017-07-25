@@ -10,4 +10,10 @@ chmod +x install_dingo.sh
 chmod +x dingo_system_dependencies.sh
 
 # create fresh container with ubuntu OS and run dingo_system_dependencies.sh and install_dingo.sh script within it
-sudo docker run --rm -v $(pwd)/:/dingo/ -v $(pwd)/install_dingo.sh:/install_dingo.sh -v $(pwd)/dingo_system_dependencies.sh:/dingo_system_dependencies.sh ubuntu bash /install_dingo.sh
+sudo docker run --rm -v $(pwd)/:/dingo/ \
+    -v $(pwd)/install_dingo.sh:/install_dingo.sh \
+    -v $(pwd)/dingo_system_dependencies.sh:/dingo_system_dependencies.sh ubuntu bash /install_dingo.sh
+
+#sudo docker run --rm -v $(pwd)/:/dingo/ \
+#    -v $(pwd)/install_dingo.sh:/install_dingo.sh \
+#    -v $(pwd)/dingo_system_dependencies.sh:/dingo_system_dependencies.sh debian bash /install_dingo.sh

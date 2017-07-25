@@ -15,10 +15,7 @@ source .virtualenvs/dingo/bin/activate
 # TODO: code is located in ./dingo
 pip3 install -e dingo
 
-#ls
-#ls dingo
-#ls dingo/examples
-
+# Test if installation worked correctly
 #python3 dingo/examples/example_single_grid_district.py
 
-python3 -c "from dingo.core import NetworkDingo; nd = NetworkDingo(name='network'); print(nd)"
+python3 -c "from dingo.core import NetworkDingo; nd = NetworkDingo(name='network'); print('\\nDingo was successfully installed!\\n\\n')"
