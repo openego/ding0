@@ -1,0 +1,12 @@
+S_max,X,R
+#kVar,Ohm,Ohm
+# Source: Torsten Werth; Netzberechnung mit Erzeugungsprofilen --
+# Grundlagen, Berechnung, Anwendung; Springer; 2016
+50,0.1968,0.0784
+100,0.0640,0.0280
+160,0.0400,0.0147
+250,0.0256,0.0083
+400,0.0160,0.0046
+630,0.0102,0.0026
+800,0.0120,0.0021
+1000,0.0096,0.0017
