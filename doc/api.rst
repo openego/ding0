@@ -4,4 +4,4 @@
    :maxdepth: 7
    :titlesonly:
 
-   dingo API <api/modules>
+   ding0 API <api/modules>

@@ -1,19 +1,19 @@
-.. dingo documentation master file, created by
+.. ding0 documentation master file, created by
    sphinx-quickstart on Fri Dec 18 15:04:25 2015.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to dingo's documentation!
+Welcome to ding0's documentation!
 =================================
 
 
-.. figure:: images/DINGO_Logo_300px.png
+.. figure:: images/DING0_Logo_300px.png
    :align: right
    :scale: 80%
 
 DIstribution Network GeneratOr -- A tool to generate synthetic medium and low voltage power distribution grids based on open (or at least accessible) data.
 
-.. warning:: Note, currently the data source Dingo relies on - the Open Energy Database - has no public accessible API, yet. Thus, currently you won't be able to run Dingo without modifications.
+.. warning:: Note, currently the data source Ding0 relies on - the Open Energy Database - has no public accessible API, yet. Thus, currently you won't be able to run Ding0 without modifications.
 
 
 
@@ -30,7 +30,7 @@ DIstribution Network GeneratOr -- A tool to generate synthetic medium and low vo
 
    development
    whatsnew
-   dingo API <api/modules>
+   ding0 API <api/modules>
 
 
 

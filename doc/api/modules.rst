@@ -1,7 +1,7 @@
-dingo
+ding0
 =====
 
 .. toctree::
    :maxdepth: 7
 
-   dingo
+   ding0
