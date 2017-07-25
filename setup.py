@@ -91,6 +91,6 @@ setup(name='dingo',
         "License :: OSI Approved :: GNU Affero General Public License v3",
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.5"
+        "Programming Language :: Python :: 3.5",
         "Topic :: Scientific/Engineering"],
       )
