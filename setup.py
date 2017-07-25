@@ -22,7 +22,7 @@ import os
 
 
 setup(name='dingo',
-      version='v0.1.0',
+      version='v0.1.1',
       author='Reiner Lemoine Institut, openego development group',
       author_email='jonathan.amme@rl-institut.de',
       description='DIstribution Network GeneratOr',
