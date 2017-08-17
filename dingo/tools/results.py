@@ -704,33 +704,52 @@ def init_mv_grid(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
     print('\n########################################')
     return nd
 ########################################################
-def process_stats(mv_grid_districts,output_stats):
+def process_stats(mv_grid_districts,n_of_districts,output_stats):
     '''Runs dingo over mv_grid_districts and generates stats dataframe
 
     Parameters
     ----------
     mv_grid_districts: :any:`list` of :obj:`int`
         Districts IDs
+    n_of_districts: int
+        Number of districts to run simultaneously
     output_stats: 
         A multiprocess queue for saving the output data when parallelizing
     
     Notes
     -----
-    The stats for the chosen districts are saved in a csv file of name::
+    The stats for the districts in a cluster are saved in a csv file of name::
+    
         "stats_MV_distrs_<min dist>_to_<max dist>.csv"    
     '''
 
-    name = 'stats_MV_distrs_' +\
-           str(min(mv_grid_districts)) + '_to_' +\
-           str(max(mv_grid_districts)) + '.csv'
+    # database connection
+    conn = db.connection(section='oedb')
 
-    nw = init_mv_grid(mv_grid_districts=mv_grid_districts, filename=False)
-    stats = calculate_mvgd_stats(nw)
-    stats.to_csv(name)
+    i = 0
+    j = min(n_of_districts,len(mv_grid_districts)-1)
+    mvgd_stats = pd.DataFrame.from_dict({}, orient='index')
+    while True:
+        print('\n########################################')
+        print('  Running dingo for district', mv_grid_districts[i:j])
+        print('########################################')
+        nw = NetworkDingo(name='network_'+str(mv_grid_districts[i])+'_to_'+str(mv_grid_districts[j-1]))
+        nw.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts[i:j])
+        stats = calculate_mvgd_stats(nw)
+        name = 'stats_MV_distrs_' + \
+               str(mv_grid_districts[i]) + '_to_' + \
+               str(mv_grid_districts[j-1]) + '.csv'
+        stats.to_csv(name)
+        mvgd_stats = pd.concat([mvgd_stats, stats], axis=0)
+        i = min(i+n_of_districts, len(mv_grid_districts))
+        j = min(j+n_of_districts, len(mv_grid_districts))
+        if i>=len(mv_grid_districts):
+            break
 
-    output_stats.put(stats)
+    conn.close()
+    output_stats.put(mvgd_stats)
 ########################################################
-def parallel_running_stats(max_dist,n_of_processes):
+def parallel_running_stats(max_dist,n_of_processes, n_of_districts):
     '''Organize parallel runs of dingo and collect the stats for the networks.
     
     The function take districts from 1 to max_dist and divide them into 
@@ -743,6 +762,8 @@ def parallel_running_stats(max_dist,n_of_processes):
         Number of districts to run.
     n_of_processes: int
         Number of processes to run in parallel
+    n_of_districts: int
+        Number of districts to be run in each cluster
     
     '''
     #######################################################################
@@ -761,7 +782,7 @@ def parallel_running_stats(max_dist,n_of_processes):
             dist_end = max_dist + 1
         mv_districts = list(range(dist, dist_end))
         processes.append(mp.Process(target=process_stats,
-                                    args=(mv_districts,output_stats)))
+                                    args=(mv_districts,n_of_districts,output_stats)))
     #######################################################################
     # Run processes
     for p in processes:
@@ -774,7 +795,7 @@ def parallel_running_stats(max_dist,n_of_processes):
     # Get process results from the output queue
     mvgd_stats_list = [output_stats.get() for p in processes]
     mvgd_stats      = pd.DataFrame.from_dict({}, orient='index')
-    #print(results_list)
+
     print('\n########################################')
     for p in range(0,len(processes)):
         mvgd_stats = pd.concat([mvgd_stats, mvgd_stats_list[p]], axis=0)
@@ -783,12 +804,12 @@ def parallel_running_stats(max_dist,n_of_processes):
     mvgd_stats.sort_index(inplace=True)
 
     mv_grid_districts = mvgd_stats.index.tolist()
+    print(mv_grid_districts)
     name = 'stats_MV_distrs_' + \
            str(min(mv_grid_districts)) + '_to_' + \
            str(max(mv_grid_districts)) + '.csv'
     mvgd_stats.to_csv(name)
     print(mvgd_stats.T)
-
 
 ########################################################
 if __name__ == "__main__":
@@ -804,12 +825,13 @@ if __name__ == "__main__":
     #stats.to_csv('stats_1_4500_200.csv')
 
     # generate stats in parallel
-    n_of_districts = 45 # districts from 1 to n_of_districts
-    n_of_processes = mp.cpu_count()
-    parallel_running_stats(n_of_districts,n_of_processes)
-
-
-
+    max_districts = 10#3607 # districts from 1 to max_districts
+    n_of_processes = mp.cpu_count() #number of parallel threaths
+    n_of_districts = 4 #n° of districts in each cluster
+    parallel_running_stats(max_districts,n_of_processes,n_of_districts)
+    #nw = init_mv_grid(mv_grid_districts=[n_of_districts],filename=False)
+    #stats = calculate_mvgd_stats(nw)
+    #print(stats.T)
 
 # TODO: old code, that may is used for re-implementation, @gplssm
 # that old code was part of the ResultsDingo class that was removed later
