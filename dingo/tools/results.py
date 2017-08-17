@@ -28,6 +28,7 @@ from dingo.core import GeneratorDingo
 from dingo.core import MVCableDistributorDingo
 from dingo.core import LVStationDingo
 from dingo.core import CircuitBreakerDingo
+from dingo.core.network.loads import LVLoadDingo
 
 from shapely.ops import transform
 import pyproj
@@ -266,14 +267,153 @@ def concat_nd_pickles(self, mv_grid_districts):
         index=False)
 
 ####################################################
-def calculate_mvgd_stats(nw):
+def calculate_lvgd_stats(nw):
     """
-    Statistics for an arbitrary network
+    LV Statistics for an arbitrary network
 
     Parameters
     ----------
-    nw: NetworkDingo
-        The MV grid to be studied
+    nw: :any:`list` of NetworkDingo
+        The MV grid(s) to be studied
+
+    Returns
+    -------
+    lvgd_stats : pandas.DataFrame
+        Dataframe containing several statistical numbers about the LVGD
+    """
+    #  ETRS (equidistant) to WGS84 (conformal) projection
+    proj = partial(
+        pyproj.transform,
+        # pyproj.Proj(init='epsg:3035'),  # source coordinate system
+        #  pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+        pyproj.Proj(init='epsg:4326'), # source coordinate system
+        pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+    lv_dist_idx = 0
+    lv_dist_dict = {}
+    lv_gen_idx = 0
+    lv_gen_dict = {}
+    branch_idx = 0
+    branches_dict = {}
+    trafos_idx = 0
+    trafos_dict = {}
+    for mv_district in nw.mv_grid_districts():
+        for LA in mv_district.lv_load_areas():
+            for lv_district in LA.lv_grid_districts():
+                lv_dist_idx += 1
+                lv_dist_dict[lv_dist_idx] = {
+                    'MV_grid_id': mv_district.mv_grid.id_db,
+                    'LV_grid_id': lv_district.lv_grid.id_db,
+                    'Population': lv_district.population,
+                    'Peak Load Residential':lv_district.peak_load_residential,
+                    'Peak Load Retail':lv_district.peak_load_retail,
+                    'Peak Load Industrial':lv_district.peak_load_industrial,
+                    'Peak Load Agricultural':lv_district.peak_load_agricultural,
+                    'Sector Count Residential': lv_district.sector_count_residential,
+                    'Sector Count Retail': lv_district.sector_count_retail,
+                    'Sector Count Industrial': lv_district.sector_count_industrial,
+                    'Sector Count Agricultural': lv_district.sector_count_agricultural,
+                    'Sector Load Residential': lv_district.sector_consumption_residential,
+                    'Sector Load Retail': lv_district.sector_consumption_retail,
+                    'Sector Load Industrial': lv_district.sector_consumption_industrial,
+                    'Sector Load Agricultural': lv_district.sector_consumption_agricultural,
+                }
+                # generation capacity
+                for g in lv_district.lv_grid.generators():
+                    lv_gen_idx+=1
+                    subtype = g.subtype
+                    if subtype == None:
+                        subtype = 'other'
+                    type = g.type
+                    if type == None:
+                        type = 'other'
+                    lv_gen_dict[lv_gen_idx] = {
+                        'LV_grid_id': lv_district.lv_grid.id_db,
+                        'v_level':g.v_level,
+                        'subtype':type+'/'+subtype,
+                        'GenCap':g.capacity,
+                    }
+                #nodes
+                #for node in lv_district.lv_grid.graph_nodes_sorted():
+                #    if isinstance(node,LVLoadDingo):
+                #        print(node.load_no)
+                #        print(node.branch_no)
+                #        print(node.string_id)
+                #branches
+                for branch in lv_district.lv_grid.graph_edges():
+                    branch_idx+=1
+                    node1 = branch['adj_nodes'][0]
+                    node2 = branch['adj_nodes'][1]
+                    branches_dict[branch_idx] = {
+                        'LV_grid_id':lv_district.lv_grid.id_db,
+                        'length': branch['branch'].length / 1e3,
+                        'type_name': branch['branch'].type.to_frame().columns[0],
+                        'type_kind': branch['branch'].kind,
+                    }
+                #Trafos
+                for trafo in lv_district.lv_grid.station().transformers():
+                    trafos_idx+=1
+                    trafos_dict[trafos_idx] = {
+                        'LV_grid_id':lv_district.lv_grid.id_db,
+                        's_max_a':trafo.s_max_a,
+                    }
+
+                # geographic
+                district_geo = transform(proj, lv_district.geo_data)
+                lv_dist_dict[lv_dist_idx].update({'Area':district_geo.area})
+
+    lvgd_stats = pd.DataFrame.from_dict(lv_dist_dict, orient='index').set_index('LV_grid_id')
+    #generate partial dataframes
+    gen_df = pd.DataFrame.from_dict(lv_gen_dict, orient='index')
+    branch_df = pd.DataFrame.from_dict(branches_dict, orient='index')
+    trafos_df = pd.DataFrame.from_dict(trafos_dict, orient='index')
+
+    #resque desired data
+    if not gen_df.empty:
+        #generation by voltage level
+        lv_generation = gen_df.groupby(['LV_grid_id', 'v_level'])['GenCap'].sum().to_frame().unstack(level=-1)
+        lv_generation.columns = ['Gen. Cap. v_level ' + str(_[1]) if isinstance(_, tuple) else str(_) for _ in lv_generation.columns]
+        lvgd_stats = pd.concat([lvgd_stats, lv_generation], axis=1)
+        #generation by type/subtype
+        lv_generation = gen_df.groupby(['LV_grid_id','subtype'])['GenCap'].sum().to_frame().unstack(level=-1)
+        lv_generation.columns = ['Gen. Cap. type ' + str(_[1]) if isinstance(_, tuple) else str(_) for _ in lv_generation.columns]
+        lvgd_stats = pd.concat([lvgd_stats, lv_generation], axis=1)
+    if not branch_df.empty:
+        #branches by type name
+        lv_branches = branch_df.groupby(['LV_grid_id','type_name'])['length'].sum().to_frame().unstack(level=-1)
+        lv_branches.columns = ['Length Type ' + _[1] if isinstance(_, tuple) else _ for _ in lv_branches.columns]
+        lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
+        #branches by kind
+        lv_branches = branch_df[branch_df['type_kind']=='line'].groupby(['LV_grid_id'])['length'].sum().to_frame()
+        lv_branches.columns = ['Length of overhead lines']
+        lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
+        lv_branches = branch_df[branch_df['type_kind']=='cable'].groupby(['LV_grid_id'])['length'].sum().to_frame()
+        lv_branches.columns = ['Length of underground cables']
+        lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
+    if not trafos_df.empty:
+        #N of trafos
+        lv_trafos = trafos_df.groupby(['LV_grid_id'])['s_max_a'].count().to_frame()
+        lv_trafos.columns = ['N° of MV/LV Trafos']
+        lvgd_stats = pd.concat([lvgd_stats, lv_trafos], axis=1)
+        #Capacity of trafos
+        lv_trafos = trafos_df.groupby(['LV_grid_id'])['s_max_a'].sum().to_frame()
+        lv_trafos.columns = ['Accumulated s_max_a in MVLV trafos']
+        lvgd_stats = pd.concat([lvgd_stats, lv_trafos], axis=1)
+
+
+
+
+    lvgd_stats = lvgd_stats.fillna(0)
+    lvgd_stats = lvgd_stats[sorted(lvgd_stats.columns.tolist())]
+    return lvgd_stats
+####################################################
+def calculate_mvgd_stats(nw):
+    """
+    MV Statistics for an arbitrary network
+
+    Parameters
+    ----------
+    nw: :any:`list` of NetworkDingo
+        The MV grid(s) to be studied
 
     Returns
     -------
@@ -703,16 +843,21 @@ def init_mv_grid(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
     conn.close()
     print('\n########################################')
     return nd
+
 ########################################################
 def process_stats(mv_grid_districts,n_of_districts,output_stats):
     '''Runs dingo over mv_grid_districts and generates stats dataframe
 
+    The process runs dingo sequentially in clusters of n_of_districts untill 
+    all districts in mv_grid_districts are run. It also calculates the stats for
+    each cluster and save them to a csv file.
+    
     Parameters
     ----------
     mv_grid_districts: :any:`list` of :obj:`int`
         Districts IDs
     n_of_districts: int
-        Number of districts to run simultaneously
+        Number of districts to run simultaneously in a cluster
     output_stats: 
         A multiprocess queue for saving the output data when parallelizing
     
@@ -753,9 +898,12 @@ def parallel_running_stats(max_dist,n_of_processes, n_of_districts):
     '''Organize parallel runs of dingo and collect the stats for the networks.
     
     The function take districts from 1 to max_dist and divide them into 
-    n_of_processes groups. For each group, a parallel dingo process is run 
-    through the function process_stats and the information is collected together
-
+    n_of_processes parallel processes. For each process, the assigned districts
+    are given to the function process_stats() with the argument n_of_districts
+        
+    process_stats() calculate the stats and give them back to this function
+    where all the data is join together into one DataFrame saved in csv file
+        
     Parameters
     ----------
     max_dist: int
@@ -763,7 +911,17 @@ def parallel_running_stats(max_dist,n_of_processes, n_of_districts):
     n_of_processes: int
         Number of processes to run in parallel
     n_of_districts: int
-        Number of districts to be run in each cluster
+        Number of districts to be run in each cluster given as argument to
+        process_stats()
+    
+    Returns
+    -------
+    DataFrame
+        The MV stats for all calculated MV districts
+    
+    See Also
+    --------
+    process_stats
     
     '''
     #######################################################################
@@ -810,6 +968,7 @@ def parallel_running_stats(max_dist,n_of_processes, n_of_districts):
            str(max(mv_grid_districts)) + '.csv'
     mvgd_stats.to_csv(name)
     print(mvgd_stats.T)
+    return mvgd_stats
 
 ########################################################
 if __name__ == "__main__":
@@ -824,14 +983,17 @@ if __name__ == "__main__":
     #print(stats.T)
     #stats.to_csv('stats_1_4500_200.csv')
 
+    #############################################
     # generate stats in parallel
-    max_districts = 10#3607 # districts from 1 to max_districts
-    n_of_processes = mp.cpu_count() #number of parallel threaths
-    n_of_districts = 4 #n° of districts in each cluster
-    parallel_running_stats(max_districts,n_of_processes,n_of_districts)
-    #nw = init_mv_grid(mv_grid_districts=[n_of_districts],filename=False)
-    #stats = calculate_mvgd_stats(nw)
-    #print(stats.T)
+    #max_districts = 10#3607 # districts from 1 to max_districts
+    #n_of_processes = mp.cpu_count() #number of parallel threaths
+    #n_of_districts = 4 #n° of districts in each cluster
+    #parallel_running_stats(max_districts,n_of_processes,n_of_districts)
+
+    #############################################
+    nw = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
+    stats = calculate_lvgd_stats(nw)
+    print(stats.iloc[0:2].T)
 
 # TODO: old code, that may is used for re-implementation, @gplssm
 # that old code was part of the ResultsDingo class that was removed later
