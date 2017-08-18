@@ -335,7 +335,7 @@ class MVGridDing0(GridDing0):
                 'distance' (default):   Decision on voltage level is determined by the max.
                                         distance between Grid District's HV-MV station and Load
                                         Areas (LA's centre is used). According to [2]_ a value of
-                                        1kV/kV can be assumed. The `voltage_per_km_threshold`
+                                        1kV/km can be assumed. The `voltage_per_km_threshold`
                                         defines the distance threshold for distinction.
                                         (default in config = (20km+10km)/2 = 15km)
 
