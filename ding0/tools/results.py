@@ -100,7 +100,7 @@ def calculate_mvgd_stats(nodes_df, edges_df):
         axis=1)
 
     # Cumulative generation capacity of subjacent LV grid
-    stations = nodes_df[nodes_df['type'] == 'LV Station']
+    stations = nodes_df[nodes_df['type'].isin(['LV Station', 'LV station (aggregated)'])]
     mvgd_stats['LV generation capacity'] = stations['generation_capacity'].sum()
 
     # Cumulative peak load of subjacent LV grid
