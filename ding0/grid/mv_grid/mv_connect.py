@@ -55,6 +55,9 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
 
     """
 
+    # threshold which is used to determine if 2 objects are on the same position (see below for details on usage)
+    conn_diff_tolerance = cfg_ding0.get('mv_connect', 'conn_diff_tolerance')
+
     conn_objects_min_stack = []
 
     for branch in branches:
@@ -77,11 +80,12 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
                                   'shp': line_shp,
                                   'dist': node_shp.distance(line_shp)}}
 
-            # remove branch if it is too close to a node
-            tol = 10**-4
+            # Remove branch from the dict of possible conn. objects if it is too close to a node.
+            # Without this solution, the target object is not unique for different runs (and so
+            # were the topology)
             if (
-                    abs(conn_objects['s1']['dist'] - conn_objects['b']['dist']) < tol
-                 or abs(conn_objects['s2']['dist'] - conn_objects['b']['dist']) < tol
+                    abs(conn_objects['s1']['dist'] - conn_objects['b']['dist']) < conn_diff_tolerance
+                 or abs(conn_objects['s2']['dist'] - conn_objects['b']['dist']) < conn_diff_tolerance
                ):
                 del conn_objects['b']
 
