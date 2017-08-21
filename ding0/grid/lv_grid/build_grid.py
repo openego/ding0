@@ -116,27 +116,27 @@ def select_transformers(grid, s_max=None):
         s_max = s_max['s_max']
 
     # get max. trafo
-    transformer_max = trafo_parameters.iloc[trafo_parameters['S_max'].idxmax()]
+    transformer_max = trafo_parameters.iloc[trafo_parameters['s_nom'].idxmax()]
 
     # peak load is smaller than max. available trafo
-    if s_max < (transformer_max['S_max'] * load_factor_lv_trans ):
+    if s_max < (transformer_max['s_nom'] * load_factor_lv_trans ):
         # choose trafo
         transformer = trafo_parameters.iloc[
             trafo_parameters[
-                trafo_parameters['S_max'] * load_factor_lv_trans > s_max][
-                'S_max'].idxmin()]
+                trafo_parameters['s_nom'] * load_factor_lv_trans > s_max][
+                's_nom'].idxmin()]
         transformer_cnt = 1
     # peak load is greater than max. available trafo -> use multiple trafos
     else:
         transformer_cnt = 2
         # increase no. of trafos until peak load can be supplied
-        while not any(trafo_parameters['S_max'] * load_factor_lv_trans > (
+        while not any(trafo_parameters['s_nom'] * load_factor_lv_trans > (
                     s_max / transformer_cnt)):
             transformer_cnt += 1
         transformer = trafo_parameters.iloc[
             trafo_parameters[
-                trafo_parameters['S_max'] * load_factor_lv_trans
-                > (s_max / transformer_cnt)]['S_max'].idxmin()]
+                trafo_parameters['s_nom'] * load_factor_lv_trans
+                > (s_max / transformer_cnt)]['s_nom'].idxmin()]
 
     return transformer, transformer_cnt
 
@@ -160,9 +160,9 @@ def transformer(grid):
             grid=grid,
             id_db=id,
             v_level=0.4,
-            s_max_longterm=transformer['S_max'],
-            r=transformer['R'],
-            x=transformer['X'])
+            s_max_longterm=transformer['s_nom'],
+            r=transformer['r'],
+            x=transformer['x'])
 
         # add each transformer to its station
         grid._station.add_transformer(lv_transformer)
