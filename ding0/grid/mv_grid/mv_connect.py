@@ -56,7 +56,7 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
     """
 
     # threshold which is used to determine if 2 objects are on the same position (see below for details on usage)
-    conn_diff_tolerance = cfg_ding0.get('mv_connect', 'conn_diff_tolerance')
+    conn_diff_tolerance = cfg_ding0.get('mv_routing', 'conn_diff_tolerance')
 
     conn_objects_min_stack = []
 
