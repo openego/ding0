@@ -292,6 +292,8 @@ def calculate_lvgd_stats(nw):
     lv_dist_dict = {}
     lv_gen_idx = 0
     lv_gen_dict = {}
+    lv_load_idx = 0
+    lv_load_dict = {}
     branch_idx = 0
     branches_dict = {}
     trafos_idx = 0
@@ -300,22 +302,25 @@ def calculate_lvgd_stats(nw):
         for LA in mv_district.lv_load_areas():
             for lv_district in LA.lv_grid_districts():
                 lv_dist_idx += 1
+                branches_from_station = len(lv_district.lv_grid.graph_branches_from_node(lv_district.lv_grid.station()))
                 lv_dist_dict[lv_dist_idx] = {
                     'MV_grid_id': mv_district.mv_grid.id_db,
                     'LV_grid_id': lv_district.lv_grid.id_db,
+                    'Load Area ID': LA.id_db,
                     'Population': lv_district.population,
                     'Peak Load Residential':lv_district.peak_load_residential,
                     'Peak Load Retail':lv_district.peak_load_retail,
                     'Peak Load Industrial':lv_district.peak_load_industrial,
                     'Peak Load Agricultural':lv_district.peak_load_agricultural,
-                    'Sector Count Residential': lv_district.sector_count_residential,
-                    'Sector Count Retail': lv_district.sector_count_retail,
-                    'Sector Count Industrial': lv_district.sector_count_industrial,
-                    'Sector Count Agricultural': lv_district.sector_count_agricultural,
-                    'Sector Load Residential': lv_district.sector_consumption_residential,
-                    'Sector Load Retail': lv_district.sector_consumption_retail,
-                    'Sector Load Industrial': lv_district.sector_consumption_industrial,
-                    'Sector Load Agricultural': lv_district.sector_consumption_agricultural,
+                    'N° of Sector Residential': lv_district.sector_count_residential,
+                    'N° of Sector Retail': lv_district.sector_count_retail,
+                    'N° of Sector Industrial': lv_district.sector_count_industrial,
+                    'N° of Sector Agricultural': lv_district.sector_count_agricultural,
+                    'Accum. Consumption Residential': lv_district.sector_consumption_residential,
+                    'Accum. Consumption Retail': lv_district.sector_consumption_retail,
+                    'Accum. Consumption Industrial': lv_district.sector_consumption_industrial,
+                    'Accum. Consumption Agricultural': lv_district.sector_consumption_agricultural,
+                    'N° of branches from LV Station': branches_from_station,
                 }
                 # generation capacity
                 for g in lv_district.lv_grid.generators():
@@ -332,17 +337,25 @@ def calculate_lvgd_stats(nw):
                         'subtype':type+'/'+subtype,
                         'GenCap':g.capacity,
                     }
-                #nodes
-                #for node in lv_district.lv_grid.graph_nodes_sorted():
-                #    if isinstance(node,LVLoadDingo):
-                #        print(node.load_no)
-                #        print(node.branch_no)
-                #        print(node.string_id)
+                #nodes bzw. LV loads
+                for node in lv_district.lv_grid.graph_nodes_sorted():
+                    if isinstance(node,LVLoadDingo):
+                        lv_load_idx +=1
+                        if isinstance(node.consumption, dict):
+                            #print(node.consumption)
+                            if 'agricultural' in node.consumption:
+                                tipo = 'agricultural'
+                            else:
+                                tipo = 'ind_ret'
+                        else:
+                            tipo = 'residential'
+                        lv_load_dict[lv_load_idx] = {
+                            'LV_grid_id': lv_district.lv_grid.id_db,
+                            'load_type': tipo,
+                        }
                 #branches
                 for branch in lv_district.lv_grid.graph_edges():
                     branch_idx+=1
-                    node1 = branch['adj_nodes'][0]
-                    node2 = branch['adj_nodes'][1]
                     branches_dict[branch_idx] = {
                         'LV_grid_id':lv_district.lv_grid.id_db,
                         'length': branch['branch'].length / 1e3,
@@ -364,6 +377,7 @@ def calculate_lvgd_stats(nw):
     lvgd_stats = pd.DataFrame.from_dict(lv_dist_dict, orient='index').set_index('LV_grid_id')
     #generate partial dataframes
     gen_df = pd.DataFrame.from_dict(lv_gen_dict, orient='index')
+    load_df = pd.DataFrame.from_dict(lv_load_dict, orient='index')
     branch_df = pd.DataFrame.from_dict(branches_dict, orient='index')
     trafos_df = pd.DataFrame.from_dict(trafos_dict, orient='index')
 
@@ -377,6 +391,20 @@ def calculate_lvgd_stats(nw):
         lv_generation = gen_df.groupby(['LV_grid_id','subtype'])['GenCap'].sum().to_frame().unstack(level=-1)
         lv_generation.columns = ['Gen. Cap. type ' + str(_[1]) if isinstance(_, tuple) else str(_) for _ in lv_generation.columns]
         lvgd_stats = pd.concat([lvgd_stats, lv_generation], axis=1)
+    if not load_df.empty:
+        #number of residential loads
+        lv_loads = load_df[load_df['load_type']=='residential'].groupby(['LV_grid_id'])['load_type'].count().to_frame()#.unstack(level=-1)
+        lv_loads.columns = ['N° of loads residential']
+        lvgd_stats = pd.concat([lvgd_stats, lv_loads], axis=1)
+        #number of agricultural loads
+        lv_loads = load_df[load_df['load_type']=='agricultural'].groupby(['LV_grid_id'])['load_type'].count().to_frame()#.unstack(level=-1)
+        lv_loads.columns = ['N° of loads agricultural']
+        lvgd_stats = pd.concat([lvgd_stats, lv_loads], axis=1)
+        #number of mixed industrial / retail loads
+        lv_loads = load_df[load_df['load_type']=='ind_ret'].groupby(['LV_grid_id'])['load_type'].count().to_frame()#.unstack(level=-1)
+        lv_loads.columns = ['N° of loads mixed industrial/retail']
+        lvgd_stats = pd.concat([lvgd_stats, lv_loads], axis=1)
+
     if not branch_df.empty:
         #branches by type name
         lv_branches = branch_df.groupby(['LV_grid_id','type_name'])['length'].sum().to_frame().unstack(level=-1)
@@ -389,6 +417,16 @@ def calculate_lvgd_stats(nw):
         lv_branches = branch_df[branch_df['type_kind']=='cable'].groupby(['LV_grid_id'])['length'].sum().to_frame()
         lv_branches.columns = ['Length of underground cables']
         lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
+        #N°of branches
+        lv_branches = branch_df.groupby(['LV_grid_id','type_name'])['length'].count().to_frame().unstack(level=-1)
+        lv_branches.columns = ['N° of branches Type ' + _[1] if isinstance(_, tuple) else _ for _ in lv_branches.columns]
+        lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
+        lv_branches = branch_df[branch_df['type_kind']=='line'].groupby(['LV_grid_id'])['length'].count().to_frame()
+        lv_branches.columns = ['N° of branches overhead lines']
+        lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
+        lv_branches = branch_df[branch_df['type_kind']=='cable'].groupby(['LV_grid_id'])['length'].count().to_frame()
+        lv_branches.columns = ['N° of branches underground cables']
+        lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
     if not trafos_df.empty:
         #N of trafos
         lv_trafos = trafos_df.groupby(['LV_grid_id'])['s_max_a'].count().to_frame()
@@ -399,12 +437,10 @@ def calculate_lvgd_stats(nw):
         lv_trafos.columns = ['Accumulated s_max_a in MVLV trafos']
         lvgd_stats = pd.concat([lvgd_stats, lv_trafos], axis=1)
 
-
-
-
     lvgd_stats = lvgd_stats.fillna(0)
     lvgd_stats = lvgd_stats[sorted(lvgd_stats.columns.tolist())]
     return lvgd_stats
+
 ####################################################
 def calculate_mvgd_stats(nw):
     """
@@ -420,7 +456,10 @@ def calculate_mvgd_stats(nw):
     mvgd_stats : pandas.DataFrame
         Dataframe containing several statistical numbers about the MVGD
     """
-
+    ##############################
+    #close circuit breakers
+    nw.control_circuit_breakers(mode='close')
+    #nw.control_circuit_breakers(mode='open')
     ##############################
     # Collect info from nw into dataframes
     # define dictionaries for collection
@@ -443,6 +482,30 @@ def calculate_mvgd_stats(nw):
         max_mv_path = 0
         max_mvlv_path = 0
 
+        # rings
+        nodes_in_rings = []
+        branches_in_rings = []
+        for ring in district.mv_grid.rings_full_data():
+            ring_idx+=1
+
+            #generation cap
+            ring_gen = 0
+            for node in ring[2]:
+                nodes_in_rings.append(node)
+                if isinstance(node,GeneratorDingo):
+                    ring_gen+=node.capacity
+            #length
+            ring_length = 0
+            for branch in ring[1]:
+                branches_in_rings.append(branch)
+                ring_length+=branch.length/ 1e3
+
+            ring_dict[ring_idx] = {
+                'grid_id': district.mv_grid.id_db,
+                'ring_length': ring_length,
+                'ring_capacity': ring_gen,
+                }
+
         # transformers in main station
         for trafo in district.mv_grid.station().transformers():
             trafos_idx+=1
@@ -460,6 +523,7 @@ def calculate_mvgd_stats(nw):
             mvlv_path_length = 0
             if isinstance(node, GeneratorDingo):
                 gen_idx+=1
+                isolation = not node in nodes_in_rings
                 subtype = node.subtype
                 if subtype==None:
                     subtype = 'other'
@@ -469,6 +533,7 @@ def calculate_mvgd_stats(nw):
                     'sub_type':node.type+'/'+subtype,
                     'gen_cap':node.capacity,
                     'v_level':node.v_level,
+                    'isolation': isolation,
                     }
                 mv_path_length = district.mv_grid.graph_path_length(
                                    node_source=root,
@@ -508,10 +573,9 @@ def calculate_mvgd_stats(nw):
                          }
 
         # branches
-        gen_isolated = []
         for branch in district.mv_grid.graph_edges():
             branch_idx+=1
-            br_in_ring = not(branch['branch'].ring == None)
+            br_in_ring = branch['branch'] in branches_in_rings
             branches_dict[branch_idx] = {
                 'grid_id':district.mv_grid.id_db,
                 'length': branch['branch'].length / 1e3,
@@ -519,32 +583,6 @@ def calculate_mvgd_stats(nw):
                 'type_kind': branch['branch'].kind,
                 'in_ring': br_in_ring,
             }
-            #search for isolated generators (not connected to MV ring)
-            if not br_in_ring:
-                node1 = branch['adj_nodes'][0]
-                node2 = branch['adj_nodes'][1]
-                if isinstance(node1,GeneratorDingo):
-                    if node1 not in gen_isolated:
-                        gen_isolated.append(node1)
-                if isinstance(node2,GeneratorDingo):
-                    if node2 not in gen_isolated:
-                        gen_isolated.append(node2)
-        other_nodes_dict[district.mv_grid.id_db].update({'Iso_Gen_count':len(gen_isolated)})
-        # rings
-        for ring in district.mv_grid._rings:
-            ring_idx+=1
-            ring_gen = 0
-            for node in ring._grid._graph.nodes():
-                if isinstance(node,GeneratorDingo):
-                    ring_gen+=node.capacity
-
-            ring_dict[ring_idx] = {
-                'grid_id': district.mv_grid.id_db,
-                'ring_length': sum([br['branch'].length / 1e3 for br in ring.branches()]),
-                'ring_capacity': ring_gen,
-                }
-            #print(str(ring_idx)+str([br for br in ring.branches()]))
-
         # Load Areas
         for LA in district.lv_load_areas():
             LA_idx += 1
@@ -641,6 +679,11 @@ def calculate_mvgd_stats(nw):
                              if isinstance(_, tuple) else _
                              for _ in mv_generation.columns]
         mvgd_stats = pd.concat([mvgd_stats, mv_generation], axis=1)
+        #Isolated generators
+        mv_generation = generators_df[generators_df['isolation']].groupby(
+            ['grid_id'])['gen_cap'].count().to_frame()#.unstack(level=-1)
+        mv_generation.columns = ['N° of isolated MV Generators']
+        mvgd_stats = pd.concat([mvgd_stats, mv_generation], axis=1)
 
     ###################################
     #Aggregated data of other nodes
@@ -649,7 +692,6 @@ def calculate_mvgd_stats(nw):
         mvgd_stats['N° of Cable Distr'] = other_nodes_df['CD_count'].to_frame().astype(int)
         mvgd_stats['N° of LV Stations'] = other_nodes_df['LV_count'].to_frame().astype(int)
         mvgd_stats['N° of Circuit Breakers'] = other_nodes_df['CB_count'].to_frame().astype(int)
-        mvgd_stats['N° of isolated MV Generators'] = other_nodes_df['Iso_Gen_count'].to_frame().astype(int)
         mvgd_stats['District Area'] = other_nodes_df['Dist_area'].to_frame()
         mvgd_stats['N° of MV/LV Trafos'] = other_nodes_df['MVLV_trafo_count'].to_frame().astype(int)
         mvgd_stats['Length of MV max path'] = other_nodes_df['max_mv_path'].to_frame()
@@ -802,6 +844,96 @@ def calculate_mvgd_stats(nw):
     mvgd_stats=mvgd_stats.fillna(0)
     mvgd_stats = mvgd_stats[sorted(mvgd_stats.columns.tolist())]
     return mvgd_stats
+
+
+####################################################
+def calculate_mvgd_voltage_current_stats(nw):
+    nodes_idx = 0
+    nodes_dict = {}
+    branches_idx = 0
+    branches_dict = {}
+    for district in nw.mv_grid_districts():
+        #nodes voltage
+        for node in district.mv_grid.graph_nodes_sorted():
+            if hasattr(node, 'voltage_res'):
+                nodes_idx+=1
+                nodes_dict[nodes_idx] = {
+                    'grid_id': district.mv_grid.id_db,
+                    'node id': node.__repr__(),
+                    'V_res_0': node.voltage_res[0],
+                    'V_res_1': node.voltage_res[1],
+                }
+        # branches currents
+        for branch in district.mv_grid.graph_edges():
+            if hasattr(branch['branch'], 's_res'):
+                branches_idx+=1
+                branches_dict[branches_idx] = {
+                    'grid_id': district.mv_grid.id_db,
+                    'branch id': branch['branch'].__repr__(), #.id_db
+                    's_res_0': branch['branch'].s_res[0],
+                    's_res_1': branch['branch'].s_res[1],
+                    'length': branch['branch'].length / 1e3,
+                }
+    nodes_df = pd.DataFrame.from_dict(nodes_dict, orient='index').set_index('node id')
+    branches_df = pd.DataFrame.from_dict(branches_dict, orient='index').set_index('branch id')
+
+    nodes_df = nodes_df.fillna(0)
+    nodes_df = nodes_df[sorted(nodes_df.columns.tolist())]
+    nodes_df.sort_index(inplace=True)
+
+    branches_df = branches_df.fillna(0)
+    branches_df = branches_df[sorted(branches_df.columns.tolist())]
+    branches_df.sort_index(inplace=True)
+
+    return(nodes_df, branches_df)
+
+####################################################
+def calculate_lvgd_voltage_current_stats(nw):
+    nodes_idx = 0
+    nodes_dict = {}
+    branches_idx = 0
+    branches_dict = {}
+    for mv_district in nw.mv_grid_districts():
+        for LA in mv_district.lv_load_areas():
+            for lv_district in LA.lv_grid_districts():
+                #nodes voltage
+                for node in lv_district.lv_grid.graph_nodes_sorted():
+                    if hasattr(node, 'voltage_res'):
+                        nodes_idx+=1
+                        nodes_dict[nodes_idx] = {
+                            'grid_id': mv_district.mv_grid.id_db,
+                            'LV_grid_id': lv_district.lv_grid.id_db,
+                            'node id': node.__repr__(),
+                            'V_res_0': node.voltage_res[0],
+                            'V_res_1': node.voltage_res[1],
+                        }
+                # branches currents
+                for branch in lv_district.lv_grid.graph_edges():
+                    if hasattr(branch['branch'], 'length'):
+                        branches_idx+=1
+                        branches_dict[branches_idx] = {
+                            'grid_id': mv_district.mv_grid.id_db,
+                            'LV_grid_id': lv_district.lv_grid.id_db,
+                            'branch id': branch['branch'].__repr__(), #.id_db
+                            #'s_res_0': branch['branch'].s_res[0],
+                            #'s_res_1': branch['branch'].s_res[1],
+                            'length': branch['branch'].length / 1e3,
+                        }
+    nodes_df = pd.DataFrame.from_dict(nodes_dict, orient='index').set_index('node id')
+    branches_df = pd.DataFrame.from_dict(branches_dict, orient='index').set_index('branch id')
+
+    nodes_df = nodes_df.fillna(0)
+    nodes_df = nodes_df[sorted(nodes_df.columns.tolist())]
+    nodes_df.sort_index(inplace=True)
+
+    branches_df = branches_df.fillna(0)
+    branches_df = branches_df[sorted(branches_df.columns.tolist())]
+    branches_df.sort_index(inplace=True)
+
+    return(nodes_df, branches_df)
+
+
+
 ########################################################
 def init_mv_grid(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
     '''Runs dingo over the districtis selected in mv_grid_districts 
@@ -992,8 +1124,13 @@ if __name__ == "__main__":
 
     #############################################
     nw = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
-    stats = calculate_lvgd_stats(nw)
-    print(stats.iloc[0:2].T)
+    #nw = init_mv_grid(mv_grid_districts=[3544, 3545])
+    #stats = calculate_lvgd_stats(nw)
+    #stats = calculate_mvgd_stats(nw)
+    #stats = calculate_mvgd_voltage_current_stats(nw)
+    stats = calculate_lvgd_voltage_current_stats(nw)
+    #print(stats.iloc[1:3].T)
+    print(stats)
 
 # TODO: old code, that may is used for re-implementation, @gplssm
 # that old code was part of the ResultsDingo class that was removed later
