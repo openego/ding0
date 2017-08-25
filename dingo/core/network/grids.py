@@ -206,18 +206,18 @@ class MVGridDingo(GridDingo):
                             edges_ring.append(edge[1]['branch'])
             yield (edges_ring[0].ring,edges_ring,ring_nodes)
 
-        #Find "rings" associated to aggregated LA
-        for node in self.graph_nodes_sorted():
-            if isinstance(node,LVLoadAreaCentreDingo): # MVCableDistributorDingo
-                edges_ring = []
-                ring_nodes = []
-                if node.lv_load_area.is_aggregated:
-                    ring_info = self.find_path(self._station, node, type='edges')
-                    for info in ring_info:
-                        edges_ring.append(info[2]['branch'])
-                        ring_nodes.append(info[0])
-                    ring_nodes.append(ring_info[-1][1])
-                    yield (edges_ring[0].ring,edges_ring,ring_nodes)
+        ##Find "rings" associated to aggregated LA
+        #for node in self.graph_nodes_sorted():
+        #    if isinstance(node,LVLoadAreaCentreDingo): # MVCableDistributorDingo
+        #        edges_ring = []
+        #        ring_nodes = []
+        #        if node.lv_load_area.is_aggregated:
+        #            ring_info = self.find_path(self._station, node, type='edges')
+        #            for info in ring_info:
+        #                edges_ring.append(info[2]['branch'])
+        #                ring_nodes.append(info[0])
+        #            ring_nodes.append(ring_info[-1][1])
+        #            yield (edges_ring[0].ring,edges_ring,ring_nodes)
 
     def get_ring_from_node(self, node):
         """ Determines the ring (RingDingo object) which node is member of.

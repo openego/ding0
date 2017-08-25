@@ -281,6 +281,7 @@ def calculate_lvgd_stats(nw):
     lvgd_stats : pandas.DataFrame
         Dataframe containing several statistical numbers about the LVGD
     """
+    ##############################
     #  ETRS (equidistant) to WGS84 (conformal) projection
     proj = partial(
         pyproj.transform,
@@ -288,6 +289,10 @@ def calculate_lvgd_stats(nw):
         #  pyproj.Proj(init='epsg:4326'))  # destination coordinate system
         pyproj.Proj(init='epsg:4326'), # source coordinate system
         pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+    ##############################
+    #close circuit breakers
+    nw.control_circuit_breakers(mode='close')
+    ##############################
     lv_dist_idx = 0
     lv_dist_dict = {}
     lv_gen_idx = 0
@@ -459,7 +464,6 @@ def calculate_mvgd_stats(nw):
     ##############################
     #close circuit breakers
     nw.control_circuit_breakers(mode='close')
-    #nw.control_circuit_breakers(mode='open')
     ##############################
     # Collect info from nw into dataframes
     # define dictionaries for collection
@@ -836,8 +840,7 @@ def calculate_mvgd_stats(nw):
         agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])['population',
                                                               'lv_generation'
                                                              ].sum()
-        agg_LA_data.columns = ['LA Aggregated Population',
-                           'LA Aggregated LV Gen. Cap.']
+        agg_LA_data.columns = ['LA Aggregated Population','LA Aggregated LV Gen. Cap.']
         mvgd_stats = pd.concat([mvgd_stats, agg_LA_data], axis=1)
 
     ###################################
@@ -848,6 +851,25 @@ def calculate_mvgd_stats(nw):
 
 ####################################################
 def calculate_mvgd_voltage_current_stats(nw):
+    """
+    MV Voltage and Current Statistics for an arbitrary network
+
+    Parameters
+    ----------
+    nw: :any:`list` of NetworkDingo
+        The MV grid(s) to be studied
+
+    Returns
+    -------
+    nodes_df : pandas.DataFrame
+        Dataframe containing voltage statistics for every node in the MVGD
+    edges_df : pandas.DataFrame
+        Dataframe containing voltage statistics for every edge in the MVGD
+    """
+    ##############################
+    #close circuit breakers
+    nw.control_circuit_breakers(mode='close')
+    ##############################
     nodes_idx = 0
     nodes_dict = {}
     branches_idx = 0
@@ -855,24 +877,36 @@ def calculate_mvgd_voltage_current_stats(nw):
     for district in nw.mv_grid_districts():
         #nodes voltage
         for node in district.mv_grid.graph_nodes_sorted():
+            nodes_idx+=1
             if hasattr(node, 'voltage_res'):
-                nodes_idx+=1
-                nodes_dict[nodes_idx] = {
+                Vres0 = node.voltage_res[0]
+                Vres1 = node.voltage_res[1]
+            else:
+                Vres0 = 'Not available'
+                Vres1 = 'Not available'
+            nodes_dict[nodes_idx] = {
                     'grid_id': district.mv_grid.id_db,
                     'node id': node.__repr__(),
-                    'V_res_0': node.voltage_res[0],
-                    'V_res_1': node.voltage_res[1],
+                    'V_res_0': Vres0,
+                    'V_res_1': Vres1,
+                    'V nominal': district.mv_grid._station.v_level_operation,
                 }
         # branches currents
         for branch in district.mv_grid.graph_edges():
+            branches_idx+=1
             if hasattr(branch['branch'], 's_res'):
-                branches_idx+=1
-                branches_dict[branches_idx] = {
+                s_res0 = branch['branch'].s_res[0]
+                s_res1 = branch['branch'].s_res[1]
+            else:
+                s_res0 = 'Not available'
+                s_res1 = 'Not available'
+
+            branches_dict[branches_idx] = {
                     'grid_id': district.mv_grid.id_db,
                     'branch id': branch['branch'].__repr__(), #.id_db
-                    's_res_0': branch['branch'].s_res[0],
-                    's_res_1': branch['branch'].s_res[1],
-                    'length': branch['branch'].length / 1e3,
+                    's_res_0': s_res0,
+                    's_res_1': s_res1,
+                    #'length': branch['branch'].length / 1e3,
                 }
     nodes_df = pd.DataFrame.from_dict(nodes_dict, orient='index').set_index('node id')
     branches_df = pd.DataFrame.from_dict(branches_dict, orient='index').set_index('branch id')
@@ -889,6 +923,25 @@ def calculate_mvgd_voltage_current_stats(nw):
 
 ####################################################
 def calculate_lvgd_voltage_current_stats(nw):
+    """
+    LV Voltage and Current Statistics for an arbitrary network
+
+    Parameters
+    ----------
+    nw: :any:`list` of NetworkDingo
+        The MV grid(s) to be studied
+
+    Returns
+    -------
+    nodes_df : pandas.DataFrame
+        Dataframe containing voltage statistics for every node in every LVGD
+    edges_df : pandas.DataFrame
+        Dataframe containing voltage statistics for every edge in every LVGD
+    """
+    ##############################
+    #close circuit breakers
+    nw.control_circuit_breakers(mode='close')
+    ##############################
     nodes_idx = 0
     nodes_dict = {}
     branches_idx = 0
@@ -898,26 +951,42 @@ def calculate_lvgd_voltage_current_stats(nw):
             for lv_district in LA.lv_grid_districts():
                 #nodes voltage
                 for node in lv_district.lv_grid.graph_nodes_sorted():
+                    nodes_idx+=1
+                    #print(node.__dict__.keys())
                     if hasattr(node, 'voltage_res'):
-                        nodes_idx+=1
-                        nodes_dict[nodes_idx] = {
+                        Vres0 = node.voltage_res[0]
+                        Vres1 = node.voltage_res[1]
+                    else:
+                        Vres0 = 'Not available'
+                        Vres1 = 'Not available'
+
+                    nodes_dict[nodes_idx] = {
                             'grid_id': mv_district.mv_grid.id_db,
                             'LV_grid_id': lv_district.lv_grid.id_db,
+                            'LA_id':LA.id_db,
                             'node id': node.__repr__(),
-                            'V_res_0': node.voltage_res[0],
-                            'V_res_1': node.voltage_res[1],
+                            'V_res_0': Vres0,
+                            'V_res_1': Vres1,
+                            'V nominal': lv_district.lv_grid._station.v_level_operation,
                         }
                 # branches currents
                 for branch in lv_district.lv_grid.graph_edges():
-                    if hasattr(branch['branch'], 'length'):
-                        branches_idx+=1
-                        branches_dict[branches_idx] = {
+                    #print(branch['branch'].__dict__.keys())
+                    branches_idx += 1
+                    if hasattr(branch['branch'], 's_res'):
+                        s_res0 = branch['branch'].s_res[0]
+                        s_res1 = branch['branch'].s_res[1]
+                    else:
+                        s_res0 = 'Not available'
+                        s_res1 = 'Not available'
+                    branches_dict[branches_idx] = {
                             'grid_id': mv_district.mv_grid.id_db,
                             'LV_grid_id': lv_district.lv_grid.id_db,
+                            'LA_id':LA.id_db,
                             'branch id': branch['branch'].__repr__(), #.id_db
-                            #'s_res_0': branch['branch'].s_res[0],
-                            #'s_res_1': branch['branch'].s_res[1],
-                            'length': branch['branch'].length / 1e3,
+                            's_res_0': s_res0,
+                            's_res_1': s_res1,
+                            #'length': branch['branch'].length / 1e3,
                         }
     nodes_df = pd.DataFrame.from_dict(nodes_dict, orient='index').set_index('node id')
     branches_df = pd.DataFrame.from_dict(branches_dict, orient='index').set_index('branch id')
@@ -931,8 +1000,6 @@ def calculate_lvgd_voltage_current_stats(nw):
     branches_df.sort_index(inplace=True)
 
     return(nodes_df, branches_df)
-
-
 
 ########################################################
 def init_mv_grid(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
@@ -1130,7 +1197,8 @@ if __name__ == "__main__":
     #stats = calculate_mvgd_voltage_current_stats(nw)
     stats = calculate_lvgd_voltage_current_stats(nw)
     #print(stats.iloc[1:3].T)
-    print(stats)
+    #print(stats.T)
+    print(stats[0])
 
 # TODO: old code, that may is used for re-implementation, @gplssm
 # that old code was part of the ResultsDingo class that was removed later
