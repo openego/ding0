@@ -167,6 +167,10 @@ class NetworkDing0:
         
         STEP 12: Reinforce MV grid
             MV grid is eventually reinforced persuant to results from step 11.
+
+        STEP 13: Close all switch disconnectors in MV grid
+            The rings are finally closed to hold a complete graph (if the SDs are open,
+            the edges adjacent to a SD will not be exported!)
         """
         if debug:
             start = time.time()
@@ -207,6 +211,9 @@ class NetworkDing0:
     
         # STEP 12: Reinforce MV grid
         self.reinforce_grid()
+
+        # STEP 13: Close all switch disconnectors in MV grid
+        self.control_circuit_breakers(mode='close')
 
         if debug:
             logger.info('Elapsed time for {0} MV Grid Districts (seconds): {1}'.format(
