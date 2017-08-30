@@ -54,6 +54,7 @@ def parallel_run(districts_list, n_of_processes, n_of_districts):
     dingo_runs
 
     '''
+    start = time.time()
     #######################################################################
     # Define an output queue
     output_info = mp.Queue()
@@ -80,6 +81,10 @@ def parallel_run(districts_list, n_of_processes, n_of_districts):
     # Resque output_info from processes
     output = [output_info.get() for p in processes]
     output = list(itertools.chain.from_iterable(output))
+
+    #######################################################################
+    print('Elapsed time for', str(max_dist),
+          'MV grid districts (seconds): {}'.format(time.time() - start))
 
     return output
 
@@ -116,7 +121,10 @@ def process_runs(mv_districts, n_of_districts, output_info):
         print('\n########################################')
         print('  Running dingo for district', cl)
         print('########################################')
-        nw_name = 'network_MVdist_'+str(cl[0])+'_to_'+str(cl[-1])
+        if cl[0] == cl[-1]:
+            nw_name = 'network_MVdist_'+str(cl[0])
+        else:
+            nw_name = 'network_MVdist_'+str(cl[0])+'_to_'+str(cl[-1])
         nw = NetworkDingo(name=nw_name)
         try:
             msg = nw.run_dingo(conn=conn, mv_grid_districts_no=cl)
@@ -133,6 +141,7 @@ def process_runs(mv_districts, n_of_districts, output_info):
 
     output_info.put(output_clusters)
 
+
     #######################################################################
     #close connection and bye bye
     conn.close()
@@ -141,10 +150,11 @@ def process_runs(mv_districts, n_of_districts, output_info):
 if __name__ == '__main__':
     #############################################
     # run in parallel
-    mv_grid_districts = list(range(1728, 1740))
+    mv_grid_districts = list(range(1728, 1736))
     n_of_processes = mp.cpu_count() #number of parallel threaths
-    n_of_districts = 3 #n° of districts in each cluster
+    n_of_districts = 1 #n° of districts in each cluster
 
     out = parallel_run(mv_grid_districts,n_of_processes,n_of_districts)
 
-    print(out)
+    for o in out:
+        print(o)

@@ -16,6 +16,7 @@ __author__     = "nesnoj, gplssm"
 import pickle
 import os
 import pandas as pd
+import time
 
 from dingo.tools import config as cfg_dingo
 from matplotlib import pyplot as plt
@@ -38,6 +39,15 @@ import multiprocessing as mp
 
 from math import floor, ceil
 
+from dingo.flexopt.check_tech_constraints import check_load, check_voltage, \
+    get_critical_line_loading, get_critical_voltage_at_nodes
+from dingo.tools import config as cfg_dingo
+#############################################
+plt.close('all')
+cfg_dingo.load_config('config_db_tables.cfg')
+cfg_dingo.load_config('config_calc.cfg')
+cfg_dingo.load_config('config_files.cfg')
+cfg_dingo.load_config('config_misc.cfg')
 
 def lv_grid_generators_bus_bar(nd):
     """
@@ -326,6 +336,8 @@ def calculate_lvgd_stats(nw):
                     'Accum. Consumption Industrial': lv_district.sector_consumption_industrial,
                     'Accum. Consumption Agricultural': lv_district.sector_consumption_agricultural,
                     'N° of branches from LV Station': branches_from_station,
+                    'Load Area is Aggregated': LA.is_aggregated,
+                    'Load Area is Satellite': LA.is_satellite,
                 }
                 # generation capacity
                 for g in lv_district.lv_grid.generators():
@@ -861,10 +873,10 @@ def calculate_mvgd_voltage_current_stats(nw):
 
     Returns
     -------
-    nodes_df : pandas.DataFrame
-        Dataframe containing voltage statistics for every node in the MVGD
-    edges_df : pandas.DataFrame
-        Dataframe containing voltage statistics for every edge in the MVGD
+    pandas.DataFrame
+        nodes_df : Dataframe containing voltage statistics for every node in the MVGD
+    pandas.DataFrame
+        edges_df : Dataframe containing voltage statistics for every edge in the MVGD
     """
     ##############################
     #close circuit breakers
@@ -885,11 +897,11 @@ def calculate_mvgd_voltage_current_stats(nw):
                 Vres0 = 'Not available'
                 Vres1 = 'Not available'
             nodes_dict[nodes_idx] = {
-                    'grid_id': district.mv_grid.id_db,
+                    'MV_grid_id': district.mv_grid.id_db,
                     'node id': node.__repr__(),
                     'V_res_0': Vres0,
                     'V_res_1': Vres1,
-                    'V nominal': district.mv_grid._station.v_level_operation,
+                    'V nominal': district.mv_grid.v_level,
                 }
         # branches currents
         for branch in district.mv_grid.graph_edges():
@@ -902,22 +914,26 @@ def calculate_mvgd_voltage_current_stats(nw):
                 s_res1 = 'Not available'
 
             branches_dict[branches_idx] = {
-                    'grid_id': district.mv_grid.id_db,
+                    'MV_grid_id': district.mv_grid.id_db,
                     'branch id': branch['branch'].__repr__(), #.id_db
                     's_res_0': s_res0,
                     's_res_1': s_res1,
                     #'length': branch['branch'].length / 1e3,
                 }
-    nodes_df = pd.DataFrame.from_dict(nodes_dict, orient='index').set_index('node id')
-    branches_df = pd.DataFrame.from_dict(branches_dict, orient='index').set_index('branch id')
+    nodes_df = pd.DataFrame.from_dict(nodes_dict, orient='index')
+    branches_df = pd.DataFrame.from_dict(branches_dict, orient='index')
 
-    nodes_df = nodes_df.fillna(0)
-    nodes_df = nodes_df[sorted(nodes_df.columns.tolist())]
-    nodes_df.sort_index(inplace=True)
+    if not nodes_df.empty:
+        nodes_df = nodes_df.set_index('node id')
+        nodes_df = nodes_df.fillna(0)
+        nodes_df = nodes_df[sorted(nodes_df.columns.tolist())]
+        nodes_df.sort_index(inplace=True)
 
-    branches_df = branches_df.fillna(0)
-    branches_df = branches_df[sorted(branches_df.columns.tolist())]
-    branches_df.sort_index(inplace=True)
+    if not branches_df.empty:
+        branches_df = branches_df.set_index('branch id')
+        branches_df = branches_df.fillna(0)
+        branches_df = branches_df[sorted(branches_df.columns.tolist())]
+        branches_df.sort_index(inplace=True)
 
     return(nodes_df, branches_df)
 
@@ -925,6 +941,10 @@ def calculate_mvgd_voltage_current_stats(nw):
 def calculate_lvgd_voltage_current_stats(nw):
     """
     LV Voltage and Current Statistics for an arbitrary network
+    
+    Note
+    ----
+    Aggregated Load Areas are excluded.
 
     Parameters
     ----------
@@ -933,10 +953,13 @@ def calculate_lvgd_voltage_current_stats(nw):
 
     Returns
     -------
-    nodes_df : pandas.DataFrame
-        Dataframe containing voltage statistics for every node in every LVGD
-    edges_df : pandas.DataFrame
-        Dataframe containing voltage statistics for every edge in every LVGD
+    pandas.DataFrame
+        nodes_df : Dataframe containing voltage, respectively current, statis
+        for every critical node, resp. every critical station, in every LV grid
+        in nw.
+    pandas.DataFrame
+        edges_df : Dataframe containing current statistics for every critical 
+        edge,  in every LV grid in nw.
     """
     ##############################
     #close circuit breakers
@@ -948,58 +971,64 @@ def calculate_lvgd_voltage_current_stats(nw):
     branches_dict = {}
     for mv_district in nw.mv_grid_districts():
         for LA in mv_district.lv_load_areas():
-            for lv_district in LA.lv_grid_districts():
-                #nodes voltage
-                for node in lv_district.lv_grid.graph_nodes_sorted():
-                    nodes_idx+=1
-                    #print(node.__dict__.keys())
-                    if hasattr(node, 'voltage_res'):
-                        Vres0 = node.voltage_res[0]
-                        Vres1 = node.voltage_res[1]
-                    else:
-                        Vres0 = 'Not available'
-                        Vres1 = 'Not available'
-
-                    nodes_dict[nodes_idx] = {
-                            'grid_id': mv_district.mv_grid.id_db,
+            if not LA.is_aggregated:
+                for lv_district in LA.lv_grid_districts():
+                    #nodes voltage
+                    crit_nodes = get_critical_voltage_at_nodes(lv_district.lv_grid)
+                    for node in crit_nodes:
+                        nodes_idx+=1
+                        nodes_dict[nodes_idx] = {
+                            'MV_grid_id': mv_district.mv_grid.id_db,
                             'LV_grid_id': lv_district.lv_grid.id_db,
                             'LA_id':LA.id_db,
-                            'node id': node.__repr__(),
-                            'V_res_0': Vres0,
-                            'V_res_1': Vres1,
-                            'V nominal': lv_district.lv_grid._station.v_level_operation,
+                            'node id': node['node'].__repr__(),
+                            'v_diff_0': node['v_diff'][0],
+                            'v_diff_1': node['v_diff'][1],
+                            's_max_0': 'NA',
+                            's_max_1': 'NA',
+                            'V nominal': lv_district.lv_grid.v_level,
                         }
-                # branches currents
-                for branch in lv_district.lv_grid.graph_edges():
-                    #print(branch['branch'].__dict__.keys())
-                    branches_idx += 1
-                    if hasattr(branch['branch'], 's_res'):
-                        s_res0 = branch['branch'].s_res[0]
-                        s_res1 = branch['branch'].s_res[1]
-                    else:
-                        s_res0 = 'Not available'
-                        s_res1 = 'Not available'
-                    branches_dict[branches_idx] = {
-                            'grid_id': mv_district.mv_grid.id_db,
+                    # branches currents
+                    critical_branches, critical_stations = get_critical_line_loading(lv_district.lv_grid)
+                    for branch in critical_branches:
+                        branches_idx += 1
+                        branches_dict[branches_idx] = {
+                            'MV_grid_id': mv_district.mv_grid.id_db,
                             'LV_grid_id': lv_district.lv_grid.id_db,
                             'LA_id':LA.id_db,
-                            'branch id': branch['branch'].__repr__(), #.id_db
-                            's_res_0': s_res0,
-                            's_res_1': s_res1,
-                            #'length': branch['branch'].length / 1e3,
+                            'branch id': branch['branch'].__repr__(),
+                            's_max_0': branch['s_max'][0],
+                            's_max_1': branch['s_max'][1],
                         }
-    nodes_df = pd.DataFrame.from_dict(nodes_dict, orient='index').set_index('node id')
-    branches_df = pd.DataFrame.from_dict(branches_dict, orient='index').set_index('branch id')
+                    # stations
+                    for node in critical_stations:
+                        nodes_idx+=1
+                        nodes_dict[nodes_idx] = {
+                            'MV_grid_id': mv_district.mv_grid.id_db,
+                            'LV_grid_id': lv_district.lv_grid.id_db,
+                            'LA_id':LA.id_db,
+                            'node id': node['station'].__repr__(),
+                            's_max_0': node['s_max'][0],
+                            's_max_1': node['s_max'][1],
+                            'v_diff_0': 'NA',
+                            'v_diff_1': 'NA',
+                        }
+    nodes_df = pd.DataFrame.from_dict(nodes_dict, orient='index')
+    branches_df = pd.DataFrame.from_dict(branches_dict, orient='index')
 
-    nodes_df = nodes_df.fillna(0)
-    nodes_df = nodes_df[sorted(nodes_df.columns.tolist())]
-    nodes_df.sort_index(inplace=True)
+    if not nodes_df.empty:
+        nodes_df = nodes_df.set_index('node id')
+        nodes_df = nodes_df.fillna(0)
+        nodes_df = nodes_df[sorted(nodes_df.columns.tolist())]
+        nodes_df.sort_index(inplace=True)
 
-    branches_df = branches_df.fillna(0)
-    branches_df = branches_df[sorted(branches_df.columns.tolist())]
-    branches_df.sort_index(inplace=True)
+    if not branches_df.empty:
+        branches_df = branches_df.set_index('branch id')
+        branches_df = branches_df.fillna(0)
+        branches_df = branches_df[sorted(branches_df.columns.tolist())]
+        branches_df.sort_index(inplace=True)
 
-    return(nodes_df, branches_df)
+    return nodes_df, branches_df
 
 ########################################################
 def init_mv_grid(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
@@ -1044,102 +1073,120 @@ def init_mv_grid(mv_grid_districts=[3545], filename='dingo_tests_grids_1.pkl'):
     return nd
 
 ########################################################
-def process_stats(mv_grid_districts,n_of_districts,output_stats):
-    '''Runs dingo over mv_grid_districts and generates stats dataframe
+def process_stats(mv_districts, n_of_districts, output_info, mode='write'):
+    '''Generates MV stats dataframe for districts in mv_districts
 
-    The process runs dingo sequentially in clusters of n_of_districts untill 
-    all districts in mv_grid_districts are run. It also calculates the stats for
-    each cluster and save them to a csv file.
+    If mode=='write': The process runs dingo sequentially in clusters of 
+    n_of_districts untill all districts in mv_districts are run.
+    If mode=='read': The process reads the data from existing pkl files
+    It calculates the stats for each cluster and save them to a csv file.
     
     Parameters
     ----------
-    mv_grid_districts: :any:`list` of :obj:`int`
-        Districts IDs
+    mv_districts: list of int
+        List with all districts to be run.
     n_of_districts: int
-        Number of districts to run simultaneously in a cluster
-    output_stats: 
-        A multiprocess queue for saving the output data when parallelizing
+        Number of districts in a cluster
+    output_info:
+        A dataframe containing the stats for all districts
+    mode: str
+        'read' for reading data from pkl or 
+        'write' for running dingo and saving data in pkl
     
     Notes
     -----
     The stats for the districts in a cluster are saved in a csv file of name::
     
-        "stats_MV_distrs_<min dist>_to_<max dist>.csv"    
+        "stats_MV_distrs_<min dist>_to_<max dist>_stats.csv"    
     '''
-
+    #######################################################################
     # database connection
     conn = db.connection(section='oedb')
-
-    i = 0
-    j = min(n_of_districts,len(mv_grid_districts)-1)
+    #######################################################################
+    clusters = [mv_districts[x:x + n_of_districts] for x in range(0, len(mv_districts), n_of_districts)]
     mvgd_stats = pd.DataFrame.from_dict({}, orient='index')
-    while True:
-        print('\n########################################')
-        print('  Running dingo for district', mv_grid_districts[i:j])
-        print('########################################')
-        nw = NetworkDingo(name='network_'+str(mv_grid_districts[i])+'_to_'+str(mv_grid_districts[j-1]))
-        nw.run_dingo(conn=conn, mv_grid_districts_no=mv_grid_districts[i:j])
-        stats = calculate_mvgd_stats(nw)
-        name = 'stats_MV_distrs_' + \
-               str(mv_grid_districts[i]) + '_to_' + \
-               str(mv_grid_districts[j-1]) + '.csv'
-        stats.to_csv(name)
-        mvgd_stats = pd.concat([mvgd_stats, stats], axis=0)
-        i = min(i+n_of_districts, len(mv_grid_districts))
-        j = min(j+n_of_districts, len(mv_grid_districts))
-        if i>=len(mv_grid_districts):
-            break
-
+    #######################################################################
+    for cl in clusters:
+        if cl[0] == cl[-1]:
+            nw_name = 'network_MVdist_'+str(cl[0])
+        else:
+            nw_name = 'network_MVdist_'+str(cl[0])+'_to_'+str(cl[-1])
+        if mode == 'write':
+            print('\n########################################')
+            print('  Running dingo for district', cl)
+            print('########################################')
+            nw = NetworkDingo(name=nw_name)
+            try:
+                msg = nw.run_dingo(conn=conn, mv_grid_districts_no=cl)
+                if not msg:
+                    save_nd_to_pickle(nw, filename=nw_name+'.pkl')
+                    stats = calculate_mvgd_stats(nw)
+                    stats.to_csv(nw_name+'_stats.csv')
+                    mvgd_stats = pd.concat([mvgd_stats, stats], axis=0)
+            except Exception as e:
+                continue
+        else:
+            print('\n########################################')
+            print('  Reading data from pickle district', cl)
+            print('########################################')
+            try:
+                nw = load_nd_from_pickle(nw_name+'.pkl')
+                stats = calculate_mvgd_stats(nw)
+                stats.to_csv(nw_name + '_stats.csv')
+                mvgd_stats = pd.concat([mvgd_stats, stats], axis=0)
+            except Exception as e:
+                continue
+    #######################################################################
     conn.close()
-    output_stats.put(mvgd_stats)
+    #######################################################################
+    output_info.put(mvgd_stats)
 ########################################################
-def parallel_running_stats(max_dist,n_of_processes, n_of_districts):
-    '''Organize parallel runs of dingo and collect the stats for the networks.
-    
-    The function take districts from 1 to max_dist and divide them into 
+def parallel_running_stats(districts_list, n_of_processes, n_of_districts, mode='write'):
+    '''Organize parallel runs of dingo to calculate stats
+
+    The function take all districts in a list and divide them into 
     n_of_processes parallel processes. For each process, the assigned districts
-    are given to the function process_stats() with the argument n_of_districts
-        
-    process_stats() calculate the stats and give them back to this function
-    where all the data is join together into one DataFrame saved in csv file
-        
+    are given to the function process_runs() with the argument n_of_districts
+
     Parameters
     ----------
-    max_dist: int
-        Number of districts to run.
+    districts_list: list of int
+        List with all districts to be run.
     n_of_processes: int
         Number of processes to run in parallel
     n_of_districts: int
         Number of districts to be run in each cluster given as argument to
         process_stats()
-    
+    mode: str
+        If 'write', then dingo is run for every cluster. Otherwise, pkl files are read.
+        
     Returns
     -------
     DataFrame
-        The MV stats for all calculated MV districts
-    
+        MV stats in a DataFrame
+
     See Also
     --------
     process_stats
-    
     '''
+    start = time.time()
     #######################################################################
     # Define an output queue
     output_stats = mp.Queue()
     #######################################################################
     # Setup a list of processes that we want to run
-    cluster_long = floor(max_dist/n_of_processes)
-    last = n_of_processes*cluster_long
+    max_dist = len(districts_list)
+    threat_long = floor(max_dist / n_of_processes)
+
+    threats = [districts_list[x:x + threat_long] for x in
+               range(0, len(districts_list), threat_long)]
+
     processes = []
-    for p in range(0, n_of_processes):
-        dist     = 1 + p*cluster_long
-        if p<n_of_processes-1:
-            dist_end = dist + cluster_long
-        else:
-            dist_end = max_dist + 1
-        mv_districts = list(range(dist, dist_end))
+    for th in threats:
+        mv_districts = th
         processes.append(mp.Process(target=process_stats,
-                                    args=(mv_districts,n_of_districts,output_stats)))
+                                    args=(mv_districts, n_of_districts,
+                                          output_stats,mode)))
     #######################################################################
     # Run processes
     for p in processes:
@@ -1147,26 +1194,29 @@ def parallel_running_stats(max_dist,n_of_processes, n_of_districts):
     # Exit the completed processes
     for p in processes:
         p.join()
-
-    #######################################################################
-    # Get process results from the output queue
-    mvgd_stats_list = [output_stats.get() for p in processes]
+    # Resque output_stats from processes
+    output = [output_stats.get() for p in processes]
     mvgd_stats      = pd.DataFrame.from_dict({}, orient='index')
 
     print('\n########################################')
     for p in range(0,len(processes)):
-        mvgd_stats = pd.concat([mvgd_stats, mvgd_stats_list[p]], axis=0)
-    mvgd_stats = mvgd_stats.fillna(0)
-    mvgd_stats = mvgd_stats[sorted(mvgd_stats.columns.tolist())]
-    mvgd_stats.sort_index(inplace=True)
+        mvgd_stats = pd.concat([mvgd_stats, output[p]], axis=0)
+    if not mvgd_stats.empty:
+        mvgd_stats = mvgd_stats.fillna(0)
+        mvgd_stats = mvgd_stats[sorted(mvgd_stats.columns.tolist())]
+        mvgd_stats.sort_index(inplace=True)
 
-    mv_grid_districts = mvgd_stats.index.tolist()
-    print(mv_grid_districts)
-    name = 'stats_MV_distrs_' + \
-           str(min(mv_grid_districts)) + '_to_' + \
-           str(max(mv_grid_districts)) + '.csv'
-    mvgd_stats.to_csv(name)
-    print(mvgd_stats.T)
+        mv_grid_districts = mvgd_stats.index.tolist()
+
+        if mv_grid_districts[0] == mv_grid_districts[-1]:
+            nw_name = 'network_MVdist_'+str(mv_grid_districts[0])
+        else:
+            nw_name = 'network_MVdist_'+str(mv_grid_districts[0])+'_to_'+str(mv_grid_districts[-1])
+        mvgd_stats.to_csv(nw_name+ '_stats.csv')
+    #######################################################################
+    print('  Elapsed time for', str(max_dist),
+          'MV grid districts (seconds): {}'.format(time.time() - start))
+    print('\n########################################')
     return mvgd_stats
 
 ########################################################
@@ -1184,155 +1234,24 @@ if __name__ == "__main__":
 
     #############################################
     # generate stats in parallel
-    #max_districts = 10#3607 # districts from 1 to max_districts
+    #mv_grid_districts = list(range(1728, 1737))
     #n_of_processes = mp.cpu_count() #number of parallel threaths
-    #n_of_districts = 4 #n° of districts in each cluster
-    #parallel_running_stats(max_districts,n_of_processes,n_of_districts)
+    #n_of_districts = 3 #n° of districts in each cluster
+    #mvgd_stats=parallel_running_stats(mv_grid_districts,n_of_processes,n_of_districts,'read')
+    #print(mvgd_stats.T)
 
     #############################################
-    nw = load_nd_from_pickle(filename='dingo_tests_grids_1.pkl')
-    #nw = init_mv_grid(mv_grid_districts=[3544, 3545])
+    nw = load_nd_from_pickle(filename='dingo_tests_grids_1567_567.pkl')
+    #nw = init_mv_grid(mv_grid_districts=[1567, 567],filename='dingo_tests_grids_1567_567.pkl')
     #stats = calculate_lvgd_stats(nw)
-    #stats = calculate_mvgd_stats(nw)
-    #stats = calculate_mvgd_voltage_current_stats(nw)
-    stats = calculate_lvgd_voltage_current_stats(nw)
     #print(stats.iloc[1:3].T)
+    #print(stats[stats['Load Area is Aggregated']].T)
+    #stats = calculate_mvgd_stats(nw)
     #print(stats.T)
-    print(stats[0])
-
-# TODO: old code, that may is used for re-implementation, @gplssm
-# that old code was part of the ResultsDingo class that was removed later
-#
-# def concat_nd_pickles(self, mv_grid_districts):
-#     """
-#     Read multiple pickles, join nd objects and save to file
-#
-#     Parameters
-#     ----------
-#     mv_grid_districts : list
-#         Ints describing MV grid districts
-#     """
-#
-#     pickle_name = cfg_dingo.get('output', 'nd_pickle')
-#     # self.nd = self.read_pickles_from_files(pickle_name)
-#
-#     mvgd_1 = pickle.load(
-#         open(os.path.join(
-#             self.base_path,
-#             'results',
-#             pickle_name.format(mv_grid_districts[0])),
-#             'rb'))
-#     # TODO: instead of passing a list of mvgd's, pass list of filenames plus optionally a basth_path
-#     for mvgd in mv_grid_districts[1:]:
-#
-#         filename = os.path.join(
-#             self.base_path,
-#             'results', pickle_name.format(mvgd))
-#         if os.path.isfile(filename):
-#             mvgd_pickle = pickle.load(open(filename, 'rb'))
-#             if mvgd_pickle._mv_grid_districts:
-#                 mvgd_1.add_mv_grid_district(mvgd_pickle._mv_grid_districts[0])
-#
-#     # save to concatenated pickle
-#     pickle.dump(mvgd_1,
-#                 open(os.path.join(
-#                     self.base_path,
-#                     'results',
-#                     "dingo_grids_{0}-{1}.pkl".format(
-#                         mv_grid_districts[0],
-#                         mv_grid_districts[-1])),
-#                     "wb"))
-#
-#     # save stats (edges and nodes data) to csv
-#     nodes, edges = mvgd_1.to_dataframe()
-#     nodes.to_csv(os.path.join(
-#         self.base_path,
-#         'results', 'mvgd_nodes_stats_{0}-{1}.csv'.format(
-#             mv_grid_districts[0], mv_grid_districts[-1])),
-#         index=False)
-#     edges.to_csv(os.path.join(
-#         self.base_path,
-#         'results', 'mvgd_edges_stats_{0}-{1}.csv'.format(
-#             mv_grid_districts[0], mv_grid_districts[-1])),
-#         index=False)
-#
-#
-# def concat_csv_stats_files(self, ranges):
-#     """
-#     Concatenate multiple csv files containing statistics on nodes and edges.
-#
-#
-#     Parameters
-#     ----------
-#     ranges : list
-#         The list contains tuples of 2 elements describing start and end of
-#         each range.
-#     """
-#
-#     for f in ['nodes', 'edges']:
-#         file_base_name = 'mvgd_' + f + '_stats_{0}-{1}.csv'
-#
-#         filenames = []
-#         [filenames.append(file_base_name.format(mvgd_ids[0], mvgd_ids[1]))
-#          for mvgd_ids in ranges]
-#
-#         results_file = 'mvgd_{0}_stats_{1}-{2}.csv'.format(
-#             f, ranges[0][0], ranges[-1][-1])
-#
-#         self.concat_and_save_csv(filenames, results_file)
-#
-#
-# def concat_and_save_csv(self, filenames, result_filename):
-#     """
-#     Concatenate and save multiple csv files in `base_path` specified by
-#     filnames
-#
-#     The path specification of files in done via `self.base_path` in the
-#     `__init__` method of this class.
-#
-#
-#     Parameters
-#     filenames : list
-#         Files to be concatenates
-#     result_filename : str
-#         File name of resulting file
-#
-#     """
-#
-#     list_ = []
-#
-#     for filename in filenames:
-#         df = pd.read_csv(os.path.join(self.base_path, 'results', filename),
-#                          index_col=None, header=0)
-#         list_.append(df)
-#
-#     frame = pd.concat(list_)
-#     frame.to_csv(os.path.join(
-#         self.base_path,
-#         'results', result_filename), index=False)
-#
-#
-# def read_csv_results(self, concat_csv_file_range):
-#     """
-#     Read csv files (nodes and edges) containing results figures
-#     Parameters
-#     ----------
-#     concat_csv_file_range : list
-#         Ints describe first and last mv grid id
-#     """
-#
-#     self.nodes = pd.read_csv(
-#         os.path.join(self.base_path,
-#                      'results',
-#                      'mvgd_nodes_stats_{0}-{1}.csv'.format(
-#                          concat_csv_file_range[0], concat_csv_file_range[-1]
-#                      ))
-#     )
-#
-#     self.edges = pd.read_csv(
-#         os.path.join(self.base_path,
-#                      'results',
-#                      'mvgd_edges_stats_{0}-{1}.csv'.format(
-#                          concat_csv_file_range[0], concat_csv_file_range[-1]
-#                      ))
-#     )
+    #print(stats.iloc[1:3].T)
+    stats = calculate_lvgd_voltage_current_stats(nw)
+    #print(stats[0][1:3].T)
+    print(stats[1].T)
+    #stats = calculate_mvgd_voltage_current_stats(nw)
+    #print(stats[0])#.index.tolist())#[1:3].T)#nodes
+    #print(stats[1][1:20])#edges

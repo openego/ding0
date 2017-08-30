@@ -180,6 +180,8 @@ Length Type <type>		             : Length (in km) of all branches with wire type
 Length of overhead lines                     : Length (in km) of all overhead lines branches at low voltage level.
 Length of underground cables                 : Length (in km) of all underground cables branches at low voltage level.
 Load Area ID                                 : ID of the Load Area to which the LV District LV_grid_id belongs.
+Load Area is Aggregated                         : True if respective Load Area is aggregated, False otherwise.
+Load Area is Satellite                          : True if respective Load Area is satellite, False otherwise.
 MV_grid_id                                   : ID of the MV District to which the LV District LV_grid_id belongs.
 N° of MV/LV Trafos                           : Number of MV/LV trafos in disctric's main station
 N° of Sector Agricultural                    : Number of Agricultural sectors in the corresponding map
@@ -216,3 +218,124 @@ Note on units:				Generation Capacities and Peak Loads are assummed to be all in
 ----------------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------------
+MV Voltage Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+node id					     : MV node Identification (DataFrame is indexed by this field, all other are columns)
+MV_grid_id				     : MV Grid District ID number
+V nominal				     : Nominal voltage of the MV District in kV
+V_res_0					     : Voltage Res 0. It can be either
+					       * A numeric value: 
+                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+V_res_1					     : Voltage Res 1. It can be either
+					       * A numeric value: 
+                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+* All MV nodes in the grid are contained in the dataframe.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+MV Current Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+branch id				     : MV branch Identification (DataFrame is indexed by this field, all other are columns)
+MV_grid_id				     : MV Grid District ID number
+s_res_0					     : Apparante Power Res 0. It can be either
+					       * A numeric value: 
+                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+s_res_1					     : Apparante Power Res 1. It can be either
+					       * A numeric value: 
+                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+* All MV branches in the grid are contained in the dataframe.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+LV Voltage Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+node id					     : LV node Identification (DataFrame is indexed by this field, all other are columns)
+LA_id					     : Associated Load Area ID number (Load areas are NOT aggregated Load Areas)
+LV_grid_id				     : LV district Identification Number
+MV_grid_id				     : MV district Identification Number
+V nominal				     : Nominal Voltage of the LV grid (in V)
+s_max_0					     : Apparante Power Max 0, in p.u. It can be either:
+					       *A numeric value: Only for LV Stations.
+					       *The string 'NA': For any node type except LV Stations.
+s_max_1					     : Apparante Power Max 1, in p.u. It can be either:
+					       *A numeric value: Only for LV Stations.
+					       *The string 'NA': For any node type except LV Stations.
+V_diff_0				     : Voltage difference 0, in p.u. It can be either:
+					       *A numeric value: For any node type except LV Stations.
+					       *The string 'NA': Only for LV Stations.
+V_diff_1				     : Voltage difference 1, in p.u. It can be either:
+					       *A numeric value: For any node type except LV Stations.
+					       *The string 'NA': Only for LV Stations.
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+* Only critical nodes (nodes with power flow problems) are contained in the dataframe.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+LV Current Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+branch id				     : LV branch Identification (DataFrame is indexed by this field, all other are columns)
+LA_id					     : Associated Load Area ID number (Load areas are NOT aggregated Load Areas)
+LV_grid_id				     : LV district Identification Number
+MV_grid_id				     : MV district Identification Number
+s_max_0					     : Apparante Power Max 0, in p.u. 
+s_max_1					     : Apparante Power Max 0, in p.u. 
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+* Only critical branches (branches with power flow problems) are contained in the dataframe.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
