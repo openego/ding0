@@ -40,14 +40,14 @@ def compare_graphs(graph1, mode, graph2=None):
     package_path = ding0.__path__[0]
     file = path.join(package_path, 'output', 'debug', 'graph1.gpickle')
 
-    if mode is 'write':
+    if mode == 'write':
         try:
             nx.write_gpickle(graph1, file)
             print('=====> DEBUG: Graph written to', file)
         except:
             raise FileNotFoundError('Could not write to file', file)
 
-    elif mode is 'compare':
+    elif mode == 'compare':
         if graph2 is None:
             try:
                 graph2 = nx.read_gpickle(file)

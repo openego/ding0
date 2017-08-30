@@ -155,7 +155,7 @@ class MVGridDing0(GridDing0):
             Circuit breakers must be closed to find rings, this is done automatically.
         """
         for circ_breaker in self.circuit_breakers():
-            if circ_breaker.status is 'open':
+            if circ_breaker.status == 'open':
                 circ_breaker.close()
                 logger.info('Circuit breakers were closed in order to find MV '
                             'rings')
@@ -585,7 +585,7 @@ class MVGridDing0(GridDing0):
                  and (edge['adj_nodes'][1] in nodes and not isinstance(
                 edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
 
-        if method is 'db':
+        if method == 'db':
 
             # Export node objects: Busses, Loads, Generators
             pypsa_io.export_nodes(self,
@@ -602,7 +602,7 @@ class MVGridDing0(GridDing0):
                                                   timesteps=timesteps,
                                                   resolution=resolution,
                                                   start_time=start_time)
-        elif method is 'onthefly':
+        elif method == 'onthefly':
 
             nodes_dict, components_data = pypsa_io.nodes_to_dict_of_dataframes(
                 self,
@@ -637,10 +637,10 @@ class MVGridDing0(GridDing0):
             2) Generation worst case:
         """
 
-        if method is 'db':
+        if method == 'db':
             raise NotImplementedError("Please use 'onthefly'.")
 
-        elif method is 'onthefly':
+        elif method == 'onthefly':
             components, components_data = self.export_to_pypsa(session, method)
             pypsa_io.run_powerflow_onthefly(components,
                                             components_data,

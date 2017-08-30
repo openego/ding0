@@ -1568,16 +1568,16 @@ class NetworkDing0:
         """
 
         for grid_district in self.mv_grid_districts():
-            if mode is 'open':
+            if mode == 'open':
                 grid_district.mv_grid.open_circuit_breakers()
-            elif mode is 'close':
+            elif mode == 'close':
                 grid_district.mv_grid.close_circuit_breakers()
             else:
                 raise ValueError('\'mode\' is invalid.')
 
-        if mode is 'open':
+        if mode == 'open':
             logger.info('=====> MV Circuit Breakers opened')
-        elif mode is 'close':
+        elif mode == 'close':
             logger.info('=====> MV Circuit Breakers closed')
 
     def run_powerflow(self, conn, method='onthefly', export_pypsa=False, debug=False):
@@ -1597,7 +1597,7 @@ class NetworkDing0:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        if method is 'db':
+        if method == 'db':
             # Empty tables
             pypsa_io.delete_powerflow_tables(session)
 
@@ -1610,7 +1610,7 @@ class NetworkDing0:
                                                     export_pypsa_dir=export_pypsa_dir,
                                                     debug=debug)
 
-        elif method is 'onthefly':
+        elif method == 'onthefly':
             for grid_district in self.mv_grid_districts():
                 if export_pypsa:
                     export_pypsa_dir = repr(grid_district.mv_grid)

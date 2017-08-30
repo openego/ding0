@@ -593,10 +593,10 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
             pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
     # check all nodes
-    if mode is 'normal':
+    if mode == 'normal':
         #nodes = sorted(graph.nodes(), key=lambda x: repr(x))
         nodes = mv_grid.graph_isolated_nodes()
-    elif mode is 'isolated':
+    elif mode == 'isolated':
         nodes = mv_grid.graph_isolated_nodes()
     else:
         raise ValueError('\'mode\' is invalid.')
@@ -611,13 +611,13 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
 
                 node_shp = transform(proj1, node.geo_data)
 
-                if mode is 'normal':
+                if mode == 'normal':
                     # get branches within a the predefined radius `load_area_sat_buffer_radius`
                     branches = calc_geo_branches_in_buffer(node,
                                                            mv_grid,
                                                            load_area_sat_buffer_radius,
                                                            load_area_sat_buffer_radius_inc, proj1)
-                elif mode is 'isolated':
+                elif mode == 'isolated':
                     # get nodes of all MV rings
                     nodes = set()
                     [nodes.update(ring_nodes) for ring_nodes in list(mv_grid.rings_nodes(include_root_node=True))]
