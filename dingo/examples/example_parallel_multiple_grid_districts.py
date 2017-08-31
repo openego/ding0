@@ -103,7 +103,7 @@ def process_runs(mv_districts, n_of_districts, output_info):
     n_of_districts: int
         Number of districts in a cluster
     output_info:
-        Info about how the run went?
+        Info about how the run went
     
     See Also
     --------
@@ -121,10 +121,10 @@ def process_runs(mv_districts, n_of_districts, output_info):
         print('\n########################################')
         print('  Running dingo for district', cl)
         print('########################################')
-        if cl[0] == cl[-1]:
-            nw_name = 'network_MVdist_'+str(cl[0])
-        else:
-            nw_name = 'network_MVdist_'+str(cl[0])+'_to_'+str(cl[-1])
+
+        nw_name = 'dingo_grids_' + str(cl[0])
+        if not cl[0] == cl[-1]:
+            nw_name = nw_name+'_to_'+str(cl[-1])
         nw = NetworkDingo(name=nw_name)
         try:
             msg = nw.run_dingo(conn=conn, mv_grid_districts_no=cl)
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     # run in parallel
     mv_grid_districts = list(range(1728, 1736))
     n_of_processes = mp.cpu_count() #number of parallel threaths
-    n_of_districts = 1 #n° of districts in each cluster
+    n_of_districts = 1 #n° of districts in each serial cluster
 
     out = parallel_run(mv_grid_districts,n_of_processes,n_of_districts)
 
