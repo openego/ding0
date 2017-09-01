@@ -1,10 +1,7 @@
-API
-~~~
-
 .. make doc-string generated documentation appear here
 
 .. toctree::
-   :maxdepth: 1
-   :glob:
+   :maxdepth: 7
+   :titlesonly:
 
-   api/*
+   ding0 API <api/modules>
