@@ -80,12 +80,16 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     # TODO: MVStationDing0 has a slack generator
 
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
     srid = int(cfg_ding0.get('geo', 'srid'))
 
     load_in_generation_case = cfg_ding0.get('assumptions',
                                             'load_in_generation_case')
+    generation_in_load_case = cfg_ding0.get('assumptions',
+                                            'generation_in_load_case')
 
     Q_factor_load = tan(acos(cos_phi_load))
+    Q_factor_generation = tan(acos(cos_phi_feedin))
 
     voltage_set_slack = cfg_ding0.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
@@ -115,7 +119,6 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     # with open('/home/guido/ding0_debug/nodes_via_dataframe.csv', 'w', newline='') as csvfile:
     #     writer = csv.writer(csvfile, delimiter='\n')
     #     writer.writerow(nodeslist)
-
 
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
@@ -154,9 +157,11 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
                     generator_pq_set['temp_id'].append(1)
                     generator_pq_set['p_set'].append(
-                        [0 * kw2mw, node.capacity * node.capacity_factor * kw2mw])
+                        [node.capacity * node.capacity_factor * kw2mw * generation_in_load_case,
+                         node.capacity * node.capacity_factor * kw2mw])
                     generator_pq_set['q_set'].append(
-                        [0 * kw2mw, 0 * kw2mw])
+                        [node.capacity * node.capacity_factor * kw2mw * Q_factor_generation * generation_in_load_case,
+                         node.capacity * node.capacity_factor * kw2mw * Q_factor_generation])
                     generator_pq_set['grid_id'].append(grid.id_db)
                     bus_v_mag_set['v_mag_pu_set'].append([1, 1])
 
@@ -183,11 +188,10 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 load_pq_set['temp_id'].append(1)
                 load_pq_set['p_set'].append(
                     [node.lv_load_area.peak_load * kw2mw,
-                     load_in_generation_case * kw2mw])
+                     node.lv_load_area.peak_load * kw2mw * load_in_generation_case])
                 load_pq_set['q_set'].append(
-                    [node.lv_load_area.peak_load
-                     * Q_factor_load * kw2mw,
-                     load_in_generation_case * kw2mw])
+                    [node.lv_load_area.peak_load * kw2mw * Q_factor_load,
+                     node.lv_load_area.peak_load * kw2mw * Q_factor_load * load_in_generation_case])
                 load_pq_set['grid_id'].append(grid.id_db)
 
                 # generator representing generation capacity of aggregate LA
@@ -204,9 +208,11 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     ['MV', str(grid.id_db), 'lcg', str(node.id_db)]))
                 generator_pq_set['temp_id'].append(1)
                 generator_pq_set['p_set'].append(
-                    [0 * kw2mw, node.lv_load_area.peak_generation * kw2mw])
+                    [node.lv_load_area.peak_generation * kw2mw * generation_in_load_case,
+                     node.lv_load_area.peak_generation * kw2mw])
                 generator_pq_set['q_set'].append(
-                    [0 * kw2mw, 0 * kw2mw])
+                    [node.lv_load_area.peak_generation * kw2mw * Q_factor_generation * generation_in_load_case,
+                     node.lv_load_area.peak_generation * kw2mw * Q_factor_generation])
                 generator_pq_set['grid_id'].append(grid.id_db)
 
             # bus + aggregate load of lv grids (at mv/ls substation)
@@ -222,10 +228,10 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 load_pq_set['temp_id'].append(1)
                 load_pq_set['p_set'].append(
                     [node.peak_load * kw2mw,
-                     load_in_generation_case * kw2mw])
+                     node.peak_load * kw2mw * load_in_generation_case])
                 load_pq_set['q_set'].append(
-                    [node.peak_load * Q_factor_load * kw2mw,
-                     load_in_generation_case])
+                    [node.peak_load * kw2mw * Q_factor_load,
+                     node.peak_load * kw2mw * Q_factor_load * load_in_generation_case])
                 load_pq_set['grid_id'].append(grid.id_db)
 
                 # bus at primary MV-LV transformer side
@@ -251,9 +257,11 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
                 generator_pq_set['temp_id'].append(1)
                 generator_pq_set['p_set'].append(
-                    [0 * kw2mw, node.peak_generation * kw2mw])
+                    [node.peak_generation * kw2mw * generation_in_load_case,
+                     node.peak_generation * kw2mw])
                 generator_pq_set['q_set'].append(
-                    [0 * kw2mw, 0 * kw2mw])
+                    [node.peak_generation * kw2mw * Q_factor_generation * generation_in_load_case,
+                     node.peak_generation * kw2mw * Q_factor_generation])
                 generator_pq_set['grid_id'].append(grid.id_db)
 
             elif isinstance(node, CircuitBreakerDing0):

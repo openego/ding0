@@ -1,13 +1,19 @@
-ding0\.grid\.lv\_grid package
-=============================
+ding0.grid.lv_grid package
+==========================
 
-.. automodule:: ding0.grid.lv_grid
+Submodules
+----------
+
+ding0.grid.lv_grid.build_grid module
+------------------------------------
+
+.. automodule:: ding0.grid.lv_grid.build_grid
     :members:
     :undoc-members:
     :show-inheritance:
 
-Submodules
-----------
+ding0.grid.lv_grid.check module
+-------------------------------
 
 .. automodule:: ding0.grid.lv_grid.check
     :members:
@@ -23,3 +29,10 @@ ding0.grid.lv_grid.lv_connect module
     :show-inheritance:
 
 
+Module contents
+---------------
+
+.. automodule:: ding0.grid.lv_grid
+    :members:
+    :undoc-members:
+    :show-inheritance:

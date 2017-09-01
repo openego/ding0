@@ -177,6 +177,48 @@ class MVGridDing0(GridDing0):
             else:
                 yield ring
 
+    def rings_full_data(self):
+        """ Returns a generator for iterating over each ring
+
+        Yields
+        ------
+            For each ring, tuple composed by ring ID, list of edges, list of nodes
+        Notes
+        -----
+            Circuit breakers must be closed to find rings, this is done automatically.
+        """
+        #close circuit breakers
+        for circ_breaker in self.circuit_breakers():
+            if not circ_breaker.status == 'closed':
+                circ_breaker.close()
+                logger.info('Circuit breakers were closed in order to find MV '
+                            'rings')
+        #find True rings (cycles from station through breaker and back to station)
+        for ring_nodes in nx.cycle_basis(self._graph, root=self._station):
+            edges_ring = []
+            for node in ring_nodes:
+                for edge in self.graph_branches_from_node(node):
+                    nodes_in_the_branch = self.graph_nodes_from_branch(edge[1]['branch'])
+                    if (nodes_in_the_branch[0] in ring_nodes and
+                        nodes_in_the_branch[1] in ring_nodes
+                        ):
+                        if not edge[1]['branch'] in edges_ring:
+                            edges_ring.append(edge[1]['branch'])
+            yield (edges_ring[0].ring,edges_ring,ring_nodes)
+
+        ##Find "rings" associated to aggregated LA
+        #for node in self.graph_nodes_sorted():
+        #    if isinstance(node,LVLoadAreaCentreDingo): # MVCableDistributorDingo
+        #        edges_ring = []
+        #        ring_nodes = []
+        #        if node.lv_load_area.is_aggregated:
+        #            ring_info = self.find_path(self._station, node, type='edges')
+        #            for info in ring_info:
+        #                edges_ring.append(info[2]['branch'])
+        #                ring_nodes.append(info[0])
+        #            ring_nodes.append(ring_info[-1][1])
+        #            yield (edges_ring[0].ring,edges_ring,ring_nodes)
+
     def get_ring_from_node(self, node):
         """ Determines the ring (RingDing0 object) which node is member of.
         Args:
@@ -335,7 +377,7 @@ class MVGridDing0(GridDing0):
                 'distance' (default):   Decision on voltage level is determined by the max.
                                         distance between Grid District's HV-MV station and Load
                                         Areas (LA's centre is used). According to [2]_ a value of
-                                        1kV/kV can be assumed. The `voltage_per_km_threshold`
+                                        1kV/km can be assumed. The `voltage_per_km_threshold`
                                         defines the distance threshold for distinction.
                                         (default in config = (20km+10km)/2 = 15km)
 
@@ -585,7 +627,7 @@ class MVGridDing0(GridDing0):
                  and (edge['adj_nodes'][1] in nodes and not isinstance(
                 edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
 
-        if method is 'db':
+        if method == 'db':
 
             # Export node objects: Busses, Loads, Generators
             pypsa_io.export_nodes(self,
@@ -602,7 +644,7 @@ class MVGridDing0(GridDing0):
                                                   timesteps=timesteps,
                                                   resolution=resolution,
                                                   start_time=start_time)
-        elif method is 'onthefly':
+        elif method == 'onthefly':
 
             nodes_dict, components_data = pypsa_io.nodes_to_dict_of_dataframes(
                 self,
@@ -637,10 +679,10 @@ class MVGridDing0(GridDing0):
             2) Generation worst case:
         """
 
-        if method is 'db':
+        if method == 'db':
             raise NotImplementedError("Please use 'onthefly'.")
 
-        elif method is 'onthefly':
+        elif method == 'onthefly':
             components, components_data = self.export_to_pypsa(session, method)
             pypsa_io.run_powerflow_onthefly(components,
                                             components_data,

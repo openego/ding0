@@ -152,7 +152,7 @@ def extend_substation(grid, critical_stations, grid_level):
 
     trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
         grid_level=grid_level)]
-    trafo_s_max_max = max(trafo_params['S_max'])
+    trafo_s_max_max = max(trafo_params['s_nom'])
 
 
     for station in critical_stations:
@@ -206,9 +206,9 @@ def extend_substation(grid, critical_stations, grid_level):
                     grid=grid,
                     id_db=id,
                     v_level=0.4,
-                    s_max_longterm=trafo_type['S_max'],
-                    r=trafo_type['R'],
-                    x=trafo_type['X'])
+                    s_max_longterm=trafo_type['s_nom'],
+                    r=trafo_type['r'],
+                    x=trafo_type['x'])
 
                 # add each transformer to its station
                 grid._station.add_transformer(lv_transformer)
@@ -244,8 +244,8 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     grid = crit_stations[0]['node'].grid
     trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
         grid_level=grid_level)]
-    trafo_s_max_max = max(trafo_params['S_max'])
-    trafo_min_size = trafo_params.ix[trafo_params['S_max'].idxmin()]
+    trafo_s_max_max = max(trafo_params['s_nom'])
+    trafo_min_size = trafo_params.ix[trafo_params['s_nom'].idxmin()]
 
     v_diff_max_fc = cfg_ding0.get('assumptions', 'lv_max_v_level_fc_diff_normal')
     v_diff_max_lc = cfg_ding0.get('assumptions', 'lv_max_v_level_lc_diff_normal')
@@ -276,9 +276,9 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                     grid=grid,
                     id_db=id,
                     v_level=0.4,
-                    s_max_longterm=trafo_min_size['S_max'],
-                    r=trafo_min_size['R'],
-                    x=trafo_min_size['X'])
+                    s_max_longterm=trafo_min_size['s_nom'],
+                    r=trafo_min_size['r'],
+                    x=trafo_min_size['x'])
 
                 # add each transformer to its station
                 grid._station.add_transformer(lv_transformer)
@@ -387,8 +387,8 @@ def extend_trafo_power(extendable_trafos, trafo_params):
     trafo = extendable_trafos[0]
     trafo_s_max_a_before = trafo.s_max_a
     trafo_nearest_larger = trafo_params.ix[
-        trafo_params.loc[trafo_params['S_max'] > trafo_s_max_a_before][
+        trafo_params.loc[trafo_params['s_nom'] > trafo_s_max_a_before][
             'S_max'].idxmin()]
-    trafo.s_max_a = trafo_nearest_larger['S_max']
-    trafo.r = trafo_nearest_larger['R']
-    trafo.x = trafo_nearest_larger['X']
+    trafo.s_max_a = trafo_nearest_larger['s_nom']
+    trafo.r = trafo_nearest_larger['r']
+    trafo.x = trafo_nearest_larger['x']

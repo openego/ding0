@@ -1,10 +1,5 @@
-ding0\.grid\.mv\_grid package
-=============================
-
-.. automodule:: ding0.grid.mv_grid
-    :members:
-    :undoc-members:
-    :show-inheritance:
+ding0.grid.mv_grid package
+==========================
 
 Subpackages
 -----------
@@ -19,15 +14,24 @@ Subpackages
 Submodules
 ----------
 
+ding0.grid.mv_grid.mv_connect module
+------------------------------------
+
 .. automodule:: ding0.grid.mv_grid.mv_connect
     :members:
     :undoc-members:
     :show-inheritance:
 
+ding0.grid.mv_grid.mv_routing module
+------------------------------------
+
 .. automodule:: ding0.grid.mv_grid.mv_routing
     :members:
     :undoc-members:
     :show-inheritance:
+
+ding0.grid.mv_grid.tools module
+-------------------------------
 
 .. automodule:: ding0.grid.mv_grid.tools
     :members:
@@ -35,3 +39,10 @@ Submodules
     :show-inheritance:
 
 
+Module contents
+---------------
+
+.. automodule:: ding0.grid.mv_grid
+    :members:
+    :undoc-members:
+    :show-inheritance:

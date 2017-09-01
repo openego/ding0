@@ -167,6 +167,10 @@ class NetworkDing0:
         
         STEP 12: Reinforce MV grid
             MV grid is eventually reinforced persuant to results from step 11.
+
+        STEP 13: Close all switch disconnectors in MV grid
+            The rings are finally closed to hold a complete graph (if the SDs are open,
+            the edges adjacent to a SD will not be exported!)
         """
         if debug:
             start = time.time()
@@ -207,6 +211,9 @@ class NetworkDing0:
     
         # STEP 12: Reinforce MV grid
         self.reinforce_grid()
+
+        # STEP 13: Close all switch disconnectors in MV grid
+        self.control_circuit_breakers(mode='close')
 
         if debug:
             logger.info('Elapsed time for {0} MV Grid Districts (seconds): {1}'.format(
@@ -923,7 +930,7 @@ class NetworkDing0:
                                    comment='#',
                                    delimiter=',',
                                    decimal='.',
-                                   converters={'S_max': lambda x: int(x)})
+                                   converters={'s_nom': lambda x: int(x)})
 
         # import equipment
         equipment_mv_parameters_lines = cfg_ding0.get('equipment',
@@ -959,8 +966,7 @@ class NetworkDing0:
                                    comment='#',
                                    delimiter=',',
                                    decimal='.',
-                                   #index_col='S_max',
-                                   converters={'S_max': lambda x: int(x)})
+                                   converters={'s_nom': lambda x: int(x)})
 
         # import LV model grids
         model_grids_lv_string_properties = cfg_ding0.get('model_grids',
@@ -1369,43 +1375,56 @@ class NetworkDing0:
 
             # get nodes from grid's graph and create datasets
             for node in grid_district.mv_grid._graph.nodes():
-                if hasattr(node, 'voltage_res'):
-                    node_name = '_'.join(['MV',
-                                          str(grid_district.mv_grid.id_db),
-                                          repr(node)])
-                    if isinstance(node, LVStationDing0):
-                        peak_load = node.peak_load
-                        generation_capacity = node.peak_generation
+                node_name = '_'.join(['MV',
+                                      str(grid_district.mv_grid.id_db),
+                                      repr(node)])
+                if isinstance(node, LVStationDing0):
+                    peak_load = node.peak_load
+                    generation_capacity = node.peak_generation
+                    if hasattr(node, 'voltage_res'):
                         type = 'LV Station'
-                    elif isinstance(node, GeneratorDing0):
-                        peak_load = 0
-                        generation_capacity = node.capacity
-                        type = node.type
-                    elif isinstance(node, MVCableDistributorDing0):
-                        peak_load = 0
-                        generation_capacity = 0
-                        type = 'Cable distributor'
-                    elif isinstance(node, LVLoadAreaCentreDing0):
-                        #TODO: replace zero at generation/peak load
-                        peak_load = 0
-                        generation_capacity = 0
-                        type = 'Load area center'
                     else:
-                        peak_load = 0
-                        generation_capacity = 0
-                        type = 'Unknown'
-                    nodes_df = nodes_df.append(pd.Series(
-                        {'node_id': node_name,
-                         'grid_id': grid_district.mv_grid.id_db,
-                         'v_nom': grid_district.mv_grid.v_level,
-                         'geom': from_shape(Point(node.geo_data), srid=srid),
-                         'peak_load': peak_load,
-                         'generation_capacity': generation_capacity,
-                         'v_res0': node.voltage_res[0],
-                         'v_res1': node.voltage_res[1],
-                         'type': type,
-                         'rings': len(grid_district.mv_grid._rings)
-                        }), ignore_index=True)
+                        type = 'LV station (aggregated)'
+                elif isinstance(node, GeneratorDing0):
+                    peak_load = 0
+                    generation_capacity = node.capacity
+                    type = node.type
+                elif isinstance(node, MVCableDistributorDing0):
+                    peak_load = 0
+                    generation_capacity = 0
+                    type = 'Cable distributor'
+                elif isinstance(node, LVLoadAreaCentreDing0):
+                    peak_load = 0
+                    generation_capacity = 0
+                    type = 'Load area center of aggregated load area'
+                elif isinstance(node, CircuitBreakerDing0):
+                    peak_load = 0
+                    generation_capacity = 0
+                    type = 'Switch disconnector'
+                else:
+                    peak_load = 0
+                    generation_capacity = 0
+                    type = 'Unknown'
+
+                # add res voltages from nodes which were part of PF only
+                if hasattr(node, 'voltage_res'):
+                    v_res0 = node.voltage_res[0]
+                    v_res1 = node.voltage_res[1]
+                else:
+                    v_res0 = v_res1 = 0
+
+                nodes_df = nodes_df.append(pd.Series(
+                    {'node_id': node_name,
+                     'grid_id': grid_district.mv_grid.id_db,
+                     'v_nom': grid_district.mv_grid.v_level,
+                     'geom': from_shape(Point(node.geo_data), srid=srid),
+                     'peak_load': peak_load,
+                     'generation_capacity': generation_capacity,
+                     'v_res0': v_res0,
+                     'v_res1': v_res1,
+                     'type': type,
+                     'rings': len(grid_district.mv_grid._rings)
+                    }), ignore_index=True)
 
             # get branches (lines) from grid's graph and create datasets
             for branch in grid_district.mv_grid.graph_edges():
@@ -1549,16 +1568,16 @@ class NetworkDing0:
         """
 
         for grid_district in self.mv_grid_districts():
-            if mode is 'open':
+            if mode == 'open':
                 grid_district.mv_grid.open_circuit_breakers()
-            elif mode is 'close':
+            elif mode == 'close':
                 grid_district.mv_grid.close_circuit_breakers()
             else:
                 raise ValueError('\'mode\' is invalid.')
 
-        if mode is 'open':
+        if mode == 'open':
             logger.info('=====> MV Circuit Breakers opened')
-        elif mode is 'close':
+        elif mode == 'close':
             logger.info('=====> MV Circuit Breakers closed')
 
     def run_powerflow(self, conn, method='onthefly', export_pypsa=False, debug=False):
@@ -1578,7 +1597,7 @@ class NetworkDing0:
         Session = sessionmaker(bind=conn)
         session = Session()
 
-        if method is 'db':
+        if method == 'db':
             # Empty tables
             pypsa_io.delete_powerflow_tables(session)
 
@@ -1591,7 +1610,7 @@ class NetworkDing0:
                                                     export_pypsa_dir=export_pypsa_dir,
                                                     debug=debug)
 
-        elif method is 'onthefly':
+        elif method == 'onthefly':
             for grid_district in self.mv_grid_districts():
                 if export_pypsa:
                     export_pypsa_dir = repr(grid_district.mv_grid)

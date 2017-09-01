@@ -262,6 +262,7 @@ def solve(graph, debug=False, anim=None):
 
     # improve initial solution using local search
     local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, debug, anim)
+    # this line is for debug plotting purposes:
     #local_search_solution = savings_solution
 
     if debug:

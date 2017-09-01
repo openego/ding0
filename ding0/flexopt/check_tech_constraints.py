@@ -80,10 +80,10 @@ def check_load(grid, mode):
         for branch in grid.graph_edges():
             s_max_th = 3**0.5 * branch['branch'].type['U_n'] * branch['branch'].type['I_max_th']
 
-            if branch['branch'].kind is 'line':
+            if branch['branch'].kind == 'line':
                 s_max_th_lcfc = [s_max_th * load_factor_mv_line_lc_normal,
                                  s_max_th * load_factor_mv_line_fc_normal]
-            elif branch['branch'].kind is 'cable':
+            elif branch['branch'].kind == 'cable':
                 s_max_th_lcfc = [s_max_th * load_factor_mv_cable_lc_normal,
                                  s_max_th * load_factor_mv_cable_fc_normal]
             else:

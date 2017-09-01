@@ -1,10 +1,5 @@
-ding0\.grid package
-===================
-
-.. automodule:: ding0.grid
-    :members:
-    :undoc-members:
-    :show-inheritance:
+ding0.grid package
+==================
 
 Subpackages
 -----------
@@ -26,3 +21,10 @@ ding0.grid.tools module
     :show-inheritance:
 
 
+Module contents
+---------------
+
+.. automodule:: ding0.grid
+    :members:
+    :undoc-members:
+    :show-inheritance:

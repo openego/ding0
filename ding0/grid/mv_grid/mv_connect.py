@@ -55,6 +55,9 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
 
     """
 
+    # threshold which is used to determine if 2 objects are on the same position (see below for details on usage)
+    conn_diff_tolerance = cfg_ding0.get('mv_routing', 'conn_diff_tolerance')
+
     conn_objects_min_stack = []
 
     for branch in branches:
@@ -77,11 +80,12 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
                                   'shp': line_shp,
                                   'dist': node_shp.distance(line_shp)}}
 
-            # remove branch if it is too close to a node
-            tol = 10**-4
+            # Remove branch from the dict of possible conn. objects if it is too close to a node.
+            # Without this solution, the target object is not unique for different runs (and so
+            # were the topology)
             if (
-                    abs(conn_objects['s1']['dist'] - conn_objects['b']['dist']) < tol
-                 or abs(conn_objects['s2']['dist'] - conn_objects['b']['dist']) < tol
+                    abs(conn_objects['s1']['dist'] - conn_objects['b']['dist']) < conn_diff_tolerance
+                 or abs(conn_objects['s2']['dist'] - conn_objects['b']['dist']) < conn_diff_tolerance
                ):
                 del conn_objects['b']
 
@@ -589,10 +593,10 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
             pyproj.Proj(init='epsg:4326'))  # destination coordinate system
 
     # check all nodes
-    if mode is 'normal':
+    if mode == 'normal':
         #nodes = sorted(graph.nodes(), key=lambda x: repr(x))
         nodes = mv_grid.graph_isolated_nodes()
-    elif mode is 'isolated':
+    elif mode == 'isolated':
         nodes = mv_grid.graph_isolated_nodes()
     else:
         raise ValueError('\'mode\' is invalid.')
@@ -607,13 +611,13 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
 
                 node_shp = transform(proj1, node.geo_data)
 
-                if mode is 'normal':
+                if mode == 'normal':
                     # get branches within a the predefined radius `load_area_sat_buffer_radius`
                     branches = calc_geo_branches_in_buffer(node,
                                                            mv_grid,
                                                            load_area_sat_buffer_radius,
                                                            load_area_sat_buffer_radius_inc, proj1)
-                elif mode is 'isolated':
+                elif mode == 'isolated':
                     # get nodes of all MV rings
                     nodes = set()
                     [nodes.update(ring_nodes) for ring_nodes in list(mv_grid.rings_nodes(include_root_node=True))]
