@@ -155,7 +155,7 @@ class MVGridDing0(GridDing0):
             Circuit breakers must be closed to find rings, this is done automatically.
         """
         for circ_breaker in self.circuit_breakers():
-            if circ_breaker.status == 'open':
+            if circ_breaker.status is 'open':
                 circ_breaker.close()
                 logger.info('Circuit breakers were closed in order to find MV '
                             'rings')
@@ -176,6 +176,48 @@ class MVGridDing0(GridDing0):
                 yield ring + [_ for sublist in satellites for _ in sublist]
             else:
                 yield ring
+
+    def rings_full_data(self):
+        """ Returns a generator for iterating over each ring
+
+        Yields
+        ------
+            For each ring, tuple composed by ring ID, list of edges, list of nodes
+        Notes
+        -----
+            Circuit breakers must be closed to find rings, this is done automatically.
+        """
+        #close circuit breakers
+        for circ_breaker in self.circuit_breakers():
+            if not circ_breaker.status == 'closed':
+                circ_breaker.close()
+                logger.info('Circuit breakers were closed in order to find MV '
+                            'rings')
+        #find True rings (cycles from station through breaker and back to station)
+        for ring_nodes in nx.cycle_basis(self._graph, root=self._station):
+            edges_ring = []
+            for node in ring_nodes:
+                for edge in self.graph_branches_from_node(node):
+                    nodes_in_the_branch = self.graph_nodes_from_branch(edge[1]['branch'])
+                    if (nodes_in_the_branch[0] in ring_nodes and
+                        nodes_in_the_branch[1] in ring_nodes
+                        ):
+                        if not edge[1]['branch'] in edges_ring:
+                            edges_ring.append(edge[1]['branch'])
+            yield (edges_ring[0].ring,edges_ring,ring_nodes)
+
+        ##Find "rings" associated to aggregated LA
+        #for node in self.graph_nodes_sorted():
+        #    if isinstance(node,LVLoadAreaCentreDingo): # MVCableDistributorDingo
+        #        edges_ring = []
+        #        ring_nodes = []
+        #        if node.lv_load_area.is_aggregated:
+        #            ring_info = self.find_path(self._station, node, type='edges')
+        #            for info in ring_info:
+        #                edges_ring.append(info[2]['branch'])
+        #                ring_nodes.append(info[0])
+        #            ring_nodes.append(ring_info[-1][1])
+        #            yield (edges_ring[0].ring,edges_ring,ring_nodes)
 
     def get_ring_from_node(self, node):
         """ Determines the ring (RingDing0 object) which node is member of.
