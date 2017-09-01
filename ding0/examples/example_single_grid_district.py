@@ -51,4 +51,4 @@ nd.run_ding0(conn=conn,
 conn.close()
 
 # export grid to file (pickle)
-save_nd_to_pickle(nd, filename='ding0_grids_example.pkl')
+save_nd_to_pickle(nd, filename='ding0_grids_example_new-genos-dp-v0.3.pkl')

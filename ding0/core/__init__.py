@@ -695,22 +695,22 @@ class NetworkDing0:
 
             # build query
             generators_sqla = session.query(
-                self.orm['orm_re_generators'].id,
-                self.orm['orm_re_generators'].subst_id,
-                self.orm['orm_re_generators'].la_id,
-                self.orm['orm_re_generators'].mvlv_subst_id,
-                self.orm['orm_re_generators'].electrical_capacity,
-                self.orm['orm_re_generators'].generation_type,
-                self.orm['orm_re_generators'].generation_subtype,
-                self.orm['orm_re_generators'].voltage_level,
+                self.orm['orm_re_generators'].columns.id,
+                self.orm['orm_re_generators'].columns.subst_id,
+                self.orm['orm_re_generators'].columns.la_id,
+                self.orm['orm_re_generators'].columns.mvlv_subst_id,
+                self.orm['orm_re_generators'].columns.electrical_capacity,
+                self.orm['orm_re_generators'].columns.generation_type,
+                self.orm['orm_re_generators'].columns.generation_subtype,
+                self.orm['orm_re_generators'].columns.voltage_level,
                 func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_re_generators'].rea_geom_new, srid)).label('geom_new'),
+                    self.orm['orm_re_generators'].columns.rea_geom_new, srid)).label('geom_new'),
                 func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_re_generators'].geom, srid)).label('geom')
+                    self.orm['orm_re_generators'].columns.geom, srid)).label('geom')
             ). \
                 filter(
-                self.orm['orm_re_generators'].subst_id.in_(list(mv_grid_districts_dict))). \
-                filter(self.orm['orm_re_generators'].voltage_level.in_([4, 5, 6, 7])). \
+                self.orm['orm_re_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
+                filter(self.orm['orm_re_generators'].columns.voltage_level.in_([4, 5, 6, 7])). \
                 filter(self.orm['version_condition_re'])
 
             # read data from db
@@ -805,17 +805,17 @@ class NetworkDing0:
 
             # build query
             generators_sqla = session.query(
-                self.orm['orm_conv_generators'].id,
-                self.orm['orm_conv_generators'].subst_id,
-                self.orm['orm_conv_generators'].name,
-                self.orm['orm_conv_generators'].capacity,
-                self.orm['orm_conv_generators'].fuel,
-                self.orm['orm_conv_generators'].voltage_level,
+                self.orm['orm_conv_generators'].columns.id,
+                self.orm['orm_conv_generators'].columns.subst_id,
+                self.orm['orm_conv_generators'].columns.name,
+                self.orm['orm_conv_generators'].columns.capacity,
+                self.orm['orm_conv_generators'].columns.fuel,
+                self.orm['orm_conv_generators'].columns.voltage_level,
                 func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_conv_generators'].geom, srid)).label('geom')). \
+                    self.orm['orm_conv_generators'].columns.geom, srid)).label('geom')). \
                 filter(
-                self.orm['orm_conv_generators'].subst_id.in_(list(mv_grid_districts_dict))). \
-                filter(self.orm['orm_conv_generators'].voltage_level.in_([4, 5, 6])). \
+                self.orm['orm_conv_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
+                filter(self.orm['orm_conv_generators'].columns.voltage_level.in_([4, 5, 6])). \
                 filter(self.orm['version_condition_conv'])
 
             # read data from db
