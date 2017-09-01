@@ -233,8 +233,11 @@ def init_files_for_tests( mv_grid_districts= [3545],filename='ding0_tests_grids_
 
     conn.close()
 
-def manual_ding0_test( mv_grid_districts= [3545],filename='ding0_tests_grids_1.pkl'):
-    ''' Compares a new run of ding0 over districts and an old one saved in filename.
+
+def manual_ding0_test(mv_grid_districts=[3545],
+                      filename='ding0_tests_grids_1.pkl'):
+    ''' Compares a new run of ding0 over districts and an old one saved in
+    filename.
     
     Parameters
     ----------
