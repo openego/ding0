@@ -1,0 +1,341 @@
+----------------------------------------------------------------------------------------------------------------------------
+MV Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+grid_id                   		     : District identification number (DataFrame is indexed by this field, all other are columns)
+District Area                                : Area of district in km² (**unit needs to be confirmed)
+Gen. Cap. Connected to MV Rings              : Medium voltage generation max capacity directly connected to a ring.
+Gen. Cap. of MV at v_level <level>           : Medium voltage generation max capacity at voltage level <level>.
+					       * <level> is either 4 or 5. (levels 6 and 7 are at low voltage)
+					       * In a particular network, not all levels are present, therefore not all columns are necessarily contained in the DataFrame
+Gen. Cap. of LV at v_level <level>           : Low voltage generation max capacity at voltage level <level>.
+					       * <level> is either 6 or 7. (levels 4 and 5 are at medium voltage)
+					       * In a particular network, not all levels are present, therefore not all columns are necessarily contained in the DataFrame
+Gen. Cap. of MV <type>/<sub_type>            : Medium voltage generation max capacity of technology <type>/<sub_type>
+					       * In a particular network, not all technologies are present, therefore not all columns are necessarily contained in the DataFrame
+					       * Values of <type> and <sub_type> according to table below.
+							Type 		Subtype
+							------------------------
+							biomass 	biofuel
+							biomass 	biogas
+							biomass 	waste_wood
+							biomass 	biogas_from_grid
+							biomass 	biomass
+							biomass 	biogas_dry_fermentation
+							biomass 	wood
+							gas 		gas
+							gas 		gas_sewage
+							gas 		gas_landfill
+							gas 		gas_mine
+							geothermal 	geothermal
+							run_of_river 	hydro
+							run_of_river 	other (** BUG? confirm this subtype)
+							solar 		solar_roof_mounted
+							solar 		other
+							solar 		solar_ground_mounted
+							wind 		wind_onshore
+							wind 		wind_offshore
+LA Aggregated LV Gen. Cap.                   : Low voltage generation max capacity in Aggregated Load Areas
+LA Aggregated Population                     : Population in Aggregated Load Areas
+LA Total LV Gen. Cap.                        : Low voltage generation max capacity in all Load Areas (including aggregated)
+LA Total LV Peak Load Agricultural           : Low voltage Agricultural sector peak load in all Load Areas (including aggregated)
+LA Total LV Peak Load Industrial             : Low voltage Industrial sector peak load in all Load Areas (including aggregated)
+LA Total LV Peak Load Residential            : Low voltage Residential sector peak load in all Load Areas (including aggregated)
+LA Total LV Peak Load Retail                 : Low voltage Retail sector peak load in all Load Areas (including aggregated)
+LA Total Population                          : Population in all Load Areas (including aggregated)
+Length of LV overhead lines                  : Length (in km) of all overhead lines branches at low voltage level.
+Length of LV type <type>		     : Length (in km) of all branches with wire type <type> at low voltage level.
+					       * In a particular network, not all types are present, therefore not all columns are necessarily contained in the DataFrame
+					       * <type> are for example:
+						-  NAYY 4x1x120
+						-  NAYY 4x1x150
+						-  NAYY 4x1x185
+						-  NAYY 4x1x240
+						-  NAYY 4x1x300
+						-  NAYY 4x1x35
+						-  NAYY 4x1x50
+						-  NAYY 4x1x95 
+						-  etc.
+Length of LV underground cable               : Length (in km) of all underground cable branches at low voltage level.
+Length of MV Non-Rings total                 : Length (in km) of medium voltage branches that are not part of a ring.
+Length of MV Ring max                        : Length (in km) of the longest medium voltage ring
+Length of MV Ring mean                       : Mean value length (in km) of all medium voltage rings
+Length of MV Ring min                        : Length (in km) of the shortest medium voltage ring
+Length of MV Rings total                     : Length (in km) of all medium voltage rings
+Length of MV max path                        : Length (in km) of longest path between MV District Station to last MV node (LV Station or MV Generator).
+Length of MV overhead lines                  : Length (in km) of all overhead lines branches at medium voltage level. 
+Length of MV type <type>		     : Length (in km) of all branches with wire type <type> at medium voltage level.
+					       * In a particular network, not all types are present, therefore not all columns are necessarily contained in the DataFrame
+					       * <type> are for example:
+						-  122-AL1/20-ST1A
+						-  48-AL1/8-ST1A
+						-  NA2XS(FL)2Y 3x1x300 RM/25
+						-  NA2XS2Y 3x1x150 RE/25
+						-  NA2XS2Y 3x1x185 RM/25
+						-  NA2XS2Y 3x1x240
+						-  NA2XS2Y 3x1x240 RM/25
+						-  etc.
+Length of MV underground cable               : Length (in km) of all underground cable branches at medium voltage level.
+Length of MVLV max path 		     : Length (in km) of longest path between MV District Station to last LV node (LV load, LV Generator, etc).
+					       * The MVLV max path is not necessary longer than the MV max path as it does not include the path from MV Station to MV Generators.
+N° of Aggregated Load Areas                  : Number of aggregated load areas.
+N° of Cable Distr                            : Number of cable distributors
+N° of Circuit Breakers                       : Number of circuit breakers (** Bug: It should be the same as N° of MV Rings)
+N° of HV/MV Trafos                           : Number of HV/MV trafos in disctric's main station
+N° of LV Stations                            : Number of LV stations =? Number of LV districts (Confirm this)
+N° of Load Areas                             : Number of Load areas (including aggregated and satellite)
+N° of MV Rings                               : Number of of medium voltage rings
+N° of MV branches                            : Number of total medium voltage branches
+N° of MV branches not in a ring              : Number of medium voltage branches not in a ring **BUG: this number is wrong. to be corrected
+N° of MV/LV Trafos                           : Total number of MV/LV trafos in all LV Stations
+N° of Satellite Load Areas                   : Number of satellite load areas
+N° of isolated MV Generators                 : Number of medium voltage generators not coonected to a ring
+Trafos HV/MV Acc s_max_a                     : Accumulate capacity of trafos in main station (in KW)
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+Note on generation capacity: 		Total MV gen cap = sum_{<level>} Gen. Cap. of MV at v_level <level> 
+							 = sum_{<type>/<sub_type>} Gen. Cap. of MV <type>/<sub_type> 
+				
+					LA Total LV Gen. Cap. = sum_{<level>} Gen. Cap. of LV at v_level <level> 
+
+					Total Gen Cap = Total MV gen cap + LA Total LV Gen. Cap. 
+----------------------------------------------------------------------------------------------------------------------------
+Note on peak load: 			Total MV peak load = 0
+					Total LV peak load = LA Total LV Peak Load Agricultural + LA Total LV Peak Load Industrial + LA Total LV Peak Load Residential + LA Total LV Peak Load Retail 
+----------------------------------------------------------------------------------------------------------------------------
+Note on branches length:		Total MV lenght = Length of MV Non-Rings total + Length of MV Rings total 
+							= Length of MV overhead lines + Length of MV underground cable
+							= sum_{<type>} Length of MV type <type>
+
+					Total LV lenght = Length of LV overhead lines + Length of LV underground cable
+							= sum_{<type>} Length of LV type <type>
+
+					Total Length 	= Total MV lenght + Total LV lenght
+----------------------------------------------------------------------------------------------------------------------------
+Note on units:				Generation Capacities and Peak Loads are assummed to be all in kW. But this is not checked.
+----------------------------------------------------------------------------------------------------------------------------
+Note on Rings:				Rings are either:
+					1) a closed path between MV station to itself through a closed circuit breaker, or
+					2) a branch between the MV station and an Aggregated Load Area
+					The Gen Capacity of a Ring, is the generation capacity of all generators which are part of the ring. Not of the generators that are connected to a ring through a cable distributor.
+----------------------------------------------------------------------------------------------------------------------------
+Note on missing things:			Nominal value of voltages, voltages deviation, and related stats are not yet implemented
+					Branches capacity violations are not yet implemented
+					For this two aspects it is probably better to generate another dataframe with all the branches and nodes in a network, otherwise it is a bit pointless.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+LV Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+LV_grid_id                                   : LV district Identification number (DataFrame is indexed by this field, all other are columns)
+Accum. Consumption Agricultural              : Yearly average comsumption (in MW-hr?) Agricultural sector
+Accum. Consumption Industrial                : Yearly average comsumption (in MW-hr?) Industrial sector
+Accum. Consumption Residential               : Yearly average comsumption (in MW-hr?) Residential sector
+Accum. Consumption Retail                    : Yearly average comsumption (in MW-hr?) Retail sector
+Accumulated s_max_a in MVLV trafos           : Accumulate capacity of trafos in main station (in KW)
+Area                                         : Area of district in km² (**unit needs to be confirmed)
+Gen. Cap. <type>/<sub_type>                  : Low voltage generation max capacity of technology <type>/<sub_type>
+					       * In a particular network, not all technologies are present, therefore not all columns are necessarily contained in the DataFrame
+					       * Values of <type> and <sub_type> according to table below.
+							Type 		Subtype
+							------------------------
+							biomass 	biofuel
+							biomass 	biogas
+							biomass 	waste_wood
+							biomass 	biogas_from_grid
+							biomass 	biomass
+							biomass 	biogas_dry_fermentation
+							biomass 	wood
+							gas 		gas
+							gas 		gas_sewage
+							gas 		gas_landfill
+							gas 		gas_mine
+							geothermal 	geothermal
+							run_of_river 	hydro
+							run_of_river 	other (** BUG? confirm this subtype)
+							solar 		solar_roof_mounted
+							solar 		other
+							solar 		solar_ground_mounted
+							wind 		wind_onshore
+							wind 		wind_offshore
+Gen. Cap. v_level <level>                    : Low voltage generation max capacity at voltage level <level>.
+					       * <level> is either 6 or 7. (levels 4 and 5 are at medium voltage)
+					       * In a particular network, not all levels are present, therefore not all columns are necessarily contained in the DataFrame
+Length Type <type>		             : Length (in km) of all branches with wire type <type> at low voltage level.
+					       * In a particular network, not all types are present, therefore not all columns are necessarily contained in the DataFrame
+					       * <type> are for example:
+						-  NAYY 4x1x120
+						-  NAYY 4x1x150
+						-  NAYY 4x1x185
+						-  NAYY 4x1x240
+						-  NAYY 4x1x300
+						-  NAYY 4x1x35
+						-  NAYY 4x1x50
+						-  NAYY 4x1x95 
+						-  etc.
+Length of overhead lines                     : Length (in km) of all overhead lines branches at low voltage level.
+Length of underground cables                 : Length (in km) of all underground cables branches at low voltage level.
+Load Area ID                                 : ID of the Load Area to which the LV District LV_grid_id belongs.
+Load Area is Aggregated                         : True if respective Load Area is aggregated, False otherwise.
+Load Area is Satellite                          : True if respective Load Area is satellite, False otherwise.
+MV_grid_id                                   : ID of the MV District to which the LV District LV_grid_id belongs.
+N° of MV/LV Trafos                           : Number of MV/LV trafos in disctric's main station
+N° of Sector Agricultural                    : Number of Agricultural sectors in the corresponding map
+N° of Sector Industrial                      : Number of Industrial sectors in the corresponding map
+N° of Sector Residential                     : Number of Residential sectors in the corresponding map
+N° of Sector Retail                          : Number of Retail sectors in the corresponding map
+N° of branches Type <type>		     : Number of branches where cable type <type> was used. 
+					       * See: Length Type <type>.
+N° of branches from LV Station               : Number of branches that come out from the LV Station
+N° of branches overhead lines                : Number of overhead branches
+N° of branches underground cables            : Number of underground branches
+N° of loads agricultural                     : N° of load nodes from Agricultural sector
+N° of loads mixed industrial/retail          : N° of load nodes from mixed Industrial/Retail sector
+N° of loads residential                      : N° of load nodes from Residential sector
+Peak Load Agricultural                       : Peak Load Agricultural sector
+Peak Load Industrial                         : Peak Load Agricultural sector
+Peak Load Residential                        : Peak Load Agricultural sector
+Peak Load Retail                             : Peak Load Agricultural sector
+Population                                   : Population in LV district
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+Note on generation capacity: 		Total LV gen cap = sum_{<level>} Gen. Cap. v_level <level> 
+							 = sum_{<type>/<sub_type>} Gen. Cap. <type>/<sub_type> 
+----------------------------------------------------------------------------------------------------------------------------
+Note on peak load: 			Total Peak Load = sum_{<sector>} Peak Load <sector>
+----------------------------------------------------------------------------------------------------------------------------
+Note on branches length:		Total LV lenght = Length of overhead lines + Length of underground cables
+							= sum_{<type>} Length Type <type>
+----------------------------------------------------------------------------------------------------------------------------
+Note on units:				Generation Capacities and Peak Loads are assummed to be all in kW. But this is not checked.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+MV Voltage Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+node id					     : MV node Identification (DataFrame is indexed by this field, all other are columns)
+MV_grid_id				     : MV Grid District ID number
+V nominal				     : Nominal voltage of the MV District in kV
+V_res_0					     : Voltage Res 0. It can be either
+					       * A numeric value: 
+                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+V_res_1					     : Voltage Res 1. It can be either
+					       * A numeric value: 
+                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+* All MV nodes in the grid are contained in the dataframe.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+MV Current Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+branch id				     : MV branch Identification (DataFrame is indexed by this field, all other are columns)
+MV_grid_id				     : MV Grid District ID number
+s_res_0					     : Apparante Power Res 0. It can be either
+					       * A numeric value: 
+                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+s_res_1					     : Apparante Power Res 1. It can be either
+					       * A numeric value: 
+                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+* All MV branches in the grid are contained in the dataframe.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+LV Voltage Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+node id					     : LV node Identification (DataFrame is indexed by this field, all other are columns)
+LA_id					     : Associated Load Area ID number (Load areas are NOT aggregated Load Areas)
+LV_grid_id				     : LV district Identification Number
+MV_grid_id				     : MV district Identification Number
+V nominal				     : Nominal Voltage of the LV grid (in V)
+s_max_0					     : Apparante Power Max 0, in p.u. It can be either:
+					       *A numeric value: Only for LV Stations.
+					       *The string 'NA': For any node type except LV Stations.
+s_max_1					     : Apparante Power Max 1, in p.u. It can be either:
+					       *A numeric value: Only for LV Stations.
+					       *The string 'NA': For any node type except LV Stations.
+V_diff_0				     : Voltage difference 0, in p.u. It can be either:
+					       *A numeric value: For any node type except LV Stations.
+					       *The string 'NA': Only for LV Stations.
+V_diff_1				     : Voltage difference 1, in p.u. It can be either:
+					       *A numeric value: For any node type except LV Stations.
+					       *The string 'NA': Only for LV Stations.
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+* Only critical nodes (nodes with power flow problems) are contained in the dataframe.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+LV Current Stats 
+DataFrame KEY				     : DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------
+branch id				     : LV branch Identification (DataFrame is indexed by this field, all other are columns)
+LA_id					     : Associated Load Area ID number (Load areas are NOT aggregated Load Areas)
+LV_grid_id				     : LV district Identification Number
+MV_grid_id				     : MV district Identification Number
+s_max_0					     : Apparante Power Max 0, in p.u. 
+s_max_1					     : Apparante Power Max 0, in p.u. 
+----------------------------------------------------------------------------------------------------------------------------
+
+
+NOTES:
+----------------------------------------------------------------------------------------------------------------------------
+* Only critical branches (branches with power flow problems) are contained in the dataframe.
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
