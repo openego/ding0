@@ -1,10 +1,5 @@
-ding0\.core package
-===================
-
-.. automodule:: ding0.core
-    :members:
-    :undoc-members:
-    :show-inheritance:
+ding0.core package
+==================
 
 Subpackages
 -----------

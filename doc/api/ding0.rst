@@ -1,11 +1,6 @@
 ding0 package
 =============
 
-.. automodule:: ding0
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 
@@ -17,3 +12,10 @@ Subpackages
     ding0.grid
     ding0.tools
 
+Module contents
+---------------
+
+.. automodule:: ding0
+    :members:
+    :undoc-members:
+    :show-inheritance:
