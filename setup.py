@@ -40,8 +40,8 @@ setup(name='ding0',
                         'egoio >= 0.2.0, <= 0.2.0',
                         'oemof.db  >= 0.0.4, <= 0.0.4',
                         'shapely >= 1.5.12, <= 1.5.12',
-                        'pypsa >= 0.8.0, <= 0.8.0',
-			'seaborn',
+                        'pypsa >= 0.10.0, <= 0.10.0',
+			            'seaborn',
                         'unittest2'
                         ],
       package_data={
