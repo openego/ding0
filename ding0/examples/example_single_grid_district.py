@@ -45,7 +45,6 @@ nd.run_ding0(conn=conn,
              mv_grid_districts_no=mv_grid_districts)
 
 # export grids to database
-#nd.control_circuit_breakers(mode='close')
 # nd.export_mv_grid(conn, mv_grid_districts)
 # nd.export_mv_grid_new(conn, mv_grid_districts)
 

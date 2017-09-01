@@ -117,7 +117,6 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                          mv_grid_districts_no=[mvgd])
 
             # save results
-            nd.control_circuit_breakers(mode='close')
             results.save_nd_to_pickle(nd, os.path.join(base_path, run_id))
         else:
             # try to perform ding0 run on grid district
@@ -132,7 +131,6 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                         ignore_index=True)
                 # if successful, save results
                 else:
-                    nd.control_circuit_breakers(mode='close')
                     results.save_nd_to_pickle(nd, os.path.join(base_path,
                                                                run_id))
             except Exception as e:
