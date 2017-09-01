@@ -15,24 +15,26 @@ __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-import matplotlib.pyplot as plt
-import oemof.db as db
 import time
+from datetime import datetime
 import os
-import pandas as pd
-import ding0.tools.results
 import itertools
 
 from ding0.core import NetworkDing0
-from ding0.tools import config as cfg_ding0, results
+from ding0.tools import results, db
 
-from math import floor, ceil
+from math import floor
 import multiprocessing as mp
+import pandas as pd
+import json
 
+
+BASEPATH = os.path.join(os.path.expanduser('~'), '.ding0')
 
 
 ########################################################
-def parallel_run(districts_list, n_of_processes, n_of_districts):
+def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
+                 base_path=None):
     '''Organize parallel runs of ding0.
 
     The function take all districts in a list and divide them into 
@@ -48,12 +50,29 @@ def parallel_run(districts_list, n_of_processes, n_of_districts):
     n_of_districts: int
         Number of districts to be run in each cluster given as argument to
         process_stats()
+    run_id: str
+        Identifier for a run of Ding0. For example it is used to create a
+        subdirectory of os.path.join(`base_path`, 'results')
+    base_path : str
+        Base path for ding0 data (input, results and logs).
+        Default is `None` which sets it to :code:`~/.ding0` (may deviate on
+        windows systems).
+        Specify your own but keep in mind that it a required a particular
+        structure of subdirectories.
         
     See Also
     --------
     ding0_runs
 
     '''
+
+    # define base path
+    if base_path is None:
+        base_path = BASEPATH
+
+    if not os.path.exists(os.path.join(base_path, run_id)):
+        os.makedirs(os.path.join(base_path, run_id))
+
     start = time.time()
     #######################################################################
     # Define an output queue
@@ -104,6 +123,15 @@ def process_runs(mv_districts, n_of_districts, output_info):
         Number of districts in a cluster
     output_info:
         Info about how the run went
+    run_id: str
+        Identifier for a run of Ding0. For example it is used to create a
+        subdirectory of os.path.join(`base_path`, 'results')
+    base_path : str
+        Base path for ding0 data (input, results and logs).
+        Default is `None` which sets it to :code:`~/.ding0` (may deviate on
+        windows systems).
+        Specify your own but keep in mind that it a required a particular
+        structure of subdirectories.
     
     See Also
     --------
@@ -133,10 +161,10 @@ def process_runs(mv_districts, n_of_districts, output_info):
             else:
                 msg = 'OK'
                 status = 'OK'
-                results.save_nd_to_pickle(nw, filename=nw_name+'.pkl')
-            output_clusters.append((nw_name,status,msg))
+                results.save_nd_to_pickle(nw, os.path.join(base_path, run_id))
+            output_clusters.append((nw_name,status,msg, nw.metadata))
         except Exception as e:
-            output_clusters.append((nw_name,  'corrupt dist', e))
+            output_clusters.append((nw_name,  'corrupt dist', e, nw.metadata))
             continue
 
     output_info.put(output_clusters)
@@ -146,15 +174,68 @@ def process_runs(mv_districts, n_of_districts, output_info):
     #close connection and bye bye
     conn.close()
 
-#######################################################################################
+def process_metadata(meta):
+    """
+    Merge metadata of run on multiple grid districts
+
+    Parameters
+    ----------
+    meta: list of dict
+        Metadata of run of each MV grid district
+
+    Returns
+    -------
+    dict
+        Single metadata dict including merge metadata
+    """
+    mvgds = []
+
+    metadata = meta[0]
+
+    for mvgd in meta:
+        if isinstance(mvgd['mv_grid_districts'], list):
+            mvgds.extend(mvgd['mv_grid_districts'])
+        else:
+            mvgds.append(mvgd['mv_grid_districts'])
+
+    metadata['mv_grid_districts'] = mvgds
+
+    return metadata
+
+
+
 if __name__ == '__main__':
-    #############################################
+    # define individual base path
+    base_path = '/home/guido/mnt/rli-daten/Ding0/'
+
+    # set run_id to current timestamp
+    run_id = datetime.now().strftime("%Y%m%d%H%M%S")
+
+
     # run in parallel
-    mv_grid_districts = list(range(1728, 1736))
+    mv_grid_districts = list(range(250, 254))
     n_of_processes = mp.cpu_count() #number of parallel threaths
     n_of_districts = 1 #n° of districts in each serial cluster
 
-    out = parallel_run(mv_grid_districts,n_of_processes,n_of_districts)
+    out = parallel_run(mv_grid_districts, n_of_processes, n_of_districts,
+                       run_id, base_path=base_path)
 
-    for o in out:
-        print(o)
+    # report on unsuccessful runs
+    out_info = [_[0:3] for _ in out]
+
+    corrupt_grid_districts = pd.DataFrame(out_info,
+                                          columns=['grid', 'status', 'message'])
+    corrupt_grid_districts.to_csv(
+        os.path.join(
+            base_path,
+            run_id,
+            'corrupt_mv_grid_districts.txt'),
+        index=False,
+        float_format='%.0f')
+
+    # save metadata
+    meta_dict_list = [_[3] for _ in out]
+    metadata = process_metadata(meta_dict_list)
+    with open(os.path.join(base_path, run_id, 'Ding0_{}.meta'.format(run_id)),
+              'w') as f:
+        json.dump(metadata, f)
