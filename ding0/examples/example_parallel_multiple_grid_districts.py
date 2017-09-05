@@ -94,12 +94,12 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
     # Run processes
     for p in processes:
         p.start()
-    # Exit the completed processes
-    for p in processes:
-        p.join()
     # Resque output_info from processes
     output = [output_info.get() for p in processes]
     output = list(itertools.chain.from_iterable(output))
+    # Exit the completed processes
+    for p in processes:
+        p.join()
 
     #######################################################################
     print('Elapsed time for', str(max_dist),
@@ -159,7 +159,7 @@ def process_runs(mv_districts, n_of_districts, output_info):
             if msg:
                 status = 'run error'
             else:
-                msg = 'OK'
+                msg = ''
                 status = 'OK'
                 results.save_nd_to_pickle(nw, os.path.join(base_path, run_id))
             output_clusters.append((nw_name,status,msg, nw.metadata))
@@ -221,9 +221,9 @@ if __name__ == '__main__':
                        run_id, base_path=base_path)
 
     # report on unsuccessful runs
-    out_info = [_[0:3] for _ in out]
+    corrupt_out = [_[0:3] for _ in out if not _[1]=='OK']
 
-    corrupt_grid_districts = pd.DataFrame(out_info,
+    corrupt_grid_districts = pd.DataFrame(corrupt_out,
                                           columns=['grid', 'status', 'message'])
     corrupt_grid_districts.to_csv(
         os.path.join(
