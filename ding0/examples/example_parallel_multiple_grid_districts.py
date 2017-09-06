@@ -206,14 +206,13 @@ def process_metadata(meta):
 
 if __name__ == '__main__':
     # define individual base path
-    base_path = '/home/guido/mnt/rli-daten/Ding0/'
+    base_path = ''#'/home/guido/mnt/rli-daten/Ding0/'
 
     # set run_id to current timestamp
     run_id = datetime.now().strftime("%Y%m%d%H%M%S")
 
-
     # run in parallel
-    mv_grid_districts = list(range(250, 254))
+    mv_grid_districts = list(range(1, 3609))
     n_of_processes = mp.cpu_count() #number of parallel threaths
     n_of_districts = 1 #n° of districts in each serial cluster
 
