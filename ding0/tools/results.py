@@ -1379,18 +1379,18 @@ if __name__ == "__main__":
 
     #############################################
     # generate stats in parallel
-    mv_grid_districts = list(range(1728, 1755))
-    n_of_processes = mp.cpu_count() #number of parallel threaths
-    n_of_districts = 1 #n° of districts in each cluster
-    mv_stats = parallel_running_stats(districts_list = mv_grid_districts,
-                                      n_of_processes = n_of_processes,
-                                      n_of_districts = n_of_districts,
-                                      source = 'pkl',#'ding0', #
-                                      mode = '',
-                                      critical = True,
-                                      save_csv = True)
-    print('#################\nMV STATS:')
-    print(mv_stats[0].T)
+    #mv_grid_districts = list(range(1728, 1755))
+    #n_of_processes = mp.cpu_count() #number of parallel threaths
+    #n_of_districts = 1 #n° of districts in each cluster
+    #mv_stats = parallel_running_stats(districts_list = mv_grid_districts,
+    #                                  n_of_processes = n_of_processes,
+    #                                  n_of_districts = n_of_districts,
+    #                                  source = 'pkl',#'ding0', #
+    #                                  mode = '',
+    #                                  critical = True,
+    #                                  save_csv = True)
+    #print('#################\nMV STATS:')
+    #print(mv_stats[0].T)
     #print('#################\nLV STATS:')
     #print(mv_stats[1].T)
     #print('#################\nMV Crit Nodes STATS:')
@@ -1419,3 +1419,29 @@ if __name__ == "__main__":
     #stats = calculate_mvgd_voltage_current_stats(nw)
     #print(stats[0])#.index.tolist())#[1:3].T)#nodes
     #print(stats[1][1:20])#edges
+
+    #############################################
+    ########## MV stats
+    stats = pd.DataFrame.from_csv('dingo_grids_1_to_3607_mv_stats.csv')
+    cols  = [c for c in stats.columns if c[:15] == 'Gen. Cap. of MV']
+    stats = stats[cols]
+    cols  = [c for c in stats.columns if c[:20] != 'Gen. Cap. of MV at v']
+    stats = stats[cols]
+
+    stats.columns = [ 'Occurances of '+c[16:] for c in stats.columns]
+
+    stats = stats.T.astype(bool).sum(axis=1)
+    print(stats)
+
+    ########## LV stats
+    stats = pd.DataFrame.from_csv('dingo_grids_1_to_3607_lv_stats.csv')
+    cols  = [c for c in stats.columns if c[:14] == 'Gen. Cap. type']
+    stats = stats[cols]
+
+    stats.columns = [ 'Occurances of '+c[15:] for c in stats.columns]
+
+    stats = stats.T.astype(bool).sum(axis=1)
+    print(stats)
+
+
+

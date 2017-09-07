@@ -38,6 +38,7 @@ from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+from shapely.geometry import shape, mapping
 import subprocess
 
 logger = logging.getLogger('ding0')
@@ -1374,10 +1375,11 @@ class NetworkDing0:
         for grid_district in self.mv_grid_districts():
 
             # get nodes from grid's graph and create datasets
-            for node in grid_district.mv_grid._graph.nodes():
+            for node in grid_district.mv_grid.graph_nodes_sorted():
                 node_name = '_'.join(['MV',
                                       str(grid_district.mv_grid.id_db),
                                       repr(node)])
+                geom = from_shape(Point(node.geo_data), srid=srid)
                 if isinstance(node, LVStationDing0):
                     peak_load = node.peak_load
                     generation_capacity = node.peak_generation
@@ -1400,7 +1402,12 @@ class NetworkDing0:
                 elif isinstance(node, CircuitBreakerDing0):
                     peak_load = 0
                     generation_capacity = 0
-                    type = 'Switch disconnector'
+                    type = 'Switch Disconnector'
+                    #round coordinates of circuit breaker
+                    geosjson = mapping(node.geo_data)
+                    decimal_places = 4 #with 4, its around 10m error N-S or E-W
+                    geosjson['coordinates'] = np.round(np.array(geosjson['coordinates']), decimal_places)
+                    geom = from_shape(Point(shape(geosjson)), srid=srid)
                 else:
                     peak_load = 0
                     generation_capacity = 0
@@ -1417,7 +1424,7 @@ class NetworkDing0:
                     {'node_id': node_name,
                      'grid_id': grid_district.mv_grid.id_db,
                      'v_nom': grid_district.mv_grid.v_level,
-                     'geom': from_shape(Point(node.geo_data), srid=srid),
+                     'geom': geom,
                      'peak_load': peak_load,
                      'generation_capacity': generation_capacity,
                      'v_res0': v_res0,
@@ -1676,10 +1683,15 @@ class NetworkDing0:
             database_tables = 'unknown'
 
         # Collect assumptions
-        assumptions = {**self.config['assumptions'],
-                       **self.config['mv_connect'],
-                       **self.config['mv_routing'],
-                       **self.config['mv_routing_tech_constraints']}
+        #assumptions = {**self.config['assumptions'],
+        #               **self.config['mv_connect'],
+        #               **self.config['mv_routing'],
+        #               **self.config['mv_routing_tech_constraints']}
+        assumptions = {}
+        assumptions.update(self.config['assumptions'])
+        assumptions.update(self.config['mv_connect'])
+        assumptions.update(self.config['mv_routing'])
+        assumptions.update(self.config['mv_routing_tech_constraints'])
 
         # Determine run_id if not set
         if not run_id:
