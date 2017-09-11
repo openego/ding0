@@ -1716,3 +1716,133 @@ class NetworkDing0:
 
     def __repr__(self):
         return str(self.name)
+
+    def list_generators(self, conn):
+        """
+        List renewable (res) and conventional (conv) generators
+
+        Args
+        ----
+        conn: SQLalchemy
+            database connection
+            
+        Returns
+        -------
+        DataFrame
+        """
+        # make DB session
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        # build dicts to map MV grid district and Load Area ids to related objects
+        mv_grid_districts_dict,\
+        lv_load_areas_dict,\
+        lv_grid_districts_dict,\
+        lv_stations_dict = self.get_mvgd_lvla_lvgd_obj_from_id()
+
+        # import renewable generators
+        # build query
+        generators_sqla = session.query(
+                self.orm['orm_re_generators'].id,
+                #self.orm['orm_re_generators'].subst_id,
+                #self.orm['orm_re_generators'].la_id,
+                #self.orm['orm_re_generators'].mvlv_subst_id,
+                self.orm['orm_re_generators'].electrical_capacity,
+                self.orm['orm_re_generators'].generation_type,
+                self.orm['orm_re_generators'].generation_subtype,
+                self.orm['orm_re_generators'].voltage_level,
+                #func.ST_AsText(func.ST_Transform(
+                #    self.orm['orm_re_generators'].rea_geom_new, srid)).label('geom_new'),
+                #func.ST_AsText(func.ST_Transform(
+                #    self.orm['orm_re_generators'].geom, srid)).label('geom')
+                ).filter(
+                self.orm['orm_re_generators'].subst_id.in_(list(mv_grid_districts_dict))). \
+                filter(self.orm['orm_re_generators'].voltage_level.in_([4, 5, 6, 7])). \
+                filter(self.orm['version_condition_re'])
+
+        # read data from db
+        generators_res = pd.read_sql_query(generators_sqla.statement,
+                                        session.bind,
+                                        index_col='id')
+
+        generators_res.columns = ['GenCap' if c=='electrical_capacity' else
+                                  'type' if c=='generation_type' else
+                                  'subtype' if c=='generation_subtype' else
+                                  'v_level' if c=='voltage_level' else
+                                  c for c in generators_res.columns]
+        ###########################
+        # Imports conventional (conv) generators
+        # build query
+        generators_sqla = session.query(
+                self.orm['orm_conv_generators'].gid,
+                #self.orm['orm_conv_generators'].subst_id,
+                #self.orm['orm_conv_generators'].name,
+                self.orm['orm_conv_generators'].capacity,
+                self.orm['orm_conv_generators'].fuel,
+                self.orm['orm_conv_generators'].voltage_level,
+                #func.ST_AsText(func.ST_Transform(
+                #    self.orm['orm_conv_generators'].geom, srid)).label('geom')
+                ).filter(
+                self.orm['orm_conv_generators'].subst_id.in_(list(mv_grid_districts_dict))). \
+                filter(self.orm['orm_conv_generators'].voltage_level.in_([4, 5, 6])). \
+                filter(self.orm['version_condition_conv'])
+
+        # read data from db
+        generators_conv = pd.read_sql_query(generators_sqla.statement,
+                                           session.bind,
+                                           index_col='gid')
+
+        generators_conv.columns = ['GenCap' if c=='capacity' else
+                                   'type' if c=='fuel' else
+                                   'v_level' if c=='voltage_level' else
+                                   c for c in generators_conv.columns]
+        ###########################
+        generators = pd.concat([generators_conv, generators_res], axis=0)
+        generators = generators.fillna('other')
+        return generators
+
+    def list_load_areas(self, conn):
+        """list load_areas (load areas) peak load from database for a single MV grid_district
+
+        Parameters
+        ----------
+        conn: Database connection
+        """
+
+        # get ding0s' standard CRS (SRID)
+        srid = str(int(cfg_ding0.get('geo', 'srid')))
+
+        # threshold: load area peak load, if peak load < threshold => disregard
+        # load area
+        lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
+
+        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+
+        # build SQL query
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        lv_load_areas_sqla = session.query(
+            self.orm['orm_lv_load_areas'].id.label('id_db'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_residential * gw2kw).\
+                label('peak_load_residential'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_retail * gw2kw).\
+                label('peak_load_retail'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * gw2kw).\
+                label('peak_load_industrial'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * gw2kw).\
+                label('peak_load_agricultural')
+            ). \
+            filter(((self.orm['orm_lv_load_areas'].sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
+                     + self.orm['orm_lv_load_areas'].sector_peakload_retail
+                     + self.orm['orm_lv_load_areas'].sector_peakload_industrial
+                     + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
+                       * gw2kw) > lv_loads_threshold). \
+            filter(self.orm['version_condition_la'])
+
+        # read data from db
+        lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
+                                          session.bind,
+                                          index_col='id_db')
+
+        return lv_load_areas

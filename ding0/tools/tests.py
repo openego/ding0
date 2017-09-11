@@ -202,9 +202,10 @@ def dataframe_equal(network_one, network_two):
             nodes_two_df.loc[idx,'v_res1']=nodes_one_df.loc[idx,'v_res1']
 
     # compare things
-    flag_nodes = nodes_one_df.equals(nodes_two_df)
+    flag_nodes = nodes_one_df[nodes_one_df['type']!='Switch Disconnector'].equals(nodes_two_df[nodes_one_df['type']!='Switch Disconnector'])
     flag_edges = edges_one_df.equals(edges_two_df)
-    passed     = flag_nodes and flag_edges
+    flag_cb    = nodes_one_df[nodes_one_df['type']=='Switch Disconnector']['geom'].equals(nodes_two_df[nodes_two_df['type']=='Switch Disconnector']['geom'])
+    passed     = flag_nodes and flag_edges and flag_cb
 
     #return result of test
     msg = 'Data sets are '
@@ -214,6 +215,8 @@ def dataframe_equal(network_one, network_two):
         msg = msg + 'different in nodes and edges'
     elif not flag_edges:
         msg = msg + 'different in edges'
+    elif (not flag_cb) and flag_nodes:
+        msg = msg + 'different only in circuit breakers: allocated in (slightly) different places'
     elif not flag_nodes:
         msg = msg + 'different in nodes'
     return passed, msg

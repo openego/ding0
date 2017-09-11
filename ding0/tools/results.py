@@ -1366,7 +1366,7 @@ def parallel_running_stats(districts_list,
 
 ########################################################
 if __name__ == "__main__":
-    #nw = init_mv_grid(mv_grid_districts=[3544, 3545])
+    #nw = init_mv_grid(mv_grid_districts=[3545, 2039,2588])
     #init_mv_grid(mv_grid_districts=list(range(1, 4500, 200)),filename='ding0_tests_grids_1_4500_200.pkl')
     #nw = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
     #nw = load_nd_from_pickle(filename='ding0_tests_grids_SevenDistricts.pkl')
@@ -1422,26 +1422,29 @@ if __name__ == "__main__":
 
     #############################################
     ########## MV stats
-    stats = pd.DataFrame.from_csv('dingo_grids_1_to_3607_mv_stats.csv')
-    cols  = [c for c in stats.columns if c[:15] == 'Gen. Cap. of MV']
-    stats = stats[cols]
-    cols  = [c for c in stats.columns if c[:20] != 'Gen. Cap. of MV at v']
-    stats = stats[cols]
+    #stats = pd.DataFrame.from_csv('dingo_grids_1_to_3607_mv_stats.csv')
+    #cols  = [c for c in stats.columns if c[:15] == 'Gen. Cap. of MV']
+    #stats = stats[cols]
+    #cols  = [c for c in stats.columns if c[:20] != 'Gen. Cap. of MV at v']
+    #stats = stats[cols]
 
-    stats.columns = [ 'Occurances of '+c[16:] for c in stats.columns]
+    #stats.columns = [ 'Occurances of '+c[16:] for c in stats.columns]
 
-    stats = stats.T.astype(bool).sum(axis=1)
-    print(stats)
+    #stats = stats.T.astype(bool).sum(axis=1)
+    #print(stats)
+    #print(stats[stats['Gen. Cap. of MV oil/other']>0]['Gen. Cap. of MV oil/other'])
+    #print(stats[stats['Gen. Cap. of MV coal/other']>0]['Gen. Cap. of MV coal/other'])
 
     ########## LV stats
-    stats = pd.DataFrame.from_csv('dingo_grids_1_to_3607_lv_stats.csv')
-    cols  = [c for c in stats.columns if c[:14] == 'Gen. Cap. type']
-    stats = stats[cols]
+    #stats = pd.DataFrame.from_csv('dingo_grids_1_to_3607_lv_stats.csv')
+    #cols  = [c for c in stats.columns if c[:14] == 'Gen. Cap. type']
+    #stats = stats[cols]
 
-    stats.columns = [ 'Occurances of '+c[15:] for c in stats.columns]
+    #stats.columns = [ 'Occurances of '+c[15:] for c in stats.columns]
 
-    stats = stats.T.astype(bool).sum(axis=1)
-    print(stats)
+    #stats = stats.T.astype(bool).sum(axis=1)
+    #print(stats)
+    pass
 
 
 
