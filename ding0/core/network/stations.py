@@ -140,32 +140,32 @@ class MVStationDing0(StationDing0):
         # determine number and size of required transformers
 
         # get max. trafo
-        transformer_max = trafo_parameters.iloc[trafo_parameters['s_nom'].idxmax()]
+        transformer_max = trafo_parameters.iloc[trafo_parameters['S_nom'].idxmax()]
 
         while residual_apparent_power > 0:
-            if residual_apparent_power > load_factor_mv_trans * transformer_max['s_nom']:
+            if residual_apparent_power > load_factor_mv_trans * transformer_max['S_nom']:
                 transformer = transformer_max
             else:
                 # choose trafo
                 transformer = trafo_parameters.iloc[
-                    trafo_parameters[trafo_parameters['s_nom'] * load_factor_mv_trans >
-                                     residual_apparent_power]['s_nom'].idxmin()]
+                    trafo_parameters[trafo_parameters['S_nom'] * load_factor_mv_trans >
+                                     residual_apparent_power]['S_nom'].idxmin()]
 
             # add transformer on determined size with according parameters
             self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                      'v_level': self.grid.v_level,
-                                                     's_max_longterm': transformer['s_nom']}))
+                                                     's_max_longterm': transformer['S_nom']}))
             # calc residual load
             residual_apparent_power -= (load_factor_mv_trans *
-                                        transformer['s_nom'])
+                                        transformer['S_nom'])
 
         # if no transformer was selected (no load in grid district), use smallest one
         if len(self._transformers) == 0:
-            transformer = trafo_parameters.iloc[trafo_parameters['s_nom'].idxmin()]
+            transformer = trafo_parameters.iloc[trafo_parameters['S_nom'].idxmin()]
 
             self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                      'v_level': self.grid.v_level,
-                                                     's_max_longterm': transformer['s_nom']}))
+                                                     's_max_longterm': transformer['S_nom']}))
 
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))

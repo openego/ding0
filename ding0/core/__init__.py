@@ -930,7 +930,7 @@ class NetworkDing0:
                                    comment='#',
                                    delimiter=',',
                                    decimal='.',
-                                   converters={'s_nom': lambda x: int(x)})
+                                   converters={'S_nom': lambda x: int(x)})
 
         # import equipment
         equipment_mv_parameters_lines = cfg_ding0.get('equipment',
@@ -966,7 +966,7 @@ class NetworkDing0:
                                    comment='#',
                                    delimiter=',',
                                    decimal='.',
-                                   converters={'s_nom': lambda x: int(x)})
+                                   converters={'S_nom': lambda x: int(x)})
 
         # import LV model grids
         model_grids_lv_string_properties = cfg_ding0.get('model_grids',
