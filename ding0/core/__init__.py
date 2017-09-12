@@ -1676,10 +1676,11 @@ class NetworkDing0:
             database_tables = 'unknown'
 
         # Collect assumptions
-        assumptions = {**self.config['assumptions'],
-                       **self.config['mv_connect'],
-                       **self.config['mv_routing'],
-                       **self.config['mv_routing_tech_constraints']}
+        assumptions = {}
+        assumptions.update(self.config['assumptions'])
+        assumptions.update(self.config['mv_connect'])
+        assumptions.update(self.config['mv_routing'])
+        assumptions.update(self.config['mv_routing_tech_constraints'])
 
         # Determine run_id if not set
         if not run_id:
