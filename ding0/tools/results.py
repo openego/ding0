@@ -17,6 +17,8 @@ import pickle
 import os
 import pandas as pd
 import time
+from datetime import datetime
+import os
 
 from ding0.tools import config as cfg_ding0
 from matplotlib import pyplot as plt
@@ -1203,7 +1205,8 @@ def parallel_running_stats(districts_list,
                            source='pkl',
                            mode='',
                            critical = False,
-                           save_csv = False):
+                           save_csv = False,
+                           save_path = ''):
     '''Organize parallel runs of ding0 to calculate stats
 
     The function take all districts in a list and divide them into 
@@ -1228,6 +1231,8 @@ def parallel_running_stats(districts_list,
         If empty, medium and low voltage stats are calculated.
     critical: bool
         If True, critical nodes and branches are returned
+    path: str
+        path to save the pkl and csv files 
         
     Returns
     -------
@@ -1260,7 +1265,8 @@ def parallel_running_stats(districts_list,
     '''
     start = time.time()
 
-    nw_name = 'ding0_grids_' #name of files prefix
+    nw_name = os.path.join(save_path, 'ding0_grids_') #name of files prefix
+
     #######################################################################
     # Define an output queue
     output_stats = mp.Queue()
@@ -1294,24 +1300,42 @@ def parallel_running_stats(districts_list,
             nw_name = nw_name + '_to_' + str(districts_list[-1])
 
     #concatenate all dataframes
-    mv_stats = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][0]],
-        axis=0)
-    lv_stats = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][1]],
-        axis=0)
-    mv_crit_nodes = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][2]],
-        axis=0)
-    mv_crit_edges = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][3]],
-        axis=0)
-    lv_crit_nodes = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][4]],
-        axis=0)
-    lv_crit_edges = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][5]],
-        axis=0)
+    try:
+        mv_stats = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][0]],
+            axis=0)
+    except:
+        mv_stats = pd.DataFrame.from_dict({})
+    try:
+        lv_stats = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][1]],
+             axis=0)
+    except:
+        lv_stats = pd.DataFrame.from_dict({})
+    try:
+        mv_crit_nodes = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][2]],
+            axis=0)
+    except:
+        mv_crit_nodes = pd.DataFrame.from_dict({})
+    try:
+        mv_crit_edges = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][3]],
+            axis=0)
+    except:
+        mv_crit_edges = pd.DataFrame.from_dict({})
+    try:
+        lv_crit_nodes = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][4]],
+            axis=0)
+    except:
+        lv_crit_nodes = pd.DataFrame.from_dict({})
+    try:
+        lv_crit_edges = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][5]],
+            axis=0)
+    except:
+        lv_crit_edges = pd.DataFrame.from_dict({})
 
     # format concatenated Dataframes
     if not mv_stats.empty:
@@ -1379,16 +1403,23 @@ if __name__ == "__main__":
 
     #############################################
     # generate stats in parallel
-    #mv_grid_districts = list(range(1728, 1755))
-    #n_of_processes = mp.cpu_count() #number of parallel threaths
-    #n_of_districts = 1 #n° of districts in each cluster
-    #mv_stats = parallel_running_stats(districts_list = mv_grid_districts,
-    #                                  n_of_processes = n_of_processes,
-    #                                  n_of_districts = n_of_districts,
-    #                                  source = 'pkl',#'ding0', #
-    #                                  mode = '',
-    #                                  critical = True,
-    #                                  save_csv = True)
+    base_path = os.path.join(os.path.expanduser('~'), '.ding0')
+    #base_path = ''
+    run_id = datetime.now().strftime("%Y%m%d%H%M%S")
+    os.makedirs(os.path.join(base_path, run_id))
+    save_path =os.path.join(base_path, run_id)
+
+    mv_grid_districts = list(range(1728, 1732))
+    n_of_processes = mp.cpu_count() #number of parallel threaths
+    n_of_districts = 1 #n° of districts in each cluster
+    mv_stats = parallel_running_stats(districts_list = mv_grid_districts,
+                                      n_of_processes = n_of_processes,
+                                      n_of_districts = n_of_districts,
+                                      source = 'ding0', #'pkl',#
+                                      mode = 'LV',
+                                      critical = False,
+                                      save_csv = True,
+                                      save_path = save_path)
     #print('#################\nMV STATS:')
     #print(mv_stats[0].T)
     #print('#################\nLV STATS:')
@@ -1444,7 +1475,3 @@ if __name__ == "__main__":
 
     #stats = stats.T.astype(bool).sum(axis=1)
     #print(stats)
-    pass
-
-
-

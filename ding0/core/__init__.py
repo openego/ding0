@@ -1801,22 +1801,25 @@ class NetworkDing0:
         generators = generators.fillna('other')
         return generators
 
-    def list_load_areas(self, conn):
+    def list_load_areas(self, conn, mv_districts):
         """list load_areas (load areas) peak load from database for a single MV grid_district
 
         Parameters
         ----------
-        conn: Database connection
+        conn:
+            Database connection
+        mv_districts: 
+            List of MV districts
         """
-
-        # get ding0s' standard CRS (SRID)
-        srid = str(int(cfg_ding0.get('geo', 'srid')))
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
         lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
 
         gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+
+        #filter list for only desired MV districts
+        stations_list = [d.mv_grid._station.id_db for d in mv_districts]
 
         # build SQL query
         Session = sessionmaker(bind=conn)
@@ -1831,8 +1834,10 @@ class NetworkDing0:
             (self.orm['orm_lv_load_areas'].sector_peakload_industrial * gw2kw).\
                 label('peak_load_industrial'),
             (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * gw2kw).\
-                label('peak_load_agricultural')
+                label('peak_load_agricultural'),
+            #self.orm['orm_lv_load_areas'].subst_id
             ). \
+            filter(self.orm['orm_lv_load_areas'].subst_id.in_(stations_list)).\
             filter(((self.orm['orm_lv_load_areas'].sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
                      + self.orm['orm_lv_load_areas'].sector_peakload_retail
                      + self.orm['orm_lv_load_areas'].sector_peakload_industrial
