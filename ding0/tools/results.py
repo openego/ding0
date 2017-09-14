@@ -1269,6 +1269,9 @@ def parallel_running_stats(districts_list,
     max_dist = len(districts_list)
     threat_long = floor(max_dist / n_of_processes)
 
+    if threat_long == 0:
+        threat_long = 1
+
     threats = [districts_list[x:x + threat_long] for x in
                range(0, len(districts_list), threat_long)]
 
