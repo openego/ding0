@@ -25,7 +25,7 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 
 # import DB interface from oemof
-import oemof.db as db
+from ding0.tools import db
 from ding0.core import NetworkDing0
 from ding0.core import GeneratorDing0
 from ding0.core import MVCableDistributorDing0
