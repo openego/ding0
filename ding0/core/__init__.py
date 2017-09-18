@@ -1815,6 +1815,7 @@ class NetworkDing0:
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
         lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
+        #lv_loads_threshold = 0
 
         gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
 
@@ -1851,3 +1852,48 @@ class NetworkDing0:
                                           index_col='id_db')
 
         return lv_load_areas
+
+    def list_lv_grid_districts(self, conn, lv_stations):
+        """Imports all lv grid districts within given load area
+
+        Parameters
+        ----------
+        conn: SQLalchemy database connection
+        lv_stations:
+            List required LV_stations==LV districts.
+
+        Returns
+        -------
+        pandas Dataframe
+            Table of lv_grid_districts
+        """
+        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+
+        # 1. filter grid districts of relevant load area
+        Session = sessionmaker(bind=conn)
+        session = Session()
+
+        lv_grid_districs_sqla = session.query(
+            self.orm['orm_lv_grid_district'].mvlv_subst_id,
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_residential * gw2kw).
+                label('peak_load_residential'),
+            (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
+                label('peak_load_retail'),
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
+                label('peak_load_industrial'),
+            (self.orm[
+                 'orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
+                label('peak_load_agricultural'),
+            ). \
+            filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(
+            lv_stations)). \
+            filter(self.orm['version_condition_lvgd'])
+
+        # read data from db
+        lv_grid_districts = pd.read_sql_query(lv_grid_districs_sqla.statement,
+                                              session.bind,
+                                              index_col='mvlv_subst_id')
+
+        return lv_grid_districts
