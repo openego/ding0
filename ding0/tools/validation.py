@@ -24,15 +24,15 @@ from ding0.tools.results import load_nd_from_pickle
 from ding0.core import GeneratorDing0, LVLoadDing0, LVLoadAreaCentreDing0
 
 ########################################################
-def validate_generation(conn, file = 'ding0_tests_grids_1.pkl'):
+def validate_generation(conn, nw):
     '''Validate if total generation of a grid in a pkl file is what expected.
     
     Parameters
     ----------
     conn:
         The connection
-    file: str
-        name of file containing a grid to compare.
+    nw:
+        The network
         
     Returns
     -------
@@ -41,9 +41,6 @@ def validate_generation(conn, file = 'ding0_tests_grids_1.pkl'):
     DataFrame
         compare_by_type
     '''
-    #load network
-    nw = load_nd_from_pickle(filename=file)
-
     #config network intern variables
     nw._config = nw.import_config()
     nw._pf_config = nw.import_pf_config()
@@ -100,7 +97,7 @@ def validate_generation(conn, file = 'ding0_tests_grids_1.pkl'):
     effective_by_level = generation_effective.groupby('v_level').sum()['GenCap'].apply(lambda x: np.round(x,3))
 
     compare_by_level = pd.concat([input_by_level,effective_by_level,input_by_level==effective_by_level],axis=1)
-    compare_by_level.columns = ['before','after','equal?']
+    compare_by_level.columns = ['table','ding0','equal?']
 
     #compare by type/subtype
     generation_input['type'] =generation_input['type']+'/'+generation_input['subtype']
@@ -116,15 +113,15 @@ def validate_generation(conn, file = 'ding0_tests_grids_1.pkl'):
     return compare_by_level, compare_by_type
 
 ########################################################
-def validate_load_areas(conn, file = 'ding0_tests_grids_1.pkl'):
+def validate_load_areas(conn, nw):
     '''Validate if total load of a grid in a pkl file is what expected from load areas
     
     Parameters
     ----------
     conn:
         The connection
-    file: str
-        name of file containing a grid to compare.
+    nw
+        The network
         
     Returns
     -------
@@ -133,9 +130,6 @@ def validate_load_areas(conn, file = 'ding0_tests_grids_1.pkl'):
     Bool
         True if data base IDs of LAs are the same as the IDs in the grid 
     '''
-    #load network
-    nw = load_nd_from_pickle(filename=file)
-
     #config network intern variables
     nw._config = nw.import_config()
     nw._pf_config = nw.import_pf_config()
@@ -176,15 +170,15 @@ def validate_load_areas(conn, file = 'ding0_tests_grids_1.pkl'):
 
 
 ########################################################
-def validate_lv_districts(conn, file='ding0_tests_grids_1.pkl'):
+def validate_lv_districts(conn, nw):
     '''Validate if total load of a grid in a pkl file is what expected from LV districts
 
     Parameters
     ----------
     conn:
         The connection
-    file: str
-        name of file containing a grid to compare.
+    nw: 
+        The network
 
     Returns
     -------
@@ -193,9 +187,6 @@ def validate_lv_districts(conn, file='ding0_tests_grids_1.pkl'):
     DataFrame
         compare_by_loads
     '''
-    # load network
-    nw = load_nd_from_pickle(filename=file)
-
     # config network intern variables
     nw._config = nw.import_config()
     nw._pf_config = nw.import_pf_config()
@@ -304,19 +295,20 @@ def validate_lv_districts(conn, file='ding0_tests_grids_1.pkl'):
 ########################################################
 if __name__ == "__main__":
     conn = db.connection(section='oedb')
+    nw = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
 
-    compare_by_level, compare_by_type = validate_generation(conn)
+    compare_by_level, compare_by_type = validate_generation(conn,nw)
     print('\nCompare Generation by Level')
     print(compare_by_level)
     print('\nCompare Generation by Type/Subtype')
     print(compare_by_type)
 
-    compare_by_la, compare_la_ids = validate_load_areas(conn)
+    compare_by_la, compare_la_ids = validate_load_areas(conn,nw)
     print('\nCompare Load by Load Areas')
     print(compare_by_la)
     #print(compare_la_ids)
 
-    compare_by_district, compare_by_load = validate_lv_districts(conn)
+    compare_by_district, compare_by_load = validate_lv_districts(conn,nw)
     print('\nCompare Load by LV Districts')
     print(compare_by_district)
     print('\nCompare Load by LV Districts in Table and LV Loads from Ding0')

@@ -1421,6 +1421,8 @@ def export_network(nw, mode=''):
     ##############################
     #close circuit breakers
     nw.control_circuit_breakers(mode='close')
+    #srid
+    srid = str(int(nw.config['geo']['srid']))
     ##############################
     #check what to do
     lv_info = True
@@ -1429,136 +1431,204 @@ def export_network(nw, mode=''):
         mv_info = False
     if mode=='MV':
         lv_info = False
-
-    edges_cols = ['branch_id', 'grid_id', 'type_name', 'type_kind',
-                  'origin_node', 'destination_node',
-                  'type_v_nom', 'type_s_nom', 'length', 's_res0',
-                  's_res1']
     #############################
     #go through the grid collecting info
-    nodes_idx = 0
-    nodes_dict = {}
+    loads_idx = 0
+    loads_dict = {}
+    gen_idx = 0
+    gen_dict = {}
+    cb_idx = 0
+    cb_dict = {}
+    cd_idx = 0
+    cd_dict = {}
+    stations_idx = 0
+    stations_dict = {}
+    trafos_idx = 0
+    trafos_dict = {}
+    areacenter_idx = 0
+    areacenter_dict = {}
     edges_idx = 0
     edges_dict = {}
     for mv_district in nw.mv_grid_districts():
+        mv_grid_id = mv_district.mv_grid.id_db
         if mv_info:
+            lv_grid_id = 0
             for node in mv_district.mv_grid.graph_nodes_sorted():
-                nodes_idx +=1
-
-                if hasattr(node, 'peak_load'):
-                    peak_load = node.peak_load
-                else:
-                    peak_load = 0
-                if hasattr(node, 'capacity'):
-                    generation = node.capacity
-                elif hasattr(node, 'peak_generation'):
-                    generation = node.peak_generation
-                else:
-                    generation = 0
-
+                geom = from_shape(Point(node.geo_data), srid=srid)
+                db_id = node.id_db
                 if isinstance(node, LVStationDing0):
-                    if hasattr(node, 'voltage_res'):
+                    if not node.lv_load_area.is_aggregated:
                         type = 'LV Station'
-                        generation = 0
-                        peak_load = 0
-                    else:
-                        type = 'LV station (aggregated)'
+                        stations_idx+=1
+                        stations_dict[stations_idx] = {
+                            'id_db': db_id,
+                            'MV_grid_id':mv_grid_id,
+                            'LV_grid_id':lv_grid_id,
+                            'geom':geom
+                        }
+                        #TODO: Trafos
+                elif isinstance(node, MVStationDing0):
+                    type = 'MV Station'
+                    stations_idx+=1
+                    stations_dict[stations_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom
+                    }
+                    #TODO: Trafos
                 elif isinstance(node, GeneratorDing0):
                     if node.subtype==None:
                         subtype = 'other'
                     else:
                         subtype = node.subtype
-                    type = node.type + '/' +subtype
+                    type = node.type
+                    gen_idx+=1
+                    gen_dict[gen_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom,
+                        'type':type,
+                        'subtype':subtype,
+                        'v_level':node.v_level,
+                        #'v_nom':mv_district.mv_grid.v_level,
+                        'nominal_capacity':node.capacity,
+                    }
                 elif isinstance(node, MVCableDistributorDing0):
                     type = 'Cable distributor'
+                    cd_idx+=1
+                    cd_dict[cd_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom
+                    }
                 elif isinstance(node, LVLoadAreaCentreDing0):
                     type = 'Load area center of aggregated load area'
+
+                    la = node.lv_load_area
+                    #TODO: all this
+
+                    areacenter_idx+=1
+                    areacenter_dict[areacenter_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom,
+                    }
                 elif isinstance(node, CircuitBreakerDing0):
                     type = 'Switch Disconnector'
-                elif isinstance(node, MVStationDing0):
-                    type = 'MV Station'
-                    generation = 0
-                    peak_load = 0
+                    cb_idx+=1
+                    cb_dict[cb_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom,
+                        'status':node.status
+                    }
                 else:
                     type = 'Unknown'
 
-                geosjson = mapping(node.geo_data)
-
-                nodes_dict[nodes_idx] = {
-                    'node_name': 'MV_'+str(mv_district.mv_grid.id_db)+'_'+repr(node),
-                    'MV_grid_id': mv_district.mv_grid.id_db,
-                    'LV_grid_id': 0,
-                    'v_nom': mv_district.mv_grid.v_level,
-                    'peak_load':peak_load,
-                    'generation':generation,
-                    'latitude':geosjson['coordinates'][0],
-                    'longitude':geosjson['coordinates'][1],
-                    'type':type,
-                }
             for branch in mv_district.mv_grid.graph_edges():
+                geom = from_shape(LineString([branch['adj_nodes'][0].geo_data,branch['adj_nodes'][1].geo_data]),srid=srid)
+                name = branch['branch'].type['name']
+                U_n = branch['branch'].type['U_n']
+                I_max_th = branch['branch'].type['I_max_th']
+                R = branch['branch'].type['R']
+                L = branch['branch'].type['L']
+                C = branch['branch'].type['C']
+
                 edges_idx +=1
+                edges_dict[edges_idx] = {
+                    'edge_name': branch['branch'].id_db,
+                    'MV_grid_id':mv_grid_id,
+                    'LV_grid_id':lv_grid_id,
+                    'type_name': name,
+                    'type_kind': branch['branch'].kind,
+                    'geom': geom,
+                    'U_n':U_n,
+                    'I_max_th':I_max_th,
+                    'R':R,
+                    'L':L,
+                    'C':C,
+                }
 
         if lv_info:
             for LA in mv_district.lv_load_areas():
                 for lv_district in LA.lv_grid_districts():
+                    lv_grid_id = lv_district.lv_grid.id_db
+                    geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
                     for node in lv_district.lv_grid.graph_nodes_sorted():
-                        nodes_idx +=1
-                        if hasattr(node, 'peak_load'):
-                            peak_load = node.peak_load
-                        else:
-                            peak_load = 0
-                        if hasattr(node, 'capacity'):
-                            generation = node.capacity
-                        elif hasattr(node, 'peak_generation'):
-                            generation = node.peak_generation
-                        else:
-                            generation = 0
-
-                        name = 'MV_' + str(mv_district.mv_grid.id_db) + '_LV_' + str(lv_district.lv_grid.id_db) + '_' + repr(node)
-
-                        if isinstance(node, LVStationDing0):
-                            if hasattr(node, 'voltage_res'):
-                                type = 'LV Station'
-                                generation = 0
-                                peak_load = 0
-                                name = 'MV_' + str(mv_district.mv_grid.id_db) + '_' + repr(node) + '_lv'
-                            else:
-                                type = 'LV station (aggregated)'
-                        elif isinstance(node, GeneratorDing0):
+                        db_id = node.id_db
+                        if isinstance(node, GeneratorDing0):
                             if node.subtype == None:
                                 subtype = 'other'
                             else:
                                 subtype = node.subtype
-                            type = node.type + '/' + subtype
+                            type = node.type
+                            gen_idx += 1
+                            gen_dict[gen_idx] = {
+                                'id_db': db_id,
+                                'MV_grid_id': mv_grid_id,
+                                'LV_grid_id': lv_grid_id,
+                                'geom': geom,
+                                'type': type,
+                                'subtype': subtype,
+                                'v_level': node.v_level,
+                                #'v_nom':lv_district.lv_grid.station().v_level_operation,
+                                'nominal_capacity': node.capacity,
+                            }
                         elif isinstance(node, LVCableDistributorDing0):
                             type = 'Cable distributor'
-                        elif isinstance(node, LVLoadAreaCentreDing0):
-                            type = 'Load area center of aggregated load area'
+                            cd_idx += 1
+                            cd_dict[cd_idx] = {
+                                'id_db': db_id,
+                                'MV_grid_id': mv_grid_id,
+                                'LV_grid_id': lv_grid_id,
+                                'geom': geom
+                            }
                         elif isinstance(node, LVLoadDing0):
                             type = 'LV Load'
+                            #TODO: all this
                         else:
                             type = 'Unknown'
 
-                        geosjson = mapping(lv_district.lv_grid.station().geo_data)
-
-                        nodes_dict[nodes_idx] = {
-                            'node_name': name ,
-                            'MV_grid_id': mv_district.mv_grid.id_db,
-                            'LV_grid_id': lv_district.lv_grid.id_db,
-                            'v_nom': lv_district.lv_grid.v_level,
-                            'peak_load': peak_load,
-                            'generation': generation,
-                            'latitude': geosjson['coordinates'][0],
-                            'longitude': geosjson['coordinates'][1],
-                            'type': type,
+                    for branch in lv_district.lv_grid.graph_edges():
+                        name =  branch['branch'].type.to_frame().columns[0]
+                        #print(branch['branch'].type.to_frame())
+                        U_n = branch['branch'].type['U_n']
+                        I_max_th = branch['branch'].type['I_max_th']
+                        R = branch['branch'].type['R']
+                        L = branch['branch'].type['L']
+                        C = branch['branch'].type['C']
+                        edges_idx +=1
+                        edges_dict[edges_idx] = {
+                            'edge_name': branch['branch'].id_db,
+                            'MV_grid_id':mv_grid_id,
+                            'LV_grid_id':lv_grid_id,
+                            'type_name': name,
+                            'type_kind': branch['branch'].kind,
+                            'geom': geom,
+                            'U_n':U_n,
+                            'I_max_th':I_max_th,
+                            'R':R,
+                            'L':L,
+                            'C':C,
                         }
 
-                    for branch in lv_district.lv_grid.graph_edges():
-                        edges_idx +=1
+    gen        = pd.DataFrame.from_dict(gen_dict, orient='index')
+    cb         = pd.DataFrame.from_dict(cb_dict, orient='index')
+    cd         = pd.DataFrame.from_dict(cd_dict, orient='index')
+    stations   = pd.DataFrame.from_dict(stations_dict, orient='index')
+    areacenter = pd.DataFrame.from_dict(areacenter_dict, orient='index')
+    trafos     = pd.DataFrame.from_dict(trafos_dict, orient='index')
+    loads      = pd.DataFrame.from_dict(loads_dict, orient='index')
+    edges      = pd.DataFrame.from_dict(edges_dict, orient='index')
 
-    nodes = pd.DataFrame.from_dict(nodes_dict, orient='index').set_index('node_name')
+    edges = edges[sorted(edges.columns.tolist())]
 
-    return nodes
+    return gen, cb, cd, stations, areacenter, trafos, loads, edges
 
 
 ########################################################
@@ -1649,6 +1719,50 @@ if __name__ == "__main__":
     #stats = stats.T.astype(bool).sum(axis=1)
     #print(stats)
     ##############################################
-    nodes = export_network(load_nd_from_pickle('ding0_tests_grids_1.pkl'))
-    print(nodes)
-    print(nodes[nodes['type']=='LV Station'])
+    #see which mv districts have aggregated LA
+    #stats = pd.DataFrame.from_csv('dingo_grids_1_to_3607_mv_stats.csv')
+    #stats = stats[stats['N° of Load Areas - Aggregated']>0].index.tolist()
+    #print(stats)
+    ##############################################
+    gen, cb, cd, stations, areacenter, trafos, loads, edges= export_network(load_nd_from_pickle('ding0_tests_grids_1.pkl'))
+    print(gen)
+    print(cb)
+    print(cd)
+    print(stations)
+    print(areacenter)
+    print(trafos)
+    print(loads)
+    print(edges)
+    ##############################################
+    #export some districts
+    #directory = os.path.join(os.path.expanduser('~'), 'github/dingo/ding0/20170904152822')
+    #results_nodes = []
+    #results_edges = []
+    #districts     = []
+    #for filename in os.listdir(directory):
+    #    extension = os.path.splitext(filename)[1]
+    #    if extension =='.pkl':
+    #        number = int(filename.split('__')[1].split('.')[0])
+    #        condition = number%200==0 or \
+    #                    number==3545 or \
+    #                    number==666 or \
+    #                    number==1407 or \
+    #                    number==2504 or \
+    #                    number==3011
+    #        if condition:
+    #            file = os.path.join(directory,filename)
+    #            nodes, edges = export_network(load_nd_from_pickle(file))
+    #            results_nodes.append(nodes)
+    #            results_edges.append(edges)
+    #            districts.append(number)
+
+    #nodes = pd.concat(results_nodes, axis=0).sort_index()
+    #edges = pd.concat(results_edges, axis=0).sort_index()
+
+    #nodes.to_csv(os.path.join(directory,'some_nodes.csv'))
+    #edges.to_csv(os.path.join(directory,'some_edges.csv'))
+
+    #print(len(districts))
+    #print(districts)
+
+    #print(nodes[nodes['type']=='LV station (aggregated)'])
