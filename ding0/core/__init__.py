@@ -687,7 +687,10 @@ class NetworkDing0:
             conn: SQLalchemy database connection
             debug: If True, information is printed during process
         Notes:
-            Connection of generators is done later on in NetworkDing0's method connect_generators()
+            Connection of generators is done later on in NetworkDing0's method
+            :func:`connect_generators()`.
+
+            If subtype is not specified it's set to 'unknown'.
         """
 
         def import_res_generators():
@@ -717,6 +720,10 @@ class NetworkDing0:
             generators = pd.read_sql_query(generators_sqla.statement,
                                            session.bind,
                                            index_col='id')
+            # define generators with unknown subtype as 'unknown'
+            generators.loc[generators[
+                               'generation_subtype'].isnull(),
+                           'generation_subtype'] = 'unknown'
 
             for id_db, row in generators.iterrows():
 
@@ -836,6 +843,7 @@ class NetworkDing0:
                                            mv_grid=mv_grid,
                                            capacity=row['capacity'],
                                            type=row['fuel'],
+                                           subtype='unknown',
                                            v_level=int(row['voltage_level']))
 
                 # add generators to graph

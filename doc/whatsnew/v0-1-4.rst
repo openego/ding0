@@ -13,6 +13,7 @@ Bug fixes
 
 Other changes
 -------------
+* Generators with unknown subtype have subtype 'unknown' now
 
 
 
