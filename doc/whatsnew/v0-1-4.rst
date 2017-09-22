@@ -9,7 +9,7 @@ Added features
 
 Bug fixes
 ---------
-
+* Remove cable distributor from MV grid's cable distributor list when disconnecting a node `eDisGo#48 <https://github.com/openego/eDisGo/issues/48>`_
 
 Other changes
 -------------
