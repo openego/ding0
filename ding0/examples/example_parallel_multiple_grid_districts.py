@@ -37,7 +37,7 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
                  base_path=None):
     '''Organize parallel runs of ding0.
 
-    The function take all districts in a list and divide them into 
+    The function take all districts in a list and divide them into
     n_of_processes parallel processes. For each process, the assigned districts
     are given to the function process_runs() with the argument n_of_districts
 
@@ -59,7 +59,7 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
         windows systems).
         Specify your own but keep in mind that it a required a particular
         structure of subdirectories.
-        
+
     See Also
     --------
     ding0_runs
@@ -82,6 +82,9 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
     max_dist = len(districts_list)
     threat_long = floor(max_dist / n_of_processes)
 
+    if threat_long == 0:
+        threat_long = 1
+
     threats = [districts_list[x:x + threat_long] for x in range(0, len(districts_list), threat_long)]
 
     processes = []
@@ -89,7 +92,7 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
         mv_districts = th
         processes.append(mp.Process(target=process_runs,
                                     args=(mv_districts, n_of_districts,
-                                          output_info)))
+                                          output_info, run_id, base_path)))
     #######################################################################
     # Run processes
     for p in processes:
@@ -108,9 +111,9 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
     return output
 
 ########################################################
-def process_runs(mv_districts, n_of_districts, output_info):
+def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
     '''Runs a process organized by parallel_run()
-    
+
     The function take all districts mv_districts and divide them into clusters
     of n_of_districts each. For each cluster, ding0 is run and the resulting
     network is saved as a pickle
@@ -132,7 +135,7 @@ def process_runs(mv_districts, n_of_districts, output_info):
         windows systems).
         Specify your own but keep in mind that it a required a particular
         structure of subdirectories.
-    
+
     See Also
     --------
     parallel_run

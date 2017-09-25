@@ -23,7 +23,7 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 
 # import DB interface from oemof
-import oemof.db as db
+from ding0.tools import db
 from ding0.core import NetworkDing0
 from ding0.core import GeneratorDing0
 from ding0.core import MVCableDistributorDing0
@@ -1268,6 +1268,9 @@ def parallel_running_stats(districts_list,
     # Setup a list of processes that we want to run
     max_dist = len(districts_list)
     threat_long = floor(max_dist / n_of_processes)
+
+    if threat_long == 0:
+        threat_long = 1
 
     threats = [districts_list[x:x + threat_long] for x in
                range(0, len(districts_list), threat_long)]

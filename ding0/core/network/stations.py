@@ -163,9 +163,10 @@ class MVStationDing0(StationDing0):
         if len(self._transformers) == 0:
             transformer = trafo_parameters.iloc[trafo_parameters['S_nom'].idxmin()]
 
-            self.add_transformer(TransformerDing0(**{'grid': self.grid,
-                                                     'v_level': self.grid.v_level,
-                                                     's_max_longterm': transformer['S_nom']}))
+            self.add_transformer(
+                TransformerDing0(grid=self.grid,
+                                 v_level=self.grid.v_level,
+                                 s_max_longterm=transformer['S_nom']))
 
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))

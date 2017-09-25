@@ -518,7 +518,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
         neighbor_nodes = graph.neighbors(target_obj_result)
 
         if len(neighbor_nodes) == 2:
-            graph.remove_node(target_obj_result)
+            node.grid.remove_cable_distributor(target_obj_result)
 
             branch_length = calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
             graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDing0(length=branch_length,
