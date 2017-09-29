@@ -1127,10 +1127,6 @@ def process_stats(mv_districts,
           If mode=='MV', then DataFrame is empty.
           If critical==False, then DataFrame is empty.
     '''
-    #######################################################################
-    # database connection
-    conn = db.connection(section='oedb')
-    #######################################################################
     # decide what exactly to do with MV LV
     if mode == 'MV':
         calc_mv = True
@@ -1162,10 +1158,14 @@ def process_stats(mv_districts,
             print('  Reading data from pickle district', cl)
             print('########################################')
             try:
+                print((nw_name + '.pkl'))
                 nw = load_nd_from_pickle(nw_name+'.pkl')
             except Exception:
                 continue
         else:
+            # database connection
+            conn = db.connection(section='oedb')
+
             print('\n########################################')
             print('  Running ding0 for district', cl)
             print('########################################')
@@ -1177,6 +1177,9 @@ def process_stats(mv_districts,
                     continue
             except Exception:
                 continue
+
+            # Close database connection
+            conn.close()
         if calc_mv:
             stats = calculate_mvgd_stats(nw)
             mv_stats.append(stats)
@@ -1195,7 +1198,6 @@ def process_stats(mv_districts,
     salida = (mv_stats,lv_stats,mv_crit_nodes,mv_crit_edges,lv_crit_nodes,lv_crit_edges)
     output.put(salida)
     #######################################################################
-    conn.close()
 ########################################################
 def parallel_running_stats(districts_list,
                            n_of_processes,
@@ -1260,7 +1262,7 @@ def parallel_running_stats(districts_list,
     '''
     start = time.time()
 
-    nw_name = 'ding0_grids_' #name of files prefix
+    nw_name = 'ding0_grids__' #name of files prefix
     #######################################################################
     # Define an output queue
     output_stats = mp.Queue()
