@@ -45,12 +45,13 @@ This is optional. If you want to follow our suggestion, install the tool
     sudo apt-get install virtualenv # since Ubuntu 16.04
 
 Afterwards `virtualenv` allows to create multiple parallel python distributions.
+Since Ding0 relies on Python 3, we specify this to virtualenv creation.
 Create a new one for Ding0 by
 
 .. code-block:: bash
 
     # Adjust path to your specific needs
-    virtualenv ~/.virtualenvs/ding0
+    virtualenv -p python3 ~/.virtualenvs/ding0
 
 Jump into (aka. activate) this python distribution by
 
