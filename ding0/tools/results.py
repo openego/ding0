@@ -1194,6 +1194,7 @@ def process_stats(mv_districts,
             stats = calculate_lvgd_voltage_current_stats(nw)
             lv_crit_nodes.append(stats[0])
             lv_crit_edges.append(stats[1])
+        print(critical, calc_lv, calc_mv)
     #######################################################################
     salida = (mv_stats,lv_stats,mv_crit_nodes,mv_crit_edges,lv_crit_nodes,lv_crit_edges)
     output.put(salida)
