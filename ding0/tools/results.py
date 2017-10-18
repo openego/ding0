@@ -621,7 +621,10 @@ def calculate_mvgd_stats(nw):
 
         mean_resistance = sum_resistances / n_terminal_nodes
         mean_thermal_limit = sum_thermal_limits / n_terminal_nodes
-        mean_thermal_limit_LV = sum_thermal_limits_LV / n_terminal_nodes_LV
+        if n_terminal_nodes_LV < 1:
+            mean_thermal_limit_LV = 0
+        else:
+            mean_thermal_limit_LV = sum_thermal_limits_LV / n_terminal_nodes_LV
         mean_path_length = sum_path_lengths / n_terminal_nodes
         number_branches_LV = n_branches_LV # / n_stations_LV
 
