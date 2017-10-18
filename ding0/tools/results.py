@@ -47,7 +47,7 @@ from shapely.geometry import shape, mapping
 
 import multiprocessing as mp
 
-from math import floor, ceil
+from math import floor, ceil, pi
 
 from ding0.flexopt.check_tech_constraints import check_load, check_voltage, \
     get_critical_line_loading, get_critical_voltage_at_nodes
@@ -487,6 +487,9 @@ def calculate_mvgd_stats(nw):
         Dataframe containing several statistical numbers about the MVGD
     """
     ##############################
+
+    omega = 2 * pi * 50
+
     #close circuit breakers
     nw.control_circuit_breakers(mode='close')
     ##############################
@@ -546,11 +549,17 @@ def calculate_mvgd_stats(nw):
                 else:
                     path = nx.shortest_path(G, root, node)
                     for i in range(len(path)-1):
-                        mv_resistance += np.sqrt((G.edge[path[i]][path[i+1]]['branch'].type['R'] * \
-                                              G.edge[path[i]][path[i+1]]['branch'].length)**2. + \
-                                              (G.edge[path[i]][path[i+1]]['branch'].type['X'] * \
-                                              G.edge[path[i]][path[i+1]]['branch'].length)**2.)
-                        mv_path_length += G.edge[path[i]][path[i+1]]['branch'].length
+                        mv_resistance += np.sqrt(
+                            (G.edge[path[i]][path[i + 1]]['branch'].type[
+                                 'L'] * 1e-3 * omega * \
+                             G.edge[path[i]][path[i + 1]][
+                                 'branch'].length) ** 2. + \
+                            (G.edge[path[i]][path[i + 1]]['branch'].type[
+                                 'L'] * 1e-3 * omega * \
+                             G.edge[path[i]][path[i + 1]][
+                                 'branch'].length) ** 2.)
+                        mv_path_length += G.edge[path[i]][path[i + 1]][
+                            'branch'].length
 
                     mv_resistances[node] = mv_resistance
                     mv_path_lengths[node] = mv_path_length
@@ -568,9 +577,9 @@ def calculate_mvgd_stats(nw):
                                             lv_resistance = 0.
                                             lv_path_length = 0.
                                             for i in range(len(path)-1):
-                                                lv_resistance += np.sqrt((G_lv.edge[path[i]][path[i+1]]['branch'].type['R'] * \
+                                                lv_resistance += np.sqrt((G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
                                                                           G_lv.edge[path[i]][path[i+1]]['branch'].length)**2. + \
-                                                                          (G_lv.edge[path[i]][path[i+1]]['branch'].type['X'] * \
+                                                                          (G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
                                                                           G_lv.edge[path[i]][path[i+1]]['branch'].length)**2.)
                                                 lv_path_length += G_lv.edge[path[i]][path[i+1]]['branch'].length
                                             lv_thermal_limit = G_lv.edge[path[0]][path[1]]['branch'].type['I_max_th']
