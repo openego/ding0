@@ -15,6 +15,7 @@ __author__     = "nesnoj, gplssm"
 
 import pickle
 import os
+import numpy as np
 import pandas as pd
 import time
 
@@ -27,9 +28,9 @@ from ding0.tools import db
 from ding0.core import NetworkDing0
 from ding0.core import GeneratorDing0
 from ding0.core import MVCableDistributorDing0
-from ding0.core import LVStationDing0
+from ding0.core import LVStationDing0, MVStationDing0
 from ding0.core import CircuitBreakerDing0
-from ding0.core.network.loads import LVLoadDing0
+from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
 
 from shapely.ops import transform
 import pyproj
@@ -42,6 +43,9 @@ from math import floor, ceil
 from ding0.flexopt.check_tech_constraints import check_load, check_voltage, \
     get_critical_line_loading, get_critical_voltage_at_nodes
 from ding0.tools import config as cfg_ding0
+
+import networkx as nx
+
 #############################################
 plt.close('all')
 cfg_ding0.load_config('config_db_tables.cfg')
@@ -493,8 +497,114 @@ def calculate_mvgd_stats(nw):
     ring_idx = 0
     LA_idx = 0
     lv_branches_idx = 0
+
+    # loop over MV grid districts
     for district in nw.mv_grid_districts():
+
+        # node of MV station
         root = district.mv_grid.station()
+
+        ###################################
+        # get resistance of path to each terminal node
+        # and get thermal capacity of first segment of path to each terminal node
+
+        # store properties of terminal nodes in dictionaries
+        # properties are e.g. resistance of path, length of path, thermal limit of first segment of path
+        mv_resistances  = {}
+        mvlv_resistances = {}
+
+        mv_path_lengths = {}
+        mvlv_path_lengths = {}
+
+        mv_thermal_limits = {} # I_max of first segment on MV for each MV path
+        lv_thermal_limits = {} # I_max of first segment on LV for each LV path
+        mvlv_thermal_limits = {} # I_max of first segment on MV for each MVLV path
+
+        n_branches_LV = 0
+        n_stations_LV = 0
+
+        G = district.mv_grid._graph
+
+        for node in G.nodes_iter():
+            if isinstance(node, MVStationDing0):
+                continue
+            mv_resistance = 0
+            mv_path_length = 0
+            if not isinstance(node, MVCableDistributorDing0) and not isinstance(node, CircuitBreakerDing0):
+                if not nx.has_path(G, root, node):
+                    continue
+                    #print(node, node.lv_load_area.is_aggregated) # only debug
+                else:
+                    path = nx.shortest_path(G, root, node)
+                    for i in range(len(path)-1):
+                        mv_resistance += G.edge[path[i]][path[i+1]]['branch'].type['R'] * \
+                                              G.edge[path[i]][path[i+1]]['branch'].length
+                        mv_path_length += G.edge[path[i]][path[i+1]]['branch'].length
+
+                    mv_resistances[node] = mv_resistance
+                    mv_path_lengths[node] = mv_path_length
+                    mv_thermal_limit = G.edge[path[0]][path[1]]['branch'].type['I_max_th']
+                    mv_thermal_limits[node] = mv_thermal_limit
+
+                    if isinstance(node, LVStationDing0):
+                        for lv_LA in district.lv_load_areas():
+                            for lv_dist in lv_LA.lv_grid_districts():
+                                if lv_dist.lv_grid._station == node:
+                                    G_lv = lv_dist.lv_grid._graph
+                                    for lv_node in G_lv.nodes():
+                                        if isinstance(lv_node, GeneratorDing0) or isinstance(lv_node, LVLoadDing0):
+                                            path = nx.shortest_path(G_lv, node, lv_node)
+                                            lv_resistance = 0.
+                                            lv_path_length = 0.
+                                            for i in range(len(path)-1):
+                                                lv_resistance += G_lv.edge[path[i]][path[i+1]]['branch'].type['R'] * \
+                                                                          G_lv.edge[path[i]][path[i+1]]['branch'].length
+                                                lv_path_length += G_lv.edge[path[i]][path[i+1]]['branch'].length
+                                            lv_thermal_limit = G_lv.edge[path[0]][path[1]]['branch'].type['I_max_th']
+
+                                            mvlv_resistances[lv_node] = mv_resistance + lv_resistance
+                                            mvlv_path_lengths[lv_node] = mv_path_length + lv_path_length     
+                                            lv_thermal_limits[lv_node] = lv_thermal_limit
+                                            mvlv_thermal_limits[lv_node] = mv_thermal_limit
+                                        elif isinstance(lv_node, LVStationDing0):
+                                            n_branches_LV += len(G_lv.neighbors(lv_node))
+                                            n_stations_LV += 1
+
+        # compute mean values by looping over terminal nodes
+        sum_resistances = 0.
+        sum_thermal_limits = 0.
+        sum_path_lengths = 0.
+        n_terminal_nodes_MV = 0
+        
+        # terminal nodes on MV
+        for terminal_node in mv_resistances.keys(): # neglect LVStations here because already part of MVLV paths below
+            if not isinstance(terminal_node, LVStationDing0) and not isinstance(terminal_node, MVStationDing0):
+                sum_resistances += mv_resistances[terminal_node]
+                sum_thermal_limits += mv_thermal_limits[terminal_node]
+                sum_path_lengths += mv_path_lengths[terminal_node]
+                n_terminal_nodes_MV += 1
+
+        sum_thermal_limits_LV = 0.
+        n_terminal_nodes_LV = 0
+
+        # terminal nodes on LV
+        for terminal_node in mvlv_resistances.keys():
+            sum_resistances += mvlv_resistances[terminal_node]
+            sum_thermal_limits += mvlv_thermal_limits[terminal_node]
+            sum_thermal_limits_LV += lv_thermal_limits[terminal_node]
+            sum_path_lengths += mvlv_path_lengths[terminal_node]
+            n_terminal_nodes_LV += 1
+
+        n_terminal_nodes = n_terminal_nodes_MV + n_terminal_nodes_LV
+
+        mean_resistance = sum_resistances / n_terminal_nodes
+        mean_thermal_limit = sum_thermal_limits / n_terminal_nodes
+        mean_thermal_limit_LV = sum_thermal_limits_LV / n_terminal_nodes_LV
+        mean_path_length = sum_path_lengths / n_terminal_nodes
+        number_branches_LV = n_branches_LV # / n_stations_LV
+
+        ###################################
+        # compute path lengths (written by Miguel)
         max_mv_path = 0
         max_mvlv_path = 0
 
@@ -534,9 +644,12 @@ def calculate_mvgd_stats(nw):
         LVs_count = 0
         cb_count =  0
         lv_trafo_count = 0
+        lv_trafo_cap = 0
+
         for node in district.mv_grid._graph.nodes():
             mv_path_length = 0
             mvlv_path_length = 0
+
             if isinstance(node, GeneratorDing0):
                 gen_idx+=1
                 isolation = not node in nodes_in_rings
@@ -554,11 +667,14 @@ def calculate_mvgd_stats(nw):
                 mv_path_length = district.mv_grid.graph_path_length(
                                    node_source=root,
                                    node_target=node)
+
             elif isinstance(node, MVCableDistributorDing0):
                 cd_count+=1
             elif isinstance(node, LVStationDing0):
                 LVs_count+=1
                 lv_trafo_count += len([trafo for trafo in node.transformers()])
+                lv_trafo_cap += np.sum([trafo.s_max_a for trafo in node.transformers()])
+
                 if not node.lv_load_area.is_aggregated:
                     mv_path_length = district.mv_grid.graph_path_length(
                         node_source=root,
@@ -573,6 +689,7 @@ def calculate_mvgd_stats(nw):
                                         node_target=lv_node)
                                     max_lv_path = max(max_lv_path,lv_path_length)
                     mvlv_path_length = mv_path_length + max_lv_path
+
             elif isinstance(node, CircuitBreakerDing0):
                 cb_count+=1
 
@@ -584,8 +701,14 @@ def calculate_mvgd_stats(nw):
                          'LV_count':LVs_count,
                          'CB_count':cb_count,
                          'MVLV_trafo_count':lv_trafo_count,
+                         'MVLV_trafo_cap':lv_trafo_cap,
                          'max_mv_path':max_mv_path,
                          'max_mvlv_path':max_mvlv_path,
+                         'mean_resistance' : mean_resistance,
+                         'mean_thermal_limit' : mean_thermal_limit,
+                         'mean_thermal_limit_LV' : mean_thermal_limit_LV,
+                         'mean_path_length' : mean_path_length / 1.e3,
+                         'number_branches_LV' : number_branches_LV
                          }
 
         # branches
@@ -645,6 +768,8 @@ def calculate_mvgd_stats(nw):
                 'retail_peak_load': retail_peak_load,
                 'industrial_peak_load': industrial_peak_load,
                 'agricultural_peak_load': agricultural_peak_load,
+                'total_peak_load' : residential_peak_load + retail_peak_load + \
+                                                 industrial_peak_load + agricultural_peak_load,
                 'lv_generation': lv_gen_level_6 + lv_gen_level_7,
                 'lv_gens_lvl_6': lv_gen_level_6,
                 'lv_gens_lvl_7': lv_gen_level_7,
@@ -710,8 +835,19 @@ def calculate_mvgd_stats(nw):
         mvgd_stats['N° of Circuit Breakers'] = other_nodes_df['CB_count'].to_frame().astype(int)
         mvgd_stats['District Area'] = other_nodes_df['Dist_area'].to_frame()
         mvgd_stats['N° of MV/LV Trafos'] = other_nodes_df['MVLV_trafo_count'].to_frame().astype(int)
+        mvgd_stats['Trafos MV/LV Acc s_max_a'] = other_nodes_df['MVLV_trafo_cap'].to_frame()
         mvgd_stats['Length of MV max path'] = other_nodes_df['max_mv_path'].to_frame()
         mvgd_stats['Length of MVLV max path'] = other_nodes_df['max_mvlv_path'].to_frame()
+        mvgd_stats['Resistance of path to terminal node, mean value'] = \
+                                            other_nodes_df['mean_resistance'].to_frame()
+        mvgd_stats['I_max of first segment of path from MV station to terminal node, mean value'] = \
+                                            other_nodes_df['mean_thermal_limit'].to_frame()
+        mvgd_stats['I_max of first segment of path from LV station to terminal node, mean value'] = \
+                                            other_nodes_df['mean_thermal_limit_LV'].to_frame()
+        mvgd_stats['Length of path from MV station to terminal node, mean value'] = \
+                                            other_nodes_df['mean_path_length'].to_frame()
+        mvgd_stats['Number of branches going out from LV stations'] = \
+                                            other_nodes_df['number_branches_LV'].to_frame()
 
     ###################################
     #Aggregated data of MV Branches
@@ -719,7 +855,7 @@ def calculate_mvgd_stats(nw):
         #km of underground cable
         branches_data = branches_df[branches_df['type_kind']=='cable'].groupby(
             ['grid_id'])['length'].sum().to_frame()
-        branches_data.columns = ['Length of MV underground cable']
+        branches_data.columns = ['Length of MV underground cables']
         mvgd_stats = pd.concat([mvgd_stats, branches_data], axis=1)
 
         #km of overhead lines
@@ -751,7 +887,7 @@ def calculate_mvgd_stats(nw):
         #km of underground cable
         lv_branches_data = lv_branches_df[lv_branches_df['type_kind']=='cable'].groupby(
             ['grid_id'])['length'].sum().to_frame()
-        lv_branches_data.columns = ['Length of LV underground cable']
+        lv_branches_data.columns = ['Length of LV underground cables']
         mvgd_stats = pd.concat([mvgd_stats, lv_branches_data], axis=1)
 
         #km of overhead lines
@@ -821,6 +957,7 @@ def calculate_mvgd_stats(nw):
                                              'retail_peak_load',
                                              'industrial_peak_load',
                                              'agricultural_peak_load',
+                                             'total_peak_load',
                                              'lv_generation',
                                              'lv_gens_lvl_6',
                                              'lv_gens_lvl_7'
@@ -830,6 +967,7 @@ def calculate_mvgd_stats(nw):
                            'LA Total LV Peak Load Retail',
                            'LA Total LV Peak Load Industrial',
                            'LA Total LV Peak Load Agricultural',
+                           'LA Total LV Peak Load total',
                            'LA Total LV Gen. Cap.',
                            'Gen. Cap. of LV at v_level 6',
                            'Gen. Cap. of LV at v_level 7',
@@ -850,9 +988,11 @@ def calculate_mvgd_stats(nw):
         mvgd_stats = pd.concat([mvgd_stats, sat_LA_data], axis=1)
 
         agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])['population',
-                                                              'lv_generation'
+                                                              'lv_generation', 'total_peak_load'
                                                              ].sum()
-        agg_LA_data.columns = ['LA Aggregated Population','LA Aggregated LV Gen. Cap.']
+        agg_LA_data.columns = ['LA Aggregated Population',
+                                             'LA Aggregated LV Gen. Cap.', 'LA Aggregated LV Peak Load total'
+                                            ]
         mvgd_stats = pd.concat([mvgd_stats, agg_LA_data], axis=1)
 
     ###################################
@@ -1372,19 +1512,30 @@ def parallel_running_stats(districts_list,
 
 ########################################################
 if __name__ == "__main__":
+
+    #############################################
+    # test stats
+    """
+    list_ids = [76, 98, 1404, 2272, 2273, 2274]
+    FILEPATH = '/home/manuel/UniHumboldt/Masterarbeit/Data/20170922152523'
+    filename = 'ding0_grids__{id}.pkl'.format(id=list_ids[0])
+    examplefile = os.path.join(FILEPATH, filename)
+    nw = load_nd_from_pickle(filename=examplefile)
+    stats = calculate_mvgd_stats(nw)
+    stats.to_csv(filename.replace('.pkl', '.csv'))
+    """
+    #############################################
+
     #nw = init_mv_grid(mv_grid_districts=[3544, 3545])
     #init_mv_grid(mv_grid_districts=list(range(1, 4500, 200)),filename='ding0_tests_grids_1_4500_200.pkl')
     #nw = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
     #nw = load_nd_from_pickle(filename='ding0_tests_grids_SevenDistricts.pkl')
     #nw = load_nd_from_pickle(filename='ding0_tests_grids_1_4500_200.pkl')
     #nw = init_mv_grid(mv_grid_districts=[2370],filename=False)
-    #stats = calculate_mvgd_stats(nw)
-    #print(stats)
-    #print(stats.T)
-    #stats.to_csv('stats_1_4500_200.csv')
 
     #############################################
     # generate stats in parallel
+    
     mv_grid_districts = list(range(1728, 1755))
     n_of_processes = mp.cpu_count() #number of parallel threaths
     n_of_districts = 1 #n° of districts in each cluster
@@ -1397,6 +1548,7 @@ if __name__ == "__main__":
                                       save_csv = True)
     print('#################\nMV STATS:')
     print(mv_stats[0].T)
+    
     #print('#################\nLV STATS:')
     #print(mv_stats[1].T)
     #print('#################\nMV Crit Nodes STATS:')
