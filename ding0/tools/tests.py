@@ -10,6 +10,9 @@ from ding0.tools.results import save_nd_to_pickle
 from ding0.tools.results import load_nd_from_pickle
 
 from geoalchemy2.shape import to_shape
+from geoalchemy2.shape import from_shape
+from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+
 import logging
 import pandas as pd
 
@@ -148,6 +151,17 @@ def dataframe_equal(network_one, network_two):
     #For the Nodes:
     nodes_one_df['geom'] = nodes_one_df['geom'].apply(lambda x: x.desc)
     nodes_two_df['geom'] = nodes_two_df['geom'].apply(lambda x: x.desc)
+    #Circuit Breakers don't always have the same numeration,
+    #so we need to reorder them according to their position
+    cb_one = nodes_one_df[nodes_one_df['type']=='Switch Disconnector'].sort_values('geom')['node_id'].reset_index(drop=True).tolist()
+    cb_two = nodes_two_df[nodes_two_df['type']=='Switch Disconnector'].sort_values('geom')['node_id'].reset_index(drop=True).tolist()
+    cb_one_new_name_list = ['Circuit_breaker_'+str(n+1) for n in range(0,len(cb_one))]
+    cb_two_new_name_list = ['Circuit_breaker_'+str(n+1) for n in range(0,len(cb_two))]
+
+    nodes_one_df['node_id'].replace(to_replace=cb_one,value=cb_one_new_name_list,inplace=True)
+    nodes_two_df['node_id'].replace(to_replace=cb_two,value=cb_two_new_name_list,inplace=True)
+    nodes_one_df = nodes_one_df.sort_values('node_id').reset_index(drop=True)
+    nodes_two_df = nodes_two_df.sort_values('node_id').reset_index(drop=True)
 
     #Similar for edges, but the extreme nodes of an edge can be switched
     #    first, convert to shape and rescue coordinates
@@ -188,9 +202,10 @@ def dataframe_equal(network_one, network_two):
             nodes_two_df.loc[idx,'v_res1']=nodes_one_df.loc[idx,'v_res1']
 
     # compare things
-    flag_nodes = nodes_one_df.equals(nodes_two_df)
+    flag_nodes = nodes_one_df[nodes_one_df['type']!='Switch Disconnector'].equals(nodes_two_df[nodes_one_df['type']!='Switch Disconnector'])
     flag_edges = edges_one_df.equals(edges_two_df)
-    passed     = flag_nodes and flag_edges
+    flag_cb    = nodes_one_df[nodes_one_df['type']=='Switch Disconnector']['geom'].equals(nodes_two_df[nodes_two_df['type']=='Switch Disconnector']['geom'])
+    passed     = flag_nodes and flag_edges and flag_cb
 
     #return result of test
     msg = 'Data sets are '
@@ -200,6 +215,8 @@ def dataframe_equal(network_one, network_two):
         msg = msg + 'different in nodes and edges'
     elif not flag_edges:
         msg = msg + 'different in edges'
+    elif (not flag_cb) and flag_nodes:
+        msg = msg + 'different only in circuit breakers: allocated in (slightly) different places'
     elif not flag_nodes:
         msg = msg + 'different in nodes'
     return passed, msg

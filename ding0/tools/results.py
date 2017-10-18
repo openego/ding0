@@ -18,6 +18,8 @@ import os
 import numpy as np
 import pandas as pd
 import time
+from datetime import datetime
+import os
 
 from ding0.tools import config as cfg_ding0
 from matplotlib import pyplot as plt
@@ -27,14 +29,21 @@ import seaborn as sns
 from ding0.tools import db
 from ding0.core import NetworkDing0
 from ding0.core import GeneratorDing0
-from ding0.core import MVCableDistributorDing0
-from ding0.core import LVStationDing0, MVStationDing0
+from ding0.core import LVCableDistributorDing0, MVCableDistributorDing0
+from ding0.core import MVStationDing0, LVStationDing0
 from ding0.core import CircuitBreakerDing0
 from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
+from ding0.core import LVLoadAreaCentreDing0
 
 from shapely.ops import transform
 import pyproj
 from functools import partial
+
+from geoalchemy2.shape import from_shape
+from shapely.wkt import loads as wkt_loads
+from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+from shapely.geometry import shape, mapping
+
 
 import multiprocessing as mp
 
@@ -362,14 +371,14 @@ def calculate_lvgd_stats(nw):
                 for node in lv_district.lv_grid.graph_nodes_sorted():
                     if isinstance(node,LVLoadDing0):
                         lv_load_idx +=1
-                        if isinstance(node.consumption, dict):
-                            #print(node.consumption)
-                            if 'agricultural' in node.consumption:
-                                tipo = 'agricultural'
-                            else:
-                                tipo = 'ind_ret'
-                        else:
+                        if 'agricultural' in node.consumption:
+                            tipo = 'agricultural'
+                        elif 'industrial' in node.consumption:
+                            tipo = 'ind_ret'
+                        elif 'residential' in node.consumption:
                             tipo = 'residential'
+                        else:
+                            tipo = 'none'
                         lv_load_dict[lv_load_idx] = {
                             'LV_grid_id': lv_district.lv_grid.id_db,
                             'load_type': tipo,
@@ -1267,6 +1276,10 @@ def process_stats(mv_districts,
           If mode=='MV', then DataFrame is empty.
           If critical==False, then DataFrame is empty.
     '''
+    #######################################################################
+    # database connection
+    conn = db.connection(section='oedb')
+    #######################################################################
     # decide what exactly to do with MV LV
     if mode == 'MV':
         calc_mv = True
@@ -1298,7 +1311,6 @@ def process_stats(mv_districts,
             print('  Reading data from pickle district', cl)
             print('########################################')
             try:
-                print((nw_name + '.pkl'))
                 nw = load_nd_from_pickle(nw_name+'.pkl')
             except Exception:
                 continue
@@ -1334,11 +1346,11 @@ def process_stats(mv_districts,
             stats = calculate_lvgd_voltage_current_stats(nw)
             lv_crit_nodes.append(stats[0])
             lv_crit_edges.append(stats[1])
-        print(critical, calc_lv, calc_mv)
     #######################################################################
     salida = (mv_stats,lv_stats,mv_crit_nodes,mv_crit_edges,lv_crit_nodes,lv_crit_edges)
     output.put(salida)
     #######################################################################
+    conn.close()
 ########################################################
 def parallel_running_stats(districts_list,
                            n_of_processes,
@@ -1346,7 +1358,8 @@ def parallel_running_stats(districts_list,
                            source='pkl',
                            mode='',
                            critical = False,
-                           save_csv = False):
+                           save_csv = False,
+                           save_path = ''):
     '''Organize parallel runs of ding0 to calculate stats
 
     The function take all districts in a list and divide them into 
@@ -1371,6 +1384,8 @@ def parallel_running_stats(districts_list,
         If empty, medium and low voltage stats are calculated.
     critical: bool
         If True, critical nodes and branches are returned
+    path: str
+        path to save the pkl and csv files 
         
     Returns
     -------
@@ -1403,7 +1418,8 @@ def parallel_running_stats(districts_list,
     '''
     start = time.time()
 
-    nw_name = 'ding0_grids__' #name of files prefix
+    nw_name = os.path.join(save_path, 'ding0_grids__') #name of files prefix
+
     #######################################################################
     # Define an output queue
     output_stats = mp.Queue()
@@ -1440,24 +1456,42 @@ def parallel_running_stats(districts_list,
             nw_name = nw_name + '_to_' + str(districts_list[-1])
 
     #concatenate all dataframes
-    mv_stats = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][0]],
-        axis=0)
-    lv_stats = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][1]],
-        axis=0)
-    mv_crit_nodes = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][2]],
-        axis=0)
-    mv_crit_edges = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][3]],
-        axis=0)
-    lv_crit_nodes = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][4]],
-        axis=0)
-    lv_crit_edges = pd.concat(
-        [df for p in range(0, len(processes)) for df in output[p][5]],
-        axis=0)
+    try:
+        mv_stats = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][0]],
+            axis=0)
+    except:
+        mv_stats = pd.DataFrame.from_dict({})
+    try:
+        lv_stats = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][1]],
+             axis=0)
+    except:
+        lv_stats = pd.DataFrame.from_dict({})
+    try:
+        mv_crit_nodes = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][2]],
+            axis=0)
+    except:
+        mv_crit_nodes = pd.DataFrame.from_dict({})
+    try:
+        mv_crit_edges = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][3]],
+            axis=0)
+    except:
+        mv_crit_edges = pd.DataFrame.from_dict({})
+    try:
+        lv_crit_nodes = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][4]],
+            axis=0)
+    except:
+        lv_crit_nodes = pd.DataFrame.from_dict({})
+    try:
+        lv_crit_edges = pd.concat(
+            [df for p in range(0, len(processes)) for df in output[p][5]],
+            axis=0)
+    except:
+        lv_crit_edges = pd.DataFrame.from_dict({})
 
     # format concatenated Dataframes
     if not mv_stats.empty:
@@ -1511,31 +1545,254 @@ def parallel_running_stats(districts_list,
     return mv_stats, lv_stats, mv_crit_nodes, mv_crit_edges, lv_crit_nodes, lv_crit_edges
 
 ########################################################
+def export_network(nw, mode=''):
+    """
+    Export all nodes and edges of the network nw as DataFrames
+
+    Parameters
+    ----------
+    nw: :any:`list` of NetworkDing0
+        The MV grid(s) to be studied
+    mode: str
+        If 'MV' export only medium voltage nodes and edges
+        If 'LV' export only low voltage nodes and edges
+        else, exports MV and LV nodes and edges
+
+    Returns
+    -------
+    pandas.DataFrame
+        nodes_df : Dataframe containing nodes and its attributes
+    pandas.DataFrame
+        edges_df : Dataframe containing edges and its attributes
+    """
+    ##############################
+    #close circuit breakers
+    nw.control_circuit_breakers(mode='close')
+    #srid
+    srid = str(int(nw.config['geo']['srid']))
+    ##############################
+    #check what to do
+    lv_info = True
+    mv_info = True
+    if mode=='LV':
+        mv_info = False
+    if mode=='MV':
+        lv_info = False
+    #############################
+    #go through the grid collecting info
+    loads_idx = 0
+    loads_dict = {}
+    gen_idx = 0
+    gen_dict = {}
+    cb_idx = 0
+    cb_dict = {}
+    cd_idx = 0
+    cd_dict = {}
+    stations_idx = 0
+    stations_dict = {}
+    trafos_idx = 0
+    trafos_dict = {}
+    areacenter_idx = 0
+    areacenter_dict = {}
+    edges_idx = 0
+    edges_dict = {}
+    for mv_district in nw.mv_grid_districts():
+        mv_grid_id = mv_district.mv_grid.id_db
+        if mv_info:
+            lv_grid_id = 0
+            for node in mv_district.mv_grid.graph_nodes_sorted():
+                geom = from_shape(Point(node.geo_data), srid=srid)
+                db_id = node.id_db
+                if isinstance(node, LVStationDing0):
+                    if not node.lv_load_area.is_aggregated:
+                        type = 'LV Station'
+                        stations_idx+=1
+                        stations_dict[stations_idx] = {
+                            'id_db': db_id,
+                            'MV_grid_id':mv_grid_id,
+                            'LV_grid_id':lv_grid_id,
+                            'geom':geom
+                        }
+                        #TODO: Trafos
+                elif isinstance(node, MVStationDing0):
+                    type = 'MV Station'
+                    stations_idx+=1
+                    stations_dict[stations_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom
+                    }
+                    #TODO: Trafos
+                elif isinstance(node, GeneratorDing0):
+                    if node.subtype==None:
+                        subtype = 'other'
+                    else:
+                        subtype = node.subtype
+                    type = node.type
+                    gen_idx+=1
+                    gen_dict[gen_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom,
+                        'type':type,
+                        'subtype':subtype,
+                        'v_level':node.v_level,
+                        #'v_nom':mv_district.mv_grid.v_level,
+                        'nominal_capacity':node.capacity,
+                    }
+                elif isinstance(node, MVCableDistributorDing0):
+                    type = 'Cable distributor'
+                    cd_idx+=1
+                    cd_dict[cd_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom
+                    }
+                elif isinstance(node, LVLoadAreaCentreDing0):
+                    type = 'Load area center of aggregated load area'
+
+                    la = node.lv_load_area
+                    #TODO: all this
+
+                    areacenter_idx+=1
+                    areacenter_dict[areacenter_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom,
+                    }
+                elif isinstance(node, CircuitBreakerDing0):
+                    type = 'Switch Disconnector'
+                    cb_idx+=1
+                    cb_dict[cb_idx] = {
+                        'id_db': db_id,
+                        'MV_grid_id':mv_grid_id,
+                        'LV_grid_id':lv_grid_id,
+                        'geom':geom,
+                        'status':node.status
+                    }
+                else:
+                    type = 'Unknown'
+
+            for branch in mv_district.mv_grid.graph_edges():
+                geom = from_shape(LineString([branch['adj_nodes'][0].geo_data,branch['adj_nodes'][1].geo_data]),srid=srid)
+                name = branch['branch'].type['name']
+                U_n = branch['branch'].type['U_n']
+                I_max_th = branch['branch'].type['I_max_th']
+                R = branch['branch'].type['R']
+                L = branch['branch'].type['L']
+                C = branch['branch'].type['C']
+
+                edges_idx +=1
+                edges_dict[edges_idx] = {
+                    'edge_name': branch['branch'].id_db,
+                    'MV_grid_id':mv_grid_id,
+                    'LV_grid_id':lv_grid_id,
+                    'type_name': name,
+                    'type_kind': branch['branch'].kind,
+                    'geom': geom,
+                    'U_n':U_n,
+                    'I_max_th':I_max_th,
+                    'R':R,
+                    'L':L,
+                    'C':C,
+                }
+
+        if lv_info:
+            for LA in mv_district.lv_load_areas():
+                for lv_district in LA.lv_grid_districts():
+                    lv_grid_id = lv_district.lv_grid.id_db
+                    geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
+                    for node in lv_district.lv_grid.graph_nodes_sorted():
+                        db_id = node.id_db
+                        if isinstance(node, GeneratorDing0):
+                            if node.subtype == None:
+                                subtype = 'other'
+                            else:
+                                subtype = node.subtype
+                            type = node.type
+                            gen_idx += 1
+                            gen_dict[gen_idx] = {
+                                'id_db': db_id,
+                                'MV_grid_id': mv_grid_id,
+                                'LV_grid_id': lv_grid_id,
+                                'geom': geom,
+                                'type': type,
+                                'subtype': subtype,
+                                'v_level': node.v_level,
+                                #'v_nom':lv_district.lv_grid.station().v_level_operation,
+                                'nominal_capacity': node.capacity,
+                            }
+                        elif isinstance(node, LVCableDistributorDing0):
+                            type = 'Cable distributor'
+                            cd_idx += 1
+                            cd_dict[cd_idx] = {
+                                'id_db': db_id,
+                                'MV_grid_id': mv_grid_id,
+                                'LV_grid_id': lv_grid_id,
+                                'geom': geom
+                            }
+                        elif isinstance(node, LVLoadDing0):
+                            type = 'LV Load'
+                            #TODO: all this
+                        else:
+                            type = 'Unknown'
+
+                    for branch in lv_district.lv_grid.graph_edges():
+                        name =  branch['branch'].type.to_frame().columns[0]
+                        #print(branch['branch'].type.to_frame())
+                        U_n = branch['branch'].type['U_n']
+                        I_max_th = branch['branch'].type['I_max_th']
+                        R = branch['branch'].type['R']
+                        L = branch['branch'].type['L']
+                        C = branch['branch'].type['C']
+                        edges_idx +=1
+                        edges_dict[edges_idx] = {
+                            'edge_name': branch['branch'].id_db,
+                            'MV_grid_id':mv_grid_id,
+                            'LV_grid_id':lv_grid_id,
+                            'type_name': name,
+                            'type_kind': branch['branch'].kind,
+                            'geom': geom,
+                            'U_n':U_n,
+                            'I_max_th':I_max_th,
+                            'R':R,
+                            'L':L,
+                            'C':C,
+                        }
+
+    gen        = pd.DataFrame.from_dict(gen_dict, orient='index')
+    cb         = pd.DataFrame.from_dict(cb_dict, orient='index')
+    cd         = pd.DataFrame.from_dict(cd_dict, orient='index')
+    stations   = pd.DataFrame.from_dict(stations_dict, orient='index')
+    areacenter = pd.DataFrame.from_dict(areacenter_dict, orient='index')
+    trafos     = pd.DataFrame.from_dict(trafos_dict, orient='index')
+    loads      = pd.DataFrame.from_dict(loads_dict, orient='index')
+    edges      = pd.DataFrame.from_dict(edges_dict, orient='index')
+
+    edges = edges[sorted(edges.columns.tolist())]
+
+    return gen, cb, cd, stations, areacenter, trafos, loads, edges
+
+
+########################################################
 if __name__ == "__main__":
-
-    #############################################
-    # test stats
-    """
-    list_ids = [76, 98, 1404, 2272, 2273, 2274]
-    FILEPATH = '/home/manuel/UniHumboldt/Masterarbeit/Data/20170922152523'
-    filename = 'ding0_grids__{id}.pkl'.format(id=list_ids[0])
-    examplefile = os.path.join(FILEPATH, filename)
-    nw = load_nd_from_pickle(filename=examplefile)
-    stats = calculate_mvgd_stats(nw)
-    stats.to_csv(filename.replace('.pkl', '.csv'))
-    """
-    #############################################
-
     #nw = init_mv_grid(mv_grid_districts=[3544, 3545])
     #init_mv_grid(mv_grid_districts=list(range(1, 4500, 200)),filename='ding0_tests_grids_1_4500_200.pkl')
     #nw = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
     #nw = load_nd_from_pickle(filename='ding0_tests_grids_SevenDistricts.pkl')
     #nw = load_nd_from_pickle(filename='ding0_tests_grids_1_4500_200.pkl')
     #nw = init_mv_grid(mv_grid_districts=[2370],filename=False)
+    #stats = calculate_mvgd_stats(nw)
+    #print(stats)
+    #print(stats.T)
+    #stats.to_csv('stats_1_4500_200.csv')
 
     #############################################
     # generate stats in parallel
-    
     mv_grid_districts = list(range(1728, 1755))
     n_of_processes = mp.cpu_count() #number of parallel threaths
     n_of_districts = 1 #n° of districts in each cluster
@@ -1548,7 +1805,6 @@ if __name__ == "__main__":
                                       save_csv = True)
     print('#################\nMV STATS:')
     print(mv_stats[0].T)
-    
     #print('#################\nLV STATS:')
     #print(mv_stats[1].T)
     #print('#################\nMV Crit Nodes STATS:')
