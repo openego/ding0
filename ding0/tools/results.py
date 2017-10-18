@@ -546,8 +546,10 @@ def calculate_mvgd_stats(nw):
                 else:
                     path = nx.shortest_path(G, root, node)
                     for i in range(len(path)-1):
-                        mv_resistance += G.edge[path[i]][path[i+1]]['branch'].type['R'] * \
-                                              G.edge[path[i]][path[i+1]]['branch'].length
+                        mv_resistance += np.sqrt((G.edge[path[i]][path[i+1]]['branch'].type['R'] * \
+                                              G.edge[path[i]][path[i+1]]['branch'].length)**2. + \
+                                              (G.edge[path[i]][path[i+1]]['branch'].type['X'] * \
+                                              G.edge[path[i]][path[i+1]]['branch'].length)**2.)
                         mv_path_length += G.edge[path[i]][path[i+1]]['branch'].length
 
                     mv_resistances[node] = mv_resistance
@@ -566,8 +568,10 @@ def calculate_mvgd_stats(nw):
                                             lv_resistance = 0.
                                             lv_path_length = 0.
                                             for i in range(len(path)-1):
-                                                lv_resistance += G_lv.edge[path[i]][path[i+1]]['branch'].type['R'] * \
-                                                                          G_lv.edge[path[i]][path[i+1]]['branch'].length
+                                                lv_resistance += np.sqrt((G_lv.edge[path[i]][path[i+1]]['branch'].type['R'] * \
+                                                                          G_lv.edge[path[i]][path[i+1]]['branch'].length)**2. + \
+                                                                          (G_lv.edge[path[i]][path[i+1]]['branch'].type['X'] * \
+                                                                          G_lv.edge[path[i]][path[i+1]]['branch'].length)**2.)
                                                 lv_path_length += G_lv.edge[path[i]][path[i+1]]['branch'].length
                                             lv_thermal_limit = G_lv.edge[path[0]][path[1]]['branch'].type['I_max_th']
 
@@ -847,7 +851,7 @@ def calculate_mvgd_stats(nw):
         mvgd_stats['Trafos MV/LV Acc s_max_a'] = other_nodes_df['MVLV_trafo_cap'].to_frame()
         mvgd_stats['Length of MV max path'] = other_nodes_df['max_mv_path'].to_frame()
         mvgd_stats['Length of MVLV max path'] = other_nodes_df['max_mvlv_path'].to_frame()
-        mvgd_stats['Resistance of path to terminal node, mean value'] = \
+        mvgd_stats['Impedance Z of path to terminal node, mean value'] = \
                                             other_nodes_df['mean_resistance'].to_frame()
         mvgd_stats['I_max of first segment of path from MV station to terminal node, mean value'] = \
                                             other_nodes_df['mean_thermal_limit'].to_frame()
