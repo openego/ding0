@@ -579,7 +579,7 @@ def calculate_mvgd_stats(nw):
                                             for i in range(len(path)-1):
                                                 lv_resistance += np.sqrt((G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
                                                                           G_lv.edge[path[i]][path[i+1]]['branch'].length)**2. + \
-                                                                          (G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
+                                                                         (G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
                                                                           G_lv.edge[path[i]][path[i+1]]['branch'].length)**2.)
                                                 lv_path_length += G_lv.edge[path[i]][path[i+1]]['branch'].length
                                             lv_thermal_limit = G_lv.edge[path[0]][path[1]]['branch'].type['I_max_th']
@@ -619,13 +619,18 @@ def calculate_mvgd_stats(nw):
 
         n_terminal_nodes = n_terminal_nodes_MV + n_terminal_nodes_LV
 
-        mean_resistance = sum_resistances / n_terminal_nodes
-        mean_thermal_limit = sum_thermal_limits / n_terminal_nodes
+        if n_terminal_nodes < 1:
+            mean_resistance = sum_resistances
+            mean_thermal_limit = sum_thermal_limits
+            mean_path_length = sum_path_lengths
+        else:
+            mean_resistance = sum_resistances / n_terminal_nodes
+            mean_thermal_limit = sum_thermal_limits / n_terminal_nodes
+            mean_path_length = sum_path_lengths / n_terminal_nodes
         if n_terminal_nodes_LV < 1:
-            mean_thermal_limit_LV = 0
+            mean_thermal_limit_LV = sum_thermal_limits_LV
         else:
             mean_thermal_limit_LV = sum_thermal_limits_LV / n_terminal_nodes_LV
-        mean_path_length = sum_path_lengths / n_terminal_nodes
         number_branches_LV = n_branches_LV # / n_stations_LV
 
         ###################################
@@ -655,7 +660,7 @@ def calculate_mvgd_stats(nw):
                 'grid_id': district.mv_grid.id_db,
                 'ring_length': ring_length,
                 'ring_capacity': ring_gen,
-                }
+            }
 
         # transformers in main station
         for trafo in district.mv_grid.station().transformers():
@@ -688,10 +693,10 @@ def calculate_mvgd_stats(nw):
                     'gen_cap':node.capacity,
                     'v_level':node.v_level,
                     'isolation': isolation,
-                    }
+                }
                 mv_path_length = district.mv_grid.graph_path_length(
-                                   node_source=root,
-                                   node_target=node)
+                    node_source=root,
+                    node_target=node)
 
             elif isinstance(node, MVCableDistributorDing0):
                 cd_count+=1
@@ -722,19 +727,19 @@ def calculate_mvgd_stats(nw):
             max_mvlv_path = max(max_mvlv_path,mvlv_path_length/1000)
 
         other_nodes_dict[district.mv_grid.id_db] = {
-                         'CD_count':cd_count,
-                         'LV_count':LVs_count,
-                         'CB_count':cb_count,
-                         'MVLV_trafo_count':lv_trafo_count,
-                         'MVLV_trafo_cap':lv_trafo_cap,
-                         'max_mv_path':max_mv_path,
-                         'max_mvlv_path':max_mvlv_path,
-                         'mean_resistance' : mean_resistance,
-                         'mean_thermal_limit' : mean_thermal_limit,
-                         'mean_thermal_limit_LV' : mean_thermal_limit_LV,
-                         'mean_path_length' : mean_path_length / 1.e3,
-                         'number_branches_LV' : number_branches_LV
-                         }
+            'CD_count':cd_count,
+            'LV_count':LVs_count,
+            'CB_count':cb_count,
+            'MVLV_trafo_count':lv_trafo_count,
+            'MVLV_trafo_cap':lv_trafo_cap,
+            'max_mv_path':max_mv_path,
+            'max_mvlv_path':max_mvlv_path,
+            'mean_resistance' : mean_resistance,
+            'mean_thermal_limit' : mean_thermal_limit,
+            'mean_thermal_limit_LV' : mean_thermal_limit_LV,
+            'mean_path_length' : mean_path_length / 1.e3,
+            'number_branches_LV' : number_branches_LV
+        }
 
         # branches
         for branch in district.mv_grid.graph_edges():
@@ -794,7 +799,7 @@ def calculate_mvgd_stats(nw):
                 'industrial_peak_load': industrial_peak_load,
                 'agricultural_peak_load': agricultural_peak_load,
                 'total_peak_load' : residential_peak_load + retail_peak_load + \
-                                                 industrial_peak_load + agricultural_peak_load,
+                                    industrial_peak_load + agricultural_peak_load,
                 'lv_generation': lv_gen_level_6 + lv_gen_level_7,
                 'lv_gens_lvl_6': lv_gen_level_6,
                 'lv_gens_lvl_7': lv_gen_level_7,
