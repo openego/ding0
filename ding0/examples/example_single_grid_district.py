@@ -32,13 +32,14 @@ logger = setup_logger()
 # ===== MAIN =====
 
 # database connection
-conn = db.connection(section='oedb')
+conn = db.connection(section='oedb_remote')
 
 # instantiate new ding0 network object
 nd = NetworkDing0(name='network')
 
 # choose MV Grid Districts to import
-mv_grid_districts = [3545]
+#mv_grid_districts = [3545]
+mv_grid_districts = [265]
 
 # run DING0 on selected MV Grid District
 nd.run_ding0(conn=conn,
@@ -51,4 +52,4 @@ nd.run_ding0(conn=conn,
 conn.close()
 
 # export grid to file (pickle)
-save_nd_to_pickle(nd, filename='ding0_grids_example.pkl')
+save_nd_to_pickle(nd, filename='ding0_grids_example_mvgd265_new-genos-dp-v0.3.pkl')
