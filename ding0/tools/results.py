@@ -535,11 +535,13 @@ def calculate_mvgd_stats(nw):
         n_branches_LV = 0
         n_stations_LV = 0
 
+        n_outgoing_MV = 0
+
         G = district.mv_grid._graph
 
         for node in G.nodes_iter():
             if isinstance(node, MVStationDing0):
-                continue
+                n_outgoing_MV += len(G.neighbors(node))
             mv_resistance = 0
             mv_path_length = 0
             if not isinstance(node, MVCableDistributorDing0) and not isinstance(node, CircuitBreakerDing0):
@@ -632,6 +634,7 @@ def calculate_mvgd_stats(nw):
         else:
             mean_thermal_limit_LV = sum_thermal_limits_LV / n_terminal_nodes_LV
         number_branches_LV = n_branches_LV # / n_stations_LV
+        number_outgoing_MV = n_outgoing_MV
 
         if n_terminal_nodes_LV == 0:
             mean_thermal_limit_LV = np.nan
@@ -743,7 +746,8 @@ def calculate_mvgd_stats(nw):
             'mean_thermal_limit' : mean_thermal_limit,
             'mean_thermal_limit_LV' : mean_thermal_limit_LV,
             'mean_path_length' : mean_path_length / 1.e3,
-            'number_branches_LV' : number_branches_LV
+            'number_branches_LV' : number_branches_LV,
+            'number_outgoing_MV' : number_outgoing_MV
         }
 
         # branches
@@ -883,6 +887,8 @@ def calculate_mvgd_stats(nw):
                                             other_nodes_df['mean_path_length'].to_frame()
         mvgd_stats['Number of branches going out from LV stations'] = \
                                             other_nodes_df['number_branches_LV'].to_frame()
+        mvgd_stats['Number of lines going out from MV stations'] = \
+                                            other_nodes_df['number_outgoing_MV'].to_frame()
 
     ###################################
     #Aggregated data of MV Branches
