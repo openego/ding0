@@ -517,13 +517,13 @@ def calculate_mvgd_stats(nw):
         root = district.mv_grid.station()
 
         ###################################
-        # get resistance of path to each terminal node
+        # get impedance of path to each terminal node
         # and get thermal capacity of first segment of path to each terminal node
 
         # store properties of terminal nodes in dictionaries
-        # properties are e.g. resistance of path, length of path, thermal limit of first segment of path
-        mv_resistances  = {}
-        mvlv_resistances = {}
+        # properties are e.g. impedance of path, length of path, thermal limit of first segment of path
+        mv_impedances  = {}
+        mvlv_impedances = {}
 
         mv_path_lengths = {}
         mvlv_path_lengths = {}
@@ -532,7 +532,7 @@ def calculate_mvgd_stats(nw):
         lv_thermal_limits = {} # I_max of first segment on LV for each LV path
         mvlv_thermal_limits = {} # I_max of first segment on MV for each MVLV path
 
-        n_branches_LV = 0
+        n_outgoing_LV = 0
         n_stations_LV = 0
 
         n_outgoing_MV = 0
@@ -542,7 +542,8 @@ def calculate_mvgd_stats(nw):
         for node in G.nodes_iter():
             if isinstance(node, MVStationDing0):
                 n_outgoing_MV += len(G.neighbors(node))
-            mv_resistance = 0
+                continue
+            mv_impedance = 0
             mv_path_length = 0
             if not isinstance(node, MVCableDistributorDing0) and not isinstance(node, CircuitBreakerDing0):
                 if not nx.has_path(G, root, node):
@@ -551,19 +552,19 @@ def calculate_mvgd_stats(nw):
                 else:
                     path = nx.shortest_path(G, root, node)
                     for i in range(len(path)-1):
-                        mv_resistance += np.sqrt(
+                        mv_impedance += np.sqrt(
                             (G.edge[path[i]][path[i + 1]]['branch'].type[
                                  'L'] * 1e-3 * omega * \
                              G.edge[path[i]][path[i + 1]][
                                  'branch'].length) ** 2. + \
                             (G.edge[path[i]][path[i + 1]]['branch'].type[
-                                 'L'] * 1e-3 * omega * \
+                                 'R'] * \
                              G.edge[path[i]][path[i + 1]][
                                  'branch'].length) ** 2.)
                         mv_path_length += G.edge[path[i]][path[i + 1]][
                             'branch'].length
 
-                    mv_resistances[node] = mv_resistance
+                    mv_impedances[node] = mv_impedance
                     mv_path_lengths[node] = mv_path_length
                     mv_thermal_limit = G.edge[path[0]][path[1]]['branch'].type['I_max_th']
                     mv_thermal_limits[node] = mv_thermal_limit
@@ -576,34 +577,34 @@ def calculate_mvgd_stats(nw):
                                     for lv_node in G_lv.nodes():
                                         if isinstance(lv_node, GeneratorDing0) or isinstance(lv_node, LVLoadDing0):
                                             path = nx.shortest_path(G_lv, node, lv_node)
-                                            lv_resistance = 0.
+                                            lv_impedance = 0.
                                             lv_path_length = 0.
                                             for i in range(len(path)-1):
-                                                lv_resistance += np.sqrt((G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
+                                                lv_impedance += np.sqrt((G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
                                                                           G_lv.edge[path[i]][path[i+1]]['branch'].length)**2. + \
-                                                                         (G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
+                                                                         (G_lv.edge[path[i]][path[i+1]]['branch'].type['R'] * \
                                                                           G_lv.edge[path[i]][path[i+1]]['branch'].length)**2.)
                                                 lv_path_length += G_lv.edge[path[i]][path[i+1]]['branch'].length
                                             lv_thermal_limit = G_lv.edge[path[0]][path[1]]['branch'].type['I_max_th']
 
-                                            mvlv_resistances[lv_node] = mv_resistance + lv_resistance
+                                            mvlv_impedances[lv_node] = mv_impedance + lv_impedance
                                             mvlv_path_lengths[lv_node] = mv_path_length + lv_path_length
                                             lv_thermal_limits[lv_node] = lv_thermal_limit
                                             mvlv_thermal_limits[lv_node] = mv_thermal_limit
                                         elif isinstance(lv_node, LVStationDing0):
-                                            n_branches_LV += len(G_lv.neighbors(lv_node))
+                                            n_outgoing_LV += len(G_lv.neighbors(lv_node))
                                             n_stations_LV += 1
 
         # compute mean values by looping over terminal nodes
-        sum_resistances = 0.
+        sum_impedances = 0.
         sum_thermal_limits = 0.
         sum_path_lengths = 0.
         n_terminal_nodes_MV = 0
 
         # terminal nodes on MV
-        for terminal_node in mv_resistances.keys(): # neglect LVStations here because already part of MVLV paths below
+        for terminal_node in mv_impedances.keys(): # neglect LVStations here because already part of MVLV paths below
             if not isinstance(terminal_node, LVStationDing0) and not isinstance(terminal_node, MVStationDing0):
-                sum_resistances += mv_resistances[terminal_node]
+                sum_impedances += mv_impedances[terminal_node]
                 sum_thermal_limits += mv_thermal_limits[terminal_node]
                 sum_path_lengths += mv_path_lengths[terminal_node]
                 n_terminal_nodes_MV += 1
@@ -612,8 +613,8 @@ def calculate_mvgd_stats(nw):
         n_terminal_nodes_LV = 0
 
         # terminal nodes on LV
-        for terminal_node in mvlv_resistances.keys():
-            sum_resistances += mvlv_resistances[terminal_node]
+        for terminal_node in mvlv_impedances.keys():
+            sum_impedances += mvlv_impedances[terminal_node]
             sum_thermal_limits += mvlv_thermal_limits[terminal_node]
             sum_thermal_limits_LV += lv_thermal_limits[terminal_node]
             sum_path_lengths += mvlv_path_lengths[terminal_node]
@@ -622,18 +623,18 @@ def calculate_mvgd_stats(nw):
         n_terminal_nodes = n_terminal_nodes_MV + n_terminal_nodes_LV
 
         if n_terminal_nodes < 1:
-            mean_resistance = sum_resistances
+            mean_impedance = sum_impedances
             mean_thermal_limit = sum_thermal_limits
             mean_path_length = sum_path_lengths
         else:
-            mean_resistance = sum_resistances / n_terminal_nodes
+            mean_impedance = sum_impedances / n_terminal_nodes
             mean_thermal_limit = sum_thermal_limits / n_terminal_nodes
             mean_path_length = sum_path_lengths / n_terminal_nodes
         if n_terminal_nodes_LV < 1:
             mean_thermal_limit_LV = sum_thermal_limits_LV
         else:
             mean_thermal_limit_LV = sum_thermal_limits_LV / n_terminal_nodes_LV
-        number_branches_LV = n_branches_LV # / n_stations_LV
+        number_outgoing_LV = n_outgoing_LV # / n_stations_LV
         number_outgoing_MV = n_outgoing_MV
 
         if n_terminal_nodes_LV == 0:
@@ -742,11 +743,11 @@ def calculate_mvgd_stats(nw):
             'MVLV_trafo_cap':lv_trafo_cap,
             'max_mv_path':max_mv_path,
             'max_mvlv_path':max_mvlv_path,
-            'mean_resistance' : mean_resistance,
+            'mean_impedance' : mean_impedance,
             'mean_thermal_limit' : mean_thermal_limit,
             'mean_thermal_limit_LV' : mean_thermal_limit_LV,
             'mean_path_length' : mean_path_length / 1.e3,
-            'number_branches_LV' : number_branches_LV,
+            'number_outgoing_LV' : number_outgoing_LV,
             'number_outgoing_MV' : number_outgoing_MV
         }
 
@@ -877,17 +878,17 @@ def calculate_mvgd_stats(nw):
         mvgd_stats['Trafos MV/LV Acc s_max_a'] = other_nodes_df['MVLV_trafo_cap'].to_frame()
         mvgd_stats['Length of MV max path'] = other_nodes_df['max_mv_path'].to_frame()
         mvgd_stats['Length of MVLV max path'] = other_nodes_df['max_mvlv_path'].to_frame()
-        mvgd_stats['Impedance Z of path to terminal node, mean value'] = \
-                                            other_nodes_df['mean_resistance'].to_frame()
-        mvgd_stats['I_max of first segment of path from MV station to terminal node, mean value'] = \
+        mvgd_stats['Impedance Z of path to terminal node (mean value)'] = \
+                                            other_nodes_df['mean_impedance'].to_frame()
+        mvgd_stats['I_max of first segment of path from MV station to terminal node (mean value)'] = \
                                             other_nodes_df['mean_thermal_limit'].to_frame()
-        mvgd_stats['I_max of first segment of path from LV station to terminal node, mean value'] = \
+        mvgd_stats['I_max of first segment of path from LV station to terminal node (mean value)'] = \
                                             other_nodes_df['mean_thermal_limit_LV'].to_frame()
-        mvgd_stats['Length of path from MV station to terminal node, mean value'] = \
+        mvgd_stats['Length of path from MV station to terminal node (mean value)'] = \
                                             other_nodes_df['mean_path_length'].to_frame()
-        mvgd_stats['Number of branches going out from LV stations'] = \
-                                            other_nodes_df['number_branches_LV'].to_frame()
-        mvgd_stats['Number of lines going out from MV stations'] = \
+        mvgd_stats['Number of lines and cables going out from LV stations'] = \
+                                            other_nodes_df['number_outgoing_LV'].to_frame()
+        mvgd_stats['Number of lines and cables going out from MV stations'] = \
                                             other_nodes_df['number_outgoing_MV'].to_frame()
 
     ###################################
