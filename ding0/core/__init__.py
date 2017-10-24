@@ -305,11 +305,41 @@ class NetworkDing0:
             Table containing lv_stations of according load_area
         """
 
-        # There's no LVGD for current LA, see #155 for details
+        # There's no LVGD for current LA
+        # -> TEMP WORKAROUND: Create single LVGD from LA, replace unknown valuess by zero
+        # TODO: Fix #155 (see also: data_processing #68)
         if len(lv_grid_districts) == 0:
-            raise ValueError(
-                'Load Area {} has no LVGD - please re-open #155'.format(
-                    repr(lv_load_area)))
+            # raise ValueError(
+            #     'Load Area {} has no LVGD - please re-open #155'.format(
+            #         repr(lv_load_area)))
+            from shapely.wkt import dumps as wkt_dumps
+            geom = wkt_dumps(lv_load_area.geo_area)
+
+            lv_grid_districts = \
+                lv_grid_districts.append(
+                    pd.DataFrame(
+                        {'la_id': [lv_load_area.id_db],
+                         'geom': [geom],
+                         'population': [0],
+
+                         'peak_load_residential': [lv_load_area.peak_load_residential],
+                         'peak_load_retail': [lv_load_area.peak_load_retail],
+                         'peak_load_industrial': [lv_load_area.peak_load_industrial],
+                         'peak_load_agricultural': [lv_load_area.peak_load_agricultural],
+
+                         'sector_count_residential': [0],
+                         'sector_count_retail': [0],
+                         'sector_count_industrial': [0],
+                         'sector_count_agricultural': [0],
+
+                         'sector_consumption_residential': [0],
+                         'sector_consumption_retail': [0],
+                         'sector_consumption_industrial': [0],
+                         'sector_consumption_agricultural': [0]
+                         },
+                        index=[lv_load_area.id_db]
+                    )
+                )
 
         lv_nominal_voltage = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
 
@@ -352,7 +382,9 @@ class NetworkDing0:
                 id_db=id,
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
-                geo_data=wkt_loads(lv_stations.loc[id, 'geom']),
+                geo_data=wkt_loads(lv_stations.loc[id, 'geom'])
+                            if id in lv_stations.index.values
+                            else lv_load_area.geo_centre,
                 peak_load=lv_grid_district.peak_load)
 
             # assign created objects
