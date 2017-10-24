@@ -124,18 +124,16 @@ class MVStationDing0(StationDing0):
         cum_peak_load = self.peak_load / cos_phi_load
         cum_peak_generation = self.peak_generation(mode='MVLV') / cos_phi_feedin
 
-        kw2mw = 1e-3
-
         # check if load or generation is greater respecting corresponding load factor
         if (cum_peak_load / load_factor_mv_trans_lc_normal) > \
            (cum_peak_generation / load_factor_mv_trans_fc_normal):
             # use peak load and load factor from load case
             load_factor_mv_trans = load_factor_mv_trans_lc_normal
-            residual_apparent_power = cum_peak_load * kw2mw
+            residual_apparent_power = cum_peak_load
         else:
             # use peak generation and load factor for feedin case
             load_factor_mv_trans = load_factor_mv_trans_fc_normal
-            residual_apparent_power = cum_peak_generation * kw2mw
+            residual_apparent_power = cum_peak_generation
 
         # determine number and size of required transformers
 
