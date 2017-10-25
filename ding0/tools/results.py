@@ -570,14 +570,24 @@ def calculate_mvgd_stats(nw):
                     mv_thermal_limits[node] = mv_thermal_limit
 
                     if isinstance(node, LVStationDing0):
+                        # add impedance of transformers in LV station
+                        lvstation_impedance = 0.
+                        for trafo in node.transformers():
+                            lvstation_impedance += 1. / np.sqrt(trafo.x**2. + trafo.r**2.) # transformers operating in parallel
+                        if lvstation_impedance > 0.: # avoid dividing by zero
+                            lvstation_impedance = 1. / lvstation_impedance 
+                        else:
+                            lvstation_impedance = 0.
+                        # identify LV nodes belonging to LV station
                         for lv_LA in district.lv_load_areas():
                             for lv_dist in lv_LA.lv_grid_districts():
                                 if lv_dist.lv_grid._station == node:
                                     G_lv = lv_dist.lv_grid._graph
+                                    # loop over all LV terminal nodes belonging to LV station
                                     for lv_node in G_lv.nodes():
                                         if isinstance(lv_node, GeneratorDing0) or isinstance(lv_node, LVLoadDing0):
                                             path = nx.shortest_path(G_lv, node, lv_node)
-                                            lv_impedance = 0.
+                                            lv_impedance = lvstation_impedance
                                             lv_path_length = 0.
                                             for i in range(len(path)-1):
                                                 lv_impedance += np.sqrt((G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
@@ -591,6 +601,7 @@ def calculate_mvgd_stats(nw):
                                             mvlv_path_lengths[lv_node] = mv_path_length + lv_path_length
                                             lv_thermal_limits[lv_node] = lv_thermal_limit
                                             mvlv_thermal_limits[lv_node] = mv_thermal_limit
+
                                         elif isinstance(lv_node, LVStationDing0):
                                             n_outgoing_LV += len(G_lv.neighbors(lv_node))
                                             n_stations_LV += 1
@@ -623,24 +634,19 @@ def calculate_mvgd_stats(nw):
         n_terminal_nodes = n_terminal_nodes_MV + n_terminal_nodes_LV
 
         if n_terminal_nodes < 1:
-            mean_impedance = sum_impedances
-            mean_thermal_limit = sum_thermal_limits
-            mean_path_length = sum_path_lengths
+            mean_impedance = np.nan
+            mean_thermal_limit = np.nan
+            mean_path_length = np.nan
         else:
             mean_impedance = sum_impedances / n_terminal_nodes
             mean_thermal_limit = sum_thermal_limits / n_terminal_nodes
             mean_path_length = sum_path_lengths / n_terminal_nodes
         if n_terminal_nodes_LV < 1:
-            mean_thermal_limit_LV = sum_thermal_limits_LV
+            mean_thermal_limit_LV = np.nan
         else:
             mean_thermal_limit_LV = sum_thermal_limits_LV / n_terminal_nodes_LV
         number_outgoing_LV = n_outgoing_LV # / n_stations_LV
         number_outgoing_MV = n_outgoing_MV
-
-        if n_terminal_nodes_LV == 0:
-            mean_thermal_limit_LV = np.nan
-        else:
-            mean_thermal_limit_LV = sum_thermal_limits_LV / n_terminal_nodes_LV
 
         ###################################
         # compute path lengths (written by Miguel)
