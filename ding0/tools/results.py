@@ -1433,125 +1433,299 @@ def export_network(nw, mode=''):
         lv_info = False
     #############################
     #go through the grid collecting info
-    loads_idx = 0
-    loads_dict = {}
-    gen_idx = 0
-    gen_dict = {}
-    cb_idx = 0
-    cb_dict = {}
-    cd_idx = 0
-    cd_dict = {}
-    stations_idx = 0
-    stations_dict = {}
-    trafos_idx = 0
-    trafos_dict = {}
+    lvloads_idx = 0
+    lvloads_dict = {}
+    mvloads_idx = 0
+    mvloads_dict = {}
+    mvgen_idx = 0
+    mvgen_dict = {}
+    mvcb_idx = 0
+    mvcb_dict = {}
+    mvcd_idx = 0
+    mvcd_dict = {}
+    mvstations_idx = 0
+    mvstations_dict = {}
+    mvtrafos_idx = 0
+    mvtrafos_dict = {}
+    lvgen_idx = 0
+    lvgen_dict = {}
+    lvcd_idx = 0
+    lvcd_dict = {}
+    lvstations_idx = 0
+    lvstations_dict = {}
+    lvtrafos_idx = 0
+    lvtrafos_dict = {}
     areacenter_idx = 0
     areacenter_dict = {}
     edges_idx = 0
     edges_dict = {}
+    LVMVmapping_idx = 0
+    LVMVmapping_dict = {}
+    test = {}
+
+    def aggregate_generators(gen, aggr):
+        """Aggregate generation capacity per voltage level
+        Parameters
+        ----------
+        gen: ding0.core.GeneratorDing0
+            Ding0 Generator object
+        aggr: dict
+            Aggregated generation capacity. For structure see
+            `_determine_aggregated_nodes()`.
+        Returns
+        -------
+        """
+
+        if gen.v_level not in aggr['generation']:
+            aggr['generation'][gen.v_level] = {}
+        if gen.type not in aggr['generation'][gen.v_level]:
+            aggr['generation'][gen.v_level][gen.type] = {}
+        if gen.subtype not in aggr['generation'][gen.v_level][gen.type]:
+            aggr['generation'][gen.v_level][gen.type].update(
+                {gen.subtype: {'ids': [gen.id_db],
+                               'capacity': gen.capacity}})
+        else:
+            aggr['generation'][gen.v_level][gen.type][gen.subtype][
+                'ids'].append(gen.id_db)
+            aggr['generation'][gen.v_level][gen.type][gen.subtype][
+                'capacity'] += gen.capacity
+
+        return aggr
+
+    def aggregate_loads(la_center, aggr):
+        """Aggregate consumption in load area per sector
+        Parameters
+        ----------
+        la_center: LVLoadAreaCentreDing0
+            Load area center object from Ding0
+        Returns
+        -------
+        """
+        for s in ['retail', 'industrial', 'agricultural', 'residential']:
+            if s not in aggr['load']:
+                aggr['load'][s] = 0
+
+        aggr['load']['retail'] += sum(
+            [_.sector_consumption_retail
+             for _ in la_center.lv_load_area._lv_grid_districts])
+        aggr['load']['industrial'] += sum(
+            [_.sector_consumption_industrial
+             for _ in la_center.lv_load_area._lv_grid_districts])
+        aggr['load']['agricultural'] += sum(
+            [_.sector_consumption_agricultural
+             for _ in la_center.lv_load_area._lv_grid_districts])
+        aggr['load']['residential'] += sum(
+            [_.sector_consumption_residential
+             for _ in la_center.lv_load_area._lv_grid_districts])
+
+        return aggr
+
     for mv_district in nw.mv_grid_districts():
         mv_grid_id = mv_district.mv_grid.id_db
+
         if mv_info:
             lv_grid_id = 0
+
+            #id_db: Classname_MV/LV_mvgridid/lvgridid_id
+            #excemptions: class LVStations: LVStationDing0_MV_mvgridid_id(=lvgridid)
+
+            #MVGrid
             for node in mv_district.mv_grid.graph_nodes_sorted():
                 geom = from_shape(Point(node.geo_data), srid=srid)
                 db_id = node.id_db
+
+                #LVStation
                 if isinstance(node, LVStationDing0):
                     if not node.lv_load_area.is_aggregated:
-                        type = 'LV Station'
-                        stations_idx+=1
-                        stations_dict[stations_idx] = {
-                            'id_db': db_id,
-                            'MV_grid_id':mv_grid_id,
-                            'LV_grid_id':lv_grid_id,
-                            'geom':geom
+                        lvstations_idx+=1
+                        lvstations_dict[lvstations_idx] = {
+                            'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
+                            'LV_grid_id':node.id_db,
+                            'geom':geom,
                         }
-                        #TODO: Trafos
+
+                        #LV-MV mapping
+                        LVMVmapping_idx+=1
+                        LVMVmapping_dict[LVMVmapping_idx] = {
+                            'MV_grid_id':mv_grid_id,
+                            'LV_grid_id':node.id_db,
+                        }
+
+                        #Trafos LV
+                        for t in node.transformers():
+                            lvtrafos_idx+=1
+                            lvtrafos_dict[lvtrafos_idx] = {
+                                'id_db':'_'.join([str(t.__class__.__name__), 'LV', str(mv_grid_id), str(node.id_db)]),
+                                'geom':geom,
+                                'LV_grid_id':node.id_db,
+                                'voltage_op':t.v_level,
+                                'S_nom':t.s_max_a,
+                                'X':t.x,
+                                'R':t.r
+                            }
+
+                #MVStation
                 elif isinstance(node, MVStationDing0):
-                    type = 'MV Station'
-                    stations_idx+=1
-                    stations_dict[stations_idx] = {
-                        'id_db': db_id,
+                    mvstations_idx+=1
+                    mvstations_dict[mvstations_idx] = {
+                        'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                         'MV_grid_id':mv_grid_id,
                         'LV_grid_id':lv_grid_id,
-                        'geom':geom
+                        'geom':geom,
                     }
-                    #TODO: Trafos
+
+                    #Trafos MV
+                    for t in node.transformers():
+                        mvtrafos_idx+=1
+                        mvtrafos_dict[mvtrafos_idx] = {
+                            'id_db': '_'.join([str(t.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
+                            'geom':geom,
+                            'MV_grid_id':mv_grid_id,
+                            'voltage_op':t.v_level,
+                            'S_nom':t.s_max_a,
+                            'X':t.x,
+                            'R':t.r
+                        }
+
+                #MVGenerator
                 elif isinstance(node, GeneratorDing0):
                     if node.subtype==None:
                         subtype = 'other'
                     else:
                         subtype = node.subtype
                     type = node.type
-                    gen_idx+=1
-                    gen_dict[gen_idx] = {
-                        'id_db': db_id,
+                    mvgen_idx+=1
+                    mvgen_dict[mvgen_idx] = {
+                        'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                         'MV_grid_id':mv_grid_id,
-                        'LV_grid_id':lv_grid_id,
                         'geom':geom,
                         'type':type,
                         'subtype':subtype,
                         'v_level':node.v_level,
-                        #'v_nom':mv_district.mv_grid.v_level,
                         'nominal_capacity':node.capacity,
                     }
+
+                #MVBranchTees
                 elif isinstance(node, MVCableDistributorDing0):
-                    type = 'Cable distributor'
-                    cd_idx+=1
-                    cd_dict[cd_idx] = {
-                        'id_db': db_id,
+                    mvcd_idx+=1
+                    mvcd_dict[mvcd_idx] = {
+                        'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                         'MV_grid_id':mv_grid_id,
-                        'LV_grid_id':lv_grid_id,
                         'geom':geom
                     }
-                elif isinstance(node, LVLoadAreaCentreDing0):
-                    type = 'Load area center of aggregated load area'
 
-                    la = node.lv_load_area
+                #LoadAreaCentre
+                elif isinstance(node, LVLoadAreaCentreDing0):
+                    print('hkjashga')
+                    #type = 'Load area center of aggregated load area'
+
                     #TODO: all this
 
                     areacenter_idx+=1
+                    aggregated = {}
+                    aggr_stations = []
+
+                    aggr = {'generation': {}, 'load': {}, 'aggregates': []}
+
+                    # Determine aggregated generation in LV grid
+                    for lvgd in node.lv_load_area._lv_grid_districts:
+
+                        for aggr_gen in lvgd.lv_grid.generators():
+                            aggr = aggregate_generators(aggr_gen, aggr)
+
+                            if aggr_gen.subtype==None:
+                                subtype = 'other'
+                            else:
+                                subtype = aggr_gen.subtype
+                            type = aggr_gen.type
+
+                    # Determine aggregated load in MV grid
+                    # -> Implement once loads in Ding0 MV grids exist
+
+                    # Determine aggregated load in LV grid
+                    aggr = aggregate_loads(node, aggr)
+
+                    # Collect metadata of aggregated load areas
+                    aggr['aggregates'] = {
+                        'population': node.lv_load_area.zensus_sum,
+                        'geom': node.lv_load_area.geo_area}
+
+                    for aggr_node in aggr:
+                        if aggr_node == 'generation':
+
+                            for v_level in aggr['generation']:
+                                for type in aggr['generation'][v_level]:
+                                    for subtype in aggr['generation'][v_level][type]:
+                                        #ToDo: geom
+                                        mvgen_idx += 1
+                                        mvgen_dict[mvgen_idx] = {
+                                            'id_db': '_'.join(
+                                                [str(aggr_gen.__class__.__name__), 'MV', str(mv_grid_id),
+                                                 str(aggr_gen.id_db)]),
+                                            'MV_grid_id': mv_grid_id,
+                                            'geom': node.lv_load_area.geo_area,#geom, #?? Polygon
+                                            'type': type,
+                                            'subtype': subtype,
+                                            'v_level': v_level, #aggr_gen.v_level,
+                                            'nominal_capacity': aggr['generation'][v_level][type][subtype]['capacity'],
+                                                #aggr['generation'][aggr_gen.v_level][aggr_gen.type][aggr_gen.subtype][
+                                                    #'capacity'],  # 'nominal_capacity' += aggr_gen.capacity,
+                                            'is_aggregated': 1,
+                                        }
+
+                        elif aggr_node == 'load':
+                            #ToDo: Peak Load, geom
+                            for type in aggr['load']:
+                                mvloads_idx += 1
+                                mvloads_dict[mvloads_idx] = {
+                                    'id_db': '_'.join(
+                                        ['AggregatedLoad', 'MV', str(mv_grid_id), str(mvloads_idx)]), #,str(aggr_gen.id_db)
+                                    'MV_grid_id': mv_grid_id,
+                                    'geom': node.lv_load_area.geo_area,  # geom, #?? Polygon
+                                    'consumption' : { str(type): aggr['load'][type]},
+                                    'is_aggregated': 1,
+                                }
+
+                    test[areacenter_idx]=aggr#['generation'][6]['solar']#[v_level][gen.type][gen.subtype]['ids']
+
                     areacenter_dict[areacenter_idx] = {
-                        'id_db': db_id,
-                        'MV_grid_id':mv_grid_id,
-                        'LV_grid_id':lv_grid_id,
-                        'geom':geom,
-                    }
+                        'id_db': node.id_db,
+                        'MV_grid_id':node.grid,
+                        #'MV_grid_id':mv_grid_id,
+                        'geom':node.geo_data,#,
+                        'lv_load_area': node.lv_load_area
+
+                     }
+
+                #DisconnectingPoints
                 elif isinstance(node, CircuitBreakerDing0):
-                    type = 'Switch Disconnector'
-                    cb_idx+=1
-                    cb_dict[cb_idx] = {
-                        'id_db': db_id,
+                    mvcb_idx+=1
+                    mvcb_dict[mvcb_idx] = {
+                        'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                         'MV_grid_id':mv_grid_id,
-                        'LV_grid_id':lv_grid_id,
                         'geom':geom,
                         'status':node.status
                     }
                 else:
                     type = 'Unknown'
 
+            #MVedges
             for branch in mv_district.mv_grid.graph_edges():
                 geom = from_shape(LineString([branch['adj_nodes'][0].geo_data,branch['adj_nodes'][1].geo_data]),srid=srid)
-                name = branch['branch'].type['name']
-                U_n = branch['branch'].type['U_n']
-                I_max_th = branch['branch'].type['I_max_th']
-                R = branch['branch'].type['R']
-                L = branch['branch'].type['L']
-                C = branch['branch'].type['C']
-
                 edges_idx +=1
                 edges_dict[edges_idx] = {
                     'edge_name': branch['branch'].id_db,
                     'MV_grid_id':mv_grid_id,
-                    'LV_grid_id':lv_grid_id,
-                    'type_name': name,
+                     'type_name': branch['branch'].type['name'],
                     'type_kind': branch['branch'].kind,
                     'geom': geom,
-                    'U_n':U_n,
-                    'I_max_th':I_max_th,
-                    'R':R,
-                    'L':L,
-                    'C':C,
+                    'U_n':branch['branch'].type['U_n'],
+                    'I_maxth':branch['branch'].type['I_max_th'],
+                    'R': branch['branch'].type['R'],
+                    'L': branch['branch'].type['L'],
+                    'C': branch['branch'].type['C'],
+                    'node1': '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'MV', str(mv_grid_id), str(branch['adj_nodes'][0].id_db)]),
+                    'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'MV', str(mv_grid_id), str(branch['adj_nodes'][1].id_db)]),
                 }
 
         if lv_info:
@@ -1560,75 +1734,90 @@ def export_network(nw, mode=''):
                     lv_grid_id = lv_district.lv_grid.id_db
                     geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
                     for node in lv_district.lv_grid.graph_nodes_sorted():
-                        db_id = node.id_db
+                        #db_id = node.id_db
+                        #geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
+
+                        #LVGenerator
                         if isinstance(node, GeneratorDing0):
                             if node.subtype == None:
                                 subtype = 'other'
                             else:
                                 subtype = node.subtype
                             type = node.type
-                            gen_idx += 1
-                            gen_dict[gen_idx] = {
-                                'id_db': db_id,
-                                'MV_grid_id': mv_grid_id,
-                                'LV_grid_id': lv_grid_id,
+                            lvgen_idx += 1
+                            lvgen_dict[lvgen_idx] = {
+                                'id_db': '_'.join([str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
+                                 'LV_grid_id': lv_grid_id,
                                 'geom': geom,
                                 'type': type,
                                 'subtype': subtype,
                                 'v_level': node.v_level,
-                                #'v_nom':lv_district.lv_grid.station().v_level_operation,
                                 'nominal_capacity': node.capacity,
                             }
+
+                        #LVcb
                         elif isinstance(node, LVCableDistributorDing0):
-                            type = 'Cable distributor'
-                            cd_idx += 1
-                            cd_dict[cd_idx] = {
-                                'id_db': db_id,
-                                'MV_grid_id': mv_grid_id,
+                            lvcd_idx += 1
+                            lvcd_dict[lvcd_idx] = {
+                                'id_db': '_'.join([str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
                                 'LV_grid_id': lv_grid_id,
                                 'geom': geom
                             }
+
+                        #LVload
                         elif isinstance(node, LVLoadDing0):
-                            type = 'LV Load'
-                            #TODO: all this
+                            lvloads_idx += 1
+                            lvloads_dict[lvloads_idx] = {
+                                'id_db': '_'.join([str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
+                                'LV_grid_id': lv_grid_id,
+                                'geom': geom,
+                                'peak_load': node.peak_load,
+                                'consumption': node.consumption
+                               }
+
                         else:
                             type = 'Unknown'
 
+                    #LVedges
                     for branch in lv_district.lv_grid.graph_edges():
-                        name =  branch['branch'].type.to_frame().columns[0]
-                        #print(branch['branch'].type.to_frame())
-                        U_n = branch['branch'].type['U_n']
-                        I_max_th = branch['branch'].type['I_max_th']
-                        R = branch['branch'].type['R']
-                        L = branch['branch'].type['L']
-                        C = branch['branch'].type['C']
                         edges_idx +=1
                         edges_dict[edges_idx] = {
                             'edge_name': branch['branch'].id_db,
                             'MV_grid_id':mv_grid_id,
                             'LV_grid_id':lv_grid_id,
-                            'type_name': name,
+                            'type_name': branch['branch'].type.to_frame().columns[0],
                             'type_kind': branch['branch'].kind,
                             'geom': geom,
-                            'U_n':U_n,
-                            'I_max_th':I_max_th,
-                            'R':R,
-                            'L':L,
-                            'C':C,
+                            'U_n':branch['branch'].type['U_n'],
+                            'I_max_th':branch['branch'].type['I_max_th'],
+                            'R':branch['branch'].type['R'],
+                            'L':branch['branch'].type['L'],
+                            'C':branch['branch'].type['C'],
+                            'node1': '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'LV', str(lv_grid_id),
+                                               str(branch['adj_nodes'][0].id_db)]),
+                            'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'LV', str(lv_grid_id),
+                                               str(branch['adj_nodes'][1].id_db)]),
                         }
 
-    gen        = pd.DataFrame.from_dict(gen_dict, orient='index')
-    cb         = pd.DataFrame.from_dict(cb_dict, orient='index')
-    cd         = pd.DataFrame.from_dict(cd_dict, orient='index')
-    stations   = pd.DataFrame.from_dict(stations_dict, orient='index')
-    areacenter = pd.DataFrame.from_dict(areacenter_dict, orient='index')
-    trafos     = pd.DataFrame.from_dict(trafos_dict, orient='index')
-    loads      = pd.DataFrame.from_dict(loads_dict, orient='index')
+    lv_gen        = pd.DataFrame.from_dict(lvgen_dict, orient='index')
+    lv_cd         = pd.DataFrame.from_dict(lvcd_dict, orient='index')
+    lv_stations   = pd.DataFrame.from_dict(lvstations_dict, orient='index')
+    lv_trafos     = pd.DataFrame.from_dict(lvtrafos_dict, orient='index')
+    lv_loads      = pd.DataFrame.from_dict(lvloads_dict, orient='index')
+    mv_gen        = pd.DataFrame.from_dict(mvgen_dict, orient='index')
+    mv_cb         = pd.DataFrame.from_dict(mvcb_dict, orient='index')
+    mv_cd         = pd.DataFrame.from_dict(mvcd_dict, orient='index')
+    mv_stations   = pd.DataFrame.from_dict(mvstations_dict, orient='index')
+    mv_areacenter = pd.DataFrame.from_dict(areacenter_dict, orient='index')
+    mv_trafos     = pd.DataFrame.from_dict(mvtrafos_dict, orient='index')
+    mv_loads      = pd.DataFrame.from_dict(mvloads_dict, orient='index')
     edges      = pd.DataFrame.from_dict(edges_dict, orient='index')
+    lvmv_mapping = pd.DataFrame.from_dict(LVMVmapping_dict, orient='index')
+    test = pd.DataFrame.from_dict(test, orient='index')
 
     edges = edges[sorted(edges.columns.tolist())]
 
-    return gen, cb, cd, stations, areacenter, trafos, loads, edges
+    return test, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, mv_areacenter, mv_trafos, mv_loads, edges, lvmv_mapping
 
 
 ########################################################
