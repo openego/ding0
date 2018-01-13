@@ -80,5 +80,4 @@ checked code of the repository. A developer mode installation is achieved by
 Use Ding0
 =========
 
-We set up some examples about how to use Ding0 that are explained in
-:ref:`ding0-examples`.
+Have a look at the :ref:`ding0-examples`.

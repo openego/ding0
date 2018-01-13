@@ -18,3 +18,4 @@ Other changes
 * Generators with unknown subtype have subtype 'unknown' now
 * Circuit breakers are closed now `#224 <https://github.com/openego/ding0/issues/224>`_
 * Version upgrade of Pandas `eDisGo #22 <https://github.com/openego/eDisGo/issues/22>`_
+* `Documentation about usage <https://dingo.readthedocs.io/en/dev/usage_details.html>`_ is updated and extended
