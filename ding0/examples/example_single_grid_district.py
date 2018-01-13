@@ -18,13 +18,13 @@ __author__     = "nesnoj, gplssm"
 # ===== IMPORTS AND CONFIGURATION =====
 
 # import DB interface
-from ding0.tools import db
+from egoio.tools import db
 
 # import required modules of DING0
 from ding0.core import NetworkDing0
 from ding0.tools.logger import setup_logger
 from ding0.tools.results import save_nd_to_pickle
-import logging
+# import logging
 
 # define logger
 logger = setup_logger()
@@ -32,13 +32,13 @@ logger = setup_logger()
 # ===== MAIN =====
 
 # database connection
-conn = db.connection(section='oedb')
+conn = db.connection(section='oedb_remote')
 
 # instantiate new ding0 network object
 nd = NetworkDing0(name='network')
 
 # choose MV Grid Districts to import
-mv_grid_districts = [3545]
+mv_grid_districts = [3040]
 
 # run DING0 on selected MV Grid District
 nd.run_ding0(conn=conn,

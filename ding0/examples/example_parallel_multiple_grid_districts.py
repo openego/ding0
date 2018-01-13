@@ -21,7 +21,8 @@ import os
 import itertools
 
 from ding0.core import NetworkDing0
-from ding0.tools import results, db
+from ding0.tools import results
+from egoio.tools import db
 
 from math import floor
 import multiprocessing as mp

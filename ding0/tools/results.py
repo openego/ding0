@@ -25,8 +25,7 @@ from ding0.tools import config as cfg_ding0
 from matplotlib import pyplot as plt
 import seaborn as sns
 
-# import DB interface from oemof
-from ding0.tools import db
+from egoio.tools import db
 from ding0.core import NetworkDing0
 from ding0.core import GeneratorDing0
 from ding0.core import LVCableDistributorDing0, MVCableDistributorDing0

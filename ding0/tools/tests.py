@@ -1,9 +1,6 @@
 import unittest2 as unittest
-from test import support
 
-# import DB interface from oemof
-import oemof.db as db
-# import other ding0 stuff
+import egoio.db as db
 from ding0.core import NetworkDing0
 from ding0.tools.logger import setup_logger
 from ding0.tools.results import save_nd_to_pickle
