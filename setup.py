@@ -40,7 +40,7 @@ setup(name='ding0',
                         'egoio >= 0.2.0, <= 0.2.0',
                         'oemof.db  >= 0.0.4, <= 0.0.4',
                         'shapely >= 1.5.12, <= 1.5.12',
-                        'pypsa >= 0.10.0, <= 0.10.0',
+                        'pypsa >= 0.11.0, <= 0.11.0',
 			            'seaborn',
                         'unittest2'
                         ],
