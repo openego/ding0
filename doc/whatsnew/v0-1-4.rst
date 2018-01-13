@@ -1,12 +1,15 @@
 Release v0.1.4 (??, 2017)
 ++++++++++++++++++++++++++++++++++
 
-<Write a summary here>
+This release provides some fixes, a largely extended export function for
+statistical information about the grid data and an update of input data.
 
 Added features
 --------------
+* Use data of data processing v0.3.0 and egoio v0.3.0
 * Python 3.4 compatible (removed some Python3.5+ introduced feature calls)
 * Export of `statistical key figures <https://github.com/openego/ding0/issues/233>`_ in addition to `to_dataframe()` added
+* Now uses PyPSA v0.11.0
 
 Bug fixes
 ---------
@@ -19,3 +22,5 @@ Other changes
 * Circuit breakers are closed now `#224 <https://github.com/openego/ding0/issues/224>`_
 * Version upgrade of Pandas `eDisGo #22 <https://github.com/openego/eDisGo/issues/22>`_
 * `Documentation about usage <https://dingo.readthedocs.io/en/dev/usage_details.html>`_ is updated and extended
+* Upgrade of versions of dependencies
+* oemof.db is now replace by egoio's connection provider
