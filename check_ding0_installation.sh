@@ -4,6 +4,8 @@
 # If you haven't installed docker yet, check out install_docker.sh
 #
 # Note: in this script all docker commands are executed as root (via sudo) as this is required on debian (solydX) systems
+#
+# Execute this script from its current location (same where setup.py lives)
 
 # make ding0 install script and dependency install script executable
 chmod +x install_ding0.sh

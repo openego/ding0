@@ -9,6 +9,7 @@ apt-get install -y python3-dev
 apt-get install -y libgeos-dev
 apt-get install -y libffi-dev
 apt-get install -y gcc
+apt-get install -y g++
 apt-get install -y python3-tk
 
 # addionatly dependencies, maybe required on Solydxk 8

@@ -1,3 +1,5 @@
+# This script must be executed in the directory where ding0 setup.py lives
+
 ./ding0_system_dependencies.sh
 
 # update package index
@@ -12,8 +14,8 @@ source .virtualenvs/ding0/bin/activate
 
 # test developer installation mode
 # TODO: get sources without github account. Currently it assumes ding0 source
-# TODO: code is located in ./ding0
-pip3 install -e ding0
+# TODO: code is located in ding0 (in docker)
+pip3 install ding0
 
 # Test if installation worked correctly
 #python3 ding0/examples/example_single_grid_district.py
