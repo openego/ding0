@@ -62,6 +62,7 @@ def get_default_home_dir():
     homedir : str
         Default home directory including its path
     """
+    print(cfg_ding0)
     ding0_dir = str(cfg_ding0.get('config',
                                   'config_dir'))
     return os.path.join(os.path.expanduser('~'), ding0_dir)
