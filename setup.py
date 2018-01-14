@@ -45,15 +45,11 @@ setup(name='ding0',
                         'scipy < 1.0'
                         ],
       package_data={
-          'config': [
+          'ding0': [
               os.path.join('config',
                            '*.cfg'),
-            ],
-          'data': [
               os.path.join('data',
                            '*.csv'),
-            ],
-          'testcases': [
               os.path.join('grid',
                            'mv_grid',
                            'tests',
