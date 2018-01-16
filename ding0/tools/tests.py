@@ -65,7 +65,7 @@ class Ding0RunTest(unittest.TestCase):
         print('\n########################################')
         print('  Running ding0 for the same configuration...')
         # database connection
-        conn = db.connection(section='oedb').connect()
+        conn = db.connection(section='oedb')
         mv_grid_districts = [3545]
 
         nw_2 = NetworkDing0(name='network')
@@ -83,7 +83,7 @@ class Ding0RunTest(unittest.TestCase):
     def test_ding0(self):
         print('\n########################################')
         print('Test ding0 vs ding0')
-        conn = db.connection(section='oedb').connect()
+        conn = db.connection(section='oedb')
         mv_grid_districts = [3545]
 
         print('\n########################################')
@@ -232,7 +232,7 @@ def init_files_for_tests( mv_grid_districts= [3545],filename='ding0_tests_grids_
     print('\n########################################')
     print('  Running ding0 for district',mv_grid_districts)
     # database connection
-    conn = db.connection(section='oedb').connect()
+    conn = db.connection(section='oedb')
 
     # instantiate new ding0 network object
     nd = NetworkDing0(name='network')
@@ -269,7 +269,7 @@ def manual_ding0_test(mv_grid_districts=[3545],
     print('\n########################################')
     print('  Running ding0 for district',mv_grid_districts, '...')
     # database connection
-    conn = db.connection(section='oedb').connect()
+    conn = db.connection(section='oedb')
 
     nw_2 = NetworkDing0(name='network')
     nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)

@@ -1241,7 +1241,7 @@ def init_mv_grid(mv_grid_districts=[3545], filename='ding0_tests_grids_1.pkl'):
     print('\n########################################')
     print('  Running ding0 for district', mv_grid_districts)
     # database connection
-    conn = db.connection(section='oedb').connect()
+    conn = db.connection(section='oedb')
 
     # instantiate new ding0 network object
     nd = NetworkDing0(name='network')
@@ -1351,7 +1351,7 @@ def process_stats(mv_districts,
                 continue
         else:
             # database connection
-            conn = db.connection(section='oedb').connect()
+            conn = db.connection(section='oedb')
 
             print('\n########################################')
             print('  Running ding0 for district', cl)

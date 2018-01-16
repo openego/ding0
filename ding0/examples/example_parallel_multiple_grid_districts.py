@@ -144,7 +144,7 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
     '''
     #######################################################################
     # database connection
-    conn = db.connection(section='oedb').connect()
+    conn = db.connection(section='oedb')
     #############################
     clusters = [mv_districts[x:x + n_of_districts] for x in range(0, len(mv_districts), n_of_districts)]
     output_clusters= []

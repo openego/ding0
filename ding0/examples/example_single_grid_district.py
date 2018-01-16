@@ -32,7 +32,7 @@ logger = setup_logger()
 # ===== MAIN =====
 
 # database connection
-conn = db.connection(section='oedb_remote').connect()
+conn = db.connection(section='oedb_remote')
 
 # instantiate new ding0 network object
 nd = NetworkDing0(name='network')

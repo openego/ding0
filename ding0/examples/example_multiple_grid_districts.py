@@ -100,7 +100,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         base_path = BASEPATH
 
     # database connection
-    conn = db.connection(section='oedb').connect()
+    conn = db.connection(section='oedb')
 
     corrupt_grid_districts = pd.DataFrame(columns=['id', 'message'])
 

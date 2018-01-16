@@ -294,7 +294,7 @@ def validate_lv_districts(conn, nw):
 
 ########################################################
 if __name__ == "__main__":
-    conn = db.connection(section='oedb').connect()
+    conn = db.connection(section='oedb')
     nw = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
 
     compare_by_level, compare_by_type = validate_generation(conn,nw)
