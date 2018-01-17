@@ -15,6 +15,7 @@ Bug fixes
 ---------
 * Remove cable distributor from MV grid's cable distributor list when disconnecting a node `eDisGo#48 <https://github.com/openego/eDisGo/issues/48>`_
 * Workaround for `#155 <https://github.com/openego/ding0/issues/155>`_ added
+* Package data is now correctly included
 
 Other changes
 -------------
