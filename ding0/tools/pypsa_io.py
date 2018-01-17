@@ -568,8 +568,6 @@ def assign_line_results(grid, line_data):
              and (
              edge['adj_nodes'][1] in grid._graph.nodes() and not isinstance(
                  edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
-    line_data.to_csv(os.path.join(package_path,
-                                  'line_data_after.csv'))
 
     decimal_places = 6
     for edge in edges:

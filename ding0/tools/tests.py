@@ -1,15 +1,16 @@
 import unittest2 as unittest
-from test import support
 
-# import DB interface from oemof
-import oemof.db as db
-# import other ding0 stuff
+from egoio.tools import db
 from ding0.core import NetworkDing0
 from ding0.tools.logger import setup_logger
 from ding0.tools.results import save_nd_to_pickle
 from ding0.tools.results import load_nd_from_pickle
 
 from geoalchemy2.shape import to_shape
+from sqlalchemy.orm import sessionmaker
+from geoalchemy2.shape import from_shape
+from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+
 import logging
 import pandas as pd
 
@@ -64,14 +65,14 @@ class Ding0RunTest(unittest.TestCase):
 
         print('\n########################################')
         print('  Running ding0 for the same configuration...')
-        # database connection
-        conn = db.connection(section='oedb')
+
+        # database connection/ session
+        engine = db.connection(section='oedb')
+        session = sessionmaker(bind=engine)()
         mv_grid_districts = [3545]
 
         nw_2 = NetworkDing0(name='network')
-        nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
-
-        conn.close()
+        nw_2.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
         #test equality
         print('  Testing equality...')
@@ -83,20 +84,21 @@ class Ding0RunTest(unittest.TestCase):
     def test_ding0(self):
         print('\n########################################')
         print('Test ding0 vs ding0')
-        conn = db.connection(section='oedb')
+        # database connection/ session
+        engine = db.connection(section='oedb')
+        session = sessionmaker(bind=engine)()
+
         mv_grid_districts = [3545]
 
         print('\n########################################')
         print('  Running ding0 once...')
         nw_1 = NetworkDing0(name='network')
-        nw_1.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
+        nw_1.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
         print('\n########################################')
         print('  Running ding0 twice...')
         nw_2 = NetworkDing0(name='network')
-        nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
-
-        conn.close()
+        nw_2.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
         #test equality
         print('\n########################################')
@@ -148,6 +150,17 @@ def dataframe_equal(network_one, network_two):
     #For the Nodes:
     nodes_one_df['geom'] = nodes_one_df['geom'].apply(lambda x: x.desc)
     nodes_two_df['geom'] = nodes_two_df['geom'].apply(lambda x: x.desc)
+    #Circuit Breakers don't always have the same numeration,
+    #so we need to reorder them according to their position
+    cb_one = nodes_one_df[nodes_one_df['type']=='Switch Disconnector'].sort_values('geom')['node_id'].reset_index(drop=True).tolist()
+    cb_two = nodes_two_df[nodes_two_df['type']=='Switch Disconnector'].sort_values('geom')['node_id'].reset_index(drop=True).tolist()
+    cb_one_new_name_list = ['Circuit_breaker_'+str(n+1) for n in range(0,len(cb_one))]
+    cb_two_new_name_list = ['Circuit_breaker_'+str(n+1) for n in range(0,len(cb_two))]
+
+    nodes_one_df['node_id'].replace(to_replace=cb_one,value=cb_one_new_name_list,inplace=True)
+    nodes_two_df['node_id'].replace(to_replace=cb_two,value=cb_two_new_name_list,inplace=True)
+    nodes_one_df = nodes_one_df.sort_values('node_id').reset_index(drop=True)
+    nodes_two_df = nodes_two_df.sort_values('node_id').reset_index(drop=True)
 
     #Similar for edges, but the extreme nodes of an edge can be switched
     #    first, convert to shape and rescue coordinates
@@ -188,9 +201,10 @@ def dataframe_equal(network_one, network_two):
             nodes_two_df.loc[idx,'v_res1']=nodes_one_df.loc[idx,'v_res1']
 
     # compare things
-    flag_nodes = nodes_one_df.equals(nodes_two_df)
+    flag_nodes = nodes_one_df[nodes_one_df['type']!='Switch Disconnector'].equals(nodes_two_df[nodes_one_df['type']!='Switch Disconnector'])
     flag_edges = edges_one_df.equals(edges_two_df)
-    passed     = flag_nodes and flag_edges
+    flag_cb    = nodes_one_df[nodes_one_df['type']=='Switch Disconnector']['geom'].equals(nodes_two_df[nodes_two_df['type']=='Switch Disconnector']['geom'])
+    passed     = flag_nodes and flag_edges and flag_cb
 
     #return result of test
     msg = 'Data sets are '
@@ -200,6 +214,8 @@ def dataframe_equal(network_one, network_two):
         msg = msg + 'different in nodes and edges'
     elif not flag_edges:
         msg = msg + 'different in edges'
+    elif (not flag_cb) and flag_nodes:
+        msg = msg + 'different only in circuit breakers: allocated in (slightly) different places'
     elif not flag_nodes:
         msg = msg + 'different in nodes'
     return passed, msg
@@ -217,21 +233,21 @@ def init_files_for_tests( mv_grid_districts= [3545],filename='ding0_tests_grids_
     '''
     print('\n########################################')
     print('  Running ding0 for district',mv_grid_districts)
-    # database connection
-    conn = db.connection(section='oedb')
+
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
 
     # instantiate new ding0 network object
     nd = NetworkDing0(name='network')
 
     # run DING0 on selected MV Grid District
-    nd.run_ding0(conn=conn,mv_grid_districts_no=mv_grid_districts)
+    nd.run_ding0(session=session,mv_grid_districts_no=mv_grid_districts)
 
     # export grid to file (pickle)
     print('\n########################################')
     print('  Saving result in ',filename)
     save_nd_to_pickle(nd, filename=filename)
-
-    conn.close()
 
 
 def manual_ding0_test(mv_grid_districts=[3545],
@@ -254,13 +270,13 @@ def manual_ding0_test(mv_grid_districts=[3545],
 
     print('\n########################################')
     print('  Running ding0 for district',mv_grid_districts, '...')
-    # database connection
-    conn = db.connection(section='oedb')
+
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
 
     nw_2 = NetworkDing0(name='network')
-    nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
-
-    conn.close()
+    nw_2.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
     # test equality
     print('\n########################################')

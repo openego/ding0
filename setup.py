@@ -16,13 +16,9 @@ __author__     = "nesnoj, gplssm"
 from setuptools import find_packages, setup
 import os
 
-# import subprocess
-#
-# subprocess.call(["sudo", "apt-get", "install", "libgeos-dev"])
-
 
 setup(name='ding0',
-      version='v0.1.3',
+      version='v0.1.4',
       author='Reiner Lemoine Institut, openego development group',
       author_email='jonathan.amme@rl-institut.de',
       description='DIstribution Network GeneratOr',
@@ -34,26 +30,22 @@ setup(name='ding0',
                         'pandas >= 0.20.3, <= 0.20.3',
                         'pyomo >= 5.0.1, <= 5.1.1',
                         'pyproj >= 1.9.5.1, <= 1.9.5.1',
-                        'sqlalchemy >= 1.0.11, <= 1.1.4',
-                        'geoalchemy2 >= 0.2.6, <= 0.4.0',
+                        'sqlalchemy >= 1.0.11, <= 1.2.0',
+                        'geoalchemy2 >= 0.2.6, <= 0.4.1',
                         'matplotlib  >= 1.5.3, <= 1.5.3',
-                        'egoio >= 0.2.0, <= 0.2.0',
-                        'oemof.db  >= 0.0.4, <= 0.0.4',
-                        'shapely >= 1.5.12, <= 1.5.12',
-                        'pypsa >= 0.10.0, <= 0.10.0',
+                        'egoio==0.3.0',
+                        'shapely >= 1.5.12, <= 1.6.3',
+                        'pypsa >= 0.11.0, <= 0.11.0',
 			            'seaborn',
-                        'unittest2'
+                        'unittest2',
+                        'scipy < 1.0'
                         ],
       package_data={
-          'config': [
+          'ding0': [
               os.path.join('config',
                            '*.cfg'),
-            ],
-          'data': [
               os.path.join('data',
                            '*.csv'),
-            ],
-          'testcases': [
               os.path.join('grid',
                            'mv_grid',
                            'tests',
@@ -92,6 +84,7 @@ setup(name='ding0',
         "License :: OSI Approved :: GNU Affero General Public License v3",
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Topic :: Scientific/Engineering"],
       )

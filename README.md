@@ -28,6 +28,8 @@ in the [documentation](https://ding0.readthedocs.io)
 A [set of examples](https://ding0.readthedocs.io/en/dev/usage_details.html#examples)
 is provided to show how to use Ding0.
 
+An overview on versions of data already generated [can be found in the wiki](https://github.com/openego/ding0/wiki/Ding0-datasets).
+
 LICENSE
 -------
 

@@ -21,12 +21,14 @@ import os
 import itertools
 
 from ding0.core import NetworkDing0
-from ding0.tools import results, db
+from ding0.tools import results
+from egoio.tools import db
 
 from math import floor
 import multiprocessing as mp
 import pandas as pd
 import json
+from sqlalchemy.orm import sessionmaker
 
 
 BASEPATH = os.path.join(os.path.expanduser('~'), '.ding0')
@@ -37,7 +39,7 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
                  base_path=None):
     '''Organize parallel runs of ding0.
 
-    The function take all districts in a list and divide them into 
+    The function take all districts in a list and divide them into
     n_of_processes parallel processes. For each process, the assigned districts
     are given to the function process_runs() with the argument n_of_districts
 
@@ -59,7 +61,7 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
         windows systems).
         Specify your own but keep in mind that it a required a particular
         structure of subdirectories.
-        
+
     See Also
     --------
     ding0_runs
@@ -92,17 +94,17 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
         mv_districts = th
         processes.append(mp.Process(target=process_runs,
                                     args=(mv_districts, n_of_districts,
-                                          output_info)))
+                                          output_info, run_id, base_path)))
     #######################################################################
     # Run processes
     for p in processes:
         p.start()
-    # Exit the completed processes
-    for p in processes:
-        p.join()
     # Resque output_info from processes
     output = [output_info.get() for p in processes]
     output = list(itertools.chain.from_iterable(output))
+    # Exit the completed processes
+    for p in processes:
+        p.join()
 
     #######################################################################
     print('Elapsed time for', str(max_dist),
@@ -111,9 +113,9 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
     return output
 
 ########################################################
-def process_runs(mv_districts, n_of_districts, output_info):
+def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
     '''Runs a process organized by parallel_run()
-    
+
     The function take all districts mv_districts and divide them into clusters
     of n_of_districts each. For each cluster, ding0 is run and the resulting
     network is saved as a pickle
@@ -135,15 +137,17 @@ def process_runs(mv_districts, n_of_districts, output_info):
         windows systems).
         Specify your own but keep in mind that it a required a particular
         structure of subdirectories.
-    
+
     See Also
     --------
     parallel_run
 
     '''
     #######################################################################
-    # database connection
-    conn = db.connection(section='oedb')
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
+
     #############################
     clusters = [mv_districts[x:x + n_of_districts] for x in range(0, len(mv_districts), n_of_districts)]
     output_clusters= []
@@ -158,11 +162,11 @@ def process_runs(mv_districts, n_of_districts, output_info):
             nw_name = nw_name+'_to_'+str(cl[-1])
         nw = NetworkDing0(name=nw_name)
         try:
-            msg = nw.run_ding0(conn=conn, mv_grid_districts_no=cl)
+            msg = nw.run_ding0(session=session, mv_grid_districts_no=cl)
             if msg:
                 status = 'run error'
             else:
-                msg = 'OK'
+                msg = ''
                 status = 'OK'
                 results.save_nd_to_pickle(nw, os.path.join(base_path, run_id))
             output_clusters.append((nw_name,status,msg, nw.metadata))
@@ -174,8 +178,7 @@ def process_runs(mv_districts, n_of_districts, output_info):
 
 
     #######################################################################
-    #close connection and bye bye
-    conn.close()
+
 
 def process_metadata(meta):
     """
@@ -206,17 +209,15 @@ def process_metadata(meta):
     return metadata
 
 
-
 if __name__ == '__main__':
     # define individual base path
-    base_path = '/home/guido/mnt/rli-daten/Ding0/'
+    base_path = BASEPATH
 
     # set run_id to current timestamp
     run_id = datetime.now().strftime("%Y%m%d%H%M%S")
 
-
     # run in parallel
-    mv_grid_districts = list(range(250, 254))
+    mv_grid_districts = list(range(1, 3609))
     n_of_processes = mp.cpu_count() #number of parallel threaths
     n_of_districts = 1 #n° of districts in each serial cluster
 
@@ -224,9 +225,9 @@ if __name__ == '__main__':
                        run_id, base_path=base_path)
 
     # report on unsuccessful runs
-    out_info = [_[0:3] for _ in out]
+    corrupt_out = [_[0:3] for _ in out if not _[1]=='OK']
 
-    corrupt_grid_districts = pd.DataFrame(out_info,
+    corrupt_grid_districts = pd.DataFrame(corrupt_out,
                                           columns=['grid', 'status', 'message'])
     corrupt_grid_districts.to_csv(
         os.path.join(
