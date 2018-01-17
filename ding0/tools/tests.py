@@ -1,6 +1,6 @@
 import unittest2 as unittest
 
-import egoio.db as db
+from egoio.tools import db
 from ding0.core import NetworkDing0
 from ding0.tools.logger import setup_logger
 from ding0.tools.results import save_nd_to_pickle
