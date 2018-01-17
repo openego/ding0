@@ -1866,6 +1866,27 @@ def export_network(nw, mode=''):
 
     return test, run_id, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, mv_areacenter, mv_trafos, mv_loads, edges, lvmv_mapping
 
+#######################################################
+
+def export_data_tocsv(path, run_id, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, areacenter, mv_trafos, mv_loads, edges, mapping ):
+    # Exports data to csv
+    def export_network_tocsv(path, table, tablename):
+        return table.to_csv(''.join([path, '/', run_id, '/', tablename, '.csv']), ';')
+
+    export_network_tocsv(path, lv_gen, 'lv_gen')
+    export_network_tocsv(path, lv_cd, 'lv_cd')
+    export_network_tocsv(path, lv_stations, 'lv_stations')
+    export_network_tocsv(path, lv_trafos, 'lv_trafos')
+    export_network_tocsv(path, lv_loads, 'lv_loads')
+    export_network_tocsv(path, mv_gen, 'mv_gen')
+    export_network_tocsv(path, mv_cd, 'mv_cd')
+    export_network_tocsv(path, mv_stations, 'mv_stations')
+    export_network_tocsv(path, mv_trafos, 'mv_trafos')
+    export_network_tocsv(path, mv_cb, 'mv_cb')
+    export_network_tocsv(path, mv_loads, 'mv_loads')
+    export_network_tocsv(path, edges, 'edges')
+    export_network_tocsv(path, mapping, 'mapping')
+    export_network_tocsv(path, areacenter, 'areacenter')
 
 ########################################################
 if __name__ == "__main__":
