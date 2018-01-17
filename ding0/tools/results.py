@@ -1467,7 +1467,6 @@ def export_network(nw, mode=''):
     edges_dict = {}
     LVMVmapping_idx = 0
     LVMVmapping_dict = {}
-    test = {}
 
     def aggregate_generators(gen, aggr):
         """Aggregate generation capacity per voltage level
@@ -1546,8 +1545,6 @@ def export_network(nw, mode=''):
         return aggr
 
     for mv_district in nw.mv_grid_districts():
-        print(nw.mv_grid_districts())
-        #test = mv_district.mv_grid.station().geo_data#station
         mv_grid_id = mv_district.mv_grid.id_db
 
         if mv_info:
@@ -1674,14 +1671,11 @@ def export_network(nw, mode=''):
 
                     # Determine aggregated load in LV grid
                     aggr = aggregate_loads(node, aggr)
-                    #test = node.lv_load_area._lv_grid_districts.peak_generation
-                    print(node.lv_load_area.peak_generation)
 
                     # Collect metadata of aggregated load areas
                     aggr['aggregates'] = {
                         'population': node.lv_load_area.zensus_sum,
                         'geom': node.lv_load_area.geo_area}
-                    test = aggr
 
                     for aggr_node in aggr:
                         if aggr_node == 'generation':
@@ -1698,25 +1692,21 @@ def export_network(nw, mode=''):
                                             'geom':from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),#lv_load_area.geo_area,#geom, #?? Polygon # mvstations_dict[mvstations_idx]['geom'], #
                                             'type': type,
                                             'subtype': subtype,
-                                            'v_level': v_level, #aggr_gen.v_level,
+                                            'v_level': v_level,
                                             'nominal_capacity': aggr['generation'][v_level][type][subtype]['capacity'],
-                                                #aggr['generation'][aggr_gen.v_level][aggr_gen.type][aggr_gen.subtype][
-                                                    #'capacity'],  # 'nominal_capacity' += aggr_gen.capacity,
                                             'is_aggregated': 1,
                                             'run_id': run_id,
                                         }
-                            #test = nw.mv_grid_districts()
 
                         elif aggr_node == 'load':
-                            #test = aggr['load']
                             #ToDo: Peak Load
                             for type in aggr['load']:
                                 mvloads_idx += 1
                                 mvloads_dict[mvloads_idx] = {
                                     'id_db': '_'.join(
-                                        ['AggregatedLoad', 'MV', str(mv_grid_id), str(mvloads_idx)]), #,str(aggr_gen.id_db)
+                                        ['AggregatedLoad', 'MV', str(mv_grid_id), str(mvloads_idx)]),
                                     'MV_grid_id': mv_grid_id,
-                                    'geom': from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),#node.lv_load_area.geo_area,  # geom, #?? Polygon
+                                    'geom': from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),
                                     #'consumption' : { str(type): aggr['load'][type]['nominal']},
                                     'peak_load': aggr['load'][type]['peak'],
                                     'type': type,
@@ -1725,13 +1715,11 @@ def export_network(nw, mode=''):
                                     'run_id': run_id,
                                 }
 
-                    #test[areacenter_idx]=aggr#['generation'][6]['solar']#[v_level][gen.type][gen.subtype]['ids']
 
                     areacenter_dict[areacenter_idx] = {
                         'id_db': node.id_db,
                         'MV_grid_id':node.grid,
-                        #'MV_grid_id':mv_grid_id,
-                        'geom':node.geo_data,#,
+                        'geom':node.geo_data,
                         'lv_load_area': node.lv_load_area,
                         'run_id': run_id,
 
@@ -1776,8 +1764,6 @@ def export_network(nw, mode=''):
                     lv_grid_id = lv_district.lv_grid.id_db
                     geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
                     for node in lv_district.lv_grid.graph_nodes_sorted():
-                        #db_id = node.id_db
-                        #geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
 
                         #LVGenerator
                         if isinstance(node, GeneratorDing0):
@@ -1860,11 +1846,10 @@ def export_network(nw, mode=''):
     mv_loads      = pd.DataFrame.from_dict(mvloads_dict, orient='index')
     edges      = pd.DataFrame.from_dict(edges_dict, orient='index')
     lvmv_mapping = pd.DataFrame.from_dict(LVMVmapping_dict, orient='index')
-    test = pd.DataFrame.from_dict(test, orient='index')
 
     edges = edges[sorted(edges.columns.tolist())]
 
-    return test, run_id, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, mv_areacenter, mv_trafos, mv_loads, edges, lvmv_mapping
+    return run_id, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, mv_areacenter, mv_trafos, mv_loads, edges, lvmv_mapping
 
 #######################################################
 
