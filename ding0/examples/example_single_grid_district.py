@@ -24,15 +24,16 @@ from egoio.tools import db
 from ding0.core import NetworkDing0
 from ding0.tools.logger import setup_logger
 from ding0.tools.results import save_nd_to_pickle
-# import logging
+from sqlalchemy.orm import sessionmaker
 
 # define logger
 logger = setup_logger()
 
 # ===== MAIN =====
 
-# database connection
-conn = db.connection(section='oedb_remote')
+# database connection/ session
+engine = db.connection(section='oedb')
+session = sessionmaker(bind=engine)()
 
 # instantiate new ding0 network object
 nd = NetworkDing0(name='network')
@@ -41,14 +42,12 @@ nd = NetworkDing0(name='network')
 mv_grid_districts = [3040]
 
 # run DING0 on selected MV Grid District
-nd.run_ding0(conn=conn,
+nd.run_ding0(session=session,
              mv_grid_districts_no=mv_grid_districts)
 
 # export grids to database
 # nd.export_mv_grid(conn, mv_grid_districts)
 # nd.export_mv_grid_new(conn, mv_grid_districts)
-
-conn.close()
 
 # export grid to file (pickle)
 save_nd_to_pickle(nd, filename='ding0_grids_example.pkl')

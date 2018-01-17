@@ -28,6 +28,7 @@ from math import floor
 import multiprocessing as mp
 import pandas as pd
 import json
+from sqlalchemy.orm import sessionmaker
 
 
 BASEPATH = os.path.join(os.path.expanduser('~'), '.ding0')
@@ -143,8 +144,10 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
 
     '''
     #######################################################################
-    # database connection
-    conn = db.connection(section='oedb')
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
+
     #############################
     clusters = [mv_districts[x:x + n_of_districts] for x in range(0, len(mv_districts), n_of_districts)]
     output_clusters= []
@@ -159,7 +162,7 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
             nw_name = nw_name+'_to_'+str(cl[-1])
         nw = NetworkDing0(name=nw_name)
         try:
-            msg = nw.run_ding0(conn=conn, mv_grid_districts_no=cl)
+            msg = nw.run_ding0(session=session, mv_grid_districts_no=cl)
             if msg:
                 status = 'run error'
             else:
@@ -175,8 +178,7 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
 
 
     #######################################################################
-    #close connection and bye bye
-    conn.close()
+
 
 def process_metadata(meta):
     """
@@ -207,10 +209,9 @@ def process_metadata(meta):
     return metadata
 
 
-
 if __name__ == '__main__':
     # define individual base path
-    base_path = ''#'/home/guido/mnt/rli-daten/Ding0/'
+    base_path = BASEPATH
 
     # set run_id to current timestamp
     run_id = datetime.now().strftime("%Y%m%d%H%M%S")

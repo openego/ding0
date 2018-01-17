@@ -18,10 +18,8 @@ import os
 import numpy as np
 import pandas as pd
 import time
-from datetime import datetime
 import os
 
-from ding0.tools import config as cfg_ding0
 from matplotlib import pyplot as plt
 import seaborn as sns
 
@@ -39,6 +37,7 @@ import pyproj
 from functools import partial
 
 from geoalchemy2.shape import from_shape
+from sqlalchemy.orm import sessionmaker
 from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 from shapely.geometry import shape, mapping
@@ -1240,14 +1239,15 @@ def init_mv_grid(mv_grid_districts=[3545], filename='ding0_tests_grids_1.pkl'):
     '''
     print('\n########################################')
     print('  Running ding0 for district', mv_grid_districts)
-    # database connection
-    conn = db.connection(section='oedb')
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
 
     # instantiate new ding0 network object
     nd = NetworkDing0(name='network')
 
     # run DINGO on selected MV Grid District
-    nd.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
+    nd.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
     # export grid to file (pickle)
     if filename:
@@ -1255,7 +1255,6 @@ def init_mv_grid(mv_grid_districts=[3545], filename='ding0_tests_grids_1.pkl'):
         print('  Saving result in ', filename)
         save_nd_to_pickle(nd, filename=filename)
 
-    conn.close()
     print('\n########################################')
     return nd
 
@@ -1350,14 +1349,15 @@ def process_stats(mv_districts,
             except Exception:
                 continue
         else:
-            # database connection
-            conn = db.connection(section='oedb')
+            # database connection/ session
+            engine = db.connection(section='oedb')
+            session = sessionmaker(bind=engine)()
 
             print('\n########################################')
             print('  Running ding0 for district', cl)
             print('########################################')
             try:
-                nw.run_ding0(conn=conn, mv_grid_districts_no=cl)
+                nw.run_ding0(session=session, mv_grid_districts_no=cl)
                 try:
                     save_nd_to_pickle(nw, filename=nw_name+'.pkl')
                 except Exception:
@@ -1366,7 +1366,6 @@ def process_stats(mv_districts,
                 continue
 
             # Close database connection
-            conn.close()
         if calc_mv:
             stats = calculate_mvgd_stats(nw)
             mv_stats.append(stats)

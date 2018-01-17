@@ -19,9 +19,11 @@ import matplotlib.pyplot as plt
 import time
 import os
 import pandas as pd
+from sqlalchemy.orm import sessionmaker
 
 from ding0.core import NetworkDing0
-from ding0.tools import config as cfg_ding0, results, db
+from ding0.tools import config as cfg_ding0, results
+from egoio.tools import db
 import json
 from datetime import datetime
 
@@ -99,8 +101,9 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
     if base_path is None:
         base_path = BASEPATH
 
-    # database connection
-    conn = db.connection(section='oedb')
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
 
     corrupt_grid_districts = pd.DataFrame(columns=['id', 'message'])
 
@@ -113,7 +116,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
 
         if not failsafe:
             # run DING0 on selected MV Grid District
-            msg = nd.run_ding0(conn=conn,
+            msg = nd.run_ding0(session=session,
                          mv_grid_districts_no=[mvgd])
 
             # save results
@@ -121,7 +124,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         else:
             # try to perform ding0 run on grid district
             try:
-                msg = nd.run_ding0(conn=conn,
+                msg = nd.run_ding0(session=session,
                          mv_grid_districts_no=[mvgd])
                 # if not successful, put grid district to report
                 if msg:
@@ -166,7 +169,6 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         index=False,
         float_format='%.0f')
 
-    conn.close()
     print('Elapsed time for', str(len(mv_grid_districts)),
           'MV grid districts (seconds): {}'.format(time.time() - start))
 
@@ -175,7 +177,8 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
 
 
 if __name__ == '__main__':
-    base_path='/home/guido/mnt/rli-daten/Ding0/'
+    base_path = BASEPATH
+
     # set run_id to current timestamp
     run_id = datetime.now().strftime("%Y%m%d%H%M%S")
 

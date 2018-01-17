@@ -33,7 +33,6 @@ import random
 import time
 from math import isnan
 
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 from shapely.wkt import loads as wkt_loads
@@ -94,15 +93,15 @@ class NetworkDing0:
         """Returns ORM data"""
         return self._orm
 
-    def run_ding0(self, conn, mv_grid_districts_no=None, debug=False):
+    def run_ding0(self, session, mv_grid_districts_no=None, debug=False):
         """ Let DING0 run by shouting at this method (or just call
             it from NetworkDing0 instance). This method is a wrapper
             for the main functionality of DING0.
 
         Parameters
         ----------
-        conn : sqlalchemy.engine.base.Connection object
-            Database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
         mv_grid_districts_no : List of Integers
             List of MV grid_districts/stations to be imported (if empty,
             all grid_districts & stations are imported)
@@ -177,11 +176,11 @@ class NetworkDing0:
             start = time.time()
 
         # STEP 1: Import MV Grid Districts and subjacent objects
-        self.import_mv_grid_districts(conn,
+        self.import_mv_grid_districts(session,
                                       mv_grid_districts_no=mv_grid_districts_no)
 
         # STEP 2: Import generators
-        self.import_generators(conn, debug=debug)
+        self.import_generators(session, debug=debug)
 
         # STEP 3: Parametrize MV grid
         self.mv_parametrize_grid(debug=debug)
@@ -208,7 +207,7 @@ class NetworkDing0:
         self.control_circuit_breakers(mode='open')
     
         # STEP 11: Do power flow analysis of MV grid
-        self.run_powerflow(conn, method='onthefly', export_pypsa=False, debug=debug)
+        self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
     
         # STEP 12: Reinforce MV grid
         self.reinforce_grid()
@@ -394,14 +393,14 @@ class NetworkDing0:
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-    def import_mv_grid_districts(self, conn, mv_grid_districts_no=None):
+    def import_mv_grid_districts(self, session, mv_grid_districts_no=None):
         """ Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
             and MV-LV stations, instantiates and initiates objects.
 
         Parameters
         ----------
-        conn : sqlalchemy.engine.base.Connection object
-               Database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
         mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
 
@@ -423,8 +422,6 @@ class NetworkDing0:
             logger.exception('cannot open config file.')
 
         # build SQL query
-        Session = sessionmaker(bind=conn)
-        session = Session()
         grid_districts = session.query(self.orm['orm_mv_grid_districts'].subst_id,
                                        func.ST_AsText(func.ST_Transform(
                                            self.orm['orm_mv_grid_districts'].geom, srid)). \
@@ -465,13 +462,13 @@ class NetworkDing0:
                                              station_geo_data)
 
             # import all lv_stations within mv_grid_district
-            lv_stations = self.import_lv_stations(conn)
+            lv_stations = self.import_lv_stations(session)
 
             # import all lv_grid_districts within mv_grid_district
-            lv_grid_districts = self.import_lv_grid_districts(conn, lv_stations)
+            lv_grid_districts = self.import_lv_grid_districts(session, lv_stations)
 
             # import load areas
-            self.import_lv_load_areas(conn,
+            self.import_lv_load_areas(session,
                                       mv_grid_district,
                                       lv_grid_districts,
                                       lv_stations)
@@ -481,13 +478,14 @@ class NetworkDing0:
 
         logger.info('=====> MV Grid Districts imported')
 
-    def import_lv_load_areas(self, conn, mv_grid_district, lv_grid_districts,
+    def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts,
                              lv_stations):
         """imports load_areas (load areas) from database for a single MV grid_district
 
         Parameters
         ----------
-        conn: Database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
         mv_grid_district : MV grid_district/station (instance of MVGridDistrictDing0 class) for
             which the import of load areas is performed
         lv_grid_districts: DataFrame
@@ -508,9 +506,6 @@ class NetworkDing0:
         gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
 
         # build SQL query
-        Session = sessionmaker(bind=conn)
-        session = Session()
-
         lv_load_areas_sqla = session.query(
             self.orm['orm_lv_load_areas'].id.label('id_db'),
             self.orm['orm_lv_load_areas'].zensus_sum,
@@ -593,12 +588,13 @@ class NetworkDing0:
             # add Load Area to MV grid district (and add centre object to MV gris district's graph)
             mv_grid_district.add_lv_load_area(lv_load_area)
 
-    def import_lv_grid_districts(self, conn, lv_stations):
+    def import_lv_grid_districts(self, session, lv_stations):
         """Imports all lv grid districts within given load area
 
         Parameters
         ----------
-        conn: SQLalchemy database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
 
         Returns
         -------
@@ -614,9 +610,6 @@ class NetworkDing0:
         gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
 
         # 1. filter grid districts of relevant load area
-        Session = sessionmaker(bind=conn)
-        session = Session()
-
         lv_grid_districs_sqla = session.query(
             self.orm['orm_lv_grid_district'].mvlv_subst_id,
             self.orm['orm_lv_grid_district'].la_id,
@@ -676,12 +669,13 @@ class NetworkDing0:
 
         return lv_grid_districts
 
-    def import_lv_stations(self, conn):
+    def import_lv_stations(self, session):
         """
         Import lv_stations within the given load_area
         Parameters
         ----------
-        conn: SQLalchemy database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
 
         Returns
         -------
@@ -691,9 +685,6 @@ class NetworkDing0:
 
         # get ding0s' standard CRS (SRID)
         srid = str(int(cfg_ding0.get('geo', 'srid')))
-
-        Session = sessionmaker(bind=conn)
-        session = Session()
 
         # get list of mv grid districts
         mv_grid_districts = list(self.get_mvgd_lvla_lvgd_obj_from_id()[0])
@@ -712,12 +703,13 @@ class NetworkDing0:
                                              index_col='mvlv_subst_id')
         return lv_grid_stations
 
-    def import_generators(self, conn, debug=False):
+    def import_generators(self, session, debug=False):
         """
         Imports renewable (res) and conventional (conv) generators
 
         Args:
-            conn: SQLalchemy database connection
+            session : sqlalchemy.orm.session.Session
+                Database session
             debug: If True, information is printed during process
         Notes:
             Connection of generators is done later on in NetworkDing0's method
@@ -893,10 +885,6 @@ class NetworkDing0:
         # get predefined random seed and initialize random generator
         seed = int(cfg_ding0.get('random', 'seed'))
         random.seed(a=seed)
-
-        # make DB session
-        Session = sessionmaker(bind=conn)
-        session = Session()
 
         # build dicts to map MV grid district and Load Area ids to related objects
         mv_grid_districts_dict,\
@@ -1144,13 +1132,13 @@ class NetworkDing0:
         logger.info('=====> MV Grids validated')
         return msg_invalidity
 
-    def export_mv_grid(self, conn, mv_grid_districts):
+    def export_mv_grid(self, session, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
         Parameters
         ----------
-        conn : sqlalchemy.engine.base.Connection object
-               Database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
         mv_grid_districts : List of MV grid_districts (instances of MVGridDistrictDing0 class)
             whose MV grids are exported.
 
@@ -1161,9 +1149,6 @@ class NetworkDing0:
             raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
         srid = str(int(cfg_ding0.get('geo', 'srid')))
-
-        Session = sessionmaker(bind=conn)
-        session = Session()
 
         # delete all existing datasets
         # db_int.sqla_mv_grid_viz.__table__.create(conn) # create if not exist
@@ -1267,13 +1252,13 @@ class NetworkDing0:
         # logger.info('=====> MV Grids exported')
         logger.info('MV Grids exported')
 
-    def export_mv_grid_new(self, conn, mv_grid_districts):
+    def export_mv_grid_new(self, session, mv_grid_districts):
         """ Exports MV grids to database for visualization purposes
 
         Parameters
         ----------
-        conn : sqlalchemy.engine.base.Connection object
-               Database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
         mv_grid_districts : List of MV grid_districts (instances of MVGridDistrictDing0 class)
             whose MV grids are exported.
 
@@ -1284,9 +1269,6 @@ class NetworkDing0:
             raise TypeError('`mv_grid_districts` has to be a list of integers.')
 
         srid = str(int(cfg_ding0.get('geo', 'srid')))
-
-        Session = sessionmaker(bind=conn)
-        session = Session()
 
         # delete all existing datasets
         # db_int.sqla_mv_grid_viz_branches.__table__.create(conn) # create if not exist
@@ -1627,11 +1609,12 @@ class NetworkDing0:
         elif mode == 'close':
             logger.info('=====> MV Circuit Breakers closed')
 
-    def run_powerflow(self, conn, method='onthefly', export_pypsa=False, debug=False):
+    def run_powerflow(self, session, method='onthefly', export_pypsa=False, debug=False):
         """ Performs power flow calculation for all MV grids
 
         Args:
-            conn: SQLalchemy database connection
+            session : sqlalchemy.orm.session.Session
+                Database session
             method: str
                 Specify export method
                 If method='db' grid data will be exported to database
@@ -1640,9 +1623,6 @@ class NetworkDing0:
                 If True PyPSA networks will be exported as csv to output/debug/grid/<MV-GRID_NAME>/
             debug: If True, information is printed during process
         """
-
-        Session = sessionmaker(bind=conn)
-        session = Session()
 
         if method == 'db':
             # Empty tables
@@ -1753,23 +1733,19 @@ class NetworkDing0:
     def __repr__(self):
         return str(self.name)
 
-    def list_generators(self, conn):
+    def list_generators(self, session):
         """
         List renewable (res) and conventional (conv) generators
 
         Args
         ----
-        conn: SQLalchemy
-            database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
             
         Returns
         -------
         DataFrame
         """
-        # make DB session
-        Session = sessionmaker(bind=conn)
-        session = Session()
-
         srid = str(int(cfg_ding0.get('geo', 'srid')))
 
         # build dicts to map MV grid district and Load Area ids to related objects
@@ -1839,13 +1815,13 @@ class NetworkDing0:
         generators = generators.fillna('other')
         return generators
 
-    def list_load_areas(self, conn, mv_districts):
+    def list_load_areas(self, session, mv_districts):
         """list load_areas (load areas) peak load from database for a single MV grid_district
 
         Parameters
         ----------
-        conn:
-            Database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
         mv_districts: 
             List of MV districts
         """
@@ -1861,9 +1837,6 @@ class NetworkDing0:
         stations_list = [d.mv_grid._station.id_db for d in mv_districts]
 
         # build SQL query
-        Session = sessionmaker(bind=conn)
-        session = Session()
-
         lv_load_areas_sqla = session.query(
             self.orm['orm_lv_load_areas'].id.label('id_db'),
             (self.orm['orm_lv_load_areas'].sector_peakload_residential * gw2kw).\
@@ -1891,12 +1864,13 @@ class NetworkDing0:
 
         return lv_load_areas
 
-    def list_lv_grid_districts(self, conn, lv_stations):
+    def list_lv_grid_districts(self, session, lv_stations):
         """Imports all lv grid districts within given load area
 
         Parameters
         ----------
-        conn: SQLalchemy database connection
+        session : sqlalchemy.orm.session.Session
+            Database session
         lv_stations:
             List required LV_stations==LV districts.
 
@@ -1908,9 +1882,6 @@ class NetworkDing0:
         gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
 
         # 1. filter grid districts of relevant load area
-        Session = sessionmaker(bind=conn)
-        session = Session()
-
         lv_grid_districs_sqla = session.query(
             self.orm['orm_lv_grid_district'].mvlv_subst_id,
             (self.orm[
