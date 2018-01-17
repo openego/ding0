@@ -16,10 +16,6 @@ __author__     = "nesnoj, gplssm"
 from setuptools import find_packages, setup
 import os
 
-# import subprocess
-#
-# subprocess.call(["sudo", "apt-get", "install", "libgeos-dev"])
-
 
 setup(name='ding0',
       version='v0.1.4',
