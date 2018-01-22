@@ -8,14 +8,14 @@ path = ''.join([base_path, grid_id])
 
 # Load network and run export function
 nw = load_nd_from_pickle(filename=''.join([path, '.pkl']))
-test, run_id, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, areacenter, mv_trafos, mv_loads, edges, mapping = export_network(nw)
+run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, areacenter, mv_trafos, mv_loads, edges, mapping = export_network(nw)
 
 # Create directory for exported data
 import os
 if not os.path.exists(os.path.join(path, run_id)):
     os.makedirs(os.path.join(path, run_id))
 
-export_data_tocsv(path, run_id, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, areacenter, mv_trafos, mv_loads, edges, mapping )
+export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, areacenter, mv_trafos, mv_loads, edges, mapping )
 
 
 # Save metadata

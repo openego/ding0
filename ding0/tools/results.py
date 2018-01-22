@@ -1432,15 +1432,18 @@ def export_network(nw, mode=''):
         mv_info = False
     if mode=='MV':
         lv_info = False
-
     ##############################
     # from datetime import datetime
     run_id = nw.metadata['run_id']  # datetime.now().strftime("%Y%m%d%H%M%S")
     ##############################
     #############################
     #go through the grid collecting info
+    lvgrid_idx = 0
+    lvgrid_dict = {}
     lvloads_idx = 0
     lvloads_dict = {}
+    mvgrid_idx = 0
+    mvgrid_dict = {}
     mvloads_idx = 0
     mvloads_dict = {}
     mvgen_idx = 0
@@ -1549,6 +1552,22 @@ def export_network(nw, mode=''):
 
         if mv_info:
             lv_grid_id = 0
+
+            # MV-grid
+            #ToDo: population; geom <- Polygon
+            mvgrid_idx += 1
+            mvgrid_dict[mvgrid_idx] = {
+                'LV_grid_id': mv_district.mv_grid.id_db,
+                'network': mv_district.mv_grid.network,
+                'geom': mv_district.geo_data,
+                'population': None,
+                #    sum([_.zensus_sum
+                #         for _ in
+                #         mv_district.lv_load_areas
+                #         if not np.isnan(_.zensus_sum)]),
+                'voltage_nom': mv_district.mv_grid.v_level / 1e3,
+                'run_id': run_id
+            }
 
             #id_db: Classname_MV/LV_mvgridid/lvgridid_id
             #excemptions: class LVStations: LVStationDing0_MV_mvgridid_id(=lvgridid)
@@ -1745,7 +1764,7 @@ def export_network(nw, mode=''):
                 edges_dict[edges_idx] = {
                     'edge_name': branch['branch'].id_db,
                     'MV_grid_id':mv_grid_id,
-                     'type_name': branch['branch'].type['name'],
+                    'type_name': branch['branch'].type['name'],
                     'type_kind': branch['branch'].kind,
                     'geom': geom,
                     'U_n':branch['branch'].type['U_n'],
@@ -1761,6 +1780,20 @@ def export_network(nw, mode=''):
         if lv_info:
             for LA in mv_district.lv_load_areas():
                 for lv_district in LA.lv_grid_districts():
+
+                    # ding0_grid.grid_district._lv_load_areas._lv_grid_districts    _.lv_grid
+                    # LV-grid
+                    # ToDo: geom <- Polygon
+                    lvgrid_idx += 1
+                    lvgrid_dict[lvgrid_idx] = {
+                        'LV_grid_id': lv_district.lv_grid.id_db,
+                        'network': lv_district.lv_grid.network,
+                        'geom': lv_district.geo_data,
+                        'population': lv_district.population,
+                        'voltage_nom': lv_district.lv_grid.v_level/1e3,
+                        'run_id': run_id
+                    }
+
                     lv_grid_id = lv_district.lv_grid.id_db
                     geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
                     for node in lv_district.lv_grid.graph_nodes_sorted():
@@ -1832,11 +1865,13 @@ def export_network(nw, mode=''):
                             'run_id': run_id,
                         }
 
+    lv_grid       = pd.DataFrame.from_dict(lvgrid_dict, orient='index')
     lv_gen        = pd.DataFrame.from_dict(lvgen_dict, orient='index')
     lv_cd         = pd.DataFrame.from_dict(lvcd_dict, orient='index')
     lv_stations   = pd.DataFrame.from_dict(lvstations_dict, orient='index')
     lv_trafos     = pd.DataFrame.from_dict(lvtrafos_dict, orient='index')
     lv_loads      = pd.DataFrame.from_dict(lvloads_dict, orient='index')
+    mv_grid       = pd.DataFrame.from_dict(mvgrid_dict, orient='index')
     mv_gen        = pd.DataFrame.from_dict(mvgen_dict, orient='index')
     mv_cb         = pd.DataFrame.from_dict(mvcb_dict, orient='index')
     mv_cd         = pd.DataFrame.from_dict(mvcd_dict, orient='index')
@@ -1849,20 +1884,22 @@ def export_network(nw, mode=''):
 
     edges = edges[sorted(edges.columns.tolist())]
 
-    return run_id, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, mv_areacenter, mv_trafos, mv_loads, edges, lvmv_mapping
+    return run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, mv_areacenter, mv_trafos, mv_loads, edges, lvmv_mapping
 
 #######################################################
 
-def export_data_tocsv(path, run_id, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_gen, mv_cb, mv_cd, mv_stations, areacenter, mv_trafos, mv_loads, edges, mapping ):
+def export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, areacenter, mv_trafos, mv_loads, edges, mapping ):
     # Exports data to csv
     def export_network_tocsv(path, table, tablename):
         return table.to_csv(''.join([path, '/', run_id, '/', tablename, '.csv']), ';')
 
+    export_network_tocsv(path, lv_grid, 'lv_grid')
     export_network_tocsv(path, lv_gen, 'lv_gen')
     export_network_tocsv(path, lv_cd, 'lv_cd')
     export_network_tocsv(path, lv_stations, 'lv_stations')
     export_network_tocsv(path, lv_trafos, 'lv_trafos')
     export_network_tocsv(path, lv_loads, 'lv_loads')
+    export_network_tocsv(path, mv_grid, 'mv_grid')
     export_network_tocsv(path, mv_gen, 'mv_gen')
     export_network_tocsv(path, mv_cd, 'mv_cd')
     export_network_tocsv(path, mv_stations, 'mv_stations')
