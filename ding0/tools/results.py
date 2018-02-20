@@ -1940,24 +1940,26 @@ def export_network(nw, mode=''):
             #MVedges
             for branch in mv_district.mv_grid.graph_edges():
                 geom = from_shape(LineString([branch['adj_nodes'][0].geo_data,branch['adj_nodes'][1].geo_data]),srid=srid)
-                edges_idx +=1
-                edges_dict[edges_idx] = {
-                    'edge_name': branch['branch'].id_db,
-                    'MV_grid_id':mv_grid_id,
-                    'grid':mv_grid_id,
-                    'type_name': branch['branch'].type['name'],
-                    'type_kind': branch['branch'].kind,
-                    'length': branch['branch'].length,
-                    'geom': geom,
-                    'U_n':branch['branch'].type['U_n'],
-                    'I_max_th':branch['branch'].type['I_max_th'],
-                    'R': branch['branch'].type['R'],
-                    'L': branch['branch'].type['L'],
-                    'C': branch['branch'].type['C'],
-                    'node1': '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'MV', str(mv_grid_id), str(branch['adj_nodes'][0].id_db)]),
-                    'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'MV', str(mv_grid_id), str(branch['adj_nodes'][1].id_db)]),
-                    'run_id': run_id,
-                }
+                if not any([isinstance(branch['adj_nodes'][0], LVLoadAreaCentreDing0),
+                            isinstance(branch['adj_nodes'][1], LVLoadAreaCentreDing0)]):
+                    edges_idx +=1
+                    edges_dict[edges_idx] = {
+                        'edge_name': branch['branch'].id_db,
+                        'MV_grid_id':mv_grid_id,
+                        'grid':mv_grid_id,
+                        'type_name': branch['branch'].type['name'],
+                        'type_kind': branch['branch'].kind,
+                        'length': branch['branch'].length,
+                        'geom': geom,
+                        'U_n':branch['branch'].type['U_n'],
+                        'I_max_th':branch['branch'].type['I_max_th'],
+                        'R': branch['branch'].type['R'],
+                        'L': branch['branch'].type['L'],
+                        'C': branch['branch'].type['C'],
+                        'node1': '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'MV', str(mv_grid_id), str(branch['adj_nodes'][0].id_db)]),
+                        'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'MV', str(mv_grid_id), str(branch['adj_nodes'][1].id_db)]),
+                        'run_id': run_id,
+                    }
 
         if lv_info:
             for LA in mv_district.lv_load_areas():
@@ -2045,8 +2047,12 @@ def export_network(nw, mode=''):
                                 'L':branch['branch'].type['L'],
                                 'C':branch['branch'].type['C'],
                                 'node1': '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'LV', str(lv_grid_id),
+                                                   str(branch['adj_nodes'][0].id_db)])
+                                        if not isinstance(branch['adj_nodes'][0], LVStationDing0) else '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'MV', str(mv_grid_id),
                                                    str(branch['adj_nodes'][0].id_db)]),
                                 'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'LV', str(lv_grid_id),
+                                                   str(branch['adj_nodes'][1].id_db)])
+                                        if not isinstance(branch['adj_nodes'][1], LVStationDing0) else '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'MV', str(mv_grid_id),
                                                    str(branch['adj_nodes'][1].id_db)]),
                                 'run_id': run_id,
                             }
