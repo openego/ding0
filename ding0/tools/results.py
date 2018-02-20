@@ -1557,7 +1557,8 @@ def export_network(nw, mode=''):
             #ToDo: population; geom <- Polygon
             mvgrid_idx += 1
             mvgrid_dict[mvgrid_idx] = {
-                'LV_grid_id': mv_district.mv_grid.id_db,
+                'MV_grid_id': mv_district.mv_grid.id_db,
+                'id_db': '_'.join([str(mv_district.mv_grid.__class__.__name__), 'MV', str(mv_grid_id),  str(mv_district.mv_grid.id_db)]),
                 'network': mv_district.mv_grid.network,
                 'geom': mv_district.geo_data,
                 'population': None,
@@ -1735,14 +1736,14 @@ def export_network(nw, mode=''):
                                 }
 
 
-                    areacenter_dict[areacenter_idx] = {
-                        'id_db': node.id_db,
-                        'MV_grid_id':node.grid,
-                        'geom':node.geo_data,
-                        'lv_load_area': node.lv_load_area,
-                        'run_id': run_id,
+                    #areacenter_dict[areacenter_idx] = {
+                    #    'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),#node.id_db,
+                    #    'MV_grid_id':node.grid,
+                    #    'geom':node.geo_data,
+                    #    'lv_load_area': node.lv_load_area,
+                    #    'run_id': run_id,#
 
-                     }
+                     #}
 
                 #DisconnectingPoints
                 elif isinstance(node, CircuitBreakerDing0):
@@ -1764,11 +1765,13 @@ def export_network(nw, mode=''):
                 edges_dict[edges_idx] = {
                     'edge_name': branch['branch'].id_db,
                     'MV_grid_id':mv_grid_id,
+                    'grid':mv_grid_id,
                     'type_name': branch['branch'].type['name'],
                     'type_kind': branch['branch'].kind,
+                    'length': branch['branch'].length,
                     'geom': geom,
                     'U_n':branch['branch'].type['U_n'],
-                    'I_maxth':branch['branch'].type['I_max_th'],
+                    'I_max_th':branch['branch'].type['I_max_th'],
                     'R': branch['branch'].type['R'],
                     'L': branch['branch'].type['L'],
                     'C': branch['branch'].type['C'],
@@ -1787,6 +1790,7 @@ def export_network(nw, mode=''):
                     lvgrid_idx += 1
                     lvgrid_dict[lvgrid_idx] = {
                         'LV_grid_id': lv_district.lv_grid.id_db,
+                        'id_db': '_'.join([str(lv_district.lv_grid.__class__.__name__), 'LV', str(lv_district.lv_grid.id_db), str(lv_district.lv_grid.id_db)]),
                         'network': lv_district.lv_grid.network,
                         'geom': lv_district.geo_data,
                         'population': lv_district.population,
@@ -1845,25 +1849,28 @@ def export_network(nw, mode=''):
 
                     #LVedges
                     for branch in lv_district.lv_grid.graph_edges():
-                        edges_idx +=1
-                        edges_dict[edges_idx] = {
-                            'edge_name': branch['branch'].id_db,
-                            'MV_grid_id':mv_grid_id,
-                            'LV_grid_id':lv_grid_id,
-                            'type_name': branch['branch'].type.to_frame().columns[0],
-                            'type_kind': branch['branch'].kind,
-                            'geom': geom,
-                            'U_n':branch['branch'].type['U_n'],
-                            'I_max_th':branch['branch'].type['I_max_th'],
-                            'R':branch['branch'].type['R'],
-                            'L':branch['branch'].type['L'],
-                            'C':branch['branch'].type['C'],
-                            'node1': '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'LV', str(lv_grid_id),
-                                               str(branch['adj_nodes'][0].id_db)]),
-                            'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'LV', str(lv_grid_id),
-                                               str(branch['adj_nodes'][1].id_db)]),
-                            'run_id': run_id,
-                        }
+                        if not any([isinstance(branch['adj_nodes'][0], LVLoadAreaCentreDing0),
+                                        isinstance(branch['adj_nodes'][1], LVLoadAreaCentreDing0)]):
+                             edges_idx +=1
+                             edges_dict[edges_idx] = {
+                                'edge_name': branch['branch'].id_db,
+                                'MV_grid_id':mv_grid_id,
+                                'LV_grid_id': lv_grid_id,
+                                'grid':lv_grid_id,
+                                'type_name': branch['branch'].type.to_frame().columns[0],
+                                'type_kind': branch['branch'].kind,
+                                'geom': geom,
+                                'U_n':branch['branch'].type['U_n']/1e3, # U_n in kV
+                                'I_max_th':branch['branch'].type['I_max_th'],
+                                'R':branch['branch'].type['R'],
+                                'L':branch['branch'].type['L'],
+                                'C':branch['branch'].type['C'],
+                                'node1': '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'LV', str(lv_grid_id),
+                                                   str(branch['adj_nodes'][0].id_db)]),
+                                'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'LV', str(lv_grid_id),
+                                                   str(branch['adj_nodes'][1].id_db)]),
+                                'run_id': run_id,
+                            }
 
     lv_grid       = pd.DataFrame.from_dict(lvgrid_dict, orient='index')
     lv_gen        = pd.DataFrame.from_dict(lvgen_dict, orient='index')
@@ -1876,7 +1883,7 @@ def export_network(nw, mode=''):
     mv_cb         = pd.DataFrame.from_dict(mvcb_dict, orient='index')
     mv_cd         = pd.DataFrame.from_dict(mvcd_dict, orient='index')
     mv_stations   = pd.DataFrame.from_dict(mvstations_dict, orient='index')
-    mv_areacenter = pd.DataFrame.from_dict(areacenter_dict, orient='index')
+    #mv_areacenter = pd.DataFrame.from_dict(areacenter_dict, orient='index')
     mv_trafos     = pd.DataFrame.from_dict(mvtrafos_dict, orient='index')
     mv_loads      = pd.DataFrame.from_dict(mvloads_dict, orient='index')
     edges      = pd.DataFrame.from_dict(edges_dict, orient='index')
@@ -1884,11 +1891,11 @@ def export_network(nw, mode=''):
 
     edges = edges[sorted(edges.columns.tolist())]
 
-    return run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, mv_areacenter, mv_trafos, mv_loads, edges, lvmv_mapping
+    return run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, mv_trafos, mv_loads, edges, lvmv_mapping # mv_areacenter,
 
 #######################################################
 
-def export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, areacenter, mv_trafos, mv_loads, edges, mapping ):
+def export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, mv_trafos, mv_loads, edges, mapping ):
     # Exports data to csv
     def export_network_tocsv(path, table, tablename):
         return table.to_csv(''.join([path, '/', run_id, '/', tablename, '.csv']), ';')
@@ -1908,7 +1915,7 @@ def export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_traf
     export_network_tocsv(path, mv_loads, 'mv_loads')
     export_network_tocsv(path, edges, 'edges')
     export_network_tocsv(path, mapping, 'mapping')
-    export_network_tocsv(path, areacenter, 'areacenter')
+    #export_network_tocsv(path, areacenter, 'areacenter')
 
 ########################################################
 if __name__ == "__main__":
