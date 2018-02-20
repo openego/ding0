@@ -1,15 +1,13 @@
 import unittest2 as unittest
-from test import support
 
-# import DB interface from oemof
-import oemof.db as db
-# import other ding0 stuff
+from egoio.tools import db
 from ding0.core import NetworkDing0
 from ding0.tools.logger import setup_logger
 from ding0.tools.results import save_nd_to_pickle
 from ding0.tools.results import load_nd_from_pickle
 
 from geoalchemy2.shape import to_shape
+from sqlalchemy.orm import sessionmaker
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 
@@ -67,14 +65,14 @@ class Ding0RunTest(unittest.TestCase):
 
         print('\n########################################')
         print('  Running ding0 for the same configuration...')
-        # database connection
-        conn = db.connection(section='oedb')
+
+        # database connection/ session
+        engine = db.connection(section='oedb')
+        session = sessionmaker(bind=engine)()
         mv_grid_districts = [3545]
 
         nw_2 = NetworkDing0(name='network')
-        nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
-
-        conn.close()
+        nw_2.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
         #test equality
         print('  Testing equality...')
@@ -86,20 +84,21 @@ class Ding0RunTest(unittest.TestCase):
     def test_ding0(self):
         print('\n########################################')
         print('Test ding0 vs ding0')
-        conn = db.connection(section='oedb')
+        # database connection/ session
+        engine = db.connection(section='oedb')
+        session = sessionmaker(bind=engine)()
+
         mv_grid_districts = [3545]
 
         print('\n########################################')
         print('  Running ding0 once...')
         nw_1 = NetworkDing0(name='network')
-        nw_1.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
+        nw_1.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
         print('\n########################################')
         print('  Running ding0 twice...')
         nw_2 = NetworkDing0(name='network')
-        nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
-
-        conn.close()
+        nw_2.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
         #test equality
         print('\n########################################')
@@ -234,21 +233,21 @@ def init_files_for_tests( mv_grid_districts= [3545],filename='ding0_tests_grids_
     '''
     print('\n########################################')
     print('  Running ding0 for district',mv_grid_districts)
-    # database connection
-    conn = db.connection(section='oedb')
+
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
 
     # instantiate new ding0 network object
     nd = NetworkDing0(name='network')
 
     # run DING0 on selected MV Grid District
-    nd.run_ding0(conn=conn,mv_grid_districts_no=mv_grid_districts)
+    nd.run_ding0(session=session,mv_grid_districts_no=mv_grid_districts)
 
     # export grid to file (pickle)
     print('\n########################################')
     print('  Saving result in ',filename)
     save_nd_to_pickle(nd, filename=filename)
-
-    conn.close()
 
 
 def manual_ding0_test(mv_grid_districts=[3545],
@@ -271,13 +270,13 @@ def manual_ding0_test(mv_grid_districts=[3545],
 
     print('\n########################################')
     print('  Running ding0 for district',mv_grid_districts, '...')
-    # database connection
-    conn = db.connection(section='oedb')
+
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
 
     nw_2 = NetworkDing0(name='network')
-    nw_2.run_ding0(conn=conn, mv_grid_districts_no=mv_grid_districts)
-
-    conn.close()
+    nw_2.run_ding0(session=session, mv_grid_districts_no=mv_grid_districts)
 
     # test equality
     print('\n########################################')

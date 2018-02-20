@@ -72,7 +72,7 @@ def reinforce_grid(grid, mode):
             reinforce_branches_voltage(grid, crit_branches_v)
 
             # run PF
-            grid.network.run_powerflow(conn=None, method='onthefly')
+            grid.network.run_powerflow(session=None, method='onthefly')
 
             crit_nodes = check_voltage(grid, mode)
 

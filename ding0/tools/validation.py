@@ -19,18 +19,19 @@ import pandas as pd
 import time
 import numpy as np
 
-import oemof.db as db
+from egoio.tools import db
+from sqlalchemy.orm import sessionmaker
 from ding0.tools.results import load_nd_from_pickle
 from ding0.core import GeneratorDing0, LVLoadDing0, LVLoadAreaCentreDing0
 
 ########################################################
-def validate_generation(conn, nw):
+def validate_generation(session, nw):
     '''Validate if total generation of a grid in a pkl file is what expected.
     
     Parameters
     ----------
-    conn:
-        The connection
+    session : sqlalchemy.orm.session.Session
+        Database session
     nw:
         The network
         
@@ -48,7 +49,7 @@ def validate_generation(conn, nw):
     nw._orm = nw.import_orm()
 
     #rescue generation from input table
-    generation_input = nw.list_generators(conn)
+    generation_input = nw.list_generators(session)
 
     #make table of generators that are in the grid
     gen_idx = 0
@@ -113,13 +114,13 @@ def validate_generation(conn, nw):
     return compare_by_level, compare_by_type
 
 ########################################################
-def validate_load_areas(conn, nw):
+def validate_load_areas(session, nw):
     '''Validate if total load of a grid in a pkl file is what expected from load areas
     
     Parameters
     ----------
-    conn:
-        The connection
+    session : sqlalchemy.orm.session.Session
+        Database session
     nw
         The network
         
@@ -137,7 +138,7 @@ def validate_load_areas(conn, nw):
     nw._orm = nw.import_orm()
 
     #rescue peak load from input table
-    load_input = nw.list_load_areas(conn,nw.mv_grid_districts())
+    load_input = nw.list_load_areas(session, nw.mv_grid_districts())
     la_input = sorted(load_input.index)
     load_input = load_input.sum(axis=0).apply(lambda x: np.round(x,3))
     load_input.sort_index(inplace=True)
@@ -170,13 +171,13 @@ def validate_load_areas(conn, nw):
 
 
 ########################################################
-def validate_lv_districts(conn, nw):
+def validate_lv_districts(session, nw):
     '''Validate if total load of a grid in a pkl file is what expected from LV districts
 
     Parameters
     ----------
-    conn:
-        The connection
+    session : sqlalchemy.orm.session.Session
+            Database session
     nw: 
         The network
 
@@ -197,7 +198,7 @@ def validate_lv_districts(conn, nw):
     lv_ditricts = [dist.id_db for mv in nw.mv_grid_districts()
                               for la in mv.lv_load_areas()
                               for dist in la.lv_grid_districts()]
-    load_input = nw.list_lv_grid_districts(conn, lv_ditricts)
+    load_input = nw.list_lv_grid_districts(session, lv_ditricts)
     load_input = load_input.sum(axis=0).apply(lambda x: np.round(x, 3))
     load_input.sort_index(inplace=True)
     load_input.index.names = ['id_db']
@@ -294,24 +295,25 @@ def validate_lv_districts(conn, nw):
 
 ########################################################
 if __name__ == "__main__":
-    conn = db.connection(section='oedb')
+    # database connection/ session
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
+
     nw = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
 
-    compare_by_level, compare_by_type = validate_generation(conn,nw)
+    compare_by_level, compare_by_type = validate_generation(session, nw)
     print('\nCompare Generation by Level')
     print(compare_by_level)
     print('\nCompare Generation by Type/Subtype')
     print(compare_by_type)
 
-    compare_by_la, compare_la_ids = validate_load_areas(conn,nw)
+    compare_by_la, compare_la_ids = validate_load_areas(session,nw)
     print('\nCompare Load by Load Areas')
     print(compare_by_la)
     #print(compare_la_ids)
 
-    compare_by_district, compare_by_load = validate_lv_districts(conn,nw)
+    compare_by_district, compare_by_load = validate_lv_districts(session,nw)
     print('\nCompare Load by LV Districts')
     print(compare_by_district)
     print('\nCompare Load by LV Districts in Table and LV Loads from Ding0')
     print(compare_by_load)
-
-    conn.close()

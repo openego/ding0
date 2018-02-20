@@ -132,6 +132,15 @@ class MVGridDing0(GridDing0):
             self._cable_distributors.append(cable_dist)
             self.graph_add_node(cable_dist)
 
+    def remove_cable_distributor(self, cable_dist):
+        """Removes a cable distributor from _cable_distributors if existing"""
+        if cable_dist in self.cable_distributors() and isinstance(cable_dist,
+                                                                  MVCableDistributorDing0):
+            # remove from array and graph
+            self._cable_distributors.remove(cable_dist)
+            if self._graph.has_node(cable_dist):
+                self._graph.remove_node(cable_dist)
+
     def add_ring(self, ring):
         """Adds a ring to _rings if not already existing"""
         if ring not in self._rings and isinstance(ring, RingDing0):
