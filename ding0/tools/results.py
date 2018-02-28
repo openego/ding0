@@ -1832,6 +1832,7 @@ def export_network(nw, mode=''):
                         'v_level':node.v_level,
                         'nominal_capacity':node.capacity,
                         'run_id': run_id,
+                        'is_aggregated': False,
                     }
 
                 #MVBranchTees
@@ -1875,32 +1876,62 @@ def export_network(nw, mode=''):
                     aggr['aggregates'] = {
                         'population': node.lv_load_area.zensus_sum,
                         'geom': node.lv_load_area.geo_area}
+                    aggr_line_type = nw._static_data['MV_cables'].iloc[
+                        nw._static_data['MV_cables']['I_max_th'].idxmax()]
 
                     for aggr_node in aggr:
                         if aggr_node == 'generation':
+                            mvgenaggr_idx = 0
 
                             for v_level in aggr['generation']:
                                 for type in aggr['generation'][v_level]:
                                     for subtype in aggr['generation'][v_level][type]:
                                         mvgen_idx += 1
+                                        mvgenaggr_idx +=1
                                         mvgen_dict[mvgen_idx] = {
                                             'id_db': '_'.join(
                                                 [str(aggr_gen.__class__.__name__), 'MV', str(mv_grid_id),
-                                                 str(aggr_gen.id_db)]),
+                                                 str(aggr_gen.id_db), str(mvgenaggr_idx)]), #, str(mvgen_idx)
                                             'MV_grid_id': mv_grid_id,
                                             'geom':from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),#lv_load_area.geo_area,#geom, #?? Polygon # mvstations_dict[mvstations_idx]['geom'], #
                                             'type': type,
                                             'subtype': subtype,
                                             'v_level': v_level,
                                             'nominal_capacity': aggr['generation'][v_level][type][subtype]['capacity'],
-                                            'is_aggregated': 1,
+                                            'is_aggregated': True,
+                                            'run_id': run_id,
+                                        }
+
+                                        edges_idx += 1
+                                        edges_dict[edges_idx] = {
+                                            #ToDo: Rename edge_name
+                                            'edge_name': '_'.join(['line_aggr_generator', str(node.lv_load_area), 'vlevel', str(v_level), 'subtype', str(subtype)]),#}'.format(v_level=v_level, subtype=subtype),
+                                            'MV_grid_id': mv_grid_id,
+                                            'grid': mv_grid_id,
+                                            # ToDo: read type_name from aggr_line_type
+                                            'type_name': 'NA2XS2Y 3x1x500 RM/35',#aggr_line_type.name,
+                                            'type_kind': 'cable',#branch['branch'].kind,
+                                            'length': 1e-3,
+                                            'geom': geom,
+                                            'U_n': aggr_line_type.U_n,
+                                            'I_max_th': aggr_line_type.I_max_th,
+                                            'R': aggr_line_type.R,
+                                            'L': aggr_line_type.L,
+                                            'C': aggr_line_type.C,
+                                            'node1': '_'.join(
+                                                [str(aggr_gen.__class__.__name__), 'MV', str(mv_grid_id),
+                                                 str(aggr_gen.id_db), str(mvgenaggr_idx)]),
+                                            'node2': '_'.join([
+                                                'MVStationDing0', 'MV', str(mv_grid_id), str(mv_grid_id)]),
                                             'run_id': run_id,
                                         }
 
                         elif aggr_node == 'load':
+                            #mvloadaggr_idx = 0
                             #ToDo: Peak Load
                             for type in aggr['load']:
                                 mvloads_idx += 1
+                                #mvloadaggr_idx +=1
                                 mvloads_dict[mvloads_idx] = {
                                     'id_db': '_'.join(
                                         ['AggregatedLoad', 'MV', str(mv_grid_id), str(mvloads_idx)]),
@@ -1910,7 +1941,33 @@ def export_network(nw, mode=''):
                                     'peak_load': aggr['load'][type]['peak'],
                                     'type': type,
                                     'consumption': aggr['load'][type]['nominal'],
-                                    'is_aggregated': 1,
+                                    'is_aggregated': True,
+                                    'run_id': run_id,
+                                }
+
+                                edges_idx += 1
+                                edges_dict[edges_idx] = {
+                                    # ToDo: Rename edge_name
+                                    'edge_name': '_'.join(
+                                        ['line_aggr_load', str(node.lv_load_area), 'vlevel', str(v_level),
+                                         'subtype', str(subtype)]),  # }'.format(v_level=v_level, subtype=subtype),
+                                    'MV_grid_id': mv_grid_id,
+                                    'grid': mv_grid_id,
+                                    #ToDo: read type_name from aggr_line_type
+                                    'type_name': 'NA2XS2Y 3x1x500 RM/35',#aggr_line_type.name,
+                                    'type_kind': 'cable',  # branch['branch'].kind,
+                                    #'type': aggr_line_type,
+                                    'length': 1e-3,
+                                    'geom': geom,
+                                    'U_n': aggr_line_type.U_n,
+                                    'I_max_th': aggr_line_type.I_max_th,
+                                    'R': aggr_line_type.R,
+                                    'L': aggr_line_type.L,
+                                    'C': aggr_line_type.C,
+                                    'node1': '_'.join(
+                                        ['AggregatedLoad', 'MV', str(mv_grid_id), str(mvloads_idx)]),
+                                    'node2': '_'.join([
+                                        'MVStationDing0', 'MV', str(mv_grid_id), str(mv_grid_id)]),
                                     'run_id': run_id,
                                 }
 
