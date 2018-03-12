@@ -132,3 +132,109 @@ Parameter Description                             Unit
 ========= ======================================= ====
 km_cable  Cumulative length of underground cables km
 ========= ======================================= ====
+
+
+CSV file export
+===============
+
+Ding0 objects are exported in csv files.
+
+
+.. csv-table:: edges.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "edge_name", "int", "unambiguous number of edge", "n/a"
+   "MV_grid_id", "int","unambiguous number of corresponding MV-Grid", "n/a"
+   "LV_grid_id", "int","unambiguous number of corresponding LV-Grid; NaN if edge element of MV-Grid", "n/a"
+   "grid", "int","LV_grid_id if edge element of LV-Grid; MV_grid_id if edge element of MV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "?"
+   "type_kind","str","","n/a"
+   "type_name","str","","n/a"
+   "node1","str","id_db of first node","n/a"
+   "node2","str","id_db of second node","n/a"
+   "length","float","length of line","km"
+   "U_n","float","nominal voltage","kV"
+   "R","float","","Ohm/km"
+   "C","float","inductive resistance at 50Hz","Ohm/km"
+   "L","float","",""
+   "I_max_th","float","",""
+   "run_id", "int", "time and date of table generation", "n/a"
+
+
+.. csv-table:: lv_branchtees.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'LVCableDistributorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
+   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "?"
+   "run_id", "int", "time and date of table generation", "n/a"
+
+
+.. csv-table:: lv_generators.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'LVGeneratorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
+   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "?"
+   "type","str","type of generation: {solar; biomass}","n/a"
+   "subtype","str","subtype of generation: {solar_roof_mounted, unknown; biomass}","n/a"
+   "v_level","int","voltage level of generator",""
+   "nominal_capacity","float","nominal capacity",""
+   "run_id", "int", "time and date of table generation", "n/a"
+
+.. csv-table:: lv_grid.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#'", "n/a"
+   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "?"
+   "network","str","corresponding network: 'ding0_grids_#mvgridid#'","n/a"
+   "population","int","population in LV-Grid",""
+   "voltage_nom","float","voltage level of grid","kV"
+   "run_id", "int", "time and date of table generation", "n/a"
+
+.. csv-table:: lv_loads.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
+   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "?"
+   "peak_load","float","","n/a"
+   "type","str","type of load: {residential, agricultural, industrial}",""
+   "consumption","float","",""
+   "run_id", "int", "time and date of table generation", "n/a"
+
+.. csv-table:: lv_stations.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'LVStationDing0_MV_#mvgridid#_#lvgridid#'", "n/a"
+   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "?"
+   "run_id", "int", "time and date of table generation", "n/a"
+
+.. csv-table:: lv_trafos.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'TransformerDing0_LV_#mvgridid#_#lvgridid#'", "n/a"
+   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "?"
+   "voltage_op","float","","kV"
+   "S_nom","float","nominal apparent power",""
+   "X","float","",""
+   "R","float","",""
+   "run_id", "int", "time and date of table generation", "n/a"
+
+.. csv-table:: mapping.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "MV_grid_id", "int","unambiguous number of MV-Grid", "n/a"
+   "run_id", "int", "time and date of table generation", "n/a"
