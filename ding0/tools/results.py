@@ -1740,11 +1740,11 @@ def export_network(nw, mode=''):
                 'id_db': '_'.join([str(mv_district.mv_grid.__class__.__name__), 'MV', str(mv_grid_id),  str(mv_district.mv_grid.id_db)]),
                 'network': mv_district.mv_grid.network,
                 'geom': mv_district.geo_data,
-                'population': None,
-                #    sum([_.zensus_sum
-                #         for _ in
-                #         mv_district.lv_load_areas
-                #         if not np.isnan(_.zensus_sum)]),
+                'population': #None,
+                    sum([_.zensus_sum
+                         for _ in
+                         mv_district._lv_load_areas #ding0_grid.grid_district._lv_load_areas
+                         if not np.isnan(_.zensus_sum)]),
                 'voltage_nom': mv_district.mv_grid.v_level / 1e3,
                 'run_id': run_id
             }
@@ -1957,7 +1957,7 @@ def export_network(nw, mode=''):
                                     'type_name': 'NA2XS2Y 3x1x500 RM/35',#aggr_line_type.name,
                                     'type_kind': 'cable',  # branch['branch'].kind,
                                     #'type': aggr_line_type,
-                                    'length': 1e-3,
+                                    'length': 1e-3, # in km
                                     'geom': geom,
                                     'U_n': aggr_line_type.U_n,
                                     'I_max_th': aggr_line_type.I_max_th,
@@ -2006,7 +2006,7 @@ def export_network(nw, mode=''):
                         'grid':mv_grid_id,
                         'type_name': branch['branch'].type['name'],
                         'type_kind': branch['branch'].kind,
-                        'length': branch['branch'].length,
+                        'length': branch['branch'].length/1e3,
                         'geom': geom,
                         'U_n':branch['branch'].type['U_n'],
                         'I_max_th':branch['branch'].type['I_max_th'],
@@ -2097,6 +2097,7 @@ def export_network(nw, mode=''):
                                 'grid':lv_grid_id,
                                 'type_name': branch['branch'].type.to_frame().columns[0],
                                 'type_kind': branch['branch'].kind,
+                                'length': branch['branch'].length/1e3, # length in km
                                 'geom': geom,
                                 'U_n':branch['branch'].type['U_n']/1e3, # U_n in kV
                                 'I_max_th':branch['branch'].type['I_max_th'],
@@ -2143,17 +2144,17 @@ def export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_traf
         return table.to_csv(''.join([path, '/', run_id, '/', tablename, '.csv']), ';')
 
     export_network_tocsv(path, lv_grid, 'lv_grid')
-    export_network_tocsv(path, lv_gen, 'lv_gen')
-    export_network_tocsv(path, lv_cd, 'lv_cd')
+    export_network_tocsv(path, lv_gen, 'lv_generators')
+    export_network_tocsv(path, lv_cd, 'lv_branchtees')
     export_network_tocsv(path, lv_stations, 'lv_stations')
     export_network_tocsv(path, lv_trafos, 'lv_trafos')
     export_network_tocsv(path, lv_loads, 'lv_loads')
     export_network_tocsv(path, mv_grid, 'mv_grid')
-    export_network_tocsv(path, mv_gen, 'mv_gen')
-    export_network_tocsv(path, mv_cd, 'mv_cd')
+    export_network_tocsv(path, mv_gen, 'mv_generators')
+    export_network_tocsv(path, mv_cd, 'mv_branchtees')
     export_network_tocsv(path, mv_stations, 'mv_stations')
     export_network_tocsv(path, mv_trafos, 'mv_trafos')
-    export_network_tocsv(path, mv_cb, 'mv_cb')
+    export_network_tocsv(path, mv_cb, 'mv_circuitbreakers')
     export_network_tocsv(path, mv_loads, 'mv_loads')
     export_network_tocsv(path, edges, 'edges')
     export_network_tocsv(path, mapping, 'mapping')
