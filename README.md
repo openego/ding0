@@ -23,7 +23,7 @@ pip3 install ding0
 ```
 
 Further details regarding the installation including dependencies are provided
-in the [documentation](https://ding0.readthedocs.io)
+in the [documentation](https://dingo.readthedocs.io)
 
 A [set of examples](https://ding0.readthedocs.io/en/dev/usage_details.html#examples)
 is provided to show how to use Ding0.
