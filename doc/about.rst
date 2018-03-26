@@ -234,13 +234,14 @@ References
 ----------
 .. [Amme2017] J. Amme, G. Pleßmann, J. Bühler, L. Hülk, E. Kötter, P. Schwaegerl:
     *The eGo grid model: An open-source and open-data based synthetic medium-voltage
-    grid model for distribution power supply systems*.
-    Journal of Physics: Conference Series 2017 (submitted)
+    grid model for distribution power supply systems*. Journal of Physics Conference
+    Series 977(1):012007, 2018, `doi:10.1088/1742-6596/977/1/012007 
+    <http://iopscience.iop.org/article/10.1088/1742-6596/977/1/012007>`_
 .. [Huelk2017] L. Hülk, L. Wienholt, I. Cussmann, U. Mueller, C. Matke and E.
     Kötter: *Allocation of annual electricity consumption and power
     generation capacities across multi voltage levels in a high spatial
-    resolution* International Journal of Sustainable Energy Planning and
-    Management 2017 (submitted)
+    resolution*. International Journal of Sustainable Energy Planning and Management
+    Vol. 13 2017 79–92, `doi:10.5278/ijsepm.2017.13.6 <https://doi.org/10.5278/ijsepm.2017.13.6>`_
 .. [Kerber] G. Kerber: Aufnahmefähigkeit von Niederspannungsverteilnetzen für
     die Einspeisung aus Photovoltaikkleinanlagen, Dissertation, TU München,
     2011
