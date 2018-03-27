@@ -139,7 +139,8 @@ CSV file export
 
 Ding0 objects are exported in csv files.
 
-
+Lines
+-----
 .. csv-table:: line.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -159,7 +160,8 @@ Ding0 objects are exported in csv files.
    "I_max_th","float","","A"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
-
+LV-Branchtees
+-----------
 .. csv-table:: lv_branchtee.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -169,7 +171,8 @@ Ding0 objects are exported in csv files.
    "geom", "None","geometric coordinates", "n/a"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
-
+LV-Generators
+-----------
 .. csv-table:: lv_generator.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -183,6 +186,8 @@ Ding0 objects are exported in csv files.
    "nominal_capacity","float","nominal capacity",""
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+LV-Grids
+-----------
 .. csv-table:: lv_grid.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -194,6 +199,8 @@ Ding0 objects are exported in csv files.
    "voltage_nom","float","voltage level of grid","kV"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+LV-Loads
+-----------
 .. csv-table:: lv_load.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -204,6 +211,8 @@ Ding0 objects are exported in csv files.
    "consumption","{"str": float}","type of load and corresponding consumption","type = {residential, agricultural, industrial}"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+LV-Stations
+-----------
 .. csv-table:: lvmv_station.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -213,6 +222,8 @@ Ding0 objects are exported in csv files.
    "geom", "?","geometric coordinates", "POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+LV-Transformers
+-----------
 .. csv-table:: lv_transformer.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -226,6 +237,8 @@ Ding0 objects are exported in csv files.
    "R","float","","Ohm"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+LV-Grids
+-----------
 .. csv-table:: mvlv_mapping.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -236,6 +249,8 @@ Ding0 objects are exported in csv files.
    "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+MV-Branchtees
+-----------
 .. csv-table:: mv_branchtee.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -245,7 +260,8 @@ Ding0 objects are exported in csv files.
    "geom", "?","geometric coordinates", "POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
-
+MV-Generators
+-----------
 .. csv-table:: mv_generator.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -259,6 +275,8 @@ Ding0 objects are exported in csv files.
    "nominal_capacity","float","nominal capacity",""
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+MV-Grids
+-----------
 .. csv-table:: mv_grid.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -270,6 +288,8 @@ Ding0 objects are exported in csv files.
    "voltage_nom","float","voltage level of grid","kV"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+MV-Loads
+-----------
 .. csv-table:: mv_load.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -281,6 +301,8 @@ Ding0 objects are exported in csv files.
    "is_aggregated", "boolean", "True if load is aggregated load, else False", ""
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+MV-Stations
+-----------
 .. csv-table:: mvhv_station.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -290,6 +312,8 @@ Ding0 objects are exported in csv files.
    "geom", "?","geometric coordinates", "POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
+MV-Transformers
+-----------
 .. csv-table:: lv_transformer.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
