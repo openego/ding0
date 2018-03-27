@@ -140,14 +140,12 @@ CSV file export
 Ding0 objects are exported in csv files.
 
 
-.. csv-table:: edges.csv
+.. csv-table:: line.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "edge_name", "int", "unambiguous number of edge", "n/a"
-   "MV_grid_id", "int","unambiguous number of corresponding MV-Grid", "n/a"
-   "LV_grid_id", "int","unambiguous number of corresponding LV-Grid; NaN if edge element of MV-Grid", "n/a"
-   "grid", "int","LV_grid_id if edge element of LV-Grid; MV_grid_id if edge element of MV-Grid", "n/a"
+   "edge_name", "str", "unambiguous name of edge", "n/a"
+   "grid_id_db", "int","unambiguous id_db of corresponding grid (MVgrid-id if MV-edge, LVgrid-id if LV-edge", "n/a"
    "geom", "?","geometric coordinates", "?"
    "type_kind","str","","n/a"
    "type_name","str","","n/a"
@@ -156,34 +154,34 @@ Ding0 objects are exported in csv files.
    "length","float","length of line","km"
    "U_n","float","nominal voltage","kV"
    "R","float","","Ohm/km"
-   "C","float","inductive resistance at 50Hz","Ohm/km"
-   "L","float","",""
-   "I_max_th","float","",""
-   "run_id", "int", "time and date of table generation", "n/a"
+   "C","float","inductive resistance at 50Hz","uF/km"
+   "L","float","","mH/km"
+   "I_max_th","float","","A"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 
-.. csv-table:: lv_branchtees.csv
+.. csv-table:: lv_branchtee.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
    "id_db", "str", "unambiguous name: 'LVCableDistributorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
-   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "?"
-   "run_id", "int", "time and date of table generation", "n/a"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "geom", "None","geometric coordinates", "n/a"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 
-.. csv-table:: lv_generators.csv
+.. csv-table:: lv_generator.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
    "id_db", "str", "unambiguous name: 'LVGeneratorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
-   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "?"
-   "type","str","type of generation: {solar; biomass}","n/a"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "POINT"
+   "type","str","type of generation","{solar; biomass}"
    "subtype","str","subtype of generation: {solar_roof_mounted, unknown; biomass}","n/a"
    "v_level","int","voltage level of generator",""
    "nominal_capacity","float","nominal capacity",""
-   "run_id", "int", "time and date of table generation", "n/a"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 .. csv-table:: lv_grid.csv
    :header: "Field","type", "Description", "Unit"
@@ -191,50 +189,116 @@ Ding0 objects are exported in csv files.
 
    "id_db", "str", "unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#'", "n/a"
    "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "?"
-   "network","str","corresponding network: 'ding0_grids_#mvgridid#'","n/a"
-   "population","int","population in LV-Grid",""
+   "geom", "?","geometric coordinates", "MULTIPOLYGON"
+   "population","int","population in LV-Grid","?"
    "voltage_nom","float","voltage level of grid","kV"
-   "run_id", "int", "time and date of table generation", "n/a"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
-.. csv-table:: lv_loads.csv
+.. csv-table:: lv_load.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
    "id_db", "str", "unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
-   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "?"
-   "peak_load","float","","n/a"
-   "type","str","type of load: {residential, agricultural, industrial}",""
-   "consumption","float","",""
-   "run_id", "int", "time and date of table generation", "n/a"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "geom", "None","geometric coordinates", "n/a"
+   "consumption","{"str": float}","type of load and corresponding consumption","type = {residential, agricultural, industrial}"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
-.. csv-table:: lv_stations.csv
+.. csv-table:: lvmv_station.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
    "id_db", "str", "unambiguous name: 'LVStationDing0_MV_#mvgridid#_#lvgridid#'", "n/a"
-   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "?"
-   "run_id", "int", "time and date of table generation", "n/a"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "POINT"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
-.. csv-table:: lv_trafos.csv
+.. csv-table:: lv_transformer.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
    "id_db", "str", "unambiguous name: 'TransformerDing0_LV_#mvgridid#_#lvgridid#'", "n/a"
-   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "?"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "POINT"
    "voltage_op","float","","kV"
-   "S_nom","float","nominal apparent power",""
-   "X","float","",""
-   "R","float","",""
-   "run_id", "int", "time and date of table generation", "n/a"
+   "S_nom","float","nominal apparent power","kVA"
+   "X","float","","Ohm"
+   "R","float","","Ohm"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
-.. csv-table:: mapping.csv
+.. csv-table:: mvlv_mapping.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
    "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
    "MV_grid_id", "int","unambiguous number of MV-Grid", "n/a"
-   "run_id", "int", "time and date of table generation", "n/a"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
+
+.. csv-table:: mv_branchtee.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'MVCableDistributorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "POINT"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
+
+
+.. csv-table:: mv_generator.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'MVGeneratorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "POINT"
+   "type","str","type of generation","{solar; biomass}"
+   "subtype","str","subtype of generation: {solar_ground_mounted, solar_roof_mounted, unknown; biomass, biogas}","n/a"
+   "v_level","int","voltage level of generator",""
+   "nominal_capacity","float","nominal capacity",""
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
+
+.. csv-table:: mv_grid.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
+   "MV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "MULTIPOLYGON"
+   "population","int","population in LV-Grid","?"
+   "voltage_nom","float","voltage level of grid","kV"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
+
+.. csv-table:: mv_load.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'MVLoadDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "POLYGON"
+   "consumption","{"str": float}","type of load and corresponding consumption","type = {retail, residential, agricultural, industrial}"
+   "is_aggregated", "boolean", "True if load is aggregated load, else False", ""
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
+
+.. csv-table:: mvhv_station.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'MVStationDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "POINT"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
+
+.. csv-table:: lv_transformer.csv
+   :header: "Field","type", "Description", "Unit"
+   :widths: 15, 10, 10, 30
+
+   "id_db", "str", "unambiguous name: 'TransformerDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "geom", "?","geometric coordinates", "POINT"
+   "voltage_op","float","","kV"
+   "S_nom","float","nominal apparent power","kVA"
+   "X","float","","Ohm"
+   "R","float","","Ohm"
+   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
