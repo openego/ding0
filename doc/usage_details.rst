@@ -208,7 +208,7 @@ LV-Loads
    "id_db", "str", "unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
    "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
    "geom", "None","geometric coordinates", "n/a"
-   "consumption","{"str": float}","type of load and corresponding consumption","type = {residential, agricultural, industrial}"
+   "consumption","{str: float}","type of load and corresponding consumption","type = {residential, agricultural, industrial}"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Stations
