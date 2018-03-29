@@ -2163,9 +2163,211 @@ def export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_traf
     #export_network_tocsv(path, areacenter, 'areacenter')
 
 ########################################################
-def export_data_to_oedb(session, run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb,
+
+from sqlalchemy import create_engine
+from egoio.db_tables import model_draft as md
+
+
+def export_network_to_oedb(session, table, tabletype):
+    dataset = []
+    engine = create_engine("sqlite:///myexample.db")
+    if tabletype == 'edges':
+        table.apply(lambda row:
+                    session.add(md.egoGridLine(
+                        run_id=row['run_id'],
+                        edge_name=row['edge_name'],
+                        grid_id_db=row['grid_id_db'],
+                        node1=row['node1'],
+                        node2=row['node2'],
+                        type_kind=row['type_kind'],
+                        type_name=row['type_name'],
+                        length=row['length'],
+                        U_n=row['U_n'],
+                        C=row['C'],
+                        L=row['L'],
+                        R=row['R'],
+                        I_max_th=row['I_max_th'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'lv_cd':
+        table.apply(lambda row:
+                    session.add(md.EgoGridLvBranchtee(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        lv_grid_id_db=row['LV_grid_id_db'],
+                        geom=row['geom'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'lv_gen':
+        table.apply(lambda row:
+                    session.add(md.EgoGridLvGenerator(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        lv_grid_id_db=row['LV_grid_id_db'],
+                        geom=row['geom'],
+                        type=row['type'],
+                        subtype=row['subtype'],
+                        v_level=row['v_level'],
+                        nominal_capacity=row['nominal_capacity'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'lv_loads':
+        table.apply(lambda row:
+                    session.add(md.EgoGridLvLoad(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        lv_grid_id_db=row['LV_grid_id_db'],
+                        geom=row['geom'],
+                        consumption=row['consumption'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'lv_grid':
+        table.apply(lambda row:
+                    session.add(md.EgoGridLvGrid(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        lv_grid_id_db=row['LV_grid_id_db'],
+                        geom=row['geom'],
+                        population=row['population'],
+                        voltage_nom=row['voltage_nom'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'lv_stations':
+        table.apply(lambda row:
+                    session.add(md.EgoGridLvmvStation(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        lv_grid_id_db=row['LV_grid_id_db'],
+                        geom=row['geom'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'lv_trafos':
+        table.apply(lambda row:
+                    session.add(md.EgoGridLvTransformer(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        lv_grid_id_db=row['LV_grid_id_db'],
+                        geom=row['geom'],
+                        voltage_op=row['voltage_op'],
+                        S_nom=row['S_nom'],
+                        X=row['X'],
+                        R=row['R'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'mapping':
+        table.apply(lambda row:
+                    session.add(md.EgoGridLvmvMapping(
+                        run_id=row['run_id'],
+                        lv_grid_id=row['LV_grid_id'],
+                        lv_grid_id_db=row['LV_grid_id_db'],
+                        mv_grid_id=row['MV_grid_id'],
+                        mv_grid_id_db=row['MV_grid_id_db'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'mv_cd':
+        table.apply(lambda row:
+                    session.add(md.EgoGridMvBranchtee(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        mv_grid_id_db=row['MV_grid_id_db'],
+                        geom=row['geom'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'mv_gen':
+        table.apply(lambda row:
+                    session.add(md.EgoGridMvGenerator(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        mv_grid_id_db=row['MV_grid_id_db'],
+                        geom=row['geom'],
+                        type=row['type'],
+                        subtype=row['subtype'],
+                        v_level=row['v_level'],
+                        nominal_capacity=row['nominal_capacity'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'mv_loads':
+        table.apply(lambda row:
+                    session.add(md.EgoGridMvLoad(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        mv_grid_id_db=row['MV_grid_id_db'],
+                        geom=row['geom'],
+                        is_aggregated=row['is_aggregated'],
+                        consumption=row['consumption'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'mv_grid':
+        table.apply(lambda row:
+                    session.add(md.EgoGridMvGrid(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        mv_grid_id=row['LV_grid_id'],
+                        geom=row['geom'],
+                        population=row['population'],
+                        voltage_nom=row['voltage_nom'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'mv_stations':
+        table.apply(lambda row:
+                    session.add(md.EgoGridMvhvStation(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        mv_grid_id_db=row['MV_grid_id_db'],
+                        geom=row['geom'],
+                    ))
+                    , axis=1)
+
+    elif tabletype == 'mv_trafos':
+        table.apply(lambda row:
+                    session.add(md.EgoGridMvTransformer(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        mv_grid_id_db=row['MV_grid_id_db'],
+                        geom=row['geom'],
+                        voltage_op=row['voltage_op'],
+                        S_nom=row['S_nom'],
+                        X=row['X'],
+                        R=row['R'],
+                    ))
+                    , axis=1)
+        if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
+            print('helloworld')
+
+    session.commit()
+
+def export_data_to_oedb(session, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb,
                       mv_cd, mv_stations, mv_trafos, mv_loads, edges, mapping):
-    print('helloworld')
+
+    #engine = create_engine('sqlite:///:memory:')
+    export_network_to_oedb(session, lv_gen, 'lv_gen')
+    export_network_to_oedb(session, lv_grid, 'lv_grid')
+    export_network_to_oedb(session, lv_cd, 'lv_cd')
+    export_network_to_oedb(session, lv_stations, 'lv_stations')
+    export_network_to_oedb(session, lv_trafos, 'lv_trafos')
+    export_network_to_oedb(session, lv_loads, 'lv_loads')
+    export_network_to_oedb(session, mv_grid, 'mv_grid')
+    export_network_to_oedb(session, mv_gen, 'mv_gen')
+    #export_network_to_oedb(session, mv_cb, 'mv_cb')
+    export_network_to_oedb(session, mv_cd, 'mv_cd')
+    export_network_to_oedb(session, mv_stations, 'mv_stations')
+    export_network_to_oedb(session, mv_trafos, 'mv_trafos')
+    export_network_to_oedb(session, mv_loads, 'mv_loads')
+    export_network_to_oedb(session, edges, 'edges')
+    export_network_to_oedb(session, mapping, 'mapping')
+
 
 
 ########################################################
