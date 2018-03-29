@@ -147,7 +147,6 @@ Lines
 
    "edge_name", "str", "unambiguous name of edge", "n/a"
    "grid_id_db", "int","unambiguous id_db of corresponding grid (MVgrid-id if MV-edge, LVgrid-id if LV-edge", "n/a"
-   "geom", "?","geometric coordinates", "?"
    "type_kind","str","","n/a"
    "type_name","str","","n/a"
    "node1","str","id_db of first node","n/a"
@@ -179,7 +178,7 @@ LV-Generators
 
    "id_db", "str", "unambiguous name: 'LVGeneratorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
    "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "POINT"
+   "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "type","str","type of generation","{solar; biomass}"
    "subtype","str","subtype of generation: {solar_roof_mounted, unknown; biomass}","n/a"
    "v_level","int","voltage level of generator",""
@@ -194,7 +193,7 @@ LV-Grids
 
    "id_db", "str", "unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#'", "n/a"
    "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "MULTIPOLYGON"
+   "geom", "wkt","geometric coordinates", "WGS84 MULTIPOLYGON"
    "population","int","population in LV-Grid","?"
    "voltage_nom","float","voltage level of grid","kV"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
@@ -219,7 +218,7 @@ LV-Stations
 
    "id_db", "str", "unambiguous name: 'LVStationDing0_MV_#mvgridid#_#lvgridid#'", "n/a"
    "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "POINT"
+   "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Transformers
@@ -230,7 +229,7 @@ LV-Transformers
 
    "id_db", "str", "unambiguous name: 'TransformerDing0_LV_#mvgridid#_#lvgridid#'", "n/a"
    "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "POINT"
+   "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "voltage_op","float","","kV"
    "S_nom","float","nominal apparent power","kVA"
    "X","float","","Ohm"
@@ -257,7 +256,7 @@ MV-Branchtees
 
    "id_db", "str", "unambiguous name: 'MVCableDistributorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
    "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "POINT"
+   "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Generators
@@ -268,8 +267,8 @@ MV-Generators
 
    "id_db", "str", "unambiguous name: 'MVGeneratorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
    "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "POINT"
-   "type","str","type of generation","{solar; biomass}"
+   "geom", "wkt","geometric coordinates", "WGS84 POINT"
+   "type","str","type of generation: {solar; biomass}","n/a"
    "subtype","str","subtype of generation: {solar_ground_mounted, solar_roof_mounted, unknown; biomass, biogas}","n/a"
    "v_level","int","voltage level of generator",""
    "nominal_capacity","float","nominal capacity",""
@@ -283,7 +282,7 @@ MV-Grids
 
    "id_db", "str", "unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
    "MV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "MULTIPOLYGON"
+   "geom", "wkt","geometric coordinates", "WGS84 MULTIPOLYGON"
    "population","int","population in LV-Grid","?"
    "voltage_nom","float","voltage level of grid","kV"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
@@ -296,9 +295,9 @@ MV-Loads
 
    "id_db", "str", "unambiguous name: 'MVLoadDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
    "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "POLYGON"
+   "geom", "wkt","geometric coordinates", "WGS84 POLYGON"
    "consumption","{"str": float}","type of load and corresponding consumption","type = {retail, residential, agricultural, industrial}"
-   "is_aggregated", "boolean", "True if load is aggregated load, else False", ""
+   "is_aggregated", "boolean", "True if load is aggregated load, else False", "n/a"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Stations
@@ -309,7 +308,7 @@ MV-Stations
 
    "id_db", "str", "unambiguous name: 'MVStationDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
    "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "POINT"
+   "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Transformers
@@ -320,7 +319,7 @@ MV-Transformers
 
    "id_db", "str", "unambiguous name: 'TransformerDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
    "MV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
-   "geom", "?","geometric coordinates", "POINT"
+   "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "voltage_op","float","","kV"
    "S_nom","float","nominal apparent power","kVA"
    "X","float","","Ohm"
