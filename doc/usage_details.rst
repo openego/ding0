@@ -207,7 +207,7 @@ LV-Loads
    "id_db", "str", "unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
    "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
    "geom", "None","geometric coordinates", "n/a"
-   "consumption","{str: float}","type of load and corresponding consumption","type = {residential, agricultural, industrial}"
+   "consumption","{\"str\": float}","type of load and corresponding consumption: {residential, agricultural, industrial}", "n/a"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Stations
@@ -296,7 +296,7 @@ MV-Loads
    "id_db", "str", "unambiguous name: 'MVLoadDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
    "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POLYGON"
-   "consumption","{"str": float}","type of load and corresponding consumption","type = {retail, residential, agricultural, industrial}"
+   "consumption","{\"str\": float}","type of load and corresponding consumption: {retail, residential, agricultural, industrial}","n/a"
    "is_aggregated", "boolean", "True if load is aggregated load, else False", "n/a"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
