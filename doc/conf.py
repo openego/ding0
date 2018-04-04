@@ -55,7 +55,7 @@ extensions = [
     'sphinx.ext.viewcode',
 #    'sphinxcontrib.napoleon',#enable Napoleon interpreter of docstrings Sphinx v<=1.2
     'sphinx.ext.napoleon', #enable Napoleon Sphinx v>1.3
-#    'sphinx_paramlinks',#to have links to the types of the parameters of the functions
+    'sphinx.ext.extlinks', #enables external links with a key
 ]
 # Napoleon settings
 napoleon_google_docstring = True
@@ -66,10 +66,25 @@ napoleon_include_special_with_doc = False
 napoleon_use_admonition_for_examples = False
 napoleon_use_admonition_for_notes = False
 napoleon_use_admonition_for_references = False
-napoleon_use_ivar = True
+napoleon_use_ivar = False
 napoleon_use_param = True
-napoleon_use_rtype = True
-napoleon_use_keyword = True
+napoleon_use_rtype = False
+napoleon_use_keyword = False
+# Dictionary of external links
+extlinks = {'pandas':('http://pandas.pydata.org/pandas-docs/stable/api.html#%s',
+                      'pandas.'),
+            'networkx':('https://networkx.readthedocs.io/en/stable/reference/classes.graph.html%s',
+                      'NetworkX Graph Obj'),
+            'sqlalchemy':('http://docs.sqlalchemy.org/en/latest/%s',
+                      'SQLAlchemy object'),
+            'shapely':('http://toblerity.org/shapely/manual.html#%s',
+                      'Shapely object'),
+            'pypsa':('https://pypsa.org/doc/components.html#%s',
+                      'pypsa.'),
+            'pyproj':('https://jswhit.github.io/pyproj/pyproj.Proj-class.html%s',
+                      'pyproj.'),
+            }
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -346,3 +361,11 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # Numbered figures
 numfig = True
+
+#Code to exclude certain text from de docs.
+#See: http://www.sphinx-doc.org/en/stable/ext/autodoc.html
+def setup(app):
+    from sphinx.ext.autodoc import cut_lines
+    app.connect('autodoc-process-docstring', cut_lines(8, what=['module']))
+    return app
+

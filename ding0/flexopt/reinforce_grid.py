@@ -26,9 +26,9 @@ logger = logging.getLogger('ding0')
 
 
 def reinforce_grid(grid, mode):
-    """ Evaluates grid reinforcement needs and performs measures. This function
-        is the parent function for all grid reinforcements.
-
+    #TODO: finish docstring
+    """ Evaluates grid reinforcement needs and performs measures
+    
     Parameters
     ----------
     grid: GridDing0 object

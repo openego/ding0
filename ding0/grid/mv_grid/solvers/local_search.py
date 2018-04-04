@@ -33,7 +33,15 @@ logger = logging.getLogger('ding0')
 
 
 class LocalSearchSolution(BaseSolution):
-    """Solution class for Local Search metaheuristic"""
+    """Solution class for Local Search metaheuristic
+    
+    Parameters
+    ----------
+    cvrp_problem : type
+        Descr
+    solution : BaseSolution
+        Descr
+    """
 
     def __init__(self, cvrp_problem, solution):
         super(LocalSearchSolution, self).__init__(cvrp_problem)
@@ -44,10 +52,16 @@ class LocalSearchSolution(BaseSolution):
     def clone(self):
         """Returns a deep copy of self
 
-        Clones:
-            routes
-            allocation
-            nodes
+        Function clones:
+        
+        * route
+        * allocation
+        * nodes
+        
+        Returns
+        -------
+        LocalSearchSolution
+            Deep copy of self
         """
 
         new_solution = self.__class__(self._problem, self._vehicles)
@@ -69,63 +83,80 @@ class LocalSearchSolution(BaseSolution):
 class LocalSearchSolver(BaseSolver):
     """ Improve initial savings solution using local search
     
-        Graph operators:
+        Graph operators::
+        
             Or-Opt (intra-route)
             Relocate (inter-route)
             Exchange (inter-route)
            
-        ToDo:
-        -----
+        Todo
+        ----
             * Cross (inter-route) - to remove crossing edges between two routes
 
         References
         ----------
-        .. [1] W. Wenger, "Multikriterielle Tourenplanung", Dissertation, 2009
-        .. [2] M. Kämpf, "Probleme der Tourenbildung", Chemnitzer Informatik-Berichte, 2006
-        .. [3] O. Bräysy, M. Gendreau, "Vehicle Routing Problem with Time Windows,
+        .. [#] W. Wenger, "Multikriterielle Tourenplanung", Dissertation, 2009
+        .. [#] M. Kämpf, "Probleme der Tourenbildung", Chemnitzer Informatik-Berichte, 2006
+        .. [#] O. Bräysy, M. Gendreau, "Vehicle Routing Problem with Time Windows,
             Part I: Route Construction and Local Search Algorithms",
             Transportation Science, vol. 39, Issue 1, pp. 104-118, 2005
-        .. [4] C. Boomgaarden, "Dynamische Tourenplanung und -steuerung",
+        .. [#] C. Boomgaarden, "Dynamische Tourenplanung und -steuerung",
             Dissertation, 2007
 
     """
     # TODO: Cross (inter-route), see above
     
     def operator_oropt(self, graph, solution, op_diff_round_digits, anim=None):
-        """applies Or-Opt intra-route operator to solution
+        # TODO: check docstring
+        """Applies Or-Opt intra-route operator to solution
         
         Takes chains of nodes (length=3..1 consecutive nodes) from a given
         route and calculates savings when inserted into another position on the
         same route (all possible positions). Performes best move (max. saving)
         and starts over again with new route until no improvement is found.
         
-        Returns a solution (LocalSearchSolution class))
-
-        Args:
-            op_diff_round_digits: Precision (floating point digits) for rounding route length differences.
-                                  Details: In some cases when an exchange is performed on two routes with one node each,
-                                  the difference between the both solutions (before and after the exchange) is not zero.
-                                  This is due to internal rounding errors of float type. So the loop won't break
-                                  (alternating between these two solutions), we need an additional criterion to avoid
-                                  this behaviour: A threshold to handle values very close to zero as if they were zero
-                                  (for a more detailed description of the matter see http://floating-point-gui.de or
-                                  https://docs.python.org/3.5/tutorial/floatingpoint.html)
-
-        Notes:
-            Since Or-Opt is an intra-route operator, it has not to be checked if route can allocate (Route's method
-            can_allocate()) nodes during relocation regarding max. peak load/current because the line/cable type is the
-            same along the entire route. However, node order within a route has an impact on the voltage stability
-            so the check would be actually required. Due to large line capacity (load factor of lines/cables ~60 %)
-            the voltage stability issues are neglected.
+        Args
+        ----
+        graph: :networkx:`NetworkX Graph Obj< >`
+            A NetworkX graaph is used.
+        solution: BaseSolution
+            BaseSolution instance
+        op_diff_round_digits: float
+            Precision (floating point digits) for rounding route length differences.
+            
+            *Details*: In some cases when an exchange is performed on two routes with one node each,
+            the difference between the both solutions (before and after the exchange) is not zero.
+            This is due to internal rounding errors of float type. So the loop won't break
+            (alternating between these two solutions), we need an additional criterion to avoid
+            this behaviour: A threshold to handle values very close to zero as if they were zero
+            (for a more detailed description of the matter see http://floating-point-gui.de or
+            https://docs.python.org/3.5/tutorial/floatingpoint.html)
+        anim: AnimationDingo
+            AnimationDingo object
+        
+        Returns
+        -------
+        LocalSearchSolution
+           A solution (LocalSearchSolution class)
+        
+        Notes
+        -----
+        Since Or-Opt is an intra-route operator, it has not to be checked if route can allocate (Route's method
+        can_allocate()) nodes during relocation regarding max. peak load/current because the line/cable type is the
+        same along the entire route. However, node order within a route has an impact on the voltage stability
+        so the check would be actually required. Due to large line capacity (load factor of lines/cables ~60 %)
+        the voltage stability issues are neglected.
 
         (Inner) Loop variables:
-            s: length (count of consecutive nodes) of the chain that is moved. Values: 3..1
-            i: node that precedes the chain before moving (position in the route `tour`, not node name)
-            j: node that precedes the chain after moving (position in the route `tour`, not node name)
         
-        ToDo:
-            * insert literature reference for Or-algorithm here
-            * Remove ugly nested loops, convert to more efficient matrix operations
+        * s: length (count of consecutive nodes) of the chain that is moved. Values: 3..1
+        * i: node that precedes the chain before moving (position in the route `tour`, not node name)
+        * j: node that precedes the chain after moving (position in the route `tour`, not node name)
+        
+        Todo
+        ----
+        * insert literature reference for Or-algorithm here
+        * Remove ugly nested loops, convert to more efficient matrix operations
         """
         no_ctr = 100
         # shorter var names for loop
@@ -192,24 +223,40 @@ class LocalSearchSolver(BaseSolver):
         position with max. saving and procedure starts over again with newly
         created graph as input. Stops when no improvement is found.
         
-        Returns a solution (LocalSearchSolution class))
-
-        Args:
-            op_diff_round_digits: Precision (floating point digits) for rounding route length differences.
-                                  Details: In some cases when an exchange is performed on two routes with one node each,
-                                  the difference between the both solutions (before and after the exchange) is not zero.
-                                  This is due to internal rounding errors of float type. So the loop won't break
-                                  (alternating between these two solutions), we need an additional criterion to avoid
-                                  this behaviour: A threshold to handle values very close to zero as if they were zero
-                                  (for a more detailed description of the matter see http://floating-point-gui.de or
-                                  https://docs.python.org/3.5/tutorial/floatingpoint.html)
-        
-        (Inner) Loop variables:
-            i: node that is checked for possible moves (position in the route `tour`, not node name)
-            j: node that precedes the insert position in target route (position in the route `target_tour`, not node name)
+        Args
+        ----
+        graph: :networkx:`NetworkX Graph Obj< >`
+            A NetworkX graaph is used.
+        solution: BaseSolution
+            BaseSolution instance
+        op_diff_round_digits: float
+            Precision (floating point digits) for rounding route length differences.
             
-        ToDo:
-            * Remove ugly nested loops, convert to more efficient matrix operations
+            *Details*: In some cases when an exchange is performed on two routes with one node each,
+            the difference between the both solutions (before and after the exchange) is not zero.
+            This is due to internal rounding errors of float type. So the loop won't break
+            (alternating between these two solutions), we need an additional criterion to avoid
+            this behaviour: A threshold to handle values very close to zero as if they were zero
+            (for a more detailed description of the matter see http://floating-point-gui.de or
+            https://docs.python.org/3.5/tutorial/floatingpoint.html)
+        anim: AnimationDingo
+            AnimationDingo object
+        
+        Returns
+        -------
+        LocalSearchSolution
+           A solution (LocalSearchSolution class)
+        
+        Notes
+        -----
+        (Inner) Loop variables:
+        
+        * i: node that is checked for possible moves (position in the route `tour`, not node name)
+        * j: node that precedes the insert position in target route (position in the route `target_tour`, not node name)
+            
+        Todo
+        ----
+        * Remove ugly nested loops, convert to more efficient matrix operations
         """
         # shorter var names for loop
         dm = graph._matrix
@@ -287,25 +334,41 @@ class LocalSearchSolver(BaseSolver):
         position with max. saving and procedure starts over again with newly
         created graph as input. Stops when no improvement is found.
         
-        Returns a solution (LocalSearchSolution class))
-
-        Args:
-            op_diff_round_digits: Precision (floating point digits) for rounding route length differences.
-                                  Details: In some cases when an exchange is performed on two routes with one node each,
-                                  the difference between the both solutions (before and after the exchange) is not zero.
-                                  This is due to internal rounding errors of float type. So the loop won't break
-                                  (alternating between these two solutions), we need an additional criterion to avoid
-                                  this behaviour: A threshold to handle values very close to zero as if they were zero
-                                  (for a more detailed description of the matter see http://floating-point-gui.de or
-                                  https://docs.python.org/3.5/tutorial/floatingpoint.html)
-        
-        (Inner) Loop variables:
-            i: node that is checked for possible moves (position in the route `tour`, not node name)
-            j: node that precedes the insert position in target route (position in the route `target_tour`, not node name)
+        Args
+        ----
+        graph: :networkx:`NetworkX Graph Obj< >`
+            A NetworkX graaph is used.
+        solution: BaseSolution
+            BaseSolution instance
+        op_diff_round_digits: float
+            Precision (floating point digits) for rounding route length differences.
             
-        ToDo:
-            * allow moves of a 2-node chain
-            * Remove ugly nested loops, convert to more efficient matrix operations
+            *Details*: In some cases when an exchange is performed on two routes with one node each,
+            the difference between the both solutions (before and after the exchange) is not zero.
+            This is due to internal rounding errors of float type. So the loop won't break
+            (alternating between these two solutions), we need an additional criterion to avoid
+            this behaviour: A threshold to handle values very close to zero as if they were zero
+            (for a more detailed description of the matter see http://floating-point-gui.de or
+            https://docs.python.org/3.5/tutorial/floatingpoint.html)
+        anim: AnimationDingo
+            AnimationDingo object
+        
+        Returns
+        -------
+        LocalSearchSolution
+           A solution (LocalSearchSolution class)
+        
+        Notes
+        -----
+        (Inner) Loop variables:
+        
+        * i: node that is checked for possible moves (position in the route `tour`, not node name)
+        * j: node that precedes the insert position in target route (position in the route `target_tour`, not node name)
+            
+        Todo
+        ----
+        * allow moves of a 2-node chain
+        * Remove ugly nested loops, convert to more efficient matrix operations
         """
 
         # shorter var names for loop
@@ -400,29 +463,40 @@ class LocalSearchSolver(BaseSolver):
         return solution
 
     def operator_cross(self, graph, solution, op_diff_round_digits):
+        # TODO: check docstring
         """applies Cross inter-route operator to solution
 
         Takes every node from every route and calculates savings when inserted
         into all possible positions in other routes. Insertion is done at
         position with max. saving and procedure starts over again with newly
         created graph as input. Stops when no improvement is found.
+        
+        Args
+        ----
+        graph: :networkx:`NetworkX Graph Obj< >`
+            Descr
+        solution: BaseSolution
+            Descr
+        op_diff_round_digits: float
+            Precision (floating point digits) for rounding route length differences.
+            
+            *Details*: In some cases when an exchange is performed on two routes with one node each,
+            the difference between the both solutions (before and after the exchange) is not zero.
+            This is due to internal rounding errors of float type. So the loop won't break
+            (alternating between these two solutions), we need an additional criterion to avoid
+            this behaviour: A threshold to handle values very close to zero as if they were zero
+            (for a more detaisled description of the matter see http://floating-point-gui.de or
+            https://docs.python.org/3.5/tutorial/floatingpoint.html)
+        
+        Returns
+        -------
+        LocalSearchSolution
+           A solution (LocalSearchSolution class)
 
-        Returns a solution (LocalSearchSolution class))
-
-        Args:
-            op_diff_round_digits: Precision (floating point digits) for rounding route length differences.
-                                  Details: In some cases when an exchange is performed on two routes with one node each,
-                                  the difference between the both solutions (before and after the exchange) is not zero.
-                                  This is due to internal rounding errors of float type. So the loop won't break
-                                  (alternating between these two solutions), we need an additional criterion to avoid
-                                  this behaviour: A threshold to handle values very close to zero as if they were zero
-                                  (for a more detailed description of the matter see http://floating-point-gui.de or
-                                  https://docs.python.org/3.5/tutorial/floatingpoint.html)
-
-
-        ToDo:
-            * allow moves of a 2-node chain
-            * Remove ugly nested loops, convert to more efficient matrix operations
+        Todo
+        ----
+        * allow moves of a 2-node chain
+        * Remove ugly nested loops, convert to more efficient matrix operations
         """
 
         # shorter var names for loop
@@ -430,7 +504,25 @@ class LocalSearchSolver(BaseSolver):
         dn = graph._nodes
 
     def benchmark_operator_order(self, graph, solution, op_diff_round_digits):
-        """performs all possible permutations of route improvement and prints graph length"""
+        """performs all possible permutations of route improvement and prints graph length
+        
+        Args
+        ----
+        graph: :networkx:`NetworkX Graph Obj< >`
+            A NetworkX graaph is used.
+        solution: BaseSolution
+            BaseSolution instance
+        op_diff_round_digits: float
+            Precision (floating point digits) for rounding route length differences.
+            
+            *Details*: In some cases when an exchange is performed on two routes with one node each,
+            the difference between the both solutions (before and after the exchange) is not zero.
+            This is due to internal rounding errors of float type. So the loop won't break
+            (alternating between these two solutions), we need an additional criterion to avoid
+            this behaviour: A threshold to handle values very close to zero as if they were zero
+            (for a more detailed description of the matter see http://floating-point-gui.de or
+            https://docs.python.org/3.5/tutorial/floatingpoint.html)
+        """
         
         operators = {self.operator_exchange: 'exchange',
                      self.operator_relocate: 'relocate',
@@ -450,14 +542,24 @@ class LocalSearchSolver(BaseSolver):
     def solve(self, graph, savings_solution, timeout, debug=False, anim=None):
         """Improve initial savings solution using local search
 
-        Parameters:
-            graph: Graph instance
-            savings_solution: initial solution of CVRP problem (instance of `SavingsSolution` class)
-            timeout: max processing time in seconds
-            debug: If True, information is printed while routing
-            anim: AnimationDing0 object (refer to class 'AnimationDing0()' for a more detailed description)
+        Parameters
+        ----------
+        graph: :networkx:`NetworkX Graph Obj< >`
+            Graph instance
+        savings_solution: SavingsSolution
+            initial solution of CVRP problem (instance of `SavingsSolution` class)
+        timeout: int
+            max processing time in seconds
+        debug: bool, defaults to False
+            If True, information is printed while routing
+        anim: AnimationDingo
+            AnimationDingo object
+        
+        Returns
+        -------
+        LocalSearchSolution
+           A solution (LocalSearchSolution class)
 
-        Returns a solution (LocalSearchSolution class))
         """
         # TODO: If necessary, use timeout to set max processing time of local search
 

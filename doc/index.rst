@@ -32,8 +32,6 @@ DIstribution Network GeneratOr -- A tool to generate synthetic medium and low vo
    whatsnew
    ding0 API <api/modules>
 
-
-
 Indices and tables
 ==================
 

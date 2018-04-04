@@ -18,13 +18,24 @@ from psycopg2.extensions import register_adapter, AsIs
 
 
 # TODO: (Maybe) move to more general place (ego.io repo)
+# TODO: check docstring
 def adapt_numpy_int64(numpy_int64):
-    """ Adapting numpy.int64 type to SQL-conform int type using psycopg extension, see [1]_ for more info.
+    """ Adapting numpy.int64 type to SQL-conform int type using psycopg extension, see [#]_ for more info.
 
+    Parameters
+    ----------
+    numpy_int64 : int 
+        numpty 64bits integer.
+          
+    Returns
+    -------
+    type 
+        #TODO: Description of return. Change type in the previous line accordingly
+    
     References
     ----------
     
-    .. [1] http://initd.org/psycopg/docs/advanced.html#adapting-new-python-types-to-sql-syntax
+    .. [#] http://initd.org/psycopg/docs/advanced.html#adapting-new-python-types-to-sql-syntax
     """
     return AsIs(numpy_int64)
 

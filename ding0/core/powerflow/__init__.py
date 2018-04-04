@@ -20,23 +20,38 @@ from pandas import DatetimeIndex
 class PFConfigDing0:
     """ Defines the PF scenario configuration
 
-    Args:
-        scenarios: List of strings describing the scenarios
-        timerange: List of Pandas DatetimeIndex objects
-        timesteps_count: int, count of timesteps the timesteps to be created
-        timestep_start: Datetime datetime object
-        resolution: String or pandas offset object, e.g. 'H'=hourly resolution,
-                    to learn more see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        srid: Spatial reference system indentifier used by PyPSA's plots
+    Parameters
+    ----------
+    scenarios:  :any:`list` of  :obj:`str`
+        List of strings describing the scenarios
+    timerange: :any:`list` of :pandas:`pandas.DatetimeIndex<datetimeindex>`  
+        List of Pandas DatetimeIndex objects
+    timesteps_count: int
+        count of timesteps the timesteps to be created
+    timestep_start: :pandas:`pandas.DatetimeIndex<datetimeindex>`  
+        Description #TODO
+    resolution: str
+        String or pandas offset object, e.g. 'H'=hourly resolution,
+        
+        to learn more see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+    srid: type
+        partial reference system indentifier used by PyPSA's plots #TODO
 
-    Notes:
-        This class can be called as follows:
-            1. With scenarios and timeranges: scenarios = ['scn_1', ...,  'scn_n'],
-                                              timeranges= [timerange_1, ..., timerange_n]
-            2. With scenarios, start time and count of timesteps: scenarios = ['scn_1', ...,  'scn_n'],
-                                                                  timesteps_count = m,
-                                                                  timestep_start = datetime()
-               (in this case, n timeranges with m timesteps starting from datetime will be created)
+    Notes
+    -----
+    This class can be called as follows:
+    
+    i) With scenarios and timeranges::
+    
+         scenarios = ['scn_1', ...,  'scn_n'],
+         timeranges= [timerange_1, ..., timerange_n]
+    ii) With scenarios, start time and count of timesteps::
+     
+         scenarios = ['scn_1', ...,  'scn_n'],
+         timesteps_count = m,
+         timestep_start = datetime()
+    
+    (in this case, n timeranges with m timesteps starting from datetime will be created)
     """
 
     def __init__(self, **kwargs):
@@ -86,5 +101,5 @@ class PFConfigDing0:
 
     @property
     def srid(self):
-        """ Returns SRID """
+        """ Returns SRID"""
         return self._srid

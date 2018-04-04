@@ -29,29 +29,46 @@ logger = logging.getLogger('ding0')
 
 
 def check_load(grid, mode):
-    """ Checks for over-loading of branches and transformers for MV or LV grid
+    """ Checks for over-loading of branches and transformers for MV or LV grid.
 
     Parameters
     ----------
-    grid: GridDing0 object
-    mode: String
-        kind of grid ('MV' or 'LV')
+    grid : GridDing0
+        Grid identifier.
+    mode : str
+        Kind of grid ('MV' or 'LV').
 
     Returns
     -------
-    Dict of critical branches (BranchDing0 objects) with max. relative overloading
-    List of critical transformers (TransformerDing0 objects),
-    Format: {branch_1: rel_overloading_1, ..., branch_n: rel_overloading_n},
-            [trafo_1, ..., trafo_m]
+    :obj:`dict`
+        Dict of critical branches with max. relative overloading, and the 
+        following format::
+        
+            {
+            branch_1: rel_overloading_1, 
+            ..., 
+            branch_n: rel_overloading_n
+            }
+        
+    :any:`list` of :obj:`GridDingo`
+        List of critical transformers with the following format::
+        
+        [trafo_1, ..., trafo_m]
 
     Notes
     -----
-    Lines'/cables' max. capacity (load case and feed-in case) are taken from [1]_.
+        Lines'/cables' max. capacity (load case and feed-in case) are taken from [#]_.
+        
 
     References
     ----------
-    .. [1] dena VNS
-
+    .. [#] dena VNS
+    
+    See Also
+    --------
+    dingo.flexopt.reinforce_measures.reinforce_branches_current :
+    dingo.flexopt.reinforce_measures.reinforce_branches_voltage :
+    
     """
 
     crit_branches = {}
@@ -140,17 +157,27 @@ def check_voltage(grid, mode):
 
     Parameters
     ----------
-    grid: GridDing0 object
-    mode: String
-        kind of grid ('MV' or 'LV')
+    grid : GridDing0
+        Grid identifier.
+    mode : str
+        Kind of grid ('MV' or 'LV').
 
     Returns
     -------
-    List of critical nodes, sorted descending by voltage difference
+    :any:`list` of :any:`GridDingo`
+        List of critical nodes, sorted descending by voltage difference.
 
     Notes
     -----
-    The voltage is checked against a max. allowed voltage deviation.
+        The examination is done in two steps, according to [#]_ :
+        
+        1. It is checked #TODO: what?
+        
+        2. #TODO: what's next?
+        
+    References
+    ----------
+    .. [#] dena VNS
     """
 
     crit_nodes = {}
@@ -200,9 +227,9 @@ def get_critical_line_loading(grid):
 
     Returns
     -------
-    critical_branches : list
+    :any:`list`
         List of critical branches incl. its line loading
-    critical_stations : list
+    :any:`list`
         List of critical stations incl. its transformer loading
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
@@ -284,15 +311,15 @@ def peak_load_generation_at_node(nodes):
 
     Parameters
     ----------
-    nodes : list
-        Any LV grid Ding0 node object that is part of the grid topology
+    nodes : :any:`list`
+        Any LV grid Dingo node object that is part of the grid topology
 
     Return
     ------
-    peak_load : numeric
-        Sum of peak loads of descendant nodes
-    peak_generation : numeric
-        Sum of nominal power of generation at descendant nodes
+    :any:`float`
+        peak_load : Sum of peak loads of descendant nodes
+    :any:`float`
+        peak_generation : Sum of nominal power of generation at descendant nodes
     """
 
     loads = [node.peak_load for node in nodes
@@ -313,49 +340,47 @@ def get_critical_voltage_at_nodes(grid):
 
     Based on voltage level at each node of the grid critical nodes in terms
     of exceed tolerable voltage drop/increase are determined.
-    The tolerable voltage drop/increase is defined by [VDE-AR]_ a adds up to
+    The tolerable voltage drop/increase is defined by [#VDE]_ a adds up to
     3 % of nominal voltage.
     The longitudinal voltage drop at each line segment is estimated by a
     simplified approach (neglecting the transverse voltage drop) described in
-    [VDE-AR]_.
+    [#VDE]_.
 
     Two equations are available for assessing voltage drop/ voltage increase.
 
     The first is used to assess a voltage drop in the load case
 
     .. math::
-        \Delta u = \frac{S_{Amax} \cdot ( R_{kV} \cdot cos(\phi) + X_{kV} \cdot sin(\phi) )}{U_{nom}}
+        \\Delta u = \\frac{S_{Amax} \cdot ( R_{kV} \cdot cos(\phi) + X_{kV} \cdot sin(\phi) )}{U_{nom}}
 
     The second equation can be used to assess the voltage increase in case of
     feedin. The only difference is the negative sign before X. This is related
     to consider a voltage drop due to inductive operation of generators.
 
     .. math::
-        \Delta u = \frac{S_{Amax} \cdot ( R_{kV} \cdot cos(\phi) - X_{kV} \cdot sin(\phi) )}{U_{nom}}
+        \\Delta u = \\frac{S_{Amax} \cdot ( R_{kV} \cdot cos(\phi) - X_{kV} \cdot sin(\phi) )}{U_{nom}}
 
-    .. TODO: correct docstring such that documentation builds properly
-
-    ================  =============================
-    Symbol            Description
-    ================  =============================
-    :math:`\Delta u`  Voltage drop/increase at node
-    :math:`S_{Amax}`  Apparent power
-    :math:`R_{kV}`    Short-circuit resistance
-    :math:`X_{kV}`    Short-circuit reactance
-    :math:`cos(\phi)` Power factor
-    :math:`U_{nom}`   Nominal voltage
-    ================  =============================
+    =================  =============================
+    Symbol             Description
+    =================  =============================
+    :math:`\Delta u`   Voltage drop/increase at node
+    :math:`S_{Amax}`   Apparent power
+    :math:`R_{kV}`     Short-circuit resistance
+    :math:`X_{kV}`     Short-circuit reactance
+    :math:`cos(\phi)`  Power factor
+    :math:`U_{nom}`    Nominal voltage
+    =================  =============================
 
     Parameters
     ----------
-    grid : ding0.core.network.grids.LVGridDing0
-        Ding0 LV grid object
+    grid : LVGridDingo
+        Dingo LV grid object
 
     Notes
     -----
     The implementation highly depends on topology of LV grid. This must not
     change its topology from radial grid with stubs branching from radial
-    branches. In general, the approach of [VDE-AR]_ is only applicable to grids of
+    branches. In general, the approach of [#VDE]_ is only applicable to grids of
     radial topology.
 
     We consider the transverse voltage drop/increase by applying the same
@@ -363,6 +388,12 @@ def get_critical_voltage_at_nodes(grid):
     drop/increase at each house connection branch (aka. stub branch or grid
     connection point) is estimated by superposition based on voltage level
     in the main branch cable distributor.
+    
+    References
+    ----------
+    .. [#VDE] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
+        Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
+        Erzeugungsanlagen am Niederspannungsnetz, 2011
     """
 
     v_delta_tolerable_fc = cfg_ding0.get('assumptions',
@@ -499,33 +530,34 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
     """
     Estimate voltrage drop/increase
 
-    The VDE [VDE-AR]_ proposes a simplified method to estimate voltage drop or
-     increase in radial grids.
+    The VDE [#]_ proposes a simplified method to estimate voltage drop or
+    increase in radial grids.
 
     Parameters
     ----------
     v_nom : int
         Nominal voltage
-    s_max : numeric
+    s_max : float
         Apparent power
-    r : numeric
+    r : float
         Short-circuit resistance from node to HV/MV substation (in ohm)
-    x : numeric
+    x : float
         Short-circuit reactance from node to HV/MV substation (in ohm). Must
         be a signed number indicating (+) inductive reactive consumer (load
         case) or (-) inductive reactive supplier (generation case)
-    cos_phi : numeric
-
-    References
-    ----------
-    .. [VDE-AR] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
-        Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
-        Erzeugungsanlagen am Niederspannungsnetz, 2011
+    cos_phi : float
 
     Returns
     -------
-    voltage_delta : numeric
+    :any:`float`
         Voltage drop or increase
+        
+    References
+    ----------
+    .. [#] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
+        Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
+        Erzeugungsanlagen am Niederspannungsnetz, 2011
+
     """
     delta_v = (s_max * (
         r * cos_phi + x * math.sin(math.acos(cos_phi)))) / v_nom ** 2
@@ -537,19 +569,20 @@ def get_house_conn_gen_load(graph, node):
     Get generation capacity/ peak load of neighboring house connected to main
     branch
 
-    Parameter
-    ---------
-    graph : networkx.DiGraph
+    Parameters
+    ----------
+    graph : :networkx:`NetworkX Graph Obj< >`
         Directed graph
     node : graph node
         Node of the main branch of LV grid
 
-    Return
-    ------
-    generation_peak_load : list
+    Returns
+    -------
+    :any:`list`
         A list containing two items
-            # peak load of connected house branch
-            # generation capacity of connected generators
+        
+        # peak load of connected house branch
+        # generation capacity of connected generators
     """
     generation = 0
     peak_load = 0
@@ -572,9 +605,9 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
 
     Parameters
     ----------
-    grid : ding0.core.network.grids.LVGridDing0
-        Ding0 grid object
-    tree : networkx.DiGraph
+    grid : LVGridDingo
+        Dingo grid object
+    tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology
     node : graph node
         Node to determine voltage level at
@@ -585,7 +618,7 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
 
     Return
     ------
-    delta_voltage : float
+    :any:`float`
         Delta voltage for node
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
@@ -621,11 +654,12 @@ def get_mv_impedance(grid):
 
     Parameters
     ----------
-    grid : ding0.core.network.grids.LVGridDing0
+    grid : LVGridDing0
 
     Returns
     -------
-    List containing resistance and reactance of MV grid
+    :any:`list`
+        List containing resistance and reactance of MV grid
     """
 
     omega = 2 * math.pi * 50
@@ -647,9 +681,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
 
     Parameters
     ----------
-    grid : ding0.core.network.grids.LVGridDing0
-        Ding0 grid object
-    tree : networkx.DiGraph
+    grid : LVGridDingo
+        Dingo grid object
+    tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology
     main_branch_node : graph node
         Node of main branch that stub branch node in connected to
@@ -662,7 +696,7 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
 
     Return
     ------
-    delta_voltage : float
+    :any:`float`
         Delta voltage for node
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
@@ -703,14 +737,16 @@ def get_voltage_at_bus_bar(grid, tree):
     """
     Determine voltage level at bus bar of MV-LV substation
 
-    grid : ding0.core.network.grids.LVGridDing0
-        Ding0 grid object
-    tree : networkx.DiGraph
+    Parameters
+    ----------
+    grid : LVGridDingo
+        Dingo grid object
+    tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology:
 
     Returns
     -------
-    voltage_levels : list
+    :any:`list`
         Voltage at bus bar. First item refers to load case, second item refers
         to voltage in feedin (generation) case
     """

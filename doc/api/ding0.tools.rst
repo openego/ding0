@@ -20,14 +20,6 @@ ding0.tools.config module
     :undoc-members:
     :show-inheritance:
 
-ding0.tools.db module
----------------------
-
-.. automodule:: ding0.tools.db
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 ding0.tools.debug module
 ------------------------
 
@@ -52,8 +44,8 @@ ding0.tools.logger module
     :undoc-members:
     :show-inheritance:
 
-ding0.tools.pypsa_io module
----------------------------
+ding0.tools.pypsa\_io module
+----------------------------
 
 .. automodule:: ding0.tools.pypsa_io
     :members:
@@ -68,24 +60,24 @@ ding0.tools.results module
     :undoc-members:
     :show-inheritance:
 
-ding0.tools.results_scigrid_2017 module
----------------------------------------
+ding0.tools.results\_scigrid\_2017 module
+-----------------------------------------
 
 .. automodule:: ding0.tools.results_scigrid_2017
     :members:
     :undoc-members:
     :show-inheritance:
 
-ding0.tools.test_logging module
--------------------------------
+ding0.tools.test\_logging module
+--------------------------------
 
 .. automodule:: ding0.tools.test_logging
     :members:
     :undoc-members:
     :show-inheritance:
 
-ding0.tools.test_logging2 module
---------------------------------
+ding0.tools.test\_logging2 module
+---------------------------------
 
 .. automodule:: ding0.tools.test_logging2
     :members:
@@ -108,8 +100,16 @@ ding0.tools.tools module
     :undoc-members:
     :show-inheritance:
 
-ding0.tools.write_openego_header module
----------------------------------------
+ding0.tools.validation module
+-----------------------------
+
+.. automodule:: ding0.tools.validation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ding0.tools.write\_openego\_header module
+-----------------------------------------
 
 .. automodule:: ding0.tools.write_openego_header
     :members:

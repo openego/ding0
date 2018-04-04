@@ -20,10 +20,21 @@ from shapely.wkt import loads as wkt_loads
 
 
 class MVGridDistrictDing0(RegionDing0):
-    """
-    Defines a MV-grid_district in DING0
-    ----------------------------
-
+        # TODO: check docstring
+    """Defines a MV-grid_district in DINGO
+    
+    Attributes
+    ----------
+    mv_grid: :obj:`int`
+       Descr
+    geo_data : :shapely:`Shapely Polygon object<polygons>`
+       Descr
+    peak_load: :obj:`float`
+       Descr
+    peak_load_satellites: :obj:`float`
+       Descr
+    peak_load_aggregated: :obj:`float`
+       Descr
     """
 
     def __init__(self, **kwargs):
@@ -50,40 +61,62 @@ class MVGridDistrictDing0(RegionDing0):
         return self.mv_grid.network
 
     def lv_load_areas(self):
-        """Returns a generator for iterating over load_areas"""
+        """Returns a generator for iterating over load_areas
+        
+        Yields
+        ------
+        int
+            generator for iterating over load_areas
+        """
         for load_area in sorted(self._lv_load_areas, key=lambda _: repr(_)):
             yield load_area
 
     def add_lv_load_area(self, lv_load_area):
-        """ Adds a Load Area `lv_load_area` to _lv_load_areas if not already existing, and adds the associated centre
-            object to MV grid's _graph as node.
+        """ Adds a Load Area `lv_load_area` to _lv_load_areas if not already existing
+        
+        Additionally, adds the associated centre object to MV grid's _graph as node.
 
-        Args:
-            lv_load_area: instance of class LVLoadAreaDing0
-
-        Returns:
-            nothing
+        Args
+        ----
+        lv_load_area: LVLoadAreaDingo
+            instance of class LVLoadAreaDingo
         """
         if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDing0):
             self._lv_load_areas.append(lv_load_area)
             self.mv_grid.graph_add_node(lv_load_area.lv_load_area_centre)
 
     def lv_load_area_groups(self):
-        """Returns a generator for iterating over LV load_area groups"""
+        """Returns a generator for iterating over LV load_area groups.
+        
+        Yields
+        ------
+        int
+            generator for iterating over LV load_areas
+        """
         for lv_load_area_group in self._lv_load_area_groups:
             yield lv_load_area_group
 
     def lv_load_area_groups_count(self):
-        """Returns the count of LV load_area groups in MV region"""
+        """Returns the count of LV load_area groups in MV region
+        
+        Returns
+        -------
+        int
+            Number of LV load_area groups in MV region.
+        """
         return len(self._lv_load_area_groups)
 
     def add_lv_load_area_group(self, lv_load_area_group):
-        """Adds a LV load_area to _lv_load_areas if not already existing"""
+        """Adds a LV load_area to _lv_load_areas if not already existing.
+        """
         if lv_load_area_group not in self.lv_load_area_groups():
             self._lv_load_area_groups.append(lv_load_area_group)
 
     def add_peak_demand(self):
-        """Summarizes peak loads of underlying load_areas in kVA (peak load sum and peak load of satellites)"""
+        """Summarizes peak loads of underlying load_areas in kVA.
+        
+        (peak load sum and peak load of satellites)
+        """
         peak_load = peak_load_satellites = 0
         for lv_load_area in self.lv_load_areas():
             peak_load += lv_load_area.peak_load
@@ -105,10 +138,25 @@ class MVGridDistrictDing0(RegionDing0):
 
 
 class LVLoadAreaDing0(RegionDing0):
-    """
-    Defines a LV-load_area in DING0
-    ----------------------------
+        # TODO: check docstring
+    """Defines a LV-load_area in DINGO
 
+    Attributes
+    ----------
+    ring: int
+       Descr
+    mv_grid_district : :shapely:`Shapely Polygon object<polygons>`
+       Descr
+    lv_load_area_centre: :shapely:`Shapely Point object<points>`
+       Descr
+    lv_load_area_group: :shapely:`Shapely Polygon object<polygons>`
+       Descr
+    is_satellite: bool
+       Descr
+    is_aggregated: bool
+       Descr
+    db_data: DataFrame
+       Descr
     """
 
     def __init__(self, **kwargs):
@@ -163,16 +211,35 @@ class LVLoadAreaDing0(RegionDing0):
         return self.mv_grid_district.network
 
     def lv_grid_districts(self):
-        """Returns a generator for iterating over LV grid districts"""
+        """Returns a generator for iterating over LV grid districts
+        
+        Yields
+        ------
+        int
+            generator for iterating over LV grid districts
+        """
         for lv_grid_district in sorted(self._lv_grid_districts, key=lambda _: repr(_)):
             yield lv_grid_district
 
     def lv_grid_districts_count(self):
-        """Returns the count of LV grid districts"""
+        """Returns the count of LV grid districts
+        
+        Returns
+        -------
+        int
+            Number of LV grid districts.
+        """
         return len(self._lv_grid_districts)
 
     def add_lv_grid_district(self, lv_grid_district):
-        """Adds a LV grid district to _lv_grid_districts if not already existing"""
+        # TODO: check docstring
+        """Adds a LV grid district to _lv_grid_districts if not already existing
+        
+        Args
+        ----
+        lv_grid_district: :shapely:`Shapely Polygon object<polygons>`
+            Descr
+        """
 
         if lv_grid_district not in self._lv_grid_districts and \
                 isinstance(lv_grid_district, LVGridDistrictDing0):
@@ -180,8 +247,8 @@ class LVLoadAreaDing0(RegionDing0):
 
     @property
     def peak_generation(self):
-        """
-        Cumulative peak generation of generators connected to LV grids of underlying LVGDs
+        """Cumulative peak generation of generators connected to LV grids of 
+        underlying LVGDs
         """
         cum_peak_generation = 0
 
@@ -195,16 +262,26 @@ class LVLoadAreaDing0(RegionDing0):
 
 
 class LVLoadAreaCentreDing0:
-    """
-    Defines a region centre in Ding0
-    --------------------------------
+    # TODO: check docstring
+    """Defines a region centre in Dingo.
+    
     The centres are used in the MV routing as nodes.
-    Note: Centre is a point within a region's polygon that is located most central (e.g. in a simple region shape like a
-    circle it's the geometric center).
+    
+    Notes
+    -----
+    Centre is a point within a region's polygon that is located most central 
+    (e.g. in a simple region shape like a circle it's the geometric center).
 
     Parameters
     ----------
-    id_db: unique ID in database (=id of associated load area)
+    id_db: int
+        unique ID in database (=id of associated load area)
+    grid: int
+        Descr
+    geo_data: :shapely:`Shapely Point object<points>`
+        Descr
+    lv_load_area: int
+        Descr
     """
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id_db', None)
@@ -225,13 +302,37 @@ class LVLoadAreaCentreDing0:
 
 
 class LVGridDistrictDing0(RegionDing0):
-    """
-    Describes region that is covered by a single LV grid
+    # TODO: check docstring
+    """Describes region that is covered by a single LV grid
 
     Parameters
     ----------
-    RegionDing0: class
-        Ding0's region base class
+    geo_data: :shapely:`Shapely Polygon object<polygons>`
+       Descr
+    lv_load_area : :shapely:`Shapely Polygon object<polygons>`
+       Descr
+    lv_grid: :shapely:`Shapely Polygon object<polygons>`
+       Descr
+    population: :obj:`float`
+       Descr
+    peak_load_residential: :obj:`float`
+       Descr
+    peak_load_retail: :obj:`float`
+       Descr
+    peak_load_industrial: :obj:`float`
+       Descr
+    peak_load_agricultural: :obj:`float`
+       Descr
+    peak_load: :obj:`float`
+       Descr
+    sector_count_residential: :obj:`int`
+       Descr
+    sector_count_retail: :obj:`int`
+       Descr
+    sector_count_industrial: :obj:`int`
+       Descr
+    sector_count_agricultural: :obj:`int`
+       Descr
     """
 
     def __init__(self, **kwargs):

@@ -10,24 +10,25 @@ The documentation is available on RTD: http://ding0.readthedocs.io
 Based on code by oemof development team
 
 This module provides a highlevel layer for reading and writing config files.
-There must be a file called "config.ini" in the root-folder of the project.
-The file has to be of the following structure to be imported correctly.
-# this is a comment \n
-# the filestructure is like: \n
- \n
-[netCDF] \n
-RootFolder = c://netCDF \n
-FilePrefix = cd2_ \n
- \n
-[mySQL] \n
-host = localhost \n
-user = guest \n
-password = root \n
-database = znes \n
- \n
-[SectionName] \n
-OptionName = value \n
-Option2 = value2 \n
+The config file has to be of the following structure to be imported correctly.
+
+::
+
+    [netCDF] \n
+         RootFolder = c://netCDF \n
+         FilePrefix = cd2_ \n
+    \n
+    [mySQL] \n
+        host = localhost \n
+        user = guest \n
+        password = root \n
+        database = znes \n
+    \n
+    [SectionName] \n
+        OptionName = value \n
+        Option2 = value2 \n
+
+Based on code by oemof development team
 """
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
@@ -53,6 +54,13 @@ cfg = cp.RawConfigParser()
 _loaded = False
 
 def load_config(filename):
+    """ Read config file specified by `filename`
+    
+    Parameters
+    ----------
+    filename : str
+        Description of filename
+    """
     package_path = ding0.__path__[0]
     FILE = path.join(package_path, 'config', filename)
 
@@ -64,15 +72,25 @@ def load_config(filename):
         logger.exception("configfile not found.")
 
 def get(section, key):
-    """
-    returns the value of a given key of a given section of the main
+    """Returns the value of a given key of a given section of the main
     config file.
-    :param section: the section.
-    :type section: str.
-    :param key: the key.
-    :type key: str.
-    :returns: the value which will be casted to float, int or boolean.
-    if no cast is successfull, the raw string will be returned.
+    
+    Parameters
+    ----------
+    section : str
+        the section.
+    key : str
+        the key
+    
+    Returns
+    -------
+    :any:`float`
+        the value which will be casted to float, int or boolean.
+        if no cast is successful, the raw string will be returned.
+        
+    See Also
+    --------
+    set :
     """
     if not _loaded:
         pass
@@ -89,15 +107,22 @@ def get(section, key):
 
 
 def set(section, key, value):
-    """
-    sets a value to a [section] key - pair.
+    """Sets a value to a [section] key - pair.
+    
     if the section doesn't exist yet, it will be created.
-    :param section: the section.
-    :type section: str.
-    :param key: the key.
-    :type key: str.
-    :param value: the value.
-    :type value: float, int, str.
+    
+    Parameters
+    ----------
+    section: str
+        the section.
+    key: str
+        the key.
+    value: float, int, str
+        the value.
+        
+    See Also
+    --------
+    get :
     """
 
     if not _loaded:

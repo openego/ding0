@@ -23,7 +23,7 @@ import numpy as np
 
 class MVStationDing0(StationDing0):
     """
-    Defines a MV station in DING0
+    Defines a MV station in DINGO
     -----------------------------
     """
 
@@ -31,23 +31,23 @@ class MVStationDing0(StationDing0):
         super().__init__(**kwargs)
 
     def peak_generation(self, mode):
-        """
-        Calculates cumulative peak generation of generators connected to
-        underlying MV grid or MV+LV grids (controlled by parameter `mode`).
+        """Calculates cumulative peak generation of generators connected to underlying grids
+        
         This is done instantaneously using bottom-up approach.
 
         Parameters
         ----------
-        mode: String
-            determines which generators are included:
+        mode: str
+            determines which generators are included::
 
             'MV':   Only generation capacities of MV level are considered.
+            
             'MVLV': Generation capacities of MV and LV are considered
                     (= cumulative generation capacities in entire MVGD).
 
         Returns
         -------
-        capacity: Float
+        float
             Cumulative peak generation
         """
 
@@ -68,6 +68,9 @@ class MVStationDing0(StationDing0):
             raise ValueError('parameter \'mode\' is invalid!')
 
     def set_operation_voltage_level(self):
+        """Set operation voltage level
+    
+        """
 
         mv_station_v_level_operation = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                            'mv_station_v_level_operation'))
@@ -92,17 +95,20 @@ class MVStationDing0(StationDing0):
         **kwargs : dict
             Should contain a value behind the key 'peak_load'
 
+
         Notes
         -----
-        Potential HV-MV transformers are chosen according to [2]_.
-        Parametrization of transformers bases on [1]_.
+        Parametrization of transformers bases on [#]_.
+        
+        Potential hv-mv-transformers are chosen according to [#]_.
+        
 
         References
         ----------
-        .. [1] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie.
+        .. [#] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie.
             Ausbau- und Innovationsbedarf der Stromverteilnetze in Deutschland
             bis 2030.", 2012
-        .. [2] X. Tao, "Automatisierte Grundsatzplanung von
+        .. [#] X. Tao, "Automatisierte Grundsatzplanung von
             Mittelspannungsnetzen", Dissertation, 2006
 
         """
@@ -174,6 +180,9 @@ class MVStationDing0(StationDing0):
 
     @property
     def pypsa_id(self):
+        #TODO: docstring
+        """ Description    
+        """
         return '_'.join(['HV', str(self.grid.id_db), 'trd'])
 
     def __repr__(self):
@@ -182,7 +191,7 @@ class MVStationDing0(StationDing0):
 
 class LVStationDing0(StationDing0):
     """
-    Defines a LV station in DING0
+    Defines a LV station in DINGO
     -----------------------------
     """
 
@@ -193,14 +202,13 @@ class LVStationDing0(StationDing0):
 
     @property
     def peak_generation(self):
-        """
-        Calculates cumulative peak generation of generators connected to
-        underlying LV grid. This is done instantaneously using bottom-up
-        approach.
+        """Calculates cumulative peak generation of generators connected to underlying LV grid.
+        
+        This is done instantaneously using bottom-up approach.
 
         Returns
         -------
-        capacity: Float
+        float
             Cumulative peak generation
         """
 
@@ -208,6 +216,9 @@ class LVStationDing0(StationDing0):
 
     @property
     def pypsa_id(self):
+        #TODO: docstring
+        """ Description    
+        """
         return '_'.join(['MV', str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
                 id_db), 'tru', str(self.id_db)])

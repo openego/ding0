@@ -20,6 +20,9 @@ class MVLoadDing0(LoadDing0):
     """
     Load in MV grids
 
+    Notes
+    -----
+    Currently not used, check later if still required
     """
     # TODO: Currently not used, check later if still required
 

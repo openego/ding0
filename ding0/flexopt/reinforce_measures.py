@@ -34,21 +34,20 @@ def reinforce_branches_current(grid, crit_branches):
     
     Parameters
     ----------
-        grid : GridDing0
-            Grid identifier.
-        crit_branches : dict
-            Dict of critical branches with max. relative overloading.
-
-    Returns
-    -------
-    type 
-        #TODO: Description of return. Change type in the previous line accordingly
+    grid : GridDingo 
+        Grid identifier.
+    crit_branches : dict
+        Dict of critical branches with max. relative overloading.
         
     Notes
     -----
-        The branch type to be installed is determined per branch using the rel. overloading. According to [2]_ 
-        only cables are installed.
-        
+    The branch type to be installed is determined per branch using the rel. overloading. According to [#]_ 
+    only cables are installed.
+    
+    References
+    ----------
+    .. [#] Ackermann et al. (RP VNS)    
+    
     See Also
     --------
     ding0.flexopt.check_tech_constraints.check_load :
@@ -76,24 +75,29 @@ def reinforce_branches_current(grid, crit_branches):
     if branch_ctr:
         logger.info('==> {} branches were reinforced.'.format(str(branch_ctr)))
 
-
 def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
+    #TODO: finish docstring
     """ Reinforce MV or LV grid by installing a new branch/line type
 
     Parameters
     ----------
-    grid: GridDing0 object
-    crit_branches: List of BranchDing0 objects
-        list of critical branches
-
+    grid : GridDingo 
+        Grid identifier.
+    crit_branches : :any:`list` of :obj:`int`
+        List of critical branches. #TODO: check if a list or a dictionary
+    grid_level : str
+        Specifying either 'MV' for medium-voltage grid or 'LV' for
+        low-voltage grid level.
+        
     Notes
     -----
-    The branch type to be installed is determined per branch - the next larger cable
-    available is used. According to [1]_ only cables are installed.
-
-    References
-    ----------
-    .. [1] Ackermann et al. (RP VNS)
+    The branch type to be installed is determined per branch - the next larger cable available is used.
+    According to Ackermann only cables are installed.
+        
+    See Also
+    --------
+    dingo.flexopt.check_tech_constraints.check_load :
+    dingo.flexopt.reinforce_measures.reinforce_branches_voltage :
     """
 
     # load cable data, file_names and parameter
@@ -122,7 +126,8 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
 
 
 def extend_substation(grid, critical_stations, grid_level):
-    """ Reinforce MV or LV substation by exchanging the existing trafo and
+    """
+    Reinforce MV or LV substation by exchanging the existing trafo and
     installing a parallel one if necessary.
 
     First, all available transformers in a `critical_stations` are extended to
@@ -131,17 +136,21 @@ def extend_substation(grid, critical_stations, grid_level):
 
     Parameters
     ----------
-        grid: GridDing0
-            Ding0 grid container
-        critical_stations : list
-            List of stations with overloading
-        grid_level : str
-            Either "LV" or "MV". Basis to select right equipment.
-
+    grid: GridDingo
+        Dingo grid container
+    critical_stations : :any:`list`
+        List of stations with overloading
+    grid_level : str
+        Either "LV" or "MV". Basis to select right equipment.
+    
     Notes
     -----
     Curently straight forward implemented for LV stations
 
+    Returns
+    -------
+    type 
+        #TODO: Description of return. Change type in the previous line accordingly
     """
     load_factor_lv_trans_lc_normal = cfg_ding0.get(
         'assumptions',
@@ -221,18 +230,17 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     """
     Extend substation if voltage issues at the substation occur
 
-    Follows a two-step procedure
-    #. Existing transformers are extended by replacement with large nominal
-        apparent power
-    #. New additional transformers added to substation (see ``Notes``)
+    Follows a two-step procedure:
+    
+    i) Existing transformers are extended by replacement with large nominal
+       apparent power
+      
+    ii) New additional transformers added to substation (see 'Notes')
 
     Parameters
     ----------
-    critical_stations : list
-            List of stations with overloading or voltage issues
-
-    Arguments
-    ---------
+    crit_stations : :any:`list`
+        List of stations with overloading or voltage issues.
     grid_level : str
         Specifiy grid level: 'MV' or 'LV'
 
@@ -304,14 +312,8 @@ def new_substation(grid):
 
     Parameters
     ----------
-        grid : MVGridDing0
-            MV Grid identifier.
-
-    Returns
-    -------
-    type 
-        #TODO: Description of return. Change type in the previous line accordingly
-
+    grid : MVGridDingo 
+        MV Grid identifier.
     """
 
 
@@ -321,9 +323,9 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     Parameters
     ----------
-    grid : ding0.core.network.grids.LVGridDing0
-        Ding0 LV grid object
-    crit_branches : list
+    grid : LVGridDingo
+        Dingo LV grid object
+    crit_branches : :any:`list`
         List of critical branches incl. its line loading
 
     Notes
@@ -333,9 +335,8 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     Returns
     -------
-
-        unsolved_branches : :obj:`list`
-            List of braches no suitable cable could be found
+    :any:`list`
+        unsolved_branches : List of braches no suitable cable could be found
     """
     unsolved_branches = []
 
@@ -379,9 +380,9 @@ def extend_trafo_power(extendable_trafos, trafo_params):
 
     Parameters
     ----------
-    extendable_trafos : list
+    extendable_trafos : :any:`list`
         Trafos with rated power below maximum size available trafo
-    trafo_params : pandas.DataFrame
+    trafo_params : :pandas:`pandas.DataFrame<dataframe>`
         Transformer parameters
     """
     trafo = extendable_trafos[0]

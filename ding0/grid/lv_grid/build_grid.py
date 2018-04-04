@@ -25,7 +25,7 @@ logger = logging.getLogger('ding0')
 
 
 def select_transformers(grid, s_max=None):
-    """ Selects MV-LV transformers for the MV-LV substation.
+    """Selects LV transformer according to peak load of LV grid district.
 
     The transformers are chosen according to max. of load case and feedin-case
     considering load factors and power factor.
@@ -40,7 +40,7 @@ def select_transformers(grid, s_max=None):
 
     Parameters
     ----------
-    grid: ding0.core.network.LVGridDing0
+    grid: LVGridDingo
         LV grid data
 
     Arguments
@@ -70,10 +70,17 @@ def select_transformers(grid, s_max=None):
 
     Returns
     -------
-    transformer: DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         Parameters of chosen Transformer
-    transformer_cnt: int
+    :obj:`int` 
         Count of transformers
+
+    Notes
+    -----
+    The LV transformer with the next higher available nominal apparent power is
+    chosen. Therefore, a max. allowed transformer loading of 100% is implicitly
+    assumed. If the peak load exceeds the max. power of a single available
+    transformer, use multiple trafos.
     """
 
     load_factor_lv_trans_lc_normal = cfg_ding0.get('assumptions',
@@ -142,12 +149,11 @@ def select_transformers(grid, s_max=None):
 
 
 def transformer(grid):
-    """
-    Choose transformer and add to grid's station
+    """ Choose transformer and add to grid's station
 
     Parameters
     ----------
-    grid: ding0.core.network.LVGridDing0
+    grid: LVGridDingo
         LV grid data
     """
 
@@ -169,8 +175,7 @@ def transformer(grid):
 
 
 def select_grid_model_ria(lvgd, sector):
-    """
-    Select a typified grid for retail/industrial and agricultural
+    """Select a typified grid for retail/industrial and agricultural
 
     Parameters
     ----------
@@ -182,7 +187,7 @@ def select_grid_model_ria(lvgd, sector):
 
     Returns
     -------
-    grid_model : dict
+    :obj:`dict`
         Parameters that describe branch lines of a sector
     """
 
@@ -271,16 +276,17 @@ def select_grid_model_ria(lvgd, sector):
 
 
 def grid_model_params_ria(lvgd):
-    """
-    Determine grid model parameters for LV grids of sectors
+    """Determine grid model parameters for LV grids of sectors
     retail/industrial and agricultural
     
-    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
+    Parameters
+    ----------
+    lvgd : LVGridDistrictDingo
         Low-voltage grid district object
 
     Returns
     -------
-    model_params_ria : dict
+    :obj:`dict`
         Structural description of (parts of) LV grid topology
     """
 
@@ -306,8 +312,7 @@ def grid_model_params_ria(lvgd):
 
 
 def build_lv_graph_ria(lvgd, grid_model_params):
-    """
-    Build graph for LV grid of sectors retail/industrial and agricultural
+    """Build graph for LV grid of sectors retail/industrial and agricultural
 
     Based on structural description of LV grid topology for sectors
     retail/industrial and agricultural (RIA) branches for these sectors are
@@ -333,20 +338,31 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
     Parameters
     ----------
-    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
+    lvgd : LVGridDistrictDingo
         Low-voltage grid district object
     grid_model_params : dict
-        Dict of structural information of sectoral LV grid branch
+        Dict of structural information of sectoral LV grid branchwith particular 
+        structure, e.g.::
+
+            grid_model_params = {
+                'agricultural': {
+                    'max_loads_per_branch': 2
+                    'single_peak_load': 140,
+                    'full_branches': 2,
+                    'remaining_loads': 1,
+                    'load_distance': 800/3,
+                    'load_distance_remaining': 400
+                }
+            }
 
     Notes
     -----
     We assume a distance from the load to the branch it is connected to of
-    30 m. This assumption is defined in the config files
+    30 m. This assumption is defined in the config files.
     """
 
     def lv_graph_attach_branch():
-        """
-        Attach a single branch including its equipment (cable dist, loads
+        """Attach a single branch including its equipment (cable dist, loads
         and line segments) to graph of `lv_grid`
         """
 
@@ -506,13 +522,12 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
 
 def build_ret_ind_agr_branches(lvgd):
-    """
-    Determine topology of LV grid for retail/industrial and agricultural sector
+    """Determine topology of LV grid for retail/industrial and agricultural sector
     and create representative graph of the grid
 
     Parameters
     ----------
-    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
+    lvgd : LVGridDistrictDingo
         Low-voltage grid district object
     """
 
@@ -524,19 +539,18 @@ def build_ret_ind_agr_branches(lvgd):
 
 
 def select_grid_model_residential(lvgd):
-    """
-    Selects typified model grid based on population
+    """Selects typified model grid based on population
 
     Parameters
     ----------
-    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
+    lvgd : LVGridDistrictDingo
         Low-voltage grid district object
 
     Returns
     -------
-    selected_strings_df: DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         Selected string of typified model grid
-    transformer: Dataframe
+    :pandas:`pandas.DataFrame<dataframe>`
         Parameters of chosen Transformer
 
     Notes
@@ -582,14 +596,13 @@ def select_grid_model_residential(lvgd):
 
 
 def build_lv_graph_residential(lvgd, selected_string_df):
-    """
-    Builds nxGraph based on the LV grid model
+    """Builds nxGraph based on the LV grid model
 
-    Parameter
-    ---------
-    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
+    Parameters
+    ----------
+    lvgd : LVGridDistrictDingo
         Low-voltage grid district object
-    selected_string_df: Dataframe
+    selected_string_df: :pandas:`pandas.DataFrame<dataframe>`
         Table of strings of the selected grid model
 
     Notes
@@ -598,11 +611,9 @@ def build_lv_graph_residential(lvgd, selected_string_df):
     are explained here
 
     * `count house branch`: number of houses connected to a string
-    * `distance house branch`: distance on a string between two house
-        branches
+    * `distance house branch`: distance on a string between two house branches
     * `string length`: total length of a string
-    * `length house branch A|B`: cable from string to connection point of a
-        house
+    * `length house branch A|B`: cable from string to connection point of a house
 
     A|B in general brings some variation in to the typified model grid and
     refer to different length of house branches and different cable types
@@ -738,13 +749,12 @@ def build_lv_graph_residential(lvgd, selected_string_df):
 
 
 def build_residential_branches(lvgd):
-    """
-    Based on population and identified peak load data, the according grid
+    """Based on population and identified peak load data, the according grid
     topology for residential sector is determined and attached to the grid graph
 
     Parameters
     ----------
-    lvgd : ding0.core.structure.regions.LVGridDistrictDing0
+    lvgd : LVGridDistrictDingo
         Low-voltage grid district object
     """
 

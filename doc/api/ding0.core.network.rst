@@ -4,8 +4,8 @@ ding0.core.network package
 Submodules
 ----------
 
-ding0.core.network.cable_distributors module
---------------------------------------------
+ding0.core.network.cable\_distributors module
+---------------------------------------------
 
 .. automodule:: ding0.core.network.cable_distributors
     :members:

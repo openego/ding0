@@ -4,8 +4,8 @@ ding0.config package
 Submodules
 ----------
 
-ding0.config.config_db_interfaces module
-----------------------------------------
+ding0.config.config\_db\_interfaces module
+------------------------------------------
 
 .. automodule:: ding0.config.config_db_interfaces
     :members:

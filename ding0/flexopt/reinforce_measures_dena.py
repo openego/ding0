@@ -36,6 +36,7 @@ def parallel_branch(grid, node_target):
 
 def split_ring(grid):
     """ Reinforce MV grid by splitting a critical ring into two new rings according to dena
+    
     Parameters
     ----------
         grid : MVGridDing0

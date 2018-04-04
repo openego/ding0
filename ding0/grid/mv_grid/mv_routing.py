@@ -33,11 +33,20 @@ logger = logging.getLogger('ding0')
 def ding0_graph_to_routing_specs(graph):
     """ Build data dictionary from graph nodes for routing (translation)
 
-    Args:
-        graph: NetworkX graph object with nodes
+    Args
+    ----
+    graph: :networkx:`NetworkX Graph Obj< >`
+        NetworkX graph object with nodes
 
-    Returns:
-        specs: Data dictionary for routing, See class `Graph()` in routing's model definition for keys
+    Returns
+    -------
+    :obj:`dict`
+        Data dictionary for routing.
+        
+    See Also
+    --------
+    dingo.grid.mv_grid.models.models.Graph : for keys of return dict
+        
     """
 
     # get power factor for loads
@@ -93,12 +102,17 @@ def ding0_graph_to_routing_specs(graph):
 def routing_solution_to_ding0_graph(graph, solution):
     """ Insert `solution` from routing into `graph`
 
-    Args:
-        graph: NetworkX graph object with nodes
-        solution: Instance of `BaseSolution` or child class (e.g. `LocalSearchSolution`) (=solution from routing)
+    Args
+    ----
+    graph: :networkx:`NetworkX Graph Obj< >`
+        NetworkX graph object with nodes
+    solution: BaseSolution
+        Instance of `BaseSolution` or child class (e.g. `LocalSearchSolution`) (=solution from routing)
 
-    Returns:
-        graph: NetworkX graph object with nodes and edges
+    Returns
+    -------
+    :networkx:`NetworkX Graph Obj< >` 
+        NetworkX graph object with nodes and edges
     """
     # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
     # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
@@ -220,15 +234,28 @@ def routing_solution_to_ding0_graph(graph, solution):
 
 
 def solve(graph, debug=False, anim=None):
-    """ Do MV routing for given nodes in `graph`. Translate data from node objects to appropriate format before.
+    # TODO: check docstring
+    """ Do MV routing for given nodes in `graph`.
+    
+    Translate data from node objects to appropriate format before.
 
-    Args:
-        graph: NetworkX graph object with nodes
-        debug: If True, information is printed while routing
-        anim: AnimationDing0 object (refer to class 'AnimationDing0()' for a more detailed description)
+    Args
+    ----
+    graph: :networkx:`NetworkX Graph Obj< >`
+        NetworkX graph object with nodes
+    debug: bool, defaults to False
+        If True, information is printed while routing
+    anim: AnimationDingo
+        AnimationDingo object 
 
-    Returns:
-        graph: NetworkX graph object with nodes and edges
+    Returns
+    -------
+    :networkx:`NetworkX Graph Obj< >`
+        NetworkX graph object with nodes and edges
+        
+    See Also
+    --------
+    dingo.tools.animation.AnimationDingo : for a more detailed description on anim parameter.
     """
 
     # TODO: Implement debug mode (pass to solver) to get more information while routing (print routes, draw network, ..)
