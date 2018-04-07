@@ -36,7 +36,7 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
 
     Parameters
     ----------
-    mv_grid : MVGridDingo
+    mv_grid : MVGridDing0
         MV Grid object. Edges contained in `mv_grid.graph_edges()` are taken
         for the test.
     polygon : :shapely:`Shapely Point object<points>`
@@ -48,7 +48,7 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
 
     Returns
     -------
-    :any:`list` of :any:`BranchDingo` objects
+    :any:`list` of :any:`BranchDing0` objects
         List of branches
 
     """
@@ -82,8 +82,8 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
 
     Parameters
     ----------
-    node : LVStationDingo, GeneratorDingo, or CableDistributorDingo
-        origin node (e.g. LVStationDingo object) with associated shapely object
+    node : LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        origin node (e.g. LVStationDing0 object) with associated shapely object
         (attribute `geo_data`) in any CRS (e.g. WGS84)
     radius : float
         buffer radius in m
@@ -117,14 +117,14 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
 
 def calc_geo_dist_vincenty(node_source, node_target):
     """ Calculates the geodesic distance between `node_source` and `node_target`
-    incorporating the detour factor specified in :file:`dingo/dingo/config/config_calc.cfg`.
+    incorporating the detour factor specified in :file:`ding0/ding0/config/config_calc.cfg`.
 
     Parameters
     ----------
-    node_source: LVStationDingo, GeneratorDingo, or CableDistributorDingo
-        source node, member of GridDingo._graph
-    node_target: LVStationDingo, GeneratorDingo, or CableDistributorDingo
-        target node, member of GridDingo._graph
+    node_source: LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        source node, member of GridDing0._graph
+    node_target: LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        target node, member of GridDing0._graph
 
     Returns
     -------
@@ -208,10 +208,10 @@ def calc_geo_centre_point(node_source, node_target):
     
     Parameters
     ----------
-    node_source: LVStationDingo, GeneratorDingo, or CableDistributorDingo
-        source node, member of GridDingo._graph
-    node_target: LVStationDingo, GeneratorDingo, or CableDistributorDingo
-        target node, member of GridDingo._graph
+    node_source: LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        source node, member of GridDing0._graph
+    node_target: LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        target node, member of GridDing0._graph
 
     Returns
     -------

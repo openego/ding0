@@ -91,7 +91,7 @@ class GridDing0:
         
         Yields
         ------
-        GridDingo
+        GridDing0
             Description #TODO check
         """
         for generator in self._generators:
@@ -102,7 +102,7 @@ class GridDing0:
         
         Parameters
         ----------
-        generator : GridDingo
+        generator : GridDing0
             Description #TODO
         
         """
@@ -116,7 +116,7 @@ class GridDing0:
         
         Parameters
         ----------
-        node_object : GridDingo
+        node_object : GridDing0
             Description #TODO
         
         """
@@ -138,7 +138,7 @@ class GridDing0:
             
         Notes
         -----
-        The geo coords (for used crs see database import in class `NetworkDingo`) 
+        The geo coords (for used crs see database import in class `NetworkDing0`)
         are used as positions for drawing but networkx uses cartesian crs.
         Since no coordinate transformation is performed, the drawn graph representation is falsified!
         """
@@ -237,13 +237,13 @@ class GridDing0:
 
         Args
         ----
-        branch: BranchDingo
+        branch: BranchDing0
             Description #TODO
                 
         Returns
         -------
-        (:obj:`GridDingo`, :obj:`GridDingo`)
-            2-tuple of nodes (Dingo objects) #TODO:Check
+        (:obj:`GridDing0`, :obj:`GridDing0`)
+            2-tuple of nodes (Ding0 objects) #TODO:Check
         """
         edges = nx.get_edge_attributes(self._graph, 'branch')
         nodes = list(edges.keys())[list(edges.values()).index(branch)]
@@ -254,13 +254,13 @@ class GridDing0:
 
         Args
         ----
-        node: GridDingo
-            Dingo object (member of graph)
+        node: GridDing0
+            Ding0 object (member of graph)
         
         Returns
         -------
         :any:`list`
-            List of tuples (node in :obj:`GridDingo`, branch in :obj:`BranchDingo`) ::
+            List of tuples (node in :obj:`GridDing0`, branch in :obj:`BranchDing0`) ::
             
                 (node , branch_0 ),
                 ...,
@@ -318,9 +318,9 @@ class GridDing0:
 
         Args
         ----
-        node_source: GridDingo 
+        node_source: GridDing0
             source node, member of _graph
-        node_target: GridDingo
+        node_target: GridDing0
             target node, member of _graph
 	    type : str
 	        Specify if nodes or edges should be returned. Default
@@ -328,7 +328,7 @@ class GridDing0:
 
         Returns
         -------
-        :any:`list` of :obj:`GridDingo`
+        :any:`list` of :obj:`GridDing0`
             path: shortest path from `node_source` to `node_target` (list of nodes in _graph)
 
         Notes:
@@ -364,7 +364,7 @@ class GridDing0:
 
         Returns
         -------
-        :any:`list` of :obj:`BranchDingo`
+        :any:`list` of :obj:`BranchDing0`
             branches: list of branches (list of nodes in _graph) #TODO:check
         """
         branches = set()
@@ -406,8 +406,8 @@ class GridDing0:
 
         Returns
         -------
-        :any:`list` of :obj:`GridDingo`
-            List of nodes (Dingo objects)
+        :any:`list` of :obj:`GridDing0`
+            List of nodes (Ding0 objects)
         """
         return sorted(nx.isolates(self._graph), key=lambda x: repr(x))
 
@@ -447,7 +447,7 @@ class StationDing0:
             
     See Also
     --------
-     (see attribute `v_level` in class MVGridDingo) #TODO where is this?
+     (see attribute `v_level` in class MVGridDing0) #TODO where is this?
     """
 
     def __init__(self, **kwargs):
@@ -466,7 +466,7 @@ class StationDing0:
         
         Yields
         ------
-        StationDingo
+        StationDing0
             Description
         """
         for trans in self._transformers:
@@ -477,7 +477,7 @@ class StationDing0:
         
         Args
         ----
-        transformer : StationDingo
+        transformer : StationDing0
             Description #TODO
         """
         if transformer not in self.transformers() and isinstance(transformer, TransformerDing0):
@@ -553,7 +553,7 @@ class BranchDing0:
         'line' or 'cable'
     connects_aggregated : 
         Description #TODO
-    circuit_breaker : :obj:`CircuitBreakerDingo`
+    circuit_breaker : :obj:`CircuitBreakerDing0`
         Description #TODO
 
     Notes
@@ -623,7 +623,7 @@ class TransformerDing0:
         return self.grid.network
 
 
-class GeneratorDingo:
+class GeneratorDing0:
     """ Generators (power plants of any kind)
         
     Attributes
@@ -750,9 +750,9 @@ class CircuitBreakerDing0:
         Descr #TODO
     grid : :obj:`int`
         Descr #TODO
-    branch : :obj:`BranchDingo`
+    branch : :obj:`BranchDing0`
         Descr #TODO
-    branch_nodes : (:obj:`GridDingo`, :obj:`GridDingo`)
+    branch_nodes : (:obj:`GridDing0`, :obj:`GridDing0`)
         Tuple of nodes in the branch.
     status: :obj:`str`, default 'closed'
         Desc #TODO

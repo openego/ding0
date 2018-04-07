@@ -45,7 +45,7 @@ def ding0_graph_to_routing_specs(graph):
         
     See Also
     --------
-    dingo.grid.mv_grid.models.models.Graph : for keys of return dict
+    ding0.grid.mv_grid.models.models.Graph : for keys of return dict
         
     """
 
@@ -245,8 +245,8 @@ def solve(graph, debug=False, anim=None):
         NetworkX graph object with nodes
     debug: bool, defaults to False
         If True, information is printed while routing
-    anim: AnimationDingo
-        AnimationDingo object 
+    anim: AnimationDing0
+        AnimationDing0 object
 
     Returns
     -------
@@ -255,7 +255,7 @@ def solve(graph, debug=False, anim=None):
         
     See Also
     --------
-    dingo.tools.animation.AnimationDingo : for a more detailed description on anim parameter.
+    ding0.tools.animation.AnimationDing0 : for a more detailed description on anim parameter.
     """
 
     # TODO: Implement debug mode (pass to solver) to get more information while routing (print routes, draw network, ..)

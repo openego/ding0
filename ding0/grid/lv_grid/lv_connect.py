@@ -30,8 +30,8 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
     
     Args
     ----
-    lv_grid_district: LVGridDistrictDingo
-        LVGridDistrictDingo object for which the connection process has to be done
+    lv_grid_district: LVGridDistrictDing0
+        LVGridDistrictDing0 object for which the connection process has to be done
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes
     debug: bool, defaults to False

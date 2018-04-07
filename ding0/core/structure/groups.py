@@ -86,7 +86,7 @@ class LoadAreaGroupDing0:
         
         Args
         ----
-        node: GridDingo
+        node: GridDing0
             Descr
         
         Returns

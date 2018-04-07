@@ -165,8 +165,8 @@ class BaseSolution(object):
         
         Parameters
         ----------
-        AnimationDingo
-            AnimationDingo object
+        AnimationDing0
+            AnimationDing0 object
             
         """
 

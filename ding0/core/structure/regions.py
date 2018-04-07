@@ -78,8 +78,8 @@ class MVGridDistrictDing0(RegionDing0):
 
         Args
         ----
-        lv_load_area: LVLoadAreaDingo
-            instance of class LVLoadAreaDingo
+        lv_load_area: LVLoadAreaDing0
+            instance of class LVLoadAreaDing0
         """
         if lv_load_area not in self.lv_load_areas() and isinstance(lv_load_area, LVLoadAreaDing0):
             self._lv_load_areas.append(lv_load_area)
@@ -263,7 +263,7 @@ class LVLoadAreaDing0(RegionDing0):
 
 class LVLoadAreaCentreDing0:
     # TODO: check docstring
-    """Defines a region centre in Dingo.
+    """Defines a region centre in Ding0.
     
     The centres are used in the MV routing as nodes.
     

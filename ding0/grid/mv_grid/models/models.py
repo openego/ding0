@@ -292,7 +292,7 @@ class Route(object):
         
         See Also
         --------
-        dingo.grid.mv_grid.tools.set_circuit_breakers
+        ding0.grid.mv_grid.tools.set_circuit_breakers
 
         """
         # TODO: add references (Tao)

@@ -50,7 +50,7 @@ def check_load(grid, mode):
             branch_n: rel_overloading_n
             }
         
-    :any:`list` of :obj:`GridDingo`
+    :any:`list` of :obj:`GridDing0`
         List of critical transformers with the following format::
         
         [trafo_1, ..., trafo_m]
@@ -66,8 +66,8 @@ def check_load(grid, mode):
     
     See Also
     --------
-    dingo.flexopt.reinforce_measures.reinforce_branches_current :
-    dingo.flexopt.reinforce_measures.reinforce_branches_voltage :
+    ding0.flexopt.reinforce_measures.reinforce_branches_current :
+    ding0.flexopt.reinforce_measures.reinforce_branches_voltage :
     
     """
 
@@ -164,7 +164,7 @@ def check_voltage(grid, mode):
 
     Returns
     -------
-    :any:`list` of :any:`GridDingo`
+    :any:`list` of :any:`GridDing0`
         List of critical nodes, sorted descending by voltage difference.
 
     Notes
@@ -312,7 +312,7 @@ def peak_load_generation_at_node(nodes):
     Parameters
     ----------
     nodes : :any:`list`
-        Any LV grid Dingo node object that is part of the grid topology
+        Any LV grid Ding0 node object that is part of the grid topology
 
     Return
     ------
@@ -373,8 +373,8 @@ def get_critical_voltage_at_nodes(grid):
 
     Parameters
     ----------
-    grid : LVGridDingo
-        Dingo LV grid object
+    grid : LVGridDing0
+        Ding0 LV grid object
 
     Notes
     -----
@@ -605,8 +605,8 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
 
     Parameters
     ----------
-    grid : LVGridDingo
-        Dingo grid object
+    grid : LVGridDing0
+        Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology
     node : graph node
@@ -681,8 +681,8 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
 
     Parameters
     ----------
-    grid : LVGridDingo
-        Dingo grid object
+    grid : LVGridDing0
+        Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology
     main_branch_node : graph node
@@ -739,8 +739,8 @@ def get_voltage_at_bus_bar(grid, tree):
 
     Parameters
     ----------
-    grid : LVGridDingo
-        Dingo grid object
+    grid : LVGridDing0
+        Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology:
 

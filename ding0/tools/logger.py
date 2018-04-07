@@ -38,7 +38,7 @@ def create_dir(dirpath):
 
 def create_home_dir(ding0_path=None):
     """
-    Check if ~/.dingo exists, otherwise create it
+    Check if ~/.ding0 exists, otherwise create it
 
     Parameters
     ----------
@@ -73,7 +73,7 @@ def setup_logger(log_dir=None, loglevel=logging.DEBUG):
     Parameters
     ----------
     log_dir: str
-        Directory to save log, default: ~/.dingo/logging/
+        Directory to save log, default: ~/.ding0/logging/
     loglevel: 
         Level of logger.
     """

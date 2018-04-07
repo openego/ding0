@@ -455,7 +455,7 @@ class NetworkDing0:
         --------
         build_mv_grid_district : used to instantiate MV grid_district objects
         import_lv_load_areas : used to import load_areas for every single MV grid_district
-        dingo.core.structure.regions.MVGridDistrictDingo.add_peak_demand : used to summarize peak loads of underlying load_areas
+        ding0.core.structure.regions.MVGridDistrictDing0.add_peak_demand : used to summarize peak loads of underlying load_areas
         """
 
         # check arguments
@@ -759,7 +759,7 @@ class NetworkDing0:
                 Database session
             debug: If True, information is printed during process
         Notes:
-            Connection of generators is done later on in NetworkDingo's method connect_generators()
+            Connection of generators is done later on in NetworkDing0's method connect_generators()
         """
 
         def import_res_generators():
@@ -968,8 +968,8 @@ class NetworkDing0:
 
         Returns
         -------
-        PFConfigDingo
-            PFConfigDingo object
+        PFConfigDing0
+            PFConfigDing0 object
         """
 
         scenario = cfg_ding0.get("powerflow", "test_grid_stability_scenario")
@@ -1448,7 +1448,7 @@ class NetworkDing0:
             
         See Also
         --------
-        dingo.core.NetworkDingo.export_mv_grid_new :
+        ding0.core.NetworkDing0.export_mv_grid_new :
         
         """
 
@@ -1565,8 +1565,8 @@ class NetworkDing0:
                 
         See Also
         --------
-        dingo.core.network.grids.MVGridDingo.routing : for details on MVGridDingo objects routing
-        dingo.tools.animation.AnimationDingo : for details on animation function.
+        ding0.core.network.grids.MVGridDing0.routing : for details on MVGridDing0 objects routing
+        ding0.tools.animation.AnimationDing0 : for details on animation function.
         """
 
         if animation:
@@ -1636,7 +1636,7 @@ class NetworkDing0:
         
         See Also
         --------
-        dingo.core.network.grids.MVGridDingo.parametrize_grid
+        ding0.core.network.grids.MVGridDing0.parametrize_grid
         """
 
         for grid_district in self.mv_grid_districts():
@@ -1649,7 +1649,7 @@ class NetworkDing0:
             
         See Also
         --------
-        dingo.core.network.grids.MVGridDingo.set_branch_ids
+        ding0.core.network.grids.MVGridDing0.set_branch_ids
         """
 
         for grid_district in self.mv_grid_districts():
@@ -1667,7 +1667,7 @@ class NetworkDing0:
             
         See Also
         --------
-        dingo.grid.mv_grid.tools.set_circuit_breakers
+        ding0.grid.mv_grid.tools.set_circuit_breakers
         """
 
         for grid_district in self.mv_grid_districts():

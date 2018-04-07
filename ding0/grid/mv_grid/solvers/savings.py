@@ -214,7 +214,7 @@ class ClarkeWrightSolver(BaseSolver):
             max processing time in seconds
         debug: bool, defaults to False
             If True, information is printed while routing
-        anim: AnimationDingo
+        anim: AnimationDing0
 
         Returns
         -------

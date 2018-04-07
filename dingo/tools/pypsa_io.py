@@ -4,16 +4,16 @@ distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DINGO lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-import dingo
+import ding0
 
 from egopowerflow.tools.io import get_timerange, import_components, \
     import_pq_sets, create_powerflow_problem, results_to_oedb, \
@@ -25,11 +25,11 @@ from egoio.db_tables.model_draft import EgoGridPfMvBus, EgoGridPfMvResBus, EgoGr
     EgoGridPfMvResLine, EgoGridPfMvGenerator, EgoGridPfMvLoad, \
     EgoGridPfMvTransformer, EgoGridPfMvResTransformer, EgoGridPfMvTempResolution, EgoGridPfMvBusVMagSet, EgoGridPfMvGeneratorPqSet, EgoGridPfMvLoadPqSet
 
-from dingo.tools import config as cfg_dingo
-from dingo.core.network.stations import LVStationDingo, MVStationDingo
-from dingo.core.network import BranchDingo, CircuitBreakerDingo, GeneratorDingo
-from dingo.core import MVCableDistributorDingo
-from dingo.core.structure.regions import LVLoadAreaCentreDingo
+from ding0.tools import config as cfg_ding0
+from ding0.core.network.stations import LVStationDing0, MVStationDing0
+from ding0.core.network import BranchDing0, CircuitBreakerDing0, GeneratorDing0
+from ding0.core import MVCableDistributorDing0
+from ding0.core.structure.regions import LVLoadAreaCentreDing0
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
@@ -42,7 +42,7 @@ import sys
 import os
 import logging
 
-logger = logging.getLogger('dingo')
+logger = logging.getLogger('ding0')
 
 
 def delete_powerflow_tables(session):
@@ -71,8 +71,8 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
 
     Parameters
     ----------
-    grid: MVGridDingo
-        Instance of MVGridDingo class
+    grid: MVGridDing0
+        Instance of MVGridDing0 class
     session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
         SQLAlchemy session object Session identifier
     temp_id: int
@@ -92,16 +92,16 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
     """
 
     mv_routing_loads_cos_phi = float(
-        cfg_dingo.get('mv_routing_tech_constraints',
+        cfg_ding0.get('mv_routing_tech_constraints',
                       'mv_routing_loads_cos_phi'))
-    srid = int(cfg_dingo.get('geo', 'srid'))
+    srid = int(cfg_ding0.get('geo', 'srid'))
 
-    load_in_generation_case = cfg_dingo.get('assumptions',
+    load_in_generation_case = cfg_ding0.get('assumptions',
                                             'load_in_generation_case')
 
     Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
 
-    voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
+    voltage_set_slack = cfg_ding0.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
 
     kw2mw = 1e-3
@@ -109,7 +109,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
     # Create all busses
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
-            if isinstance(node, LVStationDingo):
+            if isinstance(node, LVStationDing0):
                 # MV side bus
                 bus_mv = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
@@ -182,7 +182,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     grid_id=grid.id_db)
                 session.add(load)
                 session.add(load_pq_set)
-            elif isinstance(node, LVLoadAreaCentreDingo):
+            elif isinstance(node, LVLoadAreaCentreDing0):
                 load = orm_pypsa.EgoGridPfMvLoad(
                     load_id=node.pypsa_id,
                     bus='_'.join(['HV', str(grid.id_db), 'trd']),
@@ -198,7 +198,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     grid_id=grid.id_db)
                 session.add(load)
                 session.add(load_pq_set)
-            elif isinstance(node, MVCableDistributorDingo):
+            elif isinstance(node, MVCableDistributorDing0):
                 bus = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
@@ -211,7 +211,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                     grid_id=grid.id_db)
                 session.add(bus)
                 session.add(bus_pq_set)
-            elif isinstance(node, MVStationDingo):
+            elif isinstance(node, MVStationDing0):
                 logger.info('Only MV side bus of MVStation will be added.')
                 bus_mv_station = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
@@ -231,7 +231,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_mv_station)
                 session.add(bus_pq_set_mv_station)
                 session.add(slack_gen)
-            elif isinstance(node, GeneratorDingo):
+            elif isinstance(node, GeneratorDing0):
                 bus_gen = orm_pypsa.EgoGridPfMvBus(
                     bus_id=node.pypsa_id,
                     v_nom=grid.v_level,
@@ -260,7 +260,7 @@ def export_nodes(grid, session, nodes, temp_id, lv_transformer=True):
                 session.add(bus_pq_set_gen)
                 session.add(generator)
                 session.add(generator_pq_set)
-            elif isinstance(node, CircuitBreakerDingo):
+            elif isinstance(node, CircuitBreakerDing0):
                 # TODO: remove this elif-case if CircuitBreaker are removed from graph
                 continue
             else:
@@ -278,14 +278,14 @@ def export_edges(grid, session, edges):
 
     Parameters
     ----------
-    grid: MVGridDingo
-        Instance of MVGridDingo class
+    grid: MVGridDing0
+        Instance of MVGridDing0 class
     session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
         SQLAlchemy session object Session identifier
     """
 
     omega = 2 * pi * 50
-    srid = int(cfg_dingo.get('geo', 'srid'))
+    srid = int(cfg_ding0.get('geo', 'srid'))
 
     # iterate over edges and add them one by one
     for edge in edges:
@@ -334,7 +334,7 @@ def export_to_dir(network, export_dir):
         are exported to.
     """
 
-    package_path = dingo.__path__[0]
+    package_path = ding0.__path__[0]
 
     network.export_to_csv_folder(os.path.join(package_path,
                                               'output',
@@ -384,9 +384,9 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
     Parameters
     ----------
-    grid: GridDingo
-        dingo.Network grid identifier
-    nodes: GridDingo, list of
+    grid: GridDing0
+        ding0.Network grid identifier
+    nodes: GridDing0, list of
         list of nodes of the grid graph
     lv_transformer: bool, default=True
         Toggle LV transformer representation in power flow analysis
@@ -404,19 +404,19 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     data_integrity :
     """
 
-    generator_instances = [MVStationDingo, GeneratorDingo]
+    generator_instances = [MVStationDing0, GeneratorDing0]
 
     mv_routing_loads_cos_phi = float(
-        cfg_dingo.get('mv_routing_tech_constraints',
+        cfg_ding0.get('mv_routing_tech_constraints',
                       'mv_routing_loads_cos_phi'))
-    srid = int(cfg_dingo.get('geo', 'srid'))
+    srid = int(cfg_ding0.get('geo', 'srid'))
 
-    load_in_generation_case = cfg_dingo.get('assumptions',
+    load_in_generation_case = cfg_ding0.get('assumptions',
                                             'load_in_generation_case')
 
     Q_factor_load = tan(acos(mv_routing_loads_cos_phi))
 
-    voltage_set_slack = cfg_dingo.get("mv_routing_tech_constraints",
+    voltage_set_slack = cfg_ding0.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
 
     kw2mw = 1e-3
@@ -441,7 +441,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
             # buses only
-            if isinstance(node, MVCableDistributorDingo):
+            if isinstance(node, MVCableDistributorDing0):
                 buses['bus_id'].append(node.pypsa_id)
                 buses['v_nom'].append(grid.v_level)
                 buses['geom'].append(from_shape(node.geo_data, srid=srid))
@@ -455,7 +455,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
             # bus + generator
             elif isinstance(node, tuple(generator_instances)):
                 # slack generator
-                if isinstance(node, MVStationDingo):
+                if isinstance(node, MVStationDing0):
                     logger.info('Only MV side bus of MVStation will be added.')
                     generator['generator_id'].append(
                         '_'.join(['MV', str(grid.id_db), 'slack']))
@@ -465,7 +465,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                         [voltage_set_slack, voltage_set_slack])
 
                 # other generators
-                if isinstance(node, GeneratorDingo):
+                if isinstance(node, GeneratorDing0):
                     generator['generator_id'].append('_'.join(
                         ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
                     generator['control'].append('PQ')
@@ -495,7 +495,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
 
             # aggregated load at hv/mv substation
-            elif isinstance(node, LVLoadAreaCentreDingo):
+            elif isinstance(node, LVLoadAreaCentreDing0):
                 load['load_id'].append(node.pypsa_id)
                 load['bus'].append('_'.join(['HV', str(grid.id_db), 'trd']))
                 load['grid_id'].append(grid.id_db)
@@ -531,7 +531,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 generator_pq_set['grid_id'].append(grid.id_db)
 
             # bus + aggregate load of lv grids (at mv/ls substation)
-            elif isinstance(node, LVStationDingo):
+            elif isinstance(node, LVStationDing0):
                 # Aggregated load representing load in LV grid
                 load['load_id'].append(
                     '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
@@ -577,13 +577,13 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     [0 * kw2mw, 0 * kw2mw])
                 generator_pq_set['grid_id'].append(grid.id_db)
 
-            elif isinstance(node, CircuitBreakerDingo):
+            elif isinstance(node, CircuitBreakerDing0):
                 # TODO: remove this elif-case if CircuitBreaker are removed from graph
                 continue
             else:
                 raise TypeError("Node of type", node, "cannot be handled here")
         else:
-            if not isinstance(node, CircuitBreakerDingo):
+            if not isinstance(node, CircuitBreakerDing0):
                 add_info =  "LA is aggr. {0}".format(
                     node.lv_load_area.is_aggregated)
             else:
@@ -609,10 +609,10 @@ def edges_to_dict_of_dataframes(grid, edges):
 
     Parameters
     ----------
-    grid: GridDingo
-        dingo.Network grid identifier
-    edges: :any:`list` of :any:`GridDingo`
-        Edges of Dingo.Network graph
+    grid: GridDing0
+        ding0.Network grid identifier
+    edges: :any:`list` of :any:`GridDing0`
+        Edges of Ding0.Network graph
 
     Returns
     -------
@@ -620,7 +620,7 @@ def edges_to_dict_of_dataframes(grid, edges):
         edges_dict: DataFrame containing line data
     """
     omega = 2 * pi * 50
-    srid = int(cfg_dingo.get('geo', 'srid'))
+    srid = int(cfg_ding0.get('geo', 'srid'))
 
     lines = {'line_id': [], 'bus0': [], 'bus1': [], 'x': [], 'r': [],
              's_nom': [], 'length': [], 'cables': [], 'geom': [],
@@ -695,9 +695,9 @@ def run_powerflow(session, export_pypsa_dir=None):
 
     """
 
-    scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
-    start_hour = cfg_dingo.get("powerflow", "start_hour")
-    end_hour = cfg_dingo.get("powerflow", "end_hour")
+    scenario = cfg_ding0.get("powerflow", "test_grid_stability_scenario")
+    start_hour = cfg_ding0.get("powerflow", "start_hour")
+    end_hour = cfg_ding0.get("powerflow", "end_hour")
 
     # choose temp_id
     temp_id_set = 1
@@ -780,8 +780,8 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
         dict of :pandas:`pandas.DataFrame<dataframe>`
     components_data: dict
         dict of :pandas:`pandas.DataFrame<dataframe>`
-    grid: MVGridDingo
-        Dingo MV grid
+    grid: MVGridDing0
+        Ding0 MV grid
     export_pypsa_dir: str
         Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
         Export is omitted if argument is empty.
@@ -794,9 +794,9 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
     data_integrity :
     """
 
-    scenario = cfg_dingo.get("powerflow", "test_grid_stability_scenario")
-    start_hour = cfg_dingo.get("powerflow", "start_hour")
-    end_hour = cfg_dingo.get("powerflow", "end_hour")
+    scenario = cfg_ding0.get("powerflow", "test_grid_stability_scenario")
+    start_hour = cfg_ding0.get("powerflow", "start_hour")
+    end_hour = cfg_ding0.get("powerflow", "end_hour")
 
     # choose temp_id
     temp_id_set = 1
@@ -813,7 +813,7 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
                               periods=timesteps,
                               start=start_time)
 
-    # TODO: Instead of hard coding PF config, values from class PFConfigDingo can be used here.
+    # TODO: Instead of hard coding PF config, values from class PFConfigDing0 can be used here.
 
     # create PyPSA powerflow problem
     network, snapshots = create_powerflow_problem(timerange, components)
@@ -918,8 +918,8 @@ def import_pfa_bus_results(session, grid):
     ----------
     session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
         SQLAlchemy session object
-    grid: GridDingo
-        dingo.Network grid identifier networkX graph
+    grid: GridDing0
+        ding0.Network grid identifier networkX graph
     
     """
 
@@ -953,8 +953,8 @@ def import_pfa_line_results(session, grid):
     ----------
     session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
         SQLAlchemy session object
-    grid: GridDingo
-        dingo.Network grid identifier networkX graph
+    grid: GridDing0
+        ding0.Network grid identifier networkX graph
 
     """
 
@@ -1025,8 +1025,8 @@ def assign_bus_results(grid, bus_data):
 
     Parameters
     ----------
-    grid: GridDingo
-        Dingo MV grid
+    grid: GridDing0
+        Ding0 MV grid
     bus_data: :pandas:`pandas.DataFrame<dataframe>`
         DataFrame containing voltage levels obtained from PF analysis
     """
@@ -1036,13 +1036,13 @@ def assign_bus_results(grid, bus_data):
         # check if node is connected to graph
         if (node not in grid.graph_isolated_nodes()
             and not isinstance(node,
-                               LVLoadAreaCentreDingo)):
-            if isinstance(node, LVStationDingo):
+                               LVLoadAreaCentreDing0)):
+            if isinstance(node, LVStationDing0):
                 node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-            elif isinstance(node, (LVStationDingo, LVLoadAreaCentreDingo)):
+            elif isinstance(node, (LVStationDing0, LVLoadAreaCentreDing0)):
                 if node.lv_load_area.is_aggregated:
                     node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
-            elif not isinstance(node, CircuitBreakerDingo):
+            elif not isinstance(node, CircuitBreakerDing0):
                 node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
             else:
                 logger.warning("Object {} has been skipped while importing "
@@ -1054,20 +1054,20 @@ def assign_line_results(grid, line_data):
 
     Parameters
     -----------
-    grid: GridDingo
-        Dingo MV grid
+    grid: GridDing0
+        Ding0 MV grid
     line_data: :pandas:`pandas.DataFrame<dataframe>`
         DataFrame containing active/reactive at nodes obtained from PF analysis
     """
 
-    package_path = dingo.__path__[0]
+    package_path = ding0.__path__[0]
 
     edges = [edge for edge in grid.graph_edges()
              if (edge['adj_nodes'][0] in grid._graph.nodes() and not isinstance(
-            edge['adj_nodes'][0], LVLoadAreaCentreDingo))
+            edge['adj_nodes'][0], LVLoadAreaCentreDing0))
              and (
              edge['adj_nodes'][1] in grid._graph.nodes() and not isinstance(
-                 edge['adj_nodes'][1], LVLoadAreaCentreDingo))]
+                 edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
     line_data.to_csv(os.path.join(package_path,
                                   'line_data_after.csv'))
 

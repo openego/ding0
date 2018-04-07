@@ -28,7 +28,7 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
     
     Args
     ----
-    mv_grid: MVGridDingo
+    mv_grid: MVGridDing0
        Description#TODO
     debug: bool, defaults to False
        If True, information is printed during process

@@ -43,8 +43,8 @@ class MVGridDing0(GridDing0):
 
     Parameters
     ----------
-    region : :obj:`MVGridDistrictDingo`
-        MV region (instance of MVGridDistrictDingo class) that is associated with grid
+    region : :obj:`MVGridDistrictDing0`
+        MV region (instance of MVGridDistrictDing0 class) that is associated with grid
     default_branch_kind: :obj:`str`
         kind of branch (possible values: 'cable' or 'line')
     default_branch_type: :pandas:`pandas.Series<series>`   
@@ -88,7 +88,7 @@ class MVGridDing0(GridDing0):
 
         Args
         ----
-        circ_breaker: CircuitBreakerDingo 
+        circ_breaker: CircuitBreakerDing0
             Description #TODO
         """
         if circ_breaker not in self._circuit_breakers and isinstance(circ_breaker, CircuitBreakerDing0):
@@ -189,7 +189,7 @@ class MVGridDing0(GridDing0):
             
         Yields
         ------
-        :any:`list` of :obj:`GridDingo`
+        :any:`list` of :obj:`GridDing0`
             List with nodes of each ring of _graph in- or excluding root node (HV/MV station) (arg `include_root_node`),
             format::
              
@@ -253,7 +253,7 @@ class MVGridDing0(GridDing0):
 
         ##Find "rings" associated to aggregated LA
         #for node in self.graph_nodes_sorted():
-        #    if isinstance(node,LVLoadAreaCentreDingo): # MVCableDistributorDingo
+        #    if isinstance(node,LVLoadAreaCentreDing0): # MVCableDistributorDing0
         #        edges_ring = []
         #        ring_nodes = []
         #        if node.lv_load_area.is_aggregated:
@@ -291,13 +291,13 @@ class MVGridDing0(GridDing0):
 
         Args
         ----
-        node_source: GridDingo
-            source node (Dingo object), member of _graph
+        node_source: GridDing0
+            source node (Ding0 object), member of _graph
 
         Returns
         -------
-        :any:`list` of :obj:`GridDingo`
-            List of nodes (Dingo objects)
+        :any:`list` of :obj:`GridDing0`
+            List of nodes (Ding0 objects)
         """
         if node_source in self._graph.nodes():
 
@@ -809,7 +809,7 @@ class MVGridDing0(GridDing0):
             
         See Also
         --------
-        dingo.grid.mv_grid.tools.set_circuit_breakers
+        ding0.grid.mv_grid.tools.set_circuit_breakers
         """
         set_circuit_breakers(self, debug=debug)
 
@@ -822,7 +822,7 @@ class LVGridDing0(GridDing0):
 
     Parameters
     ----------
-    region : LVLoadAreaDingo
+    region : LVLoadAreaDing0
         LV region that is associated with grid
     default_branch_kind : str
         description #TODO

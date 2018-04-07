@@ -34,7 +34,7 @@ def reinforce_branches_current(grid, crit_branches):
     
     Parameters
     ----------
-    grid : GridDingo 
+    grid : GridDing0
         Grid identifier.
     crit_branches : dict
         Dict of critical branches with max. relative overloading.
@@ -81,7 +81,7 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
 
     Parameters
     ----------
-    grid : GridDingo 
+    grid : GridDing0
         Grid identifier.
     crit_branches : :any:`list` of :obj:`int`
         List of critical branches. #TODO: check if a list or a dictionary
@@ -96,8 +96,8 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
         
     See Also
     --------
-    dingo.flexopt.check_tech_constraints.check_load :
-    dingo.flexopt.reinforce_measures.reinforce_branches_voltage :
+    ding0.flexopt.check_tech_constraints.check_load :
+    ding0.flexopt.reinforce_measures.reinforce_branches_voltage :
     """
 
     # load cable data, file_names and parameter
@@ -136,8 +136,8 @@ def extend_substation(grid, critical_stations, grid_level):
 
     Parameters
     ----------
-    grid: GridDingo
-        Dingo grid container
+    grid: GridDing0
+        Ding0 grid container
     critical_stations : :any:`list`
         List of stations with overloading
     grid_level : str
@@ -312,7 +312,7 @@ def new_substation(grid):
 
     Parameters
     ----------
-    grid : MVGridDingo 
+    grid : MVGridDing0
         MV Grid identifier.
     """
 
@@ -323,8 +323,8 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     Parameters
     ----------
-    grid : LVGridDingo
-        Dingo LV grid object
+    grid : LVGridDing0
+        Ding0 LV grid object
     crit_branches : :any:`list`
         List of critical branches incl. its line loading
 

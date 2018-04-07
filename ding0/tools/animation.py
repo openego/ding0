@@ -23,7 +23,7 @@ class AnimationDing0:
     """ Class for visual animation of routing process.
     
     (basically a central place to store information about output file and count of saved images).
-    Use argument 'animation=True' of method 'NetworkDingo.mv_routing()' to enable image export.
+    Use argument 'animation=True' of method 'NetworkDing0.mv_routing()' to enable image export.
     
     Subsequently, FFMPEG can be used to convert images to animation, e.g.
     
@@ -31,7 +31,7 @@ class AnimationDing0:
     
     See Also
     --------
-    dingo.core.NetworkDingo.mv_routing() :
+    ding0.core.NetworkDing0.mv_routing() :
     """
 
     def __init__(self, **kwargs):

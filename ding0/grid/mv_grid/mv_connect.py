@@ -49,8 +49,8 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
     ----
     node_shp: :shapely:`Shapely Point object<points>`
         Shapely Point object of node
-    branches: BranchDingo
-        BranchDingo objects of MV region
+    branches: BranchDing0
+        BranchDing0 objects of MV region
     proj: :pyproj:`pyproj Proj object< >`
         nodes' CRS to equidistant CRS (e.g. WGS84 -> ETRS)
     conn_dist_weight: float
@@ -64,7 +64,7 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
     -------
     :any:`list` 
         List of connection objects. 
-        Each object is represented by dict with Dingo object,
+        Each object is represented by dict with Ding0 object,
         shapely object, and distance to node.
     
     See Also
@@ -174,8 +174,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
     
     Args
     ----
-    node: LVLoadAreaCentreDingo, i.e.
-        Origin node - Dingo graph object (e.g. LVLoadAreaCentreDingo)
+    node: LVLoadAreaCentreDing0, i.e.
+        Origin node - Ding0 graph object (e.g. LVLoadAreaCentreDing0)
     node_shp: :shapely:`Shapely Point object<points>`
         Shapely Point object of node
     graph: :networkx:`NetworkX Graph Obj< >`
@@ -185,7 +185,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
     conn_objects_min_stack: list
         List of connection objects. 
         
-        Each object is represented by dict with Dingo object, shapely object,
+        Each object is represented by dict with Ding0 object, shapely object,
         and distance to node, sorted ascending by distance.
     conn_dist_ring_mod: type
         Max. distance when nodes are included into route instead of creating a 
@@ -195,7 +195,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
     See Also
     --------
-    dingo.grid.mv_grid.mv_connect : for details on the `conn_dist_ring_mod` parameter.
+    ding0.grid.mv_grid.mv_connect : for details on the `conn_dist_ring_mod` parameter.
     """
 
     node_connected = False
@@ -343,8 +343,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
     Args
     ----
-    node: LVLoadAreaCentreDingo, i.e.
-        Origin node - Dingo graph object (e.g. LVLoadAreaCentreDingo)
+    node: LVLoadAreaCentreDing0, i.e.
+        Origin node - Ding0 graph object (e.g. LVLoadAreaCentreDing0)
     node_shp: :shapely:`Shapely Point object<points>`
         Shapely Point object of origin node
     target_obj: type
@@ -361,17 +361,17 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
     Returns
     -------
-    :obj:`LVLoadAreaCentreDingo`
+    :obj:`LVLoadAreaCentreDing0`
         object that node was connected to.
         
-        (instance of :obj:`LVLoadAreaCentreDingo` or :obj:`MVCableDistributorDingo`.
+        (instance of :obj:`LVLoadAreaCentreDing0` or :obj:`MVCableDistributorDing0`.
         
         If node is included into line instead of creating a new line (see arg
         `conn_dist_ring_mod`), `target_obj_result` is None.
                            
     See Also
     --------
-    dingo.grid.mv_grid.mv_connect : for details on the `conn_dist_ring_mod` parameter.
+    ding0.grid.mv_grid.mv_connect : for details on the `conn_dist_ring_mod` parameter.
     """
 
     target_obj_result = None
@@ -545,10 +545,10 @@ def disconnect_node(node, target_obj_result, graph, debug):
 
     Args
     ----
-    node: LVLoadAreaCentreDingo, i.e.
-        Origin node - Dingo graph object (e.g. LVLoadAreaCentreDingo)
-    target_obj_result: LVLoadAreaCentreDingo, i.e.
-        Origin node - Dingo graph object (e.g. LVLoadAreaCentreDingo)
+    node: LVLoadAreaCentreDing0, i.e.
+        Origin node - Ding0 graph object (e.g. LVLoadAreaCentreDing0)
+    target_obj_result: LVLoadAreaCentreDing0, i.e.
+        Origin node - Ding0 graph object (e.g. LVLoadAreaCentreDing0)
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes and newly created branches
     debug: bool
@@ -585,7 +585,7 @@ def parametrize_lines(mv_grid):
     
     Args
     ----
-    mv_grid: MVGridDingo
+    mv_grid: MVGridDing0
         MV grid instance
 
     Notes
@@ -606,16 +606,16 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
 
     Args
     ----
-    mv_grid: MVGridDingo
+    mv_grid: MVGridDing0
         MV grid instance
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes
     mode: str, defaults to 'normal'
-        Specify mode how satellite `LVLoadAreaCentreDingo` are connected to the
+        Specify mode how satellite `LVLoadAreaCentreDing0` are connected to the
         grid. Mode normal (default) considers for restrictions like max.
         string length, max peak load per string.
         The mode 'isolated' disregards any connection restrictions and connects
-        the node `LVLoadAreaCentreDingo` to the next connection point.
+        the node `LVLoadAreaCentreDing0` to the next connection point.
         
     debug: bool, defaults to False
          If True, information is printed during process
@@ -727,8 +727,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
     Args
     ----
-    mv_grid_district: MVGridDistrictDingo
-        MVGridDistrictDingo object for which the connection process has to be done
+    mv_grid_district: MVGridDistrictDing0
+        MVGridDistrictDing0 object for which the connection process has to be done
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes
     debug: bool, defaults to False
@@ -903,8 +903,8 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
 
     Args
     ----
-    mv_grid_district: MVGridDistrictDingo
-        MVGridDistrictDingo object for which the connection process has to be 
+    mv_grid_district: MVGridDistrictDing0
+        MVGridDistrictDing0 object for which the connection process has to be
         done
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes

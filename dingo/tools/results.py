@@ -4,12 +4,12 @@ distribution grids based on open data.
 
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
-DINGO lives at github: https://github.com/openego/dingo/
-The documentation is available on RTD: http://dingo.readthedocs.io"""
+DINGO lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/dingo/blob/master/LICENSE"
+__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
@@ -17,12 +17,12 @@ import pickle
 import os
 import pandas as pd
 
-from dingo.tools import config as cfg_dingo
+from ding0.tools import config as cfg_ding0
 from matplotlib import pyplot as plt
 import seaborn as sns
 
 
-class ResultsDingo:
+class ResultsDing0:
     # TODO: check DOCSTRING in class and methods
     """Holds raw results data and provides methods to generate a set of results
 
@@ -106,7 +106,7 @@ class ResultsDingo:
             Ints describing MV grid districts
         """
 
-        pickle_name = cfg_dingo.get('output', 'nd_pickle')
+        pickle_name = cfg_ding0.get('output', 'nd_pickle')
         # self.nd = self.read_pickles_from_files(pickle_name)
 
         mvgd_1 = pickle.load(
@@ -131,7 +131,7 @@ class ResultsDingo:
                     open(os.path.join(
                         self.base_path,
                         'results',
-                        "dingo_grids_{0}-{1}.pkl".format(
+                        "ding0_grids_{0}-{1}.pkl".format(
                             mv_grid_districts[0],
                             mv_grid_districts[-1])),
                         "wb"))
@@ -350,7 +350,7 @@ def lv_grid_stats(nd):
 
     Parameters
     ----------
-    nd : LVGridDingo
+    nd : LVGridDing0
         Network container object
 
     Returns

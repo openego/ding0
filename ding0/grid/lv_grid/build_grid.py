@@ -40,7 +40,7 @@ def select_transformers(grid, s_max=None):
 
     Parameters
     ----------
-    grid: LVGridDingo
+    grid: LVGridDing0
         LV grid data
 
     Arguments
@@ -153,7 +153,7 @@ def transformer(grid):
 
     Parameters
     ----------
-    grid: LVGridDingo
+    grid: LVGridDing0
         LV grid data
     """
 
@@ -281,7 +281,7 @@ def grid_model_params_ria(lvgd):
     
     Parameters
     ----------
-    lvgd : LVGridDistrictDingo
+    lvgd : LVGridDistrictDing0
         Low-voltage grid district object
 
     Returns
@@ -338,7 +338,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
     Parameters
     ----------
-    lvgd : LVGridDistrictDingo
+    lvgd : LVGridDistrictDing0
         Low-voltage grid district object
     grid_model_params : dict
         Dict of structural information of sectoral LV grid branchwith particular 
@@ -527,7 +527,7 @@ def build_ret_ind_agr_branches(lvgd):
 
     Parameters
     ----------
-    lvgd : LVGridDistrictDingo
+    lvgd : LVGridDistrictDing0
         Low-voltage grid district object
     """
 
@@ -543,7 +543,7 @@ def select_grid_model_residential(lvgd):
 
     Parameters
     ----------
-    lvgd : LVGridDistrictDingo
+    lvgd : LVGridDistrictDing0
         Low-voltage grid district object
 
     Returns
@@ -600,7 +600,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
 
     Parameters
     ----------
-    lvgd : LVGridDistrictDingo
+    lvgd : LVGridDistrictDing0
         Low-voltage grid district object
     selected_string_df: :pandas:`pandas.DataFrame<dataframe>`
         Table of strings of the selected grid model
@@ -754,7 +754,7 @@ def build_residential_branches(lvgd):
 
     Parameters
     ----------
-    lvgd : LVGridDistrictDingo
+    lvgd : LVGridDistrictDing0
         Low-voltage grid district object
     """
 

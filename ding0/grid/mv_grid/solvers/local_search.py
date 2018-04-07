@@ -131,8 +131,8 @@ class LocalSearchSolver(BaseSolver):
             this behaviour: A threshold to handle values very close to zero as if they were zero
             (for a more detailed description of the matter see http://floating-point-gui.de or
             https://docs.python.org/3.5/tutorial/floatingpoint.html)
-        anim: AnimationDingo
-            AnimationDingo object
+        anim: AnimationDing0
+            AnimationDing0 object
         
         Returns
         -------
@@ -239,8 +239,8 @@ class LocalSearchSolver(BaseSolver):
             this behaviour: A threshold to handle values very close to zero as if they were zero
             (for a more detailed description of the matter see http://floating-point-gui.de or
             https://docs.python.org/3.5/tutorial/floatingpoint.html)
-        anim: AnimationDingo
-            AnimationDingo object
+        anim: AnimationDing0
+            AnimationDing0 object
         
         Returns
         -------
@@ -350,8 +350,8 @@ class LocalSearchSolver(BaseSolver):
             this behaviour: A threshold to handle values very close to zero as if they were zero
             (for a more detailed description of the matter see http://floating-point-gui.de or
             https://docs.python.org/3.5/tutorial/floatingpoint.html)
-        anim: AnimationDingo
-            AnimationDingo object
+        anim: AnimationDing0
+            AnimationDing0 object
         
         Returns
         -------
@@ -552,8 +552,8 @@ class LocalSearchSolver(BaseSolver):
             max processing time in seconds
         debug: bool, defaults to False
             If True, information is printed while routing
-        anim: AnimationDingo
-            AnimationDingo object
+        anim: AnimationDing0
+            AnimationDing0 object
         
         Returns
         -------
