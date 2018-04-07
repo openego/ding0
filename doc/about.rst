@@ -175,7 +175,7 @@ Grid stability and equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 During build of LV grid topology equipment is chosen with respect to max.
-occurring load and generation according to current grid codes (see [VDE-AR]_).
+occurring load and generation according to current grid codes (see [VDEAR]_).
 Nevertheless, some overloading issues may remain. In addition, voltage issues
 may arise that can't be considered during grid topology creation. Therefore, we
 adhere to the regulatory framework of [DINEN50160]_ which is simplified by
@@ -215,7 +215,7 @@ Following steps do apply during reinforcement of Ding0 LV grids
       in the substation
 #. Subsequently **over-voltage issues** are analyzed for all grid nodes
 #. For each node where voltage exceeds 3 % of nominal voltage in feed-in case or
-    5 % of nominal voltage in load case, branch segments
+   5 % of nominal voltage in load case, branch segments
    connecting the node with the substation are reinforce until no further issues
    remain. If a over-voltage issue cannot be solved by installing largest
    availabe cable (NAYY 4x1x300) this type of cable still remains as well as
@@ -248,7 +248,7 @@ References
     Proceedings of VDE ETG Kongress, 2013
 .. [OSM] OpenStreetMap contributors:
     `Open street map <https://www.openstreetmap.org>`_, 2017
-.. [VDE-AR] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
+.. [VDEAR] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
         Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
         Erzeugungsanlagen am Niederspannungsnetz, 2011
 .. [DINEN50160] DIN EN 50160 Merkmale der Spannung in öffentlichen

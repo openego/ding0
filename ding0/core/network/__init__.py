@@ -313,8 +313,11 @@ class GridDing0:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
     def find_path(self, node_source, node_target, type='nodes'):
-        """ Determines the shortest path from `node_source` to `node_target` in _graph using networkx' shortest path
-            algorithm.
+        """Determines shortest path
+
+        Determines the shortest path from `node_source` to
+        `node_target` in _graph using networkx' shortest path
+        algorithm.
 
         Args
         ----
@@ -322,8 +325,8 @@ class GridDing0:
             source node, member of _graph
         node_target: GridDing0
             target node, member of _graph
-	    type : str
-	        Specify if nodes or edges should be returned. Default
+        type : str
+            Specify if nodes or edges should be returned. Default
             is `nodes`
 
         Returns
@@ -331,12 +334,13 @@ class GridDing0:
         :any:`list` of :obj:`GridDing0`
             path: shortest path from `node_source` to `node_target` (list of nodes in _graph)
 
-        Notes:
-            WARNING: The shortest path is calculated using the count of hops, not the actual line lengths!
-            As long as the circuit breakers are open, this works fine since there's only one path. But if
-            they are closed, there are 2 possible paths. The result is a path which have min. count of hops
-            but might have a longer total path length than the second sone.
-            See networkx' function shortest_path() function for details on how the path is calculated.
+        Notes
+        -----
+        WARNING: The shortest path is calculated using the count of hops, not the actual line lengths!
+        As long as the circuit breakers are open, this works fine since there's only one path. But if
+        they are closed, there are 2 possible paths. The result is a path which have min. count of hops
+        but might have a longer total path length than the second sone.
+        See networkx' function shortest_path() function for details on how the path is calculated.
         """
         if (node_source in self._graph.nodes()) and (node_target in self._graph.nodes()):
             path = nx.shortest_path(self._graph, node_source, node_target)

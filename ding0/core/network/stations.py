@@ -24,7 +24,6 @@ import numpy as np
 class MVStationDing0(StationDing0):
     """
     Defines a MV station in DINGO
-    -----------------------------
     """
 
     def __init__(self, **kwargs):
@@ -192,7 +191,6 @@ class MVStationDing0(StationDing0):
 class LVStationDing0(StationDing0):
     """
     Defines a LV station in DINGO
-    -----------------------------
     """
 
     def __init__(self, **kwargs):

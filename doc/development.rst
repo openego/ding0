@@ -87,6 +87,7 @@ This suite will run three tests:
   and for difference between both files.
 
 * Compare the results of a fresh ding0 run over district [3545] and the data in
-'ding0_tests_grids_1.pkl'.
+  'ding0_tests_grids_1.pkl'.
 
 * Compare the results of two fresh runs of ding0 in district [3545].
+

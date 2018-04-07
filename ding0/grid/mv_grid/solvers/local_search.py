@@ -82,26 +82,29 @@ class LocalSearchSolution(BaseSolution):
 
 class LocalSearchSolver(BaseSolver):
     """ Improve initial savings solution using local search
-    
-        Graph operators::
-        
-            Or-Opt (intra-route)
-            Relocate (inter-route)
-            Exchange (inter-route)
-           
-        Todo
-        ----
-            * Cross (inter-route) - to remove crossing edges between two routes
 
-        References
-        ----------
-        .. [#] W. Wenger, "Multikriterielle Tourenplanung", Dissertation, 2009
-        .. [#] M. Kämpf, "Probleme der Tourenbildung", Chemnitzer Informatik-Berichte, 2006
-        .. [#] O. Bräysy, M. Gendreau, "Vehicle Routing Problem with Time Windows,
-            Part I: Route Construction and Local Search Algorithms",
-            Transportation Science, vol. 39, Issue 1, pp. 104-118, 2005
-        .. [#] C. Boomgaarden, "Dynamische Tourenplanung und -steuerung",
-            Dissertation, 2007
+    The implementation of the local searach algorithm founds on the following
+    publications [#]_, [#]_, [#]_, [#]_
+    
+    Graph operators::
+
+        Or-Opt (intra-route)
+        Relocate (inter-route)
+        Exchange (inter-route)
+
+    Todo
+    ----
+        * Cross (inter-route) - to remove crossing edges between two routes
+
+    References
+    ----------
+    .. [#] W. Wenger, "Multikriterielle Tourenplanung", Dissertation, 2009
+    .. [#] M. Kämpf, "Probleme der Tourenbildung", Chemnitzer Informatik-Berichte, 2006
+    .. [#] O. Bräysy, M. Gendreau, "Vehicle Routing Problem with Time Windows,
+        Part I: Route Construction and Local Search Algorithms",
+        Transportation Science, vol. 39, Issue 1, pp. 104-118, 2005
+    .. [#] C. Boomgaarden, "Dynamische Tourenplanung und -steuerung",
+        Dissertation, 2007
 
     """
     # TODO: Cross (inter-route), see above

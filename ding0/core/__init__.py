@@ -1658,7 +1658,8 @@ class NetworkDing0:
         logger.info('=====> Branch IDs set')
 
     def set_circuit_breakers(self, debug=False):
-        """ Calculates the optimal position of the existing circuit breakers and relocates them within the graph for all MV grids.
+        """ Calculates the optimal position of the existing circuit breakers
+        and relocates them within the graph for all MV grids.
         
         Args
         ----
@@ -1668,6 +1669,7 @@ class NetworkDing0:
         See Also
         --------
         ding0.grid.mv_grid.tools.set_circuit_breakers
+
         """
 
         for grid_district in self.mv_grid_districts():

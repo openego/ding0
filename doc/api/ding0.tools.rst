@@ -60,26 +60,10 @@ ding0.tools.results module
     :undoc-members:
     :show-inheritance:
 
-ding0.tools.results\_scigrid\_2017 module
------------------------------------------
+ding0.tools.run\_ding0 module
+-----------------------------
 
-.. automodule:: ding0.tools.results_scigrid_2017
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ding0.tools.test\_logging module
---------------------------------
-
-.. automodule:: ding0.tools.test_logging
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ding0.tools.test\_logging2 module
----------------------------------
-
-.. automodule:: ding0.tools.test_logging2
+.. automodule:: ding0.tools.run_ding0
     :members:
     :undoc-members:
     :show-inheritance:
