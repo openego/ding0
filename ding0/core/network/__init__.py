@@ -690,6 +690,36 @@ class GeneratorDing0:
                     '_mvgd' + str(self.mv_grid.id_db) + '_' + str(self.id_db))
 
 
+class GeneratorFluctuatingDing0(GeneratorDing0):
+    """Generator object for fluctuating renewable energy sources
+
+    Attributes
+    ----------
+    _weather_cell_id : :obj:`str`
+        ID of the weather cell used to generate feed-in time series
+
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self._weather_cell_id = kwargs.get('weather_cell_id', None)
+
+    @property
+    def weather_cell_id(self):
+        """
+        Get weather cell ID
+        Returns
+        -------
+        :obj:`str`
+            See class definition for details.
+        """
+        return self._weather_cell_id
+
+    @weather_cell_id.setter
+    def weather_cell_id(self, weather_cell):
+        self._weather_cell_id = weather_cell
+
+
 class CableDistributorDing0:
     """ Cable distributor (connection point) 
      
