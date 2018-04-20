@@ -16,7 +16,7 @@ __author__     = "nesnoj, gplssm"
 
 import ding0
 from ding0.config import config_db_interfaces as db_int
-from ding0.core.network import GeneratorDing0
+from ding0.core.network import GeneratorDing0, GeneratorFluctuatingDing0
 from ding0.core.network.cable_distributors import MVCableDistributorDing0
 from ding0.core.network.grids import *
 from ding0.core.network.stations import *
@@ -775,6 +775,7 @@ class NetworkDing0:
                 self.orm['orm_re_generators'].columns.generation_type,
                 self.orm['orm_re_generators'].columns.generation_subtype,
                 self.orm['orm_re_generators'].columns.voltage_level,
+                self.orm['orm_re_generators'].columns.w_id,
                 func.ST_AsText(func.ST_Transform(
                     self.orm['orm_re_generators'].columns.rea_geom_new, srid)).label('geom_new'),
                 func.ST_AsText(func.ST_Transform(
@@ -819,12 +820,23 @@ class NetworkDing0:
                 mv_grid = mv_grid_districts_dict[mv_grid_district_id].mv_grid
 
                 # create generator object
-                generator = GeneratorDing0(id_db=id_db,
-                                           mv_grid=mv_grid,
-                                           capacity=row['electrical_capacity'],
-                                           type=row['generation_type'],
-                                           subtype=row['generation_subtype'],
-                                           v_level=int(row['voltage_level']))
+                if row['generation_type'] in ['solar', 'wind']:
+                    generator = GeneratorFluctuatingDing0(
+                        id_db=id_db,
+                        mv_grid=mv_grid,
+                        capacity=row['electrical_capacity'],
+                        type=row['generation_type'],
+                        subtype=row['generation_subtype'],
+                        v_level=int(row['voltage_level']),
+                        weather_cell_id=row['w_id'])
+                else:
+                    generator = GeneratorDing0(
+                        id_db=id_db,
+                        mv_grid=mv_grid,
+                        capacity=row['electrical_capacity'],
+                        type=row['generation_type'],
+                        subtype=row['generation_subtype'],
+                        v_level=int(row['voltage_level']))
 
                 # MV generators
                 if generator.v_level in [4, 5]:
