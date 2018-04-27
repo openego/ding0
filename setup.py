@@ -33,13 +33,15 @@ setup(name='ding0',
                         'sqlalchemy >= 1.0.11, <= 1.2.0',
                         'geoalchemy2 >= 0.2.6, <= 0.4.1',
                         'matplotlib  >= 1.5.3, <= 1.5.3',
-                        'egoio==0.3.0',
+                        # 'egoio==0.3.0',
+                        'egoio==0.3.1+git.b79ecd6',
                         'shapely >= 1.5.12, <= 1.6.3',
                         'pypsa >= 0.11.0, <= 0.11.0',
 			            'seaborn',
                         'unittest2',
                         'scipy < 1.0'
                         ],
+      dependency_links = ['https://github.com/openego/ego.io/archive/b79ecd66f7ee1b24bf15188d03875a8b47c1e76e.zip#egg=egoio-0.3.1+git.b79ecd6'],
       package_data={
           'ding0': [
               os.path.join('config',
