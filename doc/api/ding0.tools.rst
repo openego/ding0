@@ -60,14 +60,6 @@ ding0.tools.results module
     :undoc-members:
     :show-inheritance:
 
-ding0.tools.run\_ding0 module
------------------------------
-
-.. automodule:: ding0.tools.run_ding0
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 ding0.tools.tests module
 ------------------------
 
