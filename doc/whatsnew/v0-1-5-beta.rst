@@ -1,4 +1,4 @@
-Release v0.1.5 (May ??, 2018)
+Release v0.1.5 (May 15, 2018)
 ++++++++++++++++++++++++++++++++++
 
 This release provides an update of API docs.
