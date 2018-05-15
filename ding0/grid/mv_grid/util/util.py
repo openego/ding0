@@ -20,7 +20,17 @@ __author__     = "nesnoj, gplssm"
 
 
 def print_upper_triangular_matrix(matrix):
-    """Prints a CVRP data dict matrix"""
+    """Prints a CVRP data dict matrix
+    
+    Arguments
+    ---------
+    matrix : dict
+        Description
+        
+    Notes
+    -----
+    It is assummed that the first row of matrix contains all needed headers.
+    """
 
     # Print column header
     # Assumes first row contains all needed headers
@@ -48,8 +58,15 @@ def print_upper_triangular_matrix(matrix):
 
 def print_upper_triangular_matrix_as_complete(matrix):
     """Prints a CVRP data dict upper triangular matrix as a normal matrix
-
-    Doesn't print header"""
+    
+    Doesn't print headers.
+    
+    Arguments
+    ---------
+    matrix : dict
+        Description
+        
+    """
     for i in sorted(matrix.keys()):
         for j in sorted(matrix.keys()):
             a, b = i, j
@@ -62,14 +79,20 @@ def print_upper_triangular_matrix_as_complete(matrix):
 
 def print_solution(solution):
     """Prints a solution
+    
+    Arguments
+    ---------
+    solution : BaseSolution
 
-    Solution is an instance of project.solvers.BaseSolution
-
-    Example:
+    Example
+    -------
+    ::
+    
         [8, 9, 10, 7]: 160
         [5, 6]: 131
         [3, 4, 2]: 154
         Total cost: 445
+        
     """
     total_cost = 0
     for solution in solution.routes():

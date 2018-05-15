@@ -79,47 +79,41 @@ Branches of sector residential
 .. TODO: Editha
 
 #. LV-Branches
-  We are using the LV-Branches of Kerber from the grids. They should be assigned to the most plausible types of settlement areas.
-#. Define the type of settlement area
-  To decide if a LV-grid district is most likely a rural, village or suburban settlement area we are using the population value combined with statistical data. Statisticly, there are 2.3 persons per appartment and 1.5 appartments per house. [see BBR Tabelle B12 http://www.ggr-planung.de/fileadmin/pdf-projekte/SiedEntw_und_InfrastrFolgekosten_Teil_2.pdf] [DEMIREL page 37-41, average has been coosen]. (This is not valid for urban areas.) With this we estimate the amount aus house connections (HC).
-    This value can also be found at the explenation of the database of the "Kerber"-grids and is assinged to the type of settlement area:
-Rural: 622 HC at 43 MV/LV substations results in an average amount of 14.5 HC/substation
-Village: 2807 HC at 51 MV/LV substations results in an average amount of 55 HC/substation
-Suburban: 4856 HC at 38 MV/LV substations results in an average amount of 128 HC/substationTher
-With the resulting trendline of this three point,  [the Polynomial degree 2 [ 16.127*(x^2)-7.847*x+6.1848 ] whereas x is the type of of settlement area], we difine the border values for the typ of settlement area at:
-  * Rural <31 HC/substation
-  * Village <87 HC/substation
-  * Suburban >=87 HC/substation
-#. Define LV-grid branches  
-    within the "Kerber"-model-grids several grid branches are found:
-  * Rural: 5 branches (with l>=78m & l<=676m)
-  * Village: 7 branches (with l>=102m & l<=588m)
-  * Suburban: 15 branches (with l>=85 & l<=610m)
-    Moreover Scheffler evaluated exsiting LV-grids and provides statistics on the prevalence of LV-cable lenght divided in settelment area "type C: Detached house settlement with low densety" and "type D: Detached house settlement with higher densety":
 
-.. prevalence of LV-cable lenght:
-================    ======================= ====================
-cable length        prevalence in Typ C	    prevalence in Typ D
-================    ======================= ====================
->0	                2%	                    1%
->100	            17%	                    16%
->200	            22%	                    31%
->300	            9%	                    17%
->400	            16%	                    23%
->500	            16%	                    12%
->600	            11%	                    0
->700	            5%	                    0
->800	            2%	                    0
-================    ======================= ====================
-    
-    
-    
-#. Assinging grid branches to the Substations  
-  Strangzuweisung
-    Zu jeder ONS werden in Abhängigkeit von Netztyp und HA, NS-Stränge zugewiesen
-   Eine Verteilung des Aufkommens der Stränge anhand von der Gesamtstranglänge geschieht mit Hilfe der Scheffler Angaben (Abbildung      Länge der Netzstrahlen für ausgewählte Siedlungstypen [44])
+    We are using the LV-Branches of Kerber from the grids. They should be assigned to the most plausible types of settlement areas.
+
+#. Define the type of settlement area
+
+    To decide if a LV-grid district is most likely a rural, village or suburban settlement area we are using the population value combined with statistical data. Statisticly, there are 2.3 persons per appartment and 1.5 appartments per house. [see BBR Tabelle B12 http://www.ggr-planung.de/fileadmin/pdf-projekte/SiedEntw_und_InfrastrFolgekosten_Teil_2.pdf] [DEMIREL page 37-41, average has been coosen]. (This is not valid for urban areas.) With this we estimate the amount aus house connections (HC).
+
+    This value can also be found at the explenation of the database of the "Kerber"-grids and is assinged to the type of settlement area:
+
+    * Rural: 622 HC at 43 MV/LV substations results in an average amount of 14.5 HC/substation
+    * Village: 2807 HC at 51 MV/LV substations results in an average amount of 55 HC/substation
+    * Suburban: 4856 HC at 38 MV/LV substations results in an average amount of 128 HC/substationTher
+
+    With the resulting trendline of this three point,  [the Polynomial degree 2 [ 16.127*(x^2)-7.847*x+6.1848 ] whereas x is the type of of settlement area], we difine the border values for the typ of settlement area at:
+
+    * Rural <31 HC/substation
+    * Village <87 HC/substation
+    * Suburban >=87 HC/substation
+
+#. Assinging grid branches to the Substations
+
+    within the "Kerber"-model-grids several grid branches are found.
+  
+    * Rural: 5 branches (with l>=78m & l<=676m)
+    * Village: 7 branches (with l>=102m & l<=588m)
+    * Suburban: 15 branches (with l>=85 & l<=610m)
+  
+  
+Strangzuweisung
+Zu jeder ONS werden in Abhängigkeit von Netztyp und HA, NS-Stränge zugewiesen
+Eine Verteilung des Aufkommens der Stränge anhand von der Gesamtstranglänge geschieht mit Hilfe der Scheffler Angaben (Abbildung      Länge der Netzstrahlen für ausgewählte Siedlungstypen [44])
+
    #. Categorising grid branches form "Kerber" model grids
-  Hinzu kommen auf Basis von kerber interpolierte stränge um Lücken in der Vollständigkeit zu schließen
+
+Hinzu kommen auf Basis von kerber interpolierte stränge um Lücken in der Vollständigkeit zu schließen
 
 Branches of sector retail/industrial and agricultural
 -----------------------------------------------------
@@ -136,6 +130,7 @@ The topology of each sectoral branch is affected largely by assumptions on
 parameters that are provided in the table below.
 
 .. _assumptions:
+
 ========================================================= =====
 Parameter                                                 Value
 ========================================================= =====
@@ -220,7 +215,7 @@ Following steps do apply during reinforcement of Ding0 LV grids
       in the substation
 #. Subsequently **over-voltage issues** are analyzed for all grid nodes
 #. For each node where voltage exceeds 3 % of nominal voltage in feed-in case or
-    5 % of nominal voltage in load case, branch segments
+   5 % of nominal voltage in load case, branch segments
    connecting the node with the substation are reinforce until no further issues
    remain. If a over-voltage issue cannot be solved by installing largest
    availabe cable (NAYY 4x1x300) this type of cable still remains as well as
@@ -234,13 +229,14 @@ References
 ----------
 .. [Amme2017] J. Amme, G. Pleßmann, J. Bühler, L. Hülk, E. Kötter, P. Schwaegerl:
     *The eGo grid model: An open-source and open-data based synthetic medium-voltage
-    grid model for distribution power supply systems*.
-    Journal of Physics: Conference Series 2017 (submitted)
+    grid model for distribution power supply systems*. Journal of Physics Conference
+    Series 977(1):012007, 2018, `doi:10.1088/1742-6596/977/1/012007 
+    <http://iopscience.iop.org/article/10.1088/1742-6596/977/1/012007>`_
 .. [Huelk2017] L. Hülk, L. Wienholt, I. Cussmann, U. Mueller, C. Matke and E.
     Kötter: *Allocation of annual electricity consumption and power
     generation capacities across multi voltage levels in a high spatial
-    resolution* International Journal of Sustainable Energy Planning and
-    Management 2017 (submitted)
+    resolution*. International Journal of Sustainable Energy Planning and Management
+    Vol. 13 2017 79–92, `doi:10.5278/ijsepm.2017.13.6 <https://doi.org/10.5278/ijsepm.2017.13.6>`_
 .. [Kerber] G. Kerber: Aufnahmefähigkeit von Niederspannungsverteilnetzen für
     die Einspeisung aus Photovoltaikkleinanlagen, Dissertation, TU München,
     2011

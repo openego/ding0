@@ -29,10 +29,14 @@ logger = logging.getLogger('ding0')
 
 
 class Route(object):
-    """
-    CVRP route, consists of consecutive nodes
-    -----------------------------------------
-    bla
+    # TODO: check docstring
+    """CVRP route, consists of consecutive nodes
+    
+    Parameters
+    ----------
+    cvrp_problem : type
+        Descr
+    
     """
 
     def __init__(self, cvrp_problem):
@@ -50,9 +54,15 @@ class Route(object):
     def clone(self):
         """Returns a deep copy of self
 
-        Clones:
-            allocation
-            nodes
+        Function clones:
+        
+        * allocation
+        * nodes
+        
+        Returns
+        -------
+        type
+            Deep copy of self
         """
 
         new_route = self.__class__(self._problem)
@@ -64,16 +74,34 @@ class Route(object):
         return new_route
 
     def demand(self):
-        """Returns the current route demand"""
+        """Returns the current route demand
+        
+        Returns
+        -------
+        type
+            Current route demand.
+        """
         return self._demand
 
     def nodes(self):
-        """Returns a generator for iterating over nodes"""
+        """Returns a generator for iterating over nodes
+        
+        Yields
+        ------
+        type
+            Generator for iterating over nodes
+        """
         for node in self._nodes:
             yield node
 
     def length(self):
-        """Returns the total route length (cost)"""
+        """Returns the route length (cost)
+        
+        Returns
+        -------
+        int
+            Route length (cost).
+        """
         cost = 0
         depot = self._problem.depot()
 
@@ -100,7 +128,21 @@ class Route(object):
         return cost
 
     def can_allocate(self, nodes, pos=None):
-        """Returns True if this route can allocate nodes in `nodes` list"""
+        # TODO: check docstring
+        """Returns True if this route can allocate nodes in `nodes` list
+        
+        Parameters
+        ----------
+        nodes : type
+            Desc
+        pos : type, defaults to None
+            Desc
+            
+        Returns
+        -------
+        bool
+            True if this route can allocate nodes in `nodes` list
+        """
 
         # clone route and nodes
         new_route = self.clone()
@@ -116,7 +158,17 @@ class Route(object):
         return False
 
     def allocate(self, nodes, append=True):
-        """Allocates all nodes from `nodes` list in this route"""
+        # TODO: check docstring
+        """Allocates all nodes from `nodes` list in this route
+        
+        Parameters
+        ----------
+        nodes : type
+            Desc
+        append : bool, defaults to True
+            Desc
+        
+        """
 
         nodes_demand = 0
         for node in [node for node in nodes]:
@@ -133,7 +185,14 @@ class Route(object):
         self._demand = self._demand + nodes_demand
 
     def deallocate(self, nodes):
-        """Deallocates all nodes from `nodes` list from this route"""
+        # TODO: check docstring
+        """Deallocates all nodes from `nodes` list from this route
+        
+        Parameters
+        ----------
+        nodes : type
+            Desc
+        """
 
         nodes_demand = 0
         for node in nodes:
@@ -147,7 +206,17 @@ class Route(object):
             raise Exception('Trying to deallocate more than previously allocated')
     
     def insert(self, nodes, pos):
-        """Inserts all nodes from `nodes` list into this route at position `pos`"""
+        # TODO: check docstring
+        """Inserts all nodes from `nodes` list into this route at position `pos`
+        
+        Parameters
+        ----------
+        nodes : type
+            Desc
+        pos : type
+            Desc
+        
+        """
         
         node_list = []
         nodes_demand = 0
@@ -162,17 +231,49 @@ class Route(object):
         self._demand += nodes_demand
 
     def is_interior(self, node):
-        """Returns True if node is interior to the route, i.e., not adjascent to depot"""
+        # TODO: check docstring
+        """Returns True if node is interior to the route, i.e., not adjascent to depot
+        
+        Parameters
+        ----------
+        nodes : type
+            Desc
+            
+        Returns
+        -------
+        bool
+            True if node is interior to the route
+        
+        """
         return self._nodes.index(node) != 0 and self._nodes.index(node) != len(self._nodes) - 1
 
     def last(self, node):
-        """Returns True if node is the last node in the route"""
+        # TODO: check docstring
+        """Returns True if node is the last node in the route
+        
+        Parameters
+        ----------
+        nodes : type
+            Desc
+            
+        Returns
+        -------
+        bool
+            True if node is the last node in the route
+        """
         return self._nodes.index(node) == len(self._nodes) - 1
 
     def calc_circuit_breaker_position(self, debug=False):
         """ Calculates the optimal position of a circuit breaker on route.
-
-        Returns:
+        
+        Parameters
+        ----------
+        debug: bool, defaults to False
+            If True, prints process information.
+        
+        Returns
+        -------
+        int
             position of circuit breaker on route (index of last node on 1st half-ring preceding the circuit breaker)
 
         Notes
@@ -188,6 +289,10 @@ class Route(object):
 
         References
         ----------
+        
+        See Also
+        --------
+        ding0.grid.mv_grid.tools.set_circuit_breakers
 
         """
         # TODO: add references (Tao)
@@ -222,29 +327,28 @@ class Route(object):
     def tech_constraints_satisfied(self):
         """ Check route validity according to technical constraints (voltage and current rating)
         
-        Constraints:
-            current rating of cable/line
-            voltage stability at all nodes
+        It considers constraints as
+        
+        * current rating of cable/line
+        * voltage stability at all nodes
 
-        Notes:
+        Notes
+        -----
             The validation is done for every tested MV grid configuration during CVRP algorithm. The current rating is
-            checked using load factors from [1]_. Due to the high amount of steps the voltage rating cannot be checked
+            checked using load factors from [#]_. Due to the high amount of steps the voltage rating cannot be checked
             using load flow calculation. Therefore we use a simple method which determines the voltage change between
-            two consecutive nodes according to [2]_.
-            Furthermore it is checked:
-                * if new route has got more nodes than allowed (typ. 2*10 according to [3]_)
-                * if total lengths of half-rings exceed max. allowed distance of max_half_ring_length
-                  (typ. 30km according to [4]_). We choose 28km as default value to take the max branch stub length
-                  (cf. load_area_sat_string_length_threshold) of 2km into account.
+            two consecutive nodes according to [#]_.
+            Furthermore it is checked if new route has got more nodes than allowed (typ. 2*10 according to [#]_).
 
-        References:
+        References
+        ----------
             
-        .. [1] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
+        .. [#] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012
-        .. [2] M. Sakulin, W. Hipp, "Netzaspekte von dezentralen Erzeugungseinheiten,
+        .. [#] M. Sakulin, W. Hipp, "Netzaspekte von dezentralen Erzeugungseinheiten,
             Studie im Auftrag der E-Control GmbH", TU Graz, 2004
-        .. [3] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
-        .. [4] FGH e.V.: "Technischer Bericht 302: Ein Werkzeug zur Optimierung der Störungsbeseitigung
+        .. [#] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
+        .. [#] FGH e.V.: "Technischer Bericht 302: Ein Werkzeug zur Optimierung der Störungsbeseitigung
             für Planung und Betrieb von Mittelspannungsnetzen", Tech. rep., 2008
         """
 
@@ -283,7 +387,7 @@ class Route(object):
         position = self.calc_circuit_breaker_position()
 
         # step 2: calc required values for checking current & voltage
-        # -> get nodes of half-rings
+        # get nodes of half-rings
         nodes_hring1 = [self._problem._depot] + self._nodes[0:position]
         nodes_hring2 = list(reversed(self._nodes[position:len(self._nodes)] + [self._problem._depot]))
         # get all nodes of full ring for both directions
@@ -376,10 +480,15 @@ class Route(object):
 
 
 class Node(object):
-    """
-    CVRP node (MV transformer/customer)
-    -----------------------------------
-    bla
+    # TODO: check docstring
+    """CVRP node (MV transformer/customer)
+    
+    Parameters
+    ----------
+    name: 
+        Node name
+    demand:
+        Node demand
     """
 
     def __init__(self, name, demand):
@@ -396,11 +505,18 @@ class Node(object):
         self._allocation = None
 
     def clone(self):
+        # TODO: check docstring
         """Returns a deep copy of self
-
-        Clones:
-            allocation
-            nodes
+        
+        Function clones:
+        
+        * allocation
+        * nodes
+        
+        Returns
+        -------
+        type
+            Deep copy of self
         """
 
         new_node = self.__class__(self._name, self._demand)
@@ -408,15 +524,36 @@ class Node(object):
         return new_node
 
     def name(self):
-        """Returns node name"""
+        # TODO: check docstring
+        """Returns node name
+        
+        Returns
+        -------
+        str
+            Node's name
+        """
         return self._name
 
     def demand(self):
-        """Returns the node demand"""
+        # TODO: check docstring
+        """Returns the node demand
+        
+        Returns
+        -------
+        float
+            Node's demand
+        """
         return self._demand
 
     def route_allocation(self):
-        """Returns the route which node is allocated"""
+        # TODO: check docstring
+        """Returns the route which node is allocated
+        
+        Returns
+        -------
+        type
+            Node's route
+        """
         return self._allocation
 
     def __str__(self):
@@ -436,11 +573,15 @@ class Node(object):
 
 
 class Graph(object):
-    """Class for modelling a CVRP problem data"""
-    """
-    CVRP graph
+    # TODO: check docstring
+    """Class for modelling a CVRP problem data
+    
+    Parameters
     ----------
-    bla
+    data: type
+        TSPLIB parsed data
+        
+    
     """
 
     def __init__(self, data):
@@ -478,23 +619,60 @@ class Graph(object):
             raise Exception('Depot not found')
 
     def nodes(self):
-        """Returns a generator for iterating over nodes"""
+        # TODO: check docstring
+        """Returns a generator for iterating over nodes.
+        
+        Yields
+        ------
+        type
+            Generator for iterating over nodes.
+        
+        """
         for i in sorted(self._nodes):
             yield self._nodes[i]
 
     def edges(self):
-        """Returns a generator for iterating over edges"""
+        # TODO: check docstring
+        """Returns a generator for iterating over edges
+        
+        Yields
+        ------
+        type
+            Generator for iterating over edges.
+            
+        """
         for i in sorted(self._matrix.keys(), key=lambda x:x.name()):
             for j in sorted(self._matrix[i].keys(), key=lambda x:x.name()):
                 if i != j:
                     yield (i, j)
 
     def depot(self):
-        """Returns the depot node"""
+        # TODO: check docstring
+        """Returns the depot node.
+        
+        Returns
+        -------
+        type
+            Depot node
+        """
         return self._depot
 
     def distance(self, i, j):
-        """Returns the distance between node i and node j"""
+        # TODO: check docstring
+        """Returns the distance between node i and node j
+        
+        Parameters
+        ----------
+        i : type
+            Descr
+        j : type
+            Desc
+            
+        Returns
+        -------
+        float
+            Distance between node i and node j.
+        """
 
         a, b = i, j
 

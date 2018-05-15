@@ -14,8 +14,7 @@ __author__     = "nesnoj, gplssm"
 
 
 def cable_type(nom_power, nom_voltage, avail_cables):
-    """
-    Determine suitable type of cable for given nominal power
+    """Determine suitable type of cable for given nominal power
 
     Based on maximum occurring current which is derived from nominal power
     (either peak load or max. generation capacity) a suitable cable type is
@@ -23,16 +22,16 @@ def cable_type(nom_power, nom_voltage, avail_cables):
 
     Parameters
     ----------
-    nom_power : numeric
+    nom_power : float
         Nominal power of generators or loads connected via a cable
-    nom_voltage : numeric
+    nom_voltage : float
         Nominal voltage in kV
-    avail_cables : pandas.DataFrame
+    avail_cables : :pandas:`pandas.DataFrame<dataframe>`
         Available cable types including it's electrical parameters
     
     Returns
     -------
-    cable_type : pandas.DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         Parameters of cable type
     """
 

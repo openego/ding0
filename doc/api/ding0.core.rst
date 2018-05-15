@@ -13,8 +13,8 @@ Subpackages
 Submodules
 ----------
 
-ding0.core.upload_to_zenodo module
-----------------------------------
+ding0.core.upload\_to\_zenodo module
+------------------------------------
 
 .. automodule:: ding0.core.upload_to_zenodo
     :members:

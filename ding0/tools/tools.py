@@ -30,7 +30,7 @@ def merge_two_dicts(x, y):
 
     Returns
     -------
-    z: dict
+    :obj:`dict`
         Merged dictionary keyed by top-level keys of both dicts
     '''
 

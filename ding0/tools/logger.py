@@ -21,8 +21,7 @@ import logging
 
 
 def create_dir(dirpath):
-    """
-    Create directory and report about it
+    """Create directory and report about it
 
     Parameters
     ----------
@@ -39,7 +38,7 @@ def create_dir(dirpath):
 
 def create_home_dir(ding0_path=None):
     """
-    Check in ~/<DING0_DIR> exists, otherwise create it
+    Check if ~/.ding0 exists, otherwise create it
 
     Parameters
     ----------
@@ -59,7 +58,7 @@ def get_default_home_dir():
 
     Returns
     -------
-    homedir : str
+    :any:`str`
         Default home directory including its path
     """
     ding0_dir = str(cfg_ding0.get('config',
@@ -73,8 +72,10 @@ def setup_logger(log_dir=None, loglevel=logging.DEBUG):
 
     Parameters
     ----------
-    log_dir : str
+    log_dir: str
         Directory to save log, default: ~/.ding0/logging/
+    loglevel: 
+        Level of logger.
     """
 
     create_home_dir()

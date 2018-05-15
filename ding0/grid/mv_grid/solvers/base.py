@@ -24,23 +24,44 @@ import matplotlib.pyplot as plt
 
 
 class BaseSolution(object):
-    """Base abstract class for a CVRP solution"""
+    """Base abstract class for a CVRP solution
+    
+    Parameters
+    ----------
+    cvrp_problem : type
+        Desc Graph instance?
+    """
 
     def __init__(self, cvrp_problem):
         """Initialize class
-
-        Parameters:
-            cvrp_problem: Graph instance
         """
         self._problem = cvrp_problem
         self._allocated = 0
 
     def get_pair(self, pair):
+        """get pair description
+        
+        Parameters
+        ----------
+        pair : :any:`list` of nodes
+            Descr
+            
+        Returns
+        -------
+        type
+            Descr
+        """
         i, j = pair
         return (self._nodes[i.name()], self._nodes[j.name()])
 
     def is_complete(self):
-        """Returns True if this is a complete solution, i.e, all nodes are allocated"""
+        """Returns True if this is a complete solution, i.e, all nodes are allocated
+        
+        Returns
+        -------
+        bool
+            True if all nodes are llocated.
+        """
         return all(
             [node.route_allocation() is not None for node in list(self._nodes.values()) if node != self._problem.depot()]
         )
@@ -48,10 +69,16 @@ class BaseSolution(object):
     def clone(self):
         """Returns a deep copy of self
 
-        Clones:
-            routes
-            allocation
-            nodes
+        Function clones:
+        
+        * route
+        * allocation
+        * nodes
+        
+        Returns
+        -------
+        type
+            Deep copy of self
         """
 
         new_solution = self.__class__(self._problem, len(self._routes))
@@ -67,12 +94,24 @@ class BaseSolution(object):
         return new_solution
 
     def routes(self):
-        """Returns a generator for iterating over solution routes"""
+        """Returns a generator for iterating over solution routes
+        
+        Yields
+        ------
+        type
+            Generator for iterating over solution routes.
+        """
         for r in self._routes:
             yield r
 
     def length(self):
-        """Returns the solution length (or cost)"""
+        """Returns the solution length (or cost)
+        
+        Returns
+        -------
+        float
+            Solution length (or cost).
+        """
         length = 0
         for r in self._routes:
             length = length + r.length()
@@ -80,24 +119,56 @@ class BaseSolution(object):
         return length
 
     def can_process(self, pairs):
+        # TODO: check docstring
         """Returns True if this solution can process `pairs`
 
-        Parameters:
-            pairs: List of pairs
+        Parameters
+        ----------
+        pairs:  :any:`list` of pairs
+            List of pairs
+            
+        Returns
+        -------
+        bool
+            True if this solution can process `pairs`
+            
+        Todo
+        ----
+        Not yet implemented
         """
         raise NotImplementedError()
 
     def process(self, node_or_pair):
+        # TODO: check docstring
         """Processes a node or a pair of nodes into the current solution
 
         MUST CREATE A NEW INSTANCE, NOT CHANGE ANY INSTANCE ATTRIBUTES
-
-        Returns a new instance (deep copy) of self object
+        
+        Parameters
+        ----------
+        node_or_pair: type
+            Desc
+        
+        Returns
+        -------
+        type 
+            A new instance (deep copy) of self object
+        
+        Todo
+        ----
+        Not yet implemented
         """
         raise NotImplementedError()
 
     def draw_network(self, anim):
-        """draws solution's graph using networkx"""
+        """Draws solution's graph using networkx
+        
+        Parameters
+        ----------
+        AnimationDing0
+            AnimationDing0 object
+            
+        """
 
         g = nx.Graph()
         ntemp = []
@@ -140,13 +211,21 @@ class BaseSolver(object):
     def solve(self, data, vehicles, timeout):
         """Must solves the CVRP problem
 
-        Parameters:
-            data: Graph instance
-            vehicles: Vehicles number
-            timeout: max processing time in seconds
-
         Must return BEFORE timeout
 
         Must returns a solution (BaseSolution class derived)
+        
+        Parameters
+        ----------
+        data: type 
+            Graph instance
+        vehicles: int
+            Vehicles number
+        timeout: int
+            max processing time in seconds
+ 
+        Todo
+        ----
+        Not yet implemented
         """
         raise NotImplementedError()

@@ -41,10 +41,16 @@ class SavingsSolution(BaseSolution):
     def clone(self):
         """Returns a deep copy of self
 
-        Clones:
-            routes
-            allocation
-            nodes
+        Function clones:
+        
+        * routes
+        * allocation
+        * nodes
+
+        Returns
+        -------
+        SavingsSolution
+            A clone (deepcopy) of the instance itself
         """
 
         new_solution = self.__class__(self._problem)
@@ -64,7 +70,15 @@ class SavingsSolution(BaseSolution):
 
     def is_complete(self):
         """Returns True if this is a complete solution, i.e, all nodes are allocated
+
+        Todo
+        ----
         TO BE REVIEWED
+        
+        Returns
+        -------
+        bool
+            True if this is a complete solution.
         """
         allocated = all(
             [node.route_allocation() is not None for node in list(self._nodes.values()) if node.name() != self._problem.depot().name()]
@@ -75,11 +89,22 @@ class SavingsSolution(BaseSolution):
         return allocated and valid_routes
 
     def process(self, pair):
+        # TODO: check docstring
         """Processes a pair of nodes into the current solution
 
         MUST CREATE A NEW INSTANCE, NOT CHANGE ANY INSTANCE ATTRIBUTES
 
         Returns a new instance (deep copy) of self object
+        
+        Args
+        ----
+        pair : type
+            description
+            
+        Returns
+        -------
+        type
+            Description (Copy of self?)
         """
         a, b = pair
 
@@ -117,8 +142,15 @@ class SavingsSolution(BaseSolution):
     def can_process(self, pairs):
         """Returns True if this solution can process `pairs`
 
-        Parameters:
-            pairs: List of pairs
+        Parameters
+        ----------
+        pairs: :any:`list` of pairs of Route
+            List of pairs
+            
+        Returns
+        -------
+        bool
+            True if this solution can process `pairs`.
         """
         i, j = pairs
 
@@ -141,6 +173,16 @@ class ClarkeWrightSolver(BaseSolver):
         A saving list is a matrix containing the saving amount S between i and j
 
         S is calculated by S = d(0,i) + d(0,j) - d(i,j) (CLARKE; WRIGHT, 1964)
+        
+        Args
+        ----
+        graph: :networkx:`NetworkX Graph Obj< >`
+            A NetworkX graaph is used.
+        
+        Returns
+        -------
+        :any:`list` of `Node`
+            List of nodes sorted by its savings
         """
 
         savings_list = {}
@@ -164,14 +206,22 @@ class ClarkeWrightSolver(BaseSolver):
     def solve(self, graph, timeout, debug=False, anim=None):
         """Solves the CVRP problem using Clarke and Wright Savings methods
 
-        Parameters:
-            graph: Graph instance
-            timeout: max processing time in seconds
-            debug: If True, information is printed while routing
-            anim: AnimationDing0 object (refer to class 'AnimationDing0()' for a more detailed description)
+        Parameters
+        ----------
+        graph: :networkx:`NetworkX Graph Obj< >`
+            A NetworkX graaph is used.
+        timeout: int
+            max processing time in seconds
+        debug: bool, defaults to False
+            If True, information is printed while routing
+        anim: AnimationDing0
 
-        Returns a solution (SavingsSolution class))
+        Returns
+        -------
+        SavingsSolution
+            A solution
         """
+
         savings_list = self.compute_savings_list(graph)
 
         solution = SavingsSolution(graph)
