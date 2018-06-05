@@ -2373,7 +2373,7 @@ def export_data_to_oedb(session, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos,
 
 def create_ding0_db_tables(engine):
 
-    tables = [md.EgoGridLine, md.EgoGridMvTransformer, md.EgoGridLvBranchtee,
+    tables = [md.EgoGridLine, md.EgoGridLvBranchtee,
               md.EgoGridLvGenerator, md.EgoGridLvLoad, md.EgoGridLvGrid,
               md.EgoGridLvmvStation, md.EgoGridLvTransformer,
               md.EgoGridLvmvMapping, md.EgoGridMvBranchtee,
@@ -2385,7 +2385,7 @@ def create_ding0_db_tables(engine):
 
 def drop_ding0_db_tables(engine):
 
-    tables = [md.EgoGridLine, md.EgoGridMvTransformer, md.EgoGridLvBranchtee,
+    tables = [md.EgoGridLine, md.EgoGridLvBranchtee,
               md.EgoGridLvGenerator, md.EgoGridLvLoad, md.EgoGridLvGrid,
               md.EgoGridLvmvStation, md.EgoGridLvTransformer,
               md.EgoGridLvmvMapping, md.EgoGridMvBranchtee,
