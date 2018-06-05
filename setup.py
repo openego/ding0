@@ -38,8 +38,8 @@ setup(name='ding0',
                         'pypsa >= 0.11.0, <= 0.11.0',
 			            'seaborn',
                         'unittest2',
-                        'scipy < 1.0'
-                        ],
+                        're',
+                        'scipy < 1.0'],
       package_data={
           'ding0': [
               os.path.join('config',

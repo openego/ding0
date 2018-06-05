@@ -19,6 +19,7 @@ import pandas as pd
 import time
 import os
 import json
+import re
 
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -2382,6 +2383,49 @@ def create_ding0_db_tables(engine):
     for tab in tables:
         tab().__table__.create(bind=engine, checkfirst=True)
 
+def drop_ding0_db_tables(engine):
+
+    tables = [md.EgoGridLine, md.EgoGridMvTransformer, md.EgoGridLvBranchtee,
+              md.EgoGridLvGenerator, md.EgoGridLvLoad, md.EgoGridLvGrid,
+              md.EgoGridLvmvStation, md.EgoGridLvTransformer,
+              md.EgoGridLvmvMapping, md.EgoGridMvBranchtee,
+              md.EgoGridMvGenerator, md.EgoGridMvLoad, md.EgoGridMvGrid,
+              md.EgoGridMvhvStation, md.EgoGridMvTransformer]
+
+    print("Please confirm that you would like to drop the following tables:")
+    for n, tab in enumerate(tables):
+        print("{: 3d}. {}".format(n, tab))
+
+    print("Please confirm with either of the choices below:\n" +\
+          "- yes\n" +\
+          "- no\n" +\
+          "- the indexes to drop in the format 0, 2, 3, 5")
+    confirmation = input("Please type the choice completely as there is no default choice.")
+    if re.fullmatch('[Yy]es', confirmation):
+        for tab in tables:
+            tab().__table__.drop(bind=engine, checkfirst=True)
+    elif re.fullmatch('[Nn]o', confirmation):
+        print("Cancelled dropping of tables")
+    else:
+        try:
+            indlist = confirmation.split(',')
+            indlist = list(map(int, indlist))
+            print("Please confirm deletion of the following tables:")
+            tablist = np.array(tables)[indlist].tolist()
+            for n, tab in enumerate(tablist):
+                print("{: 3d}. {}".format(n, tab))
+            con2 = input("Please confirm with either of the choices below:\n" +\
+                         "- yes\n" +\
+                         "- no")
+            if re.fullmatch('[Yy]es', con2):
+                for tab in tablist:
+                    tab().__table__.drop(bind=engine, checkfirst=True)
+            elif re.fullmatch('[Nn]o', con2):
+                print("Cancelled dropping of tables")
+            else:
+                print("The input is unclear, no action taken")
+        except ValueError:
+            print("Confirmation unclear, no action taken")
 
 
 ########################################################
