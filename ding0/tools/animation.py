@@ -20,10 +20,18 @@ import os
 
 
 class AnimationDing0:
-    """ Class for visual animation of routing process (basically a central place to store information about output file
-        and count of saved images). Use argument 'animation=True' of method 'NetworkDing0.mv_routing()' to enable image
-        export. Subsequently, FFMPEG can be used to convert images to animation, e.g.
-            ffmpeg -r 10 -i mv-routing_ani_%04d.png -c:v libx264 -vf fps=25 -pix_fmt yuv420p mv-routing_ani.mp4
+    """ Class for visual animation of routing process.
+    
+    (basically a central place to store information about output file and count of saved images).
+    Use argument 'animation=True' of method 'NetworkDing0.mv_routing()' to enable image export.
+    
+    Subsequently, FFMPEG can be used to convert images to animation, e.g.
+    
+        ffmpeg -r 10 -i mv-routing_ani_%04d.png -c:v libx264 -vf fps=25 -pix_fmt yuv420p mv-routing_ani.mp4
+    
+    See Also
+    --------
+    ding0.core.NetworkDing0.mv_routing() :
     """
 
     def __init__(self, **kwargs):

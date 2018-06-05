@@ -17,7 +17,13 @@ from . import CableDistributorDing0
 
 
 class MVCableDistributorDing0(CableDistributorDing0):
-    """ MV Cable distributor (connection point) """
+    """ MV Cable distributor (connection point) 
+    
+    Attributes
+    ----------
+    lv_load_area_group : 
+        Description #TODO
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -27,7 +33,8 @@ class MVCableDistributorDing0(CableDistributorDing0):
 
     @property
     def pypsa_id(self):
-
+        """ :obj:`str`: Returns ...#TODO        
+        """
         return '_'.join(['MV', str(self.grid.id_db),
                                   'cld', str(self.id_db)])
 
@@ -36,7 +43,20 @@ class MVCableDistributorDing0(CableDistributorDing0):
 
 
 class LVCableDistributorDing0(CableDistributorDing0):
-    """ LV Cable distributor (connection point) """
+    """ LV Cable distributor (connection point) 
+    
+    Attributes
+    ----------
+    string_id : 
+        Description #TODO
+    branch_no : 
+        Description #TODO
+    load_no : 
+        Description #TODO
+    in_building : 
+        Description #TODO
+    
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

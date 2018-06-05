@@ -28,7 +28,30 @@ logger = logging.getLogger('ding0')
 
 
 def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
-    # TODO: DOCSTRING
+    """ Calculate geographical branches in polygon.
+
+    For a given `mv_grid` all branches (edges in the graph of the grid) are
+    tested if they are in the given `polygon`. You can choose different modes
+    and projections for this operation.
+
+    Parameters
+    ----------
+    mv_grid : MVGridDing0
+        MV Grid object. Edges contained in `mv_grid.graph_edges()` are taken
+        for the test.
+    polygon : :shapely:`Shapely Point object<points>`
+        Polygon that contains edges.
+    mode : str
+        Choose between 'intersects' or 'contains'.
+    proj : int
+        EPSG code to specify projection
+
+    Returns
+    -------
+    :any:`list` of :any:`BranchDing0` objects
+        List of branches
+
+    """
 
     branches = []
     polygon_shp = transform(proj, polygon)
@@ -51,18 +74,29 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
 
 
 def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
-    """ Determines branches in nodes' associated graph that are at least partly within buffer of `radius` from `node`.
-        If there are no nodes, the buffer is successively extended by `radius_inc` until nodes are found.
+    """ Determines branches in nodes' associated graph that are at least partly
+    within buffer of `radius` from `node`.
+    
+    If there are no nodes, the buffer is successively extended by `radius_inc`
+    until nodes are found.
 
-    Args:
-        node: origin node (e.g. LVStationDing0 object) with associated shapely object (attribute `geo_data`) in any CRS
-              (e.g. WGS84)
-        radius: buffer radius in m
-        radius_inc: radius increment in m
-        proj: pyproj projection object: nodes' CRS to equidistant CRS (e.g. WGS84 -> ETRS)
+    Parameters
+    ----------
+    node : LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        origin node (e.g. LVStationDing0 object) with associated shapely object
+        (attribute `geo_data`) in any CRS (e.g. WGS84)
+    radius : float
+        buffer radius in m
+    radius_inc : float
+        radius increment in m
+    proj : int
+        pyproj projection object: nodes' CRS to equidistant CRS
+        (e.g. WGS84 -> ETRS)
 
-    Returns:
-        list of branches (NetworkX branch objects)
+    Returns
+    -------
+    :any:`list` of :networkx:`NetworkX Graph Obj< >`
+        List of branches (NetworkX branch objects)
 
     """
 
@@ -82,13 +116,19 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
 
 
 def calc_geo_dist_vincenty(node_source, node_target):
-    """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
-        config_calc.cfg.
-    Args:
-        node_source: source node (Ding0 object), member of _graph
-        node_target: target node (Ding0 object), member of _graph
+    """ Calculates the geodesic distance between `node_source` and `node_target`
+    incorporating the detour factor specified in :file:`ding0/ding0/config/config_calc.cfg`.
 
-    Returns:
+    Parameters
+    ----------
+    node_source: LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        source node, member of GridDing0._graph
+    node_target: LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        target node, member of GridDing0._graph
+
+    Returns
+    -------
+    :any:`float`
         Distance in m
     """
 
@@ -112,28 +152,36 @@ def calc_geo_dist_vincenty(node_source, node_target):
 
 
 def calc_geo_dist_matrix_vincenty(nodes_pos):
-    """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor in
-        config_calc.cfg. For every two points/coord it uses geopy's vincenty function (formula devised by Thaddeus Vincenty,
-        with an accurate ellipsoidal model of the earth). As default ellipsoidal model of the earth WGS-84 is used.
-        For more options see
-        https://geopy.readthedocs.org/en/1.10.0/index.html?highlight=vincenty#geopy.distance.vincenty
+    """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor in config_calc.cfg.
+        
+    For every two points/coord it uses geopy's vincenty function (formula devised by Thaddeus Vincenty, 
+    with an accurate ellipsoidal model of the earth). As default ellipsoidal model of the earth WGS-84 is used.
+    For more options see
+    
+    https://geopy.readthedocs.org/en/1.10.0/index.html?highlight=vincenty#geopy.distance.vincenty
 
-    Args:
-        nodes_pos: dictionary of nodes with positions,
-                   Format: {'node_1': (x_1, y_1),
-                            ...,
-                            'node_n': (x_n, y_n)
-                           }
+    Parameters
+    ----------
+    nodes_pos: dict 
+        dictionary of nodes with positions, with x=longitude, y=latitude, and the following format::
+        
+        {
+            'node_1': (x_1, y_1), 
+            ...,
+            'node_n': (x_n, y_n)
+        }
+   
+    Returns
+    -------
+    :obj:`dict`
+        dictionary with distances between all nodes (in km), with the following format::
+        
+        {
+            'node_1': {'node_1': dist_11, ..., 'node_n': dist_1n},
+            ..., 
+            'node_n': {'node_1': dist_n1, ..., 'node_n': dist_nn}
+        }
 
-    Returns:
-        dictionary with distances between all nodes (in km),
-        Format: {'node_1': {'node_1': dist_11, ..., 'node_n': dist_1n},
-                 ...,
-                 'node_n': {'node_1': dist_n1, ..., 'node_n': dist_nn
-                }
-
-    Notice:
-        x=longitude, y=latitude
     """
 
     branch_detour_factor = cfg_ding0.get('assumptions', 'branch_detour_factor')
@@ -155,14 +203,20 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
 
 
 def calc_geo_centre_point(node_source, node_target):
-    """ Calculates the geodesic distance between `node_source` and `node_target` incorporating the detour factor in
-        config_calc.cfg.
-    Args:
-        node_source: source node (Ding0 object), member of _graph
-        node_target: target node (Ding0 object), member of _graph
+    """ Calculates the geodesic distance between `node_source` and `node_target`
+    incorporating the detour factor specified in config_calc.cfg.
+    
+    Parameters
+    ----------
+    node_source: LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        source node, member of GridDing0._graph
+    node_target: LVStationDing0, GeneratorDing0, or CableDistributorDing0
+        target node, member of GridDing0._graph
 
-    Returns:
-        Distance in m
+    Returns
+    -------
+    :any:`float`
+        Distance in m.
     """
 
     proj_source = partial(

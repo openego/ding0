@@ -1,0 +1,11 @@
+Release v0.1.5 (May ??, 2018)
+++++++++++++++++++++++++++++++++++
+
+This release provides an update of API docs.
+
+* Update docs: API docs now build properly  from a technical perspective
+  `#45 <https://github.com/openego/ding0/issues/45>`_.
+  The content is still not complete
+* Added new generator object GeneratorFluctuating that includes a
+  weather_cell_id
+  `#254 <https://github.com/openego/ding0/issues/254>`_

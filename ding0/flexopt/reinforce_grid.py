@@ -26,14 +26,18 @@ logger = logging.getLogger('ding0')
 
 
 def reinforce_grid(grid, mode):
-    """ Evaluates grid reinforcement needs and performs measures. This function
-        is the parent function for all grid reinforcements.
+    #TODO: finish docstring
+    """ Evaluates grid reinforcement needs and performs measures
 
+    Grid reinforcement according to methods described in [VNSRP]_ supplemented
+    by [DENA]_.
+    
     Parameters
     ----------
-    grid: GridDing0 object
-    mode: String
-        kind of grid ('MV' or 'LV')
+    grid: GridDing0
+        Grid instance
+    mode: str
+        Choose of: 'MV' or 'LV'
 
     Notes
     -----
@@ -42,8 +46,12 @@ def reinforce_grid(grid, mode):
 
     References
     ----------
-    .. [1] dena VNS
-    .. [2] Ackermann et al. (RP VNS)
+    .. [DENA] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
+            Stromverteilnetze in Deutschland bis 2030.", 2012
+    .. [VNSRP] Ackermann, T., Untsch, S., Koch, M., & Rothfuchs, H. (2014).
+            Verteilnetzstudie Rheinland-Pfalz. Hg. v. Ministerium für
+            Wirtschaft, Klimaschutz, Energie und Landesplanung Rheinland-Pfalz
+            (MWKEL). energynautics GmbH.
 
     """
 

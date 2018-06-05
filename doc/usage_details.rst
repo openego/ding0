@@ -8,11 +8,11 @@ Examples
 
 We provide two examples of how to use Ding0 along with two example for analysis
 of resulting data. The
-:download:`first example <../examples/example_single_grid_district.py>` shows how Ding0
+:download:`first example <../ding0/examples/example_single_grid_district.py>` shows how Ding0
 is applied to a single medium-voltage grid district. Grid topology for the
 medium- and low-voltage grid level is generated an export to the *OEDB* and
 save to file (.pkl).
-The :download:`analysis script <../examples/example_analyze_single_grid_district.py>`
+The :download:`analysis script <../ding0/examples/example_analyze_single_grid_district.py>`
 takes data generated the first example and produces exemplary output: key
 figures and plots.
 
@@ -32,7 +32,7 @@ Run ding0
 ---------
 
 Check out :meth:`~core.Network.run_ding0()` as high-level function which is also used the
-:download:`example <../examples/example_single_grid_district.py>`.
+:download:`example <../ding0/examples/example_single_grid_district.py>`.
 
 For larger calculation (parallelization)
 ----------------------------------------

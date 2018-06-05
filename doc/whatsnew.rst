@@ -8,6 +8,7 @@ See what's new as per release!
     :local:
     :backlinks: top
 
+.. include::  whatsnew/v0-1-5.rst
 .. include::  whatsnew/v0-1-4.rst
 .. include::  whatsnew/v0-1-3.rst
 .. include::  whatsnew/v0-1-2.rst

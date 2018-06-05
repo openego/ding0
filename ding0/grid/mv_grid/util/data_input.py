@@ -27,7 +27,18 @@ from ding0.grid.mv_grid.models.models import Graph
 
 
 class ParseException(Exception):
-    """Exception raised when something unexpected occurs in a TSPLIB file parsing"""
+    """Exception raised when something unexpected occurs in a TSPLIB file parsing
+    
+    Attributes
+    ----------
+    value: type
+        Description
+    
+    Args
+    ----
+    value: type
+        Description
+    """
     def __init__(self, value):
         self.value = value
 
@@ -36,22 +47,48 @@ class ParseException(Exception):
 
 
 def strip(line):
-    """Removes any \r or \n from line and remove trailing whitespaces"""
+    """Removes any `\\\\r` or `\\\\n` from line and remove trailing whitespaces
+    
+    Parameters
+    ----------
+    line: str
+        
+    
+    Returns
+    -------
+    str
+        the stripped line.
+        
+    """
     return line.replace('\r\n', '').strip() # remove new lines and trailing whitespaces
 
 
 def sanitize(filename):
     """Returns a sanitized file name with absolut path
 
-    Example: ~/input.txt -> /home/<your_home/input.txt
+    Example
+    -------
+    ~/input.txt -> /home/<your_home/input.txt
+    
+    Returns
+    -------
+    str
+        The sanitized file name with absolut path.
     """
     return path.abspath(path.expanduser(path.expandvars(filename)))
 
 
 def _parse_depot_section(f):
     """Parse TSPLIB DEPOT_SECTION data part from file descriptor f
-
-    Returns an array of depots
+    
+    Args
+    ----
+    f : str
+        File descriptor
+    Returns
+    -------
+    int
+        an array of depots
     """
     depots = []
 
@@ -142,8 +179,18 @@ def _parse_edge_weight(f, nodes):
 
 def calculate_euc_distance(a, b):
     """Calculates Eclidian distances from two points a and b
+    
+    Args
+    ----
+    a : (:obj:`float`, :obj:`float`)
+        Two-dimension tuple (x1,y1)
+    b : (:obj:`float`, :obj:`float`)
+        Two-dimension tuple (x2,y2)
 
-    Points are two-dimension tuples
+    Returns
+    -------
+    float
+        the distance.
     """
     x1, y1 = a
     x2, y2 = b
@@ -155,8 +202,15 @@ def _post_process_specs(specs):
     """Post-process specs after pure parsing
 
     Casts any number expected values into integers
-
-    Remarks: Modifies the specs object
+    
+    Args
+    ----
+    specs :
+    
+    
+    Notes
+    -----
+    Modifies the specs object
     """
     integer_specs = ['DIMENSION', 'CAPACITY']
 
@@ -323,7 +377,18 @@ def _parse_tsplib(f):
 
 
 def read_file(filename):
-    """Reads a TSPLIB file and returns the problem data"""
+    """Reads a TSPLIB file and returns the problem data.
+    
+    Args
+    ----
+    filename: str
+    
+    Returns
+    -------
+    type
+        Problem specs.
+    
+    """
     sanitized_filename = sanitize(filename)
 
     f = open(sanitized_filename)

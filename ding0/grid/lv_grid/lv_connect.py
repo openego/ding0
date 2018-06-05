@@ -25,15 +25,22 @@ logger = logging.getLogger('ding0')
 
 
 def lv_connect_generators(lv_grid_district, graph, debug=False):
+
     """ Connect LV generators to LV grid
+    
+    Args
+    ----
+    lv_grid_district: LVGridDistrictDing0
+        LVGridDistrictDing0 object for which the connection process has to be done
+    graph: :networkx:`NetworkX Graph Obj< >`
+        NetworkX graph object with nodes
+    debug: bool, defaults to False
+        If True, information is printed during process
 
-    Args:
-        lv_grid_district: LVGridDistrictDing0 object for which the connection process has to be done
-        graph: NetworkX graph object with nodes
-        debug: If True, information is printed during process
-
-    Returns:
-        graph: NetworkX graph object with nodes and newly created branches
+    Returns
+    -------
+    :networkx:`NetworkX Graph Obj< >`
+        NetworkX graph object with nodes and newly created branches
     """
 
     cable_lf = cfg_ding0.get('assumptions',

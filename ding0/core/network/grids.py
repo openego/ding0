@@ -43,9 +43,13 @@ class MVGridDing0(GridDing0):
 
     Parameters
     ----------
-    region : MV region (instance of MVGridDistrictDing0 class) that is associated with grid
-    default_branch_kind: kind of branch (possible values: 'cable' or 'line')
-    default_branch_type: type of branch (pandas Series object with cable/line parameters)
+    region : :obj:`MVGridDistrictDing0`
+        MV region (instance of MVGridDistrictDing0 class) that is associated with grid
+    default_branch_kind: :obj:`str`
+        kind of branch (possible values: 'cable' or 'line')
+    default_branch_type: :pandas:`pandas.Series<series>`   
+        type of branch (pandas Series object with cable/line parameters)
+    
     """
 
     # TODO: Add method to join MV graph with LV graphs to have one graph that covers whole grid (MV and LV)
@@ -80,31 +84,36 @@ class MVGridDing0(GridDing0):
         return len(self._circuit_breakers)
 
     def add_circuit_breaker(self, circ_breaker):
-        """ Creates circuit breaker object and ...
+        """Creates circuit breaker object and ...
 
-        Args:
-            circ_breaker: CircuitBreakerDing0 object
+        Args
+        ----
+        circ_breaker: CircuitBreakerDing0
+            Description #TODO
         """
         if circ_breaker not in self._circuit_breakers and isinstance(circ_breaker, CircuitBreakerDing0):
             self._circuit_breakers.append(circ_breaker)
             self.graph_add_node(circ_breaker)
 
     def open_circuit_breakers(self):
-        """ Opens all circuit breakers in MV grid """
+        """Opens all circuit breakers in MV grid """
         for circ_breaker in self.circuit_breakers():
             circ_breaker.open()
 
     def close_circuit_breakers(self):
-        """ Closes all circuit breakers in MV grid """
+        """Closes all circuit breakers in MV grid """
         for circ_breaker in self.circuit_breakers():
             circ_breaker.close()
 
     def add_station(self, mv_station, force=False):
-        """ Adds MV station if not already existing
+        """Adds MV station if not already existing
 
-        Args:
-            mv_station: MVStationDing0 object
-            force: bool. If True, MV Station is set even though it's not empty (override)
+        Args
+        ----
+        mv_station: MVStationDing0
+            Description #TODO
+        force: bool
+            If True, MV Station is set even though it's not empty (override)
         """
         if not isinstance(mv_station, MVStationDing0):
             raise Exception('Given MV station is not a MVStationDing0 object.')
@@ -118,14 +127,26 @@ class MVGridDing0(GridDing0):
                 raise Exception('MV Station already set, use argument `force=True` to override.')
 
     def add_load(self, lv_load):
-        """Adds a MV load to _loads and grid graph if not already existing"""
+        """Adds a MV load to _loads and grid graph if not already existing
+        
+        Args
+        ----
+        lv_load : float
+            Desription #TODO
+        """
         if lv_load not in self._loads and isinstance(lv_load,
                                                      MVLoadDing0):
             self._loads.append(lv_load)
             self.graph_add_node(lv_load)
 
     def add_cable_distributor(self, cable_dist):
-        """Adds a cable distributor to _cable_distributors if not already existing"""
+        """Adds a cable distributor to _cable_distributors if not already existing
+        
+        Args
+        ----
+        cable_dist : float
+            Desription #TODO
+        """
         if cable_dist not in self.cable_distributors() and isinstance(cable_dist,
                                                                       MVCableDistributorDing0):
             # add to array and graph
@@ -147,20 +168,35 @@ class MVGridDing0(GridDing0):
             self._rings.append(ring)
 
     def rings_count(self):
-        """Returns the count of rings in MV grid"""
+        """Returns the count of rings in MV grid
+        
+        Returns
+        -------
+        int
+            Count of ringos in MV grid.
+        """
         return len(self._rings)
 
     def rings_nodes(self, include_root_node=False, include_satellites=False):
         """ Returns a generator for iterating over rings (=routes of MVGrid's graph)
 
-        Args:
-            include_root_node: If True, the root node is included in the list of ring nodes.
-            include_satellites: If True, the satellite nodes (nodes that diverge from ring nodes) is included in the
-                                list of ring nodes.
-        Returns:
+        Args
+        ----
+        include_root_node: bool, defaults to False
+            If True, the root node is included in the list of ring nodes.
+        include_satellites: bool, defaults to False
+            If True, the satellite nodes (nodes that diverge from ring nodes) is included in the list of ring nodes.
+            
+        Yields
+        ------
+        :any:`list` of :obj:`GridDing0`
             List with nodes of each ring of _graph in- or excluding root node (HV/MV station) (arg `include_root_node`),
-            format: [ring_m_node_1, ..., ring_m_node_n]
-        Notes:
+            format::
+             
+            [ ring_m_node_1, ..., ring_m_node_n ]
+            
+        Notes
+        -----
             Circuit breakers must be closed to find rings, this is done automatically.
         """
         for circ_breaker in self.circuit_breakers():
@@ -217,7 +253,7 @@ class MVGridDing0(GridDing0):
 
         ##Find "rings" associated to aggregated LA
         #for node in self.graph_nodes_sorted():
-        #    if isinstance(node,LVLoadAreaCentreDingo): # MVCableDistributorDingo
+        #    if isinstance(node,LVLoadAreaCentreDing0): # MVCableDistributorDing0
         #        edges_ring = []
         #        ring_nodes = []
         #        if node.lv_load_area.is_aggregated:
@@ -230,10 +266,15 @@ class MVGridDing0(GridDing0):
 
     def get_ring_from_node(self, node):
         """ Determines the ring (RingDing0 object) which node is member of.
-        Args:
-            node: Ding0 object (member of graph)
-        Returns:
-            RingDing0 object
+        Args
+        ----
+        node: GridDing0
+            Ding0 object (member of graph)
+        
+        Returns
+        -------
+        RingDing0
+            Ringo of which node is member.
         """
         try:
             return self.graph_branches_from_node(node)[0][1]['branch'].ring
@@ -241,15 +282,21 @@ class MVGridDing0(GridDing0):
             raise Exception('Cannot get node\'s associated ring.')
 
     def graph_nodes_from_subtree(self, node_source):
-        """ Finds all nodes of a tree that is connected to `node_source` and are (except `node_source`) not part of the
-            ring of `node_source` (traversal of graph from `node_source` excluding nodes along ring).
-            Example: A given graph with ring (edges) 0-1-2-3-4-5-0 and a tree starting at node (`node_source`) 3 with
-            edges 3-6-7, 3-6-8-9 will return [6,7,8,9]
+        """ Finds all nodes of a tree that is connected to `node_source` and are (except `node_source`) not part of the 
+        ring of `node_source` (traversal of graph from `node_source` excluding nodes along ring).
+            
+        Example
+        -------
+        A given graph with ring (edges) 0-1-2-3-4-5-0 and a tree starting at node (`node_source`) 3 with edges 3-6-7, 3-6-8-9 will return [6,7,8,9]
 
-        Args:
-            node_source: source node (Ding0 object), member of _graph
+        Args
+        ----
+        node_source: GridDing0
+            source node (Ding0 object), member of _graph
 
-        Returns:
+        Returns
+        -------
+        :any:`list` of :obj:`GridDing0`
             List of nodes (Ding0 objects)
         """
         if node_source in self._graph.nodes():
@@ -301,8 +348,12 @@ class MVGridDing0(GridDing0):
     def routing(self, debug=False, anim=None):
         """ Performs routing on Load Area centres to build MV grid with ring topology.
 
-        Args:
-            debug: If True, information is printed while routing
+        Args
+        ----
+        debug: bool, defaults to False
+            If True, information is printed while routing
+        anim: type, defaults to None
+            Descr #TODO
         """
 
         # do the routing
@@ -334,20 +385,29 @@ class MVGridDing0(GridDing0):
     def connect_generators(self, debug=False):
         """ Connects MV generators (graph nodes) to grid (graph)
 
-        Args:
-            debug: If True, information is printed during process
+        Args
+        ----
+        debug: bool, defaults to False
+            If True, information is printed during process
         """
 
         self._graph = mv_connect.mv_connect_generators(self.grid_district, self._graph, debug)
 
     def parametrize_grid(self, debug=False):
-        """ Performs Parametrization of grid equipment: 1. Sets voltage level of MV grid, 2. Operation voltage level
-            and transformer of HV/MV station, 3. Default branch types (normal, aggregated, settlement)
+        """ Performs Parametrization of grid equipment:
+        
+            i) Sets voltage level of MV grid, 
+            ii) Operation voltage level and transformer of HV/MV station, 
+            iii) Default branch types (normal, aggregated, settlement)
 
-        Args:
-            debug: If True, information is printed during process
-        Notes:
-            It is assumed that only cables are used within settlements
+        Args
+        ----
+        debug: bool, defaults to False
+            If True, information is printed during process.
+            
+        Notes
+        -----
+        It is assumed that only cables are used within settlements.
         """
         # TODO: Add more detailed description
 
@@ -371,30 +431,30 @@ class MVGridDing0(GridDing0):
 
     def set_voltage_level(self, mode='distance'):
         """ Sets voltage level of MV grid according to load density of MV Grid District or max.
-            distance between station and Load Area.
+        distance between station and Load Area.
 
         Parameters
         ----------
-            mode: String
-                determines how voltage level is determined:
+        mode: str
+            method to determine voltage level
+            
+            * 'load_density': Decision on voltage level is determined by load density
+              of the considered region. Urban areas (load density of
+              >= 1 MW/km2 according to [#]_) usually got a voltage of
+              10 kV whereas rural areas mostly use 20 kV.
 
-                'load_density':         Decision on voltage level is determined by load density
-                                        of the considered region. Urban areas (load density of
-                                        >= 1 MW/km2 according to [1]_) usually got a voltage of
-                                        10 kV whereas rural areas mostly use 20 kV.
-
-                'distance' (default):   Decision on voltage level is determined by the max.
-                                        distance between Grid District's HV-MV station and Load
-                                        Areas (LA's centre is used). According to [2]_ a value of
-                                        1kV/km can be assumed. The `voltage_per_km_threshold`
-                                        defines the distance threshold for distinction.
-                                        (default in config = (20km+10km)/2 = 15km)
+            * 'distance' (default): Decision on voltage level is determined by the max.
+              distance between Grid District's HV-MV station and Load
+              Areas (LA's centre is used). According to [#]_ a value of
+              1kV/kV can be assumed. The `voltage_per_km_threshold`
+              defines the distance threshold for distinction.
+              (default in config = (20km+10km)/2 = 15km)
 
         References
         ----------
-        .. [1] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger Referenznetze im Verteilnetzsektor zur
+        .. [#] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger Referenznetze im Verteilnetzsektor zur
             Überprüfung der Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
-        .. [2] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
+        .. [#] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
 
         """
 
@@ -458,32 +518,37 @@ class MVGridDing0(GridDing0):
     def set_default_branch_type(self, debug=False):
         """ Determines default branch type according to grid district's peak load and standard equipment.
 
-        Args:
-            debug: If True, information is printed during process
+        Args
+        ----
+        debug: bool, defaults to False
+            If True, information is printed during process
 
-        Returns:
+        Returns
+        -------
+        :pandas:`pandas.Series<series>`   
             default branch type: pandas Series object. If no appropriate type is found, return largest possible one.
+        :pandas:`pandas.Series<series>`    
             default branch type max: pandas Series object. Largest available line/cable type
 
         Notes
         -----
-        Parameter values for cables and lines are taken from [1]_, [2]_ and [3]_.
+        Parameter values for cables and lines are taken from [#]_, [#]_ and [#]_.
 
-        Lines are chosen to have 60 % load relative to their nominal capacity according to [4]_.
+        Lines are chosen to have 60 % load relative to their nominal capacity according to [#]_.
 
         Decision on usage of overhead lines vs. cables is determined by load density of the considered region. Urban
         areas usually are equipped with underground cables whereas rural areas often have overhead lines as MV
-        distribution system [5]_.
+        distribution system [#]_.
 
         References
         ----------
-        .. [1] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
-        .. [2] René Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
-        .. [3] Südkabel GmbH, "Einadrige VPE-isolierte Mittelspannungskabel",
+        .. [#] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
+        .. [#] René Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
+        .. [#] Südkabel GmbH, "Einadrige VPE-isolierte Mittelspannungskabel",
             http://www.suedkabel.de/cms/upload/pdf/Garnituren/Einadrige_VPE-isolierte_Mittelspannungskabel.pdf, 2017
-        .. [4] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
+        .. [#] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012
-        .. [5] Tao, X., "Automatisierte Grundsatzplanung von
+        .. [#] Tao, X., "Automatisierte Grundsatzplanung von
             Mittelspannungsnetzen", Dissertation, RWTH Aachen, 2007
         """
 
@@ -584,11 +649,11 @@ class MVGridDing0(GridDing0):
     def set_nodes_aggregation_flag(self, peak_current_branch_max):
         """ Set Load Areas with too high demand to aggregated type.
 
-        Args:
-            peak_current_branch_max: Max. allowed current for line/cable
+        Args
+        ----
+        peak_current_branch_max: float
+            Max. allowed current for line/cable
 
-        Returns:
-            nothing
         """
 
         for lv_load_area in self.grid_district.lv_load_areas():
@@ -607,11 +672,13 @@ class MVGridDing0(GridDing0):
 
         Parameters
         ----------
-        session: SQLalchemy database session
+        session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Description
         method: str
-            Specify export method
-            If method='db' grid data will be exported to database
-            If method='onthefly' grid data will be passed to PyPSA directly (default)
+            Specify export method::
+            
+            'db': grid data will be exported to database
+            'onthefly': grid data will be passed to PyPSA directly (default)
 
         Notes
         -----
@@ -669,19 +736,26 @@ class MVGridDing0(GridDing0):
     def run_powerflow(self, session, export_pypsa_dir=None,  method='onthefly', debug=False):
         """ Performs power flow calculation for all MV grids
 
-        Args:
-            session: SQLalchemy database session
-            export_pypsa_dir: str
-                Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
-                Export is omitted if argument is empty.
-            method: str
-                Specify export method
-                If method='db' grid data will be exported to database
-                If method='onthefly' grid data will be passed to PyPSA directly (default)
-            debug: If True, information is printed during process
+        Args
+        ----
+        session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Description #TODO
+        export_pypsa_dir: str
+            Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
+            
+            Export is omitted if argument is empty.
+        method: str
+            Specify export method::
+            
+            'db': grid data will be exported to database
+            'onthefly': grid data will be passed to PyPSA directly (default)
+            
+        debug: bool, defaults to False
+            If True, information is printed during process
 
-        Notes:
-            It has to be proven that this method works for LV grids as well!
+        Notes
+        -----
+        It has to be proven that this method works for LV grids as well!
 
             Ding0 treats two stationary case of powerflow:
             1) Full load: We assume no generation and loads to be set to peak load
@@ -700,15 +774,13 @@ class MVGridDing0(GridDing0):
                                             debug=debug)
 
     def import_powerflow_results(self, session):
-        """
-        Assign results from power flow analysis to edges and nodes
+        """Assign results from power flow analysis to edges and nodes
 
         Parameters
         ----------
-        session: SQLalchemy database session
-        Returns
-        -------
-        None
+        session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Description
+        
         """
 
         # bus data
@@ -720,15 +792,24 @@ class MVGridDing0(GridDing0):
         # transformer data
 
     def reinforce_grid(self):
-        """ Performs grid reinforcement measures for current MV grid """
+        """Performs grid reinforcement measures for current MV grid
+
+        """
+        # TODO: Finalize docstring
 
         reinforce_grid(self, mode='MV')
 
     def set_circuit_breakers(self, debug=False):
-        """ Calculates the optimal position of the existing circuit breakers and relocates them within the graph,
-            see method `set_circuit_breakers` in ding0.grid.mv_grid.tools for details.
-        Args:
-            debug: If True, information is printed during process
+        """ Calculates the optimal position of the existing circuit breakers and relocates them within the graph.
+        
+        Args
+        ----
+        debug: bool, defaults to False
+            If True, information is printed during process
+            
+        See Also
+        --------
+        ding0.grid.mv_grid.tools.set_circuit_breakers
         """
         set_circuit_breakers(self, debug=debug)
 
@@ -741,10 +822,16 @@ class LVGridDing0(GridDing0):
 
     Parameters
     ----------
-    region : LV region (instance of LVLoadAreaDing0 class) that is associated with grid
+    region : LVLoadAreaDing0
+        LV region that is associated with grid
+    default_branch_kind : str
+        description #TODO
+    population : 
+        description #TODO
 
-    Notes:
-      It is assumed that LV grid have got cables only (attribute 'default_branch_kind')
+    Notes
+    -----
+        It is assumed that LV grid have got cables only (attribute 'default_branch_kind')
     """
 
     def __init__(self, **kwargs):
@@ -768,18 +855,20 @@ class LVGridDing0(GridDing0):
             self.grid_district.lv_load_area.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
     def loads_sector(self, sector='res'):
-        """
-        Returns a generator for iterating over grid's sectoral loads
+        """Returns a generator for iterating over grid's sectoral loads
         
         Parameters
         ----------
         sector: String
-            possible values: 'res' (residential),
-                             'ria' (retail, industrial, agricultural)
+            possible values::
+                
+                'res' (residential),
+                'ria' (retail, industrial, agricultural)
 
-        Returns
+        Yields
         -------
-        Generator for iterating over loads of the type specified in `sector`. 
+        int 
+            Generator for iterating over loads of the type specified in `sector`. 
         """
         
         for load in self._loads:
@@ -789,22 +878,33 @@ class LVGridDing0(GridDing0):
                 yield load
 
     def add_load(self, lv_load):
-        """Adds a LV load to _loads and grid graph if not already existing"""
+        """Adds a LV load to _loads and grid graph if not already existing
+        
+        Parameters
+        ----------
+        lv_load : 
+            Description #TODO
+        """
         if lv_load not in self._loads and isinstance(lv_load,
                                                      LVLoadDing0):
             self._loads.append(lv_load)
             self.graph_add_node(lv_load)
 
     def add_cable_dist(self, lv_cable_dist):
-        """Adds a LV cable_dist to _cable_dists and grid graph if not already existing"""
+        """Adds a LV cable_dist to _cable_dists and grid graph if not already existing
+        
+        Parameters
+        ----------
+        lv_cable_dist : 
+            Description #TODO
+        """
         if lv_cable_dist not in self._cable_distributors and isinstance(lv_cable_dist,
                                                                         LVCableDistributorDing0):
             self._cable_distributors.append(lv_cable_dist)
             self.graph_add_node(lv_cable_dist)
 
     def build_grid(self):
-        """
-        Create LV grid graph
+        """Create LV grid graph
         """
 
         # add required transformers
@@ -821,14 +921,18 @@ class LVGridDing0(GridDing0):
     def connect_generators(self, debug=False):
         """ Connects LV generators (graph nodes) to grid (graph)
 
-        Args:
-            debug: If True, information is printed during process
+        Args
+        ----
+        debug: bool, defaults to False
+             If True, information is printed during process
         """
 
         self._graph = lv_connect.lv_connect_generators(self.grid_district, self._graph, debug)
 
     def reinforce_grid(self):
-        """ Performs grid reinforcement measures for current LV grid """
+        """ Performs grid reinforcement measures for current LV grid.
+        """
+        # TODO: Finalize docstring
 
         reinforce_grid(self, mode='LV')
 

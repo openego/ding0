@@ -13,8 +13,6 @@ __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-# This file provides some useful functions for debugging DING0
-
 import ding0
 import os.path as path
 import networkx as nx

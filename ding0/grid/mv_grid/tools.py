@@ -25,29 +25,26 @@ logger = logging.getLogger('ding0')
 
 def set_circuit_breakers(mv_grid, mode='load', debug=False):
     """ Calculates the optimal position of a circuit breaker on all routes of mv_grid, adds and connects them to graph.
-    Args:
-        mv_grid: MVGridDing0 object
-        mode: String
-            determines the key parameter for relocation
-
-            'load' (default):       Only loads are used for determination of circuit breaker position.
-
-            'loadgen':              Both loads and generator capacities are used for determination of
-                                    circuit breaker position. If a ring is dominated by loads (peak load
-                                    > peak capacity of generators), only loads are used for determining
-                                    the location of circuit breaker. If generators are prevailing
-                                    (peak load < peak capacity of generators), only generator capacities
-                                    are considered for relocation.
-
-        debug: If True, information is printed during process
+    
+    Args
+    ----
+    mv_grid: MVGridDing0
+       Description#TODO
+    debug: bool, defaults to False
+       If True, information is printed during process
+    
 
     Notes
     -----
     According to planning principles of MV grids, a MV ring is run as two strings (half-rings) separated by a
-    circuit breaker which is open at normal operation [1]_, [2]_.
+    circuit breaker which is open at normal operation [#]_, [#]_.
     Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
     breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
     the route. Instead of the peak current, the peak load is used here (assuming a constant voltage).
+    
+    If a ring is dominated by loads (peak load > peak capacity of generators), only loads are used for determining
+    the location of circuit breaker. If generators are prevailing (peak load < peak capacity of generators),
+    only generator capacities are considered for relocation.
 
     The core of this function (calculation of the optimal circuit breaker position) is the same as in
     ding0.grid.mv_grid.models.Route.calc_circuit_breaker_position but here it is
@@ -59,8 +56,8 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
 
     References
     ----------
-    .. [1] X. Tao, "Automatisierte Grundsatzplanung von Mittelspannungsnetzen", Dissertation, 2006
-    .. [2] FGH e.V.: "Technischer Bericht 302: Ein Werkzeug zur Optimierung der Störungsbeseitigung
+    .. [#] X. Tao, "Automatisierte Grundsatzplanung von Mittelspannungsnetzen", Dissertation, 2006
+    .. [#] FGH e.V.: "Technischer Bericht 302: Ein Werkzeug zur Optimierung der Störungsbeseitigung
         für Planung und Betrieb von Mittelspannungsnetzen", Tech. rep., 2008
 
     """

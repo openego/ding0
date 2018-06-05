@@ -20,11 +20,11 @@ def line_prepender(filename, line):
 
 
 def openego_header():
-    """
+    """openego header in files
 
     Returns
     -------
-    header : str
+    :any:`str`
         openego group py-file header
     """
 

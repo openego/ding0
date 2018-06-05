@@ -94,11 +94,11 @@ def lv_grid_generators_bus_bar(nd):
 
     return lv_stats
 
-#here original position of function mvgdstats
 
 def save_nd_to_pickle(nd, path='', filename=None):
-    """
-    Use pickle to save the whole nd-object to disc
+    """Use pickle to save the whole nd-object to disc
+
+    The network instance is entirely pickled to a file.
 
     Parameters
     ----------
@@ -107,21 +107,7 @@ def save_nd_to_pickle(nd, path='', filename=None):
     path : str
         Absolute or relative path where pickle should be saved. Default is ''
         which means pickle is save to PWD
-    """
 
-    abs_path = os.path.abspath(path)
-
-
-def save_nd_to_pickle(nd, path='', filename=None):
-    """
-    Use pickle to save the whole nd-object to disc
-    Parameters
-    ----------
-    nd : NetworkDing0
-        Ding0 grid container object
-    path : str
-        Absolute or relative path where pickle should be saved. Default is ''
-        which means pickle is save to PWD
     """
 
     abs_path = os.path.abspath(path)
