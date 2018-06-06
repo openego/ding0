@@ -1,4 +1,4 @@
-Release v0.1.5 (June 6, 2018)
+Release v0.1.5 (May 15, 2018)
 ++++++++++++++++++++++++++++++++++
 
 This release provides an update of API docs.
@@ -9,4 +9,3 @@ This release provides an update of API docs.
 * Added new generator object GeneratorFluctuating that includes a
   weather_cell_id
   `#254 <https://github.com/openego/ding0/issues/254>`_
-* Include `oedialect <https://github.com/openego/oedialect>`_
