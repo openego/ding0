@@ -2182,7 +2182,7 @@ from sqlalchemy import create_engine
 from egoio.db_tables import model_draft as md
 
 
-def export_network_to_oedb(session, table, tabletype):
+def export_network_to_oedb(session, table, tabletype, srid):
     dataset = []
     engine = create_engine("sqlite:///myexample.db")
     if tabletype == 'edges':
@@ -2219,8 +2219,8 @@ def export_network_to_oedb(session, table, tabletype):
                     session.add(md.EgoGridDing0LvGenerator(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
-                        lv_grid_id_db=row['LV_grid_id_db'],
-                        geom=row['geom'],
+                        lv_grid_id_db=str(row['LV_grid_id_db']),
+                        geom="SRID={};{}".format(srid, row['geom']),
                         type=row['type'],
                         subtype=row['subtype'],
                         v_level=row['v_level'],
@@ -2363,24 +2363,24 @@ def export_network_to_oedb(session, table, tabletype):
     session.commit()
 
 
-def export_data_to_oedb(session, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb,
+def export_data_to_oedb(session, srid, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb,
                         mv_cd, mv_stations, mv_trafos, mv_loads, edges, mapping):
     # only for testing
     # engine = create_engine('sqlite:///:memory:')
-    export_network_to_oedb(session, lv_gen, 'lv_gen')
-    export_network_to_oedb(session, lv_grid, 'lv_grid')
-    export_network_to_oedb(session, lv_cd, 'lv_cd')
-    export_network_to_oedb(session, lv_stations, 'lv_stations')
-    export_network_to_oedb(session, lv_trafos, 'lv_trafos')
-    export_network_to_oedb(session, lv_loads, 'lv_loads')
-    export_network_to_oedb(session, mv_grid, 'mv_grid')
-    export_network_to_oedb(session, mv_gen, 'mv_gen')
-    export_network_to_oedb(session, mv_cd, 'mv_cd')
-    export_network_to_oedb(session, mv_stations, 'mv_stations')
-    export_network_to_oedb(session, mv_trafos, 'mv_trafos')
-    export_network_to_oedb(session, mv_loads, 'mv_loads')
-    export_network_to_oedb(session, edges, 'edges')
-    export_network_to_oedb(session, mapping, 'mapping')
+    export_network_to_oedb(session, lv_gen, 'lv_gen', srid)
+    export_network_to_oedb(session, lv_grid, 'lv_grid', srid)
+    export_network_to_oedb(session, lv_cd, 'lv_cd', srid)
+    export_network_to_oedb(session, lv_stations, 'lv_stations', srid)
+    export_network_to_oedb(session, lv_trafos, 'lv_trafos', srid)
+    export_network_to_oedb(session, lv_loads, 'lv_loads', srid)
+    export_network_to_oedb(session, mv_grid, 'mv_grid', srid)
+    export_network_to_oedb(session, mv_gen, 'mv_gen', srid)
+    export_network_to_oedb(session, mv_cd, 'mv_cd', srid)
+    export_network_to_oedb(session, mv_stations, 'mv_stations', srid)
+    export_network_to_oedb(session, mv_trafos, 'mv_trafos', srid)
+    export_network_to_oedb(session, mv_loads, 'mv_loads', srid)
+    export_network_to_oedb(session, edges, 'edges', srid)
+    export_network_to_oedb(session, mapping, 'mapping', srid)
 
 
 def create_ding0_db_tables(engine):
@@ -2424,8 +2424,8 @@ def drop_ding0_db_tables(engine):
         print("{: 3d}. {}".format(n, tab))
 
     print("Please confirm with either of the choices below:\n" + \
-          "- yes\n" + \
-          "- no\n" + \
+          "- yes\n" +\
+          "- no\n" +\
           "- the indexes to drop in the format 0, 2, 3, 5")
     confirmation = input("Please type the choice completely as there is no default choice.")
     if re.fullmatch('[Yy]es', confirmation):
