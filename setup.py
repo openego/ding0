@@ -33,12 +33,13 @@ setup(name='ding0',
                         'sqlalchemy >= 1.0.11, <= 1.2.0',
                         'geoalchemy2 >= 0.2.6, <= 0.4.1',
                         'matplotlib  >= 1.5.3, <= 1.5.3',
-                        'egoio==0.3.1',
+                        'egoio==0.4.0',
                         'shapely >= 1.5.12, <= 1.6.3',
                         'pypsa >= 0.11.0, <= 0.11.0',
                         'seaborn',
                         'unittest2',
-                        'scipy < 1.0'
+                        'scipy < 1.0',
+                        'oedialect'
                         ],
       package_data={
           'ding0': [
