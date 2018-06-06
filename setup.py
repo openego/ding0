@@ -38,7 +38,8 @@ setup(name='ding0',
                         'pypsa >= 0.11.0, <= 0.11.0',
                         'seaborn',
                         'unittest2',
-                        'scipy < 1.0'
+                        'scipy < 1.0',
+                        'oedialect'
                         ],
       package_data={
           'ding0': [
