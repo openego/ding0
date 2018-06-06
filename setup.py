@@ -18,7 +18,7 @@ import os
 
 
 setup(name='ding0',
-      version='v0.1.5',
+      version='v0.1.6dev',
       author='Reiner Lemoine Institut, openego development group',
       author_email='jonathan.amme@rl-institut.de',
       description='DIstribution Network GeneratOr',
