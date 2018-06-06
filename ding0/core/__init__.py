@@ -40,6 +40,7 @@ from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 from shapely.geometry import shape, mapping
 import subprocess
+import oedialect
 
 logger = logging.getLogger('ding0')
 
