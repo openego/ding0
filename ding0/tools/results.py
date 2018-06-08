@@ -1937,7 +1937,7 @@ def export_network(nw, mode=''):
                                     'MV_grid_id_db': mv_grid_id_db,
                                     'geom': geom,
                                     # from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),
-                                    'consumption': json.dumps({type: aggr['load'][type]['nominal']}),
+                                    'consumption_{}'.format(type): aggr['load'][type]['nominal'],
                                     'is_aggregated': True,
                                     'run_id': run_id,
                                 }
@@ -2082,15 +2082,26 @@ def export_network(nw, mode=''):
 
                             # LVload
                             elif isinstance(node, LVLoadDing0):
+                                consumption_dict = {}
+                                for k in ['residential', 'retail', 'agricultural', 'industrial']:
+                                    if k in node.consumption.keys():
+                                        consumption_dict[k] = node.consumption[k]
+                                    else:
+                                        consumption_dict[k] = None
                                 lvloads_idx += 1
                                 lvloads_dict[lvloads_idx] = {
                                     'id_db': '_'.join(
                                         [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
                                     'LV_grid_id_db': lv_grid_id_db,
                                     'geom': None,#wkt_dumps(lv_district.geo_data),#wkt_dumps(node.geo_data), Todo: why no geo_data?
-                                    'consumption': json.dumps(node.consumption),
+                                    # 'consumption': json.dumps(node.consumption),
+                                    'consumption_residential': consumption_dict['residential'],
+                                    'consumption_retail': consumption_dict['retail'],
+                                    'consumption_agricultural': consumption_dict['agricultural'],
+                                    'consumption_industrial': consumption_dict['industrial'],
                                     'run_id': run_id,
                                 }
+                                del consumption_dict
 
                             else:
                                 type = 'Unknown'
@@ -2131,23 +2142,24 @@ def export_network(nw, mode=''):
     lv_grid       = pd.DataFrame.from_dict(lvgrid_dict, orient='index')
     lv_gen        = pd.DataFrame.from_dict(lvgen_dict, orient='index')
     lv_cd         = pd.DataFrame.from_dict(lvcd_dict, orient='index')
-    lv_stations   = pd.DataFrame.from_dict(lvstations_dict, orient='index')
-    lv_trafos     = pd.DataFrame.from_dict(lvtrafos_dict, orient='index')
+    mvlv_stations = pd.DataFrame.from_dict(lvstations_dict, orient='index')
+    mvlv_trafos   = pd.DataFrame.from_dict(lvtrafos_dict, orient='index')
     lv_loads      = pd.DataFrame.from_dict(lvloads_dict, orient='index')
     mv_grid       = pd.DataFrame.from_dict(mvgrid_dict, orient='index')
     mv_gen        = pd.DataFrame.from_dict(mvgen_dict, orient='index')
-    mv_cb         = pd.DataFrame.from_dict(mvcb_dict, orient='index')
+    # mv_cb         = pd.DataFrame.from_dict(mvcb_dict, orient='index')
     mv_cd         = pd.DataFrame.from_dict(mvcd_dict, orient='index')
-    mv_stations   = pd.DataFrame.from_dict(mvstations_dict, orient='index')
-    #mv_areacenter = pd.DataFrame.from_dict(areacenter_dict, orient='index')
-    mv_trafos     = pd.DataFrame.from_dict(mvtrafos_dict, orient='index')
+    hvmv_stations = pd.DataFrame.from_dict(mvstations_dict, orient='index')
+    # mv_areacenter= pd.DataFrame.from_dict(areacenter_dict, orient='index')
+    hvmv_trafos   = pd.DataFrame.from_dict(mvtrafos_dict, orient='index')
     mv_loads      = pd.DataFrame.from_dict(mvloads_dict, orient='index')
-    edges      = pd.DataFrame.from_dict(edges_dict, orient='index')
-    lvmv_mapping = pd.DataFrame.from_dict(LVMVmapping_dict, orient='index')
+    edges         = pd.DataFrame.from_dict(edges_dict, orient='index')
+    mvlv_mapping  = pd.DataFrame.from_dict(LVMVmapping_dict, orient='index')
 
     edges = edges[sorted(edges.columns.tolist())]
 
-    return run_id, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, mv_trafos, mv_loads, edges, lvmv_mapping  # mv_areacenter,
+    return run_id, lv_grid, lv_gen, lv_cd, mvlv_stations, mvlv_trafos, lv_loads, mv_grid, mv_gen, mv_cd, \
+           hvmv_stations, hvmv_trafos, mv_loads, edges, mvlv_mapping  # mv_areacenter,
 
 
 #######################################################
@@ -2210,7 +2222,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         lv_grid_id_db=row['LV_grid_id_db'],
-                        geom=row['geom'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                     ))
                     , axis=1)
 
@@ -2220,7 +2232,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         lv_grid_id_db=str(row['LV_grid_id_db']),
-                        geom="SRID={};{}".format(srid, row['geom']),
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         type=row['type'],
                         subtype=row['subtype'],
                         v_level=row['v_level'],
@@ -2234,8 +2246,11 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         lv_grid_id_db=row['LV_grid_id_db'],
-                        geom=row['geom'],
-                        consumption=row['consumption'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
+                        consumption_residential=row['consumption_residential'],
+                        consumption_retail=row['consumption_retail'],
+                        consumption_agricultural=row['consumption_agricultural'],
+                        consumption_industrial=row['consumption_industrial'],
                     ))
                     , axis=1)
 
@@ -2244,30 +2259,30 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     session.add(md.EgoGridDing0LvGrid(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
-                        lv_grid_id_db=row['LV_grid_id_db'],
-                        geom=row['geom'],
+                        lv_grid_id=row['LV_grid_id'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         population=row['population'],
                         voltage_nom=row['voltage_nom'],
                     ))
                     , axis=1)
 
-    elif tabletype == 'lv_stations':
+    elif tabletype == 'mvlv_stations':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvlvStation(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         lv_grid_id_db=row['LV_grid_id_db'],
-                        geom=row['geom'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                     ))
                     , axis=1)
 
-    elif tabletype == 'lv_trafos':
+    elif tabletype == 'mvlv_trafos':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvlvTransformer(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         lv_grid_id_db=row['LV_grid_id_db'],
-                        geom=row['geom'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         voltage_op=row['voltage_op'],
                         S_nom=row['S_nom'],
                         X=row['X'],
@@ -2275,7 +2290,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     ))
                     , axis=1)
 
-    elif tabletype == 'mapping':
+    elif tabletype == 'mvlv_mapping':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvlvMapping(
                         run_id=row['run_id'],
@@ -2292,7 +2307,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         mv_grid_id_db=row['MV_grid_id_db'],
-                        geom=row['geom'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                     ))
                     , axis=1)
 
@@ -2302,7 +2317,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         mv_grid_id_db=row['MV_grid_id_db'],
-                        geom=row['geom'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         type=row['type'],
                         subtype=row['subtype'],
                         v_level=row['v_level'],
@@ -2316,9 +2331,12 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         mv_grid_id_db=row['MV_grid_id_db'],
-                        geom=row['geom'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         is_aggregated=row['is_aggregated'],
-                        consumption=row['consumption'],
+                        consumption_residential=row['consumption_residential'],
+                        consumption_retail=row['consumption_retail'],
+                        consumption_agricultural=row['consumption_agricultural'],
+                        consumption_industrial=row['consumption_industrial'],
                     ))
                     , axis=1)
 
@@ -2327,60 +2345,60 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     session.add(md.EgoGridDing0MvGrid(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
-                        mv_grid_id=row['LV_grid_id'],
-                        geom=row['geom'],
+                        mv_grid_id=row['MV_grid_id'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         population=row['population'],
                         voltage_nom=row['voltage_nom'],
                     ))
                     , axis=1)
 
-    elif tabletype == 'mv_stations':
+    elif tabletype == 'hvmv_stations':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0HvmvStation(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         mv_grid_id_db=row['MV_grid_id_db'],
-                        geom=row['geom'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                     ))
                     , axis=1)
 
-    elif tabletype == 'mv_trafos':
+    elif tabletype == 'hvmv_trafos':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0HvmvTransformer(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         mv_grid_id_db=row['MV_grid_id_db'],
-                        geom=row['geom'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         voltage_op=row['voltage_op'],
                         S_nom=row['S_nom'],
                         X=row['X'],
                         R=row['R'],
                     ))
                     , axis=1)
-        if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
-            print('helloworld')
+        # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
+        #     print('helloworld')
 
     session.commit()
 
 
-def export_data_to_oedb(session, srid, lv_grid, lv_gen, lv_cd, lv_stations, lv_trafos, lv_loads, mv_grid, mv_gen, mv_cb,
-                        mv_cd, mv_stations, mv_trafos, mv_loads, edges, mapping):
+def export_data_to_oedb(session, srid, lv_grid, lv_gen, lv_cd, mvlv_stations, mvlv_trafos, lv_loads, mv_grid, mv_gen,
+                        mv_cd, hvmv_stations, hvmv_trafos, mv_loads, edges, mvlv_mapping):
     # only for testing
     # engine = create_engine('sqlite:///:memory:')
     export_network_to_oedb(session, lv_gen, 'lv_gen', srid)
     export_network_to_oedb(session, lv_grid, 'lv_grid', srid)
     export_network_to_oedb(session, lv_cd, 'lv_cd', srid)
-    export_network_to_oedb(session, lv_stations, 'lv_stations', srid)
-    export_network_to_oedb(session, lv_trafos, 'lv_trafos', srid)
+    export_network_to_oedb(session, mvlv_stations, 'mvlv_stations', srid)
+    export_network_to_oedb(session, mvlv_trafos, 'mvlv_trafos', srid)
     export_network_to_oedb(session, lv_loads, 'lv_loads', srid)
     export_network_to_oedb(session, mv_grid, 'mv_grid', srid)
-    export_network_to_oedb(session, mv_gen, 'mv_gen', srid)
+    #export_network_to_oedb(session, mv_gen, 'mv_gen', srid)
     export_network_to_oedb(session, mv_cd, 'mv_cd', srid)
-    export_network_to_oedb(session, mv_stations, 'mv_stations', srid)
-    export_network_to_oedb(session, mv_trafos, 'mv_trafos', srid)
+    export_network_to_oedb(session, hvmv_stations, 'hvmv_stations', srid)
+    export_network_to_oedb(session, hvmv_trafos, 'hvmv_trafos', srid)
     export_network_to_oedb(session, mv_loads, 'mv_loads', srid)
     export_network_to_oedb(session, edges, 'edges', srid)
-    export_network_to_oedb(session, mapping, 'mapping', srid)
+    export_network_to_oedb(session, mvlv_mapping, 'mvlv_mapping', srid)
 
 
 def create_ding0_db_tables(engine):
