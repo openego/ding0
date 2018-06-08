@@ -29,6 +29,7 @@ import multiprocessing as mp
 import pandas as pd
 import json
 from sqlalchemy.orm import sessionmaker
+import oedialect
 
 
 BASEPATH = os.path.join(os.path.expanduser('~'), '.ding0')
