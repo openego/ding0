@@ -7,11 +7,10 @@ It is developed in the project open_eGo: https://openegoproject.wordpress.com
 DING0 lives at github: https://github.com/openego/ding0/
 The documentation is available on RTD: http://ding0.readthedocs.io"""
 
-__copyright__  = "Reiner Lemoine Institut gGmbH"
-__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
-__author__     = "nesnoj, gplssm"
-
+__copyright__ = "Reiner Lemoine Institut gGmbH"
+__license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
+__author__ = "nesnoj, gplssm"
 
 import pickle
 import numpy as np
@@ -26,7 +25,7 @@ import seaborn as sns
 
 from egoio.tools import db
 from ding0.core import NetworkDing0
-from ding0.core import GeneratorDing0
+from ding0.core import GeneratorDing0, GeneratorFluctuatingDing0
 from ding0.core import LVCableDistributorDing0, MVCableDistributorDing0
 from ding0.core import MVStationDing0, LVStationDing0
 from ding0.core import CircuitBreakerDing0
@@ -539,7 +538,7 @@ def calculate_mvgd_stats(nw):
             if not isinstance(node, MVCableDistributorDing0) and not isinstance(node, CircuitBreakerDing0):
                 if not nx.has_path(G, root, node):
                     continue
-                    #print(node, node.lv_load_area.is_aggregated) # only debug
+                    # print(node, node.lv_load_area.is_aggregated) # only debug
                 else:
                     path = nx.shortest_path(G, root, node)
                     for i in range(len(path) - 1):
@@ -564,7 +563,7 @@ def calculate_mvgd_stats(nw):
                         # add impedance of transformers in LV station
                         lvstation_impedance = 0.
                         for trafo in node.transformers():
-                            lvstation_impedance += 1. / np.hypot(trafo.r,trafo.x)  # transformers operating in parallel
+                            lvstation_impedance += 1. / np.hypot(trafo.r, trafo.x)  # transformers operating in parallel
                         if lvstation_impedance > 0.:  # avoid dividing by zero
                             lvstation_impedance = 1. / lvstation_impedance
                         else:
@@ -580,12 +579,16 @@ def calculate_mvgd_stats(nw):
                                             path = nx.shortest_path(G_lv, node, lv_node)
                                             lv_impedance = lvstation_impedance
                                             lv_path_length = 0.
-                                            for i in range(len(path)-1):
-                                                lv_impedance += np.sqrt((G_lv.edge[path[i]][path[i+1]]['branch'].type['L'] * 1e-3 * omega * \
-                                                                          G_lv.edge[path[i]][path[i+1]]['branch'].length)**2. + \
-                                                                         (G_lv.edge[path[i]][path[i+1]]['branch'].type['R'] * \
-                                                                          G_lv.edge[path[i]][path[i+1]]['branch'].length)**2.)
-                                                lv_path_length += G_lv.edge[path[i]][path[i+1]]['branch'].length
+                                            for i in range(len(path) - 1):
+                                                lv_impedance += np.sqrt((G_lv.edge[path[i]][path[i + 1]]['branch'].type[
+                                                                             'L'] * 1e-3 * omega * \
+                                                                         G_lv.edge[path[i]][path[i + 1]][
+                                                                             'branch'].length) ** 2. + \
+                                                                        (G_lv.edge[path[i]][path[i + 1]]['branch'].type[
+                                                                             'R'] * \
+                                                                         G_lv.edge[path[i]][path[i + 1]][
+                                                                             'branch'].length) ** 2.)
+                                                lv_path_length += G_lv.edge[path[i]][path[i + 1]]['branch'].length
                                             lv_thermal_limit = G_lv.edge[path[0]][path[1]]['branch'].type['I_max_th']
 
                                             mvlv_impedances[lv_node] = mv_impedance + lv_impedance
@@ -1320,8 +1323,8 @@ def process_stats(mv_districts,
     #######################################################################
     clusters = [mv_districts[x:x + n_of_districts] for x in range(0, len(mv_districts), n_of_districts)]
 
-    mv_stats      = []
-    lv_stats      = []
+    mv_stats = []
+    lv_stats = []
     mv_crit_nodes = []
     mv_crit_edges = []
     lv_crit_nodes = []
@@ -1626,7 +1629,7 @@ def export_network(nw, mode=''):
     mvcd_idx = 0
     mv_cd_dict = {}
     mvstations_idx = 0
-    hvmv_stations_dict = {}
+    mv_stations_dict = {}
     mvtrafos_idx = 0
     hvmv_trafos_dict = {}
     lvgen_idx = 0
@@ -1634,7 +1637,7 @@ def export_network(nw, mode=''):
     lvcd_idx = 0
     lv_cd_dict = {}
     lvstations_idx = 0
-    mvlv_stations_dict = {}
+    lv_stations_dict = {}
     lvtrafos_idx = 0
     mvlv_trafos_dict = {}
     areacenter_idx = 0
@@ -1686,7 +1689,7 @@ def export_network(nw, mode=''):
             if s not in aggr['load']:
                 aggr['load'][s] = {}
 
-            for t in ['nominal','peak']:
+            for t in ['nominal', 'peak']:
                 if t not in aggr['load'][s]:
                     aggr['load'][s][t] = 0
 
@@ -1758,7 +1761,7 @@ def export_network(nw, mode=''):
                 if isinstance(node, LVStationDing0):
                     if not node.lv_load_area.is_aggregated:
                         lvstations_idx += 1
-                        mvlv_stations_dict[lvstations_idx] = {
+                        lv_stations_dict[lvstations_idx] = {
                             'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                             'LV_grid_id_db': '_'.join(['LVGridDing0', 'LV', str(node.id_db), str(node.id_db)]),
                             'geom': geom,
@@ -1792,7 +1795,7 @@ def export_network(nw, mode=''):
                 # MVStation
                 elif isinstance(node, MVStationDing0):
                     mvstations_idx += 1
-                    hvmv_stations_dict[mvstations_idx] = {
+                    mv_stations_dict[mvstations_idx] = {
                         'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                         'MV_grid_id_db': mv_grid_id_db,
                         'geom': geom,
@@ -1814,24 +1817,39 @@ def export_network(nw, mode=''):
                         }
 
                 # MVGenerator
-                elif isinstance(node, GeneratorDing0):
+                elif (isinstance(node, GeneratorDing0) or isinstance(node, GeneratorFluctuatingDing0)):
                     if node.subtype == None:
                         subtype = 'other'
                     else:
                         subtype = node.subtype
-                    type = node.type
-                    mvgen_idx += 1
-                    mv_gen_dict[mvgen_idx] = {
-                        'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
-                        'MV_grid_id_db': mv_grid_id_db,
-                        'geom': geom,
-                        'type': type,
-                        'subtype': subtype,
-                        'v_level': node.v_level,
-                        'nominal_capacity': node.capacity,
-                        'run_id': run_id,
-                        'is_aggregated': False,
-                    }
+                    if isinstance(node, GeneratorFluctuatingDing0):
+                        type = node.type
+                        mvgen_idx += 1
+                        mv_gen_dict[mvgen_idx] ={
+                            'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
+                            'MV_grid_id_db': mv_grid_id_db,
+                            'geom': geom,
+                            'type': type,
+                            'subtype': subtype,
+                            'v_level': node.v_level,
+                            'nominal_capacity': node.capacity,
+                            'run_id': run_id,
+                            'is_aggregated': False,
+                            'weather_cell_id': node.weather_cell_id,
+                        }
+                    else:
+                        type = node.type
+                        mvgen_idx += 1
+                        mv_gen_dict[mvgen_idx] = {
+                            'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
+                            'MV_grid_id_db': mv_grid_id_db,
+                            'geom': geom,
+                            'type': type,
+                            'subtype': subtype,
+                            'v_level': node.v_level,
+                            'nominal_capacity': node.capacity,
+                            'run_id': run_id,
+                            'is_aggregated': False}
 
                 # MVBranchTees
                 elif isinstance(node, MVCableDistributorDing0):
@@ -1855,15 +1873,35 @@ def export_network(nw, mode=''):
 
                     # Determine aggregated generation in LV grid
                     for lvgd in node.lv_load_area._lv_grid_districts:
-
+                        weather_cell_ids = {}
                         for aggr_gen in lvgd.lv_grid.generators():
                             aggr = aggregate_generators(aggr_gen, aggr)
+
+                            # Get the aggregated weather cell id of the area
+                            # b
+                            if isinstance(aggr_gen, GeneratorFluctuatingDing0):
+                                if aggr_gen.weather_cell_id not in weather_cell_ids.keys():
+                                    weather_cell_ids[aggr_gen.weather_cell_id] = 1
+                                else:
+                                    weather_cell_ids[aggr_gen.weather_cell_id] += 1
 
                             if aggr_gen.subtype == None:
                                 subtype = 'other'
                             else:
                                 subtype = aggr_gen.subtype
                             type = aggr_gen.type
+
+                        # Get the weather cell id that occurs the most
+                        weather_cell_id = list(weather_cell_ids.keys())[
+                            list(weather_cell_ids.values()).index(max(weather_cell_ids.values()))]
+
+                        for v_level in aggr['generation']:
+                            for type in aggr['generation'][v_level]:
+                                for subtype in aggr['generation'][v_level][type]:
+                                    aggr['generation'][v_level][type][subtype]['weather_cell_id'] = \
+                                        weather_cell_id
+
+
 
                     # Determine aggregated load in MV grid
                     # -> Implement once loads in Ding0 MV grids exist
@@ -1877,7 +1915,7 @@ def export_network(nw, mode=''):
                         'geom': node.lv_load_area.geo_area}
                     aggr_line_type = nw._static_data['MV_cables'].iloc[
                         nw._static_data['MV_cables']['I_max_th'].idxmax()]
-                    geom = wkt_dumps(node.lv_load_area.geo_area)
+                    geom = wkt_dumps(node.geo_data)
 
                     for aggr_node in aggr:
                         if aggr_node == 'generation':
@@ -1893,11 +1931,13 @@ def export_network(nw, mode=''):
                                                 [str(aggr_gen.__class__.__name__), 'MV', str(mv_grid_id),
                                                  str(aggr_gen.id_db), str(mvgenaggr_idx)]),  # , str(mvgen_idx)
                                             'MV_grid_id_db': mv_grid_id_db,
-                                            'geom': geom,#from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),#lv_load_area.geo_area,#geom, #?? Polygon # hvmv_stations_dict[mvstations_idx]['geom'], #
+                                            'geom': geom,
+                                            # from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),#lv_load_area.geo_area,#geom, #?? Polygon # mv_stations_dict[mvstations_idx]['geom'], #
                                             'type': type,
                                             'subtype': subtype,
                                             'v_level': v_level,
                                             'nominal_capacity': aggr['generation'][v_level][type][subtype]['capacity'],
+                                            'weather_cell_id': aggr['generation'][v_level][type][subtype]['weather_cell_id'],
                                             'is_aggregated': True,
                                             'run_id': run_id,
                                         }
@@ -1937,7 +1977,7 @@ def export_network(nw, mode=''):
                                     'MV_grid_id_db': mv_grid_id_db,
                                     'geom': geom,
                                     # from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),
-                                    'consumption_{}'.format(type): aggr['load'][type]['nominal'],
+                                    'consumption': json.dumps({type: aggr['load'][type]['nominal']}),
                                     'is_aggregated': True,
                                     'run_id': run_id,
                                 }
@@ -2049,24 +2089,40 @@ def export_network(nw, mode=''):
                             # geom = wkt_dumps(node.geo_data)
 
                             # LVGenerator
-                            if isinstance(node, GeneratorDing0):
+                            if (isinstance(node, GeneratorDing0) or isinstance(node, GeneratorFluctuatingDing0)):
                                 if node.subtype == None:
                                     subtype = 'other'
                                 else:
                                     subtype = node.subtype
-                                type = node.type
-                                lvgen_idx += 1
-                                lv_gen_dict[lvgen_idx] = {
-                                    'id_db': '_'.join(
-                                        [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
-                                    'LV_grid_id_db': lv_grid_id_db,
-                                    'geom': wkt_dumps(node.geo_data),
-                                    'type': type,
-                                    'subtype': subtype,
-                                    'v_level': node.v_level,
-                                    'nominal_capacity': node.capacity,
-                                    'run_id': run_id,
-                                }
+                                if isinstance(node, GeneratorFluctuatingDing0):
+                                    type = node.type
+                                    lvgen_idx += 1
+                                    lv_gen_dict[lvgen_idx] = {
+                                        'id_db': '_'.join(
+                                            [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
+                                        'LV_grid_id_db': lv_grid_id_db,
+                                        'geom': wkt_dumps(node.geo_data),
+                                        'type': type,
+                                        'subtype': subtype,
+                                        'v_level': node.v_level,
+                                        'nominal_capacity': node.capacity,
+                                        'run_id': run_id,
+                                        'weather_cell_id': node.weather_cell_id,
+                                    }
+                                else:
+                                    type = node.type
+                                    lvgen_idx += 1
+                                    lv_gen_dict[lvgen_idx] = {
+                                        'id_db': '_'.join(
+                                            [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
+                                        'LV_grid_id_db': lv_grid_id_db,
+                                        'geom': wkt_dumps(node.geo_data),
+                                        'type': type,
+                                        'subtype': subtype,
+                                        'v_level': node.v_level,
+                                        'nominal_capacity': node.capacity,
+                                        'run_id': run_id,
+                                    }
 
                             # LVcd
                             elif isinstance(node, LVCableDistributorDing0):
@@ -2082,34 +2138,24 @@ def export_network(nw, mode=''):
 
                             # LVload
                             elif isinstance(node, LVLoadDing0):
-                                consumption_dict = {}
-                                for k in ['residential', 'retail', 'agricultural', 'industrial']:
-                                    if k in node.consumption.keys():
-                                        consumption_dict[k] = node.consumption[k]
-                                    else:
-                                        consumption_dict[k] = None
                                 lvloads_idx += 1
                                 lv_loads_dict[lvloads_idx] = {
                                     'id_db': '_'.join(
                                         [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
                                     'LV_grid_id_db': lv_grid_id_db,
-                                    'geom': None,#wkt_dumps(lv_district.geo_data),#wkt_dumps(node.geo_data), Todo: why no geo_data?
-                                    # 'consumption': json.dumps(node.consumption),
-                                    'consumption_residential': consumption_dict['residential'],
-                                    'consumption_retail': consumption_dict['retail'],
-                                    'consumption_agricultural': consumption_dict['agricultural'],
-                                    'consumption_industrial': consumption_dict['industrial'],
+                                    'geom': None,
+                                    # wkt_dumps(lv_district.geo_data),#wkt_dumps(node.geo_data), Todo: why no geo_data?
+                                    'consumption': json.dumps(node.consumption),
                                     'run_id': run_id,
                                 }
-                                del consumption_dict
 
                             else:
                                 type = 'Unknown'
 
                         # LVedges
                         for branch in lv_district.lv_grid.graph_edges():
-    #                        geom = from_shape(
-    #                            LineString([branch['adj_nodes'][0].geo_data, branch['adj_nodes'][1].geo_data]), srid=srid)
+                            #                        geom = from_shape(
+                            #                            LineString([branch['adj_nodes'][0].geo_data, branch['adj_nodes'][1].geo_data]), srid=srid)
                             if not any([isinstance(branch['adj_nodes'][0], LVLoadAreaCentreDing0),
                                         isinstance(branch['adj_nodes'][1], LVLoadAreaCentreDing0)]):
                                 lines_idx += 1
@@ -2142,14 +2188,14 @@ def export_network(nw, mode=''):
     lv_grid       = pd.DataFrame.from_dict(lv_grid_dict, orient='index')
     lv_gen        = pd.DataFrame.from_dict(lv_gen_dict, orient='index')
     lv_cd         = pd.DataFrame.from_dict(lv_cd_dict, orient='index')
-    mvlv_stations = pd.DataFrame.from_dict(mvlv_stations_dict, orient='index')
+    lv_stations   = pd.DataFrame.from_dict(lv_stations_dict, orient='index')
     mvlv_trafos   = pd.DataFrame.from_dict(mvlv_trafos_dict, orient='index')
     lv_loads      = pd.DataFrame.from_dict(lv_loads_dict, orient='index')
     mv_grid       = pd.DataFrame.from_dict(mv_grid_dict, orient='index')
     mv_gen        = pd.DataFrame.from_dict(mv_gen_dict, orient='index')
-    # mv_cb         = pd.DataFrame.from_dict(mvcb_dict, orient='index')
+    mv_cb         = pd.DataFrame.from_dict(mvcb_dict, orient='index')
     mv_cd         = pd.DataFrame.from_dict(mv_cd_dict, orient='index')
-    hvmv_stations = pd.DataFrame.from_dict(hvmv_stations_dict, orient='index')
+    mv_stations   = pd.DataFrame.from_dict(mv_stations_dict, orient='index')
     # mv_areacenter= pd.DataFrame.from_dict(areacenter_dict, orient='index')
     hvmv_trafos   = pd.DataFrame.from_dict(hvmv_trafos_dict, orient='index')
     mv_loads      = pd.DataFrame.from_dict(mv_loads_dict, orient='index')
@@ -2158,33 +2204,40 @@ def export_network(nw, mode=''):
 
     lines = lines[sorted(lines.columns.tolist())]
 
-    return run_id, lv_grid, lv_gen, lv_cd, mvlv_stations, mvlv_trafos, lv_loads, mv_grid, mv_gen, mv_cd, \
-           hvmv_stations, hvmv_trafos, mv_loads, lines, mvlv_mapping  # mv_areacenter,
+    return run_id, \
+        lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
+        mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
+        lines, mvlv_mapping  # mv_areacenter,
 
 
 #######################################################
 
-def export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, mv_grid, mv_gen, mv_cb,
-                      mv_cd, mv_stations, hvmv_trafos, mv_loads, lines, mapping):
+def export_data_tocsv(path, run_id,
+                      lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
+                      mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
+                      lines, mvlv_mapping, csv_sep=','):
+    # make directory with run_id if it doesn't exist
+    os.makedirs(os.path.join(path, run_id), exist_ok=True)
+
     # Exports data to csv
     def export_network_tocsv(path, table, tablename):
-        return table.to_csv(''.join([path, '/', run_id, '/', tablename, '.csv']), ';')
+        return table.to_csv(os.path.join(path, run_id, tablename + '.csv'), sep=csv_sep)
 
     export_network_tocsv(path, lv_grid, 'lv_grid')
     export_network_tocsv(path, lv_gen, 'lv_generator')
     export_network_tocsv(path, lv_cd, 'lv_branchtee')
-    export_network_tocsv(path, lv_stations, 'lvmv_station')
-    export_network_tocsv(path, mvlv_trafos, 'lv_transformer')
+    export_network_tocsv(path, lv_stations, 'lv_station')
+    export_network_tocsv(path, mvlv_trafos, 'mvlv_transformer')
     export_network_tocsv(path, lv_loads, 'lv_load')
     export_network_tocsv(path, mv_grid, 'mv_grid')
     export_network_tocsv(path, mv_gen, 'mv_generator')
     export_network_tocsv(path, mv_cd, 'mv_branchtee')
-    export_network_tocsv(path, mv_stations, 'mvhv_station')
-    export_network_tocsv(path, hvmv_trafos, 'mv_transformer')
+    export_network_tocsv(path, mv_stations, 'mv_station')
+    export_network_tocsv(path, hvmv_trafos, 'hvmv_transformer')
     export_network_tocsv(path, mv_cb, 'mv_circuitbreaker')
     export_network_tocsv(path, mv_loads, 'mv_load')
     export_network_tocsv(path, lines, 'line')
-    export_network_tocsv(path, mapping, 'mvlv_mapping')
+    export_network_tocsv(path, mvlv_mapping, 'mvlv_mapping')
     # export_network_tocsv(path, areacenter, 'areacenter')
 
 
@@ -2198,7 +2251,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
     dataset = []
     engine = create_engine("sqlite:///myexample.db")
     print("Exporting table type : {}".format(tabletype))
-    if tabletype == 'lines':
+    if tabletype == 'line':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0Line(
                         run_id=row['run_id'],
@@ -2241,17 +2294,14 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     ))
                     , axis=1)
 
-    elif tabletype == 'lv_loads':
+    elif tabletype == 'lv_load':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0LvLoad(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         lv_grid_id_db=row['LV_grid_id_db'],
                         geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
-                        consumption_residential=row['consumption_residential'],
-                        consumption_retail=row['consumption_retail'],
-                        consumption_agricultural=row['consumption_agricultural'],
-                        consumption_industrial=row['consumption_industrial'],
+                        consumption=row['consumption']
                     ))
                     , axis=1)
 
@@ -2267,9 +2317,9 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     ))
                     , axis=1)
 
-    elif tabletype == 'mvlv_stations':
+    elif tabletype == 'lv_station':
         table.apply(lambda row:
-                    session.add(md.EgoGridDing0MvlvStation(
+                    session.add(md.EgoGridDing0LvStation(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         lv_grid_id_db=row['LV_grid_id_db'],
@@ -2277,7 +2327,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     ))
                     , axis=1)
 
-    elif tabletype == 'mvlv_trafos':
+    elif tabletype == 'mvlv_trafo':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvlvTransformer(
                         run_id=row['run_id'],
@@ -2312,6 +2362,17 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     ))
                     , axis=1)
 
+    elif tabletype == 'mv_cb':
+        table.apply(lambda row:
+                    session.add(md.EgoGridDing0MvCircuitbreaker(
+                        run_id=row['run_id'],
+                        id_db=row['id_db'],
+                        mv_grid_id_db=row['MV_grid_id_db'],
+                        geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
+                        status=row['status'],
+                    ))
+                    , axis=1)
+
     elif tabletype == 'mv_gen':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvGenerator(
@@ -2327,7 +2388,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     ))
                     , axis=1)
 
-    elif tabletype == 'mv_loads':
+    elif tabletype == 'mv_load':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvLoad(
                         run_id=row['run_id'],
@@ -2335,10 +2396,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         mv_grid_id_db=row['MV_grid_id_db'],
                         geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         is_aggregated=row['is_aggregated'],
-                        consumption_residential=row['consumption_residential'],
-                        consumption_retail=row['consumption_retail'],
-                        consumption_agricultural=row['consumption_agricultural'],
-                        consumption_industrial=row['consumption_industrial'],
+                        consumption=row['consumption'],
                     ))
                     , axis=1)
 
@@ -2354,9 +2412,9 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     ))
                     , axis=1)
 
-    elif tabletype == 'hvmv_stations':
+    elif tabletype == 'mv_station':
         table.apply(lambda row:
-                    session.add(md.EgoGridDing0HvmvStation(
+                    session.add(md.EgoGridDing0MvStation(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
                         mv_grid_id_db=row['MV_grid_id_db'],
@@ -2364,7 +2422,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     ))
                     , axis=1)
 
-    elif tabletype == 'hvmv_trafos':
+    elif tabletype == 'hvmv_trafo':
         table.apply(lambda row:
                     session.add(md.EgoGridDing0HvmvTransformer(
                         run_id=row['run_id'],
@@ -2383,23 +2441,24 @@ def export_network_to_oedb(session, table, tabletype, srid):
     session.commit()
 
 
-def export_data_to_oedb(session, srid, lv_grid, lv_gen, lv_cd, mvlv_stations, mvlv_trafos, lv_loads, mv_grid, mv_gen,
-                        mv_cd, hvmv_stations, hvmv_trafos, mv_loads, lines, mvlv_mapping):
+def export_data_to_oedb(session, srid, lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, mv_grid, mv_gen,
+                        mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, lines, mvlv_mapping):
     # only for testing
     # engine = create_engine('sqlite:///:memory:')
     export_network_to_oedb(session, lv_grid, 'lv_grid', srid)
     export_network_to_oedb(session, lv_gen, 'lv_gen', srid)
     export_network_to_oedb(session, lv_cd, 'lv_cd', srid)
-    export_network_to_oedb(session, mvlv_stations, 'mvlv_stations', srid)
-    export_network_to_oedb(session, mvlv_trafos, 'mvlv_trafos', srid)
-    export_network_to_oedb(session, lv_loads, 'lv_loads', srid)
+    export_network_to_oedb(session, lv_stations, 'lv_station', srid)
+    export_network_to_oedb(session, mvlv_trafos, 'mvlv_trafo', srid)
+    export_network_to_oedb(session, lv_loads, 'lv_load', srid)
     export_network_to_oedb(session, mv_grid, 'mv_grid', srid)
     export_network_to_oedb(session, mv_gen, 'mv_gen', srid)
+    export_network_to_oedb(session, mv_cb, 'mv_cb', srid)
     export_network_to_oedb(session, mv_cd, 'mv_cd', srid)
-    export_network_to_oedb(session, hvmv_stations, 'hvmv_stations', srid)
-    export_network_to_oedb(session, hvmv_trafos, 'hvmv_trafos', srid)
-    export_network_to_oedb(session, mv_loads, 'mv_loads', srid)
-    export_network_to_oedb(session, lines, 'lines', srid)
+    export_network_to_oedb(session, mv_stations, 'mv_station', srid)
+    export_network_to_oedb(session, hvmv_trafos, 'hvmv_trafo', srid)
+    export_network_to_oedb(session, mv_loads, 'mv_load', srid)
+    export_network_to_oedb(session, lines, 'line', srid)
     export_network_to_oedb(session, mvlv_mapping, 'mvlv_mapping', srid)
 
 
@@ -2409,14 +2468,15 @@ def create_ding0_db_tables(engine):
               md.EgoGridDing0LvGenerator,
               md.EgoGridDing0LvLoad,
               md.EgoGridDing0LvGrid,
-              md.EgoGridDing0MvlvStation,
+              md.EgoGridDing0LvStation,
               md.EgoGridDing0MvlvTransformer,
               md.EgoGridDing0MvlvMapping,
               md.EgoGridDing0MvBranchtee,
+              md.EgoGridDing0MvCircuitbreaker,
               md.EgoGridDing0MvGenerator,
               md.EgoGridDing0MvLoad,
               md.EgoGridDing0MvGrid,
-              md.EgoGridDing0HvmvStation,
+              md.EgoGridDing0MvStation,
               md.EgoGridDing0HvmvTransformer]
 
     for tab in tables:
@@ -2429,14 +2489,15 @@ def drop_ding0_db_tables(engine):
               md.EgoGridDing0LvGenerator,
               md.EgoGridDing0LvLoad,
               md.EgoGridDing0LvGrid,
-              md.EgoGridDing0MvlvStation,
+              md.EgoGridDing0LvStation,
               md.EgoGridDing0MvlvTransformer,
               md.EgoGridDing0MvlvMapping,
               md.EgoGridDing0MvBranchtee,
+              md.EgoGridDing0MvCircuitbreaker,
               md.EgoGridDing0MvGenerator,
               md.EgoGridDing0MvLoad,
               md.EgoGridDing0MvGrid,
-              md.EgoGridDing0HvmvStation,
+              md.EgoGridDing0MvStation,
               md.EgoGridDing0HvmvTransformer]
 
     print("Please confirm that you would like to drop the following tables:")
@@ -2444,8 +2505,8 @@ def drop_ding0_db_tables(engine):
         print("{: 3d}. {}".format(n, tab))
 
     print("Please confirm with either of the choices below:\n" + \
-          "- yes\n" +\
-          "- no\n" +\
+          "- yes\n" + \
+          "- no\n" + \
           "- the indexes to drop in the format 0, 2, 3, 5")
     confirmation = input("Please type the choice completely as there is no default choice.")
     if re.fullmatch('[Yy]es', confirmation):
