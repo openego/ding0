@@ -1611,6 +1611,7 @@ def export_network(nw, mode=''):
     ##############################
     # from datetime import datetime
     run_id = nw.metadata['run_id']  # datetime.now().strftime("%Y%m%d%H%M%S")
+    metadata_json = json.dumps(nw.metadata)
     ##############################
     #############################
     # go through the grid collecting info
@@ -2204,7 +2205,7 @@ def export_network(nw, mode=''):
 
     lines = lines[sorted(lines.columns.tolist())]
 
-    return run_id, \
+    return run_id, metadata_json,\
         lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
         mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
         lines, mvlv_mapping  # mv_areacenter,
@@ -2212,12 +2213,17 @@ def export_network(nw, mode=''):
 
 #######################################################
 
-def export_data_tocsv(path, run_id,
+def export_data_tocsv(path, run_id, metadata_json,
                       lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
                       mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
                       lines, mvlv_mapping, csv_sep=','):
     # make directory with run_id if it doesn't exist
     os.makedirs(os.path.join(path, run_id), exist_ok=True)
+
+    # put a text file with the metadata
+    metadata = json.loads(metadata_json)
+    with open(os.path.join(path, run_id, 'metadata.json'), 'w') as metafile:
+        json.dump(metadata, metafile)
 
     # Exports data to csv
     def export_network_tocsv(path, table, tablename):
@@ -2441,29 +2447,57 @@ def export_network_to_oedb(session, table, tabletype, srid):
     session.commit()
 
 
-def export_data_to_oedb(session, srid, lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, mv_grid, mv_gen,
-                        mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, lines, mvlv_mapping):
+def export_data_to_oedb(session, run_id, metadata_json, srid,
+                        lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
+                        mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, lines, mvlv_mapping):
     # only for testing
     # engine = create_engine('sqlite:///:memory:')
-    export_network_to_oedb(session, lv_grid, 'lv_grid', srid)
-    export_network_to_oedb(session, lv_gen, 'lv_gen', srid)
-    export_network_to_oedb(session, lv_cd, 'lv_cd', srid)
-    export_network_to_oedb(session, lv_stations, 'lv_station', srid)
-    export_network_to_oedb(session, mvlv_trafos, 'mvlv_trafo', srid)
-    export_network_to_oedb(session, lv_loads, 'lv_load', srid)
-    export_network_to_oedb(session, mv_grid, 'mv_grid', srid)
-    export_network_to_oedb(session, mv_gen, 'mv_gen', srid)
-    export_network_to_oedb(session, mv_cb, 'mv_cb', srid)
-    export_network_to_oedb(session, mv_cd, 'mv_cd', srid)
-    export_network_to_oedb(session, mv_stations, 'mv_station', srid)
-    export_network_to_oedb(session, hvmv_trafos, 'hvmv_trafo', srid)
-    export_network_to_oedb(session, mv_loads, 'mv_load', srid)
-    export_network_to_oedb(session, lines, 'line', srid)
-    export_network_to_oedb(session, mvlv_mapping, 'mvlv_mapping', srid)
+
+    # get the run_id from model_draft.ego_grid_ding0_versioning
+    # compare the run_id from table to the current run_id
+
+    oedb_versioning_query = session.query(
+        md.EgoGridDing0Versioning.run_id,
+        md.EgoGridDing0Versioning.description
+    ).filter(md.EgoGridDing0Versioning.run_id == run_id)
+
+    oedb_versioning = pd.read_sql_query(oedb_versioning_query.statement,
+                                        session.bind)
+
+    if oedb_versioning.empty:
+        # if the run_id doesn't exist then
+        # create entry into ego_grid_ding0_versioning:
+        metadata_df = pd.DataFrame({'run_id': run_id,
+                                    'description': metadata_json},
+                                   index=[0])
+        metadata_df.apply(lambda row:
+                          session.add(md.EgoGridDing0Versioning(
+                              run_id=row['run_id'],
+                              description=row['description'],
+                          ))
+                          , axis=1)
+        export_network_to_oedb(session, lv_grid, 'lv_grid', srid)
+        export_network_to_oedb(session, lv_gen, 'lv_gen', srid)
+        export_network_to_oedb(session, lv_cd, 'lv_cd', srid)
+        export_network_to_oedb(session, lv_stations, 'lv_station', srid)
+        export_network_to_oedb(session, mvlv_trafos, 'mvlv_trafo', srid)
+        export_network_to_oedb(session, lv_loads, 'lv_load', srid)
+        export_network_to_oedb(session, mv_grid, 'mv_grid', srid)
+        export_network_to_oedb(session, mv_gen, 'mv_gen', srid)
+        export_network_to_oedb(session, mv_cb, 'mv_cb', srid)
+        export_network_to_oedb(session, mv_cd, 'mv_cd', srid)
+        export_network_to_oedb(session, mv_stations, 'mv_station', srid)
+        export_network_to_oedb(session, hvmv_trafos, 'hvmv_trafo', srid)
+        export_network_to_oedb(session, mv_loads, 'mv_load', srid)
+        export_network_to_oedb(session, lines, 'line', srid)
+        export_network_to_oedb(session, mvlv_mapping, 'mvlv_mapping', srid)
+    else:
+        raise KeyError("run_id already present! No tables are input!")
 
 
 def create_ding0_db_tables(engine):
-    tables = [md.EgoGridDing0Line,
+    tables = [md.EgoGridDing0Versioning,
+              md.EgoGridDing0Line,
               md.EgoGridDing0LvBranchtee,
               md.EgoGridDing0LvGenerator,
               md.EgoGridDing0LvLoad,
@@ -2498,15 +2532,16 @@ def drop_ding0_db_tables(engine):
               md.EgoGridDing0MvLoad,
               md.EgoGridDing0MvGrid,
               md.EgoGridDing0MvStation,
-              md.EgoGridDing0HvmvTransformer]
+              md.EgoGridDing0HvmvTransformer,
+              md.EgoGridDing0Versioning]
 
     print("Please confirm that you would like to drop the following tables:")
     for n, tab in enumerate(tables):
         print("{: 3d}. {}".format(n, tab))
 
-    print("Please confirm with either of the choices below:\n" + \
-          "- yes\n" + \
-          "- no\n" + \
+    print("Please confirm with either of the choices below:\n" +
+          "- yes\n" +
+          "- no\n" +
           "- the indexes to drop in the format 0, 2, 3, 5")
     confirmation = input("Please type the choice completely as there is no default choice.")
     if re.fullmatch('[Yy]es', confirmation):
@@ -2522,8 +2557,8 @@ def drop_ding0_db_tables(engine):
             tablist = np.array(tables)[indlist].tolist()
             for n, tab in enumerate(tablist):
                 print("{: 3d}. {}".format(n, tab))
-            con2 = input("Please confirm with either of the choices below:\n" + \
-                         "- yes\n" + \
+            con2 = input("Please confirm with either of the choices below:\n" +
+                         "- yes\n" +
                          "- no")
             if re.fullmatch('[Yy]es', con2):
                 for tab in tablist:
