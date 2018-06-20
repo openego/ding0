@@ -2571,6 +2571,51 @@ def drop_ding0_db_tables(engine):
             print("Confirmation unclear, no action taken")
 
 
+def grant_access_ding0_db_tables(engine):
+
+    tables = [md.EgoGridDing0Line,
+              md.EgoGridDing0LvBranchtee,
+              md.EgoGridDing0LvGenerator,
+              md.EgoGridDing0LvLoad,
+              md.EgoGridDing0LvGrid,
+              md.EgoGridDing0LvStation,
+              md.EgoGridDing0MvlvTransformer,
+              md.EgoGridDing0MvlvMapping,
+              md.EgoGridDing0MvBranchtee,
+              md.EgoGridDing0MvCircuitbreaker,
+              md.EgoGridDing0MvGenerator,
+              md.EgoGridDing0MvLoad,
+              md.EgoGridDing0MvGrid,
+              md.EgoGridDing0MvStation,
+              md.EgoGridDing0HvmvTransformer,
+              md.EgoGridDing0Versioning]
+
+    def grant_db_access(conn, table, role):
+        r"""Gives access to database users/ groups
+        Parameters
+        ----------
+        conn : sqlalchemy connection object
+            A valid connection to a database
+        table : sqlalchmy Table class definition
+            The database table
+        role : str
+            database role that access is granted to
+        """
+        tablename = table.__table__.name
+        schema = table.__table__.schema
+
+
+        grant_str = """GRANT ALL ON TABLE {schema}.{table}
+        TO {role} WITH GRANT OPTION;""".format(schema=schema, table=tablename,
+                                               role=role)
+
+        conn.execute(grant_str)
+
+    session = sessionmaker(bind=engine)()
+
+    for tab in tables:
+        grant_db_access(session.bind, tab, 'oeuser')
+
 ########################################################
 if __name__ == "__main__":
     # nw = init_mv_grid(mv_grid_districts=[3544, 3545])
