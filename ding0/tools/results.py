@@ -2476,6 +2476,8 @@ def export_data_to_oedb(session, run_id, metadata_json, srid,
                               description=row['description'],
                           ))
                           , axis=1)
+        session.commit()
+
         export_network_to_oedb(session, lv_grid, 'lv_grid', srid)
         export_network_to_oedb(session, lv_gen, 'lv_gen', srid)
         export_network_to_oedb(session, lv_cd, 'lv_cd', srid)
