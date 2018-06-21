@@ -2592,11 +2592,11 @@ def grant_access_ding0_db_tables(engine):
               md.EgoGridDing0HvmvTransformer,
               md.EgoGridDing0Versioning]
 
-    def grant_db_access(conn, table, role):
+    def grant_db_access(engine, table, role):
         r"""Gives access to database users/ groups
         Parameters
         ----------
-        conn : sqlalchemy connection object
+        session : sqlalchemy session object
             A valid connection to a database
         table : sqlalchmy Table class definition
             The database table
@@ -2607,16 +2607,18 @@ def grant_access_ding0_db_tables(engine):
         schema = table.__table__.schema
 
 
-        grant_str = """GRANT ALL ON TABLE {schema}.{table}
-        TO {role} WITH GRANT OPTION;""".format(schema=schema, table=tablename,
+        grant_str = """BEGIN;
+        GRANT ALL PRIVILEGES ON TABLE {schema}.{table}
+        TO {role} WITH GRANT OPTION;
+        COMMIT;""".format(schema=schema, table=tablename,
                                                role=role)
 
-        conn.execute(grant_str)
+        engine.execute(grant_str)
 
-    session = sessionmaker(bind=engine)()
+    # engine.echo=True
 
     for tab in tables:
-        grant_db_access(session.bind, tab, 'oeuser')
+        grant_db_access(engine, tab, 'oeuser')
 
 ########################################################
 if __name__ == "__main__":
