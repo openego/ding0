@@ -1892,15 +1892,16 @@ def export_network(nw, mode=''):
                                 subtype = aggr_gen.subtype
                             type = aggr_gen.type
 
-                        # Get the weather cell id that occurs the most
-                        weather_cell_id = list(weather_cell_ids.keys())[
-                            list(weather_cell_ids.values()).index(max(weather_cell_ids.values()))]
+                        if weather_cell_ids:
+                            # Get the weather cell id that occurs the most
+                            weather_cell_id = list(weather_cell_ids.keys())[
+                                list(weather_cell_ids.values()).index(max(weather_cell_ids.values()))]
 
-                        for v_level in aggr['generation']:
-                            for type in aggr['generation'][v_level]:
-                                for subtype in aggr['generation'][v_level][type]:
-                                    aggr['generation'][v_level][type][subtype]['weather_cell_id'] = \
-                                        weather_cell_id
+                            for v_level in aggr['generation']:
+                                for type in aggr['generation'][v_level]:
+                                    for subtype in aggr['generation'][v_level][type]:
+                                        aggr['generation'][v_level][type][subtype]['weather_cell_id'] = \
+                                            weather_cell_id
 
 
 
