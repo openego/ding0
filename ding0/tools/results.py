@@ -2218,16 +2218,16 @@ def export_data_tocsv(path, run_id, metadata_json,
                       mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
                       lines, mvlv_mapping, csv_sep=','):
     # make directory with run_id if it doesn't exist
-    os.makedirs(os.path.join(path, run_id), exist_ok=True)
+    os.makedirs(path, exist_ok=True)
 
     # put a text file with the metadata
     metadata = json.loads(metadata_json)
-    with open(os.path.join(path, run_id, 'metadata.json'), 'w') as metafile:
+    with open(os.path.join(path, 'metadata.json'), 'w') as metafile:
         json.dump(metadata, metafile)
 
     # Exports data to csv
     def export_network_tocsv(path, table, tablename):
-        return table.to_csv(os.path.join(path, run_id, tablename + '.csv'), sep=csv_sep)
+        return table.to_csv(os.path.join(path, tablename + '.csv'), sep=csv_sep)
 
     export_network_tocsv(path, lv_grid, 'lv_grid')
     export_network_tocsv(path, lv_gen, 'lv_generator')
