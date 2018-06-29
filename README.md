@@ -25,7 +25,7 @@ pip3 install ding0
 Further details regarding the installation including dependencies are provided
 in the [documentation](https://dingo.readthedocs.io)
 
-A [set of examples](https://ding0.readthedocs.io/en/dev/usage_details.html#examples)
+A [set of examples](https://dingo.readthedocs.io/en/dev/usage_details.html#examples)
 is provided to show how to use Ding0.
 
 An overview on versions of data already generated [can be found in the wiki](https://github.com/openego/ding0/wiki/Ding0-datasets).
