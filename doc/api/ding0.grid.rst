@@ -1,5 +1,5 @@
-ding0.grid package
-==================
+ding0\.grid package
+===================
 
 Subpackages
 -----------
@@ -12,8 +12,8 @@ Subpackages
 Submodules
 ----------
 
-ding0.grid.tools module
------------------------
+ding0\.grid\.tools module
+-------------------------
 
 .. automodule:: ding0.grid.tools
     :members:
