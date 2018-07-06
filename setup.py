@@ -18,7 +18,7 @@ import os
 
 
 setup(name='ding0',
-      version='v0.1.6dev',
+      version='v0.1.7dev',
       author='Reiner Lemoine Institut, openego development group',
       author_email='jonathan.amme@rl-institut.de',
       description='DIstribution Network GeneratOr',
@@ -33,7 +33,7 @@ setup(name='ding0',
                         'sqlalchemy >= 1.0.11, <= 1.2.0',
                         'geoalchemy2 >= 0.2.6, <= 0.4.1',
                         'matplotlib  >= 1.5.3, <= 1.5.3',
-                        'egoio>=0.4.0',
+                        'egoio>=0.4.1',
                         'shapely >= 1.5.12, <= 1.6.3',
                         'pypsa >= 0.11.0, <= 0.11.0',
                         'seaborn',
