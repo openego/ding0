@@ -1648,35 +1648,6 @@ def export_network(nw, mode=''):
     LVMVmapping_idx = 0
     mvlv_mapping_dict = {}
 
-    def aggregate_generators(gen, aggr):
-        """Aggregate generation capacity per voltage level
-        Parameters
-        ----------
-        gen: ding0.core.GeneratorDing0
-            Ding0 Generator object
-        aggr: dict
-            Aggregated generation capacity. For structure see
-            `_determine_aggregated_nodes()`.
-        Returns
-        -------
-        """
-
-        if gen.v_level not in aggr['generation']:
-            aggr['generation'][gen.v_level] = {}
-        if gen.type not in aggr['generation'][gen.v_level]:
-            aggr['generation'][gen.v_level][gen.type] = {}
-        if gen.subtype not in aggr['generation'][gen.v_level][gen.type]:
-            aggr['generation'][gen.v_level][gen.type].update(
-                {gen.subtype: {'ids': [gen.id_db],
-                               'capacity': gen.capacity}})
-        else:
-            aggr['generation'][gen.v_level][gen.type][gen.subtype][
-                'ids'].append(gen.id_db)
-            aggr['generation'][gen.v_level][gen.type][gen.subtype][
-                'capacity'] += gen.capacity
-
-        return aggr
-
     def aggregate_loads(la_center, aggr):
         """Aggregate consumption in load area per sector
         Parameters
@@ -1827,7 +1798,8 @@ def export_network(nw, mode=''):
                         type = node.type
                         mvgen_idx += 1
                         mv_gen_dict[mvgen_idx] ={
-                            'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
+                            # 'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
+                            'id_db': node.id_db,
                             'MV_grid_id_db': mv_grid_id_db,
                             'geom': geom,
                             'type': type,
@@ -1842,7 +1814,8 @@ def export_network(nw, mode=''):
                         type = node.type
                         mvgen_idx += 1
                         mv_gen_dict[mvgen_idx] = {
-                            'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
+                            # 'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
+                            'id_db': node.id_db,
                             'MV_grid_id_db': mv_grid_id_db,
                             'geom': geom,
                             'type': type,
@@ -1872,39 +1845,6 @@ def export_network(nw, mode=''):
 
                     aggr = {'generation': {}, 'load': {}, 'aggregates': []}
 
-                    # Determine aggregated generation in LV grid
-                    for lvgd in node.lv_load_area._lv_grid_districts:
-                        weather_cell_ids = {}
-                        for aggr_gen in lvgd.lv_grid.generators():
-                            aggr = aggregate_generators(aggr_gen, aggr)
-
-                            # Get the aggregated weather cell id of the area
-                            # b
-                            if isinstance(aggr_gen, GeneratorFluctuatingDing0):
-                                if aggr_gen.weather_cell_id not in weather_cell_ids.keys():
-                                    weather_cell_ids[aggr_gen.weather_cell_id] = 1
-                                else:
-                                    weather_cell_ids[aggr_gen.weather_cell_id] += 1
-
-                            if aggr_gen.subtype == None:
-                                subtype = 'other'
-                            else:
-                                subtype = aggr_gen.subtype
-                            type = aggr_gen.type
-
-                        if weather_cell_ids:
-                            # Get the weather cell id that occurs the most
-                            weather_cell_id = list(weather_cell_ids.keys())[
-                                list(weather_cell_ids.values()).index(max(weather_cell_ids.values()))]
-
-                            for v_level in aggr['generation']:
-                                for type in aggr['generation'][v_level]:
-                                    for subtype in aggr['generation'][v_level][type]:
-                                        aggr['generation'][v_level][type][subtype]['weather_cell_id'] = \
-                                            weather_cell_id
-
-
-
                     # Determine aggregated load in MV grid
                     # -> Implement once loads in Ding0 MV grids exist
 
@@ -1921,54 +1861,7 @@ def export_network(nw, mode=''):
 
                     for aggr_node in aggr:
                         if aggr_node == 'generation':
-                            mvgenaggr_idx = 0
-
-                            for v_level in aggr['generation']:
-                                for type in aggr['generation'][v_level]:
-                                    for subtype in aggr['generation'][v_level][type]:
-                                        mvgen_idx += 1
-                                        mvgenaggr_idx += 1
-                                        mv_gen_dict[mvgen_idx] = {
-                                            'id_db': '_'.join(
-                                                [str(aggr_gen.__class__.__name__), 'MV', str(mv_grid_id),
-                                                 str(aggr_gen.id_db), str(mvgenaggr_idx)]),  # , str(mvgen_idx)
-                                            'MV_grid_id_db': mv_grid_id_db,
-                                            'geom': geom,
-                                            # from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),#lv_load_area.geo_area,#geom, #?? Polygon # mv_stations_dict[mvstations_idx]['geom'], #
-                                            'type': type,
-                                            'subtype': subtype,
-                                            'v_level': v_level,
-                                            'nominal_capacity': aggr['generation'][v_level][type][subtype]['capacity'],
-                                            'weather_cell_id': aggr['generation'][v_level][type][subtype]['weather_cell_id'],
-                                            'is_aggregated': True,
-                                            'run_id': run_id,
-                                        }
-
-                                        lines_idx += 1
-                                        aggr_lines += 1
-                                        lines_dict[lines_idx] = {
-                                            # ToDo: Rename edge_name
-                                            'edge_name': '_'.join(
-                                                [str(mv_grid_id), 'aggr', str(node.lv_load_area.id_db),
-                                                 str(aggr_lines)]),
-                                            # , 'vlevel', str(v_level), 'subtype', str(subtype)]),#}'.format(v_level=v_level, subtype=subtype),
-                                            'grid_id_db': mv_grid_id_db,
-                                            # ToDo: read type_name from aggr_line_type
-                                            'type_name': 'NA2XS2Y 3x1x500 RM/35',  # aggr_line_type.name,
-                                            'type_kind': 'cable',  # branch['branch'].kind,
-                                            'length': 1,
-                                            'U_n': aggr_line_type.U_n,
-                                            'I_max_th': aggr_line_type.I_max_th,
-                                            'R': aggr_line_type.R,
-                                            'L': aggr_line_type.L,
-                                            'C': aggr_line_type.C,
-                                            'node1': '_'.join(
-                                                [str(aggr_gen.__class__.__name__), 'MV', str(mv_grid_id),
-                                                 str(aggr_gen.id_db), str(mvgenaggr_idx)]),
-                                            'node2': '_'.join([
-                                                'MVStationDing0', 'MV', str(mv_grid_id), str(mv_grid_id)]),
-                                            'run_id': run_id,
-                                        }
+                            pass
 
                         elif aggr_node == 'load':
                             for type in aggr['load']:
@@ -1978,7 +1871,6 @@ def export_network(nw, mode=''):
                                         ['AggregatedLoad', 'MV', str(mv_grid_id), str(mvloads_idx)]),
                                     'MV_grid_id_db': mv_grid_id_db,
                                     'geom': geom,
-                                    # from_shape(Point(mv_district.mv_grid.station().geo_data), srid=srid),
                                     'consumption': json.dumps({type: aggr['load'][type]['nominal']}),
                                     'is_aggregated': True,
                                     'run_id': run_id,
@@ -2010,15 +1902,6 @@ def export_network(nw, mode=''):
                                         'MVStationDing0', 'MV', str(mv_grid_id), str(mv_grid_id)]),
                                     'run_id': run_id,
                                 }
-
-                    # areacenter_dict[areacenter_idx] = {
-                    #    'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),#node.id_db,
-                    #    'MV_grid_id':node.grid,
-                    #    'geom':node.geo_data,
-                    #    'lv_load_area': node.lv_load_area,
-                    #    'run_id': run_id,#
-
-                    # }
 
                 # DisconnectingPoints
                 elif isinstance(node, CircuitBreakerDing0):
@@ -2063,11 +1946,8 @@ def export_network(nw, mode=''):
         if lv_info:
             for LA in mv_district.lv_load_areas():
                 for lv_district in LA.lv_grid_districts():
-                    if not lv_district.lv_grid.grid_district.lv_load_area.is_aggregated:
 
-                        # ding0_grid.grid_district._lv_load_areas._lv_grid_districts    _.lv_grid
-                        # LV-grid
-                        # ToDo: geom <- Polygon
+                    if not lv_district.lv_grid.grid_district.lv_load_area.is_aggregated:
                         lvgrid_idx += 1
                         lv_grid_dict[lvgrid_idx] = {
                             'LV_grid_id': lv_district.lv_grid.id_db,
@@ -2080,54 +1960,61 @@ def export_network(nw, mode=''):
                             'run_id': run_id
                         }
 
-                        lv_grid_id = lv_district.lv_grid.id_db
-                        lv_grid_id_db = '_'.join(
-                            [str(lv_district.lv_grid.__class__.__name__), 'LV', str(lv_district.lv_grid.id_db),
-                             str(lv_district.lv_grid.id_db)])
+                    lv_grid_id = lv_district.lv_grid.id_db
+                    lv_grid_id_db = '_'.join(
+                        [str(lv_district.lv_grid.__class__.__name__), 'LV', str(lv_district.lv_grid.id_db),
+                         str(lv_district.lv_grid.id_db)])
 
-                        # geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
-                        # geom = wkt_dumps(lv_district.geo_data)# lv_grid.station() #ding0_lv_grid.grid_district.geo_data
-                        for node in lv_district.lv_grid.graph_nodes_sorted():
-                            # geom = wkt_dumps(node.geo_data)
+                    # geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
+                    # geom = wkt_dumps(lv_district.geo_data)# lv_grid.station() #ding0_lv_grid.grid_district.geo_data
+                    for node in lv_district.lv_grid.graph_nodes_sorted():
+                        # geom = wkt_dumps(node.geo_data)
 
-                            # LVGenerator
-                            if (isinstance(node, GeneratorDing0) or isinstance(node, GeneratorFluctuatingDing0)):
-                                if node.subtype == None:
-                                    subtype = 'other'
-                                else:
-                                    subtype = node.subtype
-                                if isinstance(node, GeneratorFluctuatingDing0):
-                                    type = node.type
-                                    lvgen_idx += 1
-                                    lv_gen_dict[lvgen_idx] = {
-                                        'id_db': '_'.join(
-                                            [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
-                                        'LV_grid_id_db': lv_grid_id_db,
-                                        'geom': wkt_dumps(node.geo_data),
-                                        'type': type,
-                                        'subtype': subtype,
-                                        'v_level': node.v_level,
-                                        'nominal_capacity': node.capacity,
-                                        'run_id': run_id,
-                                        'weather_cell_id': node.weather_cell_id,
-                                    }
-                                else:
-                                    type = node.type
-                                    lvgen_idx += 1
-                                    lv_gen_dict[lvgen_idx] = {
-                                        'id_db': '_'.join(
-                                            [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
-                                        'LV_grid_id_db': lv_grid_id_db,
-                                        'geom': wkt_dumps(node.geo_data),
-                                        'type': type,
-                                        'subtype': subtype,
-                                        'v_level': node.v_level,
-                                        'nominal_capacity': node.capacity,
-                                        'run_id': run_id,
-                                    }
+                        # LVGenerator
+                        if (isinstance(node, GeneratorDing0) or isinstance(node, GeneratorFluctuatingDing0)):
+                            if node.subtype == None:
+                                subtype = 'other'
+                            else:
+                                subtype = node.subtype
+                            if isinstance(node, GeneratorFluctuatingDing0):
+                                type = node.type
+                                lvgen_idx += 1
+                                lv_gen_dict[lvgen_idx] = {
+                                    # 'id_db': '_'.join(
+                                    #     [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
+                                    'id_db': node.id_db,
+                                    'la_id': LA.id_db,
+                                    'LV_grid_id_db': lv_grid_id_db,
+                                    'geom': wkt_dumps(node.geo_data),
+                                    'type': type,
+                                    'subtype': subtype,
+                                    'v_level': node.v_level,
+                                    'nominal_capacity': node.capacity,
+                                    'run_id': run_id,
+                                    'is_aggregated': node.lv_load_area.is_aggregated,
+                                    'weather_cell_id': node.weather_cell_id,
+                                }
+                            else:
+                                type = node.type
+                                lvgen_idx += 1
+                                lv_gen_dict[lvgen_idx] = {
+                                    # 'id_db': '_'.join(
+                                    #     [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
+                                    'id_db': node.id_db,
+                                    'la_id': LA.id_db,
+                                    'LV_grid_id_db': lv_grid_id_db,
+                                    'geom': wkt_dumps(node.geo_data),
+                                    'type': type,
+                                    'subtype': subtype,
+                                    'v_level': node.v_level,
+                                    'nominal_capacity': node.capacity,
+                                    'run_id': run_id,
+                                    'is_aggregated': node.lv_load_area.is_aggregated,
+                                }
 
-                            # LVcd
-                            elif isinstance(node, LVCableDistributorDing0):
+                        # LVcd
+                        elif isinstance(node, LVCableDistributorDing0):
+                            if not node.grid.grid_district.lv_load_area.is_aggregated:
                                 lvcd_idx += 1
                                 lv_cd_dict[lvcd_idx] = {
                                     'id_db': '_'.join(
@@ -2138,8 +2025,9 @@ def export_network(nw, mode=''):
                                     'run_id': run_id,
                                 }
 
-                            # LVload
-                            elif isinstance(node, LVLoadDing0):
+                        # LVload
+                        elif isinstance(node, LVLoadDing0):
+                            if not node.grid.grid_district.lv_load_area.is_aggregated:
                                 lvloads_idx += 1
                                 lv_loads_dict[lvloads_idx] = {
                                     'id_db': '_'.join(
@@ -2151,13 +2039,14 @@ def export_network(nw, mode=''):
                                     'run_id': run_id,
                                 }
 
-                            else:
-                                type = 'Unknown'
+                        else:
+                            type = 'Unknown'
 
-                        # LVedges
-                        for branch in lv_district.lv_grid.graph_edges():
-                            #                        geom = from_shape(
-                            #                            LineString([branch['adj_nodes'][0].geo_data, branch['adj_nodes'][1].geo_data]), srid=srid)
+                    # LVedges
+                    for branch in lv_district.lv_grid.graph_edges():
+                        if not branch['branch'].connects_aggregated:
+                        #                        geom = from_shape(
+                        #                            LineString([branch['adj_nodes'][0].geo_data, branch['adj_nodes'][1].geo_data]), srid=srid)
                             if not any([isinstance(branch['adj_nodes'][0], LVLoadAreaCentreDing0),
                                         isinstance(branch['adj_nodes'][1], LVLoadAreaCentreDing0)]):
                                 lines_idx += 1
