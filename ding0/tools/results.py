@@ -2175,12 +2175,16 @@ def export_network_to_oedb(session, table, tabletype, srid):
                     session.add(md.EgoGridDing0LvGenerator(
                         run_id=row['run_id'],
                         id_db=row['id_db'],
+                        la_id=row['la_id'],
                         lv_grid_id_db=str(row['LV_grid_id_db']),
                         geom="SRID={};{}".format(srid, row['geom']) if row['geom'] else None,
                         type=row['type'],
                         subtype=row['subtype'],
                         v_level=row['v_level'],
                         nominal_capacity=row['nominal_capacity'],
+                        is_aggregated=row['is_aggregated'],
+                        weather_cell_id=row['weather_cell_id']
+
                     ))
                     , axis=1)
 
@@ -2275,6 +2279,7 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         v_level=row['v_level'],
                         nominal_capacity=row['nominal_capacity'],
                         is_aggregated=row['is_aggregated'],
+                        weather_cell_id=row['weather_cell_id']
                     ))
                     , axis=1)
 
