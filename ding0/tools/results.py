@@ -1707,7 +1707,8 @@ def export_network(nw, mode=''):
             mvgrid_idx += 1
             mv_grid_dict[mvgrid_idx] = {
                 'MV_grid_id': mv_district.mv_grid.id_db,
-                'id_db': mv_grid_id,
+                'id_db': '_'.join([str(mv_district.mv_grid.__class__.__name__), 'MV', str(mv_grid_id),
+                                   str(mv_district.mv_grid.id_db)]),
                 # 'network': mv_district.mv_grid.network,
                 'geom': wkt_dumps(mv_district.geo_data),
                 'population':  # None,
@@ -1733,8 +1734,8 @@ def export_network(nw, mode=''):
                     if not node.lv_load_area.is_aggregated:
                         lvstations_idx += 1
                         lv_stations_dict[lvstations_idx] = {
+                            'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                             'LV_grid_id_db': '_'.join(['LVGridDing0', 'LV', str(node.id_db), str(node.id_db)]),
-                            'id_db': node.id_db,
                             'geom': geom,
                             'run_id': run_id,
                         }
@@ -1753,7 +1754,7 @@ def export_network(nw, mode=''):
                         for t in node.transformers():
                             lvtrafos_idx += 1
                             mvlv_trafos_dict[lvtrafos_idx] = {
-                                'id_db': node.id_db,
+                                'id_db': '_'.join([str(t.__class__.__name__), 'LV', str(mv_grid_id), str(node.id_db)]),
                                 'geom': geom,
                                 'LV_grid_id_db': '_'.join(['LVGridDing0', 'LV', str(node.id_db), str(node.id_db)]),
                                 'voltage_op': t.v_level,
@@ -1767,7 +1768,7 @@ def export_network(nw, mode=''):
                 elif isinstance(node, MVStationDing0):
                     mvstations_idx += 1
                     mv_stations_dict[mvstations_idx] = {
-                        'id_db': node.id_db,
+                        'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                         'MV_grid_id_db': mv_grid_id_db,
                         'geom': geom,
                         'run_id': run_id,
@@ -1777,7 +1778,7 @@ def export_network(nw, mode=''):
                     for t in node.transformers():
                         mvtrafos_idx += 1
                         hvmv_trafos_dict[mvtrafos_idx] = {
-                            'id_db': node.id_db,
+                            'id_db': '_'.join([str(t.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                             'geom': geom,
                             'MV_grid_id_db': mv_grid_id_db,
                             'voltage_op': t.v_level,
@@ -1826,7 +1827,7 @@ def export_network(nw, mode=''):
                 elif isinstance(node, MVCableDistributorDing0):
                     mvcd_idx += 1
                     mv_cd_dict[mvcd_idx] = {
-                        'id_db': node.id_db,
+                        'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                         'MV_grid_id_db': mv_grid_id_db,
                         'geom': geom,
                         'run_id': run_id,
@@ -1864,7 +1865,8 @@ def export_network(nw, mode=''):
                             for type in aggr['load']:
                                 mvloads_idx += 1
                                 mv_loads_dict[mvloads_idx] = {
-                                    'id_db': mvloads_idx,
+                                    'id_db': '_'.join(
+                                        ['AggregatedLoad', 'MV', str(mv_grid_id), str(mvloads_idx)]),
                                     'MV_grid_id_db': mv_grid_id_db,
                                     'geom': geom,
                                     'consumption': json.dumps({type: aggr['load'][type]['nominal']}),
@@ -1903,7 +1905,7 @@ def export_network(nw, mode=''):
                 elif isinstance(node, CircuitBreakerDing0):
                     mvcb_idx += 1
                     mvcb_dict[mvcb_idx] = {
-                        'id_db': node.id_db,
+                        'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                         'MV_grid_id': mv_grid_id,
                         'MV_grid_id_db': mv_grid_id_db,
                         'geom': geom,
@@ -1947,7 +1949,9 @@ def export_network(nw, mode=''):
                         lvgrid_idx += 1
                         lv_grid_dict[lvgrid_idx] = {
                             'LV_grid_id': lv_district.lv_grid.id_db,
-                            'id_db': lv_district.lv_grid.id_db,
+                            'id_db': '_'.join(
+                                [str(lv_district.lv_grid.__class__.__name__), 'LV', str(lv_district.lv_grid.id_db),
+                                 str(lv_district.lv_grid.id_db)]),
                             'geom': wkt_dumps(lv_district.geo_data),
                             'population': lv_district.population,
                             'voltage_nom': lv_district.lv_grid.v_level / 1e3,
@@ -2007,7 +2011,8 @@ def export_network(nw, mode=''):
                             if not node.grid.grid_district.lv_load_area.is_aggregated:
                                 lvcd_idx += 1
                                 lv_cd_dict[lvcd_idx] = {
-                                    'id_db': node.id_db,
+                                    'id_db': '_'.join(
+                                        [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
                                     'LV_grid_id_db': lv_grid_id_db,
                                     'geom': None,
                                     # wkt_dumps(lv_district.geo_data),#wkt_dumps(node.geo_data), Todo: why no geo_data?
@@ -2019,7 +2024,8 @@ def export_network(nw, mode=''):
                             if not node.grid.grid_district.lv_load_area.is_aggregated:
                                 lvloads_idx += 1
                                 lv_loads_dict[lvloads_idx] = {
-                                    'id_db': node.id_db,
+                                    'id_db': '_'.join(
+                                        [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
                                     'LV_grid_id_db': lv_grid_id_db,
                                     'geom': None,
                                     # wkt_dumps(lv_district.geo_data),#wkt_dumps(node.geo_data), Todo: why no geo_data?
