@@ -1696,8 +1696,7 @@ def export_network(nw, mode=''):
     for mv_district in nw.mv_grid_districts():
         from shapely.wkt import dumps as wkt_dumps
         mv_grid_id = mv_district.mv_grid.id_db
-        mv_grid_id_db = '_'.join(
-            [str(mv_district.mv_grid.__class__.__name__), 'MV', str(mv_grid_id), str(mv_district.mv_grid.id_db)])
+        mv_grid_id_db = mv_district.mv_grid.id_db
 
         if mv_info:
             lv_grid_id = 0
@@ -1733,8 +1732,8 @@ def export_network(nw, mode=''):
                     if not node.lv_load_area.is_aggregated:
                         lvstations_idx += 1
                         lv_stations_dict[lvstations_idx] = {
-                            'LV_grid_id_db': '_'.join(['LVGridDing0', 'LV', str(node.id_db), str(node.id_db)]),
                             'id_db': node.id_db,
+                            'LV_grid_id_db': node.id_db,
                             'geom': geom,
                             'run_id': run_id,
                         }
@@ -1745,7 +1744,7 @@ def export_network(nw, mode=''):
                             'MV_grid_id': mv_grid_id,
                             'MV_grid_id_db': mv_grid_id_db,
                             'LV_grid_id': node.id_db,
-                            'LV_grid_id_db': '_'.join(['LVGridDing0', 'LV', str(node.id_db), str(node.id_db)]),
+                            'LV_grid_id_db': node.id_db,
                             'run_id': run_id,
                         }
 
@@ -1755,7 +1754,7 @@ def export_network(nw, mode=''):
                             mvlv_trafos_dict[lvtrafos_idx] = {
                                 'id_db': node.id_db,
                                 'geom': geom,
-                                'LV_grid_id_db': '_'.join(['LVGridDing0', 'LV', str(node.id_db), str(node.id_db)]),
+                                'LV_grid_id_db': node.id_db,
                                 'voltage_op': t.v_level,
                                 'S_nom': t.s_max_a,
                                 'X': t.x,
@@ -1955,9 +1954,7 @@ def export_network(nw, mode=''):
                         }
 
                     lv_grid_id = lv_district.lv_grid.id_db
-                    lv_grid_id_db = '_'.join(
-                        [str(lv_district.lv_grid.__class__.__name__), 'LV', str(lv_district.lv_grid.id_db),
-                         str(lv_district.lv_grid.id_db)])
+                    lv_grid_id_db = lv_district.lv_grid.id_db
 
                     # geom = from_shape(Point(lv_district.lv_grid.station().geo_data), srid=srid)
                     # geom = wkt_dumps(lv_district.geo_data)# lv_grid.station() #ding0_lv_grid.grid_district.geo_data
