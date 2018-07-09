@@ -1798,7 +1798,6 @@ def export_network(nw, mode=''):
                         type = node.type
                         mvgen_idx += 1
                         mv_gen_dict[mvgen_idx] ={
-                            # 'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                             'id_db': node.id_db,
                             'MV_grid_id_db': mv_grid_id_db,
                             'geom': geom,
@@ -1814,7 +1813,6 @@ def export_network(nw, mode=''):
                         type = node.type
                         mvgen_idx += 1
                         mv_gen_dict[mvgen_idx] = {
-                            # 'id_db': '_'.join([str(node.__class__.__name__), 'MV', str(mv_grid_id), str(node.id_db)]),
                             'id_db': node.id_db,
                             'MV_grid_id_db': mv_grid_id_db,
                             'geom': geom,
@@ -1980,8 +1978,6 @@ def export_network(nw, mode=''):
                                 type = node.type
                                 lvgen_idx += 1
                                 lv_gen_dict[lvgen_idx] = {
-                                    # 'id_db': '_'.join(
-                                    #     [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
                                     'id_db': node.id_db,
                                     'la_id': LA.id_db,
                                     'LV_grid_id_db': lv_grid_id_db,
@@ -1998,8 +1994,6 @@ def export_network(nw, mode=''):
                                 type = node.type
                                 lvgen_idx += 1
                                 lv_gen_dict[lvgen_idx] = {
-                                    # 'id_db': '_'.join(
-                                    #     [str(node.__class__.__name__), 'LV', str(lv_grid_id), str(node.id_db)]),
                                     'id_db': node.id_db,
                                     'la_id': LA.id_db,
                                     'LV_grid_id_db': lv_grid_id_db,
