@@ -1939,6 +1939,9 @@ def export_network(nw, mode=''):
                         'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'MV', str(mv_grid_id),
                                            str(branch['adj_nodes'][1].id_db)]),
                         'run_id': run_id,
+                        'geom': from_shape(LineString([branch['adj_nodes'][0].geo_data,
+                                                        branch['adj_nodes'][1].geo_data]),
+                                            srid=srid)
                     }
 
         if lv_info:
@@ -2068,6 +2071,9 @@ def export_network(nw, mode=''):
                                         [str(branch['adj_nodes'][1].__class__.__name__), 'MV', str(mv_grid_id),
                                          str(branch['adj_nodes'][1].id_db)]),
                                     'run_id': run_id,
+                                    'geom': from_shape(LineString([branch['adj_nodes'][0].geo_data,
+                                                                   branch['adj_nodes'][1].geo_data]),
+                                                       srid=srid)
                                 }
 
     lv_grid       = pd.DataFrame.from_dict(lv_grid_dict, orient='index')
