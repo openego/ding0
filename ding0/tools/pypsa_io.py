@@ -76,11 +76,22 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
         DataFrame containing components time-varying data
     """
 
+    def q_sign(power_factor_mode_string):
+        comparestr = power_factor_mode_string.lower()
+        if re.fullmatch('inductive', comparestr):
+            return 1
+        elif re.fullmatch('capacitive', comparestr):
+                return -1
+        else:
+            raise ValueError("Unknown value {} in power_factor_mode".format(power_factor_mode_string))
+
     generator_instances = [MVStationDing0, GeneratorDing0]
     # TODO: MVStationDing0 has a slack generator
 
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     srid = int(cfg_ding0.get('geo', 'srid'))
 
     load_in_generation_case = cfg_ding0.get('assumptions',
@@ -88,8 +99,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     generation_in_load_case = cfg_ding0.get('assumptions',
                                             'generation_in_load_case')
 
-    Q_factor_load = tan(acos(cos_phi_load))
-    Q_factor_generation = tan(acos(cos_phi_feedin))
+    Q_factor_load = q_sign(cos_phi_load_mode[1:-1]) * tan(acos(cos_phi_load))
+    Q_factor_generation = q_sign(cos_phi_feedin_mode[1:-1]) * tan(acos(cos_phi_feedin))
 
     voltage_set_slack = cfg_ding0.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
