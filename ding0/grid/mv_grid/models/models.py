@@ -22,6 +22,8 @@ __author__     = "nesnoj, gplssm"
 from ding0.tools import config as cfg_ding0
 
 from math import pi, tan, acos
+
+import re
 import logging
 
 
