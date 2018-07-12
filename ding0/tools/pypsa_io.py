@@ -31,6 +31,7 @@ from pypsa import Network
 from datetime import datetime
 import sys
 import os
+import re
 import logging
 
 
@@ -76,12 +77,23 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
         DataFrame containing components time-varying data
     """
 
-    def q_sign(power_factor_mode_string):
+    def q_sign(power_factor_mode_string, sign_convention):
         comparestr = power_factor_mode_string.lower()
+
         if re.fullmatch('inductive', comparestr):
-            return 1
-        elif re.fullmatch('capacitive', comparestr):
+            if re.fullmatch('generator', sign_convention):
                 return -1
+            elif re.fullmatch('load', sign_convention):
+                return 1
+            else:
+                raise ValueError("Unknown sign conention {}".format(sign_convention))
+        elif re.fullmatch('capacitive', comparestr):
+            if re.fullmatch('generator', sign_convention):
+                return 1
+            elif re.fullmatch('load', sign_convention):
+                return -1
+            else:
+                raise ValueError("Unknown sign conention {}".format(sign_convention))
         else:
             raise ValueError("Unknown value {} in power_factor_mode".format(power_factor_mode_string))
 
@@ -99,8 +111,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     generation_in_load_case = cfg_ding0.get('assumptions',
                                             'generation_in_load_case')
 
-    Q_factor_load = q_sign(cos_phi_load_mode[1:-1]) * tan(acos(cos_phi_load))
-    Q_factor_generation = q_sign(cos_phi_feedin_mode[1:-1]) * tan(acos(cos_phi_feedin))
+    Q_factor_load = q_sign(cos_phi_load_mode[1:-1], 'load') * tan(acos(cos_phi_load))
+    Q_factor_generation = q_sign(cos_phi_feedin_mode[1:-1], 'generator') * tan(acos(cos_phi_feedin))
 
     voltage_set_slack = cfg_ding0.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
