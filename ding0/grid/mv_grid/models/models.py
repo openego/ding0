@@ -20,10 +20,10 @@ __author__     = "nesnoj, gplssm"
 
 
 from ding0.tools import config as cfg_ding0
+from ding0.tools.pypsa_io import q_sign
 
 from math import pi, tan, acos
 
-import re
 import logging
 
 
@@ -354,26 +354,6 @@ class Route(object):
             für Planung und Betrieb von Mittelspannungsnetzen", Tech. rep., 2008
         """
 
-        def q_sign(power_factor_mode_string, sign_convention):
-            comparestr = power_factor_mode_string.lower()
-
-            if re.fullmatch('inductive', comparestr):
-                if re.fullmatch('generator', sign_convention):
-                    return -1
-                elif re.fullmatch('load', sign_convention):
-                    return 1
-                else:
-                    raise ValueError("Unknown sign conention {}".format(sign_convention))
-            elif re.fullmatch('capacitive', comparestr):
-                if re.fullmatch('generator', sign_convention):
-                    return 1
-                elif re.fullmatch('load', sign_convention):
-                    return -1
-                else:
-                    raise ValueError("Unknown sign conention {}".format(sign_convention))
-            else:
-                raise ValueError("Unknown value {} in power_factor_mode".format(power_factor_mode_string))
-
         # load parameters
         load_area_count_per_ring = float(cfg_ding0.get('mv_routing',
                                                        'load_area_count_per_ring'))
@@ -417,7 +397,7 @@ class Route(object):
         nodes_ring1 = [self._problem._depot] + self._nodes
         nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
         # factor to calc reactive from active power
-        Q_factor = q_sign(cos_phi_load_mode[1:-1],'load') * tan(acos(cos_phi_load))
+        Q_factor = q_sign(cos_phi_load_mode[1:-1], 'load') * tan(acos(cos_phi_load))
         # line/cable params per km
         r = self._problem._branch_type['R']  # unit for r: ohm/km
         x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km

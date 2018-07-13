@@ -57,6 +57,27 @@ def export_to_dir(network, export_dir):
                                               export_dir))
 
 
+def q_sign(power_factor_mode_string, sign_convention):
+    comparestr = power_factor_mode_string.lower()
+
+    if re.fullmatch('inductive', comparestr):
+        if re.fullmatch('generator', sign_convention):
+            return -1
+        elif re.fullmatch('load', sign_convention):
+            return 1
+        else:
+            raise ValueError("Unknown sign conention {}".format(sign_convention))
+    elif re.fullmatch('capacitive', comparestr):
+        if re.fullmatch('generator', sign_convention):
+            return 1
+        elif re.fullmatch('load', sign_convention):
+            return -1
+        else:
+            raise ValueError("Unknown sign conention {}".format(sign_convention))
+    else:
+        raise ValueError("Unknown value {} in power_factor_mode".format(power_factor_mode_string))
+
+
 def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     """
     Creates dictionary of dataframes containing grid
@@ -76,27 +97,6 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     components_data: dict of pandas.DataFrame
         DataFrame containing components time-varying data
     """
-
-    def q_sign(power_factor_mode_string, sign_convention):
-        comparestr = power_factor_mode_string.lower()
-
-        if re.fullmatch('inductive', comparestr):
-            if re.fullmatch('generator', sign_convention):
-                return -1
-            elif re.fullmatch('load', sign_convention):
-                return 1
-            else:
-                raise ValueError("Unknown sign conention {}".format(sign_convention))
-        elif re.fullmatch('capacitive', comparestr):
-            if re.fullmatch('generator', sign_convention):
-                return 1
-            elif re.fullmatch('load', sign_convention):
-                return -1
-            else:
-                raise ValueError("Unknown sign conention {}".format(sign_convention))
-        else:
-            raise ValueError("Unknown value {} in power_factor_mode".format(power_factor_mode_string))
-
     generator_instances = [MVStationDing0, GeneratorDing0]
     # TODO: MVStationDing0 has a slack generator
 
