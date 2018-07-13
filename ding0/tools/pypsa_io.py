@@ -58,6 +58,22 @@ def export_to_dir(network, export_dir):
 
 
 def q_sign(power_factor_mode_string, sign_convention):
+    """
+    Gets the correct sign for Q time series given 'inductive' and 'capacitive' and the 'generator'
+    or 'load' convention.
+
+    Parameters
+    ----------
+    power_factor_mode_string: :obj:`str`
+        Either 'inductive' or 'capacitive'
+    sign_convention: :obj:`str`
+        Either 'load' or 'generator'
+    Return
+    ------
+    :obj: `int` : +1 or -1
+        A sign to mulitply to Q time sereis
+    """
+
     comparestr = power_factor_mode_string.lower()
 
     if re.fullmatch('inductive', comparestr):
