@@ -2016,6 +2016,9 @@ def export_network(nw, mode=''):
                                     'node1': mv_aggr_load_name,
                                     'node2': mv_station_name,
                                     'run_id': run_id,
+                                    'geom': from_shape(LineString([mv_station.geo_data,
+                                                                   mv_station.geo_data]),
+                                                       srid=srid)
                                 }
 
                 # TODO: eventually remove export of DisconnectingPoints from export
@@ -2067,6 +2070,9 @@ def export_network(nw, mode=''):
                              'MV', str(mv_grid_id),
                              str(branch['adj_nodes'][1].id_db)]),
                         'run_id': run_id,
+                        'geom': from_shape(LineString([branch['adj_nodes'][0].geo_data,
+                                                       branch['adj_nodes'][1].geo_data]),
+                                           srid=srid),
                     }
 
         if lv_info:
@@ -2176,8 +2182,6 @@ def export_network(nw, mode=''):
                     # LVedges
                     for branch in lv_district.lv_grid.graph_edges():
                         if not branch['branch'].connects_aggregated:
-                            #                        geom = from_shape(
-                            #                            LineString([branch['adj_nodes'][0].geo_data, branch['adj_nodes'][1].geo_data]), srid=srid)
                             if not any([isinstance(branch['adj_nodes'][0],
                                                    LVLoadAreaCentreDing0),
                                         isinstance(branch['adj_nodes'][1],
@@ -2224,6 +2228,7 @@ def export_network(nw, mode=''):
                                          str(mv_grid_id),
                                          str(branch['adj_nodes'][1].id_db)]),
                                     'run_id': run_id,
+                                    'geom': None
                                 }
 
     lv_grid = pd.DataFrame.from_dict(lv_grid_dict, orient='index')
@@ -2302,18 +2307,20 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0Line(
                         run_id=row['run_id'],
+                        id_db=row['id'],
                         edge_name=row['edge_name'],
-                        grid_id_db=row['grid_id_db'],
+                        grid_name=row['grid_name'],
                         node1=row['node1'],
                         node2=row['node2'],
                         type_kind=row['type_kind'],
                         type_name=row['type_name'],
                         length=row['length'],
-                        U_n=row['U_n'],
-                        C=row['C'],
-                        L=row['L'],
-                        R=row['R'],
-                        I_max_th=row['I_max_th'],
+                        u_n=row['U_n'],
+                        c=row['C'],
+                        l=row['L'],
+                        r=row['R'],
+                        i_max_th=row['I_max_th'],
+                        geom=row['geom'],
                     ))
                     , axis=1)
 
@@ -2321,8 +2328,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0LvBranchtee(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        lv_grid_id_db=row['LV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                     ))
@@ -2332,9 +2339,10 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0LvGenerator(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
+                        id_db=row['id'],
                         la_id=row['la_id'],
-                        lv_grid_id_db=str(row['LV_grid_id_db']),
+                        name=row['name'],
+                        lv_grid_id=str(row['lv_grid_id']),
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         type=row['type'],
@@ -2342,7 +2350,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         v_level=row['v_level'],
                         nominal_capacity=row['nominal_capacity'],
                         is_aggregated=row['is_aggregated'],
-                        weather_cell_id=row['weather_cell_id']
+                        weather_cell_id=row['weather_cell_id'] if not(pd.isnull(row[
+                            'weather_cell_id'])) else None,
 
                     ))
                     , axis=1)
@@ -2351,8 +2360,9 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0LvLoad(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        lv_grid_id_db=row['LV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
+                        lv_grid_id=row['lv_grid_id'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         consumption=row['consumption']
@@ -2363,8 +2373,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0LvGrid(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        lv_grid_id=row['LV_grid_id'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         population=row['population'],
@@ -2376,8 +2386,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0LvStation(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        lv_grid_id_db=row['LV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                     ))
@@ -2387,14 +2397,14 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvlvTransformer(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        lv_grid_id_db=row['LV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         voltage_op=row['voltage_op'],
-                        S_nom=row['S_nom'],
-                        X=row['X'],
-                        R=row['R'],
+                        s_nom=row['S_nom'],
+                        x=row['X'],
+                        r=row['R'],
                     ))
                     , axis=1)
 
@@ -2402,10 +2412,10 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvlvMapping(
                         run_id=row['run_id'],
-                        lv_grid_id=row['LV_grid_id'],
-                        lv_grid_id_db=row['LV_grid_id_db'],
-                        mv_grid_id=row['MV_grid_id'],
-                        mv_grid_id_db=row['MV_grid_id_db'],
+                        lv_grid_id=row['lv_grid_id'],
+                        lv_grid_name=row['lv_grid_name'],
+                        mv_grid_id=row['mv_grid_id'],
+                        mv_grid_name=row['mv_grid_name'],
                     ))
                     , axis=1)
 
@@ -2413,8 +2423,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvBranchtee(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        mv_grid_id_db=row['MV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                     ))
@@ -2424,8 +2434,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvCircuitbreaker(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        mv_grid_id_db=row['MV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         status=row['status'],
@@ -2436,8 +2446,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvGenerator(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        mv_grid_id_db=row['MV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         type=row['type'],
@@ -2445,7 +2455,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         v_level=row['v_level'],
                         nominal_capacity=row['nominal_capacity'],
                         is_aggregated=row['is_aggregated'],
-                        weather_cell_id=row['weather_cell_id']
+                        weather_cell_id=row['weather_cell_id'] if not(pd.isnull(row[
+                            'weather_cell_id'])) else None,
                     ))
                     , axis=1)
 
@@ -2453,8 +2464,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvLoad(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        mv_grid_id_db=row['MV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         is_aggregated=row['is_aggregated'],
@@ -2466,8 +2477,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvGrid(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        mv_grid_id=row['MV_grid_id'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         population=row['population'],
@@ -2479,8 +2490,8 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0MvStation(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        mv_grid_id_db=row['MV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                     ))
@@ -2490,14 +2501,14 @@ def export_network_to_oedb(session, table, tabletype, srid):
         table.apply(lambda row:
                     session.add(md.EgoGridDing0HvmvTransformer(
                         run_id=row['run_id'],
-                        id_db=row['id_db'],
-                        mv_grid_id_db=row['MV_grid_id_db'],
+                        id_db=row['id'],
+                        name=row['name'],
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         voltage_op=row['voltage_op'],
-                        S_nom=row['S_nom'],
-                        X=row['X'],
-                        R=row['R'],
+                        s_nom=row['S_nom'],
+                        x=row['X'],
+                        r=row['R'],
                     ))
                     , axis=1)
         # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
