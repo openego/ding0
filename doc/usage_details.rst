@@ -216,8 +216,8 @@ LV-Stations
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id_db", "str", "unambiguous name: 'LVStationDing0_MV_#mvgridid#_#lvgridid#'", "n/a"
-   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "id", "int","unambiguous id_db of LV-Grid", "n/a"
+   "lv_grid_name", "str", "unambiguous name: 'LVStationDing0_MV_#mvgridid#_#lvgridid#'", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
@@ -227,8 +227,8 @@ LV-Transformers
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id_db", "str", "unambiguous name: 'TransformerDing0_LV_#mvgridid#_#lvgridid#'", "n/a"
-   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "id", "int","unambiguous id_db of LV-Grid", "n/a"
+   "lv_grid_name", "str", "unambiguous name: 'TransformerDing0_LV_#mvgridid#_#lvgridid#'", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "voltage_op","float","","kV"
    "S_nom","float","nominal apparent power","kVA"
@@ -242,10 +242,10 @@ LV-Grids
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
-   "MV_grid_id", "int","unambiguous number of MV-Grid", "n/a"
-   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
-   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "lv_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "mv_grid_id", "int","unambiguous number of MV-Grid", "n/a"
+   "lv_grid_name", "str", "unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#'", "n/a"
+   "mv_grid_name", "str", "unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Branchtees
@@ -280,8 +280,8 @@ MV-Grids
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id_db", "str", "unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
-   "MV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "id", "int","unambiguous number of LV-Grid", "n/a"
+   "mv_grid_name", "str", "unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 MULTIPOLYGON"
    "population","int","population in LV-Grid","?"
    "voltage_nom","float","voltage level of grid","kV"
