@@ -1,0 +1,4 @@
+Release v0.1.7 July ??, 2018
+++++++++++++++++++++++++++++
+
+* Explicit dependencies of Pyomo and Scipy are removed
