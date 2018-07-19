@@ -31,7 +31,6 @@ from pypsa import Network
 from datetime import datetime
 import sys
 import os
-import re
 import logging
 
 
@@ -57,14 +56,14 @@ def export_to_dir(network, export_dir):
                                               export_dir))
 
 
-def q_sign(power_factor_mode_string, sign_convention):
+def q_sign(reactive_power_mode_string, sign_convention):
     """
     Gets the correct sign for Q time series given 'inductive' and 'capacitive' and the 'generator'
     or 'load' convention.
 
     Parameters
     ----------
-    power_factor_mode_string: :obj:`str`
+    reactive_power_mode_string: :obj:`str`
         Either 'inductive' or 'capacitive'
     sign_convention: :obj:`str`
         Either 'load' or 'generator'
@@ -74,24 +73,24 @@ def q_sign(power_factor_mode_string, sign_convention):
         A sign to mulitply to Q time sereis
     """
 
-    comparestr = power_factor_mode_string.lower()
+    comparestr = reactive_power_mode_string.lower()
 
-    if re.fullmatch('inductive', comparestr):
-        if re.fullmatch('generator', sign_convention):
+    if comparestr == 'inductive':
+        if sign_convention == 'generator':
             return -1
-        elif re.fullmatch('load', sign_convention):
+        elif sign_convention == 'load':
             return 1
         else:
             raise ValueError("Unknown sign conention {}".format(sign_convention))
-    elif re.fullmatch('capacitive', comparestr):
-        if re.fullmatch('generator', sign_convention):
+    elif comparestr == 'capacitive':
+        if sign_convention =='generator':
             return 1
-        elif re.fullmatch('load', sign_convention):
+        elif sign_convention =='load':
             return -1
         else:
             raise ValueError("Unknown sign conention {}".format(sign_convention))
     else:
-        raise ValueError("Unknown value {} in power_factor_mode".format(power_factor_mode_string))
+        raise ValueError("Unknown value {} in power_factor_mode".format(reactive_power_mode_string))
 
 
 def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
@@ -127,8 +126,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     generation_in_load_case = cfg_ding0.get('assumptions',
                                             'generation_in_load_case')
 
-    Q_factor_load = q_sign(cos_phi_load_mode[1:-1], 'load') * tan(acos(cos_phi_load))
-    Q_factor_generation = q_sign(cos_phi_feedin_mode[1:-1], 'generator') * tan(acos(cos_phi_feedin))
+    Q_factor_load = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
+    Q_factor_generation = q_sign(cos_phi_feedin_mode, 'generator') * tan(acos(cos_phi_feedin))
 
     voltage_set_slack = cfg_ding0.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")

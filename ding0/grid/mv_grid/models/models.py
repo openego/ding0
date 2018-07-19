@@ -397,7 +397,7 @@ class Route(object):
         nodes_ring1 = [self._problem._depot] + self._nodes
         nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
         # factor to calc reactive from active power
-        Q_factor = q_sign(cos_phi_load_mode[1:-1], 'load') * tan(acos(cos_phi_load))
+        Q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
         # line/cable params per km
         r = self._problem._branch_type['R']  # unit for r: ohm/km
         x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km
