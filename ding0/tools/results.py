@@ -1998,7 +1998,7 @@ def export_network(nw, mode=''):
                                 lines_idx += 1
                                 aggr_lines += 1
                                 edge_name = '_'.join(
-                                    ['line_aggr_load_la_',
+                                    ['line_aggr_load_la',
                                      str(node.lv_load_area.id_db), str(type),
                                      str(node.lv_load_area.id_db)])
                                 lines_dict[lines_idx] = {
