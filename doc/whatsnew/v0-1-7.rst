@@ -1,4 +1,6 @@
-Release v0.1.7 July ??, 2018
+Release v0.1.7 July 19, 2018
 ++++++++++++++++++++++++++++
+
+A release to update software dependencies.
 
 * Explicit dependencies of Pyomo and Scipy are removed
