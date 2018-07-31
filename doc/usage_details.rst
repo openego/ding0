@@ -266,7 +266,7 @@ MV-Generators
    :widths: 15, 10, 10, 30
 
    "id_db", "str", "unambiguous name: 'MVGeneratorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
-   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "mv_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "type","str","type of generation: {solar; biomass}","n/a"
    "subtype","str","subtype of generation: {solar_ground_mounted, solar_roof_mounted, unknown; biomass, biogas}","n/a"
