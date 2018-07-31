@@ -152,11 +152,11 @@ Lines
    "node1","str","id_db of first node","n/a"
    "node2","str","id_db of second node","n/a"
    "length","float","length of line","km"
-   "u_n","float","nominal voltage","kV"
-   "r","float","","Ohm/km"
-   "c","float","inductive resistance at 50Hz","uF/km"
-   "l","float","","mH/km"
-   "i_max_th","float","","A"
+   "U_n","float","nominal voltage","kV"
+   "R","float","","Ohm/km"
+   "C","float","inductive resistance at 50Hz","uF/km"
+   "L","float","","mH/km"
+   "I_max_th","float","","A"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Branchtees
@@ -165,8 +165,8 @@ LV-Branchtees
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'LVCableDistributorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
-   "lv_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'LVCableDistributorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
    "geom", "None","geometric coordinates", "n/a"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
@@ -176,8 +176,8 @@ LV-Generators
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'LVGeneratorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
-   "lv_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'LVGeneratorDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "type","str","type of generation","{solar; biomass}"
    "subtype","str","subtype of generation: {solar_roof_mounted, unknown; biomass}","n/a"
@@ -191,8 +191,8 @@ LV-Grids
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#'", "n/a"
-   "lv_grid_id", "int","unambiguous number of LV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#'", "n/a"
+   "LV_grid_id", "int","unambiguous number of LV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 MULTIPOLYGON"
    "population","int","population in LV-Grid","?"
    "voltage_nom","float","voltage level of grid","kV"
@@ -204,8 +204,8 @@ LV-Loads
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
-   "lv_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'", "n/a"
+   "LV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
    "geom", "None","geometric coordinates", "n/a"
    "consumption","{''str'': float}","type of load {residential, agricultural, industrial} and corresponding consumption", "n/a"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
@@ -231,9 +231,9 @@ LV-Transformers
    "lv_grid_name", "str", "unambiguous name: 'TransformerDing0_LV_#mvgridid#_#lvgridid#'", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "voltage_op","float","","kV"
-   "s_nom","float","nominal apparent power","kVA"
-   "x","float","","Ohm"
-   "r","float","","Ohm"
+   "S_nom","float","nominal apparent power","kVA"
+   "X","float","","Ohm"
+   "R","float","","Ohm"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Grids
@@ -254,8 +254,8 @@ MV-Branchtees
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'MVCableDistributorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
-   "mv_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'MVCableDistributorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
@@ -265,8 +265,8 @@ MV-Generators
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'MVGeneratorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
-   "mv_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'MVGeneratorDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "type","str","type of generation: {solar; biomass}","n/a"
    "subtype","str","subtype of generation: {solar_ground_mounted, solar_roof_mounted, unknown; biomass, biogas}","n/a"
@@ -293,8 +293,8 @@ MV-Loads
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'MVLoadDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
-   "mv_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'MVLoadDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POLYGON"
    "consumption","{''str'': float}","type of load {retail, residential, agricultural, industrial} and corresponding consumption","n/a"
    "is_aggregated", "boolean", "True if load is aggregated load, else False", "n/a"
@@ -306,8 +306,8 @@ MV-Stations
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'MVStationDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
-   "mv_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'MVStationDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of MV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
@@ -317,11 +317,11 @@ MV-Transformers
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id", "str", "unambiguous name: 'TransformerDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
-   "mv_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
+   "id_db", "str", "unambiguous name: 'TransformerDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
+   "MV_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84 POINT"
    "voltage_op","float","","kV"
-   "s_nom","float","nominal apparent power","kVA"
-   "x","float","","Ohm"
-   "r","float","","Ohm"
+   "S_nom","float","nominal apparent power","kVA"
+   "X","float","","Ohm"
+   "R","float","","Ohm"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
