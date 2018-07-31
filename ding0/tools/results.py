@@ -1680,7 +1680,7 @@ def parallel_running_stats(districts_list,
 
 
 ########################################################
-def export_network(nw, mode=''):
+def export_network(nw, mode='', run_id=None):
     """
     Export all nodes and lines of the network nw as DataFrames
 
@@ -1715,7 +1715,8 @@ def export_network(nw, mode=''):
         lv_info = False
     ##############################
     # from datetime import datetime
-    run_id = nw.metadata['run_id']  # datetime.now().strftime("%Y%m%d%H%M%S")
+    if not run_id:
+        run_id = nw.metadata['run_id']  # datetime.now().strftime("%Y%m%d%H%M%S")
     metadata_json = json.dumps(nw.metadata)
     ##############################
     #############################
@@ -1980,13 +1981,15 @@ def export_network(nw, mode=''):
                         elif aggr_node == 'load':
                             for type in aggr['load']:
                                 mvloads_idx += 1
+                                aggr_line_id = 100 * node.lv_load_area.id_db + mvloads_idx + 1
                                 mv_aggr_load_name = '_'.join(
                                     ['Load_aggregated', str(type),
                                      repr(mv_district.mv_grid),
-                                     str(node.lv_load_area.id_db)])
+                                     # str(node.lv_load_area.id_db)])
+                                     str(aggr_line_id)])
                                 mv_loads_dict[mvloads_idx] = {
                                     # Exception: aggregated loads get a string as id
-                                    'id': mv_aggr_load_name,
+                                    'id':  aggr_line_id, #node.lv_load_area.id_db, #mv_aggr_load_name,
                                     'name': mv_aggr_load_name,
                                     'geom': geom,
                                     'consumption': json.dumps(
@@ -2000,9 +2003,10 @@ def export_network(nw, mode=''):
                                 edge_name = '_'.join(
                                     ['line_aggr_load_la',
                                      str(node.lv_load_area.id_db), str(type),
-                                     str(node.lv_load_area.id_db)])
+                                     # str(node.lv_load_area.id_db)])
+                                     str(aggr_line_id)])
                                 lines_dict[lines_idx] = {
-                                    'id': edge_name,
+                                    'id': aggr_line_id, #node.lv_load_area.id_db,
                                     'edge_name': edge_name,
                                     'grid_name': mv_grid_name,
                                     'type_name': aggr_line_type.name,
@@ -2528,13 +2532,14 @@ def export_data_to_oedb(session, run_id, metadata_json, srid,
     # get the run_id from model_draft.ego_grid_ding0_versioning
     # compare the run_id from table to the current run_id
 
-    oedb_versioning_query = session.query(
-        md.EgoGridDing0Versioning.run_id,
-        md.EgoGridDing0Versioning.description
-    ).filter(md.EgoGridDing0Versioning.run_id == run_id)
-
-    oedb_versioning = pd.read_sql_query(oedb_versioning_query.statement,
-                                        session.bind)
+    # oedb_versioning_query = session.query(
+    #     md.EgoGridDing0Versioning.run_id,
+    #     md.EgoGridDing0Versioning.description
+    # ).filter(md.EgoGridDing0Versioning.run_id == run_id)
+    #
+    # oedb_versioning = pd.read_sql_query(oedb_versioning_query.statement,
+    #                                     session.bind)
+    oedb_versioning = pd.DataFrame()
 
     if oedb_versioning.empty:
         # if the run_id doesn't exist then
@@ -2684,12 +2689,15 @@ def grant_access_ding0_db_tables(engine):
         COMMIT;""".format(schema=schema, table=tablename,
                           role=role)
 
-        engine.execute(grant_str)
+        # engine.execute(grant_str)
+        engine.execution_options(autocommit=True).execute(grant_str)
 
     # engine.echo=True
 
     for tab in tables:
         grant_db_access(engine, tab, 'oeuser')
+
+    engine.close()
 
 
 ########################################################
