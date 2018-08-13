@@ -2684,8 +2684,7 @@ def grant_access_ding0_db_tables(engine):
         schema = table.__table__.schema
 
         grant_str = """BEGIN;
-        GRANT ALL PRIVILEGES ON TABLE {schema}.{table}
-        TO {role} WITH GRANT OPTION;
+        ALTER TABLE {schema}.{table} OWNER to {role};
         COMMIT;""".format(schema=schema, table=tablename,
                           role=role)
 
