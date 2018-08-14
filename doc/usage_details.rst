@@ -312,7 +312,7 @@ MV-Loads
    :widths: 15, 10, 10, 30
 
     "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
-    "id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+    "id_db", "int","unambiguous number of MV-Grid", "n/a"
     "name", "str", "unambiguous name: 'MVLoadDing0_MV_#mvgridid#_#ascendingnumber#'", "n/a"
     "geom", "wkt","geometric coordinates", "WGS84, POLYGON"
     "consumption","{''str'': float}","type of load {retail, residential, agricultural, industrial} and corresponding consumption","n/a"
@@ -326,7 +326,7 @@ MV-Stations
    :widths: 15, 10, 10, 30
 
     "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
-    "id_db", "int","unambiguous id_db of MV-Grid", "n/a"
+    "id_db", "int","unambiguous number of MV-Grid", "n/a"
     "name", "str", "unambiguous name: 'MVStationDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
     "geom", "wkt","geometric coordinates", "WGS84, POINT"
 
@@ -337,11 +337,11 @@ MV-Transformers
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
 
-   "id_db", "str", "unambiguous name: 'TransformerDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
-   "mv_grid_id_db", "int","unambiguous id_db of LV-Grid", "n/a"
-   "geom", "wkt","geometric coordinates", "WGS84 POINT"
-   "voltage_op","float","","kV"
-   "s_nom","float","nominal apparent power","kVA"
-   "x","float","","Ohm"
-   "r","float","","Ohm"
-   "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
+    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
+    "id_db", "int","unambiguous number of LV-Grid", "n/a"
+    "name", "str", "unambiguous name: 'TransformerDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
+    "geom", "wkt","geometric coordinates", "WGS84, POINT"
+    "voltage_op","float","","kV"
+    "s_nom","float","nominal apparent power","kVA"
+    "x","float","","Ohm"
+    "r","float","","Ohm"
