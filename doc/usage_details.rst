@@ -146,7 +146,7 @@ Lines
    :widths: 15, 10, 10, 30
 
    "edge_name", "str", "unambiguous name of edge", "n/a"
-   "grid_id_db", "int","unambiguous id_db of corresponding grid (MVgrid-id if MV-edge, LVgrid-id if LV-edge", "n/a"
+   "id_db", "int","unambiguous id_db of corresponding grid (MVgrid-id if MV-edge, LVgrid-id if LV-edge", "n/a"
    "type_kind","str","","n/a"
    "type_name","str","","n/a"
    "node1","str","id_db of first node","n/a"
