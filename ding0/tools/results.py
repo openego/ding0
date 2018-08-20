@@ -1899,8 +1899,7 @@ def export_network(nw, mode='', run_id=None):
                             }
 
                 # MVGenerator
-                elif (isinstance(node, GeneratorDing0) or isinstance(node,
-                                                                     GeneratorFluctuatingDing0)):
+                elif isinstance(node, (GeneratorDing0, GeneratorFluctuatingDing0)):
                     if node.subtype == None:
                         subtype = 'other'
                     else:
@@ -1920,7 +1919,7 @@ def export_network(nw, mode='', run_id=None):
                             'nominal_capacity': node.capacity,
                             'run_id': run_id,
                             'is_aggregated': False,
-                            'weather_cell_id': node.weather_cell_id,
+                            'weather_cell_id': node.weather_cell_id
                         }
                     else:
                         type = node.type
@@ -1936,7 +1935,9 @@ def export_network(nw, mode='', run_id=None):
                             'v_level': node.v_level,
                             'nominal_capacity': node.capacity,
                             'run_id': run_id,
-                            'is_aggregated': False}
+                            'is_aggregated': False,
+                            'weather_cell_id': np.nan
+                        }
 
                 # MVBranchTees
                 elif isinstance(node, MVCableDistributorDing0):
@@ -2106,8 +2107,7 @@ def export_network(nw, mode='', run_id=None):
                         # geom = wkt_dumps(node.geo_data)
 
                         # LVGenerator
-                        if (isinstance(node, GeneratorDing0) or isinstance(node,
-                                                                           GeneratorFluctuatingDing0)):
+                        if isinstance(node, (GeneratorDing0, GeneratorFluctuatingDing0)):
                             if node.subtype == None:
                                 subtype = 'other'
                             else:
@@ -2150,6 +2150,7 @@ def export_network(nw, mode='', run_id=None):
                                     'nominal_capacity': node.capacity,
                                     'run_id': run_id,
                                     'is_aggregated': node.lv_load_area.is_aggregated,
+                                    'weather_cell_id': np.nan
                                 }
 
                         # LVcd
