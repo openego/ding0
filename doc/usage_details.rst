@@ -297,10 +297,10 @@ MV-Grids
    :widths: 15, 10, 10, 30
 
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
-   "id_db", "int","unambiguous number of LV-Grid", "n/a"
+   "id_db", "int","unambiguous number of MV-Grid", "n/a"
    "name", "str", "unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#'", "n/a"
    "geom", "wkt","geometric coordinates", "WGS84, MULTIPOLYGON"
-   "population","int","population in LV-Grid","?"
+   "population","int","population in MV-Grid","?"
    "voltage_nom","float","voltage level of grid","kV"
 
 
