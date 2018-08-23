@@ -25,7 +25,7 @@
 	"copyright": "© Reiner Lemoine Institut"},
 "contributors": [
 	{"name": "Jonas Huber", "email": "jonas.huber@rl-institut.de", "date": "2018-08-17", "comment": "Create metadata"},
-	{"name": "", "email": "", "date", "comment": ""} ],
+	{"name": "", "email": "", "date": "", "comment": ""} ],
 "resources": [
 	{"name": "model_draft.ego_grid_ding0_line", 
 	"format": "PostgreSQL", 
