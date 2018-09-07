@@ -10,17 +10,6 @@ Subpackages
     ding0.core.powerflow
     ding0.core.structure
 
-Submodules
-----------
-
-ding0\.core\.upload\_to\_zenodo module
---------------------------------------
-
-.. automodule:: ding0.core.upload_to_zenodo
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
