@@ -160,7 +160,7 @@ Lines
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Branchtees
------------
+--------------
 .. csv-table:: lv_branchtee.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -171,7 +171,7 @@ LV-Branchtees
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Generators
------------
+-------------
 .. csv-table:: lv_generator.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -222,7 +222,7 @@ LV-Stations
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Transformers
------------
+----------------
 .. csv-table:: lv_transformer.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -249,7 +249,7 @@ LV-Grids
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Branchtees
------------
+--------------
 .. csv-table:: mv_branchtee.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -260,7 +260,7 @@ MV-Branchtees
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Generators
------------
+--------------
 .. csv-table:: mv_generator.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -312,7 +312,7 @@ MV-Stations
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Transformers
------------
+----------------
 .. csv-table:: lv_transformer.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
