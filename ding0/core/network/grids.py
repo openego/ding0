@@ -29,11 +29,12 @@ from ding0.core.structure.regions import LVLoadAreaCentreDing0
 
 import networkx as nx
 from datetime import datetime
-from shapely.ops import transform
 import pyproj
 from functools import partial
 import logging
 
+if not 'READTHEDOCS' in os.environ:
+    from shapely.ops import transform
 
 logger = logging.getLogger('ding0')
 

@@ -33,16 +33,11 @@ from ding0.core import CircuitBreakerDing0
 from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
 from ding0.core import LVLoadAreaCentreDing0
 
-from shapely.ops import transform
 import pyproj
 from functools import partial
 
 from geoalchemy2.shape import from_shape
 from sqlalchemy.orm import sessionmaker
-from shapely.wkt import loads as wkt_loads
-from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
-from shapely.geometry import shape, mapping
-
 import multiprocessing as mp
 
 from math import floor, ceil, pi
@@ -52,6 +47,11 @@ from ding0.flexopt.check_tech_constraints import check_load, check_voltage, \
 from ding0.tools import config as cfg_ding0
 
 import networkx as nx
+
+if not 'READTHEDOCS' in os.environ:
+    from shapely.ops import transform
+    from shapely.geometry import LineString
+    from shapely.wkt import dumps as wkt_dumps
 
 #############################################
 plt.close('all')
@@ -1719,7 +1719,7 @@ def export_network(nw, mode=''):
         return aggr
 
     for mv_district in nw.mv_grid_districts():
-        from shapely.wkt import dumps as wkt_dumps
+
         mv_grid_id = mv_district.mv_grid.id_db
         mv_grid_id_db = '_'.join(
             [str(mv_district.mv_grid.__class__.__name__), 'MV', str(mv_grid_id), str(mv_district.mv_grid.id_db)])

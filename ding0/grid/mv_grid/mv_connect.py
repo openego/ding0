@@ -13,6 +13,7 @@ __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
+import os
 
 from ding0.core.network.stations import *
 from ding0.core.network import BranchDing0, GeneratorDing0
@@ -23,14 +24,15 @@ from ding0.tools import config as cfg_ding0
 from ding0.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist_vincenty,\
                             calc_geo_centre_point, calc_geo_branches_in_polygon
 
-from shapely.geometry import LineString
-from shapely.ops import transform
 import pyproj
 from functools import partial
 
 import time
 import logging
 
+if not 'READTHEDOCS' in os.environ:
+    from shapely.geometry import LineString
+    from shapely.ops import transform
 
 logger = logging.getLogger('ding0')
 
