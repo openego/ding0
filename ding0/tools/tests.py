@@ -8,16 +8,14 @@ from ding0.tools.results import load_nd_from_pickle
 
 from geoalchemy2.shape import to_shape
 from sqlalchemy.orm import sessionmaker
-from geoalchemy2.shape import from_shape
 
 import logging
-import pandas as pd
-
 
 logger = setup_logger(loglevel=logging.CRITICAL)
 
+
 class Ding0RunTest(unittest.TestCase):
-    ''' '''
+
     def setUp(self):
         print('\n')
 

@@ -18,7 +18,6 @@ import numpy as np
 import pandas as pd
 import time
 import os
-import json
 import re
 
 from matplotlib import pyplot as plt
@@ -30,7 +29,7 @@ from ding0.core import GeneratorDing0
 from ding0.core import LVCableDistributorDing0, MVCableDistributorDing0
 from ding0.core import MVStationDing0, LVStationDing0
 from ding0.core import CircuitBreakerDing0
-from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
+from ding0.core.network.loads import LVLoadDing0
 from ding0.core import LVLoadAreaCentreDing0
 
 import pyproj
@@ -40,10 +39,10 @@ from geoalchemy2.shape import from_shape
 from sqlalchemy.orm import sessionmaker
 import multiprocessing as mp
 
-from math import floor, ceil, pi
+from math import floor, pi
 
-from ding0.flexopt.check_tech_constraints import check_load, check_voltage, \
-    get_critical_line_loading, get_critical_voltage_at_nodes
+from ding0.flexopt.check_tech_constraints import get_critical_line_loading, \
+    get_critical_voltage_at_nodes
 from ding0.tools import config as cfg_ding0
 
 import networkx as nx

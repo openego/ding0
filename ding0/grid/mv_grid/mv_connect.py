@@ -14,6 +14,10 @@ __author__     = "nesnoj, gplssm"
 
 
 import os
+import pyproj
+from functools import partial
+import time
+import logging
 
 from ding0.core.network.stations import *
 from ding0.core.network import BranchDing0, GeneratorDing0
@@ -23,12 +27,6 @@ from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.tools import config as cfg_ding0
 from ding0.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist_vincenty,\
                             calc_geo_centre_point, calc_geo_branches_in_polygon
-
-import pyproj
-from functools import partial
-
-import time
-import logging
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
