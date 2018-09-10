@@ -33,7 +33,7 @@ Base = declarative_base()
 metadata = Base.metadata
 
 DING0_TABLES = {'versioning': 'ding0_versioning',
-                'lines': 'ding0_line',
+                'line': 'ding0_line',
                 'lv_branchtee': 'ding0_lv_branchtee',
                 'lv_generator': 'ding0_lv_generator',
                 'lv_load': 'ding0_lv_load',
@@ -106,26 +106,199 @@ def create_ding0_sql_tables(engine, ding0_schema):
 
 
     # ding0 lines table
-    lines = Table(DING0_TABLES['lines'], metadata,
-                  Column('id', Integer, primary_key=True),
-                  Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                  Column('id_db', BigInteger),
-                  Column('edge_name', String(100)),
-                  Column('grid_name', String(100)),
-                  Column('node1', String(100)),
-                  Column('node2', String(100)),
-                  Column('type_kind', String(100)),
-                  Column('type_name', String(100)),
-                  Column('length', Float(10)),
-                  Column('u_n', Float(10)),
-                  Column('c', Float(10)),
-                  Column('l', Float(10)),
-                  Column('r', Float(10)),
-                  Column('i_max_th', Float(10)),
-                  Column('geom', Geometry('LINESTRING', 4326)),
-                  schema=ding0_schema,
-                  comment="""This is a commment on table for the ding0 lines table"""
-                  )
+    line = Table(DING0_TABLES['ding0_line'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('edge_name', String(100)),
+                    Column('grid_name', String(100)),
+                    Column('node1', String(100)),
+                    Column('node2', String(100)),
+                    Column('type_kind', String(100)),
+                    Column('type_name', String(100)),
+                    Column('length', Float(10)),
+                    Column('u_n', Float(10)),
+                    Column('c', Float(10)),
+                    Column('l', Float(10)),
+                    Column('r', Float(10)),
+                    Column('i_max_th', Float(10)),
+                    Column('geom', Geometry('LINESTRING', 4326)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 lv_branchtee table
+    lv_branchtee = Table(DING0_TABLES['ding0_lv_branchtee'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('geom', Geometry('POINT', 4326)),
+                    Column('name', String(100)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 lv_generator table
+    lv_generator = Table(DING0_TABLES['ding0_lv_generator'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('la_id', BigInteger),
+                    Column('name', String(100)),
+                    Column('lv_grid_id', BigInteger),
+                    Column('geom', Geometry('POINT', 4326)),
+                    Column('type', String(22)),
+                    Column('subtype', String(22)),
+                    Column('v_level', Integer),
+                    Column('nominal_capacity', Float(10)),
+                    Column('weather_cell_id', BigInteger),
+                    Column('is_aggregated', Boolean),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 lv_load table
+    lv_load = Table(DING0_TABLES['ding0_lv_load'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('name', String(100)),
+                    Column('lv_grid_id', BigInteger),
+                    Column('geom', Geometry('POINT', 4326)),
+                    Column('consumption', String(100)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 lv_station table
+    lv_station = Table(DING0_TABLES['ding0_lv_station'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('geom', Geometry('POINT', 4326)),
+                    Column('name', String(100)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 mvlv_transformer table
+    mvlv_transformer = Table(DING0_TABLES['ding0_mvlv_transformer'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('geom', Geometry('POINT', 4326)),
+                    Column('name', String(100)),
+                    Column('voltage_op', Float(10)),
+                    Column('s_nom', Float(10)),
+                    Column('x', Float(10)),
+                    Column('r', Float(10)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 mvlv_mapping table
+    mvlv_mapping = Table(DING0_TABLES['ding0_mvlv_mapping'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('lv_grid_id', BigInteger),
+                    Column('lv_grid_name', String(100)),
+                    Column('mv_grid_id', BigInteger),
+                    Column('mv_grid_name', String(100)),
+                    )
+
+    # ding0 mv_branchtee table
+    mv_branchtee = Table(DING0_TABLES['ding0_mv_branchtee'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('geom', Geometry('POINT', 4326)),
+                    Column('name', String(100)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 mv_circuitbreaker table
+    mv_circuitbreaker = Table(DING0_TABLES['ding0_mv_circuitbreaker'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('geom', Geometry('POINT', 4326)),
+                    Column('name', String(100)),
+                    Column('status', String(10)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 mv_generator table
+    mv_generator = Table(DING0_TABLES['ding0_mv_generator'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('name', String(100)),
+                    Column('geom', Geometry('POINT', 4326)),
+                    Column('type', String(22)),
+                    Column('subtype', String(22)),
+                    Column('v_level', Integer),
+                    Column('nominal_capacity', Float(10)),
+                    Column('weather_cell_id', BigInteger),
+                    Column('is_aggregated', Boolean),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 mv_load table
+    mv_load = Table(DING0_TABLES['ding0_mv_load'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('name', String(100)),
+                    Column('geom', Geometry('LINESTRING', 4326)),
+                    Column('is_aggregated', Boolean),
+                    Column('consumption', String(100)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 mv_grid table
+    mv_grid = Table(DING0_TABLES['ding0_mv_grid'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('geom', Geometry('LINESTRING', 4326)),
+                    Column('name', String(100)),
+                    Column('population', BigInteger),
+                    Column('voltage_nom', Float(10)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+
+
+    # ding0 mv_station table
+    mv_station = Table(DING0_TABLES['ding0_mv_station'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('geom', Geometry('LINESTRING', 4326)),
+                    Column('name', String(100)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
+
+    # ding0 hvmv_transformer table
+    hvmv_transformer = Table(DING0_TABLES['ding0_hvmv_transformer'], metadata,
+                    Column('id', Integer, primary_key=True),
+                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                    Column('id_db', BigInteger),
+                    Column('geom', Geometry('LINESTRING', 4326)),
+                    Column('name', String(100)),
+                    Column('voltage_op', Float(10)),
+                    Column('s_nom', Float(10)),
+                    Column('x', Float(10)),
+                    Column('r', Float(10)),
+                    schema=ding0_schema,
+                    comment="""This is a commment on table for the ding0 lines table"""
+                    )
 
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
