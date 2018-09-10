@@ -27,6 +27,7 @@ from ding0.grid.mv_grid.tools import set_circuit_breakers
 from ding0.flexopt.reinforce_grid import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
 
+import os
 import networkx as nx
 from datetime import datetime
 import pyproj
