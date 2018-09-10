@@ -303,7 +303,7 @@ def create_ding0_sql_tables(engine, ding0_schema):
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
 
-def export_network_to_oedb(session, schema, table, tabletype, srid):
+def export_network_to_db(session, schema, table, tabletype, srid):
     dataset = []
     engine = create_engine("sqlite:///myexample.db")
     print("Exporting table type : {}".format(tabletype))
@@ -539,9 +539,9 @@ def export_data_to_db(session, schema, run_id, metadata_json, srid,
     #
     # oedb_versioning = pd.read_sql_query(oedb_versioning_query.statement,
     #                                     session.bind)
-    oedb_versioning = pd.DataFrame()
+    db_versioning = pd.DataFrame()
 
-    if oedb_versioning.empty:
+    if db_versioning.empty:
         # if the run_id doesn't exist then
         # create entry into ego_grid_ding0_versioning:
         metadata_df = pd.DataFrame({'run_id': run_id,
@@ -555,21 +555,21 @@ def export_data_to_db(session, schema, run_id, metadata_json, srid,
                           , axis=1)
         session.commit()
 
-        export_network_to_oedb(session, lv_grid, 'lv_grid', srid)
-        export_network_to_oedb(session, lv_gen, 'lv_gen', srid)
-        export_network_to_oedb(session, lv_cd, 'lv_cd', srid)
-        export_network_to_oedb(session, lv_stations, 'lv_station', srid)
-        export_network_to_oedb(session, mvlv_trafos, 'mvlv_trafo', srid)
-        export_network_to_oedb(session, lv_loads, 'lv_load', srid)
-        export_network_to_oedb(session, mv_grid, 'mv_grid', srid)
-        export_network_to_oedb(session, mv_gen, 'mv_gen', srid)
-        export_network_to_oedb(session, mv_cb, 'mv_cb', srid)
-        export_network_to_oedb(session, mv_cd, 'mv_cd', srid)
-        export_network_to_oedb(session, mv_stations, 'mv_station', srid)
-        export_network_to_oedb(session, hvmv_trafos, 'hvmv_trafo', srid)
-        export_network_to_oedb(session, mv_loads, 'mv_load', srid)
-        export_network_to_oedb(session, lines, 'line', srid)
-        export_network_to_oedb(session, mvlv_mapping, 'mvlv_mapping', srid)
+        export_network_to_db(session, lv_grid, 'lv_grid', srid)
+        export_network_to_db(session, lv_gen, 'lv_gen', srid)
+        export_network_to_db(session, lv_cd, 'lv_cd', srid)
+        export_network_to_db(session, lv_stations, 'lv_station', srid)
+        export_network_to_db(session, mvlv_trafos, 'mvlv_trafo', srid)
+        export_network_to_db(session, lv_loads, 'lv_load', srid)
+        export_network_to_db(session, mv_grid, 'mv_grid', srid)
+        export_network_to_db(session, mv_gen, 'mv_gen', srid)
+        export_network_to_db(session, mv_cb, 'mv_cb', srid)
+        export_network_to_db(session, mv_cd, 'mv_cd', srid)
+        export_network_to_db(session, mv_stations, 'mv_station', srid)
+        export_network_to_db(session, hvmv_trafos, 'hvmv_trafo', srid)
+        export_network_to_db(session, mv_loads, 'mv_load', srid)
+        export_network_to_db(session, lines, 'line', srid)
+        export_network_to_db(session, mvlv_mapping, 'mvlv_mapping', srid)
     else:
         raise KeyError("run_id already present! No tables are input!")
 
