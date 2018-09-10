@@ -16,7 +16,7 @@ __author__     = "nesnoj, gplssm"
 # from ding0.core.network import GridDing0
 from . import GridDing0
 from ding0.core.network.stations import *
-from ding0.core.network import RingDing0, BranchDing0, CircuitBreakerDing0
+from ding0.core.network import RingDing0, CircuitBreakerDing0
 from ding0.core.network.loads import *
 from ding0.core.network.cable_distributors import MVCableDistributorDing0, LVCableDistributorDing0
 from ding0.grid.mv_grid import mv_routing, mv_connect
