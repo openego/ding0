@@ -20,7 +20,7 @@ import re
 from sqlalchemy import create_engine
 from egoio.db_tables import model_draft as md
 
-from sqlalchemy import ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
+from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
 from geoalchemy2.types import Geometry, Raster
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql.hstore import HSTORE
@@ -32,6 +32,103 @@ from sqlalchemy.dialects.postgresql import ARRAY, DOUBLE_PRECISION, INTEGER, NUM
 Base = declarative_base()
 metadata = Base.metadata
 
+DING0_TABLES = {'versioning': 'ding0_versioning',
+                'lines': 'ding0_line',
+                'lv_branchtee': 'ding0_lv_branchtee',
+                'lv_generator': 'ding0_lv_generator',
+                'lv_load': 'ding0_lv_load',
+                'lv_grid': 'ding0_lv_grid',
+                'lv_station': 'ding0_lv_station',
+                'mvlv_transformer': 'ding0_mvlv_transformer',
+                'mvlv_mapping': 'ding0_mvlv_mapping',
+                'mv_branchtee': 'ding0_mv_branchtee',
+                'mv_circuitbreaker': 'ding0_mv_circuitbreaker',
+                'mv_generator': 'ding0_mv_generator',
+                'mv_load': 'ding0_mv_load',
+                'mv_grid': 'ding0_mv_grid',
+                'mv_station': 'ding0_mv_station',
+                'hvmv_transformer': 'ding0_hvmv_transformer'}
+
+
+def df_sql_write(dataframe, db_table, engine):
+    """
+    Convert dataframes such that their column names
+    are made small and the index is renamed 'id' so as to
+    correctly load its data to its appropriate sql table.
+
+    .. ToDo:  need to check for id_db instead of only 'id' in index label names
+
+    NOTE: This function does not check if the dataframe columns
+    matches the db_table fields, if they do not then no warning
+    is given.
+
+    Parameters
+    ----------
+    dataframe: :pandas:`DataFrame<dataframe>`
+        The pandas dataframe to be transferred to its
+        apprpritate db_table
+
+    db_table: :py:mod:`sqlalchemy.sql.schema.Table`
+        A table instance definition from sqlalchemy.
+        NOTE: This isn't an orm definition
+
+    engine: :py:mod:`sqlalchemy.engine.base.Engine`
+        Sqlalchemy database engine
+    """
+    sql_write_df = dataframe.copy()
+    sql_write_df.columns = sql_write_df.columns.map(str.lower)
+    sql_write_df = sql_write_df.set_index('id')
+    sql_write_df.to_sql(db_table.name, con=engine, if_exists='append')
+
+
+def create_ding0_sql_tables(engine, ding0_schema):
+    """
+    Create the ding0 tables
+
+    Parameters
+    ----------
+    engine: :py:mod:`sqlalchemy.engine.base.Engine`
+        Sqlalchemy database engine
+
+    schema: :obj:`str`
+        The schema in which the tables are to be created
+    Returns
+    -------
+    """
+
+    # versioning table
+    versioning = Table(DING0_TABLES['versioning'], metadata,
+                       Column('run_id', BigInteger, primary_key=True, autoincrement=False, nullable=False),
+                       Column('description', String(3000)),
+                       schema=ding0_schema,
+                       comment="""This is a comment on table for the ding0 versioning table"""
+                       )
+
+
+    # ding0 lines table
+    lines = Table(DING0_TABLES['lines'], metadata,
+                  Column('id', Integer, primary_key=True),
+                  Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                  Column('id_db', BigInteger),
+                  Column('edge_name', String(100)),
+                  Column('grid_name', String(100)),
+                  Column('node1', String(100)),
+                  Column('node2', String(100)),
+                  Column('type_kind', String(100)),
+                  Column('type_name', String(100)),
+                  Column('length', Float(10)),
+                  Column('u_n', Float(10)),
+                  Column('c', Float(10)),
+                  Column('l', Float(10)),
+                  Column('r', Float(10)),
+                  Column('i_max_th', Float(10)),
+                  Column('geom', Geometry('LINESTRING', 4326)),
+                  schema=ding0_schema,
+                  comment="""This is a commment on table for the ding0 lines table"""
+                  )
+
+    # create all the tables
+    metadata.create_all(engine, checkfirst=True)
 
 def export_network_to_oedb(session, schema, table, tabletype, srid):
     dataset = []
