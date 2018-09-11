@@ -77,11 +77,11 @@ def df_sql_write(dataframe, db_table, engine):
     """
     sql_write_df = dataframe.copy()
     sql_write_df.columns = sql_write_df.columns.map(str.lower)
-    sql_write_df = sql_write_df.set_index('id')
-    sql_write_df.to_sql(db_table.name, con=engine, if_exists='append')
+    # sql_write_df = sql_write_df.set_index('id')
+    sql_write_df.to_sql(db_table.name, con=engine, if_exists='append', index=None)
 
 
-def create_ding0_sql_tables(engine, ding0_schema):
+def create_ding0_sql_tables(engine, ding0_schema=None):
     """
     Create the ding0 tables
 
@@ -90,10 +90,9 @@ def create_ding0_sql_tables(engine, ding0_schema):
     engine: :py:mod:`sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
 
-    schema: :obj:`str`
+    ding0_schema: :obj:`str`
         The schema in which the tables are to be created
-    Returns
-    -------
+        Default: None
     """
 
     # versioning table
@@ -304,8 +303,6 @@ def create_ding0_sql_tables(engine, ding0_schema):
     metadata.create_all(engine, checkfirst=True)
 
 def export_network_to_db(session, schema, table, tabletype, srid):
-    dataset = []
-    engine = create_engine("sqlite:///myexample.db")
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
         table.apply(lambda row:
