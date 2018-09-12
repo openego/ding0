@@ -1,6 +1,6 @@
 <img align="right" width="300" height="300" src="https://github.com/openego/ding0/blob/dev/doc/images/DING0_Logo_300px.png">
 
-[![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://ding0.readthedocs.io/en/dev/?badge=dev)
+[![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://dingo.readthedocs.io/en/dev)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.834751.svg)](https://doi.org/10.5281/zenodo.834751)
 
 DING0
