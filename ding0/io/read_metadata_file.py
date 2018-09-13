@@ -30,25 +30,29 @@ import os
 #Session.configure(bind=con)
 #session = Session()
 
+# JSON metadatastring folder. Static path for windows
+FOLDER = Path('C:/ego_grid_ding0_metadatastrings')
 
-
-#load data from json file
-#mds = metadatastring
-def load_json():
-
-    # JSON metadatastring folder. Static path for windows
-    FOLDER = Path('C:\ego_grid_ding0_metadatastrings')
+# load data from json file
+def load_json_files():
     print(FOLDER)
     full_dir = os.walk(FOLDER.parent / FOLDER.name)
     jsonmetadata = []
 
     for jsonfiles in full_dir:
         for jsonfile in jsonfiles:
-            #if jsonfile[-4:] == 'json':
+            #if jsonfile[:4] == 'json':
             jsonmetadata = jsonfile
 
+    return jsonmetadata
 
-    #with open('JSONMETADATA') as f:
-        #mds = json.load(f)
+# Prepares the JSON String for the sql comment on table
+# mds = metadatastring
+def add_metadata_todb():
+    for file in load_json_files():
+        JSONFILEPATH = FOLDER / file
+        with open(JSONFILEPATH) as f:
+            mds = json.load(f)
+            print(mds)
 
-load_json()
+add_metadata_todb()
