@@ -35,11 +35,11 @@
 		{"name": "name","discription": "unambiguous name: 'LVGeneratorDing0_LV_#lvgridid#_#ascendingnumber#'","unit": "string"}, 
 		{"name": "lv_grid_id","discription": "unambiguous id_db of LV-Grid","unit": "integer"}, 
 		{"name": "geom","discription": "geometric coordinates","unit": "WGS84, POINT"}, 
-		{"name": "type","discription": "type of generation","{solar; biomass}","unit": "string"}, 
+		{"name": "type","discription": "type of generation {solar; biomass}","unit": "string"},
 		{"name": "subtype","discription": "subtype of generation: {solar_roof_mounted, unknown; biomass}","unit": "string"}, 
 		{"name": "v_level","discription": "voltage level of generator","unit": "integer"}, 
 		{"name": "nominal_capacity","discription": "nominal capacity","unit": "float"}, 
-		{"name": "is_aggregated","discription": "True if load is aggregated load, else False","unit": "boolean"};
+		{"name": "is_aggregated","discription": "True if load is aggregated load, else False","unit": "boolean"},
 		{"name": "weather_cell_id","discription": "unambiguous number of the corresponding weather cell","unit": "integer"} ] } ],
 "metadata_version": "1.3",
 "_comment": {
