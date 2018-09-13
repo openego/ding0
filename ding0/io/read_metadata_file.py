@@ -12,26 +12,49 @@ __license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__ = "jh-RLI"
 
-#from egoio.tools.db import connection
+from egoio.tools.db import connection
 #from egoio.db_tables import model_draft as md
 
-#from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
-#from geoalchemy2.types import Geometry, Raster
-#from sqlalchemy.orm import sessionmaker
+from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
+from geoalchemy2.types import Geometry, Raster
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 
 from pathlib import Path
 import json
 import os
 
-#con = connection()
+con = connection()
 
 #query orm style
 #Session = sessionmaker()
 #Session.configure(bind=con)
 #session = Session()
 
-# JSON metadatastring folder. Static path for windows
+Base = declarative_base()
+metadata = Base.metadata
+
+# metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7)
+# Modify if folder name is different
 FOLDER = Path('C:/ego_grid_ding0_metadatastrings')
+
+DING0_TABLES = {'versioning': 'ding0_versioning',
+                'line': 'ding0_line',
+                'lv_branchtee': 'ding0_lv_branchtee',
+                'lv_generator': 'ding0_lv_generator',
+                'lv_load': 'ding0_lv_load',
+                'lv_grid': 'ding0_lv_grid',
+                'lv_station': 'ding0_lv_station',
+                'mvlv_transformer': 'ding0_mvlv_transformer',
+                'mvlv_mapping': 'ding0_mvlv_mapping',
+                'mv_branchtee': 'ding0_mv_branchtee',
+                'mv_circuitbreaker': 'ding0_mv_circuitbreaker',
+                'mv_generator': 'ding0_mv_generator',
+                'mv_load': 'ding0_mv_load',
+                'mv_grid': 'ding0_mv_grid',
+                'mv_station': 'ding0_mv_station',
+                'hvmv_transformer': 'ding0_hvmv_transformer'}
+
 
 # load data from json file
 def load_json_files():
@@ -41,18 +64,35 @@ def load_json_files():
 
     for jsonfiles in full_dir:
         for jsonfile in jsonfiles:
-            #if jsonfile[:4] == 'json':
+            #if jsonfile[:4] == 'json': #ToDo: Add Execption
             jsonmetadata = jsonfile
 
     return jsonmetadata
 
+
 # Prepares the JSON String for the sql comment on table
 # mds = metadatastring
-def prepare_metadatastring_fordb():
+def prepare_metadatastring_fordb(table):
     for file in load_json_files():
         JSONFILEPATH = FOLDER / file
         with open(JSONFILEPATH) as f:
-            mds = json.load(f)
-            print(mds)
+            if table in file:
+                mds = json.load(f)
+                return mds
 
-prepare_metadatastring_fordb()
+
+def create_ding0_sql_tables(engine, ding0_schema):
+    # versioning table
+    versioning = Table(DING0_TABLES['versioning'], metadata,
+                       Column('run_id', BigInteger, primary_key=True, autoincrement=False, nullable=False),
+                       Column('description', String(3000)),
+                       schema=ding0_schema,
+                       comment="""This is a comment on table for the ding0 versioning table:"""
+                               + str(prepare_metadatastring_fordb("versioning"))
+                       )
+    # create all the tables
+    metadata.create_all(engine, checkfirst=True)
+
+#prepare_metadatastring_fordb("versioning")
+
+create_ding0_sql_tables(con, "topology")
