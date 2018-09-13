@@ -12,8 +12,8 @@ __license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__ = "jh-RLI"
 
-from egoio.tools.db import connection
-from egoio.db_tables import model_draft as md
+#from egoio.tools.db import connection
+#from egoio.db_tables import model_draft as md
 
 #from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
 #from geoalchemy2.types import Geometry, Raster
@@ -48,11 +48,11 @@ def load_json_files():
 
 # Prepares the JSON String for the sql comment on table
 # mds = metadatastring
-def add_metadata_todb():
+def prepare_metadatastring_fordb():
     for file in load_json_files():
         JSONFILEPATH = FOLDER / file
         with open(JSONFILEPATH) as f:
             mds = json.load(f)
             print(mds)
 
-add_metadata_todb()
+prepare_metadatastring_fordb()
