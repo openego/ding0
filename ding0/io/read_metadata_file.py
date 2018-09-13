@@ -78,7 +78,8 @@ def prepare_metadatastring_fordb(table):
         with open(JSONFILEPATH) as f:
             if table in file:
                 mds = json.load(f)
-                return mds
+                mdsstring = json.dumps(mds, indent=4)
+                return mdsstring
 
 
 # Copy from db_export for testing purpose included just for testing and review
@@ -88,8 +89,7 @@ def create_ding0_sql_tables(engine, ding0_schema):
                        Column('run_id', BigInteger, primary_key=True, autoincrement=False, nullable=False),
                        Column('description', String(3000)),
                        schema=ding0_schema,
-                       comment="""This is a comment on table for the ding0 versioning table:"""
-                               + str(prepare_metadatastring_fordb("versioning"))
+                       comment=prepare_metadatastring_fordb("versioning")
                        )
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
