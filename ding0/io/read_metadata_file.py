@@ -91,6 +91,18 @@ def create_ding0_sql_tables(engine, ding0_schema):
                        schema=ding0_schema,
                        comment=prepare_metadatastring_fordb("versioning")
                        )
+
+    # ding0 mv_station table
+    ding0_mv_station = Table(DING0_TABLES['mv_station'], metadata,
+                       Column('id', Integer, primary_key=True),
+                       Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                       Column('id_db', BigInteger),
+                       Column('geom', Geometry('POINT', 4326)),
+                       Column('name', String(100)),
+                       schema=ding0_schema,
+                       comment=prepare_metadatastring_fordb("ding0_mv_station")
+                       )
+
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
 

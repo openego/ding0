@@ -105,7 +105,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
 
 
     # ding0 lines table
-    line = Table(DING0_TABLES['ding0_line'], metadata,
+    ding0_line = Table(DING0_TABLES['line'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -127,7 +127,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 lv_branchtee table
-    lv_branchtee = Table(DING0_TABLES['ding0_lv_branchtee'], metadata,
+    ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -138,7 +138,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 lv_generator table
-    lv_generator = Table(DING0_TABLES['ding0_lv_generator'], metadata,
+    ding0_lv_generator = Table(DING0_TABLES['lv_generator'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -157,7 +157,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 lv_load table
-    lv_load = Table(DING0_TABLES['ding0_lv_load'], metadata,
+    ding0_lv_load = Table(DING0_TABLES['lv_load'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -170,7 +170,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 lv_station table
-    lv_station = Table(DING0_TABLES['ding0_lv_station'], metadata,
+    ding0_lv_station = Table(DING0_TABLES['lv_station'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -181,7 +181,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 mvlv_transformer table
-    mvlv_transformer = Table(DING0_TABLES['ding0_mvlv_transformer'], metadata,
+    ding0_mvlv_transformer = Table(DING0_TABLES['mvlv_transformer'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -196,7 +196,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 mvlv_mapping table
-    mvlv_mapping = Table(DING0_TABLES['ding0_mvlv_mapping'], metadata,
+    ding0_mvlv_mapping = Table(DING0_TABLES['mvlv_mapping'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('lv_grid_id', BigInteger),
@@ -206,7 +206,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 mv_branchtee table
-    mv_branchtee = Table(DING0_TABLES['ding0_mv_branchtee'], metadata,
+    ding0_mv_branchtee = Table(DING0_TABLES['mv_branchtee'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -217,7 +217,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 mv_circuitbreaker table
-    mv_circuitbreaker = Table(DING0_TABLES['ding0_mv_circuitbreaker'], metadata,
+    ding0_mv_circuitbreaker = Table(DING0_TABLES['mv_circuitbreaker'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -229,7 +229,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 mv_generator table
-    mv_generator = Table(DING0_TABLES['ding0_mv_generator'], metadata,
+    ding0_mv_generator = Table(DING0_TABLES['mv_generator'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -246,7 +246,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 mv_load table
-    mv_load = Table(DING0_TABLES['ding0_mv_load'], metadata,
+    ding0_mv_load = Table(DING0_TABLES['mv_load'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -259,7 +259,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 mv_grid table
-    mv_grid = Table(DING0_TABLES['ding0_mv_grid'], metadata,
+    ding0_mv_grid = Table(DING0_TABLES['mv_grid'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -274,7 +274,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
 
 
     # ding0 mv_station table
-    mv_station = Table(DING0_TABLES['ding0_mv_station'], metadata,
+    ding0_mv_station = Table(DING0_TABLES['mv_station'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
@@ -285,7 +285,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     )
 
     # ding0 hvmv_transformer table
-    hvmv_transformer = Table(DING0_TABLES['ding0_hvmv_transformer'], metadata,
+    ding0_hvmv_transformer = Table(DING0_TABLES['hvmv_transformer'], metadata,
                     Column('id', Integer, primary_key=True),
                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                     Column('id_db', BigInteger),
