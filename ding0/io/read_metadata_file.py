@@ -81,6 +81,7 @@ def prepare_metadatastring_fordb(table):
                 return mds
 
 
+# Copy from db_export for testing purpose included just for testing and review
 def create_ding0_sql_tables(engine, ding0_schema):
     # versioning table
     versioning = Table(DING0_TABLES['versioning'], metadata,
@@ -93,6 +94,5 @@ def create_ding0_sql_tables(engine, ding0_schema):
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
 
-#prepare_metadatastring_fordb("versioning")
-
+# Test
 create_ding0_sql_tables(con, "topology")
