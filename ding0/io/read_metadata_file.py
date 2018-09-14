@@ -13,23 +13,18 @@ __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__ = "jh-RLI"
 
 from egoio.tools.db import connection
-#from egoio.db_tables import model_draft as md
 
 from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
 from geoalchemy2.types import Geometry, Raster
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from pathlib import Path
 import json
 import os
 
+# DB used for testing: reiners_db
 con = connection()
 
-#query orm style
-#Session = sessionmaker()
-#Session.configure(bind=con)
-#session = Session()
 
 Base = declarative_base()
 metadata = Base.metadata
@@ -70,7 +65,7 @@ def load_json_files():
     return jsonmetadata
 
 
-# Prepares the JSON String for the sql comment on table
+# Prepares the JSON String for the sql comment on table # ToDO: handel "Sonderzeichen" in SQL comment
 # mds = metadatastring
 def prepare_metadatastring_fordb(table):
     for file in load_json_files():
