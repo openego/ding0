@@ -1,4 +1,4 @@
-{"title": "DING0 - Result data",
+{"title": "DING0 - Result data for lv load areas",
 "description": "DIstribution Network Generat0r - A tool to generate synthetic medium and low voltage power distribution grids based on open (or at least accessible) data.",
 "language": [ "eng","ger "],
 "spatial": 
@@ -28,13 +28,13 @@
 	{"name": "model_draft.ego_grid_ding0_lv_load", 
 	"format": "PostgreSQL", 
 	"fields": [
-		{"name": "id","discription": "unambiguous unique numer","unit": "integer"},
-		{"name": "run_id","discription": "time and date of table generation","unit": "yyyyMMddhhmmss"},
-		{"name": "id_db","discription": "unambiguous number of LV-Grid","unit": "integer"},
-		{"name": "name","discription": "unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'","unit": "string"}, 
-		{"name": "lv_grid_id","discription": "unambiguous id_db of LV-Grid","unit": "integer"}, 
-		{"name": "geom","discription": "geometric coordinates","unit": "WGS84 POINT"}, 
-		{"name": "consumption","discription": "type of load {residential, agricultural, industrial} and corresponding consumption","unit": "string "} ] } ],
+		{"name": "id","description": "unambiguous unique numer","unit": "integer"},
+		{"name": "run_id","description": "time and date of table generation","unit": "yyyyMMddhhmmss"},
+		{"name": "id_db","description": "unambiguous number of LV-Grid","unit": "integer"},
+		{"name": "name","description": "unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'","unit": "string"},
+		{"name": "lv_grid_id","description": "unambiguous id_db of LV-Grid","unit": "integer"},
+		{"name": "geom","description": "geometric coordinates","unit": "WGS84 POINT"},
+		{"name": "consumption","description": "type of load {residential, agricultural, industrial} and corresponding consumption","unit": "string "} ] } ],
 "metadata_version": "1.3",
 "_comment": {
     "_url": "https://github.com/OpenEnergyPlatform/examples/tree/master/metadata",

@@ -1,4 +1,4 @@
-{"title": "DING0 - Result data",
+{"title": "DING0 - Result data for mv branchtee",
 "description": "DIstribution Network Generat0r - A tool to generate synthetic medium and low voltage power distribution grids based on open (or at least accessible) data.",
 "language": [ "eng","ger "],
 "spatial": 
@@ -28,11 +28,11 @@
 	{"name": "model_draft.ego_grid_ding0_mv_branchtee", 
 	"format": "PostgreSQL", 
 	"fields": [
-		{"name": "id","discription": "unambiguous unique numer","unit": "integer"},
-		{"name": "run_id","discription": "time and date of table generation","unit": "yyyyMMddhhmmss"},
-		{"name": "id_db","discription": "geometric coordinates","unit": "integer"},
-		{"name": "geom","discription": "geometric coordinates","unit": "WGS84 POINT"}, 
-		{"name": "name","discription": "unambiguous name: 'MVCableDistributorDing0_MV_#mvgridid#_#ascendingnumber#'","unit": "string"} ] } ],
+		{"name": "id","description": "unambiguous unique numer","unit": "integer"},
+		{"name": "run_id","description": "time and date of table generation","unit": "yyyyMMddhhmmss"},
+		{"name": "id_db","description": "unambiguous number of MV-Grid","unit": "integer"},
+		{"name": "geom","description": "geometric coordinates","unit": "WGS84 POINT"},
+		{"name": "name","description": "unambiguous name: 'MVCableDistributorDing0_MV_#mvgridid#_#ascendingnumber#'","unit": "string"} ] } ],
 "metadata_version": "1.3",
 "_comment": {
     "_url": "https://github.com/OpenEnergyPlatform/examples/tree/master/metadata",
