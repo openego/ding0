@@ -362,25 +362,27 @@ def df_sql_write(dataframe, db_table, engine):
     # sql_write_df = sql_write_df.set_index('id')
     sql_write_df.to_sql(db_table.name, con=engine, if_exists='append', index=None)
 
+    # create a dummy dataframe with lines
+    line1 = pd.DataFrame({'run_id': [1, 1],
+                          'id': [1, 2],
+                          'edge_name': ['line1', 'line2'],
+                          'grid_name': ['mv_grid5', 'mvgrid5'],
+                          'node1': [1, 2],
+                          'node2': [2, 3],
+                          'type_kind': ['line', 'line'],
+                          'type_name': ['NASX2Y', 'NA2SXX2Y'],
+                          'length': [1.3, 2.3],
+                          'U_n': [10, 10],
+                          'C': [0.002, 0.001],
+                          'L': [0.01, 0.02],
+                          'R': [0.0001, 0.00005],
+                          'I_max_th': [5, 6]})
+
+
 def export_network_to_db(session, schema, table, tabletype, srid):
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
-        # create a dummy dataframe with lines
-        line1 = pd.DataFrame({'run_id': [1, 1],
-                              'id': [1, 2],
-                              'edge_name': ['line1', 'line2'],
-                              'grid_name': ['mv_grid5', 'mvgrid5'],
-                              'node1': [1, 2],
-                              'node2': [2, 3],
-                              'type_kind': ['line', 'line'],
-                              'type_name': ['NASX2Y', 'NA2SXX2Y'],
-                              'length': [1.3, 2.3],
-                              'U_n': [10, 10],
-                              'C': [0.002, 0.001],
-                              'L': [0.01, 0.02],
-                              'R': [0.0001, 0.00005],
-                              'I_max_th': [5, 6]})
-
+        pass
 
     elif tabletype == 'lv_cd':
         pass
