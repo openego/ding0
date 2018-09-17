@@ -10,7 +10,7 @@ The documentation is available on RTD: http://ding0.readthedocs.io"""
 __copyright__ = "Reiner Lemoine Institut gGmbH"
 __license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
-__author__ = "nesnoj, gplssm"
+__author__ = "nesnoj, gplssm, jh-RLI"
 
 import numpy as np
 import pandas as pd
@@ -53,37 +53,6 @@ DING0_TABLES = {'versioning': 'ding0_versioning',
                 'mv_grid': 'ding0_mv_grid',
                 'mv_station': 'ding0_mv_station',
                 'hvmv_transformer': 'ding0_hvmv_transformer'}
-
-
-def df_sql_write(dataframe, db_table, engine):
-    """
-    Convert dataframes such that their column names
-    are made small and the index is renamed 'id' so as to
-    correctly load its data to its appropriate sql table.
-
-    .. ToDo:  need to check for id_db instead of only 'id' in index label names
-
-    NOTE: This function does not check if the dataframe columns
-    matches the db_table fields, if they do not then no warning
-    is given.
-
-    Parameters
-    ----------
-    dataframe: :pandas:`DataFrame<dataframe>`
-        The pandas dataframe to be transferred to its
-        apprpritate db_table
-
-    db_table: :py:mod:`sqlalchemy.sql.schema.Table`
-        A table instance definition from sqlalchemy.
-        NOTE: This isn't an orm definition
-
-    engine: :py:mod:`sqlalchemy.engine.base.Engine`
-        Sqlalchemy database engine
-    """
-    sql_write_df = dataframe.copy()
-    sql_write_df.columns = sql_write_df.columns.map(str.lower)
-    # sql_write_df = sql_write_df.set_index('id')
-    sql_write_df.to_sql(db_table.name, con=engine, if_exists='append', index=None)
 
 
 # metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7)
@@ -362,220 +331,102 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
 
+
+def df_sql_write(dataframe, db_table, engine):
+    """
+    Convert dataframes such that their column names
+    are made small and the index is renamed 'id' so as to
+    correctly load its data to its appropriate sql table.
+
+    .. ToDo:  need to check for id_db instead of only 'id' in index label names
+
+    NOTE: This function does not check if the dataframe columns
+    matches the db_table fields, if they do not then no warning
+    is given.
+
+    Parameters
+    ----------
+    dataframe: :pandas:`DataFrame<dataframe>`
+        The pandas dataframe to be transferred to its
+        apprpritate db_table
+
+    db_table: :py:mod:`sqlalchemy.sql.schema.Table`
+        A table instance definition from sqlalchemy.
+        NOTE: This isn't an orm definition
+
+    engine: :py:mod:`sqlalchemy.engine.base.Engine`
+        Sqlalchemy database engine
+    """
+    sql_write_df = dataframe.copy()
+    sql_write_df.columns = sql_write_df.columns.map(str.lower)
+    # sql_write_df = sql_write_df.set_index('id')
+    sql_write_df.to_sql(db_table.name, con=engine, if_exists='append', index=None)
+
 def export_network_to_db(session, schema, table, tabletype, srid):
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0Line(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        edge_name=row['edge_name'],
-                        grid_name=row['grid_name'],
-                        node1=row['node1'],
-                        node2=row['node2'],
-                        type_kind=row['type_kind'],
-                        type_name=row['type_name'],
-                        length=row['length'],
-                        u_n=row['U_n'],
-                        c=row['C'],
-                        l=row['L'],
-                        r=row['R'],
-                        i_max_th=row['I_max_th'],
-                        geom=row['geom'],
-                    ))
-                    , axis=1)
+        # create a dummy dataframe with lines
+        line1 = pd.DataFrame({'run_id': [1, 1],
+                              'id': [1, 2],
+                              'edge_name': ['line1', 'line2'],
+                              'grid_name': ['mv_grid5', 'mvgrid5'],
+                              'node1': [1, 2],
+                              'node2': [2, 3],
+                              'type_kind': ['line', 'line'],
+                              'type_name': ['NASX2Y', 'NA2SXX2Y'],
+                              'length': [1.3, 2.3],
+                              'U_n': [10, 10],
+                              'C': [0.002, 0.001],
+                              'L': [0.01, 0.02],
+                              'R': [0.0001, 0.00005],
+                              'I_max_th': [5, 6]})
+
 
     elif tabletype == 'lv_cd':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0LvBranchtee(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'lv_gen':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0LvGenerator(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        la_id=row['la_id'],
-                        name=row['name'],
-                        lv_grid_id=str(row['lv_grid_id']),
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        type=row['type'],
-                        subtype=row['subtype'],
-                        v_level=row['v_level'],
-                        nominal_capacity=row['nominal_capacity'],
-                        is_aggregated=row['is_aggregated'],
-                        weather_cell_id=row['weather_cell_id'] if not(pd.isnull(row[
-                            'weather_cell_id'])) else None,
-
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'lv_load':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0LvLoad(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        lv_grid_id=row['lv_grid_id'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        consumption=row['consumption']
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'lv_grid':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0LvGrid(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        population=row['population'],
-                        voltage_nom=row['voltage_nom'],
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'lv_station':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0LvStation(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'mvlv_trafo':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0MvlvTransformer(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        voltage_op=row['voltage_op'],
-                        s_nom=row['S_nom'],
-                        x=row['X'],
-                        r=row['R'],
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'mvlv_mapping':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0MvlvMapping(
-                        run_id=row['run_id'],
-                        lv_grid_id=row['lv_grid_id'],
-                        lv_grid_name=row['lv_grid_name'],
-                        mv_grid_id=row['mv_grid_id'],
-                        mv_grid_name=row['mv_grid_name'],
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'mv_cd':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0MvBranchtee(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'mv_cb':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0MvCircuitbreaker(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        status=row['status'],
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'mv_gen':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0MvGenerator(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        type=row['type'],
-                        subtype=row['subtype'],
-                        v_level=row['v_level'],
-                        nominal_capacity=row['nominal_capacity'],
-                        is_aggregated=row['is_aggregated'],
-                        weather_cell_id=row['weather_cell_id'] if not(pd.isnull(row[
-                            'weather_cell_id'])) else None,
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'mv_load':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0MvLoad(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        is_aggregated=row['is_aggregated'],
-                        consumption=row['consumption'],
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'mv_grid':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0MvGrid(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        population=row['population'],
-                        voltage_nom=row['voltage_nom'],
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'mv_station':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0MvStation(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                    ))
-                    , axis=1)
+        pass
 
     elif tabletype == 'hvmv_trafo':
-        table.apply(lambda row:
-                    session.add(schema.EgoGridDing0HvmvTransformer(
-                        run_id=row['run_id'],
-                        id_db=row['id'],
-                        name=row['name'],
-                        geom="SRID={};{}".format(srid, row['geom']) if row[
-                            'geom'] else None,
-                        voltage_op=row['voltage_op'],
-                        s_nom=row['S_nom'],
-                        x=row['X'],
-                        r=row['R'],
-                    ))
-                    , axis=1)
+        pass
         # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
         #     print('helloworld')
 
-    session.commit()
+    #session.commit()
 
 
 def export_data_to_db(session, schema, run_id, metadata_json, srid,
@@ -754,248 +605,3 @@ def db_tables_change_owner(engine, schema):
         change_owner(engine, tab, 'oeuser')
 
     engine.close()
-
-
-class EgoGridDing0Versioning(Base):
-    __tablename__ = 'ego_grid_ding0_versioning'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger, unique=True, nullable=False)
-    description = Column(String(3000))
-
-
-class EgoGridDing0MvStation(Base):
-    __tablename__ = 'ego_grid_ding0_mv_station'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(BigInteger, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    geom = Column(Geometry('POINT', 4326))
-    name = Column(String(100))
-
-
-class EgoGridDing0HvmvTransformer(Base):
-    __tablename__ = 'ego_grid_ding0_hvmv_transformer'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    geom = Column(Geometry('POINT', 4326))
-    name = Column(String(100))
-    voltage_op = Column(Float(10))
-    s_nom = Column(Float(10))
-    x = Column(Float(10))
-    r = Column(Float(10))
-
-
-class EgoGridDing0Line(Base):
-    __tablename__ = 'ego_grid_ding0_line'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    edge_name = Column(String(100))
-    grid_name = Column(String(100))
-    node1 = Column(String(100))
-    node2 = Column(String(100))
-    type_kind = Column(String(20))
-    type_name = Column(String(30))
-    length = Column(Float(10))
-    u_n = Column(Float(10))
-    c = Column(Float(10))
-    l = Column(Float(10))
-    r = Column(Float(10))
-    i_max_th = Column(Float(10))
-    geom = Column(Geometry('LINESTRING', 4326))
-
-
-class EgoGridDing0LvBranchtee(Base):
-    __tablename__ = 'ego_grid_ding0_lv_branchtee'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    geom = Column(Geometry('POINT', 4326))
-    name = Column(String(100))
-
-
-class EgoGridDing0LvGenerator(Base):
-    __tablename__ = 'ego_grid_ding0_lv_generator'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    la_id = Column(BigInteger)
-    name = Column(String(100))
-    lv_grid_id = Column(BigInteger)
-    geom = Column(Geometry('POINT', 4326))
-    type = Column(String(22))
-    subtype = Column(String(22))
-    v_level = Column(Integer)
-    nominal_capacity = Column(Float(10))
-    weather_cell_id = Column(BigInteger)
-    is_aggregated = Column(Boolean)
-
-
-class EgoGridDing0LvGrid(Base):
-    __tablename__ = 'ego_grid_ding0_lv_grid'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    name = Column(String(100))
-    geom = Column(Geometry('MULTIPOLYGON', 4326)) #Todo: check if right srid?
-    population = Column(BigInteger)
-    voltage_nom = Column(Float(10)) #Todo: Check Datatypes
-
-
-class EgoGridDing0LvLoad(Base):
-    __tablename__ = 'ego_grid_ding0_lv_load'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    name = Column(String(100))
-    lv_grid_id = Column(Integer)
-    geom = Column(Geometry('POINT', 4326))
-    consumption = Column(String(100))
-
-
-class EgoGridDing0MvBranchtee(Base):
-    __tablename__ = 'ego_grid_ding0_mv_branchtee'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    geom = Column(Geometry('POINT', 4326))
-    name = Column(String(100))
-
-class EgoGridDing0MvCircuitbreaker(Base):
-    __tablename__ = 'ego_grid_ding0_mv_circuitbreaker'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    geom = Column(Geometry('POINT', 4326))
-    name = Column(String(100))
-    status = Column(String(10))
-
-class EgoGridDing0MvGenerator(Base):
-    __tablename__ = 'ego_grid_ding0_mv_generator'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    name = Column(String(100))
-    geom = Column(Geometry('POINT',  4326))
-    type = Column(String(22))
-    subtype = Column(String(22))
-    v_level = Column(Integer)
-    nominal_capacity = Column(Float(10))
-    weather_cell_id = Column(BigInteger)
-    is_aggregated = Column(Boolean)
-
-
-class EgoGridDing0MvGrid(Base):
-    __tablename__ = 'ego_grid_ding0_mv_grid'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    geom = Column(Geometry('MULTIPOLYGON', 4326)) #Todo: check if right srid?
-    name = Column(String(100))
-    population = Column(BigInteger)
-    voltage_nom = Column(Float(10)) #Todo: Check Datatypes
-
-
-class EgoGridDing0MvLoad(Base):
-    __tablename__ = 'ego_grid_ding0_mv_load'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    name = Column(String(100))
-    geom = Column(Geometry('GEOMETRY', 4326))
-    is_aggregated = Column(Boolean)
-    consumption = Column(String(100))
-
-
-class EgoGridDing0MvlvMapping(Base):
-    __tablename__ = 'ego_grid_ding0_mvlv_mapping'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    lv_grid_id = Column(BigInteger)
-    lv_grid_name = Column(String(100))
-    mv_grid_id = Column(BigInteger)
-    mv_grid_name = Column(String(100))
-
-
-class EgoGridDing0LvStation(Base):
-    __tablename__ = 'ego_grid_ding0_lv_station'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    geom = Column(Geometry('POINT', 4326))
-    name = Column(String(100))
-
-
-class EgoGridDing0MvlvTransformer(Base):
-    __tablename__ = 'ego_grid_ding0_mvlv_transformer'
-    __table_args__ = {'schema': 'model_draft'}
-
-    id = Column(Integer, primary_key=True)
-    run_id = Column(BigInteger,
-                    ForeignKey('model_draft.ego_grid_ding0_versioning.run_id'),
-                    nullable=False)
-    id_db = Column(BigInteger)
-    geom = Column(Geometry('POINT', 4326))
-    name = Column(String(100))
-    voltage_op = Column(Float(10))
-    s_nom = Column(Float(10))
-    x = Column(Float(10))
-    r = Column(Float(10))
