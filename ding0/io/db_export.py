@@ -161,7 +161,6 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                        comment=prepare_metadatastring_fordb("versioning")
                        )
 
-
     # ding0 lines table
     ding0_line = Table(DING0_TABLES['line'], metadata,
                     Column('id', Integer, primary_key=True),
