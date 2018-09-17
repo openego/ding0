@@ -14,11 +14,15 @@ __author__ = "nesnoj, gplssm"
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
+import json
+import os
 
 import re
 
 from sqlalchemy import create_engine
 from egoio.db_tables import model_draft as md
+from egoio.tools.db import connection
 
 from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
 from geoalchemy2.types import Geometry, Raster
@@ -28,6 +32,7 @@ from sqlalchemy.dialects.postgresql.base import OID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import ARRAY, DOUBLE_PRECISION, INTEGER, NUMERIC, TEXT, BIGINT, TIMESTAMP, VARCHAR
 
+con = connection()
 
 Base = declarative_base()
 metadata = Base.metadata
@@ -81,6 +86,59 @@ def df_sql_write(dataframe, db_table, engine):
     sql_write_df.to_sql(db_table.name, con=engine, if_exists='append', index=None)
 
 
+# metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7)
+# Modify if folder name is different
+FOLDER = Path('C:/ego_grid_ding0_metadatastrings')
+
+
+def load_json_files():
+    """
+    Creats a list of all .json files in FOLDER
+
+    Parameters
+    ----------
+    :return: dict: jsonmetadata
+             contains all .json files from the folder
+    """
+    print(FOLDER)
+    full_dir = os.walk(FOLDER.parent / FOLDER.name)
+    jsonmetadata = []
+
+    for jsonfiles in full_dir:
+        for jsonfile in jsonfiles:
+            jsonmetadata = jsonfile
+
+    return jsonmetadata
+
+
+
+def prepare_metadatastring_fordb(table):
+    """
+    Prepares the JSON String for the sql comment on table
+
+    Required: The .json file names must contain the table name (for example from create_ding0_sql_tables())
+    Instruction: Check the SQL "comment on table" for each table (f.e. use pgAdmin)
+
+    Parameters
+    ----------
+    table:  str
+            table name of the sqlAlchemy table
+
+    return: mdsstring:str
+            Contains the .json file as string
+
+    """
+    for file in load_json_files():
+        JSONFILEPATH = FOLDER / file
+        with open(JSONFILEPATH, encoding='UTF-8') as f:
+            if table in file:
+                # included for testing / or logging
+                # print("Comment on table: " + table + "\nusing this metadata file: " + file + "\n")
+                mds = json.load(f)
+                mdsstring = json.dumps(mds, indent=4, ensure_ascii=False)
+                return mdsstring
+
+
 def create_ding0_sql_tables(engine, ding0_schema=None):
     """
     Create the ding0 tables
@@ -100,7 +158,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                        Column('run_id', BigInteger, primary_key=True, autoincrement=False, nullable=False),
                        Column('description', String(3000)),
                        schema=ding0_schema,
-                       comment="""This is a comment on table for the ding0 versioning table"""
+                       comment=prepare_metadatastring_fordb("versioning")
                        )
 
 
@@ -123,7 +181,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('i_max_th', Float(10)),
                     Column('geom', Geometry('LINESTRING', 4326)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_line")
                     )
 
     # ding0 lv_branchtee table
@@ -134,7 +192,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('geom', Geometry('POINT', 4326)),
                     Column('name', String(100)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_lv_branchtee")
                     )
 
     # ding0 lv_generator table
@@ -153,7 +211,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('weather_cell_id', BigInteger),
                     Column('is_aggregated', Boolean),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_lv_generator")
                     )
 
     # ding0 lv_load table
@@ -166,7 +224,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('geom', Geometry('POINT', 4326)),
                     Column('consumption', String(100)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_lv_load")
                     )
 
     # ding0 lv_station table
@@ -177,7 +235,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('geom', Geometry('POINT', 4326)),
                     Column('name', String(100)),
                     schema=ding0_schema,
-                    comment="""This is a commment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_lv_station")
                     )
 
     # ding0 mvlv_transformer table
@@ -192,7 +250,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('x', Float(10)),
                     Column('r', Float(10)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_mvlv_transformer")
                     )
 
     # ding0 mvlv_mapping table
@@ -203,6 +261,8 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('lv_grid_name', String(100)),
                     Column('mv_grid_id', BigInteger),
                     Column('mv_grid_name', String(100)),
+                    schema=ding0_schema,
+                    comment=prepare_metadatastring_fordb("ding0_mvlv_mapping")
                     )
 
     # ding0 mv_branchtee table
@@ -213,7 +273,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('geom', Geometry('POINT', 4326)),
                     Column('name', String(100)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_mv_branchtee")
                     )
 
     # ding0 mv_circuitbreaker table
@@ -225,7 +285,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('name', String(100)),
                     Column('status', String(10)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_mv_circuitbreaker")
                     )
 
     # ding0 mv_generator table
@@ -242,7 +302,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('weather_cell_id', BigInteger),
                     Column('is_aggregated', Boolean),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_mv_generator")
                     )
 
     # ding0 mv_load table
@@ -255,7 +315,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('is_aggregated', Boolean),
                     Column('consumption', String(100)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_mv_load")
                     )
 
     # ding0 mv_grid table
@@ -268,7 +328,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('population', BigInteger),
                     Column('voltage_nom', Float(10)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_mv_grid")
                     )
 
 
@@ -281,7 +341,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('geom', Geometry('POINT', 4326)),
                     Column('name', String(100)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_mv_station")
                     )
 
     # ding0 hvmv_transformer table
@@ -296,7 +356,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     Column('x', Float(10)),
                     Column('r', Float(10)),
                     schema=ding0_schema,
-                    comment="""This is a comment on table for the ding0 lines table"""
+                    comment=prepare_metadatastring_fordb("ding0_hvmv_transformer")
                     )
 
     # create all the tables
