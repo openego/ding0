@@ -100,6 +100,7 @@ def load_json_files():
     :return: dict: jsonmetadata
              contains all .json files from the folder
     """
+
     print(FOLDER)
     full_dir = os.walk(FOLDER.parent / FOLDER.name)
     jsonmetadata = []
@@ -126,8 +127,8 @@ def prepare_metadatastring_fordb(table):
 
     return: mdsstring:str
             Contains the .json file as string
-
     """
+
     for file in load_json_files():
         JSONFILEPATH = FOLDER / file
         with open(JSONFILEPATH, encoding='UTF-8') as f:
