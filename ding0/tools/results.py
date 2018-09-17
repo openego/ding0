@@ -2315,11 +2315,11 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         type_kind=row['type_kind'],
                         type_name=row['type_name'],
                         length=row['length'],
-                        u_n=row['u_n'],
-                        c=row['c'],
-                        l=row['l'],
-                        r=row['r'],
-                        i_max_th=row['i_max_th'],
+                        u_n=row['U_n'],
+                        c=row['C'],
+                        l=row['L'],
+                        r=row['R'],
+                        i_max_th=row['I_max_th'],
                         geom=row['geom'],
                     ))
                     , axis=1)
@@ -2402,9 +2402,9 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         voltage_op=row['voltage_op'],
-                        s_nom=row['s_nom'],
-                        x=row['x'],
-                        r=row['r'],
+                        s_nom=row['S_nom'],
+                        x=row['X'],
+                        r=row['R'],
                     ))
                     , axis=1)
 
@@ -2506,9 +2506,9 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         geom="SRID={};{}".format(srid, row['geom']) if row[
                             'geom'] else None,
                         voltage_op=row['voltage_op'],
-                        s_nom=row['s_nom'],
-                        x=row['x'],
-                        r=row['r'],
+                        s_nom=row['S_nom'],
+                        x=row['X'],
+                        r=row['R'],
                     ))
                     , axis=1)
         # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
