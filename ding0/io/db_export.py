@@ -37,22 +37,22 @@ con = connection()
 Base = declarative_base()
 metadata = Base.metadata
 
-DING0_TABLES = {'versioning': 'ding0_versioning',
-                'line': 'ding0_line',
-                'lv_branchtee': 'ding0_lv_branchtee',
-                'lv_generator': 'ding0_lv_generator',
-                'lv_load': 'ding0_lv_load',
-                'lv_grid': 'ding0_lv_grid',
-                'lv_station': 'ding0_lv_station',
-                'mvlv_transformer': 'ding0_mvlv_transformer',
-                'mvlv_mapping': 'ding0_mvlv_mapping',
-                'mv_branchtee': 'ding0_mv_branchtee',
-                'mv_circuitbreaker': 'ding0_mv_circuitbreaker',
-                'mv_generator': 'ding0_mv_generator',
-                'mv_load': 'ding0_mv_load',
-                'mv_grid': 'ding0_mv_grid',
-                'mv_station': 'ding0_mv_station',
-                'hvmv_transformer': 'ding0_hvmv_transformer'}
+DING0_TABLES = {'versioning': 'ego_ding0_versioning',
+                'line': 'ego_ding0_line',
+                'lv_branchtee': 'ego_ding0_lv_branchtee',
+                'lv_generator': 'ego_ding0_lv_generator',
+                'lv_load': 'ego_ding0_lv_load',
+                'lv_grid': 'ego_ding0_lv_grid',
+                'lv_station': 'ego_ding0_lv_station',
+                'mvlv_transformer': 'ego_ding0_mvlv_transformer',
+                'mvlv_mapping': 'ego_ding0_mvlv_mapping',
+                'mv_branchtee': 'ego_ding0_mv_branchtee',
+                'mv_circuitbreaker': 'ego_ding0_mv_circuitbreaker',
+                'mv_generator': 'ego_ding0_mv_generator',
+                'mv_load': 'ego_ding0_mv_load',
+                'mv_grid': 'ego_ding0_mv_grid',
+                'mv_station': 'ego_ding0_mv_station',
+                'hvmv_transformer': 'ego_ding0_hvmv_transformer'}
 
 
 # metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7)
@@ -70,7 +70,7 @@ def load_json_files():
              contains all .json files from the folder
     """
 
-    print(FOLDER)
+    #print(FOLDER)
     full_dir = os.walk(FOLDER.parent / FOLDER.name)
     jsonmetadata = []
 
@@ -153,6 +153,7 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     comment=prepare_metadatastring_fordb("ding0_line")
                     )
 
+    """
     # ding0 lv_branchtee table
     ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], metadata,
                     Column('id', Integer, primary_key=True),
@@ -327,10 +328,9 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     schema=ding0_schema,
                     comment=prepare_metadatastring_fordb("ding0_hvmv_transformer")
                     )
-
+"""
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
-
 
 def df_sql_write(dataframe, db_table, engine):
     """
@@ -362,24 +362,10 @@ def df_sql_write(dataframe, db_table, engine):
     # sql_write_df = sql_write_df.set_index('id')
     sql_write_df.to_sql(db_table.name, con=engine, if_exists='append', index=None)
 
-    # create a dummy dataframe with lines
-    line1 = pd.DataFrame({'run_id': [1, 1],
-                          'id': [1, 2],
-                          'edge_name': ['line1', 'line2'],
-                          'grid_name': ['mv_grid5', 'mvgrid5'],
-                          'node1': [1, 2],
-                          'node2': [2, 3],
-                          'type_kind': ['line', 'line'],
-                          'type_name': ['NASX2Y', 'NA2SXX2Y'],
-                          'length': [1.3, 2.3],
-                          'U_n': [10, 10],
-                          'C': [0.002, 0.001],
-                          'L': [0.01, 0.02],
-                          'R': [0.0001, 0.00005],
-                          'I_max_th': [5, 6]})
 
 
-def export_network_to_db(session, schema, table, tabletype, srid):
+
+def export_network_to_db(engine, schema, table, tabletype, srid):
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
         pass
@@ -607,3 +593,25 @@ def db_tables_change_owner(engine, schema):
         change_owner(engine, tab, 'oeuser')
 
     engine.close()
+
+# create a dummy dataframe with lines
+line1 = pd.DataFrame({'run_id': [1, 1],
+                      'id_db': [1, 2],
+                      'edge_name': ['line1', 'line2'],
+                      'grid_name': ['mv_grid5', 'mvgrid5'],
+                      'node1': [1, 2],
+                      'node2': [2, 3],
+                      'type_kind': ['line', 'line'],
+                      'type_name': ['NASX2Y', 'NA2SXX2Y'],
+                      'length': [1.3, 2.3],
+                      'U_n': [10, 10],
+                      'C': [0.002, 0.001],
+                      'L': [0.01, 0.02],
+                      'R': [0.0001, 0.00005],
+                      'I_max_th': [5, 6]})
+
+# included for testing
+#df_sql_write(line1, , con)
+
+# tested with reiners_db
+create_ding0_sql_tables(con, "topology")
