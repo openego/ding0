@@ -20,17 +20,12 @@ import os
 
 import re
 
-from sqlalchemy import create_engine
-from egoio.db_tables import model_draft as md
 from egoio.tools.db import connection
+from ding0.io.export import export_network
 
 from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
 from geoalchemy2.types import Geometry, Raster
-from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql.hstore import HSTORE
-from sqlalchemy.dialects.postgresql.base import OID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import ARRAY, DOUBLE_PRECISION, INTEGER, NUMERIC, TEXT, BIGINT, TIMESTAMP, VARCHAR
 
 
 con = connection()
@@ -74,7 +69,6 @@ def load_json_files():
              contains all .json files from the folder
     """
 
-    #print(FOLDER)
     full_dir = os.walk(FOLDER.parent / FOLDER.name)
     jsonmetadata = []
 
@@ -370,11 +364,7 @@ def df_sql_write(engine, schema, db_table, dataframe):
     sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
 
-def check_run_id():
-    pass
-
-
-def export_network_to_db(engine, schema, df, tabletype, srid=None, run_id=None):
+def export_network_to_db(engine, schema, df, tabletype, metadata_json, run_id=None, srid=None):
     """
     Exports pre created Pands data frames to a connected database schema.
 
@@ -405,18 +395,16 @@ def export_network_to_db(engine, schema, df, tabletype, srid=None, run_id=None):
     db_versioning = pd.read_sql_table(DING0_TABLES['versioning'], engine, schema,
                                       columns=['run_id', 'description'])
 
-
-
     if engine.dialect.has_table(engine, DING0_TABLES["versioning"]):
         if db_versioning.empty:
             # if the run_id doesn't exist then
             # create entry into ego_grid_ding0_versioning:
-    #        metadata_df = pd.DataFrame({'run_id': run_id,
-    #                                    'description': metadata_json},
-    #                                   index=[0])
-            pass
+            metadata_df = pd.DataFrame({'run_id': run_id,
+                                        'description': metadata_json},
+                                       index=[0])
 
-        else:
+            df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
+
             print("Exporting table type : {}".format(tabletype))
             if tabletype == 'line':
                 df_sql_write(engine, schema, DING0_TABLES['line'], df)
@@ -462,14 +450,14 @@ def export_network_to_db(engine, schema, df, tabletype, srid=None, run_id=None):
 
             elif tabletype == 'hvmv_trafo':
                 df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df)
+        else:
+            # if the run_id doesn't exist then
+            # create entry into ego_grid_ding0_versioning:
+            metadata_df = pd.DataFrame({'run_id': run_id,
+                                        'description': metadata_json},
+                                       index=[0])
 
-            # else:
-            #     pass
-                # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
-                #     print('helloworld')
-            # else:
-            #    raise KeyError("run_id already present! No tables are input!")
-
+            # compare df db_versioning and metadata_df run_id field
     else:
         print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
 
@@ -516,7 +504,6 @@ def drop_ding0_db_tables(engine, schema):
 
 def db_tables_change_owner(engine, schema):
     tables = metadata.tables.keys()
-
 
     def change_owner(engine, table, role):
         r"""Gives access to database users/ groups
@@ -576,5 +563,5 @@ create_ding0_sql_tables(con, "topology")
 
 # ToDo: Include the Pandas Dataframes from script x? which are created for all 16/(15) tables
 # export_network_to_db(engine, schema, df, tabletype, srid=None)
-#export_network_to_db(con, SCHEMA, line1, "versioning1")
+#export_network_to_db(con, SCHEMA, line1, "versioning")
 export_network_to_db(con, SCHEMA, line1, "line")
