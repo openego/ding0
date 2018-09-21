@@ -339,12 +339,6 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     metadata.create_all(engine, checkfirst=True)
 
 
-def select_db_table(db_table):
-    for table in metadata.tables.keys():
-        if db_table in table:
-            pass
-
-
 def df_sql_write(engine, schema, db_table, dataframe):
     """
     Convert dataframes such that their column names
@@ -370,22 +364,16 @@ def df_sql_write(engine, schema, db_table, dataframe):
     engine: :py:mod:`sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
     """
-    #for table in metadata.tables.keys():
-
-
 
     sql_write_df = dataframe.copy()
     sql_write_df.columns = sql_write_df.columns.map(str.lower)
     # sql_write_df = sql_write_df.set_index('id')
     sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
-    #con.connect().execute()
-
-
 
 def export_network_to_db(engine, schema, df, tabletype, srid=None):
     """
-    Exports pre created Pands data frames to a connected database.
+    Exports pre created Pands data frames to a connected database schema.
 
     :param engine:
     :param schema:
@@ -446,27 +434,6 @@ def export_network_to_db(engine, schema, df, tabletype, srid=None):
         # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
         #     print('helloworld')
 
-
-def create_ding0_db_tables(engine, schema,):
-    tables = [schema.EgoGridDing0Versioning,
-              schema.EgoGridDing0Line,
-              schema.EgoGridDing0LvBranchtee,
-              schema.EgoGridDing0LvGenerator,
-              schema.EgoGridDing0LvLoad,
-              schema.EgoGridDing0LvGrid,
-              schema.EgoGridDing0LvStation,
-              schema.EgoGridDing0MvlvTransformer,
-              schema.EgoGridDing0MvlvMapping,
-              schema.EgoGridDing0MvBranchtee,
-              schema.EgoGridDing0MvCircuitbreaker,
-              schema.EgoGridDing0MvGenerator,
-              schema.EgoGridDing0MvLoad,
-              schema.EgoGridDing0MvGrid,
-              schema.EgoGridDing0MvStation,
-              schema.EgoGridDing0HvmvTransformer]
-
-    for tab in tables:
-        tab().__table__.create(bind=engine, checkfirst=True)
 
 
 def drop_ding0_db_tables(engine, schema):
@@ -601,6 +568,6 @@ select_db_table("ego_ding0_line")
 # df_sql_write(line1, "ego_ding0_line", "topology", con)
 # df_sql_write(versioning1, "ego_ding0_versioning", "topology", con)
 
-# ToDo: Include the Pandas Dataframes from script x? which are created all 16/(15) tables
+# ToDo: Include the Pandas Dataframes from script x? which are created for all 16/(15) tables
 # export_network_to_db(engine, schema, df, tabletype, srid=None)
 export_network_to_db(con, SCHEMA, line1, "line")
