@@ -32,6 +32,8 @@ from sqlalchemy.dialects.postgresql.base import OID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import ARRAY, DOUBLE_PRECISION, INTEGER, NUMERIC, TEXT, BIGINT, TIMESTAMP, VARCHAR
 
+
+
 con = connection()
 
 Base = declarative_base()
@@ -55,7 +57,7 @@ DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'hvmv_transformer': 'ego_ding0_hvmv_transformer'}
 
 
-# metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7)
+# metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7) and Change to not static
 # Modify if folder name is different
 FOLDER = Path('C:/ego_grid_ding0_metadatastrings')
 
@@ -329,10 +331,18 @@ def create_ding0_sql_tables(engine, ding0_schema=None):
                     comment=prepare_metadatastring_fordb("ding0_hvmv_transformer")
                     )
 """
+
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
 
-def df_sql_write(dataframe, db_table, engine):
+
+def select_db_table(db_table):
+    for table in metadata.tables.keys():
+        if db_table in table:
+            pass
+
+
+def df_sql_write(dataframe, db_table, schema,engine):
     """
     Convert dataframes such that their column names
     are made small and the index is renamed 'id' so as to
@@ -357,10 +367,16 @@ def df_sql_write(dataframe, db_table, engine):
     engine: :py:mod:`sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
     """
+    #for table in metadata.tables.keys():
+
+
+
     sql_write_df = dataframe.copy()
     sql_write_df.columns = sql_write_df.columns.map(str.lower)
     # sql_write_df = sql_write_df.set_index('id')
-    sql_write_df.to_sql(db_table.name, con=engine, if_exists='append', index=None)
+    sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
+
+    #con.connect().execute()
 
 
 
@@ -368,7 +384,7 @@ def df_sql_write(dataframe, db_table, engine):
 def export_network_to_db(engine, schema, table, tabletype, srid):
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
-        pass
+        metadata.execute(df_sql_write(line1, "topology.ego_ding0_line", con))
 
     elif tabletype == 'lv_cd':
         pass
@@ -594,6 +610,8 @@ def db_tables_change_owner(engine, schema):
 
     engine.close()
 
+
+
 # create a dummy dataframe with lines
 line1 = pd.DataFrame({'run_id': [1, 1],
                       'id_db': [1, 2],
@@ -610,8 +628,14 @@ line1 = pd.DataFrame({'run_id': [1, 1],
                       'R': [0.0001, 0.00005],
                       'I_max_th': [5, 6]})
 
-# included for testing
-#df_sql_write(line1, , con)
+versioning1 = pd.DataFrame({'run_id': [6], 'description': str(line1.to_dict())})
 
 # tested with reiners_db
 create_ding0_sql_tables(con, "topology")
+
+# Test fnc.
+select_db_table("ego_ding0_line")
+
+# included for testing
+df_sql_write(line1, "ego_ding0_line", "topology", con)
+# df_sql_write(versioning1, "ego_ding0_versioning", "topology", con)
