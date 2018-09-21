@@ -61,6 +61,9 @@ DING0_TABLES = {'versioning': 'ego_ding0_versioning',
 # Modify if folder name is different
 FOLDER = Path('C:/ego_grid_ding0_metadatastrings')
 
+# Set the Database schema which you want to add the tables to
+SCHEMA = "topology"
+
 
 def load_json_files():
     """
@@ -111,7 +114,7 @@ def prepare_metadatastring_fordb(table):
                 return mdsstring
 
 
-def create_ding0_sql_tables(engine, ding0_schema=None):
+def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     """
     Create the ding0 tables
 
@@ -342,7 +345,7 @@ def select_db_table(db_table):
             pass
 
 
-def df_sql_write(dataframe, db_table, schema,engine):
+def df_sql_write(engine, schema, db_table, dataframe):
     """
     Convert dataframes such that their column names
     are made small and the index is renamed 'id' so as to
@@ -380,110 +383,68 @@ def df_sql_write(dataframe, db_table, schema,engine):
 
 
 
+def export_network_to_db(engine, schema, df, tabletype, srid=None):
+    """
+    Exports pre created Pands data frames to a connected database.
 
-def export_network_to_db(engine, schema, table, tabletype, srid):
+    :param engine:
+    :param schema:
+    :param df:
+    :param tabletype:
+    :param srid:
+    """
+    # ToDo: check if versioning table exists
+
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
-        metadata.execute(df_sql_write(line1, "topology.ego_ding0_line", con))
+        df_sql_write(engine, schema, DING0_TABLES['line'], df)
 
     elif tabletype == 'lv_cd':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df)
 
     elif tabletype == 'lv_gen':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df)
 
     elif tabletype == 'lv_load':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['lv_load'], df)
 
     elif tabletype == 'lv_grid':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df)
 
     elif tabletype == 'lv_station':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['lv_station'], df)
 
     elif tabletype == 'mvlv_trafo':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df)
 
     elif tabletype == 'mvlv_mapping':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['mvlv_mapping'], df)
 
     elif tabletype == 'mv_cd':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df)
 
     elif tabletype == 'mv_cb':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df)
 
     elif tabletype == 'mv_gen':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df)
 
     elif tabletype == 'mv_load':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df)
 
     elif tabletype == 'mv_grid':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df)
 
     elif tabletype == 'mv_station':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['mv_station'], df)
 
     elif tabletype == 'hvmv_trafo':
-        pass
+        df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df)
+
+    # else:
+    #     pass
         # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
         #     print('helloworld')
-
-    #session.commit()
-
-
-def export_data_to_db(session, schema, run_id, metadata_json, srid,
-                        lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos,
-                        lv_loads,
-                        mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos,
-                        mv_loads, lines, mvlv_mapping):
-    # only for testing
-    # engine = create_engine('sqlite:///:memory:')
-
-    # get the run_id from model_draft.ego_grid_ding0_versioning
-    # compare the run_id from table to the current run_id
-
-    # oedb_versioning_query = session.query(
-    #     schema.EgoGridDing0Versioning.run_id,
-    #     schema.EgoGridDing0Versioning.description
-    # ).filter(schema.EgoGridDing0Versioning.run_id == run_id)
-    #
-    # oedb_versioning = pd.read_sql_query(oedb_versioning_query.statement,
-    #                                     session.bind)
-    db_versioning = pd.DataFrame()
-
-    if db_versioning.empty:
-        # if the run_id doesn't exist then
-        # create entry into ego_grid_ding0_versioning:
-        metadata_df = pd.DataFrame({'run_id': run_id,
-                                    'description': metadata_json},
-                                   index=[0])
-        metadata_df.apply(lambda row:
-                          session.add(schema.EgoGridDing0Versioning(
-                              run_id=row['run_id'],
-                              description=row['description'],
-                          ))
-                          , axis=1)
-        session.commit()
-
-        export_network_to_db(session, lv_grid, 'lv_grid', srid)
-        export_network_to_db(session, lv_gen, 'lv_gen', srid)
-        export_network_to_db(session, lv_cd, 'lv_cd', srid)
-        export_network_to_db(session, lv_stations, 'lv_station', srid)
-        export_network_to_db(session, mvlv_trafos, 'mvlv_trafo', srid)
-        export_network_to_db(session, lv_loads, 'lv_load', srid)
-        export_network_to_db(session, mv_grid, 'mv_grid', srid)
-        export_network_to_db(session, mv_gen, 'mv_gen', srid)
-        export_network_to_db(session, mv_cb, 'mv_cb', srid)
-        export_network_to_db(session, mv_cd, 'mv_cd', srid)
-        export_network_to_db(session, mv_stations, 'mv_station', srid)
-        export_network_to_db(session, hvmv_trafos, 'hvmv_trafo', srid)
-        export_network_to_db(session, mv_loads, 'mv_load', srid)
-        export_network_to_db(session, lines, 'line', srid)
-        export_network_to_db(session, mvlv_mapping, 'mvlv_mapping', srid)
-    else:
-        raise KeyError("run_id already present! No tables are input!")
 
 
 def create_ding0_db_tables(engine, schema,):
@@ -613,7 +574,7 @@ def db_tables_change_owner(engine, schema):
 
 
 # create a dummy dataframe with lines
-line1 = pd.DataFrame({'run_id': [1, 1],
+line1 = pd.DataFrame({'run_id': [2, 2],
                       'id_db': [1, 2],
                       'edge_name': ['line1', 'line2'],
                       'grid_name': ['mv_grid5', 'mvgrid5'],
@@ -637,5 +598,9 @@ create_ding0_sql_tables(con, "topology")
 select_db_table("ego_ding0_line")
 
 # included for testing
-df_sql_write(line1, "ego_ding0_line", "topology", con)
+# df_sql_write(line1, "ego_ding0_line", "topology", con)
 # df_sql_write(versioning1, "ego_ding0_versioning", "topology", con)
+
+# ToDo: Include the Pandas Dataframes from script x? which are created all 16/(15) tables
+# export_network_to_db(engine, schema, df, tabletype, srid=None)
+export_network_to_db(con, SCHEMA, line1, "line")
