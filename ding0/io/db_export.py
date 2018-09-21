@@ -561,9 +561,6 @@ versioning1 = pd.DataFrame({'run_id': [6], 'description': str(line1.to_dict())})
 # tested with reiners_db
 create_ding0_sql_tables(con, "topology")
 
-# Test fnc.
-select_db_table("ego_ding0_line")
-
 # included for testing
 # df_sql_write(line1, "ego_ding0_line", "topology", con)
 # df_sql_write(versioning1, "ego_ding0_versioning", "topology", con)
