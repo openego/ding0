@@ -43,4 +43,4 @@
     "_additional_information": {
         "_dates": "Dates must follow the ISO8601 (JJJJ-MM-TT)",
         "_units": "Use a space between Numbers and units (100 m)",
-        "_none": "If not applicable use 'none'"} } }
+        "_none": "If not applicable use: none"} } }

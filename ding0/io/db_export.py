@@ -435,27 +435,10 @@ def export_network_to_db(engine, schema, df, tabletype, srid=None):
         #     print('helloworld')
 
 
-
 def drop_ding0_db_tables(engine, schema):
-    tables = [schema.EgoGridDing0Line,
-              schema.EgoGridDing0LvBranchtee,
-              schema.EgoGridDing0LvGenerator,
-              schema.EgoGridDing0LvLoad,
-              schema.EgoGridDing0LvGrid,
-              schema.EgoGridDing0LvStation,
-              schema.EgoGridDing0MvlvTransformer,
-              schema.EgoGridDing0MvlvMapping,
-              schema.EgoGridDing0MvBranchtee,
-              schema.EgoGridDing0MvCircuitbreaker,
-              schema.EgoGridDing0MvGenerator,
-              schema.EgoGridDing0MvLoad,
-              schema.EgoGridDing0MvGrid,
-              schema.EgoGridDing0MvStation,
-              schema.EgoGridDing0HvmvTransformer,
-              schema.EgoGridDing0Versioning]
 
     print("Please confirm that you would like to drop the following tables:")
-    for n, tab in enumerate(tables):
+    for n, tab in enumerate(metadata.tables.keys()):
         print("{: 3d}. {}".format(n, tab))
 
     print("Please confirm with either of the choices below:\n" +
