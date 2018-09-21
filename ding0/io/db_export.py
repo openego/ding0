@@ -33,7 +33,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import ARRAY, DOUBLE_PRECISION, INTEGER, NUMERIC, TEXT, BIGINT, TIMESTAMP, VARCHAR
 
 
-
 con = connection()
 
 Base = declarative_base()
@@ -371,7 +370,11 @@ def df_sql_write(engine, schema, db_table, dataframe):
     sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
 
-def export_network_to_db(engine, schema, df, tabletype, srid=None):
+def check_run_id():
+    pass
+
+
+def export_network_to_db(engine, schema, df, tabletype, srid=None, run_id=None):
     """
     Exports pre created Pands data frames to a connected database schema.
 
@@ -381,64 +384,101 @@ def export_network_to_db(engine, schema, df, tabletype, srid=None):
     :param tabletype:
     :param srid:
     """
-    # ToDo: check if versioning table exists
+    # ToDo: extend the fnc: insert run_id to versioning table if not exists
 
-    print("Exporting table type : {}".format(tabletype))
-    if tabletype == 'line':
-        df_sql_write(engine, schema, DING0_TABLES['line'], df)
+    # db_versioning = pd.DataFrame()
+    #
+    # if db_versioning.empty:
+    #     # if the run_id doesn't exist then
+    #     # create entry into ego_grid_ding0_versioning:
+    #     metadata_df = pd.DataFrame({'run_id': run_id,
+    #                                 'description': metadata_json},
+    #                                index=[0])
+    #     metadata_df.apply(lambda row:
+    #                       session.add(schema.EgoGridDing0Versioning(
+    #                           run_id=row['run_id'],
+    #                           description=row['description'],
+    #                       ))
+    #                       , axis=1)
+    #     session.commit()
 
-    elif tabletype == 'lv_cd':
-        df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df)
+    db_versioning = pd.read_sql_table(DING0_TABLES['versioning'], engine, schema,
+                                      columns=['run_id', 'description'])
 
-    elif tabletype == 'lv_gen':
-        df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df)
 
-    elif tabletype == 'lv_load':
-        df_sql_write(engine, schema, DING0_TABLES['lv_load'], df)
 
-    elif tabletype == 'lv_grid':
-        df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df)
+    if engine.dialect.has_table(engine, DING0_TABLES["versioning"]):
+        if db_versioning.empty:
+            # if the run_id doesn't exist then
+            # create entry into ego_grid_ding0_versioning:
+    #        metadata_df = pd.DataFrame({'run_id': run_id,
+    #                                    'description': metadata_json},
+    #                                   index=[0])
+            pass
 
-    elif tabletype == 'lv_station':
-        df_sql_write(engine, schema, DING0_TABLES['lv_station'], df)
+        else:
+            print("Exporting table type : {}".format(tabletype))
+            if tabletype == 'line':
+                df_sql_write(engine, schema, DING0_TABLES['line'], df)
 
-    elif tabletype == 'mvlv_trafo':
-        df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df)
+            elif tabletype == 'lv_cd':
+                df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df)
 
-    elif tabletype == 'mvlv_mapping':
-        df_sql_write(engine, schema, DING0_TABLES['mvlv_mapping'], df)
+            elif tabletype == 'lv_gen':
+                df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df)
 
-    elif tabletype == 'mv_cd':
-        df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df)
+            elif tabletype == 'lv_load':
+                df_sql_write(engine, schema, DING0_TABLES['lv_load'], df)
 
-    elif tabletype == 'mv_cb':
-        df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df)
+            elif tabletype == 'lv_grid':
+                df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df)
 
-    elif tabletype == 'mv_gen':
-        df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df)
+            elif tabletype == 'lv_station':
+                df_sql_write(engine, schema, DING0_TABLES['lv_station'], df)
 
-    elif tabletype == 'mv_load':
-        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df)
+            elif tabletype == 'mvlv_trafo':
+                df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df)
 
-    elif tabletype == 'mv_grid':
-        df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df)
+            elif tabletype == 'mvlv_mapping':
+                df_sql_write(engine, schema, DING0_TABLES['mvlv_mapping'], df)
 
-    elif tabletype == 'mv_station':
-        df_sql_write(engine, schema, DING0_TABLES['mv_station'], df)
+            elif tabletype == 'mv_cd':
+                df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df)
 
-    elif tabletype == 'hvmv_trafo':
-        df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df)
+            elif tabletype == 'mv_cb':
+                df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df)
 
-    # else:
-    #     pass
-        # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
-        #     print('helloworld')
+            elif tabletype == 'mv_gen':
+                df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df)
+
+            elif tabletype == 'mv_load':
+                df_sql_write(engine, schema, DING0_TABLES['mv_load'], df)
+
+            elif tabletype == 'mv_grid':
+                df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df)
+
+            elif tabletype == 'mv_station':
+                df_sql_write(engine, schema, DING0_TABLES['mv_station'], df)
+
+            elif tabletype == 'hvmv_trafo':
+                df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df)
+
+            # else:
+            #     pass
+                # if not engine.dialect.has_table(engine, 'ego_grid_mv_transformer'):
+                #     print('helloworld')
+            # else:
+            #    raise KeyError("run_id already present! No tables are input!")
+
+    else:
+        print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
 
 
 def drop_ding0_db_tables(engine, schema):
+    tables = metadata.tables.keys()
 
     print("Please confirm that you would like to drop the following tables:")
-    for n, tab in enumerate(metadata.tables.keys()):
+    for n, tab in enumerate(tables):
         print("{: 3d}. {}".format(n, tab))
 
     print("Please confirm with either of the choices below:\n" +
@@ -475,22 +515,7 @@ def drop_ding0_db_tables(engine, schema):
 
 
 def db_tables_change_owner(engine, schema):
-    tables = [schema.EgoGridDing0Line,
-              schema.EgoGridDing0LvBranchtee,
-              schema.EgoGridDing0LvGenerator,
-              schema.EgoGridDing0LvLoad,
-              schema.EgoGridDing0LvGrid,
-              schema.EgoGridDing0LvStation,
-              schema.EgoGridDing0MvlvTransformer,
-              schema.EgoGridDing0MvlvMapping,
-              schema.EgoGridDing0MvBranchtee,
-              schema.EgoGridDing0MvCircuitbreaker,
-              schema.EgoGridDing0MvGenerator,
-              schema.EgoGridDing0MvLoad,
-              schema.EgoGridDing0MvGrid,
-              schema.EgoGridDing0MvStation,
-              schema.EgoGridDing0HvmvTransformer,
-              schema.EgoGridDing0Versioning]
+    tables = metadata.tables.keys()
 
 
     def change_owner(engine, table, role):
@@ -523,6 +548,7 @@ def db_tables_change_owner(engine, schema):
 
 
 
+
 # create a dummy dataframe with lines
 line1 = pd.DataFrame({'run_id': [2, 2],
                       'id_db': [1, 2],
@@ -539,7 +565,7 @@ line1 = pd.DataFrame({'run_id': [2, 2],
                       'R': [0.0001, 0.00005],
                       'I_max_th': [5, 6]})
 
-versioning1 = pd.DataFrame({'run_id': [6], 'description': str(line1.to_dict())})
+versioning1 = pd.DataFrame({'run_id': [2], 'description': str(line1.to_dict())})
 
 # tested with reiners_db
 create_ding0_sql_tables(con, "topology")
@@ -550,4 +576,5 @@ create_ding0_sql_tables(con, "topology")
 
 # ToDo: Include the Pandas Dataframes from script x? which are created for all 16/(15) tables
 # export_network_to_db(engine, schema, df, tabletype, srid=None)
+#export_network_to_db(con, SCHEMA, line1, "versioning1")
 export_network_to_db(con, SCHEMA, line1, "line")
