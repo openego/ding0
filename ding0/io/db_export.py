@@ -586,12 +586,7 @@ versioning1 = pd.DataFrame({'run_id': [2], 'description': str(line1.to_dict())})
 # tested with reiners_db
 create_ding0_sql_tables(con, "topology")
 
-# included for testing
-# df_sql_write(line1, "ego_ding0_line", "topology", con)
-# df_sql_write(versioning1, "ego_ding0_versioning", "topology", con)
-
 # ToDo: Include the Pandas Dataframes from script x? which are created for all 16/(15) tables
-# export_network_to_db(engine, schema, df, tabletype, srid=None)
-#export_network_to_db(con, SCHEMA, line1, "versioning")
+# parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
 export_network_to_db(con, SCHEMA, line1, "line", metadata_json)
 
