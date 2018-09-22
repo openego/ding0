@@ -33,6 +33,12 @@ con = connection()
 Base = declarative_base()
 metadata = Base.metadata
 
+# any list of NetworkDing0 provides run_id
+# metadata_json = json.dumps(nw.metadata)
+metadata_json = {
+                    "run_id":"2"
+                }
+
 DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'line': 'ego_ding0_line',
                 'lv_branchtee': 'ego_ding0_lv_branchtee',
@@ -364,7 +370,7 @@ def df_sql_write(engine, schema, db_table, dataframe):
     sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
 
-def export_network_to_db(engine, schema, df, tabletype, metadata_json, run_id=None, srid=None):
+def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None):
     """
     Exports pre created Pands data frames to a connected database schema.
 
@@ -399,7 +405,7 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, run_id=No
         if db_versioning.empty:
             # if the run_id doesn't exist then
             # create entry into ego_grid_ding0_versioning:
-            metadata_df = pd.DataFrame({'run_id': run_id,
+            metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
                                         'description': metadata_json},
                                        index=[0])
 
@@ -451,11 +457,7 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, run_id=No
             elif tabletype == 'hvmv_trafo':
                 df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df)
         else:
-            # if the run_id doesn't exist then
-            # create entry into ego_grid_ding0_versioning:
-            metadata_df = pd.DataFrame({'run_id': run_id,
-                                        'description': metadata_json},
-                                       index=[0])
+            pass
 
             # compare df db_versioning and metadata_df run_id field
     else:
@@ -564,4 +566,5 @@ create_ding0_sql_tables(con, "topology")
 # ToDo: Include the Pandas Dataframes from script x? which are created for all 16/(15) tables
 # export_network_to_db(engine, schema, df, tabletype, srid=None)
 #export_network_to_db(con, SCHEMA, line1, "versioning")
-export_network_to_db(con, SCHEMA, line1, "line")
+export_network_to_db(con, SCHEMA, line1, "line", metadata_json)
+
