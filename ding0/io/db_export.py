@@ -33,11 +33,10 @@ con = connection()
 Base = declarative_base()
 metadata = Base.metadata
 
-# any list of NetworkDing0 provides run_id
+# any list of NetworkDing0 also provides run_id
 # metadata_json = json.dumps(nw.metadata)
-metadata_json = {
-                    "run_id":"2"
-                }
+meta_json = '{"run_id":"20"}'
+
 
 DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'line': 'ego_ding0_line',
@@ -64,6 +63,12 @@ FOLDER = Path('C:/ego_grid_ding0_metadatastrings')
 # Set the Database schema which you want to add the tables to
 SCHEMA = "topology"
 
+def dump_json_obj(meta_json):
+    # included for testing / or logging
+    # print("Comment on table: " + table + "\nusing this metadata file: " + file + "\n")
+    dumped_json = json.loads(meta_json)
+    return dumped_json
+metadata_json = dump_json_obj(meta_json)
 
 def load_json_files():
     """
@@ -426,7 +431,7 @@ def export_df_to_db(engine, schema, df, tabletype):
         df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df)
 
 
-def run_id_in_db(df, db_versioning):
+def run_id_in_db(engine, schema, df, db_versioning, tabletype):
     """
     Filter data frame row run_id and compares the values.
     returns true if the value (run_id) for the new data frame (df) is available in the DB
@@ -439,12 +444,26 @@ def run_id_in_db(df, db_versioning):
     db_run_id = db_versioning.filter(items=['run_id'])
     df_run_id = df.filter(items=['run_id'])
 
-    for i in db_run_id.values:
-        for j in df_run_id.values:
-            if j in i:
-                return True
-            else:
-                return False
+    n = []
+    for j in db_run_id["run_id"]:
+        n.append(j)
+
+    # ToDo: problem: if the same run_id is passed in with the pandas data frame 4 entry are created in the db
+    for i in df_run_id["run_id"]:
+        if i in n:
+            # the run_id value needs to be only present in the run_id column
+            df_by_run_id = df[(df["run_id"]==i) & (df["run_id"]==i)]
+            export_df_to_db(engine, schema, df_by_run_id, tabletype)
+        elif i not in n:
+            metadata_df = pd.DataFrame({'run_id': i,
+                                        'description': ""}, index=[0])
+            # create the new run_id from df in db table
+            df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
+
+            # insert df with the new run_id
+            df_by_run_id = df[df["run_id"] == i]
+            export_df_to_db(engine, schema, df_by_run_id, tabletype)
+
 
 
 def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None):
@@ -468,25 +487,27 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None
             # if the run_id doesn't exist then
             # create entry into ego_grid_ding0_versioning:
             metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
-                                        'description': metadata_json},
-                                       index=[0])
+                                        'description': metadata_json})
 
             df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
             export_network_to_db(engine, schema, df, tabletype, metadata_json)
 
-        elif run_id_in_db(df, db_versioning) == True:
-            export_df_to_db(engine, schema, df, tabletype)
+        # elif run_id_in_db(df, db_versioning) == True:
+        #     export_df_to_db(engine, schema, df, tabletype)
+        #
+        # elif run_id_in_db(df, db_versioning) == False:
+        #     # # if the run_id from the data frame doesn't exist then
+        #     # # create new entry into ego_grid_ding0_versioning:
+        #     # newrunid_df = pd.DataFrame({'run_id': df['run_id'],
+        #     #                             'description': metadata_json},
+        #     #                            index=[0])
+        #     #
+        #     # df_sql_write(con, SCHEMA, "ego_ding0_versioning", newrunid_df)
+        #
+        #     print("The run_id from the Pandas data frame is not available in the connected database table: "+DING0_TABLES['versioning'])
+        else:
+            run_id_in_db(engine, schema, df, db_versioning, tabletype)
 
-        elif run_id_in_db(df, db_versioning) == False:
-            # # if the run_id from the data frame doesn't exist then
-            # # create new entry into ego_grid_ding0_versioning:
-            # newrunid_df = pd.DataFrame({'run_id': df['run_id'],
-            #                             'description': metadata_json},
-            #                            index=[0])
-            #
-            # df_sql_write(con, SCHEMA, "ego_ding0_versioning", newrunid_df)
-
-            print("The run_id from the Pandas data frame is not available in the connected database table: "+DING0_TABLES['versioning'])
     else:
         print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
 
@@ -564,9 +585,9 @@ def db_tables_change_owner(engine, schema):
 
 
 
-
+# ToDo: Testfailed: Cant insert 2 run_ids at a time, if one of them is not availabe in the database
 # create a dummy dataframe with lines
-line1 = pd.DataFrame({'run_id': [3, 3],
+line1 = pd.DataFrame({'run_id': [30, 30],
                       'id_db': [1, 2],
                       'edge_name': ['line1', 'line2'],
                       'grid_name': ['mv_grid5', 'mvgrid5'],
