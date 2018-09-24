@@ -22,20 +22,24 @@ import re
 
 from egoio.tools.db import connection
 from ding0.io.export import export_network
+from ding0.core import NetworkDing0
 
 from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
 from geoalchemy2.types import Geometry, Raster
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
+##########SQLAlchemy and DB table################
+engine2 = connection(section='oedb')
+session = sessionmaker(bind=engine2)()
 
 con = connection()
 
 Base = declarative_base()
 metadata = Base.metadata
 
-# any list of NetworkDing0 also provides run_id
-# metadata_json = json.dumps(nw.metadata)
-meta_json = '{"run_id":"20"}'
+# Set the Database schema which you want to add the tables to
+SCHEMA = "topology"
 
 
 DING0_TABLES = {'versioning': 'ego_ding0_versioning',
@@ -56,25 +60,35 @@ DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'hvmv_transformer': 'ego_ding0_hvmv_transformer'}
 
 
+##########Ding0 Network and NW Metadata################
+
+# create ding0 Network instance
+nw = NetworkDing0(name='network')
+
+
+# choose MV Grid Districts to import
+mv_grid_districts = [3040]
+
+# run DING0 on selected MV Grid District
+nw.run_ding0(session=session,
+             mv_grid_districts_no=mv_grid_districts)
+
+# return values from export_network() as tupels
+run_id, nw_metadata, \
+lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
+mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
+lines, mvlv_mapping = export_network(nw)
+
+# ToDo: Include the metadata_json variable returned form fun. in export.py
+# any list of NetworkDing0 also provides run_id
+# nw_metadata = json.dumps(nw.metadata)
+metadata_json = json.loads(nw_metadata)
+
+######################################################
+
 # metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7) and Change to not static
 # Modify if folder name is different -> use: "/"
 FOLDER = Path('/ego_grid_ding0_metadatastrings')
-
-# Set the Database schema which you want to add the tables to
-SCHEMA = "topology"
-
-# ToDo: Include the metadata_json variable returned form fun. in export.py
-def loads_json_obj(meta_json):
-    """
-    Fnc. included for testing, loads json obj as dict
-    -> Value should be available as metadata_json from export.py skript
-    :param meta_json:
-    """
-    # included for testing / or logging
-    # print("Comment on table: " + table + "\nusing this metadata file: " + file + "\n")
-    loads_json = json.loads(meta_json)
-    return loads_json
-metadata_json = loads_json_obj(meta_json)
 
 def load_json_files():
     """
@@ -83,7 +97,7 @@ def load_json_files():
     Parameters
     ----------
     :return: dict: jsonmetadata
-             contains all .json files from the folder
+             contains all .json file names from the folder
     """
 
     full_dir = os.walk(FOLDER.parent / FOLDER.name)
@@ -96,13 +110,12 @@ def load_json_files():
     return jsonmetadata
 
 
-
 def prepare_metadatastring_fordb(table):
     """
     Prepares the JSON String for the sql comment on table
 
     Required: The .json file names must contain the table name (for example from create_ding0_sql_tables())
-    Instruction: Check the SQL "comment on table" for each table (f.e. use pgAdmin)
+    Instruction: Check the SQL "comment on table" for each table (e.g. use pgAdmin)
 
     Parameters
     ----------
@@ -141,7 +154,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     # versioning table
     versioning = Table(DING0_TABLES['versioning'], metadata,
                        Column('run_id', BigInteger, primary_key=True, autoincrement=False, nullable=False),
-                       Column('description', String(3000)),
+                       Column('description', String(6000)),
                        schema=ding0_schema,
                        comment=prepare_metadatastring_fordb("versioning")
                        )
@@ -373,6 +386,7 @@ def df_sql_write(engine, schema, db_table, dataframe):
 
     engine: :py:mod:`sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
+    schema: DB schema
     """
 
     sql_write_df = dataframe.copy()
@@ -380,10 +394,14 @@ def df_sql_write(engine, schema, db_table, dataframe):
     # sql_write_df = sql_write_df.set_index('id')
     sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
+
 def export_df_to_db(engine, schema, df, tabletype):
     """
     Writes values to the connected DB. Values from Pandas data frame.
+    Decides which table by tabletype
 
+    Parameters
+    ----------
     :param engine:
     :param schema:
     :param df:
@@ -443,6 +461,8 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
     Filter data frame for column=row run_id and compares the values.
     db_run_id values are from the DB table: ego_ding0_versioning.
 
+    Parameters
+    ----------
     :param engine: DB connection
     :param schema: DB schema
     :param df: pandas data frame -> gets inserted to the db
@@ -464,15 +484,17 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
     for i in df_run_id["run_id"]:
         if i in db_0temp:
             if i not in df_1temp:
-                # the run_id value needs to be only present in the run_id column
+                # the run_id value needs to be only present in the run_id column else the filter
+                # might not work correctly
                 df_by_run_id = df[df["run_id"]==i]
                 export_df_to_db(engine, schema, df_by_run_id, tabletype)
                 # stores the run_id(i) from the df in order to compare with the next loop iteration run_id(i) ->
                 # df with multiple rows which include the same run_id will not be inserted n times to the db
                 df_1temp.append(i)
+        # ToDo: Check if this can be the case following the Ding0 logic
         elif i not in db_0temp:
             metadata_df = pd.DataFrame({'run_id': i,
-                                        # ToDo: Optional: insert the current df as description to db
+                                        # ToDo: decide optional: insert the current df as description to db
                                         'description': str(df[df["run_id"]==i].to_dict())}, index=[0])
             # create the new run_id from df in db table
             df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
@@ -482,13 +504,14 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
             export_df_to_db(engine, schema, df_by_run_id, tabletype)
 
 
-
 def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None):
     """
     Exports pre created Pands data frames to a connected database schema.
     Creates new entry in ego_ding0_versioning if the table is empty.
     Checks if the given pandas data frame "run_id" is available in the DB table.
 
+    Parameters
+    ----------
     :param engine:
     :param schema:
     :param df:
@@ -504,12 +527,12 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None
             # if the run_id doesn't exist then
             # create entry into ego_grid_ding0_versioning:
             metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
-                                        'description': metadata_json})
+                                        'description': str(metadata_json)}, index=[0])
 
             df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
             export_network_to_db(engine, schema, df, tabletype, metadata_json)
 
-            print("The database table: "+DING0_TABLES['versioning'] + " had no values for the run_id. Inserted metadata_json")
+            print("The database table: "+DING0_TABLES['versioning'] + " had no values for the run_id. Inserted the value from metadata_json")
         else:
             run_id_in_db(engine, schema, df, db_versioning, tabletype)
 
@@ -517,7 +540,7 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None
         print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
 
 
-def drop_ding0_db_tables(engine, schema):
+def drop_ding0_db_tables(engine, schema=SCHEMA):
     tables = metadata.tables.keys()
 
     print("Please confirm that you would like to drop the following tables:")
@@ -557,10 +580,10 @@ def drop_ding0_db_tables(engine, schema):
             print("Confirmation unclear, no action taken")
 
 
-def db_tables_change_owner(engine, schema):
+def db_tables_change_owner(engine, schema=SCHEMA):
     tables = metadata.tables.keys()
 
-    def change_owner(engine, table, role):
+    def change_owner(engine, table, role, schema):
         r"""Gives access to database users/ groups
         Parameters
         ----------
@@ -571,8 +594,8 @@ def db_tables_change_owner(engine, schema):
         role : str
             database role that access is granted to
         """
-        tablename = table.__table__.name
-        schema = table.__table__.schema
+        tablename = table
+        schema = SCHEMA
 
         grant_str = """ALTER TABLE {schema}.{table}
         OWNER TO {role};""".format(schema=schema, table=tablename,
@@ -584,7 +607,7 @@ def db_tables_change_owner(engine, schema):
     # engine.echo=True
 
     for tab in tables:
-        change_owner(engine, tab, 'oeuser')
+        change_owner(engine, tab, 'oeuser', schema)
 
     engine.close()
 
@@ -608,8 +631,9 @@ line1 = pd.DataFrame({'run_id': [90, 101],
 
 # tested with reiners_db
 create_ding0_sql_tables(con, "topology")
+# drop_ding0_db_tables(con, "topology")
+# db_tables_change_owner(con, "topology")
 
 # ToDo: Include the Pandas Dataframes from script export.py which are created for all 16/(15) tables
 # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-export_network_to_db(con, SCHEMA, line1, "line", metadata_json)
-
+export_network_to_db(con, SCHEMA, lines, "line", metadata_json)
