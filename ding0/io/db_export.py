@@ -57,8 +57,8 @@ DING0_TABLES = {'versioning': 'ego_ding0_versioning',
 
 
 # metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7) and Change to not static
-# Modify if folder name is different
-FOLDER = Path('C:/ego_grid_ding0_metadatastrings')
+# Modify if folder name is different -> use: "/"
+FOLDER = Path('/ego_grid_ding0_metadatastrings')
 
 # Set the Database schema which you want to add the tables to
 SCHEMA = "topology"
