@@ -63,12 +63,18 @@ FOLDER = Path('C:/ego_grid_ding0_metadatastrings')
 # Set the Database schema which you want to add the tables to
 SCHEMA = "topology"
 
-def dump_json_obj(meta_json):
+# ToDo: Include the metadata_json variable returned form fun. in export.py
+def loads_json_obj(meta_json):
+    """
+    Fnc. included for testing, loads json obj as dict
+    -> Value should be available as metadata_json from export.py skript
+    :param meta_json:
+    """
     # included for testing / or logging
     # print("Comment on table: " + table + "\nusing this metadata file: " + file + "\n")
-    dumped_json = json.loads(meta_json)
-    return dumped_json
-metadata_json = dump_json_obj(meta_json)
+    loads_json = json.loads(meta_json)
+    return loads_json
+metadata_json = loads_json_obj(meta_json)
 
 def load_json_files():
     """
@@ -382,7 +388,6 @@ def export_df_to_db(engine, schema, df, tabletype):
     :param schema:
     :param df:
     :param tabletype:
-    :return:
     """
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
@@ -433,30 +438,42 @@ def export_df_to_db(engine, schema, df, tabletype):
 
 def run_id_in_db(engine, schema, df, db_versioning, tabletype):
     """
-    Filter data frame row run_id and compares the values.
-    returns true if the value (run_id) for the new data frame (df) is available in the DB
-    table: ego_ding0_versioning.
+    Check if the run_id values from the new data frames are available in the DB.
+    Creates new run_id in the db if not exist.
+    Filter data frame for column=row run_id and compares the values.
+    db_run_id values are from the DB table: ego_ding0_versioning.
 
-    :param df: pandas data frame for any dingo table
-    :param db_versioning: pandas data frame created from the versionig Table (from DB)
-    :return: True if value (run_id) is available in the database
+    :param engine: DB connection
+    :param schema: DB schema
+    :param df: pandas data frame -> gets inserted to the db
+    :param db_versioning: pandas df created from the versioning table in the DB
+    :param tabletype: select the db table "value relevant in export_df_to_db()"
     """
+
+
     db_run_id = db_versioning.filter(items=['run_id'])
     df_run_id = df.filter(items=['run_id'])
 
-    n = []
+    # temp stores all run_id values that are available in the DB
+    db_0temp = []
     for j in db_run_id["run_id"]:
-        n.append(j)
+        db_0temp.append(j)
 
-    # ToDo: problem: if the same run_id is passed in with the pandas data frame 4 entry are created in the db
+    # temp stores run_id value from data frame
+    df_1temp = []
     for i in df_run_id["run_id"]:
-        if i in n:
-            # the run_id value needs to be only present in the run_id column
-            df_by_run_id = df[(df["run_id"]==i) & (df["run_id"]==i)]
-            export_df_to_db(engine, schema, df_by_run_id, tabletype)
-        elif i not in n:
+        if i in db_0temp:
+            if i not in df_1temp:
+                # the run_id value needs to be only present in the run_id column
+                df_by_run_id = df[df["run_id"]==i]
+                export_df_to_db(engine, schema, df_by_run_id, tabletype)
+                # stores the run_id(i) from the df in order to compare with the next loop iteration run_id(i) ->
+                # df with multiple rows which include the same run_id will not be inserted n times to the db
+                df_1temp.append(i)
+        elif i not in db_0temp:
             metadata_df = pd.DataFrame({'run_id': i,
-                                        'description': ""}, index=[0])
+                                        # ToDo: Optional: insert the current df as description to db
+                                        'description': str(df[df["run_id"]==i].to_dict())}, index=[0])
             # create the new run_id from df in db table
             df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
 
@@ -584,10 +601,8 @@ def db_tables_change_owner(engine, schema):
     engine.close()
 
 
-
-# ToDo: Testfailed: Cant insert 2 run_ids at a time, if one of them is not availabe in the database
 # create a dummy dataframe with lines
-line1 = pd.DataFrame({'run_id': [30, 30],
+line1 = pd.DataFrame({'run_id': [90, 101],
                       'id_db': [1, 2],
                       'edge_name': ['line1', 'line2'],
                       'grid_name': ['mv_grid5', 'mvgrid5'],
