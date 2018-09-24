@@ -509,19 +509,7 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None
             df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
             export_network_to_db(engine, schema, df, tabletype, metadata_json)
 
-        # elif run_id_in_db(df, db_versioning) == True:
-        #     export_df_to_db(engine, schema, df, tabletype)
-        #
-        # elif run_id_in_db(df, db_versioning) == False:
-        #     # # if the run_id from the data frame doesn't exist then
-        #     # # create new entry into ego_grid_ding0_versioning:
-        #     # newrunid_df = pd.DataFrame({'run_id': df['run_id'],
-        #     #                             'description': metadata_json},
-        #     #                            index=[0])
-        #     #
-        #     # df_sql_write(con, SCHEMA, "ego_ding0_versioning", newrunid_df)
-        #
-        #     print("The run_id from the Pandas data frame is not available in the connected database table: "+DING0_TABLES['versioning'])
+            print("The database table: "+DING0_TABLES['versioning'] + " had no values for the run_id. Inserted metadata_json")
         else:
             run_id_in_db(engine, schema, df, db_versioning, tabletype)
 
@@ -617,12 +605,11 @@ line1 = pd.DataFrame({'run_id': [90, 101],
                       'R': [0.0001, 0.00005],
                       'I_max_th': [5, 6]})
 
-versioning1 = pd.DataFrame({'run_id': [2], 'description': str(line1.to_dict())})
 
 # tested with reiners_db
 create_ding0_sql_tables(con, "topology")
 
-# ToDo: Include the Pandas Dataframes from script x? which are created for all 16/(15) tables
+# ToDo: Include the Pandas Dataframes from script export.py which are created for all 16/(15) tables
 # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
 export_network_to_db(con, SCHEMA, line1, "line", metadata_json)
 
