@@ -606,6 +606,47 @@ def db_tables_change_owner(engine, schema=SCHEMA):
 
     engine.close()
 
+def execute_export_network_to_db(con, schema=SCHEMA):
+    """
+    exportes all data frames to the db tables
+
+
+    :param con:
+    :param schema:
+    :return:
+    """
+
+    # 1
+    export_network_to_db(con, schema, lines, "line", metadata_json)
+    # 2
+    export_network_to_db(con, schema, lv_cd, "lv_cd", metadata_json)
+    # 3
+    export_network_to_db(con, schema, lv_gen, "lv_gen", metadata_json)
+    # 4
+    export_network_to_db(con, schema, lv_stations, "lv_station", metadata_json)
+    # 5
+    export_network_to_db(con, schema, lv_loads, "lv_load", metadata_json)
+    # 6
+    export_network_to_db(con, schema, lv_grid, "lv_grid", metadata_json)
+    # 7
+    export_network_to_db(con, schema, mv_cb, "mv_cb", metadata_json)
+    # 8
+    export_network_to_db(con, schema, mv_cd, "mv_cd", metadata_json)
+    # 9
+    export_network_to_db(con, schema, mv_gen, "mv_gen", metadata_json)
+    # 10
+    export_network_to_db(con, schema, mv_stations, "mv_station", metadata_json)
+    # 11
+    export_network_to_db(con, schema, mv_loads, "mv_load", metadata_json)
+    # 12
+    export_network_to_db(con, schema, mv_grid, "mv_grid", metadata_json)
+    # 13
+    export_network_to_db(con, schema, mvlv_trafos, "mvlv_trafo", metadata_json)
+    # 14
+    export_network_to_db(con, schema, hvmv_trafos, "hvmv_trafo", metadata_json)
+    # 15
+    export_network_to_db(con, schema, mvlv_mapping, "mvlv_mapping", metadata_json)
+
 
 # tested with reiners_db
 create_ding0_sql_tables(con, "topology")
@@ -614,5 +655,5 @@ create_ding0_sql_tables(con, "topology")
 
 # ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
 # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
-export_network_to_db(con, SCHEMA, mv_stations, "mv_stations", metadata_json)
+export_network_to_db(con, SCHEMA, lines, "line", metadata_json)
+# export_network_to_db(con, SCHEMA, mv_stations, "mv_stations", metadata_json)
