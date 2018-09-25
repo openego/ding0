@@ -191,7 +191,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                     schema=ding0_schema,
                     comment=prepare_metadatastring_fordb("ding0_lv_branchtee")
                     )
-    """
+
     # ding0 lv_generator table
     ding0_lv_generator = Table(DING0_TABLES['lv_generator'], metadata,
                     Column('id', Integer, primary_key=True),
@@ -355,7 +355,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                     schema=ding0_schema,
                     comment=prepare_metadatastring_fordb("ding0_hvmv_transformer")
                     )
-"""
+
 
     # create all the tables
     metadata.create_all(engine, checkfirst=True)
@@ -614,4 +614,5 @@ create_ding0_sql_tables(con, "topology")
 
 # ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
 # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-# export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
+export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
+export_network_to_db(con, SCHEMA, mv_stations, "mv_stations", metadata_json)
