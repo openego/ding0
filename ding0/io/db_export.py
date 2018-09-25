@@ -181,7 +181,6 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                     comment=prepare_metadatastring_fordb("ding0_line")
                     )
 
-
     # ding0 lv_branchtee table
     ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], metadata,
                     Column('id', Integer, primary_key=True),
@@ -465,7 +464,7 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
     """
     Check if the run_id values from the new data frames are available in the DB.
     Creates new run_id in the db if not exist.
-    Filter data frame for column=row run_id and compares the values.
+    Filter data frame for column=run_id and compares the values with existing run_id.
     db_run_id values are from the DB table: ego_ding0_versioning.
 
     Parameters
@@ -492,12 +491,11 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
             if i not in df_1temp:
                 # the run_id value needs to be only present in the run_id column else the filter
                 # might not work correctly
-                df_by_run_id = df[df["run_id"]==i]
+                df_by_run_id = df[df["run_id"] == i]
                 export_df_to_db(engine, schema, df_by_run_id, tabletype)
                 # stores the run_id(i) from the df in order to compare with the next loop iteration run_id(i) ->
                 # df with multiple rows which include the same run_id will not be inserted n times to the db
                 df_1temp.append(i)
-        # ToDo: Check if this can be the case following the Ding0 logic
         elif i not in db_0temp:
             metadata_df = pd.DataFrame({'run_id': i,
                                         'description': str(metadata_json)}, index=[0])
@@ -510,7 +508,7 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
             export_df_to_db(engine, schema, df_by_run_id, tabletype)
 
 
-def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None):
+def export_network_to_db(engine, schema, df, tabletype, srid=None):
     """
     Exports pre created Pands data frames to a connected database schema.
     Creates new entry in ego_ding0_versioning if the table is empty.
@@ -529,17 +527,6 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None
                                       columns=['run_id', 'description'])
 
     if engine.dialect.has_table(engine, DING0_TABLES["versioning"]):
-        # if db_versioning.empty:
-        #     # if the run_id doesn't exist then
-        #     # create entry into ego_grid_ding0_versioning:
-        #     metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
-        #                                 'description': str(metadata_json)}, index=[0])
-        #
-        #     df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
-        #     export_network_to_db(engine, schema, df, tabletype, metadata_json)
-        #
-        #     print("The database table: "+DING0_TABLES['versioning'] + " had no values for the run_id. Inserted the value from metadata_json")
-        # else:
 
         run_id_in_db(engine, schema, df, db_versioning, tabletype)
 
@@ -548,7 +535,8 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None
 
 
 def drop_ding0_db_tables(engine, schema=SCHEMA):
-    tables = metadata.tables.keys()
+    tables = metadata.sorted_tables
+    reversed_tables = reversed(tables)
 
     print("Please confirm that you would like to drop the following tables:")
     for n, tab in enumerate(tables):
@@ -561,8 +549,8 @@ def drop_ding0_db_tables(engine, schema=SCHEMA):
     confirmation = input(
         "Please type the choice completely as there is no default choice.")
     if re.fullmatch('[Yy]es', confirmation):
-        for tab in tables:
-            tab().__table__.drop(bind=engine, checkfirst=True)
+        for tab in reversed_tables:
+            tab.drop(engine, checkfirst=True)
     elif re.fullmatch('[Nn]o', confirmation):
         print("Cancelled dropping of tables")
     else:
@@ -570,7 +558,7 @@ def drop_ding0_db_tables(engine, schema=SCHEMA):
             indlist = confirmation.split(',')
             indlist = list(map(int, indlist))
             print("Please confirm deletion of the following tables:")
-            tablist = np.array(tables)[indlist].tolist()
+            tablist = np.array(reversed_tables)[indlist].tolist()
             for n, tab in enumerate(tablist):
                 print("{: 3d}. {}".format(n, tab))
             con2 = input("Please confirm with either of the choices below:\n" +
@@ -578,7 +566,7 @@ def drop_ding0_db_tables(engine, schema=SCHEMA):
                          "- no")
             if re.fullmatch('[Yy]es', con2):
                 for tab in tablist:
-                    tab().__table__.drop(bind=engine, checkfirst=True)
+                    tab.drop(engine, checkfirst=True)
             elif re.fullmatch('[Nn]o', con2):
                 print("Cancelled dropping of tables")
             else:
@@ -588,7 +576,7 @@ def drop_ding0_db_tables(engine, schema=SCHEMA):
 
 
 def db_tables_change_owner(engine, schema=SCHEMA):
-    tables = metadata.tables.keys()
+    tables = metadata.sorted_tables
 
     def change_owner(engine, table, role, schema):
         r"""Gives access to database users/ groups
@@ -619,28 +607,11 @@ def db_tables_change_owner(engine, schema=SCHEMA):
     engine.close()
 
 
-# create a dummy dataframe with lines
-line1 = pd.DataFrame({'run_id': [90, 101],
-                      'id_db': [1, 2],
-                      'edge_name': ['line1', 'line2'],
-                      'grid_name': ['mv_grid5', 'mvgrid5'],
-                      'node1': [1, 2],
-                      'node2': [2, 3],
-                      'type_kind': ['line', 'line'],
-                      'type_name': ['NASX2Y', 'NA2SXX2Y'],
-                      'length': [1.3, 2.3],
-                      'U_n': [10, 10],
-                      'C': [0.002, 0.001],
-                      'L': [0.01, 0.02],
-                      'R': [0.0001, 0.00005],
-                      'I_max_th': [5, 6]})
-
-
 # tested with reiners_db
 create_ding0_sql_tables(con, "topology")
-# drop_ding0_db_tables(con, "topology")
+# drop_ding0_db_tables(con)
 # db_tables_change_owner(con, "topology")
 
-# ToDo: Include the Pandas Dataframes from script export.py which are created for all 16/(15) tables
+# ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
 # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
+# export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
