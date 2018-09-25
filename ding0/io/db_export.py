@@ -181,7 +181,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                     comment=prepare_metadatastring_fordb("ding0_line")
                     )
 
-    """
+
     # ding0 lv_branchtee table
     ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], metadata,
                     Column('id', Integer, primary_key=True),
@@ -192,7 +192,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                     schema=ding0_schema,
                     comment=prepare_metadatastring_fordb("ding0_lv_branchtee")
                     )
-
+    """
     # ding0 lv_generator table
     ding0_lv_generator = Table(DING0_TABLES['lv_generator'], metadata,
                     Column('id', Integer, primary_key=True),
@@ -388,11 +388,17 @@ def df_sql_write(engine, schema, db_table, dataframe):
         Sqlalchemy database engine
     schema: DB schema
     """
-
-    sql_write_df = dataframe.copy()
-    sql_write_df.columns = sql_write_df.columns.map(str.lower)
-    # sql_write_df = sql_write_df.set_index('id')
-    sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
+    if 'id' in dataframe.columns:
+        dataframe.rename(columns={'id':'id_db'}, inplace=True)
+        sql_write_df = dataframe.copy()
+        sql_write_df.columns = sql_write_df.columns.map(str.lower)
+        # sql_write_df = sql_write_df.set_index('id')
+        sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
+    else:
+        sql_write_df = dataframe.copy()
+        sql_write_df.columns = sql_write_df.columns.map(str.lower)
+        # sql_write_df = sql_write_df.set_index('id')
+        sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
 
 def export_df_to_db(engine, schema, df, tabletype):
@@ -412,6 +418,7 @@ def export_df_to_db(engine, schema, df, tabletype):
         df_sql_write(engine, schema, DING0_TABLES['line'], df)
 
     elif tabletype == 'lv_cd':
+        df = df.drop(['lv_grid_id'], axis=1)
         df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df)
 
     elif tabletype == 'lv_gen':
@@ -470,7 +477,6 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
     :param tabletype: select the db table "value relevant in export_df_to_db()"
     """
 
-
     db_run_id = db_versioning.filter(items=['run_id'])
     df_run_id = df.filter(items=['run_id'])
 
@@ -494,10 +500,10 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
         # ToDo: Check if this can be the case following the Ding0 logic
         elif i not in db_0temp:
             metadata_df = pd.DataFrame({'run_id': i,
-                                        # ToDo: decide optional: insert the current df as description to db
-                                        'description': str(df[df["run_id"]==i].to_dict())}, index=[0])
+                                        'description': str(metadata_json)}, index=[0])
             # create the new run_id from df in db table
             df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
+            db_0temp.append(i)
 
             # insert df with the new run_id
             df_by_run_id = df[df["run_id"] == i]
@@ -523,18 +529,19 @@ def export_network_to_db(engine, schema, df, tabletype, metadata_json, srid=None
                                       columns=['run_id', 'description'])
 
     if engine.dialect.has_table(engine, DING0_TABLES["versioning"]):
-        if db_versioning.empty:
-            # if the run_id doesn't exist then
-            # create entry into ego_grid_ding0_versioning:
-            metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
-                                        'description': str(metadata_json)}, index=[0])
+        # if db_versioning.empty:
+        #     # if the run_id doesn't exist then
+        #     # create entry into ego_grid_ding0_versioning:
+        #     metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
+        #                                 'description': str(metadata_json)}, index=[0])
+        #
+        #     df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
+        #     export_network_to_db(engine, schema, df, tabletype, metadata_json)
+        #
+        #     print("The database table: "+DING0_TABLES['versioning'] + " had no values for the run_id. Inserted the value from metadata_json")
+        # else:
 
-            df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
-            export_network_to_db(engine, schema, df, tabletype, metadata_json)
-
-            print("The database table: "+DING0_TABLES['versioning'] + " had no values for the run_id. Inserted the value from metadata_json")
-        else:
-            run_id_in_db(engine, schema, df, db_versioning, tabletype)
+        run_id_in_db(engine, schema, df, db_versioning, tabletype)
 
     else:
         print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
@@ -636,4 +643,4 @@ create_ding0_sql_tables(con, "topology")
 
 # ToDo: Include the Pandas Dataframes from script export.py which are created for all 16/(15) tables
 # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-export_network_to_db(con, SCHEMA, lines, "line", metadata_json)
+export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)

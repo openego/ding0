@@ -58,6 +58,7 @@ target/
 
 # OWN STUFF
 #.gitignore
+ding0/examples/ding0_grids_example.pkl
 .idea/
 ding0/output/
 /Line_loading_feed-in_case.png
