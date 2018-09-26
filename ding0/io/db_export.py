@@ -60,37 +60,6 @@ DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'mv_station': 'ego_ding0_mv_station',
                 'hvmv_transformer': 'ego_ding0_hvmv_transformer'}
 
-
-##########Ding0 Network and NW Metadata################
-
-# create ding0 Network instance
-nw = NetworkDing0(name='network')
-
-
-# choose MV Grid Districts to import
-mv_grid_districts = [3040]
-
-# run DING0 on selected MV Grid District
-nw.run_ding0(session=session,
-            mv_grid_districts_no=mv_grid_districts)
-
-# return values from export_network() as tupels
-run_id, nw_metadata, \
-lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
-mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
-lines, mvlv_mapping = export_network(nw)
-
-# ToDo: Include the metadata_json variable returned form fun. in export.py
-# any list of NetworkDing0 also provides run_id
-# nw_metadata = json.dumps(nw.metadata)
-metadata_json = json.loads(nw_metadata)
-
-######################################################
-
-# metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7) and Change to not static
-# Modify if folder name is different -> use: "/"
-FOLDER = Path('/Users/Jonas.Huber/PycharmProjects/ding0_metadata/ding0/ego_grid_ding0_metadatastrings')
-
 def load_json_files():
     """
     Creats a list of all .json files in FOLDER
@@ -181,6 +150,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                     schema=ding0_schema,
                     comment=prepare_metadatastring_fordb("ding0_line")
                     )
+
 
     # ding0 lv_branchtee table
     ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], metadata,
@@ -401,7 +371,7 @@ def df_sql_write(engine, schema, db_table, dataframe):
         sql_write_df = dataframe.copy()
         sql_write_df.columns = sql_write_df.columns.map(str.lower)
         # sql_write_df = sql_write_df.set_index('id')
-        sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None, )
+        sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
     else:
         sql_write_df = dataframe.copy()
         sql_write_df.columns = sql_write_df.columns.map(str.lower)
@@ -665,13 +635,52 @@ def execute_export_network_to_db(con, schema=SCHEMA):
     # 15
     export_network_to_db(con, schema, mvlv_mapping, "mvlv_mapping", metadata_json)
 
+    
+if __name__ == "__main__":
 
-# tested with reiners_db
-create_ding0_sql_tables(con, "topology")
-# drop_ding0_db_tables(con)
-# db_tables_change_owner(con, "topology")
+    ##########Ding0 Network and NW Metadata################
 
-# ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
-# parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
-# export_network_to_db(con, SCHEMA, mv_stations, "mv_stations", metadata_json)
+    # create ding0 Network instance
+    nw = NetworkDing0(name='network')
+
+
+    # choose MV Grid Districts to import
+    mv_grid_districts = [3040]
+
+    # run DING0 on selected MV Grid District
+    nw.run_ding0(session=session,
+                 mv_grid_districts_no=mv_grid_districts)
+
+    # return values from export_network() as tupels
+    run_id, nw_metadata, \
+    lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
+    mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
+    lines, mvlv_mapping = export_network(nw)
+
+    # ToDo: Include the metadata_json variable returned form fun. in export.py
+    # any list of NetworkDing0 also provides run_id
+    # nw_metadata = json.dumps(nw.metadata)
+    metadata_json = json.loads(nw_metadata)
+
+    ######################################################
+
+    # metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7) and Change to not static
+    # Modify if folder name is different -> use: "/"
+    FOLDER = Path('/ego_grid_ding0_metadatastrings')
+
+    # tested with reiners_db
+    create_ding0_sql_tables(con, "topology")
+    # drop_ding0_db_tables(con, "topology")
+    # db_tables_change_owner(con, "topology")
+
+
+    # tested with reiners_db
+    create_ding0_sql_tables(con, "topology")
+    # drop_ding0_db_tables(con)
+    # db_tables_change_owner(con, "topology")
+
+    # ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
+    # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
+    export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
+    # export_network_to_db(con, SCHEMA, mv_stations, "mv_stations", metadata_json)
+
