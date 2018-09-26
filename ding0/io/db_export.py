@@ -29,6 +29,7 @@ from geoalchemy2.types import Geometry, Raster
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+
 ##########SQLAlchemy and DB table################
 engine2 = connection(section='oedb')
 session = sessionmaker(bind=engine2)()
@@ -71,7 +72,7 @@ mv_grid_districts = [3040]
 
 # run DING0 on selected MV Grid District
 nw.run_ding0(session=session,
-             mv_grid_districts_no=mv_grid_districts)
+            mv_grid_districts_no=mv_grid_districts)
 
 # return values from export_network() as tupels
 run_id, nw_metadata, \
@@ -88,7 +89,7 @@ metadata_json = json.loads(nw_metadata)
 
 # metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7) and Change to not static
 # Modify if folder name is different -> use: "/"
-FOLDER = Path('/ego_grid_ding0_metadatastrings')
+FOLDER = Path('/Users/Jonas.Huber/PycharmProjects/ding0_metadata/ding0/ego_grid_ding0_metadatastrings')
 
 def load_json_files():
     """
@@ -387,12 +388,20 @@ def df_sql_write(engine, schema, db_table, dataframe):
         Sqlalchemy database engine
     schema: DB schema
     """
+    # if 'geom' in dataframe.columns:
+    #     sql_write_geom = dataframe.filter(items=['geom'])
+    #     for i in sql_write_geom['geom']:
+    #
+    #         # insert_geom = "UPDATE {} SET {}=ST_GeomFromText('{}') WHERE (id={}) ".format(db_table, "geom", i, "1")
+    #         insert_geom = "INSERT INTO {} ({}) VALUES (ST_GeomFromText('{}'))".format(db_table, "geom", i)
+    #         engine.execute(insert_geom)
+
     if 'id' in dataframe.columns:
         dataframe.rename(columns={'id':'id_db'}, inplace=True)
         sql_write_df = dataframe.copy()
         sql_write_df.columns = sql_write_df.columns.map(str.lower)
         # sql_write_df = sql_write_df.set_index('id')
-        sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
+        sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None, )
     else:
         sql_write_df = dataframe.copy()
         sql_write_df.columns = sql_write_df.columns.map(str.lower)
@@ -535,6 +544,12 @@ def export_network_to_db(engine, schema, df, tabletype, srid=None):
 
 
 def drop_ding0_db_tables(engine, schema=SCHEMA):
+    """
+    Instructions: In order to drop tables all tables need to be stored in metadata (create tables before dropping them)
+    :param engine:
+    :param schema:
+    :return:
+    """
     tables = metadata.sorted_tables
     reversed_tables = reversed(tables)
 
@@ -579,7 +594,9 @@ def db_tables_change_owner(engine, schema=SCHEMA):
     tables = metadata.sorted_tables
 
     def change_owner(engine, table, role, schema):
-        r"""Gives access to database users/ groups
+        """
+        Gives access to database users/ groups
+
         Parameters
         ----------
         session : sqlalchemy session object
@@ -606,14 +623,15 @@ def db_tables_change_owner(engine, schema=SCHEMA):
 
     engine.close()
 
+
 def execute_export_network_to_db(con, schema=SCHEMA):
     """
-    exportes all data frames to the db tables
+    exports all data frames to the db tables
 
-
+    Parameters
+    ----------
     :param con:
     :param schema:
-    :return:
     """
 
     # 1
@@ -655,5 +673,5 @@ create_ding0_sql_tables(con, "topology")
 
 # ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
 # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-export_network_to_db(con, SCHEMA, lines, "line", metadata_json)
+export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
 # export_network_to_db(con, SCHEMA, mv_stations, "mv_stations", metadata_json)
