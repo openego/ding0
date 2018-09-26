@@ -32,14 +32,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-##########SQLAlchemy and DB table################
-engine2 = connection(section='oedb')
-session = sessionmaker(bind=engine2)()
-
-con = connection()
-
-Base = declarative_base()
-metadata = Base.metadata
+DECLARATIVE_BASE = declarative_base()
+METADATA = DECLARATIVE_BASE.metadata
 
 # Set the Database schema which you want to add the tables to
 SCHEMA = "topology"
@@ -126,214 +120,212 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     """
 
     # versioning table
-    versioning = Table(DING0_TABLES['versioning'], metadata,
+    versioning = Table(DING0_TABLES['versioning'], METADATA,
                        Column('run_id', BigInteger, primary_key=True, autoincrement=False, nullable=False),
                        Column('description', String(6000)),
                        schema=ding0_schema,
-                       comment=prepare_metadatastring_fordb("versioning")
+                       comment=prepare_metadatastring_fordb('versioning')
                        )
 
     # ding0 lines table
-    ding0_line = Table(DING0_TABLES['line'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('edge_name', String(100)),
-                    Column('grid_name', String(100)),
-                    Column('node1', String(100)),
-                    Column('node2', String(100)),
-                    Column('type_kind', String(100)),
-                    Column('type_name', String(100)),
-                    Column('length', Float(10)),
-                    Column('u_n', Float(10)),
-                    Column('c', Float(10)),
-                    Column('l', Float(10)),
-                    Column('r', Float(10)),
-                    Column('i_max_th', Float(10)),
-                    Column('geom', Geometry('LINESTRING', 4326)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_line")
-                    )
+    ding0_line = Table(DING0_TABLES['line'], METADATA,
+                       Column('id', Integer, primary_key=True),
+                       Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                       Column('id_db', BigInteger),
+                       Column('edge_name', String(100)),
+                       Column('grid_name', String(100)),
+                       Column('node1', String(100)),
+                       Column('node2', String(100)),
+                       Column('type_kind', String(100)),
+                       Column('type_name', String(100)),
+                       Column('length', Float(10)),
+                       Column('u_n', Float(10)),
+                       Column('c', Float(10)),
+                       Column('l', Float(10)),
+                       Column('r', Float(10)),
+                       Column('i_max_th', Float(10)),
+                       Column('geom', Geometry('LINESTRING', 4326)),
+                       schema=ding0_schema,
+                       comment=prepare_metadatastring_fordb('line')
+                       )
 
 
     # ding0 lv_branchtee table
-    ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('name', String(100)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_lv_branchtee")
-                    )
+    ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], METADATA,
+                               Column('id', Integer, primary_key=True),
+                               Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                               Column('id_db', BigInteger),
+                               Column('geom', Geometry('POINT', 4326)),
+                               Column('name', String(100)),
+                               schema=ding0_schema,
+                               comment=prepare_metadatastring_fordb('lv_branchtee')
+                               )
 
     # ding0 lv_generator table
-    ding0_lv_generator = Table(DING0_TABLES['lv_generator'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('la_id', BigInteger),
-                    Column('name', String(100)),
-                    Column('lv_grid_id', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('type', String(22)),
-                    Column('subtype', String(22)),
-                    Column('v_level', Integer),
-                    Column('nominal_capacity', Float(10)),
-                    Column('weather_cell_id', BigInteger),
-                    Column('is_aggregated', Boolean),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_lv_generator")
-                    )
+    ding0_lv_generator = Table(DING0_TABLES['lv_generator'], METADATA,
+                               Column('id', Integer, primary_key=True),
+                               Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                               Column('id_db', BigInteger),
+                               Column('la_id', BigInteger),
+                               Column('name', String(100)),
+                               Column('lv_grid_id', BigInteger),
+                               Column('geom', Geometry('POINT', 4326)),
+                               Column('type', String(22)),
+                               Column('subtype', String(22)),
+                               Column('v_level', Integer),
+                               Column('nominal_capacity', Float(10)),
+                               Column('weather_cell_id', BigInteger),
+                               Column('is_aggregated', Boolean),
+                               schema=ding0_schema,
+                               comment=prepare_metadatastring_fordb('lv_generator')
+                               )
 
     # ding0 lv_load table
-    ding0_lv_load = Table(DING0_TABLES['lv_load'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('name', String(100)),
-                    Column('lv_grid_id', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('consumption', String(100)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_lv_load")
-                    )
+    ding0_lv_load = Table(DING0_TABLES['lv_load'], METADATA,
+                          Column('id', Integer, primary_key=True),
+                          Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                          Column('id_db', BigInteger),
+                          Column('name', String(100)),
+                          Column('lv_grid_id', BigInteger),
+                          Column('geom', Geometry('POINT', 4326)),
+                          Column('consumption', String(100)),
+                          schema=ding0_schema,
+                          comment=prepare_metadatastring_fordb('lv_load')
+                          )
 
     # ding0 lv_station table
-    ding0_lv_station = Table(DING0_TABLES['lv_station'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('name', String(100)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_lv_station")
-                    )
+    ding0_lv_station = Table(DING0_TABLES['lv_station'], METADATA,
+                             Column('id', Integer, primary_key=True),
+                             Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                             Column('id_db', BigInteger),
+                             Column('geom', Geometry('POINT', 4326)),
+                             Column('name', String(100)),
+                             schema=ding0_schema,
+                             comment=prepare_metadatastring_fordb('lv_station')
+                             )
 
     # ding0 mvlv_transformer table
-    ding0_mvlv_transformer = Table(DING0_TABLES['mvlv_transformer'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('name', String(100)),
-                    Column('voltage_op', Float(10)),
-                    Column('s_nom', Float(10)),
-                    Column('x', Float(10)),
-                    Column('r', Float(10)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_mvlv_transformer")
-                    )
+    ding0_mvlv_transformer = Table(DING0_TABLES['mvlv_transformer'], METADATA,
+                                   Column('id', Integer, primary_key=True),
+                                   Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                                   Column('id_db', BigInteger),
+                                   Column('geom', Geometry('POINT', 4326)),
+                                   Column('name', String(100)),
+                                   Column('voltage_op', Float(10)),
+                                   Column('s_nom', Float(10)),
+                                   Column('x', Float(10)),
+                                   Column('r', Float(10)),
+                                   schema=ding0_schema,
+                                   comment=prepare_metadatastring_fordb("mvlv_transformer")
+                                   )
 
     # ding0 mvlv_mapping table
-    ding0_mvlv_mapping = Table(DING0_TABLES['mvlv_mapping'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('lv_grid_id', BigInteger),
-                    Column('lv_grid_name', String(100)),
-                    Column('mv_grid_id', BigInteger),
-                    Column('mv_grid_name', String(100)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_mvlv_mapping")
-                    )
+    ding0_mvlv_mapping = Table(DING0_TABLES['mvlv_mapping'], METADATA,
+                               Column('id', Integer, primary_key=True),
+                               Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                               Column('lv_grid_id', BigInteger),
+                               Column('lv_grid_name', String(100)),
+                               Column('mv_grid_id', BigInteger),
+                               Column('mv_grid_name', String(100)),
+                               schema=ding0_schema,
+                               comment=prepare_metadatastring_fordb("mvlv_mapping")
+                               )
 
     # ding0 mv_branchtee table
-    ding0_mv_branchtee = Table(DING0_TABLES['mv_branchtee'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('name', String(100)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_mv_branchtee")
-                    )
+    ding0_mv_branchtee = Table(DING0_TABLES['mv_branchtee'], METADATA,
+                               Column('id', Integer, primary_key=True),
+                               Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                               Column('id_db', BigInteger),
+                               Column('geom', Geometry('POINT', 4326)),
+                               Column('name', String(100)),
+                               schema=ding0_schema,
+                               comment=prepare_metadatastring_fordb("mv_branchtee")
+                               )
 
     # ding0 mv_circuitbreaker table
-    ding0_mv_circuitbreaker = Table(DING0_TABLES['mv_circuitbreaker'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('name', String(100)),
-                    Column('status', String(10)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_mv_circuitbreaker")
-                    )
+    ding0_mv_circuitbreaker = Table(DING0_TABLES['mv_circuitbreaker'], METADATA,
+                                    Column('id', Integer, primary_key=True),
+                                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                                    Column('id_db', BigInteger),
+                                    Column('geom', Geometry('POINT', 4326)),
+                                    Column('name', String(100)),
+                                    Column('status', String(10)),
+                                    schema=ding0_schema,
+                                    comment=prepare_metadatastring_fordb("mv_circuitbreaker")
+                                    )
 
     # ding0 mv_generator table
-    ding0_mv_generator = Table(DING0_TABLES['mv_generator'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('name', String(100)),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('type', String(22)),
-                    Column('subtype', String(22)),
-                    Column('v_level', Integer),
-                    Column('nominal_capacity', Float(10)),
-                    Column('weather_cell_id', BigInteger),
-                    Column('is_aggregated', Boolean),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_mv_generator")
-                    )
+    ding0_mv_generator = Table(DING0_TABLES['mv_generator'], METADATA,
+                               Column('id', Integer, primary_key=True),
+                               Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                               Column('id_db', BigInteger),
+                               Column('name', String(100)),
+                               Column('geom', Geometry('POINT', 4326)),
+                               Column('type', String(22)),
+                               Column('subtype', String(22)),
+                               Column('v_level', Integer),
+                               Column('nominal_capacity', Float(10)),
+                               Column('weather_cell_id', BigInteger),
+                               Column('is_aggregated', Boolean),
+                               schema=ding0_schema,
+                               comment=prepare_metadatastring_fordb("mv_generator")
+                               )
 
     # ding0 mv_load table
-    ding0_mv_load = Table(DING0_TABLES['mv_load'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('name', String(100)),
-                    Column('geom', Geometry('LINESTRING', 4326)),
-                    Column('is_aggregated', Boolean),
-                    Column('consumption', String(100)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_mv_load")
-                    )
+    ding0_mv_load = Table(DING0_TABLES['mv_load'], METADATA,
+                          Column('id', Integer, primary_key=True),
+                          Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                          Column('id_db', BigInteger),
+                          Column('name', String(100)),
+                          Column('geom', Geometry('LINESTRING', 4326)),
+                          Column('is_aggregated', Boolean),
+                          Column('consumption', String(100)),
+                          schema=ding0_schema,
+                          comment=prepare_metadatastring_fordb("mv_load")
+                          )
 
     # ding0 mv_grid table
-    ding0_mv_grid = Table(DING0_TABLES['mv_grid'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('geom', Geometry('MULTIPOLYGON', 4326)),
-                    Column('name', String(100)),
-                    Column('population', BigInteger),
-                    Column('voltage_nom', Float(10)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_mv_grid")
-                    )
-
+    ding0_mv_grid = Table(DING0_TABLES['mv_grid'], METADATA,
+                          Column('id', Integer, primary_key=True),
+                          Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                          Column('id_db', BigInteger),
+                          Column('geom', Geometry('MULTIPOLYGON', 4326)),
+                          Column('name', String(100)),
+                          Column('population', BigInteger),
+                          Column('voltage_nom', Float(10)),
+                          schema=ding0_schema,
+                          comment=prepare_metadatastring_fordb("mv_grid")
+                          )
 
 
     # ding0 mv_station table
-    ding0_mv_station = Table(DING0_TABLES['mv_station'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('name', String(100)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_mv_station")
-                    )
+    ding0_mv_station = Table(DING0_TABLES['mv_station'], METADATA,
+                             Column('id', Integer, primary_key=True),
+                             Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                             Column('id_db', BigInteger),
+                             Column('geom', Geometry('POINT', 4326)),
+                             Column('name', String(100)),
+                             schema=ding0_schema,
+                             comment=prepare_metadatastring_fordb("mv_station")
+                             )
 
     # ding0 hvmv_transformer table
-    ding0_hvmv_transformer = Table(DING0_TABLES['hvmv_transformer'], metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
-                    Column('id_db', BigInteger),
-                    Column('geom', Geometry('POINT', 4326)),
-                    Column('name', String(100)),
-                    Column('voltage_op', Float(10)),
-                    Column('s_nom', Float(10)),
-                    Column('x', Float(10)),
-                    Column('r', Float(10)),
-                    schema=ding0_schema,
-                    comment=prepare_metadatastring_fordb("ding0_hvmv_transformer")
-                    )
-
+    ding0_hvmv_transformer = Table(DING0_TABLES['hvmv_transformer'], METADATA,
+                                   Column('id', Integer, primary_key=True),
+                                   Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                                   Column('id_db', BigInteger),
+                                   Column('geom', Geometry('POINT', 4326)),
+                                   Column('name', String(100)),
+                                   Column('voltage_op', Float(10)),
+                                   Column('s_nom', Float(10)),
+                                   Column('x', Float(10)),
+                                   Column('r', Float(10)),
+                                   schema=ding0_schema,
+                                   comment=prepare_metadatastring_fordb("hvmv_transformer")
+                                   )
 
     # create all the tables
-    metadata.create_all(engine, checkfirst=True)
+    METADATA.create_all(engine, checkfirst=True)
 
 
 def df_sql_write(engine, schema, db_table, dataframe):
@@ -519,12 +511,12 @@ def export_network_to_db(engine, schema, df, tabletype, srid=None):
 
 def drop_ding0_db_tables(engine, schema=SCHEMA):
     """
-    Instructions: In order to drop tables all tables need to be stored in metadata (create tables before dropping them)
+    Instructions: In order to drop tables all tables need to be stored in METADATA (create tables before dropping them)
     :param engine:
     :param schema:
     :return:
     """
-    tables = metadata.sorted_tables
+    tables = METADATA.sorted_tables
     reversed_tables = reversed(tables)
 
     print("Please confirm that you would like to drop the following tables:")
@@ -565,7 +557,7 @@ def drop_ding0_db_tables(engine, schema=SCHEMA):
 
 
 def db_tables_change_owner(engine, schema=SCHEMA):
-    tables = metadata.sorted_tables
+    tables = METADATA.sorted_tables
 
     def change_owner(engine, table, role, schema):
         """
