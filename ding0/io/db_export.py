@@ -21,6 +21,8 @@ import os
 import re
 
 from egoio.tools.db import connection
+
+import ding0
 from ding0.io.export import export_network
 from ding0.core import NetworkDing0
 
@@ -42,6 +44,8 @@ metadata = Base.metadata
 # Set the Database schema which you want to add the tables to
 SCHEMA = "topology"
 
+METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'config', 'metadatastrings')
+
 
 DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'line': 'ego_ding0_line',
@@ -62,7 +66,7 @@ DING0_TABLES = {'versioning': 'ego_ding0_versioning',
 
 def load_json_files():
     """
-    Creats a list of all .json files in FOLDER
+    Creats a list of all .json files in METADATA_STRING_FOLDER
 
     Parameters
     ----------
@@ -70,7 +74,7 @@ def load_json_files():
              contains all .json file names from the folder
     """
 
-    full_dir = os.walk(FOLDER.parent / FOLDER.name)
+    full_dir = os.walk(METADATA_STRING_FOLDER)
     jsonmetadata = []
 
     for jsonfiles in full_dir:
@@ -96,13 +100,13 @@ def prepare_metadatastring_fordb(table):
             Contains the .json file as string
     """
 
-    for file in load_json_files():
-        JSONFILEPATH = FOLDER / file
-        with open(JSONFILEPATH, encoding='UTF-8') as f:
-            if table in file:
+    for json_file in load_json_files():
+        json_file_path = os.path.join(METADATA_STRING_FOLDER, json_file)
+        with open(json_file_path, encoding='UTF-8') as jf:
+            if table in json_file:
                 # included for testing / or logging
-                # print("Comment on table: " + table + "\nusing this metadata file: " + file + "\n")
-                mds = json.load(f)
+                # print("Comment on table: " + table + "\nusing this METADATA file: " + file + "\n")
+                mds = json.load(jf)
                 mdsstring = json.dumps(mds, indent=4, ensure_ascii=False)
                 return mdsstring
 
