@@ -99,7 +99,7 @@ def prepare_metadatastring_fordb(table):
         with open(json_file_path, encoding='UTF-8') as jf:
             if table in json_file:
                 # included for testing / or logging
-                # print("Comment on table: " + table + "\nusing this METADATA file: " + file + "\n")
+                # print("Comment on table: " + table + "\nusing this metadata string file: " + file + "\n")
                 mds = json.load(jf)
                 mdsstring = json.dumps(mds, indent=4, ensure_ascii=False)
                 return mdsstring
@@ -475,7 +475,7 @@ def run_id_in_db(engine, schema, df, db_versioning, tabletype):
             metadata_df = pd.DataFrame({'run_id': i,
                                         'description': str(metadata_json)}, index=[0])
             # create the new run_id from df in db table
-            df_sql_write(con, SCHEMA, "ego_ding0_versioning", metadata_df)
+            df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
             db_0temp.append(i)
 
             # insert df with the new run_id
@@ -634,6 +634,10 @@ def execute_export_network_to_db(con, schema=SCHEMA):
     
 if __name__ == "__main__":
 
+    ##########SQLAlchemy and DB table################
+    engine = connection(section='oedb')
+    session = sessionmaker(bind=engine)()
+
     ##########Ding0 Network and NW Metadata################
 
     # create ding0 Network instance
@@ -655,28 +659,26 @@ if __name__ == "__main__":
 
     # ToDo: Include the metadata_json variable returned form fun. in export.py
     # any list of NetworkDing0 also provides run_id
-    # nw_metadata = json.dumps(nw.metadata)
+    # nw_metadata = json.dumps(nw_metadata)
     metadata_json = json.loads(nw_metadata)
 
     ######################################################
 
-    # metadatastring file folder. #ToDO: Test if Path works on other os (Tested on Windows7) and Change to not static
-    # Modify if folder name is different -> use: "/"
-    FOLDER = Path('/ego_grid_ding0_metadatastrings')
-
-    # tested with reiners_db
-    create_ding0_sql_tables(con, "topology")
-    # drop_ding0_db_tables(con, "topology")
-    # db_tables_change_owner(con, "topology")
 
 
     # tested with reiners_db
-    create_ding0_sql_tables(con, "topology")
-    # drop_ding0_db_tables(con)
-    # db_tables_change_owner(con, "topology")
+    create_ding0_sql_tables(engine, SCHEMA)
+    # drop_ding0_db_tables(engine, SCHEMA)
+    # db_tables_change_owner(engine, SCHEMA)
+
+
+    # tested with reiners_db
+    create_ding0_sql_tables(engine, SCHEMA)
+    # drop_ding0_db_tables(engine)
+    # db_tables_change_owner(engine, SCHEMA)
 
     # ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
     # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-    export_network_to_db(con, SCHEMA, lv_gen, "lv_gen", metadata_json)
-    # export_network_to_db(con, SCHEMA, mv_stations, "mv_stations", metadata_json)
+    export_network_to_db(engine, SCHEMA, lv_gen, "lv_gen", metadata_json)
+    # export_network_to_db(CONNECTION, SCHEMA, mv_stations, "mv_stations", metadata_json)
 
