@@ -14,9 +14,9 @@ __author__ = "nesnoj, gplssm, jh-RLI"
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
 import json
 import os
+from pathlib import Path
 
 import re
 
@@ -38,8 +38,8 @@ METADATA = DECLARATIVE_BASE.metadata
 # Set the Database schema which you want to add the tables to
 SCHEMA = "topology"
 
-METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'config', 'metadatastrings')
-
+METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
+CLEANED_METADATA_STRING_FOLDER_PATH = Path(METADATA_STRING_FOLDER)
 
 DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'line': 'ego_ding0_line',
@@ -58,6 +58,7 @@ DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'mv_station': 'ego_ding0_mv_station',
                 'hvmv_transformer': 'ego_ding0_hvmv_transformer'}
 
+
 def load_json_files():
     """
     Creats a list of all .json files in METADATA_STRING_FOLDER
@@ -68,7 +69,7 @@ def load_json_files():
              contains all .json file names from the folder
     """
 
-    full_dir = os.walk(METADATA_STRING_FOLDER)
+    full_dir = os.walk(str(CLEANED_METADATA_STRING_FOLDER_PATH))
     jsonmetadata = []
 
     for jsonfiles in full_dir:
@@ -95,7 +96,7 @@ def prepare_metadatastring_fordb(table):
     """
 
     for json_file in load_json_files():
-        json_file_path = os.path.join(METADATA_STRING_FOLDER, json_file)
+        json_file_path = os.path.join(CLEANED_METADATA_STRING_FOLDER_PATH, json_file)
         with open(json_file_path, encoding='UTF-8') as jf:
             if table in json_file:
                 # included for testing / or logging
@@ -119,7 +120,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
         Default: None
     """
 
-    # versioning table
+    # 1 versioning table
     versioning = Table(DING0_TABLES['versioning'], METADATA,
                        Column('run_id', BigInteger, primary_key=True, autoincrement=False, nullable=False),
                        Column('description', String(6000)),
@@ -127,7 +128,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                        comment=prepare_metadatastring_fordb('versioning')
                        )
 
-    # ding0 lines table
+    # 2 ding0 lines table
     ding0_line = Table(DING0_TABLES['line'], METADATA,
                        Column('id', Integer, primary_key=True),
                        Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -150,7 +151,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                        )
 
 
-    # ding0 lv_branchtee table
+    # 3 ding0 lv_branchtee table
     ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], METADATA,
                                Column('id', Integer, primary_key=True),
                                Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -161,7 +162,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                comment=prepare_metadatastring_fordb('lv_branchtee')
                                )
 
-    # ding0 lv_generator table
+    # 4 ding0 lv_generator table
     ding0_lv_generator = Table(DING0_TABLES['lv_generator'], METADATA,
                                Column('id', Integer, primary_key=True),
                                Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -180,7 +181,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                comment=prepare_metadatastring_fordb('lv_generator')
                                )
 
-    # ding0 lv_load table
+    # 5 ding0 lv_load table
     ding0_lv_load = Table(DING0_TABLES['lv_load'], METADATA,
                           Column('id', Integer, primary_key=True),
                           Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -193,7 +194,20 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                           comment=prepare_metadatastring_fordb('lv_load')
                           )
 
-    # ding0 lv_station table
+    # 6
+    ding0_lv_grid = Table(DING0_TABLES['lv_grid'], METADATA,
+                          Column('id', Integer, primary_key=True),
+                          Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
+                          Column('id_db', BigInteger),
+                          Column('name', String(100)),
+                          Column('geom', Geometry('MULTIPOLYGON', 4326)),
+                          Column('population', BigInteger),
+                          Column('voltage_nom', Float(10)),
+                          schema=ding0_schema,
+                          comment=prepare_metadatastring_fordb('lv_grid')
+                          )
+
+    # 7 ding0 lv_station table
     ding0_lv_station = Table(DING0_TABLES['lv_station'], METADATA,
                              Column('id', Integer, primary_key=True),
                              Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -204,7 +218,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                              comment=prepare_metadatastring_fordb('lv_station')
                              )
 
-    # ding0 mvlv_transformer table
+    # 8 ding0 mvlv_transformer table
     ding0_mvlv_transformer = Table(DING0_TABLES['mvlv_transformer'], METADATA,
                                    Column('id', Integer, primary_key=True),
                                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -219,7 +233,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                    comment=prepare_metadatastring_fordb("mvlv_transformer")
                                    )
 
-    # ding0 mvlv_mapping table
+    # 9 ding0 mvlv_mapping table
     ding0_mvlv_mapping = Table(DING0_TABLES['mvlv_mapping'], METADATA,
                                Column('id', Integer, primary_key=True),
                                Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -231,7 +245,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                comment=prepare_metadatastring_fordb("mvlv_mapping")
                                )
 
-    # ding0 mv_branchtee table
+    # 10 ding0 mv_branchtee table
     ding0_mv_branchtee = Table(DING0_TABLES['mv_branchtee'], METADATA,
                                Column('id', Integer, primary_key=True),
                                Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -242,7 +256,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                comment=prepare_metadatastring_fordb("mv_branchtee")
                                )
 
-    # ding0 mv_circuitbreaker table
+    # 11 ding0 mv_circuitbreaker table
     ding0_mv_circuitbreaker = Table(DING0_TABLES['mv_circuitbreaker'], METADATA,
                                     Column('id', Integer, primary_key=True),
                                     Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -254,7 +268,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                     comment=prepare_metadatastring_fordb("mv_circuitbreaker")
                                     )
 
-    # ding0 mv_generator table
+    # 12 ding0 mv_generator table
     ding0_mv_generator = Table(DING0_TABLES['mv_generator'], METADATA,
                                Column('id', Integer, primary_key=True),
                                Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -271,7 +285,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                comment=prepare_metadatastring_fordb("mv_generator")
                                )
 
-    # ding0 mv_load table
+    # 13 ding0 mv_load table
     ding0_mv_load = Table(DING0_TABLES['mv_load'], METADATA,
                           Column('id', Integer, primary_key=True),
                           Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -284,7 +298,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                           comment=prepare_metadatastring_fordb("mv_load")
                           )
 
-    # ding0 mv_grid table
+    # 14 ding0 mv_grid table
     ding0_mv_grid = Table(DING0_TABLES['mv_grid'], METADATA,
                           Column('id', Integer, primary_key=True),
                           Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -298,7 +312,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                           )
 
 
-    # ding0 mv_station table
+    # 15 ding0 mv_station table
     ding0_mv_station = Table(DING0_TABLES['mv_station'], METADATA,
                              Column('id', Integer, primary_key=True),
                              Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -309,7 +323,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                              comment=prepare_metadatastring_fordb("mv_station")
                              )
 
-    # ding0 hvmv_transformer table
+    # 16 ding0 hvmv_transformer table
     ding0_hvmv_transformer = Table(DING0_TABLES['hvmv_transformer'], METADATA,
                                    Column('id', Integer, primary_key=True),
                                    Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
@@ -393,6 +407,7 @@ def export_df_to_db(engine, schema, df, tabletype):
 
     elif tabletype == 'lv_cd':
         df = df.drop(['lv_grid_id'], axis=1)
+        df['geom'].apply()
         df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df)
 
     elif tabletype == 'lv_gen':
@@ -435,81 +450,7 @@ def export_df_to_db(engine, schema, df, tabletype):
         df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df)
 
 
-def run_id_in_db(engine, schema, df, db_versioning, tabletype):
-    """
-    Check if the run_id values from the new data frames are available in the DB.
-    Creates new run_id in the db if not exist.
-    Filter data frame for column=run_id and compares the values with existing run_id.
-    db_run_id values are from the DB table: ego_ding0_versioning.
-
-    Parameters
-    ----------
-    :param engine: DB connection
-    :param schema: DB schema
-    :param df: pandas data frame -> gets inserted to the db
-    :param db_versioning: pandas df created from the versioning table in the DB
-    :param tabletype: select the db table "value relevant in export_df_to_db()"
-    """
-
-    db_run_id = db_versioning.filter(items=['run_id'])
-    df_run_id = df.filter(items=['run_id'])
-
-    # temp stores all run_id values that are available in the DB
-    db_0temp = []
-    for j in db_run_id["run_id"]:
-        db_0temp.append(j)
-
-    # temp stores run_id value from data frame
-    df_1temp = []
-    for i in df_run_id["run_id"]:
-        if i in db_0temp:
-            if i not in df_1temp:
-                # the run_id value needs to be only present in the run_id column else the filter
-                # might not work correctly
-                df_by_run_id = df[df["run_id"] == i]
-                export_df_to_db(engine, schema, df_by_run_id, tabletype)
-                # stores the run_id(i) from the df in order to compare with the next loop iteration run_id(i) ->
-                # df with multiple rows which include the same run_id will not be inserted n times to the db
-                df_1temp.append(i)
-        elif i not in db_0temp:
-            metadata_df = pd.DataFrame({'run_id': i,
-                                        'description': str(metadata_json)}, index=[0])
-            # create the new run_id from df in db table
-            df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
-            db_0temp.append(i)
-
-            # insert df with the new run_id
-            df_by_run_id = df[df["run_id"] == i]
-            export_df_to_db(engine, schema, df_by_run_id, tabletype)
-
-
-def export_network_to_db(engine, schema, df, tabletype, srid=None):
-    """
-    Exports pre created Pands data frames to a connected database schema.
-    Creates new entry in ego_ding0_versioning if the table is empty.
-    Checks if the given pandas data frame "run_id" is available in the DB table.
-
-    Parameters
-    ----------
-    :param engine:
-    :param schema:
-    :param df:
-    :param tabletype:
-    :param srid:
-    """
-
-    db_versioning = pd.read_sql_table(DING0_TABLES['versioning'], engine, schema,
-                                      columns=['run_id', 'description'])
-
-    if engine.dialect.has_table(engine, DING0_TABLES["versioning"]):
-
-        run_id_in_db(engine, schema, df, db_versioning, tabletype)
-
-    else:
-        print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
-
-
-def drop_ding0_db_tables(engine, schema=SCHEMA):
+def drop_ding0_db_tables(engine, schema):
     """
     Instructions: In order to drop tables all tables need to be stored in METADATA (create tables before dropping them)
     :param engine:
@@ -556,7 +497,7 @@ def drop_ding0_db_tables(engine, schema=SCHEMA):
             print("Confirmation unclear, no action taken")
 
 
-def db_tables_change_owner(engine, schema=SCHEMA):
+def db_tables_change_owner(engine, schema):
     tables = METADATA.sorted_tables
 
     def change_owner(engine, table, role, schema):
@@ -573,6 +514,7 @@ def db_tables_change_owner(engine, schema=SCHEMA):
             database role that access is granted to
         """
         tablename = table
+        # ToDo: Still using globally def. variable "SCHEMA" inside this func.
         schema = SCHEMA
 
         grant_str = """ALTER TABLE {schema}.{table}
@@ -590,9 +532,9 @@ def db_tables_change_owner(engine, schema=SCHEMA):
     engine.close()
 
 
-def execute_export_network_to_db(con, schema=SCHEMA):
+def export_all_dataframes_to_db(engine, schema, srid=None):
     """
-    exports all data frames to the db tables
+    exports all data frames from func. export_network() to the db tables
 
     Parameters
     ----------
@@ -600,43 +542,67 @@ def execute_export_network_to_db(con, schema=SCHEMA):
     :param schema:
     """
 
-    # 1
-    export_network_to_db(con, schema, lines, "line", metadata_json)
-    # 2
-    export_network_to_db(con, schema, lv_cd, "lv_cd", metadata_json)
-    # 3
-    export_network_to_db(con, schema, lv_gen, "lv_gen", metadata_json)
-    # 4
-    export_network_to_db(con, schema, lv_stations, "lv_station", metadata_json)
-    # 5
-    export_network_to_db(con, schema, lv_loads, "lv_load", metadata_json)
-    # 6
-    export_network_to_db(con, schema, lv_grid, "lv_grid", metadata_json)
-    # 7
-    export_network_to_db(con, schema, mv_cb, "mv_cb", metadata_json)
-    # 8
-    export_network_to_db(con, schema, mv_cd, "mv_cd", metadata_json)
-    # 9
-    export_network_to_db(con, schema, mv_gen, "mv_gen", metadata_json)
-    # 10
-    export_network_to_db(con, schema, mv_stations, "mv_station", metadata_json)
-    # 11
-    export_network_to_db(con, schema, mv_loads, "mv_load", metadata_json)
-    # 12
-    export_network_to_db(con, schema, mv_grid, "mv_grid", metadata_json)
-    # 13
-    export_network_to_db(con, schema, mvlv_trafos, "mvlv_trafo", metadata_json)
-    # 14
-    export_network_to_db(con, schema, hvmv_trafos, "hvmv_trafo", metadata_json)
-    # 15
-    export_network_to_db(con, schema, mvlv_mapping, "mvlv_mapping", metadata_json)
+    if engine.dialect.has_table(engine, DING0_TABLES["versioning"]):
 
-    
+        db_versioning = pd.read_sql_table(DING0_TABLES['versioning'], engine, schema,
+                                          columns=['run_id', 'description'])
+
+        if db_versioning.empty:
+
+            metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
+                                        'description': str(metadata_json)}, index=[0])
+
+            df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
+
+            # ToDo: UseCase done: 1. run_id from metadata_json to db 2. Insert all data frames
+            # ToDo: UseCase maybe?: 1. There are run_id in the db 2. Insert all data frames (might never be the case?)
+            # 1
+            export_df_to_db(engine, schema, lines, "line")
+            # 2
+            # export_df_to_db(engine, schema, lv_cd, "lv_cd")
+            # # 3
+            # export_df_to_db(engine, schema, lv_gen, "lv_gen")
+            # # 4
+            # export_df_to_db(engine, schema, lv_stations, "lv_station")
+            # # 5
+            # export_df_to_db(engine, schema, lv_loads, "lv_load")
+            # # 6
+            # export_df_to_db(engine, schema, lv_grid, "lv_grid")
+            # # 7
+            # export_df_to_db(engine, schema, mv_cb, "mv_cb")
+            # # 8
+            # export_df_to_db(engine, schema, mv_cd, "mv_cd")
+            # # 9
+            # export_df_to_db(engine, schema, mv_gen, "mv_gen")
+            # # 10
+            # export_df_to_db(engine, schema, mv_stations, "mv_station")
+            # # 11
+            # export_df_to_db(engine, schema, mv_loads, "mv_load")
+            # # 12
+            # export_df_to_db(engine, schema, mv_grid, "mv_grid")
+            # # 13
+            # export_df_to_db(engine, schema, mvlv_trafos, "mvlv_trafo")
+            # # 14
+            # export_df_to_db(engine, schema, hvmv_trafos, "hvmv_trafo")
+            # # 15
+            # export_df_to_db(engine, schema, mvlv_mapping, "mvlv_mapping")
+
+        else:
+            raise KeyError("run_id already present! No tables are input!")
+
+    else:
+        print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
+
+
+
 if __name__ == "__main__":
 
     ##########SQLAlchemy and DB table################
-    engine = connection(section='oedb')
-    session = sessionmaker(bind=engine)()
+    oedb_engine = connection(section='oedb')
+    session = sessionmaker(bind=oedb_engine)()
+
+    # Testing Database
+    reiners_engine = connection(section='reiners_db')
 
     ##########Ding0 Network and NW Metadata################
 
@@ -667,18 +633,14 @@ if __name__ == "__main__":
 
 
     # tested with reiners_db
-    create_ding0_sql_tables(engine, SCHEMA)
-    # drop_ding0_db_tables(engine, SCHEMA)
+    create_ding0_sql_tables(reiners_engine, SCHEMA)
+    # drop_ding0_db_tables(reiners_engine, SCHEMA)
     # db_tables_change_owner(engine, SCHEMA)
 
-
-    # tested with reiners_db
-    create_ding0_sql_tables(engine, SCHEMA)
-    # drop_ding0_db_tables(engine)
-    # db_tables_change_owner(engine, SCHEMA)
 
     # ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
     # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-    export_network_to_db(engine, SCHEMA, lv_gen, "lv_gen", metadata_json)
+    # export_network_to_db(reiners_engine, SCHEMA, lv_gen, "lv_gen", metadata_json)
     # export_network_to_db(CONNECTION, SCHEMA, mv_stations, "mv_stations", metadata_json)
+    export_all_dataframes_to_db(reiners_engine, SCHEMA)
 
