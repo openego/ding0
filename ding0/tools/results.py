@@ -34,8 +34,6 @@ from ding0.core import LVLoadAreaCentreDing0
 
 import pyproj
 from functools import partial
-
-from geoalchemy2.shape import from_shape
 from sqlalchemy.orm import sessionmaker
 import multiprocessing as mp
 
@@ -51,6 +49,7 @@ if not 'READTHEDOCS' in os.environ:
     from shapely.ops import transform
     from shapely.geometry import LineString
     from shapely.wkt import dumps as wkt_dumps
+    from geoalchemy2.shape import from_shape
 
 #############################################
 plt.close('all')

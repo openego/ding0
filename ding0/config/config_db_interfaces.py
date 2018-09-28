@@ -15,12 +15,13 @@ __author__     = "nesnoj, gplssm"
 
 from ding0.tools import config as cfg_ding0
 
-from geoalchemy2 import Geometry
+import os
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
+if not 'READTHEDOCS' in os.environ:
+    from geoalchemy2 import Geometry
 
 Base = declarative_base()
-
 
 # TODO: check docstrings
 

@@ -34,7 +34,6 @@ import time
 from math import isnan
 
 from sqlalchemy import func
-from geoalchemy2.shape import from_shape
 import subprocess
 
 if not 'READTHEDOCS' in os.environ:
@@ -42,6 +41,7 @@ if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
     from shapely.geometry import shape, mapping
     from shapely.wkt import dumps as wkt_dumps
+    from geoalchemy2.shape import from_shape
 
 logger = logging.getLogger('ding0')
 
