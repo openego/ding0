@@ -1,5 +1,4 @@
 import unittest2 as unittest
-import os
 
 from egoio.tools import db
 from ding0.core import NetworkDing0
@@ -7,13 +6,12 @@ from ding0.tools.logger import setup_logger
 from ding0.tools.results import save_nd_to_pickle
 from ding0.tools.results import load_nd_from_pickle
 
+from geoalchemy2.shape import to_shape
 from sqlalchemy.orm import sessionmaker
+
 import logging
 
 logger = setup_logger(loglevel=logging.CRITICAL)
-
-if not 'READTHEDOCS' in os.environ:
-    from geoalchemy2.shape import to_shape
 
 
 class Ding0RunTest(unittest.TestCase):
