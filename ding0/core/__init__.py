@@ -33,9 +33,11 @@ import random
 import time
 from math import isnan
 
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 import subprocess
+import oedialect
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
