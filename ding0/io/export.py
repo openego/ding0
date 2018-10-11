@@ -17,7 +17,6 @@ import pandas as pd
 
 import json
 
-
 from ding0.core import NetworkDing0
 from ding0.core import GeneratorDing0, GeneratorFluctuatingDing0
 from ding0.core import LVCableDistributorDing0, MVCableDistributorDing0
@@ -371,9 +370,7 @@ def export_network(nw, mode='', run_id=None):
                                     'node1': mv_aggr_load_name,
                                     'node2': mv_station_name,
                                     'run_id': run_id,
-                                    'geom': from_shape(LineString([mv_station.geo_data,
-                                                                   mv_station.geo_data]),
-                                                       srid=srid)
+                                    'geom': LineString([mv_station.geo_data, mv_station.geo_data])
                                 }
 
                 # TODO: eventually remove export of DisconnectingPoints from export
@@ -426,9 +423,7 @@ def export_network(nw, mode='', run_id=None):
                              'MV', str(mv_grid_id),
                              str(branch['adj_nodes'][1].id_db)]),
                         'run_id': run_id,
-                        'geom': from_shape(LineString([branch['adj_nodes'][0].geo_data,
-                                                       branch['adj_nodes'][1].geo_data]),
-                                           srid=srid),
+                        'geom': LineString([branch['adj_nodes'][0].geo_data, branch['adj_nodes'][1].geo_data])
                     }
 
         if lv_info:

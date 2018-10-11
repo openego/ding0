@@ -27,7 +27,7 @@ from ding0.core import NetworkDing0
 from ding0.tools.results import save_nd_to_pickle, load_nd_from_pickle
 
 from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
-from geoalchemy2.types import Geometry, Raster, WKTElement, WKBElement
+from geoalchemy2.types import Geometry, Raster, WKTElement
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -291,7 +291,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                           Column('id_db', BigInteger),
                           Column('name', String(100)),
                           # ToDo: Check geometry type
-                          Column('geom', Geometry('LINESTRING', 4326)),
+                          Column('geom', Geometry('GEOMETRY', 4326)),
                           Column('is_aggregated', Boolean),
                           Column('consumption', String(100)),
                           schema=ding0_schema,
@@ -342,11 +342,13 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     METADATA.create_all(engine, checkfirst=True)
 
 
+# Use GeoAlchemy's WKTElement to create a geom with SRID
 def create_wkt_element(geom):
-    return WKTElement(geom, srid=int(SRID))
+    if geom is not None:
+        return WKTElement(geom, srid=int(SRID), extended=True)
+    else:
+        return None
 
-def create_wkb_element(geom):
-    return WKBElement(geom, srid=int(SRID))
 
 def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
     """
@@ -396,7 +398,7 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
                                     dtype={'geom': Geometry('MULTIPOLYGON', srid=int(SRID))})
 
             elif geom_type == 'LINESTRING':
-                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkb_element)
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
                 sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
                                     dtype={'geom': Geometry('LINESTRING', srid=int(SRID))})
         else:
@@ -418,12 +420,19 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
             elif geom_type == 'MULTIPOLYGON':
                 sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
                 sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
-                                    dtype={'geom': Geometry('POINT', srid=int(SRID))})
+                                    dtype={'geom': Geometry('MULTIPOLYGON', srid=int(SRID))})
 
             elif geom_type == 'LINESTRING':
                 sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
                 sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
-                                    dtype={'geom': Geometry('POINT', srid=int(SRID))})
+                                    dtype={'geom': Geometry('LINESTRING', srid=int(SRID))})
+
+            elif geom_type == 'GEOMETRY':
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
+                sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
+                                    dtype={'geom': Geometry('GEOMETRY', srid=int(SRID))})
+
+
         else:
             sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
@@ -475,6 +484,7 @@ def export_df_to_db(engine, schema, df, tabletype):
     elif tabletype == 'mv_gen':
         df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df, 'POINT')
 
+    # ToDo: Check the geom_type
     elif tabletype == 'mv_load':
         df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'LINESTRING')
 
@@ -488,6 +498,7 @@ def export_df_to_db(engine, schema, df, tabletype):
         df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df, 'POINT')
 
 
+# ToDo: function works but throws unexpected error (versioning tbl dosent exists
 def drop_ding0_db_tables(engine, schema):
     """
     Instructions: In order to drop tables all tables need to be stored in METADATA (create tables before dropping them)
@@ -535,6 +546,7 @@ def drop_ding0_db_tables(engine, schema):
             print("Confirmation unclear, no action taken")
 
 
+# ToDo: Functions works but engine.close() is not tested
 def db_tables_change_owner(engine, schema):
     tables = METADATA.sorted_tables
 
@@ -590,38 +602,36 @@ def export_all_dataframes_to_db(engine, schema):
 
             df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
-            # ToDo: UseCase done: 1. run_id from metadata_json to db 2. Insert all data frames
-            # ToDo: UseCase maybe?: 1. There are run_id in the db 2. Insert all data frames (might never be the case?)
             # # 1
-            # export_df_to_db(engine, schema, lines, "line")
+            export_df_to_db(engine, schema, lines, "line")
             # # 2
-            # export_df_to_db(engine, schema, lv_cd, "lv_cd")
+            export_df_to_db(engine, schema, lv_cd, "lv_cd")
             # # 3
-            # export_df_to_db(engine, schema, lv_gen, "lv_gen")
+            export_df_to_db(engine, schema, lv_gen, "lv_gen")
             # # 4
-            # export_df_to_db(engine, schema, lv_stations, "lv_station")
+            export_df_to_db(engine, schema, lv_stations, "lv_station")
             # # 5
-            # export_df_to_db(engine, schema, lv_loads, "lv_load")
+            export_df_to_db(engine, schema, lv_loads, "lv_load")
             # # 6
-            # export_df_to_db(engine, schema, lv_grid, "lv_grid")
+            export_df_to_db(engine, schema, lv_grid, "lv_grid")
             # # 7
-            # export_df_to_db(engine, schema, mv_cb, "mv_cb")
+            export_df_to_db(engine, schema, mv_cb, "mv_cb")
             # # 8
-            # export_df_to_db(engine, schema, mv_cd, "mv_cd")
+            export_df_to_db(engine, schema, mv_cd, "mv_cd")
             # # 9
-            # export_df_to_db(engine, schema, mv_gen, "mv_gen")
+            export_df_to_db(engine, schema, mv_gen, "mv_gen")
             # # 10
-            # export_df_to_db(engine, schema, mv_stations, "mv_station")
+            export_df_to_db(engine, schema, mv_stations, "mv_station")
             # # 11
-            # export_df_to_db(engine, schema, mv_loads, "mv_load")
+            export_df_to_db(engine, schema, mv_loads, "mv_load")
             # 12
-            # export_df_to_db(engine, schema, mv_grid, "mv_grid")
+            export_df_to_db(engine, schema, mv_grid, "mv_grid")
             # # 13
-            # export_df_to_db(engine, schema, mvlv_trafos, "mvlv_trafo")
+            export_df_to_db(engine, schema, mvlv_trafos, "mvlv_trafo")
             # # 14
-            # export_df_to_db(engine, schema, hvmv_trafos, "hvmv_trafo")
+            export_df_to_db(engine, schema, hvmv_trafos, "hvmv_trafo")
             # # 15
-            # export_df_to_db(engine, schema, mvlv_mapping, "mvlv_mapping")
+            export_df_to_db(engine, schema, mvlv_mapping, "mvlv_mapping")
 
         else:
             raise KeyError("run_id already present! No tables are input!")
@@ -649,7 +659,7 @@ if __name__ == "__main__":
     #srid
     #ToDo: Check why converted to int and string
     SRID = str(int(nw.config['geo']['srid']))
-    # SRID = 4326
+
     # choose MV Grid Districts to import
     mv_grid_districts = [3040]
 
