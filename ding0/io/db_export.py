@@ -16,7 +16,6 @@ import numpy as np
 import pandas as pd
 import json
 import os
-from pathlib import Path
 
 import re
 
@@ -25,9 +24,10 @@ from egoio.tools.db import connection
 import ding0
 from ding0.io.export import export_network
 from ding0.core import NetworkDing0
+from ding0.tools.results import save_nd_to_pickle, load_nd_from_pickle
 
 from sqlalchemy import MetaData, ARRAY, BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint, Index, Integer, JSON, Numeric, SmallInteger, String, Table, Text, UniqueConstraint, text
-from geoalchemy2.types import Geometry, Raster
+from geoalchemy2.types import Geometry, Raster, WKTElement, WKBElement
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -36,10 +36,9 @@ DECLARATIVE_BASE = declarative_base()
 METADATA = DECLARATIVE_BASE.metadata
 
 # Set the Database schema which you want to add the tables to
-SCHEMA = "topology"
+SCHEMA = "model_draft"
 
 METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
-CLEANED_METADATA_STRING_FOLDER_PATH = Path(METADATA_STRING_FOLDER)
 
 DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'line': 'ego_ding0_line',
@@ -69,7 +68,7 @@ def load_json_files():
              contains all .json file names from the folder
     """
 
-    full_dir = os.walk(str(CLEANED_METADATA_STRING_FOLDER_PATH))
+    full_dir = os.walk(str(METADATA_STRING_FOLDER))
     jsonmetadata = []
 
     for jsonfiles in full_dir:
@@ -96,7 +95,7 @@ def prepare_metadatastring_fordb(table):
     """
 
     for json_file in load_json_files():
-        json_file_path = os.path.join(CLEANED_METADATA_STRING_FOLDER_PATH, json_file)
+        json_file_path = os.path.join(METADATA_STRING_FOLDER, json_file)
         with open(json_file_path, encoding='UTF-8') as jf:
             if table in json_file:
                 # included for testing / or logging
@@ -180,7 +179,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                schema=ding0_schema,
                                comment=prepare_metadatastring_fordb('lv_generator')
                                )
-
+    # ToDo: Check if right geom type
     # 5 ding0 lv_load table
     ding0_lv_load = Table(DING0_TABLES['lv_load'], METADATA,
                           Column('id', Integer, primary_key=True),
@@ -291,6 +290,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                           Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                           Column('id_db', BigInteger),
                           Column('name', String(100)),
+                          # ToDo: Check geometry type
                           Column('geom', Geometry('LINESTRING', 4326)),
                           Column('is_aggregated', Boolean),
                           Column('consumption', String(100)),
@@ -342,7 +342,13 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     METADATA.create_all(engine, checkfirst=True)
 
 
-def df_sql_write(engine, schema, db_table, dataframe):
+def create_wkt_element(geom):
+    return WKTElement(geom, srid=int(SRID))
+
+def create_wkb_element(geom):
+    return WKBElement(geom, srid=int(SRID))
+
+def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
     """
     Convert dataframes such that their column names
     are made small and the index is renamed 'id' so as to
@@ -368,25 +374,58 @@ def df_sql_write(engine, schema, db_table, dataframe):
         Sqlalchemy database engine
     schema: DB schema
     """
-    # if 'geom' in dataframe.columns:
-    #     sql_write_geom = dataframe.filter(items=['geom'])
-    #     for i in sql_write_geom['geom']:
-    #
-    #         # insert_geom = "UPDATE {} SET {}=ST_GeomFromText('{}') WHERE (id={}) ".format(db_table, "geom", i, "1")
-    #         insert_geom = "INSERT INTO {} ({}) VALUES (ST_GeomFromText('{}'))".format(db_table, "geom", i)
-    #         engine.execute(insert_geom)
 
+    # rename dataframe column DB like
     if 'id' in dataframe.columns:
         dataframe.rename(columns={'id':'id_db'}, inplace=True)
         sql_write_df = dataframe.copy()
         sql_write_df.columns = sql_write_df.columns.map(str.lower)
-        # sql_write_df = sql_write_df.set_index('id')
-        sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
+        # sql_write_df = sql_write_df.set_index('id_db')
+
+        # Insert pd Dataframe with geom column
+        if 'geom' in dataframe.columns:
+            if geom_type == 'POINT':
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
+
+                sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
+                                    dtype={'geom': Geometry('POINT', srid=int(SRID))})
+
+            elif geom_type == 'MULTIPOLYGON':
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
+                sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
+                                    dtype={'geom': Geometry('MULTIPOLYGON', srid=int(SRID))})
+
+            elif geom_type == 'LINESTRING':
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkb_element)
+                sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
+                                    dtype={'geom': Geometry('LINESTRING', srid=int(SRID))})
+        else:
+            sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
+    # If the Dataframe does not contain id named column (like already named id_db)
     else:
         sql_write_df = dataframe.copy()
         sql_write_df.columns = sql_write_df.columns.map(str.lower)
         # sql_write_df = sql_write_df.set_index('id')
-        sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
+
+        if 'geom' in dataframe.columns:
+            # Insert pd Dataframe with geom column
+            if geom_type == 'POINT':
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
+
+                sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
+                                    dtype={'geom': Geometry('POINT', srid=int(SRID))})
+
+            elif geom_type == 'MULTIPOLYGON':
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
+                sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
+                                    dtype={'geom': Geometry('POINT', srid=int(SRID))})
+
+            elif geom_type == 'LINESTRING':
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
+                sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
+                                    dtype={'geom': Geometry('POINT', srid=int(SRID))})
+        else:
+            sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
 
 def export_df_to_db(engine, schema, df, tabletype):
@@ -403,51 +442,50 @@ def export_df_to_db(engine, schema, df, tabletype):
     """
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
-        df_sql_write(engine, schema, DING0_TABLES['line'], df)
+        df_sql_write(engine, schema, DING0_TABLES['line'], df, 'LINESTRING')
 
     elif tabletype == 'lv_cd':
         df = df.drop(['lv_grid_id'], axis=1)
-        df['geom'].apply()
-        df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df)
+        df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df, 'POINT')
 
     elif tabletype == 'lv_gen':
-        df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df)
+        df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df, 'POINT')
 
     elif tabletype == 'lv_load':
-        df_sql_write(engine, schema, DING0_TABLES['lv_load'], df)
+        df_sql_write(engine, schema, DING0_TABLES['lv_load'], df, 'POINT')
 
     elif tabletype == 'lv_grid':
-        df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df)
+        df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df, 'MULTIPOLYGON')
 
     elif tabletype == 'lv_station':
-        df_sql_write(engine, schema, DING0_TABLES['lv_station'], df)
+        df_sql_write(engine, schema, DING0_TABLES['lv_station'], df, 'POINT')
 
     elif tabletype == 'mvlv_trafo':
-        df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df)
+        df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df, 'POINT')
 
     elif tabletype == 'mvlv_mapping':
         df_sql_write(engine, schema, DING0_TABLES['mvlv_mapping'], df)
 
     elif tabletype == 'mv_cd':
-        df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df)
+        df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df, 'POINT')
 
     elif tabletype == 'mv_cb':
-        df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df)
+        df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df, 'POINT')
 
     elif tabletype == 'mv_gen':
-        df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df)
+        df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df, 'POINT')
 
     elif tabletype == 'mv_load':
-        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df)
+        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'LINESTRING')
 
     elif tabletype == 'mv_grid':
-        df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df)
+        df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df, 'MULTIPOLYGON')
 
     elif tabletype == 'mv_station':
-        df_sql_write(engine, schema, DING0_TABLES['mv_station'], df)
+        df_sql_write(engine, schema, DING0_TABLES['mv_station'], df, 'POINT')
 
     elif tabletype == 'hvmv_trafo':
-        df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df)
+        df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df, 'POINT')
 
 
 def drop_ding0_db_tables(engine, schema):
@@ -514,11 +552,9 @@ def db_tables_change_owner(engine, schema):
             database role that access is granted to
         """
         tablename = table
-        # ToDo: Still using globally def. variable "SCHEMA" inside this func.
-        schema = SCHEMA
 
         grant_str = """ALTER TABLE {schema}.{table}
-        OWNER TO {role};""".format(schema=schema, table=tablename,
+        OWNER TO {role};""".format(schema=schema, table=tablename.name,
                           role=role)
 
         # engine.execute(grant_str)
@@ -532,7 +568,7 @@ def db_tables_change_owner(engine, schema):
     engine.close()
 
 
-def export_all_dataframes_to_db(engine, schema, srid=None):
+def export_all_dataframes_to_db(engine, schema):
     """
     exports all data frames from func. export_network() to the db tables
 
@@ -556,9 +592,9 @@ def export_all_dataframes_to_db(engine, schema, srid=None):
 
             # ToDo: UseCase done: 1. run_id from metadata_json to db 2. Insert all data frames
             # ToDo: UseCase maybe?: 1. There are run_id in the db 2. Insert all data frames (might never be the case?)
-            # 1
-            export_df_to_db(engine, schema, lines, "line")
-            # 2
+            # # 1
+            # export_df_to_db(engine, schema, lines, "line")
+            # # 2
             # export_df_to_db(engine, schema, lv_cd, "lv_cd")
             # # 3
             # export_df_to_db(engine, schema, lv_gen, "lv_gen")
@@ -578,7 +614,7 @@ def export_all_dataframes_to_db(engine, schema, srid=None):
             # export_df_to_db(engine, schema, mv_stations, "mv_station")
             # # 11
             # export_df_to_db(engine, schema, mv_loads, "mv_load")
-            # # 12
+            # 12
             # export_df_to_db(engine, schema, mv_grid, "mv_grid")
             # # 13
             # export_df_to_db(engine, schema, mvlv_trafos, "mvlv_trafo")
@@ -608,8 +644,12 @@ if __name__ == "__main__":
 
     # create ding0 Network instance
     nw = NetworkDing0(name='network')
+    # nw = load_nd_from_pickle(filename='ding0_grids_example.pkl', path='ding0\ding0\examples\ding0_grids_example.pkl')
 
-
+    #srid
+    #ToDo: Check why converted to int and string
+    SRID = str(int(nw.config['geo']['srid']))
+    # SRID = 4326
     # choose MV Grid Districts to import
     mv_grid_districts = [3040]
 
@@ -623,7 +663,6 @@ if __name__ == "__main__":
     mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
     lines, mvlv_mapping = export_network(nw)
 
-    # ToDo: Include the metadata_json variable returned form fun. in export.py
     # any list of NetworkDing0 also provides run_id
     # nw_metadata = json.dumps(nw_metadata)
     metadata_json = json.loads(nw_metadata)
@@ -632,15 +671,15 @@ if __name__ == "__main__":
 
 
 
-    # tested with reiners_db
-    create_ding0_sql_tables(reiners_engine, SCHEMA)
-    # drop_ding0_db_tables(reiners_engine, SCHEMA)
-    # db_tables_change_owner(engine, SCHEMA)
+    # tested with reiners_db and oedb
+    create_ding0_sql_tables(oedb_engine, SCHEMA)
+    # drop_ding0_db_tables(oedb_engine, SCHEMA)
+    # db_tables_change_owner(oedb_engine, SCHEMA)
 
 
     # ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
     # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
     # export_network_to_db(reiners_engine, SCHEMA, lv_gen, "lv_gen", metadata_json)
     # export_network_to_db(CONNECTION, SCHEMA, mv_stations, "mv_stations", metadata_json)
-    export_all_dataframes_to_db(reiners_engine, SCHEMA)
+    export_all_dataframes_to_db(oedb_engine, SCHEMA)
 

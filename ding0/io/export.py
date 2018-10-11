@@ -26,9 +26,8 @@ from ding0.core import CircuitBreakerDing0
 from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
 from ding0.core import LVLoadAreaCentreDing0
 
-from geoalchemy2.shape import from_shape
-from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
-from shapely.geometry import shape, mapping
+from geoalchemy2.shape import from_shape, to_shape
+from shapely.geometry import Point, MultiPoint, MultiLineString, LineString, MultiPolygon, shape, mapping
 
 
 def export_network(nw, mode='', run_id=None):
@@ -184,7 +183,7 @@ def export_network(nw, mode='', run_id=None):
             mv_stations_dict[0] = {
                 'id': mv_district.mv_grid.id_db,
                 'name': mv_station_name,
-                'geom': mv_station.geo_data,
+                'geom': wkt_dumps(mv_station.geo_data),
                 'run_id': run_id}
 
             # Trafos MV
@@ -192,7 +191,7 @@ def export_network(nw, mode='', run_id=None):
                 mvtrafos_idx += 1
                 hvmv_trafos_dict[mvtrafos_idx] = {
                     'id': mv_station.id_db,
-                    'geom': mv_station.geo_data,
+                    'geom': wkt_dumps(mv_station.geo_data),
                     'name': '_'.join(
                         ['MVTransformerDing0', 'MV', str(mv_station.id_db),
                          str(mv_station.id_db)]),
@@ -321,7 +320,7 @@ def export_network(nw, mode='', run_id=None):
                     # Collect metadata of aggregated load areas
                     aggr['aggregates'] = {
                         'population': node.lv_load_area.zensus_sum,
-                        'geom': node.lv_load_area.geo_area}
+                        'geom': wkt_dumps(node.lv_load_area.geo_area)}
                     aggr_line_type = nw._static_data['MV_cables'].iloc[
                         nw._static_data['MV_cables']['I_max_th'].idxmax()]
                     geom = wkt_dumps(node.geo_data)
@@ -394,10 +393,11 @@ def export_network(nw, mode='', run_id=None):
 
             # MVedges
             for branch in mv_district.mv_grid.graph_edges():
-                # geom = wkt_dumps(node.geo_data)
-                geom = from_shape(LineString([branch['adj_nodes'][0].geo_data,
-                                              branch['adj_nodes'][1].geo_data]),
-                                  srid=srid)
+                # geom_string = from_shape(LineString([branch['adj_nodes'][0].geo_data,
+                #                                     branch['adj_nodes'][1].geo_data]),
+                #                                     srid=srid)
+                # geom = wkt_dumps(geom_string)
+
                 if not any([isinstance(branch['adj_nodes'][0],
                                        LVLoadAreaCentreDing0),
                             isinstance(branch['adj_nodes'][1],
