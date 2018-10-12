@@ -401,6 +401,12 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
                 sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
                 sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
                                     dtype={'geom': Geometry('LINESTRING', srid=int(SRID))})
+
+            elif geom_type == 'GEOMETRY':
+                sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
+                sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
+                                    dtype={'geom': Geometry('GEOMETRY', srid=int(SRID))})
+
         else:
             sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
     # If the Dataframe does not contain id named column (like already named id_db)
@@ -486,7 +492,7 @@ def export_df_to_db(engine, schema, df, tabletype):
 
     # ToDo: Check the geom_type
     elif tabletype == 'mv_load':
-        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'LINESTRING')
+        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'GEOMETRY')
 
     elif tabletype == 'mv_grid':
         df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df, 'MULTIPOLYGON')
