@@ -38,8 +38,10 @@ METADATA = DECLARATIVE_BASE.metadata
 # Set the Database schema which you want to add the tables to
 SCHEMA = "model_draft"
 
+# Metadata folder Path
 METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
 
+# set your Table names
 DING0_TABLES = {'versioning': 'ego_ding0_versioning',
                 'line': 'ego_ding0_line',
                 'lv_branchtee': 'ego_ding0_lv_branchtee',
@@ -90,7 +92,7 @@ def prepare_metadatastring_fordb(table):
     table:  str
             table name of the sqlAlchemy table
 
-    return: mdsstring:str
+    :return: mdsstring:str
             Contains the .json file as string
     """
 
@@ -107,7 +109,7 @@ def prepare_metadatastring_fordb(table):
 
 def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     """
-    Create the ding0 tables
+    Create the 16 ding0 tables
 
     Parameters
     ----------
@@ -148,7 +150,6 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                        schema=ding0_schema,
                        comment=prepare_metadatastring_fordb('line')
                        )
-
 
     # 3 ding0 lv_branchtee table
     ding0_lv_branchtee = Table(DING0_TABLES['lv_branchtee'], METADATA,
@@ -311,7 +312,6 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                           comment=prepare_metadatastring_fordb("mv_grid")
                           )
 
-
     # 15 ding0 mv_station table
     ding0_mv_station = Table(DING0_TABLES['mv_station'], METADATA,
                              Column('id', Integer, primary_key=True),
@@ -342,8 +342,13 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     METADATA.create_all(engine, checkfirst=True)
 
 
-# Use GeoAlchemy's WKTElement to create a geom with SRID
 def create_wkt_element(geom):
+    """
+    Use GeoAlchemy's WKTElement to create a geom with SRID
+
+    :param geom: Shaply geometry from script export.py
+    :return: GeoAlchemy2 WKTElement (PostGis func:ST_GeomFromText)
+    """
     if geom is not None:
         return WKTElement(geom, srid=int(SRID), extended=True)
     else:
@@ -352,13 +357,14 @@ def create_wkt_element(geom):
 
 def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
     """
-    Convert dataframes such that their column names
-    are made small and the index is renamed 'id' so as to
-    correctly load its data to its appropriate sql table.
+    Convert data frames such that their column names
+    are made small and the index is renamed 'id_db' so as to
+    correctly load its data to its appropriate sql table. Also handles the
+    upload to a DB data frames with different geometry types.
 
     .. ToDo:  need to check for id_db instead of only 'id' in index label names
 
-    NOTE: This function does not check if the dataframe columns
+    NOTE: This function does not check if the data frame columns
     matches the db_table fields, if they do not then no warning
     is given.
 
@@ -374,17 +380,21 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
 
     engine: :py:mod:`sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
+
     schema: DB schema
+
+    geom_type: Prameter for handling data frames with
+        different geometry types
     """
 
-    # rename dataframe column DB like
+    # rename data frame column DB like
     if 'id' in dataframe.columns:
         dataframe.rename(columns={'id':'id_db'}, inplace=True)
         sql_write_df = dataframe.copy()
         sql_write_df.columns = sql_write_df.columns.map(str.lower)
         # sql_write_df = sql_write_df.set_index('id_db')
 
-        # Insert pd Dataframe with geom column
+        # Insert pd data frame with geom column
         if 'geom' in dataframe.columns:
             if geom_type == 'POINT':
                 sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
@@ -438,7 +448,6 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
                 sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
                                     dtype={'geom': Geometry('GEOMETRY', srid=int(SRID))})
 
-
         else:
             sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
@@ -450,10 +459,12 @@ def export_df_to_db(engine, schema, df, tabletype):
 
     Parameters
     ----------
-    :param engine:
+    :param engine: sqlalchemy.engine.base.Engine`
+        Sqlalchemy database engine
     :param schema:
     :param df:
-    :param tabletype:
+    :param tabletype: Set the destination table where the pd data frame will
+        be stored in
     """
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
@@ -504,11 +515,12 @@ def export_df_to_db(engine, schema, df, tabletype):
         df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df, 'POINT')
 
 
-# ToDo: function works but throws unexpected error (versioning tbl dosent exists
+# ToDo: function works but throws unexpected error (versioning tbl dosent exists)
 def drop_ding0_db_tables(engine, schema):
     """
     Instructions: In order to drop tables all tables need to be stored in METADATA (create tables before dropping them)
-    :param engine:
+    :param engine: sqlalchemy.engine.base.Engine`
+        Sqlalchemy database engine
     :param schema:
     :return:
     """
@@ -562,8 +574,9 @@ def db_tables_change_owner(engine, schema):
 
         Parameters
         ----------
-        session : sqlalchemy session object
+        engine: sqlalchemy session object
             A valid connection to a database
+        schema:
         table : sqlalchmy Table class definition
             The database table
         role : str
@@ -592,7 +605,8 @@ def export_all_dataframes_to_db(engine, schema):
 
     Parameters
     ----------
-    :param con:
+    :param engine:sqlalchemy.engine.base.Engine`
+        Sqlalchemy database engine
     :param schema:
     """
 
@@ -646,7 +660,6 @@ def export_all_dataframes_to_db(engine, schema):
         print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
 
 
-
 if __name__ == "__main__":
 
     ##########SQLAlchemy and DB table################
@@ -685,15 +698,11 @@ if __name__ == "__main__":
 
     ######################################################
 
-
-
     # tested with reiners_db and oedb
     create_ding0_sql_tables(oedb_engine, SCHEMA)
     # drop_ding0_db_tables(oedb_engine, SCHEMA)
     # db_tables_change_owner(oedb_engine, SCHEMA)
 
-
-    # ToDo: Insert line df: Geometry is wkb and fails to be inserted to db table, get tabletype?
     # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
     # export_network_to_db(reiners_engine, SCHEMA, lv_gen, "lv_gen", metadata_json)
     # export_network_to_db(CONNECTION, SCHEMA, mv_stations, "mv_stations", metadata_json)
