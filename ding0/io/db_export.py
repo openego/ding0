@@ -704,7 +704,7 @@ if __name__ == "__main__":
     # nw_metadata = json.dumps(nw_metadata)
     metadata_json = json.loads(nw_metadata)
 
-    ######################################################
+    #####################################################
 
     # tested with reiners_db and oedb
     create_ding0_sql_tables(oedb_engine, SCHEMA)
