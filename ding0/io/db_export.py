@@ -690,13 +690,12 @@ if __name__ == "__main__":
     # choose MV Grid Districts to import
     mv_grid_districts = [3040, 3045]
 
-    # for grid in mv_grid_districts:
     # run DING0 on selected MV Grid District
     nw.run_ding0(session=session,
                  mv_grid_districts_no=mv_grid_districts)
 
     # return values from export_network() as tupels
-    run_id , nw_metadata, \
+    run_id, nw_metadata, \
     lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
     mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
     lines, mvlv_mapping = export_network(nw)
