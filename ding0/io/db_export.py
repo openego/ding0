@@ -17,6 +17,8 @@ import pandas as pd
 import json
 import os
 
+from datetime import datetime
+
 import re
 
 from egoio.tools.db import connection
@@ -586,7 +588,7 @@ def db_tables_change_owner(engine, schema):
 
         grant_str = """ALTER TABLE {schema}.{table}
         OWNER TO {role};""".format(schema=schema, table=tablename.name,
-                          role=role)
+                                   role=role)
 
         # engine.execute(grant_str)
         engine.execution_options(autocommit=True).execute(grant_str)
@@ -614,9 +616,11 @@ def export_all_dataframes_to_db(engine, schema):
 
         db_versioning = pd.read_sql_table(DING0_TABLES['versioning'], engine, schema,
                                           columns=['run_id', 'description'])
-
+        # Use for another run with different run_id
+        # if metadata_json['run_id'] not in db_versioning['run_id']:
+        # Use if just one run_id should be present to the DB table
         if db_versioning.empty:
-
+            # this leads to wrong run_id if run_id is SET in __main__ -> 'run_id': metadata_json['run_id']
             metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
                                         'description': str(metadata_json)}, index=[0])
 
@@ -638,7 +642,7 @@ def export_all_dataframes_to_db(engine, schema):
             export_df_to_db(engine, schema, mv_cb, "mv_cb")
             # # 8
             export_df_to_db(engine, schema, mv_cd, "mv_cd")
-            # # 9
+            # 9
             export_df_to_db(engine, schema, mv_gen, "mv_gen")
             # # 10
             export_df_to_db(engine, schema, mv_stations, "mv_station")
@@ -654,7 +658,7 @@ def export_all_dataframes_to_db(engine, schema):
             export_df_to_db(engine, schema, mvlv_mapping, "mvlv_mapping")
 
         else:
-            raise KeyError("run_id already present! No tables are input!")
+            raise KeyError("a run_id already present! No tables are input!")
 
     else:
         print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
@@ -662,25 +666,29 @@ def export_all_dataframes_to_db(engine, schema):
 
 if __name__ == "__main__":
 
-    ##########SQLAlchemy and DB table################
+    # #########SQLAlchemy and DB table################
     oedb_engine = connection(section='oedb')
     session = sessionmaker(bind=oedb_engine)()
 
     # Testing Database
     reiners_engine = connection(section='reiners_db')
 
-    ##########Ding0 Network and NW Metadata################
+    # #########Ding0 Network and NW Metadata################
 
     # create ding0 Network instance
     nw = NetworkDing0(name='network')
     # nw = load_nd_from_pickle(filename='ding0_grids_example.pkl', path='ding0\ding0\examples\ding0_grids_example.pkl')
 
-    #srid
-    #ToDo: Check why converted to int and string
+    # srid
+    # ToDo: Check why converted to int and string
     SRID = str(int(nw.config['geo']['srid']))
 
+    # provide run_id, note that the run_id is unique to the DB table
+    # if not set it will be set
+    # RUN_ID = datetime.now().strftime("%Y%m%d%H%M%S")
+
     # choose MV Grid Districts to import
-    mv_grid_districts = [3040]
+    mv_grid_districts = [3040, 3045]
 
     # run DING0 on selected MV Grid District
     nw.run_ding0(session=session,
