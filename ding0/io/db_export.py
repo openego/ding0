@@ -38,7 +38,7 @@ DECLARATIVE_BASE = declarative_base()
 METADATA = DECLARATIVE_BASE.metadata
 
 # Set the Database schema which you want to add the tables to
-SCHEMA = "model_draft"
+# SCHEMA = "model_draft"
 
 # Metadata folder Path
 METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
@@ -114,7 +114,7 @@ def prepare_metadatastring_fordb(table):
                 return mdsstring
 
 
-def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
+def create_ding0_sql_tables(engine, ding0_schema):
     """
     Create the 16 ding0 tables
 
@@ -179,7 +179,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                Column('lv_grid_id', BigInteger),
                                Column('geom', Geometry('POINT', 4326)),
                                Column('type', String(22)),
-                               Column('subtype', String(22)),
+                               Column('subtype', String(30)),
                                Column('v_level', Integer),
                                Column('nominal_capacity', Float(10)),
                                Column('weather_cell_id', BigInteger),
@@ -187,7 +187,6 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                schema=ding0_schema,
                                comment=prepare_metadatastring_fordb('lv_generator')
                                )
-    # ToDo: Check if right geom type
     # 5 ding0 lv_load table
     ding0_lv_load = Table(DING0_TABLES['lv_load'], METADATA,
                           Column('id', Integer, primary_key=True),
@@ -283,7 +282,7 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                Column('name', String(100)),
                                Column('geom', Geometry('POINT', 4326)),
                                Column('type', String(22)),
-                               Column('subtype', String(22)),
+                               Column('subtype', String(30)),
                                Column('v_level', Integer),
                                Column('nominal_capacity', Float(10)),
                                Column('weather_cell_id', BigInteger),
@@ -298,7 +297,6 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                           Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                           Column('id_db', BigInteger),
                           Column('name', String(100)),
-                          # ToDo: Check geometry type
                           Column('geom', Geometry('GEOMETRY', 4326)),
                           Column('is_aggregated', Boolean),
                           Column('consumption', String(100)),
@@ -518,7 +516,6 @@ def export_df_to_db(engine, schema, df, tabletype):
     elif tabletype == 'mv_gen':
         df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df, 'POINT')
 
-    # ToDo: Check the geom_type
     elif tabletype == 'mv_load':
         df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'GEOMETRY')
 
@@ -533,7 +530,7 @@ def export_df_to_db(engine, schema, df, tabletype):
 
 
 # ToDo: function works but throws unexpected error (versioning tbl dosent exists)
-def drop_ding0_db_tables(engine):
+def drop_ding0_db_tables(engine, schema):
     """
     Instructions: In order to drop tables all tables need to be stored in METADATA (create tables before dropping them)
 
@@ -664,42 +661,42 @@ def export_all_dataframes_to_db(engine, schema):
 
             df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
-            # # 1
+            # 1
             export_df_to_db(engine, schema, lines, "line")
-            # # 2
+            # 2
             export_df_to_db(engine, schema, lv_cd, "lv_cd")
-            # # 3
+            # 3
             export_df_to_db(engine, schema, lv_gen, "lv_gen")
-            # # 4
+            # 4
             export_df_to_db(engine, schema, lv_stations, "lv_station")
-            # # 5
+            # 5
             export_df_to_db(engine, schema, lv_loads, "lv_load")
-            # # 6
+            # 6
             export_df_to_db(engine, schema, lv_grid, "lv_grid")
-            # # 7
+            # 7
             export_df_to_db(engine, schema, mv_cb, "mv_cb")
-            # # 8
+            # 8
             export_df_to_db(engine, schema, mv_cd, "mv_cd")
             # 9
             export_df_to_db(engine, schema, mv_gen, "mv_gen")
-            # # 10
+            # 10
             export_df_to_db(engine, schema, mv_stations, "mv_station")
-            # # 11
+            # 11
             export_df_to_db(engine, schema, mv_loads, "mv_load")
             # 12
             export_df_to_db(engine, schema, mv_grid, "mv_grid")
-            # # 13
+            # 13
             export_df_to_db(engine, schema, mvlv_trafos, "mvlv_trafo")
-            # # 14
+            # 14
             export_df_to_db(engine, schema, hvmv_trafos, "hvmv_trafo")
-            # # 15
+            # 15
             export_df_to_db(engine, schema, mvlv_mapping, "mvlv_mapping")
 
         else:
             raise KeyError("a run_id already present! No tables are input!")
 
     else:
-        print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + SCHEMA)
+        print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
 
 
 if __name__ == "__main__":
@@ -710,6 +707,9 @@ if __name__ == "__main__":
 
     # Testing Database
     reiners_engine = connection(section='reiners_db')
+
+    # Set the Database schema which you want to add the tables to
+    SCHEMA = "model_draft"
 
     # #########Ding0 Network and NW Metadata################
 
@@ -744,7 +744,6 @@ if __name__ == "__main__":
 
     #####################################################
 
-    # tested with reiners_db and oedb
     create_ding0_sql_tables(oedb_engine, SCHEMA)
     # drop_ding0_db_tables(oedb_engine, SCHEMA)
     # db_tables_change_owner(oedb_engine, SCHEMA)
