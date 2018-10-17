@@ -49,9 +49,9 @@ def example_stats(filename, plotpath=''):
     f, axarr = plt.subplots(2, sharex=True)
     f.suptitle("Peak load (top)/ peak generation capacity (bottom) at LV "
               "substation in kW")
-    stations.hist(column=['peak_load'], bins=20, alpha=0.5, ax=axarr[0])
+    stations['peak_load'].hist(bins=20, alpha=0.5, ax=axarr[0])
     axarr[0].set_title("Peak load in kW")
-    stations.hist(column=['generation_capacity'], bins=20, alpha=0.5, ax=axarr[1])
+    stations['generation_capacity'].hist(bins=20, alpha=0.5, ax=axarr[1])
     axarr[1].set_title("Peak generation capacity in kW")
     plt.show()
 
