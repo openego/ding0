@@ -78,7 +78,7 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
         try:
             nd_load = results.load_nd_from_pickle(filename=
                                                   os.path.join(base_path,
-                                                               'results',
+                                                               'grids',
                                                                filename))
 
             nds.append(nd_load)
