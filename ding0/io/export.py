@@ -25,7 +25,6 @@ from ding0.core import CircuitBreakerDing0
 from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
 from ding0.core import LVLoadAreaCentreDing0
 
-from geoalchemy2.shape import from_shape, to_shape
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString, MultiPolygon, shape, mapping
 
 

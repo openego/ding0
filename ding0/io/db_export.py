@@ -68,8 +68,11 @@ def load_json_files():
 
     Parameters
     ----------
-    :return: dict: jsonmetadata
-             contains all .json file names from the folder
+
+    Returns
+    -------
+    jsonmetadata : dict
+            contains all .json file names from the folder
     """
 
     full_dir = os.walk(str(METADATA_STRING_FOLDER))
@@ -94,7 +97,9 @@ def prepare_metadatastring_fordb(table):
     table:  str
             table name of the sqlAlchemy table
 
-    :return: mdsstring:str
+    Returns
+    -------
+    mdsstring:str
             Contains the .json file as string
     """
 
@@ -118,9 +123,9 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
     engine: :py:mod:`sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
 
-    ding0_schema: :obj:`str`
+    ding0_schema : str
         The schema in which the tables are to be created
-        Default: None
+        Default: static SCHEMA
     """
 
     # 1 versioning table
@@ -347,9 +352,16 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
 def create_wkt_element(geom):
     """
     Use GeoAlchemy's WKTElement to create a geom with SRID
+    GeoAlchemy2 WKTElement (PostGis func:ST_GeomFromText)
 
-    :param geom: Shaply geometry from script export.py
-    :return: GeoAlchemy2 WKTElement (PostGis func:ST_GeomFromText)
+    Parameters
+    ----------
+    geom: Shaply geometry from script export.py
+
+    Returns
+    -------
+    None : None
+        Returns None if the data frame does not contain any geometry
     """
     if geom is not None:
         return WKTElement(geom, srid=int(SRID), extended=True)
@@ -372,9 +384,9 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
 
     Parameters
     ----------
-    dataframe: :pandas:`DataFrame<dataframe>`
-        The pandas dataframe to be transferred to its
-        apprpritate db_table
+    pandas.DataFrame
+        dataframe : The pandas dataframe to be transferred to its
+                    apprpritate db_table
 
     db_table: :py:mod:`sqlalchemy.sql.schema.Table`
         A table instance definition from sqlalchemy.
@@ -383,10 +395,11 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
     engine: :py:mod:`sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
 
-    schema: DB schema
+    schema: str
+        The schema in which the tables are to be created
 
-    geom_type: Prameter for handling data frames with
-        different geometry types
+    geom_type: str
+        Prameter for handling data frames with different geometry types
     """
 
     # rename data frame column DB like
@@ -461,12 +474,14 @@ def export_df_to_db(engine, schema, df, tabletype):
 
     Parameters
     ----------
-    :param engine: sqlalchemy.engine.base.Engine`
+    engine: sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
-    :param schema:
-    :param df:
-    :param tabletype: Set the destination table where the pd data frame will
-        be stored in
+    schema : str
+        The schema in which the tables are to be created
+    pandas.DataFrame
+        df : pandas data frame
+    tabletype : str
+        Set the destination table where the pd data frame will be stored in
     """
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
@@ -518,13 +533,14 @@ def export_df_to_db(engine, schema, df, tabletype):
 
 
 # ToDo: function works but throws unexpected error (versioning tbl dosent exists)
-def drop_ding0_db_tables(engine, schema):
+def drop_ding0_db_tables(engine):
     """
     Instructions: In order to drop tables all tables need to be stored in METADATA (create tables before dropping them)
-    :param engine: sqlalchemy.engine.base.Engine`
+
+    Parameters
+    ----------
+    engine: sqlalchemy.engine.base.Engine`
         Sqlalchemy database engine
-    :param schema:
-    :return:
     """
     tables = METADATA.sorted_tables
     reversed_tables = reversed(tables)
@@ -577,7 +593,7 @@ def db_tables_change_owner(engine, schema):
         ----------
         engine: sqlalchemy session object
             A valid connection to a database
-        schema:
+        schema: The schema in which the tables are to be created
         table : sqlalchmy Table class definition
             The database table
         role : str
@@ -624,12 +640,14 @@ def export_all_dataframes_to_db(engine, schema):
     14. If you need to drop the table call the function drop_ding0_db_tables(engine, schema) immediately after
         the called create function:  create_ding0_sql_tables(oedb_engine, SCHEMA)
                                     drop_ding0_db_tables(oedb_engine, SCHEMA)
+    15. Check if all metadata strings are present to the current folder and added as SQL comment on table
 
     Parameters
     ----------
-    :param engine:sqlalchemy.engine.base.Engine`
+    engine : sqlalchemy.engine.base.Engine
         Sqlalchemy database engine
-    :param schema:
+    schema : str
+        The schema in which the tables are to be created
     """
 
     if engine.dialect.has_table(engine, DING0_TABLES["versioning"]):
