@@ -44,22 +44,22 @@ SCHEMA = "model_draft"
 METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
 
 # set your Table names
-DING0_TABLES = {'versioning': 'ego_ding0_versioning',
-                'line': 'ego_ding0_line',
-                'lv_branchtee': 'ego_ding0_lv_branchtee',
-                'lv_generator': 'ego_ding0_lv_generator',
-                'lv_load': 'ego_ding0_lv_load',
-                'lv_grid': 'ego_ding0_lv_grid',
-                'lv_station': 'ego_ding0_lv_station',
-                'mvlv_transformer': 'ego_ding0_mvlv_transformer',
-                'mvlv_mapping': 'ego_ding0_mvlv_mapping',
-                'mv_branchtee': 'ego_ding0_mv_branchtee',
-                'mv_circuitbreaker': 'ego_ding0_mv_circuitbreaker',
-                'mv_generator': 'ego_ding0_mv_generator',
-                'mv_load': 'ego_ding0_mv_load',
-                'mv_grid': 'ego_ding0_mv_grid',
-                'mv_station': 'ego_ding0_mv_station',
-                'hvmv_transformer': 'ego_ding0_hvmv_transformer'}
+DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning',
+                'line': 'ego_grid_ding0_line',
+                'lv_branchtee': 'ego_grid_ding0_lv_branchtee',
+                'lv_generator': 'ego_grid_ding0_lv_generator',
+                'lv_load': 'ego_grid_ding0_lv_load',
+                'lv_grid': 'ego_grid_ding0_lv_grid',
+                'lv_station': 'ego_grid_ding0_lv_station',
+                'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer',
+                'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping',
+                'mv_branchtee': 'ego_grid_ding0_mv_branchtee',
+                'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker',
+                'mv_generator': 'ego_grid_ding0_mv_generator',
+                'mv_load': 'ego_grid_ding0_mv_load',
+                'mv_grid': 'ego_grid_ding0_mv_grid',
+                'mv_station': 'ego_grid_ding0_mv_station',
+                'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer'}
 
 
 def load_json_files():
