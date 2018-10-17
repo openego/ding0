@@ -26,8 +26,6 @@ __author__ = "nesnoj, gplssm"
 from ding0.tools import results
 from ding0.tools.logger import get_default_home_dir
 import os
-import pandas as pd
-from matplotlib import pyplot as plt
 
 BASEPATH = get_default_home_dir()
 
