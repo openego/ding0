@@ -160,9 +160,11 @@ def plot_cable_length(stats, plotpath):
     """
 
     # cable and line kilometer distribution
-    f, axarr = plt.subplots(2, sharex=True)
-    stats.hist(column=['km_cable'], bins=5, alpha=0.5, ax=axarr[0])
-    stats.hist(column=['km_line'], bins=5, alpha=0.5, ax=axarr[1])
+    f, axarr = plt.subplots(2, 2, sharex=True)
+    stats.hist(column=['Length of MV overhead lines'], bins=5, alpha=0.5, ax=axarr[0, 0])
+    stats.hist(column=['Length of MV underground cables'], bins=5, alpha=0.5, ax=axarr[0, 1])
+    stats.hist(column=['Length of LV overhead lines'], bins=5, alpha=0.5, ax=axarr[1, 0])
+    stats.hist(column=['Length of LV underground cables'], bins=5, alpha=0.5, ax=axarr[1, 1])
 
     plt.savefig(os.path.join(plotpath,
                              'Histogram_cable_line_length.pdf'))
