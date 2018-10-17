@@ -183,13 +183,19 @@ def plot_generation_over_load(stats, plotpath):
     sns.set_style("ticks")
 
     # reformat to MW
-    stats[['generation_capacity', 'peak_load']] = stats[['generation_capacity',
-                                                         'peak_load']] / 1e3
+
+    gen_cap_indexes = ["Gen. Cap. of MV at v_level 4",
+                       "Gen. Cap. of MV at v_level 5",
+                       "Gen. Cap. of LV at v_level 6",
+                       "Gen. Cap. of LV at v_level 7"]
+    peak_load_index = ["LA Total LV Peak Load total"]
+    stats['generation_capacity'] = stats[gen_cap_indexes].sum(axis=1) / 1e3
+    stats['peak_load'] = stats[peak_load_index] / 1e3
 
     sns.lmplot('generation_capacity', 'peak_load',
                data=stats,
                fit_reg=False,
-               hue='v_nom',
+               # hue='v_nom',
                # hue='Voltage level',
                scatter_kws={"marker": "D",
                             "s": 100},
