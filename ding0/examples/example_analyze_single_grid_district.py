@@ -18,17 +18,16 @@ disk. If the example script was executed in PWD, do not change `base_path`
 below.
 """
 
-__copyright__  = "Reiner Lemoine Institut gGmbH"
-__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
-__author__     = "nesnoj, gplssm"
-
+__copyright__ = "Reiner Lemoine Institut gGmbH"
+__license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
+__author__ = "nesnoj, gplssm"
 
 from ding0.tools import results
 from matplotlib import pyplot as plt
 
-
 base_path = ''
+
 
 def example_stats(filename, plotpath=''):
     """
@@ -48,7 +47,7 @@ def example_stats(filename, plotpath=''):
     stations = nodes_df[nodes_df['type'] == 'LV Station']
     f, axarr = plt.subplots(2, sharex=True)
     f.suptitle("Peak load (top)/ peak generation capacity (bottom) at LV "
-              "substation in kW")
+               "substation in kW")
     stations['peak_load'].hist(bins=20, alpha=0.5, ax=axarr[0])
     axarr[0].set_title("Peak load in kW")
     stations['generation_capacity'].hist(bins=20, alpha=0.5, ax=axarr[1])
@@ -63,6 +62,7 @@ def example_stats(filename, plotpath=''):
     # this isn't a particularly beautiful format but it is
     # information rich
     print(stats.T)
+
 
 if __name__ == '__main__':
     filename = 'ding0_grids_example.pkl'
