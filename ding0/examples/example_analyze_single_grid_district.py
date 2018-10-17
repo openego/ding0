@@ -42,7 +42,7 @@ def example_stats(filename, plotpath=''):
     nodes_df, edges_df = nd.to_dataframe()
 
     # get statistical numbers about grid
-    stats = results.calculate_mvgd_stats(nodes_df, edges_df)
+    stats = results.calculate_mvgd_stats(nd)
 
     # plot distribution of load/generation of subjacent LV grids
     stations = nodes_df[nodes_df['type'] == 'LV Station']
