@@ -91,10 +91,8 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
     for n in nds[1:]:
         nd.add_mv_grid_district(n._mv_grid_districts[0])
 
-    nodes_df, edges_df = nd.to_dataframe()
-
     # get statistical numbers about grid
-    stats = results.calculate_mvgd_stats(nodes_df, edges_df)
+    stats = results.calculate_mvgd_stats(nd)
 
     # TODO: correct LV peak load/ generation capacity. Same in all LV GD
     return stats
