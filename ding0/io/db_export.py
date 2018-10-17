@@ -187,7 +187,6 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                                schema=ding0_schema,
                                comment=prepare_metadatastring_fordb('lv_generator')
                                )
-    # ToDo: Check if right geom type
     # 5 ding0 lv_load table
     ding0_lv_load = Table(DING0_TABLES['lv_load'], METADATA,
                           Column('id', Integer, primary_key=True),
@@ -298,7 +297,6 @@ def create_ding0_sql_tables(engine, ding0_schema=SCHEMA):
                           Column('run_id', BigInteger, ForeignKey(versioning.columns.run_id), nullable=False),
                           Column('id_db', BigInteger),
                           Column('name', String(100)),
-                          # ToDo: Check geometry type
                           Column('geom', Geometry('GEOMETRY', 4326)),
                           Column('is_aggregated', Boolean),
                           Column('consumption', String(100)),
@@ -518,7 +516,6 @@ def export_df_to_db(engine, schema, df, tabletype):
     elif tabletype == 'mv_gen':
         df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df, 'POINT')
 
-    # ToDo: Check the geom_type
     elif tabletype == 'mv_load':
         df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'GEOMETRY')
 
