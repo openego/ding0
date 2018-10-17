@@ -18,11 +18,10 @@ disc. If the example script was executed in PWD, do not change `base_path`
 below.
 """
 
-__copyright__  = "Reiner Lemoine Institut gGmbH"
-__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
-__author__     = "nesnoj, gplssm"
-
+__copyright__ = "Reiner Lemoine Institut gGmbH"
+__license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
+__author__ = "nesnoj, gplssm"
 
 from ding0.tools import results
 from ding0.tools.logger import get_default_home_dir
@@ -30,8 +29,8 @@ import os
 import pandas as pd
 from matplotlib import pyplot as plt
 
-
 BASEPATH = get_default_home_dir()
+
 
 def ding0_exemplary_plots(stats, base_path=BASEPATH):
     """
@@ -80,9 +79,9 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
     for filename in filenames:
         try:
             nd_load = results.load_nd_from_pickle(filename=
-                                             os.path.join(base_path,
-                                                          'results',
-                                                          filename))
+                                                  os.path.join(base_path,
+                                                               'results',
+                                                               filename))
 
             nds.append(nd_load)
         except:
@@ -101,6 +100,7 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
 
     # TODO: correct LV peak load/ generation capacity. Same in all LV GD
     return stats
+
 
 if __name__ == '__main__':
     base_path = BASEPATH
