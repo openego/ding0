@@ -103,7 +103,7 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
 if __name__ == '__main__':
     base_path = BASEPATH
 
-    mv_grid_districts = list(range(1, 20))
+    mv_grid_districts = list(range(1729, 1732))
 
     filenames = ["ding0_grids__{ext}.pkl".format(ext=_)
                  for _ in mv_grid_districts]
