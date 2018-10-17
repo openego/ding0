@@ -24,6 +24,7 @@ __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__ = "nesnoj, gplssm"
 
 from ding0.tools import results
+from pandas import option_context
 from matplotlib import pyplot as plt
 
 base_path = ''
@@ -61,7 +62,8 @@ def example_stats(filename, plotpath=''):
     # print all the calculated stats
     # this isn't a particularly beautiful format but it is
     # information rich
-    print(stats.T)
+    with option_context('display.max_rows', None, 'display.max_columns', None):
+        print(stats.T)
 
 
 if __name__ == '__main__':
