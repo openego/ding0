@@ -47,7 +47,6 @@ def ding0_exemplary_plots(stats, base_path=BASEPATH):
     plotpath = os.path.join(base_path, 'plots')
     results.plot_cable_length(stats, plotpath)
     results.plot_generation_over_load(stats, plotpath)
-    results.plot_km_cable_vs_line(stats, plotpath)
 
 
 def nd_load_and_stats(filenames, base_path=BASEPATH):
