@@ -109,8 +109,8 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         # instantiate ding0  network object
         nd = NetworkDing0(name='network', run_id=run_id)
 
-        if not os.path.exists(os.path.join(base_path, run_id)):
-            os.mkdir(os.path.join(base_path, run_id))
+        if not os.path.exists(os.path.join(base_path, "grids")):
+            os.mkdir(os.path.join(base_path, "grids"))
 
         if not failsafe:
             # run DING0 on selected MV Grid District
@@ -118,7 +118,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                                mv_grid_districts_no=[mvgd])
 
             # save results
-            results.save_nd_to_pickle(nd, os.path.join(base_path, run_id))
+            results.save_nd_to_pickle(nd, os.path.join(base_path, "grids"))
         else:
             # try to perform ding0 run on grid district
             try:
@@ -133,7 +133,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                 # if successful, save results
                 else:
                     results.save_nd_to_pickle(nd, os.path.join(base_path,
-                                                               run_id))
+                                                               "grids"))
             except Exception as e:
                 corrupt_grid_districts = corrupt_grid_districts.append(
                     pd.Series({'id': mvgd,
@@ -153,7 +153,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                 metadata['mv_grid_districts'].append(mvgd)
 
     # Save metadata to disk
-    with open(os.path.join(base_path, run_id, 'Ding0_{}.meta'.format(run_id)),
+    with open(os.path.join(base_path, "grids", 'Ding0_{}.meta'.format(run_id)),
               'w') as f:
         json.dump(metadata, f)
 
@@ -161,7 +161,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
     corrupt_grid_districts.to_csv(
         os.path.join(
             base_path,
-            run_id,
+            "grids",
             'corrupt_mv_grid_districts.txt'),
         index=False,
         float_format='%.0f')
