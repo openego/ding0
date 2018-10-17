@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
     # save stats file to disc
     stats.to_csv(os.path.join(base_path, 'results',
-                              'ding0_grids_stats_{first}-{last}'.format(
+                              'ding0_grids_stats_{first}-{last}.csv'.format(
                                   first=mv_grid_districts[0],
                                   last=mv_grid_districts[-1])))
 
