@@ -566,7 +566,6 @@ def drop_ding0_db_tables(engine, schema):
             print("Confirmation unclear, no action taken")
 
 
-# ToDo: Functions works but engine.close() is not tested
 def db_tables_change_owner(engine, schema):
     tables = METADATA.sorted_tables
 
@@ -598,12 +597,33 @@ def db_tables_change_owner(engine, schema):
     for tab in tables:
         change_owner(engine, tab, 'oeuser', schema)
 
-    engine.close()
-
 
 def export_all_dataframes_to_db(engine, schema):
     """
     exports all data frames from func. export_network() to the db tables
+
+    Instructions:
+    1. Create a database connection to the "OEDB" for example use the "from egoio.tools.db import connection" function
+    2. Create a SA session: session = sessionmaker(bind=oedb_engine)()
+    3. Create a ding0 network instance: nw = NetworkDing0(name='network')
+    4. SET the srid from network config: SRID = str(int(nw.config['geo']['srid']))
+    5. Choose the grid_districts for the ding0 run (nothing chosen all grid_districts will be imported)
+        mv_grid_districts = [3040, 3045]
+    6. run ding0 on selected mv_grid_district
+    7. call function export_network from export.py -> this provides the run_id, network metadata as json
+        and all ding0 result data as pandas data frames
+    8. json.loads the metadata, it is needed to provide the values for the
+        versioning table
+    9. Create a database connection to your database for example use the "from egoio.tools.db import connection" function
+    10. SET the SCHEMA you want to use within the connected database
+    11. Create the ding0 sql tables: create_ding0_sql_tables(engine, SCHEMA)
+    12. Call the function: export_all_dataframes_to_db(engine, SCHEMA) with your destination database and SCHEMA
+    additionally:
+    13. If you used the "OEDB" as destination database change the table owner using the function:
+        db_tables_change_owner(engine, schema)
+    14. If you need to drop the table call the function drop_ding0_db_tables(engine, schema) immediately after
+        the called create function:  create_ding0_sql_tables(oedb_engine, SCHEMA)
+                                    drop_ding0_db_tables(oedb_engine, SCHEMA)
 
     Parameters
     ----------
