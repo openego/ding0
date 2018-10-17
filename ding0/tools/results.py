@@ -172,10 +172,7 @@ def plot_cable_length(stats, plotpath):
 
 def plot_generation_over_load(stats, plotpath):
     """
-
-    :param stats:
-    :param plotpath:
-    :return:
+    Plot of generation over load
     """
 
     # Generation capacity vs. peak load
