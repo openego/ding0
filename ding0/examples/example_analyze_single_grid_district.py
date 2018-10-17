@@ -62,7 +62,9 @@ def example_stats(filename, plotpath=''):
     # print all the calculated stats
     # this isn't a particularly beautiful format but it is
     # information rich
-    with option_context('display.max_rows', None, 'display.max_columns', None):
+    with option_context('display.max_rows', None,
+                        'display.max_columns', None,
+                        'display.max_colwidth', -1):
         print(stats.T)
 
 
