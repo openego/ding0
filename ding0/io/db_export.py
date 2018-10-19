@@ -411,7 +411,6 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
         if 'geom' in dataframe.columns:
             if geom_type == 'POINT':
                 sql_write_df['geom'] = sql_write_df['geom'].apply(create_wkt_element)
-
                 sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None,
                                     dtype={'geom': Geometry('POINT', srid=int(SRID))})
 
@@ -647,7 +646,7 @@ def export_all_dataframes_to_db(engine, schema):
         The schema in which the tables are to be created
     """
 
-    if engine.dialect.has_table(engine, DING0_TABLES["versioning"]):
+    if engine.dialect.has_table(engine, DING0_TABLES["versioning"], schema=schema):
 
         db_versioning = pd.read_sql_table(DING0_TABLES['versioning'], engine, schema,
                                           columns=['run_id', 'description'])
@@ -706,7 +705,7 @@ if __name__ == "__main__":
     session = sessionmaker(bind=oedb_engine)()
 
     # Testing Database
-    reiners_engine = connection(section='reiners_db')
+    # reiners_engine = connection(section='reiners_db')
 
     # Set the Database schema which you want to add the tables to
     SCHEMA = "model_draft"
