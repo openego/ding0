@@ -725,7 +725,7 @@ if __name__ == "__main__":
     # RUN_ID = datetime.now().strftime("%Y%m%d%H%M%S")
 
     # choose MV Grid Districts to import
-    mv_grid_districts = [3040, 3045]
+    mv_grid_districts = [3040, 3046]
 
     # run DING0 on selected MV Grid District
     nw.run_ding0(session=session,
