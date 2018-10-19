@@ -25,7 +25,7 @@
 	{"name": "Jonas Huber", "email": "jonas.huber@rl-institut.de", "date": "2018-08-17", "comment": "Create metadata"},
 	{"name": "Jonas Huber", "email": "jonas.huber@rl-institut.de", "date": "2018-09-12", "comment": "Update metadata section source"} ],
 "resources": [
-	{"name": "model_draft.ego_grid_ding0_lv_generator", 
+	{"name": "grid.ego_grid_ding0_lv_generator",
 	"format": "PostgreSQL", 
 	"fields": [
 		{"name": "id","description": "unambiguous unique numer","unit": "integer"},
