@@ -12,10 +12,13 @@ The documentation is available on RTD: http://ding0.readthedocs.io
 Notes
 -----
 
-This example file assumes you have already run the example file
-`example_multiple_grid_districts.py` and use the option to save the `nd` object to
-disc. If the example script was executed in PWD, do not change `base_path`
-below.
+This example file creates some statistics of the specified ding0 grids that are
+saved to `BASEPATH/results/` and some plots that are shown and saved to
+`BASEPATH/plots/`. The example assumes you have already run the example file
+`example_multiple_grid_districts.py` and use the option to save the `nd` object
+to disc. Make sure to use the same BASEPATH here as in
+`example_multiple_grid_districts.py`.
+
 """
 
 __copyright__ = "Reiner Lemoine Institut gGmbH"
@@ -26,13 +29,14 @@ __author__ = "nesnoj, gplssm"
 from ding0.tools import results
 from ding0.tools.logger import get_default_home_dir
 import os
+from matplotlib import pyplot as plt
 
 BASEPATH = get_default_home_dir()
 
 
 def ding0_exemplary_plots(stats, base_path=BASEPATH):
     """
-    Analyze multiple grid district data generated with Ding0
+    Analyze multiple grid district data generated with Ding0.
 
     Parameters
     ----------
@@ -41,12 +45,15 @@ def ding0_exemplary_plots(stats, base_path=BASEPATH):
     base_path : str
         Root directory of Ding0 data structure, i.e. '~/.ding0' (which is
         default).
+
     """
 
     # make some plot
     plotpath = os.path.join(base_path, 'plots')
     results.plot_cable_length(stats, plotpath)
+    plt.show()
     results.plot_generation_over_load(stats, plotpath)
+    plt.show()
 
 
 def nd_load_and_stats(filenames, base_path=BASEPATH):
@@ -55,8 +62,8 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
 
     Passes the list of files assuming the ding0 data structure as default in
     :code:`~/.ding0`.
-    Data will concatenated and key indicators for each grid district are
-    returned in table and graphic format
+    Data will be concatenated and key indicators for each grid district are
+    returned in table and graphic format.
 
     Parameters
     ----------
@@ -65,10 +72,12 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
     base_path : str
         Root directory of Ding0 data structure, i.e. '~/.ding0' (which is
         default).
+
     Returns
     -------
     stats : pandas.DataFrame
         Statistics of each MV grid districts
+
     """
 
     # load Ding0 data
@@ -93,7 +102,6 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
     # get statistical numbers about grid
     stats = results.calculate_mvgd_stats(nd)
 
-    # TODO: correct LV peak load/ generation capacity. Same in all LV GD
     return stats
 
 
