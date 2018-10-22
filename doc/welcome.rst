@@ -2,11 +2,6 @@
 What is ding0 about?
 ####################
 
-**WARNING** Note, currently the data source Ding0 relies on - the
-[Open Energy Database](http://oep.iks.cs.ovgu.de/dataedit/) - has no public
-accessible API, yet. Thus, currently you won't be able to run Ding0 without
-modifications.
-
 DIstribution Network GeneratOr (Ding0) is a tool to generate synthetic medium
 and low voltage power distribution grids based on open (or at least accessible)
 data.

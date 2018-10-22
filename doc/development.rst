@@ -1,7 +1,7 @@
 Notes to developers
 ~~~~~~~~~~~~~~~~~~~
 
-If you're interested to contribute and join the project. Feel free to submit
+If you're interested to contribute and join the project, feel free to submit
 PR, contact us, or just create an issue if something seems odd.
 
 

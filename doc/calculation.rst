@@ -4,8 +4,8 @@ Calculation principles
 Reactance
 #########
 
-We assume all cables and overhead lines as to be short lines. Thus, the capacity
-is neither considered to calculate reactance of overhead lines and cables.
+We assume all cables and overhead lines to be short lines. Thus, the capacity
+is not considered in calculation of reactance of overhead lines and cables.
 
 .. math::
     x = \omega * L
