@@ -14,8 +14,8 @@ Notes
 
 This example file assumes you have already run the example file
 `example_single_grid_district.py` and use the option to save the `nd` object to
-disk. If the example script was executed in PWD, do not change `base_path`
-below.
+disk.
+
 """
 
 __copyright__ = "Reiner Lemoine Institut gGmbH"
@@ -27,10 +27,8 @@ from ding0.tools import results
 from pandas import option_context
 from matplotlib import pyplot as plt
 
-base_path = ''
 
-
-def example_stats(filename, plotpath=''):
+def example_stats(filename):
     """
     Obtain statistics from create grid topology
 
@@ -47,8 +45,8 @@ def example_stats(filename, plotpath=''):
     # plot distribution of load/generation of subjacent LV grids
     stations = nodes_df[nodes_df['type'] == 'LV Station']
     f, axarr = plt.subplots(2, sharex=True)
-    f.suptitle("Peak load (top)/ peak generation capacity (bottom) at LV "
-               "substation in kW")
+    f.suptitle("Peak load (top) / peak generation capacity (bottom) at LV "
+               "substations in kW")
     stations['peak_load'].hist(bins=20, alpha=0.5, ax=axarr[0])
     axarr[0].set_title("Peak load in kW")
     stations['generation_capacity'].hist(bins=20, alpha=0.5, ax=axarr[1])
