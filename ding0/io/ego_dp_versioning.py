@@ -11,72 +11,20 @@
 # __license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 # __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
 # __author__ = "jh-RLI"
-#
-#
-# import json
-# import os
-#
-# from egoio.tools.db import connection
-#
-# from sqlalchemy import MetaData
-#
-# # set your Table names
-# DING0_TABLES = {'versioning': 'ego_ding0_versioning',
-#                 'line': 'ego_ding0_line',
-#                 'lv_branchtee': 'ego_ding0_lv_branchtee',
-#                 'lv_generator': 'ego_ding0_lv_generator',
-#                 'lv_load': 'ego_ding0_lv_load',
-#                 'lv_grid': 'ego_ding0_lv_grid',
-#                 'lv_station': 'ego_ding0_lv_station',
-#                 'mvlv_transformer': 'ego_ding0_mvlv_transformer',
-#                 'mvlv_mapping': 'ego_ding0_mvlv_mapping',
-#                 'mv_branchtee': 'ego_ding0_mv_branchtee',
-#                 'mv_circuitbreaker': 'ego_ding0_mv_circuitbreaker',
-#                 'mv_generator': 'ego_ding0_mv_generator',
-#                 'mv_load': 'ego_ding0_mv_load',
-#                 'mv_grid': 'ego_ding0_mv_grid',
-#                 'mv_station': 'ego_ding0_mv_station',
-#                 'hvmv_transformer': 'ego_ding0_hvmv_transformer'}
-#
-# # #########SQLAlchemy and DB table################
-# #source
-# oedb_engine = connection(section='oedb')
-# # Testing Database -> destination
-# reiners_engine = connection(section='reiners_db')
-#
-# REFLICTED_SCHEMA = "model_draft"
-# VERSIONING_SCHEMA = "grid"
-#
-# META = MetaData()
-# META.reflect(bind=reiners_engine, schema=REFLICTED_SCHEMA, only=DING0_TABLES['versioning', 'line', 'lv_branchtee',
-#                                                                           'lv_generator', 'lv_load', 'lv_grid',
-#                                                                           'lv_station', 'mvlv_transformer',
-#                                                                           'mvlv_mapping', 'mv_branchtee',
-#                                                                           'mv_circuitbreaker', 'mv_generator',
-#                                                                           'mv_load', 'mv_grid', 'mv_station',
-#                                                                           'hvmv_transformer'])
-# # ################################################
-#
-# tables = META.metadata.tables
-# for tbl in tables:
-#     print ('##################################')
-#     print (tbl)
-#     print ( tables[tbl].select())
-#     data = oedb_engine.execute(tables[tbl].select()).fetchall()
-#     for a in data: print(a)
-#     if data:
-#         print (tables[tbl].insert())
-#         reiners_engine.execute( tables[tbl].insert(), data)
 
-#!/usr/bin/env python
+import os
 
-import sys
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, MetaData, Table, exc
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.ext.declarative import declarative_base
+from geoalchemy2.types import Geometry, WKTElement
 
 from egoio.tools.db import connection
 
+import ding0
+from ding0.io.db_export import prepare_metadatastring_fordb
+from ding0.io.ego_scenario_log import write_scenario_log
 
 # # set your Table names
 # DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning',
@@ -96,8 +44,27 @@ from egoio.tools.db import connection
 #                 'mv_station': 'ego_grid_ding0_mv_station',
 #                 'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer'}
 
-DING0_TABLES = {'mv_generator': 'ego_grid_ding0_mv_generator'}
+# set your Table names
+DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning_test',
+                'line': 'ego_grid_ding0_line_test',
+                'lv_branchtee': 'ego_grid_ding0_lv_branchtee_test',
+                'lv_generator': 'ego_grid_ding0_lv_generator_test',
+                'lv_load': 'ego_grid_ding0_lv_load_test',
+                'lv_grid': 'ego_grid_ding0_lv_grid_test',
+                'lv_station': 'ego_grid_ding0_lv_station_test',
+                'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer_test',
+                'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping_test',
+                'mv_branchtee': 'ego_grid_ding0_mv_branchtee_test',
+                'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker_test',
+                'mv_generator': 'ego_grid_ding0_mv_generator_test',
+                'mv_load': 'ego_grid_ding0_mv_load_test',
+                'mv_grid': 'ego_grid_ding0_mv_grid_test',
+                'mv_station': 'ego_grid_ding0_mv_station_test',
+                'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer_test'}
 
+# DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning_test',
+#                 'line': 'ego_grid_ding0_line_test',
+#                 'lv_branchtee': 'ego_grid_ding0_lv_branchtee_test',}
 
 def get_table_names(t):
     tables = []
@@ -111,7 +78,21 @@ def make_session(engine):
     return Session(), engine
 
 
-def pull_data(from_db, s_schema, to_db, d_schema, tables):
+def migrate_tables_to_destination(from_db, s_schema, to_db, d_schema, runid=None):
+    """
+    Note: This function will throw a exception caused by the already existing index.
+    Functionality is still given.
+
+    Copys the table from source to the destination database.schema
+
+    Parameters
+    ----------
+    from_db:
+    s_schema:
+    to_db:
+    d_schema:
+    runid:
+    """
     source, sengine = make_session(from_db)
     smeta = MetaData(bind=sengine, schema=s_schema)
     destination, dengine = make_session(to_db)
@@ -120,9 +101,13 @@ def pull_data(from_db, s_schema, to_db, d_schema, tables):
         print('Processing', table_name)
         print('Pulling schema from source server')
         table = Table(table_name, smeta, autoload=True)
-        table.schema = d_schema
         print('Creating table on destination server or schema')
-        table.metadata.create_all(dengine, checkfirst=True)
+        try:
+            table.schema = d_schema
+            table.metadata.create_all(dengine, checkfirst=True)
+        except exc.ProgrammingError:
+            print("WARNING: The Index already exists, warning can be ignored.")
+        table.schema = s_schema
         new_record = quick_mapper(table)
         columns = table.columns.keys()
         print('Transferring records')
@@ -130,16 +115,63 @@ def pull_data(from_db, s_schema, to_db, d_schema, tables):
             data = dict(
                 [(str(column), getattr(record, column)) for column in columns]
             )
+            table.schema = d_schema
             destination.merge(new_record(**data))
-    print('Committing changes')
-    destination.commit()
+
+        print('Committing changes')
+        # destination.commit()
+
+        rows = destination.query(table_name).count()
+        json_tbl_name = []
+        for k,v in DING0_TABLES.items():
+            if v == table_name:
+                json_tbl_name.append(k)
+        metadata_string_json = prepare_metadatastring_fordb(json_tbl_name[0])
+        write_scenario_log(oedb_engine, 'open_eGo', runid, 'output', s_schema, table_name, 'db_export.py',
+                           entries=rows, comment='versioning', metadata=metadata_string_json)
 
 
 def quick_mapper(table):
     Base = declarative_base()
+
     class GenericMapper(Base):
         __table__ = table
     return GenericMapper
+
+
+def db_tables_change_owner(engine, schema):
+    DECLARATIVE_BASE = declarative_base()
+    METADATA = DECLARATIVE_BASE.metadata
+
+    tables = METADATA.sorted_tables
+
+    def change_owner(engine, table, role, schema):
+        """
+        Gives access to database users/ groups
+
+        Parameters
+        ----------
+        engine: sqlalchemy session object
+            A valid connection to a database
+        schema: The schema in which the tables are to be created
+        table : sqlalchmy Table class definition
+            The database table
+        role : str
+            database role that access is granted to
+        """
+        tablename = table
+
+        grant_str = """ALTER TABLE {schema}.{table}
+        OWNER TO {role};""".format(schema=schema, table=tablename.name,
+                                   role=role)
+
+        # engine.execute(grant_str)
+        engine.execution_options(autocommit=True).execute(grant_str)
+
+    # engine.echo=True
+
+    for tab in tables:
+        change_owner(engine, tab, 'oeuser', schema)
 
 
 if __name__ == '__main__':
@@ -152,4 +184,11 @@ if __name__ == '__main__':
     DESTINATION_SCHEMA = 'grid'
     tables = get_table_names(DING0_TABLES)
 
-    pull_data(oedb_engine, SOURCE_SCHEMA, oedb_engine, DESTINATION_SCHEMA, tables)
+    # Enter the current run_id, Inserted in scenario_log
+    RUN_ID = '20181022161343'
+
+    # Metadata folder Path
+    METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
+
+    migrate_tables_to_destination(oedb_engine, SOURCE_SCHEMA, oedb_engine, DESTINATION_SCHEMA, RUN_ID)
+    # db_tables_change_owner(oedb_engine, DESTINATION_SCHEMA)
