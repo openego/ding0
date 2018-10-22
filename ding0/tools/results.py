@@ -197,7 +197,7 @@ def plot_generation_over_load(stats, plotpath):
                scatter_kws={"marker": "D",
                             "s": 100},
                aspect=2)
-    plt.title('Peak load vs. generation capcity')
+    plt.title('Peak load vs. generation capacity')
     plt.xlabel('Generation capacity in MW')
     plt.ylabel('Peak load in MW')
 
