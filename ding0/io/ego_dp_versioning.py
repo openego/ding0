@@ -26,45 +26,24 @@ import ding0
 from ding0.io.db_export import prepare_metadatastring_fordb
 from ding0.io.ego_scenario_log import write_scenario_log
 
-# # set your Table names
-# DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning',
-#                 'line': 'ego_grid_ding0_line',
-#                 'lv_branchtee': 'ego_grid_ding0_lv_branchtee',
-#                 'lv_generator': 'ego_grid_ding0_lv_generator',
-#                 'lv_load': 'ego_grid_ding0_lv_load',
-#                 'lv_grid': 'ego_grid_ding0_lv_grid',
-#                 'lv_station': 'ego_grid_ding0_lv_station',
-#                 'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer',
-#                 'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping',
-#                 'mv_branchtee': 'ego_grid_ding0_mv_branchtee',
-#                 'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker',
-#                 'mv_generator': 'ego_grid_ding0_mv_generator',
-#                 'mv_load': 'ego_grid_ding0_mv_load',
-#                 'mv_grid': 'ego_grid_ding0_mv_grid',
-#                 'mv_station': 'ego_grid_ding0_mv_station',
-#                 'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer'}
-
 # set your Table names
-DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning_test',
-                'line': 'ego_grid_ding0_line_test',
-                'lv_branchtee': 'ego_grid_ding0_lv_branchtee_test',
-                'lv_generator': 'ego_grid_ding0_lv_generator_test',
-                'lv_load': 'ego_grid_ding0_lv_load_test',
-                'lv_grid': 'ego_grid_ding0_lv_grid_test',
-                'lv_station': 'ego_grid_ding0_lv_station_test',
-                'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer_test',
-                'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping_test',
-                'mv_branchtee': 'ego_grid_ding0_mv_branchtee_test',
-                'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker_test',
-                'mv_generator': 'ego_grid_ding0_mv_generator_test',
-                'mv_load': 'ego_grid_ding0_mv_load_test',
-                'mv_grid': 'ego_grid_ding0_mv_grid_test',
-                'mv_station': 'ego_grid_ding0_mv_station_test',
-                'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer_test'}
+DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning',
+                'line': 'ego_grid_ding0_line',
+                'lv_branchtee': 'ego_grid_ding0_lv_branchtee',
+                'lv_generator': 'ego_grid_ding0_lv_generator',
+                'lv_load': 'ego_grid_ding0_lv_load',
+                'lv_grid': 'ego_grid_ding0_lv_grid',
+                'lv_station': 'ego_grid_ding0_lv_station',
+                'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer',
+                'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping',
+                'mv_branchtee': 'ego_grid_ding0_mv_branchtee',
+                'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker',
+                'mv_generator': 'ego_grid_ding0_mv_generator',
+                'mv_load': 'ego_grid_ding0_mv_load',
+                'mv_grid': 'ego_grid_ding0_mv_grid',
+                'mv_station': 'ego_grid_ding0_mv_station',
+                'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer'}
 
-# DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning_test',
-#                 'line': 'ego_grid_ding0_line_test',
-#                 'lv_branchtee': 'ego_grid_ding0_lv_branchtee_test',}
 
 def get_table_names(t):
     tables = []
@@ -85,6 +64,20 @@ def migrate_tables_to_destination(from_db, s_schema, to_db, d_schema, runid=None
 
     Copys the table from source to the destination database.schema
 
+    Step-by-Step:
+    1. Set up the connection using the egoio.tools.db -> connection() function
+    2. SET the SOURCE_SCHEMA and DESTINATION_SCHEMA
+    3. Insert your table (key: names) to dict like DING0_TABLES
+    4. Call the function get_table_names() with your Table dictionary as parameter save the result in
+        variable "tables = get_table_names(dict)"
+    5. For ding0 data set the RUN_ID
+    6. Save the dynamic path to the metadata_string.json in METADATA_STRING_FOLDER´
+        Note: Metadata_string file names need to contain the the table name See:
+        https://github.com/openego/ding0/tree/features/stats-export/ding0/io/metadatastrings
+    7. Call the function with parameters like:
+        migrate_tables_to_destination(oedb_engine, SOURCE_SCHEMA, oedb_engine, DESTINATION_SCHEMA, RUN_ID)
+    8. In function migrate_tables_to_destination() check the function write_scenario_log()
+    9. Check if the tables in your source schema exist and named eually to the table dict like in DING0_TABLES{}
     Parameters
     ----------
     from_db:
@@ -119,9 +112,9 @@ def migrate_tables_to_destination(from_db, s_schema, to_db, d_schema, runid=None
             destination.merge(new_record(**data))
 
         print('Committing changes')
-        # destination.commit()
+        destination.commit()
 
-        rows = destination.query(table_name).count()
+        rows = destination.query(table.c.run_id).count()
         json_tbl_name = []
         for k,v in DING0_TABLES.items():
             if v == table_name:
@@ -185,7 +178,7 @@ if __name__ == '__main__':
     tables = get_table_names(DING0_TABLES)
 
     # Enter the current run_id, Inserted in scenario_log
-    RUN_ID = '20181022161343'
+    RUN_ID = '20181022185643'
 
     # Metadata folder Path
     METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
