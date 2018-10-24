@@ -8,11 +8,6 @@ DING0
 DIstribution Network GeneratOr -- A tool to generate synthetic medium and low
 voltage power distribution grids based on open (or at least accessible) data.
 
-WARNING: Note, currently the data source Ding0 relies on - the
-[Open Energy Database](http://oep.iks.cs.ovgu.de/dataedit/) - has no public
-accessible API, yet. Thus, currently you won't be able to run Ding0 without
-modifications.
-
 Installation and usage
 ----------------------
 
