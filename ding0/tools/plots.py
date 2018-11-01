@@ -1,0 +1,254 @@
+import os
+import matplotlib.pyplot as plt
+import networkx as nx
+from pyproj import Proj, transform
+import logging
+
+logger = logging.getLogger('ding0')
+from ding0.tools.logger import get_default_home_dir
+
+use_gpd = False
+use_ctx = False
+
+if not 'READTHEDOCS' in os.environ:
+    use_gpd = True
+    try:
+        import geopandas as gpd
+    except:
+        use_gpd = False
+
+    use_ctx = True
+    try:
+        import contextily as ctx
+    except:
+        use_ctx = False
+
+
+def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
+                     line_color=None, node_color='type', testcase='load'):
+    """ Draws MV grid graph using networkx
+
+    Parameters
+    ----------
+    grid : :obj:`MVGridDing0`
+        MV grid to plot.
+    subtitle : str
+        Extend plot's title by this string.
+    background_map : bool, optional
+        If True, a background map is plotted (default: stamen toner light).
+    filename : str
+        If provided, the figure will be saved and not displayed (default path: ~/.ding0/).
+        A prefix is added to the file name.
+    line_color : str
+        Defines whereby to choose line colors. Possible options are:
+
+        * 'loading'
+          Line color is set according to loading of the line in heavy load case.
+        * None (default)
+          Lines are plotted in black. Is also the fallback option in case of
+          wrong input.
+    node_color : str
+        Defines whereby to choose node colors. Possible options are:
+
+        * 'type' (default)
+          Node color as well as size is set according to type of node
+          (generator, MV station, etc.). Is also the fallback option in case of
+          wrong input.
+        * 'voltage'
+          Node color is set according to voltage deviation from 1 p.u..
+          Voltages of nodes in MV grid must be provided by parameter `voltage`.
+    testcase : str
+        Defines which case is to be used. Refer to config_calc.cfg to see further
+        assumptions for the cases. Possible options are:
+        * 'load' (default)
+          Heavy-load-flow case
+        * 'feedin'
+          Feedin-case
+
+    Notes
+    -----
+    The geo coords (for used crs see database import in class `NetworkDing0`)
+    are used as positions for drawing but networkx uses cartesian crs.
+    Since no coordinate transformation is performed, the drawn graph representation is falsified!
+    """
+
+    def set_nodes_style_and_position(nodes):
+        nodes_pos = {}
+        nodes_color = []
+        nodes_size = []
+
+        # TODO: MOVE settings to config
+        # node styles
+        colors_dict = {'MVStationDing0': '#f2ae00',
+                       'LVStationDing0': 'grey',
+                       'LVLoadAreaCentreDing0': '#fffc3d',
+                       'MVCableDistributorDing0': '#000000',
+                       'GeneratorDing0': '#00b023',
+                       'GeneratorFluctuatingDing0': '#0078b0',
+                       'CircuitBreakerDing0': '#c20000',
+                       'n/a': 'orange'}
+        sizes_dict = {'MVStationDing0': 120,
+                      'LVStationDing0': 7,
+                      'LVLoadAreaCentreDing0': 30,
+                      'MVCableDistributorDing0': 5,
+                      'GeneratorDing0': 50,
+                      'GeneratorFluctuatingDing0': 50,
+                      'CircuitBreakerDing0': 50,
+                      'n/a': 5}
+
+        for n in nodes:
+            if type(n).__name__ in colors_dict.keys():
+                nodes_color.append(colors_dict[type(n).__name__])
+                nodes_size.append(sizes_dict[type(n).__name__])
+            else:
+                nodes_color.append(colors_dict['n/a'])
+                nodes_size.append(sizes_dict['n/a'])
+            nodes_pos[n] = (n.geo_data.x, n.geo_data.y)
+
+        return nodes_pos, nodes_color, nodes_size
+
+    def reproject_nodes(nodes_pos, model_proj='4326'):
+        inProj = Proj(init='epsg:{srid}'.format(srid=model_proj))
+        outProj = Proj(init='epsg:3857')
+        nodes_pos2 = {}
+        for k, v in nodes_pos.items():
+            x2, y2 = transform(inProj, outProj,
+                               v[0],
+                               v[1])
+            nodes_pos2[k] = (x2, y2)
+        return nodes_pos2
+
+    def plot_background_map(ax):
+        url = ctx.sources.ST_TONER_LITE
+        xmin, xmax, ymin, ymax = ax.axis()
+        basemap, extent = ctx.bounds2img(xmin, ymin, xmax, ymax,
+                                         zoom=12, url=url)
+        ax.imshow(basemap, extent=extent, interpolation='bilinear', zorder=0)
+        ax.axis((xmin, xmax, ymin, ymax))
+
+        # hide axes labels (coords)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+
+    def plot_region_data(ax):
+        # get geoms of MV grid district, load areas and LV grid districts
+        mv_grid_district = gpd.GeoDataFrame({'geometry': grid.grid_district.geo_data},
+                                            crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
+        load_areas = gpd.GeoDataFrame({'geometry': [la.geo_area for la in grid.grid_district.lv_load_areas()]},
+                                      crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
+        lv_grid_districts = gpd.GeoDataFrame({'geometry': [lvgd.geo_data
+                                                           for la in grid.grid_district.lv_load_areas()
+                                                           for lvgd in la.lv_grid_districts()]},
+                                             crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
+
+        # reproject to WGS84 pseudo mercator if contextily is used
+        if use_ctx and background_map:
+            mv_grid_district = mv_grid_district.to_crs(epsg=3857)
+            load_areas = load_areas.to_crs(epsg=3857)
+            lv_grid_districts = lv_grid_districts.to_crs(epsg=3857)
+
+        # plot
+        mv_grid_district.plot(ax=ax, color='#ffffff', alpha=0.2, edgecolor='k', linewidth=2, zorder=2)
+        load_areas.plot(ax=ax, color='#fffea3', alpha=0.1, edgecolor='k', linewidth=0.5, zorder=3)
+        lv_grid_districts.plot(ax=ax, color='#ffffff', alpha=0.05, edgecolor='k', linewidth=0.5, zorder=4)
+
+    model_proj = grid.network.config['geo']['srid']
+
+    if testcase == 'feedin':
+        case_idx = 1
+    else:
+        case_idx = 0
+
+    g = grid._graph
+    nodes_pos, nodes_color, nodes_size = set_nodes_style_and_position(g.nodes())
+
+    if use_ctx and background_map:
+        nodes_pos = reproject_nodes(nodes_pos, model_proj=model_proj)
+
+    if line_color == 'loading':
+        edges_color = []
+        for n1, n2 in g.edges():
+            edge = g.edge[n1][n2]
+            if hasattr(edge['branch'], 's_res'):
+                edges_color.append(edge['branch'].s_res[case_idx] * 1e3 /
+                                   (3 ** 0.5 * edge['branch'].type['U_n'] * edge['branch'].type['I_max_th']))
+            else:
+                edges_color.append(0)
+        edges_cmap = plt.get_cmap('jet')
+        edges_cmap.set_over('#952eff')
+    else:
+        edges_color = ['black'] * len(list(grid.graph_edges()))
+        edges_cmap = None
+
+    if node_color == 'voltage':
+        voltage_station = grid._station.voltage_res[case_idx]
+        nodes_color = []
+        for n in g.nodes():
+            if hasattr(n, 'voltage_res'):
+                nodes_color.append(n.voltage_res[case_idx])
+            else:
+                nodes_color.append(voltage_station)
+
+        nodes_vmax = voltage_station
+        if testcase == 'feedin':
+            nodes_cmap = plt.get_cmap('Reds')
+            nodes_cmap.set_over('#952eff')
+            nodes_vmax = voltage_station + float(grid.network.config
+                                                 ['mv_routing_tech_constraints']
+                                                 ['mv_max_v_level_fc_diff_normal'])
+            nodes_vmin = voltage_station
+        else:
+            nodes_cmap = plt.get_cmap('Reds_r')
+            nodes_cmap.set_under('#952eff')
+            nodes_vmin = voltage_station - float(grid.network.config
+                                                 ['mv_routing_tech_constraints']
+                                                 ['mv_max_v_level_lc_diff_normal'])
+            nodes_vmax = voltage_station
+    else:
+        nodes_cmap = None
+        nodes_vmax = nodes_vmin = None
+
+    plt.figure()
+    ax = plt.gca()
+
+    # TODO: Add different symbols here
+    nodes = nx.draw_networkx_nodes(g,
+                                   nodes_pos,
+                                   # node_shape='o',
+                                   node_color=nodes_color,
+                                   cmap=nodes_cmap,
+                                   vmin=nodes_vmin,
+                                   vmax=nodes_vmax,
+                                   node_size=nodes_size,
+                                   linewidths=0.25,
+                                   ax=ax)
+
+    nodes.set_zorder(6)
+    nodes.set_edgecolor('k')
+
+    edges = nx.draw_networkx_edges(g,
+                                   pos=nodes_pos,
+                                   edge_color=edges_color,
+                                   edge_cmap=edges_cmap,
+                                   edge_vmin=0,
+                                   edge_vmax=1,
+                                   #width=1,
+                                   ax=ax)
+    edges.set_zorder(5)
+
+    if use_ctx and background_map:
+        plot_background_map(ax=ax)
+    if use_gpd:
+        plot_region_data(ax=ax)
+
+    plt.title('MV Grid District {id} - {st}'.format(id=grid.id_db,
+                                                    st=subtitle))
+
+    if filename is None:
+        plt.show()
+    else:
+        path = os.path.join(get_default_home_dir(), 'ding0_grid_{id}_{filename}'.format(id=str(grid.id_db),
+                                                                                        filename=filename))
+        plt.savefig(path, dpi=300, bbox_inches='tight')
+        plt.close()
+        logger.info('==> Figure saved to {path}'.format(path=path))

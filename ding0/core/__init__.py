@@ -24,6 +24,7 @@ from ding0.core.structure.regions import *
 from ding0.core.powerflow import *
 from ding0.tools import pypsa_io
 from ding0.tools.animation import AnimationDing0
+from ding0.tools.plots import plot_mv_topology
 from ding0.flexopt.reinforce_grid import *
 
 import os
@@ -99,7 +100,7 @@ class NetworkDing0:
         """Returns ORM data"""
         return self._orm
 
-    def run_ding0(self, session, mv_grid_districts_no=None, debug=False):
+    def run_ding0(self, session, mv_grid_districts_no=None, debug=False, export_figures=False):
         """ Let DING0 run by shouting at this method (or just call
             it from NetworkDing0 instance). This method is a wrapper
             for the main functionality of DING0.
@@ -113,6 +114,8 @@ class NetworkDing0:
             all grid_districts & stations are imported)
         debug : bool, defaults to False
             If True, information is printed during process
+        export_figures : bool, defaults to False
+            If True, figures are shown or exported (default path: ~/.ding0/) during run.
 
         Returns
         -------
@@ -210,28 +213,50 @@ class NetworkDing0:
         self.build_lv_grids()
 
         # STEP 6: Build MV grids
-        self.mv_routing(debug=False, animation=False)
+        self.mv_routing(debug=False)
+        if export_figures:
+            grid = self._mv_grid_districts[0].mv_grid
+            plot_mv_topology(grid, subtitle='Routing completed', filename='1_routing_completed.png')
 
         # STEP 7: Connect MV and LV generators
         self.connect_generators(debug=False)
+        if export_figures:
+            plot_mv_topology(grid, subtitle='Generators connected', filename='2_generators_connected.png')
 
         # STEP 8: Set IDs for all branches in MV and LV grids
         self.set_branch_ids()
 
         # STEP 9: Relocate switch disconnectors in MV grid
         self.set_circuit_breakers(debug=debug)
+        if export_figures:
+            plot_mv_topology(grid, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
     
         # STEP 10: Open all switch disconnectors in MV grid
         self.control_circuit_breakers(mode='open')
     
         # STEP 11: Do power flow analysis of MV grid
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
+        if export_figures:
+            plot_mv_topology(grid, subtitle='PF result (load case)',
+                             filename='4_PF_result_load.png',
+                             line_color='loading', node_color='voltage', testcase='load')
+            plot_mv_topology(grid, subtitle='PF result (feedin case)',
+                             filename='5_PF_result_feedin.png',
+                             line_color='loading', node_color='voltage', testcase='feedin')
     
         # STEP 12: Reinforce MV grid
         self.reinforce_grid()
 
         # STEP 13: Close all switch disconnectors in MV grid
         self.control_circuit_breakers(mode='close')
+
+        if export_figures:
+            plot_mv_topology(grid, subtitle='Final grid PF result (load case)',
+                             filename='6_final_grid_PF_result_load.png',
+                             line_color='loading', node_color='voltage', testcase='load')
+            plot_mv_topology(grid, subtitle='Final grid PF result (feedin case)',
+                             filename='7_final_grid_PF_result_feedin.png',
+                             line_color='loading', node_color='voltage', testcase='feedin')
 
         if debug:
             logger.info('Elapsed time for {0} MV Grid Districts (seconds): {1}'.format(
