@@ -7,7 +7,14 @@ distribution grids based on open data.
 It is developed in the project open_eGo: https://openegoproject.wordpress.com
 
 DINGO lives at github: https://github.com/openego/ding0/
-The documentation is available on RTD: http://ding0.readthedocs.io"""
+The documentation is available on RTD: http://ding0.readthedocs.io
+
+Notes
+-----
+
+This example file creates ding0 grids for all 3608 grid districts.
+
+"""
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
 __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"

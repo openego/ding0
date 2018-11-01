@@ -36,11 +36,14 @@ from math import isnan
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 from geoalchemy2.shape import from_shape
-from shapely.wkt import loads as wkt_loads
-from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
-from shapely.geometry import shape, mapping
 import subprocess
 import oedialect
+
+if not 'READTHEDOCS' in os.environ:
+    from shapely.wkt import loads as wkt_loads
+    from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+    from shapely.geometry import shape, mapping
+    from shapely.wkt import dumps as wkt_dumps
 
 logger = logging.getLogger('ding0')
 
@@ -359,7 +362,6 @@ class NetworkDing0:
             # raise ValueError(
             #     'Load Area {} has no LVGD - please re-open #155'.format(
             #         repr(lv_load_area)))
-            from shapely.wkt import dumps as wkt_dumps
             geom = wkt_dumps(lv_load_area.geo_area)
 
             lv_grid_districts = \
