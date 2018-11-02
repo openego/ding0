@@ -11,7 +11,7 @@ from ding0.core.network.grids import MVGridDing0
 use_gpd = False
 use_ctx = False
 
-if not 'READTHEDOCS' in os.environ:
+if 'READTHEDOCS' not in os.environ:
     use_gpd = True
     try:
         import geopandas as gpd
