@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger('ding0')
 from ding0.tools.logger import get_default_home_dir
+from ding0.core.network.grids import MVGridDing0
 
 use_gpd = False
 use_ctx = False
@@ -152,6 +153,11 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
         load_areas.plot(ax=ax, color='#fffea3', alpha=0.1, edgecolor='k', linewidth=0.5, zorder=3)
         lv_grid_districts.plot(ax=ax, color='#ffffff', alpha=0.05, edgecolor='k', linewidth=0.5, zorder=4)
 
+    if not isinstance(grid, MVGridDing0):
+        logger.warning('Sorry, but plotting is currently only available for MV grids but you did not pass an'
+                       'instance of MVGridDing0. Plotting is skipped.')
+        return
+
     model_proj = grid.network.config['geo']['srid']
 
     if testcase == 'feedin':
@@ -189,7 +195,6 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
             else:
                 nodes_color.append(voltage_station)
 
-        nodes_vmax = voltage_station
         if testcase == 'feedin':
             nodes_cmap = plt.get_cmap('Reds')
             nodes_cmap.set_over('#952eff')
@@ -211,7 +216,7 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
     plt.figure()
     ax = plt.gca()
 
-    # TODO: Add different symbols here
+    # TODO: Add additional symbols here
     nodes = nx.draw_networkx_nodes(g,
                                    nodes_pos,
                                    # node_shape='o',
