@@ -1,4 +1,6 @@
 import os
+import math
+import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 from pyproj import Proj, transform
@@ -25,8 +27,10 @@ if 'READTHEDOCS' not in os.environ:
         use_ctx = False
 
 
-def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
-                     line_color=None, node_color='type', testcase='load'):
+def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
+                     line_color=None, node_color='type',
+                     limits_cb_lines=None, limits_cb_nodes=None,
+                     background_map=True):
     """ Draws MV grid graph using networkx
 
     Parameters
@@ -35,11 +39,16 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
         MV grid to plot.
     subtitle : str
         Extend plot's title by this string.
-    background_map : bool, optional
-        If True, a background map is plotted (default: stamen toner light).
     filename : str
         If provided, the figure will be saved and not displayed (default path: ~/.ding0/).
         A prefix is added to the file name.
+    testcase : str
+        Defines which case is to be used. Refer to config_calc.cfg to see further
+        assumptions for the cases. Possible options are:
+        * 'load' (default)
+          Heavy-load-flow case
+        * 'feedin'
+          Feedin-case
     line_color : str
         Defines whereby to choose line colors. Possible options are:
 
@@ -58,13 +67,14 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
         * 'voltage'
           Node color is set according to voltage deviation from 1 p.u..
           Voltages of nodes in MV grid must be provided by parameter `voltage`.
-    testcase : str
-        Defines which case is to be used. Refer to config_calc.cfg to see further
-        assumptions for the cases. Possible options are:
-        * 'load' (default)
-          Heavy-load-flow case
-        * 'feedin'
-          Feedin-case
+    limits_cb_lines : :obj:`tuple`
+        Tuple with limits for colorbar of line color. First entry is the
+        minimum and second entry the maximum value. Default: None.
+    limits_cb_nodes : :obj:`tuple`
+        Tuple with limits for colorbar of nodes. First entry is the
+        minimum and second entry the maximum value. Default: None.
+    background_map : bool, optional
+        If True, a background map is plotted (default: stamen toner light).
 
     Notes
     -----
@@ -74,11 +84,18 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
     """
 
     def set_nodes_style_and_position(nodes):
-        nodes_pos = {}
-        nodes_color = []
-        nodes_size = []
 
         # TODO: MOVE settings to config
+        # node types (name of classes)
+        node_types = ['MVStationDing0',
+                      'LVStationDing0',
+                      'LVLoadAreaCentreDing0',
+                      'MVCableDistributorDing0',
+                      'GeneratorDing0',
+                      'GeneratorFluctuatingDing0',
+                      'CircuitBreakerDing0',
+                      'n/a']
+        
         # node styles
         colors_dict = {'MVStationDing0': '#f2ae00',
                        'LVStationDing0': 'grey',
@@ -97,16 +114,30 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
                       'CircuitBreakerDing0': 50,
                       'n/a': 5}
 
+        # dict of node class names: list of nodes
+        nodes_by_type = {_: [] for _ in node_types}
+        # dict of node class names: list of node-individual color
+        node_colors_by_type = {_: [] for _ in node_types}
+        # dict of node class names: list of node-individual size
+        node_sizes_by_type = {_: [] for _ in node_types}
+        node_sizes_by_type['all'] = []
+        # dict of nodes:node-individual positions
+        nodes_pos = {}
+
         for n in nodes:
-            if type(n).__name__ in colors_dict.keys():
-                nodes_color.append(colors_dict[type(n).__name__])
-                nodes_size.append(sizes_dict[type(n).__name__])
+            if type(n).__name__ in node_types:
+                nodes_by_type[type(n).__name__].append(n)
+                node_colors_by_type[type(n).__name__].append(colors_dict[type(n).__name__])
+                node_sizes_by_type[type(n).__name__].append(sizes_dict[type(n).__name__])
+                node_sizes_by_type['all'].append(sizes_dict[type(n).__name__])
             else:
-                nodes_color.append(colors_dict['n/a'])
-                nodes_size.append(sizes_dict['n/a'])
+                nodes_by_type['n/a'].append(n)
+                node_colors_by_type['n/a'].append(colors_dict['n/a'])
+                node_sizes_by_type['n/a'].append(sizes_dict['n/a'])
+                node_sizes_by_type['all'].append(sizes_dict['n/a'])
             nodes_pos[n] = (n.geo_data.x, n.geo_data.y)
 
-        return nodes_pos, nodes_color, nodes_size
+        return node_types, nodes_by_type, node_colors_by_type, node_sizes_by_type, nodes_pos
 
     def reproject_nodes(nodes_pos, model_proj='4326'):
         inProj = Proj(init='epsg:{srid}'.format(srid=model_proj))
@@ -158,6 +189,7 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
                        'instance of MVGridDing0. Plotting is skipped.')
         return
 
+    g = grid._graph
     model_proj = grid.network.config['geo']['srid']
 
     if testcase == 'feedin':
@@ -165,11 +197,14 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
     else:
         case_idx = 0
 
-    g = grid._graph
-    nodes_pos, nodes_color, nodes_size = set_nodes_style_and_position(g.nodes())
+    nodes_types, nodes_by_type, node_colors_by_type, node_sizes_by_type, nodes_pos =\
+        set_nodes_style_and_position(g.nodes())
 
     if use_ctx and background_map:
         nodes_pos = reproject_nodes(nodes_pos, model_proj=model_proj)
+
+    plt.figure()
+    ax = plt.gca()
 
     if line_color == 'loading':
         edges_color = []
@@ -186,6 +221,7 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
         edges_color = ['black'] * len(list(grid.graph_edges()))
         edges_cmap = None
 
+    # plot nodes by voltage
     if node_color == 'voltage':
         voltage_station = grid._station.voltage_res[case_idx]
         nodes_color = []
@@ -197,39 +233,58 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
 
         if testcase == 'feedin':
             nodes_cmap = plt.get_cmap('Reds')
-            nodes_cmap.set_over('#952eff')
             nodes_vmax = voltage_station + float(grid.network.config
                                                  ['mv_routing_tech_constraints']
                                                  ['mv_max_v_level_fc_diff_normal'])
             nodes_vmin = voltage_station
         else:
             nodes_cmap = plt.get_cmap('Reds_r')
-            nodes_cmap.set_under('#952eff')
             nodes_vmin = voltage_station - float(grid.network.config
                                                  ['mv_routing_tech_constraints']
                                                  ['mv_max_v_level_lc_diff_normal'])
             nodes_vmax = voltage_station
+
+        nodes = nx.draw_networkx_nodes(g,
+                                       pos=nodes_pos,
+                                       node_color=nodes_color,
+                                       # node_shape='o', # TODO: Add additional symbols here
+                                       cmap=nodes_cmap,
+                                       vmin=nodes_vmin,
+                                       vmax=nodes_vmax,
+                                       node_size=node_sizes_by_type['all'],
+                                       linewidths=0.25,
+                                       ax=ax)
+        nodes.set_zorder(6)
+        nodes.set_edgecolor('k')
+
+        if limits_cb_nodes is None:
+            limits_cb_nodes = (math.floor(min(nodes_color)*100)/100,
+                               math.ceil(max(nodes_color)*100)/100)
+        v_voltage = np.linspace(limits_cb_nodes[0], limits_cb_nodes[1], 101)
+        cb_voltage = plt.colorbar(nodes, boundaries=v_voltage,
+                                  ticks=v_voltage[0:101:10])
+        cb_voltage.set_clim(vmin=limits_cb_nodes[0],
+                            vmax=limits_cb_nodes[1])
+        cb_voltage.set_label('Voltage deviation in p.u.')
+
+    # plot nodes by type
     else:
-        nodes_cmap = None
-        nodes_vmax = nodes_vmin = None
-
-    plt.figure()
-    ax = plt.gca()
-
-    # TODO: Add additional symbols here
-    nodes = nx.draw_networkx_nodes(g,
-                                   nodes_pos,
-                                   # node_shape='o',
-                                   node_color=nodes_color,
-                                   cmap=nodes_cmap,
-                                   vmin=nodes_vmin,
-                                   vmax=nodes_vmax,
-                                   node_size=nodes_size,
-                                   linewidths=0.25,
-                                   ax=ax)
-
-    nodes.set_zorder(6)
-    nodes.set_edgecolor('k')
+        for node_type in nodes_types:
+            if len(nodes_by_type[node_type]) != 0:
+                nodes = nx.draw_networkx_nodes(g,
+                                               nodelist=nodes_by_type[node_type],
+                                               pos=nodes_pos,
+                                               # node_shape='o', # TODO: Add additional symbols here
+                                               node_color=node_colors_by_type[node_type],
+                                               cmap=None,
+                                               vmin=None,
+                                               vmax=None,
+                                               node_size=node_sizes_by_type[node_type],
+                                               linewidths=0.25,
+                                               label=node_type,
+                                               ax=ax)
+                nodes.set_zorder(6)
+                nodes.set_edgecolor('k')
 
     edges = nx.draw_networkx_edges(g,
                                    pos=nodes_pos,
@@ -246,6 +301,7 @@ def plot_mv_topology(grid, subtitle='', background_map=True, filename=None,
     if use_gpd:
         plot_region_data(ax=ax)
 
+    plt.legend()
     plt.title('MV Grid District {id} - {st}'.format(id=grid.id_db,
                                                     st=subtitle))
 
