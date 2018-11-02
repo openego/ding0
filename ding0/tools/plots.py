@@ -216,7 +216,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
             else:
                 edges_color.append(0)
         edges_cmap = plt.get_cmap('jet')
-        edges_cmap.set_over('#952eff')
+        #edges_cmap.set_over('#952eff')
     else:
         edges_color = ['black'] * len(list(grid.graph_edges()))
         edges_cmap = None
@@ -257,15 +257,17 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         nodes.set_zorder(6)
         nodes.set_edgecolor('k')
 
+        # colorbar nodes
         if limits_cb_nodes is None:
             limits_cb_nodes = (math.floor(min(nodes_color)*100)/100,
                                math.ceil(max(nodes_color)*100)/100)
-        v_voltage = np.linspace(limits_cb_nodes[0], limits_cb_nodes[1], 101)
-        cb_voltage = plt.colorbar(nodes, boundaries=v_voltage,
-                                  ticks=v_voltage[0:101:10])
+        v_range = np.linspace(limits_cb_nodes[0], limits_cb_nodes[1], 101)
+        cb_voltage = plt.colorbar(nodes, boundaries=v_range,
+                                  ticks=v_range[0:101:10])
         cb_voltage.set_clim(vmin=limits_cb_nodes[0],
                             vmax=limits_cb_nodes[1])
-        cb_voltage.set_label('Voltage deviation in p.u.')
+        cb_voltage.set_label('Voltage deviation in p.u.', size='smaller')
+        cb_voltage.ax.tick_params(labelsize=8)
 
     # plot nodes by type
     else:
@@ -295,6 +297,19 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                                    #width=1,
                                    ax=ax)
     edges.set_zorder(5)
+
+    if line_color == 'loading':
+        # colorbar edges
+        if limits_cb_lines is None:
+            limits_cb_lines = (math.floor(min(edges_color)*100)/100,
+                               math.ceil(max(edges_color)*100)/100)
+        loading_range = np.linspace(limits_cb_lines[0], limits_cb_lines[1], 101)
+        cb_loading = plt.colorbar(edges, boundaries=loading_range,
+                                  ticks=loading_range[0:101:10])
+        cb_loading.set_clim(vmin=limits_cb_lines[0],
+                            vmax=limits_cb_lines[1])
+        cb_loading.set_label('Rel. line loading in p.u.', size='smaller')
+        cb_loading.ax.tick_params(labelsize=8)
 
     if use_ctx and background_map:
         plot_background_map(ax=ax)
