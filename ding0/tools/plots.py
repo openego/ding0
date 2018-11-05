@@ -51,7 +51,6 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
           Feedin-case
     line_color : str
         Defines whereby to choose line colors. Possible options are:
-
         * 'loading'
           Line color is set according to loading of the line in heavy load case.
           You can use parameter `limits_cb_lines` to adjust the color range.
@@ -80,12 +79,13 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         Default: None (min and max loading are used).
     background_map : bool, optional
         If True, a background map is plotted (default: stamen toner light).
+        The additional package `contextily` is needed for this functionality.
+        Default: True
 
     Notes
     -----
-    The geo coords (for used crs see database import in class `NetworkDing0`)
-    are used as positions for drawing but networkx uses cartesian crs.
-    Since no coordinate transformation is performed, the drawn graph representation is falsified!
+    WGS84 pseudo mercator (epsg:3857) is used as coordinate reference system (CRS).
+    Therefore, the drawn graph representation may be falsified!
     """
 
     def set_nodes_style_and_position(nodes):
@@ -172,10 +172,6 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         ax.imshow(basemap, extent=extent, interpolation='bilinear', zorder=0)
         ax.axis((xmin, xmax, ymin, ymax))
 
-        # hide axes labels (coords)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
     def plot_region_data(ax):
         # get geoms of MV grid district, load areas and LV grid districts
         mv_grid_district = gpd.GeoDataFrame({'geometry': grid.grid_district.geo_data},
@@ -187,11 +183,10 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                                                            for lvgd in la.lv_grid_districts()]},
                                              crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
 
-        # reproject to WGS84 pseudo mercator if contextily is used
-        if use_ctx and background_map:
-            mv_grid_district = mv_grid_district.to_crs(epsg=3857)
-            load_areas = load_areas.to_crs(epsg=3857)
-            lv_grid_districts = lv_grid_districts.to_crs(epsg=3857)
+        # reproject to WGS84 pseudo mercator
+        mv_grid_district = mv_grid_district.to_crs(epsg=3857)
+        load_areas = load_areas.to_crs(epsg=3857)
+        lv_grid_districts = lv_grid_districts.to_crs(epsg=3857)
 
         # plot
         mv_grid_district.plot(ax=ax, color='#ffffff', alpha=0.2, edgecolor='k', linewidth=2, zorder=2)
@@ -214,8 +209,8 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     nodes_types, nodes_by_type, node_colors_by_type, node_sizes_by_type, zindex_by_type, nodes_pos =\
         set_nodes_style_and_position(g.nodes())
 
-    if use_ctx and background_map:
-        nodes_pos = reproject_nodes(nodes_pos, model_proj=model_proj)
+    # reproject to WGS84 pseudo mercator
+    nodes_pos = reproject_nodes(nodes_pos, model_proj=model_proj)
 
     plt.figure(figsize=(9, 6))
     ax = plt.gca()
@@ -335,6 +330,11 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     plt.legend()
     plt.title('MV Grid District {id} - {st}'.format(id=grid.id_db,
                                                     st=subtitle))
+
+    # hide axes labels (coords)
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+
     if filename is None:
         plt.tight_layout()
         plt.show()
