@@ -1,5 +1,5 @@
-ding0\.core\.powerflow package
-==============================
+ding0.core.powerflow package
+============================
 
 Module contents
 ---------------

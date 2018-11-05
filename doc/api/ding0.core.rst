@@ -1,5 +1,5 @@
-ding0\.core package
-===================
+ding0.core package
+==================
 
 Subpackages
 -----------
@@ -9,7 +9,6 @@ Subpackages
     ding0.core.network
     ding0.core.powerflow
     ding0.core.structure
-
 
 Module contents
 ---------------
