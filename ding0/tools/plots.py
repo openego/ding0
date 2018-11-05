@@ -54,6 +54,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
 
         * 'loading'
           Line color is set according to loading of the line in heavy load case.
+          You can use parameter `limits_cb_lines` to adjust the color range.
         * None (default)
           Lines are plotted in black. Is also the fallback option in case of
           wrong input.
@@ -66,13 +67,17 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
           wrong input.
         * 'voltage'
           Node color is set according to voltage deviation from 1 p.u..
-          Voltages of nodes in MV grid must be provided by parameter `voltage`.
+          You can use parameter `limits_cb_nodes` to adjust the color range.
     limits_cb_lines : :obj:`tuple`
         Tuple with limits for colorbar of line color. First entry is the
-        minimum and second entry the maximum value. Default: None.
+        minimum and second entry the maximum value. E.g. pass (0, 1) to
+        adjust the colorbar to 0..100% loading.
+        Default: None (min and max loading are used).
     limits_cb_nodes : :obj:`tuple`
         Tuple with limits for colorbar of nodes. First entry is the
-        minimum and second entry the maximum value. Default: None.
+        minimum and second entry the maximum value. E.g. pass (0.9, 1) to
+        adjust the colorbar to 90%..100% voltage.
+        Default: None (min and max loading are used).
     background_map : bool, optional
         If True, a background map is plotted (default: stamen toner light).
 
@@ -113,6 +118,14 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                       'GeneratorFluctuatingDing0': 50,
                       'CircuitBreakerDing0': 50,
                       'n/a': 5}
+        zindex_by_type = {'MVStationDing0': 16,
+                          'LVStationDing0': 12,
+                          'LVLoadAreaCentreDing0': 11,
+                          'MVCableDistributorDing0': 13,
+                          'GeneratorDing0': 14,
+                          'GeneratorFluctuatingDing0': 14,
+                          'CircuitBreakerDing0': 15,
+                          'n/a': 10}
 
         # dict of node class names: list of nodes
         nodes_by_type = {_: [] for _ in node_types}
@@ -137,7 +150,8 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                 node_sizes_by_type['all'].append(sizes_dict['n/a'])
             nodes_pos[n] = (n.geo_data.x, n.geo_data.y)
 
-        return node_types, nodes_by_type, node_colors_by_type, node_sizes_by_type, nodes_pos
+        return node_types, nodes_by_type, node_colors_by_type,\
+               node_sizes_by_type, zindex_by_type, nodes_pos
 
     def reproject_nodes(nodes_pos, model_proj='4326'):
         inProj = Proj(init='epsg:{srid}'.format(srid=model_proj))
@@ -197,13 +211,13 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     else:
         case_idx = 0
 
-    nodes_types, nodes_by_type, node_colors_by_type, node_sizes_by_type, nodes_pos =\
+    nodes_types, nodes_by_type, node_colors_by_type, node_sizes_by_type, zindex_by_type, nodes_pos =\
         set_nodes_style_and_position(g.nodes())
 
     if use_ctx and background_map:
         nodes_pos = reproject_nodes(nodes_pos, model_proj=model_proj)
 
-    plt.figure()
+    plt.figure(figsize=(9, 6))
     ax = plt.gca()
 
     if line_color == 'loading':
@@ -254,7 +268,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                                        node_size=node_sizes_by_type['all'],
                                        linewidths=0.25,
                                        ax=ax)
-        nodes.set_zorder(6)
+        nodes.set_zorder(10)
         nodes.set_edgecolor('k')
 
         # colorbar nodes
@@ -263,11 +277,12 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                                math.ceil(max(nodes_color)*100)/100)
         v_range = np.linspace(limits_cb_nodes[0], limits_cb_nodes[1], 101)
         cb_voltage = plt.colorbar(nodes, boundaries=v_range,
-                                  ticks=v_range[0:101:10])
+                                  ticks=v_range[0:101:10],
+                                  fraction=0.04, pad=0.1)
         cb_voltage.set_clim(vmin=limits_cb_nodes[0],
                             vmax=limits_cb_nodes[1])
-        cb_voltage.set_label('Voltage deviation in p.u.', size='smaller')
-        cb_voltage.ax.tick_params(labelsize=8)
+        cb_voltage.set_label('Node voltage deviation in %', size='smaller')
+        cb_voltage.ax.tick_params(labelsize='smaller')
 
     # plot nodes by type
     else:
@@ -285,7 +300,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                                                linewidths=0.25,
                                                label=node_type,
                                                ax=ax)
-                nodes.set_zorder(6)
+                nodes.set_zorder(zindex_by_type[node_type])
                 nodes.set_edgecolor('k')
 
     edges = nx.draw_networkx_edges(g,
@@ -305,11 +320,12 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                                math.ceil(max(edges_color)*100)/100)
         loading_range = np.linspace(limits_cb_lines[0], limits_cb_lines[1], 101)
         cb_loading = plt.colorbar(edges, boundaries=loading_range,
-                                  ticks=loading_range[0:101:10])
+                                  ticks=loading_range[0:101:10],
+                                  fraction=0.04, pad=0.04)
         cb_loading.set_clim(vmin=limits_cb_lines[0],
                             vmax=limits_cb_lines[1])
-        cb_loading.set_label('Rel. line loading in p.u.', size='smaller')
-        cb_loading.ax.tick_params(labelsize=8)
+        cb_loading.set_label('Line loading in % of nominal capacity', size='smaller')
+        cb_loading.ax.tick_params(labelsize='smaller')
 
     if use_ctx and background_map:
         plot_background_map(ax=ax)
@@ -319,8 +335,8 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     plt.legend()
     plt.title('MV Grid District {id} - {st}'.format(id=grid.id_db,
                                                     st=subtitle))
-
     if filename is None:
+        plt.tight_layout()
         plt.show()
     else:
         path = os.path.join(get_default_home_dir(), 'ding0_grid_{id}_{filename}'.format(id=str(grid.id_db),
