@@ -131,10 +131,13 @@ class GridDing0:
     def graph_draw(self, mode):
         """ Draws grid graph using networkx
 
+        This method is for debugging purposes only.
+        Use ding0.tools.plots.plot_mv_topology() for advanced plotting.
+
         Parameters
         ----------
         mode : str
-            Mode selection 'MV' or 'LV'.  #TODO: check
+            Mode selection 'MV' or 'LV'.
             
         Notes
         -----
