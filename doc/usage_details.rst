@@ -46,6 +46,25 @@ as done in the :download:`parallelization example <../ding0/examples/example_par
 Analysis of grid data
 =====================
 
+Plot results
+------------
+
+The :func:`~.tools.plots.plot_mv_topology` allows plots of the MV grid including grid topology
+with line loadings and node voltages. You can simply fire it using an MVGrid instance or pass argument
+:code:`export_figures=True` to :meth:`~core.Network.run_ding0()` to export some key plots.
+The plotting allows to draw a background map. For this function, the package `contextily` is needed which
+is not included in the standard ding0 installation. If you want to use this feature, you can simply install it by
+
+.. code-block:: python
+
+    pip3 install contextily
+
+See plotting function for a detailed description of possible modes and parameters.
+
+Example plot:
+
+.. figure:: images/mvgd_plot_example1.png
+
 Export key figures
 ------------------
 
