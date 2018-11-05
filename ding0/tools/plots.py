@@ -327,7 +327,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     if use_gpd:
         plot_region_data(ax=ax)
 
-    plt.legend()
+    plt.legend(fontsize=7)
     plt.title('MV Grid District {id} - {st}'.format(id=grid.id_db,
                                                     st=subtitle))
 
