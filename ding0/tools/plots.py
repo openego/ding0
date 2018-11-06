@@ -45,12 +45,14 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     testcase : str
         Defines which case is to be used. Refer to config_calc.cfg to see further
         assumptions for the cases. Possible options are:
+        
         * 'load' (default)
           Heavy-load-flow case
         * 'feedin'
           Feedin-case
     line_color : str
         Defines whereby to choose line colors. Possible options are:
+
         * 'loading'
           Line color is set according to loading of the line in heavy load case.
           You can use parameter `limits_cb_lines` to adjust the color range.
