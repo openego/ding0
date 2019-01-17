@@ -3,10 +3,10 @@ from ding0.core.network import GridDing0, \
     GeneratorDing0, GeneratorFluctuatingDing0
 
 
-class TestGridDing0:(object):
+class TestGridDing0(object):
 
     @pytest.fixture
-    def empty_gridding0():
+    def empty_gridding0(self):
         """
         Returns an empty GridDing0 object
         """
