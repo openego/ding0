@@ -18,18 +18,21 @@ class TestNetworkDing0(object):
 
     @pytest.fixture
     def oedb_session(self):
+        """
+        Returns an ego.io oedb session and closes it on finishing the test
+        """
         engine = db.connection(section='oedb')
         session = sessionmaker(bind=engine)()
         yield session
         print("closing session")
         session.close()
 
-    def test_empty_mv_grid_districts(emptyNetworkDing0):
+    def test_empty_mv_grid_districts(self, emptyNetworkDing0):
         mv_grid_districts = list(emptyNetworkDing0.mv_grid_districts())
         empty_list = []
         assert mv_grid_districts == empty_list
 
-    def test_import_mv_grid_districts(oedb_session):
+    def test_import_mv_grid_districts(self, oedb_session):
         with pytest.raises(TypeError):
             NetworkDing0.import_mv_grid_districts(
                 oedb_session,
