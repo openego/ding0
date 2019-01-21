@@ -106,6 +106,73 @@ class TestGridDing0(object):
     def test_loads_count(self, load_grid):
         assert load_grid.loads_count() == 2
 
+    @pytest.fixture
+    def generator_grid(self):
+        """
+        Returns a GridDing0 object with
+        2 GeneratorDing0 objects
+        at Point(0, 0) and id_db=0 and
+        at Point(0, 1) and id_db=1, and
+        2 GeneratorFluctuatingDing0 objects
+        at Point(1, 0), id_db=2, weather_cell_id=0 and
+        at Point(1, 1), id_db=3, weather_cell_id=1
+        """
+        generator_grid = GridDing0()
+        geo_data1 = Point(0, 0)
+        generator1 = GeneratorDing0(id_db=0,
+                                    geo_data=geo_data1)
+        geo_data2 = Point(0, 1)
+        generator2 = GeneratorDing0(id_db=1,
+                                    geo_data=geo_data2)
+        geo_data3 = Point(1, 0)
+        generator3 = GeneratorFluctuatingDing0(id_db=2,
+                                               weather_cell_id=0,
+                                               geo_data=geo_data3)
+        geo_data4 = Point(1, 1)
+        generator4 = GeneratorFluctuatingDing0(id_db=3,
+                                               weather_cell_id=1,
+                                               geo_data=geo_data4)
+        generator_grid._generators = [generator1,
+                                      generator2,
+                                      generator3,
+                                      generator4]
+        return generator_grid
+
+    def test_add_generator(self, empty_grid):
+        geo_data1 = Point(0, 0)
+        generator1 = GeneratorDing0(id_db=0,
+                                    geo_data=geo_data1)
+        empty_grid.add_generator(generator1)
+        assert len(list(empty_grid.generators())) == 1
+        geo_data2 = Point(0, 1)
+        generator2 = GeneratorDing0(id_db=1,
+                                    geo_data=geo_data2)
+        empty_grid.add_generator(generator2)
+        assert len(list(empty_grid.generators())) == 2
+        geo_data3 = Point(1, 0)
+        generator3 = GeneratorFluctuatingDing0(id_db=2,
+                                               weather_cell_id=0,
+                                               geo_data=geo_data3)
+        empty_grid.add_generator(generator3)
+        assert len(list(empty_grid.generators())) == 3
+        geo_data4 = Point(1, 1)
+        generator4 = GeneratorFluctuatingDing0(id_db=3,
+                                               weather_cell_id=1,
+                                               geo_data=geo_data4)
+        empty_grid.add_generator(generator4)
+        assert len(list(empty_grid.generators())) == 4
+        generator_list = list(empty_grid.generators())
+        assert generator_list[0].id_db == 0
+        assert generator_list[0].geo_data == geo_data1
+        assert generator_list[1].id_db == 1
+        assert generator_list[1].geo_data == geo_data2
+        assert generator_list[2].id_db == 2
+        assert generator_list[2].weather_cell_id == 0
+        assert generator_list[2].geo_data == geo_data3
+        assert generator_list[3].id_db == 3
+        assert generator_list[3].weather_cell_id == 1
+        assert generator_list[3].geo_data == geo_data4
+
 class TestStationDing0(object):
 
     @pytest.fixture
