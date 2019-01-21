@@ -234,6 +234,36 @@ class TestGridDing0(object):
         empty_grid.graph_add_node(generator1)
         len_nodes_after = len(list(empty_grid._graph.nodes()))
         assert len_nodes_before == len_nodes_after
+
+    # negative tests for graph_add_node
+    def test_graph_add_node_load(self, empty_grid):
+        load1 = LoadDing0(grid=empty_grid)
+        empty_grid._loads = [load1]
+        # make sure that call of add_nodes
+        # does nothing
+        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        empty_grid.graph_add_node(load1)
+        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        assert len_nodes_before == len_nodes_after
+
+    def test_graph_add_node_branch(self, empty_grid):
+        branch1 = BranchDing0()
+        # make sure that call of add_nodes
+        # does nothing
+        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        empty_grid.graph_add_node(branch1)
+        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        assert len_nodes_before == len_nodes_after
+
+    def test_graph_add_node_grid(self, empty_grid):
+        grid1 = GridDing0()
+        # make sure that call of add_nodes
+        # does nothing
+        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        empty_grid.graph_add_node(grid1)
+        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        assert len_nodes_before == len_nodes_after
+
 class TestStationDing0(object):
 
     @pytest.fixture
