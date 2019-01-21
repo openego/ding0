@@ -94,6 +94,18 @@ class TestGridDing0(object):
                           grid=load_grid)
         load_grid._loads.append(load2)
         return load_grid
+
+    def test_loads_list(self, load_grid):
+        load_list = list(load_grid.loads())
+        assert len(load_list) == 2
+        assert load_list[0].id_db == 1
+        assert load_list[0].geo_data == Point(0, 0)
+        assert load_list[1].id_db == 2
+        assert load_list[1].geo_data == Point(0, 1)
+
+    def test_loads_count(self, load_grid):
+        assert load_grid.loads_count() == 2
+
 class TestStationDing0(object):
 
     @pytest.fixture
