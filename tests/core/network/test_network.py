@@ -173,6 +173,67 @@ class TestGridDing0(object):
         assert generator_list[3].weather_cell_id == 1
         assert generator_list[3].geo_data == geo_data4
 
+    # check for all positive cases of graph_add_node
+    def test_graph_add_node_station(self, empty_grid):
+        station1 = StationDing0()
+        empty_grid.graph_add_node(station1)
+        assert station1 in empty_grid._graph.nodes()
+        assert len(list(empty_grid._graph.nodes())) == 1
+
+    def test_graph_add_node_cable_distributor(self, empty_grid):
+        cable_distributor1 = CableDistributorDing0()
+        empty_grid.graph_add_node(cable_distributor1)
+        assert cable_distributor1 in empty_grid._graph.nodes()
+        assert len(list(empty_grid._graph.nodes())) == 1
+
+    def test_graph_add_node_lv_load_area_centre(self, empty_grid):
+        lv_load_area_centre1 = LVLoadAreaCentreDing0()
+        empty_grid.graph_add_node(lv_load_area_centre1)
+        assert lv_load_area_centre1 in empty_grid._graph.nodes()
+        assert len(list(empty_grid._graph.nodes())) == 1
+
+    def test_graph_add_node_circuit_breaker(self, empty_grid):
+        circuit_breaker1 = CircuitBreakerDing0(grid=empty_grid)
+        empty_grid.graph_add_node(circuit_breaker1)
+        assert circuit_breaker1 in empty_grid._graph.nodes()
+        assert len(list(empty_grid._graph.nodes())) == 1
+
+    def test_graph_add_node_generator(self, empty_grid):
+        # an add_node is called within add_generator
+        geo_data1 = Point(0, 0)
+        generator1 = GeneratorDing0(id_db=0,
+                                    geo_data=geo_data1)
+        empty_grid.graph_add_node(generator1)
+        assert generator1 in empty_grid._graph.nodes()
+        assert len(list(empty_grid._graph.nodes())) == 1
+
+    def test_graph_add_node_add_generator(self, empty_grid):
+        # an add_node is called within add_generator
+        geo_data1 = Point(0, 0)
+        generator1 = GeneratorDing0(id_db=0,
+                                    geo_data=geo_data1)
+        empty_grid.add_generator(generator1)
+        assert generator1 in empty_grid._graph.nodes()
+        # make sure that another call of add_nodes
+        # does nothing
+        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        empty_grid.graph_add_node(generator1)
+        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        assert len_nodes_before == len_nodes_after
+
+    def test_graph_add_node_generator_fluctuating(self, empty_grid):
+        # an add_node is called within add_generator
+        geo_data1 = Point(0, 0)
+        generator1 = GeneratorFluctuatingDing0(id_db=0,
+                                               geo_data=geo_data1)
+        empty_grid.add_generator(generator1)
+        assert generator1 in empty_grid._graph.nodes()
+        # make sure that another call of add_nodes
+        # does nothing
+        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        empty_grid.graph_add_node(generator1)
+        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        assert len_nodes_before == len_nodes_after
 class TestStationDing0(object):
 
     @pytest.fixture
