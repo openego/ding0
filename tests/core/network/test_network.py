@@ -19,23 +19,6 @@ class TestGridDing0(object):
         """
         return GridDing0()
 
-    @pytest.fixture
-    def simple_grid(self):
-        """
-        Returns a basic GridDing0 object
-        """
-        network = NetworkDing0(name='TestNetwork',
-                               run_id='test_run')
-        grid_district = Polygon(((0, 0),
-                                 (0, 1),
-                                 (1, 1),
-                                 (1, 0),
-                                 (0, 0)))
-        grid = GridDing0(network=network,
-                         id_db=0,
-                         grid_district=grid_district)
-        return grid
-
     # There is no setter function for providing a list
     # of cable_distributors to the empty_grid
     @pytest.fixture
@@ -264,6 +247,54 @@ class TestGridDing0(object):
         len_nodes_after = len(list(empty_grid._graph.nodes()))
         assert len_nodes_before == len_nodes_after
 
+    @pytest.fixture
+    def simple_graph_grid(self):
+        grid = GridDing0(id_db=0)
+        station = StationDing0(id_db=0, geo_data=Point(0, 0))
+        generator = GeneratorDing0(id_db=0,
+                                   geo_data=Point(0, 1),
+                                   mv_grid=grid)
+        grid.graph_add_node(station)
+        grid.add_generator(generator)
+        branch = BranchDing0(id_db=0,
+                             length=2.0,
+                             kind='cable')
+        grid._graph.add_edge(generator, station, branch=branch)
+        return (grid, station, generator, branch)
+
+    def test_graph_nodes_from_branch(self, simple_graph_grid):
+        grid, station, generator, branch = simple_graph_grid
+        nodes_from_branch = grid.graph_nodes_from_branch(branch)
+        assert type(nodes_from_branch) == tuple
+        assert nodes_from_branch == (station, generator)
+
+    def test_graph_branches_from_node(self, simple_graph_grid):
+        grid, station, generator, branch = simple_graph_grid
+        branches_from_node = grid.graph_branches_from_node(station)
+        assert branches_from_node == [(generator, dict(branch=branch))]
+
+    def test_graph_edges(self, simple_graph_grid):
+        grid, station, generator, branch = simple_graph_grid
+        graph_edges = dict(grid.graph_edges())
+        assert graph_edges == dict(adj_nodes=station,
+                                   branch=branch)
+
+    def test_find_path(self, simple_graph_grid):
+        grid, station, generator, branch = simple_graph_grid
+        path = grid.find_path(generator, station)
+        assert path == [generator, station]
+
+    def test_graph_path_length(self, simple_graph_grid):
+        grid, station, generator, branch = simple_graph_grid
+        path_length = grid.graph_path_length(generator, station)
+        assert path_length == 2.0
+
+    def test_graph_isolated_nodes(self, simple_graph_grid):
+        grid, station, generator, branch = simple_graph_grid
+        isolates = grid.graph_isolated_nodes()
+        assert isolates == []
+
+
 class TestStationDing0(object):
 
     @pytest.fixture
@@ -326,81 +357,6 @@ class TestStationDing0(object):
         assert transformer2_in_empty_stationding0.tap_ratio == 1.00
         assert transformer2_in_empty_stationding0.r == 0.01
         assert transformer2_in_empty_stationding0.x == 0.001
-
-
-class TestRingDing0(object):
-
-    @pytest.fixture
-    def empty_ringding0(self):
-        """
-        Returns an empty RingDing0 object
-        """
-        return RingDing0()
-
-    @pytest.fixture
-    def simple_ringding0(self):
-        """
-        Returns a simple RingDing0 object
-        """
-        ringding0 = RingDing0(grid=grid,
-                              id_db=0)
-
-
-class TestLoadDing0(object):
-
-    @pytest.fixture
-    def empty_loadding0(self):
-        """
-        Returns an empty LoadDing0 object
-        """
-        return LoadDing0(grid=GridDing0())
-
-    @pytest.fixture
-    def some_loadding0(self):
-        """
-        Returns a networkless LoadDing0 object with some set parameters
-        """
-        geo_data = Point(0, 0)
-        network = NetworkDing0(name='TestNetwork',
-                               run_id='test_run')
-
-        grid_district = Polygon([Point(0, 0),
-                                 Point(0, 1),
-                                 Point(1, 1),
-                                 Point(1, 0),
-                                 Point(0, 0)])
-        grid = GridDing0(network=network,
-                         id_db=0,
-                         grid_district=grid_district)
-        load = LoadDing0(id_db=0,
-                         geo_data=geo_data,
-                         grid=grid,
-                         peak_load=dict(residential=1.0,
-                                        retail=1.0,
-                                        industrial=1.0,
-                                        agricultural=1.0),
-                         consumption=dict(residential=1.0,
-                                          retail=1.0,
-                                          industrial=1.0,
-                                          agricultural=1.0))
-
-        return load
-
-    def test_empty_loadding0(self, empty_loadding0):
-        assert empty_loadding0.id_db is 1
-        assert empty_loadding0.geo_data is None
-        # Once binary equality operators are implemented
-        # the following can be tested
-        # assert empty_loadding0.grid == GridDing0()
-        assert empty_loadding0.peak_load is None
-        assert empty_loadding0.consumption is None
-
-    # def test_some_loadding0(self, some_loadding0):
-    #     assert some_loadding0.id_db is None
-    #     assert some_loadding0.geo_data is None
-    #     assert some_loadding0.grid is None
-    #     assert some_loadding0.peak_load is None
-    #     assert some_loadding0.consumption is None
 
 
 if __name__ == "__main__":
