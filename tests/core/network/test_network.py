@@ -275,9 +275,9 @@ class TestGridDing0(object):
 
     def test_graph_edges(self, simple_graph_grid):
         grid, station, generator, branch = simple_graph_grid
-        graph_edges = dict(grid.graph_edges())
-        assert graph_edges == dict(adj_nodes=station,
-                                   branch=branch)
+        graph_edges = list(grid.graph_edges())
+        assert graph_edges[0] == dict(adj_nodes=(station, generator),
+                                      branch=branch)
 
     def test_find_path(self, simple_graph_grid):
         grid, station, generator, branch = simple_graph_grid
