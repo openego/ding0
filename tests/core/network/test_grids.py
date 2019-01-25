@@ -217,8 +217,40 @@ class TestMVGridDing0(object):
         assert branches_out == branches_expected
         assert rings_nodes_out == rings_nodes_expected
 
-    def test_graph_nodes_from_subtree(self, ring_mvgridding0):
-        pass
+    def test_graph_nodes_from_subtree_station(self, ring_mvgridding0):
+        ring, grid = ring_mvgridding0
+        station = grid.station()
+        nodes_out = grid.graph_nodes_from_subtree(station)
+        nodes_expected = []
+        assert nodes_out == nodes_expected
+
+    def test_graph_nodes_from_subtree_circuit_breaker(self, ring_mvgridding0):
+        ring, grid = ring_mvgridding0
+        circuit_breakers = list(grid.circuit_breakers())
+        nodes_out = grid.graph_nodes_from_subtree(circuit_breakers[0])
+        nodes_expected = []
+        assert nodes_out == nodes_expected
+
+    def test_graph_nodes_from_subtree_ring_branch_left(self, ring_mvgridding0):
+        ring, grid = ring_mvgridding0
+        generators = list(grid.generators())
+        nodes_out = grid.graph_nodes_from_subtree(generators[0])
+        nodes_expected = []
+        assert nodes_out == nodes_expected
+
+    def test_graph_nodes_from_subtree_ring_branch_right(self, ring_mvgridding0):
+        ring, grid = ring_mvgridding0
+        generators = list(grid.generators())
+        nodes_out = grid.graph_nodes_from_subtree(generators[1])
+        nodes_expected = [generators[2]]
+        assert nodes_out == nodes_expected
+
+    def test_graph_nodes_from_subtree_off_ring(self, ring_mvgridding0):
+        ring, grid = ring_mvgridding0
+        generators = list(grid.generators())
+        nodes_out = grid.graph_nodes_from_subtree(generators[2])
+        nodes_expected = []
+        assert nodes_out == nodes_expected
 
     def test_set_branch_ids(self, ring_mvgridding0):
         pass
