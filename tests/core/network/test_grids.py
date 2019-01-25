@@ -193,7 +193,29 @@ class TestMVGridDing0(object):
         assert rings_nodes == rings_nodes_expected
 
     def test_rings_full_data(self, ring_mvgridding0):
-        pass
+        ring, grid = ring_mvgridding0
+        station = grid.station()
+        generators = list(grid.generators())
+        circuit_breakers = list(grid.circuit_breakers())
+        branches = sorted(list(map(lambda x: x['branch'],
+                                   grid.graph_edges())),
+                          key=lambda x: repr(x))
+        ring_expected = ring
+        # branches following the ring
+        branches_expected = [branches[1],
+                             branches[0],
+                             branches[3],
+                             branches[2]]
+        rings_nodes_expected = [generators[0],
+                                circuit_breakers[0],
+                                generators[1],
+                                station]
+        (ring_out,
+         branches_out,
+         rings_nodes_out) = list(grid.rings_full_data())[0]
+        assert ring_out == ring_expected
+        assert branches_out == branches_expected
+        assert rings_nodes_out == rings_nodes_expected
 
     def test_graph_nodes_from_subtree(self, ring_mvgridding0):
         pass
