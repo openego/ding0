@@ -27,21 +27,7 @@ from ding0.tools.results import save_nd_to_pickle
 from sqlalchemy.orm import sessionmaker
 import oedialect
 
-# this is a workaround for geting pyproj to work
-import os
-import platform
 
-if platform.system() == 'Windows':
-    os.environ["PROJ_LIB"] = os.path.join('C:', os.sep, 'ProgramData',
-                                          'Miniconda3', 'envs',
-                                          'openbea_calculations', 'Library',
-                                          'share')  # windows
-elif platform.system() == 'Linux':
-    os.environ["PROJ_LIB"] = os.path.join(os.sep, 'opt', 'Miniconda3', 'envs',
-                                          'openbea_calculations', 'Library',
-                                          'share')  # linux
-else:
-    print("Unknown platform, No PROJ_LIB environment variable set.")
 # define logger
 logger = setup_logger()
 
