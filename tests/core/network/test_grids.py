@@ -14,6 +14,21 @@ from ding0.core.network import (RingDing0, BranchDing0, CircuitBreakerDing0,
 from ding0.core.network.stations import MVStationDing0, LVStationDing0
 from ding0.core.network.grids import MVGridDing0, LVGridDing0
 
+import os
+import platform
+
+if platform.system() == 'Windows':
+    os.environ["PROJ_LIB"] = os.path.join('C:', os.sep, 'ProgramData',
+                                          'Miniconda3', 'envs',
+                                          'openbea_calculations', 'Library',
+                                          'share')  # windows
+elif platform.system() == 'Linux':
+    os.environ["PROJ_LIB"] = os.path.join(os.sep, 'opt', 'Miniconda3', 'envs',
+                                          'openbea_calculations', 'Library',
+                                          'share')  # linux
+else:
+    print("Unknown platform, No PROJ_LIB environment variable set.")
+
 
 class TestMVGridDing0(object):
 
