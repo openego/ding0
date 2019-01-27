@@ -275,7 +275,7 @@ def get_critical_line_loading(grid):
 
         else:
             # preceeding node of node
-            predecessors = tree.predecessors(node)
+            predecessors = list(tree.predecessors(node))
 
             # a non-meshed grid topology returns a list with only 1 item
             predecessor = predecessors[0]
@@ -451,7 +451,7 @@ def get_critical_voltage_at_nodes(grid):
         x = x_mv_grid + x_trafo
 
         # roughly estimate transverse voltage drop
-        stub_node = [_ for _ in tree.successors(first_node) if
+        stub_node = [_ for _ in list(tree.successors(first_node)) if
                      _ not in main_branch][0]
         v_delta_load_stub, v_delta_gen_stub = voltage_delta_stub(
             grid,
@@ -628,7 +628,7 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
 
     # add resitance/ reactance to preceeding
     in_edge = [_ for _ in grid.graph_branches_from_node(node) if
-               _[0] in tree.predecessors(node)][0][1]
+               _[0] in list(tree.predecessors(node))][0][1]
     r = r_preceeding + (in_edge['branch'].type['R'] *
                      in_edge['branch'].length)
     x = x_preceeding + (in_edge['branch'].type['L'] / 1e3 * omega *
