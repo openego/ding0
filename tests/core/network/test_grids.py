@@ -1,4 +1,12 @@
 import pytest
+
+from egoio.tools import db
+from sqlalchemy.orm import sessionmaker
+import oedialect
+
+import networkx as nx
+import pandas as pd
+
 from shapely.geometry import Point, LineString, LinearRing, Polygon
 from ding0.core import NetworkDing0
 from ding0.core.network import (RingDing0, BranchDing0, CircuitBreakerDing0,
@@ -252,14 +260,77 @@ class TestMVGridDing0(object):
         nodes_expected = []
         assert nodes_out == nodes_expected
 
-    def test_set_branch_ids(self, ring_mvgridding0):
-        pass
+    @pytest.fixture
+    def oedb_session(self):
+        """
+        Returns an ego.io oedb session and closes it on finishing the test
+        """
+        engine = db.connection(section='oedb')
+        session = sessionmaker(bind=engine)()
+        yield session
+        print("closing session")
+        session.close()
 
-    def test_routing(self, ring_mvgridding0):
-        pass
+    def test_routing(self, oedb_session):
+        # instantiate new ding0 network object
+        nd = NetworkDing0(name='network')
 
-    def test_connect_generators(self, ring_mvgridding0):
-        pass
+        nd.import_mv_grid_districts(oedb_session,
+                                    mv_grid_districts_no=[460])
+        # STEP 2: Import generators
+        nd.import_generators(oedb_session)
+        # STEP 3: Parametrize MV grid
+        nd.mv_parametrize_grid()
+        # STEP 4: Validate MV Grid Districts
+        nd.validate_grid_districts()
+        # STEP 5: Build LV grids
+        nd.build_lv_grids()
+
+        graph = nd._mv_grid_districts[0].mv_grid._graph
+
+        assert len(graph.nodes()) == 256
+        assert len(graph.edges()) == 0
+        assert len(nx.isolates(graph)) == 256
+        assert pd.Series(graph.degree()).sum(axis=0) == 0
+        assert pd.Series(graph.degree()).mean(axis=0) == 0.0
+        assert len(nx.get_edge_attributes(graph, 'branch')) == 0
+        assert nx.average_node_connectivity(graph) == 0.0
+        assert pd.Series(
+            nx.degree_centrality(graph)
+            ).mean(axis=0) == 0.0
+        assert pd.Series(
+            nx.closeness_centrality(graph)
+            ).mean(axis=0) == 0.0
+        assert pd.Series(
+            nx.betweenness_centrality(graph)
+            ).mean(axis=0) == 0.0
+
+        nd.mv_routing()
+
+        assert len(graph.nodes()) == 269
+        assert len(graph.edges()) == 218
+        assert len(nx.isolates(graph)) == 54
+        assert pd.Series(graph.degree()).sum(axis=0) == 436
+        assert pd.Series(
+            graph.degree()
+            ).mean(axis=0) == pytest.approx(1.62, 0.001)
+        assert len(nx.get_edge_attributes(graph, 'branch')) == 218
+        assert nx.average_node_connectivity(graph) == pytest.approx(
+            0.688,
+            abs=0.0001
+            )
+        assert pd.Series(
+            nx.degree_centrality(graph)
+            ).mean(axis=0) == pytest.approx(0.006, abs=0.001)
+        assert pd.Series(
+            nx.closeness_centrality(graph)
+            ).mean(axis=0) == pytest.approx(0.042474, abs=0.00001)
+        assert pd.Series(
+            nx.betweenness_centrality(graph)
+            ).mean(axis=0) == pytest.approx(0.0354629, abs=0.00001)
+        assert pd.Series(
+            nx.edge_betweenness_centrality(graph)
+            ).mean(axis=0) == pytest.approx(0.04636150, abs=0.00001)
 
 
 class TestLVGridDing0(object):
