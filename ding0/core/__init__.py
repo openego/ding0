@@ -66,7 +66,27 @@ class NetworkDing0:
     * mv_grid_districts : Essentially a list of mv_grid districts whose data
         is stored in the current instance of the NetworkDing0 Object.
     * config : These are the configurations that are required for the
-        construction of the network given the areas to be connected together
+        construction of the network topology given the areas to be connected
+        together.
+    * pf_config : These are the configuration of the power flows that are
+        run to ensure that the generated network is plausible and is
+        capable of a reasonable amount of loading without causing any
+        grid issues.
+    * static_data : Data such as electrical and mechanical properties
+        of typical assets in the energy system are stored in ding0.
+        These are used in many parts of ding0's calculations.
+        Data values:
+        - Typical cable types, and typical line types' electrical impedences,
+            thermal ratings, operating voltage level.
+        - Typical transformers types' electrical impedences, voltage drops,
+            thermal ratings, winding voltages
+        - Typical LV grid topologies' line types, line lengths and
+            distribution
+    * orm : The connection parameters to the OpenEnergy Platform and
+        the tables and datasets required for the functioning of ding0
+
+    The most important function that defines ding0's use case is initiated
+    from this class i.e. run_ding0. 
 
     Attributes
     ----------
