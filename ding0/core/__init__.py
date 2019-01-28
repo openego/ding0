@@ -54,12 +54,27 @@ package_path = ding0.__path__[0]
 class NetworkDing0:
     """ Defines the DING0 Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.
-    
+
+    This object does not do anything else but behave like a location to
+    store all the constituent objects required to estimate the grid topology
+    of a give set of shapes that need to be connected.
+
+    The classes of the objects that can are stored here are :
+    * run_id : A unique identification number to identify different runs of
+        Ding0. This is usually the date and the time in some compressed
+        format.
+    * mv_grid_districts : Essentially a list of mv_grid districts whose data
+        is stored in the current instance of the NetworkDing0 Object.
+    * config : These are the configurations that are required for the
+        construction of the network given the areas to be connected together
+
     Attributes
     ----------
     name : :obj:`str`
         Name of the grid
-        
+    mv_grid_districts: :obj:`list iterator`
+        contains the MV Grid Districts where the topology has to be estimated
+
     """
 
     def __init__(self, **kwargs):
@@ -130,66 +145,66 @@ class NetworkDing0:
         The steps performed in this method are to be kept in the given order
         since there are hard dependencies between them. Short description of
         all steps performed:
-        
+
         * STEP 1: Import MV Grid Districts and subjacent objects
-        
+
             Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
             and MV-LV stations, instantiates and initiates objects.
-            
+
         * STEP 2: Import generators
-        
+
             Conventional and renewable generators of voltage levels 4..7 are imported
             and added to corresponding grid.
-        
+
         * STEP 3: Parametrize grid
-        
+
             Parameters of MV grid are set such as voltage level and cable/line types
             according to MV Grid District's characteristics.
-        
+
         * STEP 4: Validate MV Grid Districts
-        
+
             Tests MV grid districts for validity concerning imported data such as
             count of Load Areas.
-        
+
         * STEP 5: Build LV grids
-        
+
             Builds LV grids for every non-aggregated LA in every MV Grid District
             using model grids.
-        
+
         * STEP 6: Build MV grids
-        
+
             Builds MV grid by performing a routing on Load Area centres to build
             ring topology.
-        
+
         * STEP 7: Connect MV and LV generators
-        
+
             Generators are connected to grids, used approach depends on voltage
             level.
-        
+
         * STEP 8: Set IDs for all branches in MV and LV grids
-        
+
             While IDs of imported objects can be derived from dataset's ID, branches
             are created in steps 5+6 and need unique IDs (e.g. for PF calculation).
-        
+
         * STEP 9: Relocate switch disconnectors in MV grid
-        
+
             Switch disconnectors are set during routing process (step 6) according
             to the load distribution within a ring. After further modifications of
             the grid within step 6+7 they have to be relocated (note: switch
             disconnectors are called circuit breakers in DING0 for historical reasons).
-        
+
         * STEP 10: Open all switch disconnectors in MV grid
-        
+
             Under normal conditions, rings are operated in open state (half-rings).
             Furthermore, this is required to allow powerflow for MV grid.
-        
+
         * STEP 11: Do power flow analysis of MV grid
-        
+
             The technically working MV grid created in step 6 was extended by satellite
             loads and generators. It is finally tested again using powerflow calculation.
-        
+
         * STEP 12: Reinforce MV grid
-        
+
             MV grid is eventually reinforced persuant to results from step 11.
 
         STEP 13: Close all switch disconnectors in MV grid
@@ -233,10 +248,10 @@ class NetworkDing0:
         self.set_circuit_breakers(debug=debug)
         if export_figures:
             plot_mv_topology(grid, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
-    
+
         # STEP 10: Open all switch disconnectors in MV grid
         self.control_circuit_breakers(mode='open')
-    
+
         # STEP 11: Do power flow analysis of MV grid
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
         if export_figures:
@@ -246,7 +261,7 @@ class NetworkDing0:
             plot_mv_topology(grid, subtitle='PF result (feedin case)',
                              filename='5_PF_result_feedin.png',
                              line_color='loading', node_color='voltage', testcase='feedin')
-    
+
         # STEP 12: Reinforce MV grid
         self.reinforce_grid()
 
@@ -277,7 +292,7 @@ class NetworkDing0:
         -------
         :obj:`dict`
             mv_grid_districts_dict::
-            
+
                 {
                   mv_grid_district_id_1: mv_grid_district_obj_1,
                   ...,
@@ -285,7 +300,7 @@ class NetworkDing0:
                 }
         :obj:`dict`
             lv_load_areas_dict::
-            
+
                 {
                   lv_load_area_id_1: lv_load_area_obj_1,
                   ...,
@@ -293,7 +308,7 @@ class NetworkDing0:
                 }
         :obj:`dict`
             lv_grid_districts_dict::
-            
+
                 {
                   lv_grid_district_id_1: lv_grid_district_obj_1,
                   ...,
@@ -301,7 +316,7 @@ class NetworkDing0:
                 }
         :obj:`dict`
             lv_stations_dict::
-            
+
                 {
                   lv_station_id_1: lv_station_obj_1,
                   ...,
@@ -338,7 +353,7 @@ class NetworkDing0:
             Polygon of grid district
         station_geo_data: :shapely:`Shapely Point object<points>`
             Point of station
-            
+
         Returns
         -------
         :shapely:`Shapely Polygon object<polygons>`
@@ -366,7 +381,7 @@ class NetworkDing0:
                                lv_grid_districts,
                                lv_stations):
         """Instantiates and associates lv_grid_district incl grid and station.
-        
+
         The instantiation creates more or less empty objects including relevant
         data for transformer choice and grid creation
 
@@ -375,7 +390,7 @@ class NetworkDing0:
         lv_load_area: :shapely:`Shapely Polygon object<polygons>`
             load_area object
         lv_grid_districts: :pandas:`pandas.DataFrame<dataframe>`
-            Table containing lv_grid_districts of according load_area 
+            Table containing lv_grid_districts of according load_area
         lv_stations : :pandas:`pandas.DataFrame<dataframe>`
             Table containing lv_stations of according load_area
         """
@@ -998,7 +1013,7 @@ class NetworkDing0:
         cfg_ding0.load_config('config_calc.cfg')
         cfg_ding0.load_config('config_files.cfg')
         cfg_ding0.load_config('config_misc.cfg')
-        
+
         cfg_dict = cfg_ding0.cfg._sections
 
         return cfg_dict
@@ -1124,7 +1139,7 @@ class NetworkDing0:
         #TODO: check docstring
         """ Import ORM classes for oedb access depending on input in config in
         self.config which is loaded from 'config_db_tables.cfg'
-        
+
         Returns
         -------
         int
@@ -1195,10 +1210,10 @@ class NetworkDing0:
     def validate_grid_districts(self):
         #TODO: check docstring
         """ Tests MV grid districts for validity concerning imported data such as:
-            
-            i) Uno            
+
+            i) Uno
             ii) Dos
-        
+
         Invalid MV grid districts are subsequently deleted from Network.
         """
 
@@ -1485,11 +1500,11 @@ class NetworkDing0:
         -------
         :pandas:`pandas.DataFrame<dataframe>`
             Pandas Data Frame
-            
+
         See Also
         --------
         ding0.core.NetworkDing0.export_mv_grid_new :
-        
+
         """
 
         node_cols = ['node_id', 'grid_id', 'v_nom', 'geom', 'v_res0', 'v_res1',
@@ -1602,7 +1617,7 @@ class NetworkDing0:
             If True, information is printed while routing
         animation: bool, default to False
             If True, images of route modification steps are exported during routing process. A new animation object is created.
-                
+
         See Also
         --------
         ding0.core.network.grids.MVGridDing0.routing : for details on MVGridDing0 objects routing
@@ -1668,12 +1683,12 @@ class NetworkDing0:
 
     def mv_parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment of all MV grids.
-         
+
         Parameters
         ----------
         debug: bool, defaults to False
             If True, information is printed during process.
-        
+
         See Also
         --------
         ding0.core.network.grids.MVGridDing0.parametrize_grid
@@ -1685,8 +1700,8 @@ class NetworkDing0:
         logger.info('=====> MV Grids parametrized')
 
     def set_branch_ids(self):
-        """ Performs generation and setting of ids of branches for all MV and underlying LV grids.            
-            
+        """ Performs generation and setting of ids of branches for all MV and underlying LV grids.
+
         See Also
         --------
         ding0.core.network.grids.MVGridDing0.set_branch_ids
@@ -1700,12 +1715,12 @@ class NetworkDing0:
     def set_circuit_breakers(self, debug=False):
         """ Calculates the optimal position of the existing circuit breakers
         and relocates them within the graph for all MV grids.
-        
+
         Args
         ----
         debug: bool, defaults to False
             If True, information is printed during process
-            
+
         See Also
         --------
         ding0.grid.mv_grid.tools.set_circuit_breakers
@@ -1748,13 +1763,13 @@ class NetworkDing0:
             method: str
                 Specify export method
                 If method='db' grid data will be exported to database
-                
+
                 If method='onthefly' grid data will be passed to PyPSA directly (default)
         export_pypsa: bool
             If True PyPSA networks will be exported as csv to output/debug/grid/<MV-GRID_NAME>/
         debug: bool, defaults to False
             If True, information is printed during process
-        
+
         """
 
         if method == 'db':
@@ -1874,7 +1889,7 @@ class NetworkDing0:
         ----
         session : sqlalchemy.orm.session.Session
             Database session
-            
+
         Returns
         -------
         DataFrame
@@ -1955,7 +1970,7 @@ class NetworkDing0:
         ----------
         session : sqlalchemy.orm.session.Session
             Database session
-        mv_districts: 
+        mv_districts:
             List of MV districts
         """
 
