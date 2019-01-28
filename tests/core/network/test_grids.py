@@ -291,8 +291,8 @@ class TestMVGridDing0(object):
         assert len(list(graph.nodes())) == 256
         assert len(list(graph.edges())) == 0
         assert len(list(nx.isolates(graph))) == 256
-        assert pd.Series(graph.degree()).sum(axis=0) == 0
-        assert pd.Series(graph.degree()).mean(axis=0) == 0.0
+        assert pd.Series(dict(graph.degree())).sum(axis=0) == 0
+        assert pd.Series(dict(graph.degree())).mean(axis=0) == 0.0
         assert len(list(nx.get_edge_attributes(graph, 'branch'))) == 0
         assert nx.average_node_connectivity(graph) == 0.0
         assert pd.Series(
@@ -310,9 +310,9 @@ class TestMVGridDing0(object):
         assert len(list(graph.nodes())) == 269
         assert len(list(graph.edges())) == 218
         assert len(list(nx.isolates(graph))) == 54
-        assert pd.Series(graph.degree()).sum(axis=0) == 436
+        assert pd.Series(dict(graph.degree())).sum(axis=0) == 436
         assert pd.Series(
-            graph.degree()
+            dict(graph.degree())
             ).mean(axis=0) == pytest.approx(1.62, 0.001)
         assert len(list(nx.get_edge_attributes(graph, 'branch'))) == 218
         assert nx.average_node_connectivity(graph) == pytest.approx(
