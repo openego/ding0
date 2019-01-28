@@ -416,7 +416,7 @@ def get_critical_voltage_at_nodes(grid):
 
     # fill two above lists
     for node in list(nx.descendants(tree, grid._station)):
-        successors = tree.successors(node)
+        successors = list(tree.successors(node))
         if successors and all(isinstance(successor, LVCableDistributorDing0)
                for successor in successors):
             main_branch.append(node)
