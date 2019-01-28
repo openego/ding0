@@ -288,12 +288,12 @@ class TestMVGridDing0(object):
 
         graph = nd._mv_grid_districts[0].mv_grid._graph
 
-        assert len(graph.nodes()) == 256
-        assert len(graph.edges()) == 0
-        assert len(nx.isolates(graph)) == 256
+        assert len(list(graph.nodes())) == 256
+        assert len(list(graph.edges())) == 0
+        assert len(list(nx.isolates(graph))) == 256
         assert pd.Series(graph.degree()).sum(axis=0) == 0
         assert pd.Series(graph.degree()).mean(axis=0) == 0.0
-        assert len(nx.get_edge_attributes(graph, 'branch')) == 0
+        assert len(list(nx.get_edge_attributes(graph, 'branch'))) == 0
         assert nx.average_node_connectivity(graph) == 0.0
         assert pd.Series(
             nx.degree_centrality(graph)
@@ -307,14 +307,14 @@ class TestMVGridDing0(object):
 
         nd.mv_routing()
 
-        assert len(graph.nodes()) == 269
-        assert len(graph.edges()) == 218
-        assert len(nx.isolates(graph)) == 54
+        assert len(list(graph.nodes())) == 269
+        assert len(list(graph.edges())) == 218
+        assert len(list(nx.isolates(graph))) == 54
         assert pd.Series(graph.degree()).sum(axis=0) == 436
         assert pd.Series(
             graph.degree()
             ).mean(axis=0) == pytest.approx(1.62, 0.001)
-        assert len(nx.get_edge_attributes(graph, 'branch')) == 218
+        assert len(list(nx.get_edge_attributes(graph, 'branch'))) == 218
         assert nx.average_node_connectivity(graph) == pytest.approx(
             0.688,
             abs=0.0001
