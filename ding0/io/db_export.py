@@ -61,6 +61,25 @@ DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning',
                 'mv_station': 'ego_grid_ding0_mv_station',
                 'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer'}
 
+# # set your Table names
+# DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning_test',
+#                 'line': 'ego_grid_ding0_line_test',
+#                 'lv_branchtee': 'ego_grid_ding0_lv_branchtee_test',
+#                 'lv_generator': 'ego_grid_ding0_lv_generator_test',
+#                 'lv_load': 'ego_grid_ding0_lv_load_test',
+#                 'lv_grid': 'ego_grid_ding0_lv_grid_test',
+#                 'lv_station': 'ego_grid_ding0_lv_station_test',
+#                 'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer_test',
+#                 'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping_test',
+#                 'mv_branchtee': 'ego_grid_ding0_mv_branchtee_test',
+#                 'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker_test',
+#                 'mv_generator': 'ego_grid_ding0_mv_generator_test',
+#                 'mv_load': 'ego_grid_ding0_mv_load_test',
+#                 'mv_grid': 'ego_grid_ding0_mv_grid_test',
+#                 'mv_station': 'ego_grid_ding0_mv_station_test',
+#                 'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer_test'}
+
+
 
 def load_json_files():
     """
@@ -374,8 +393,6 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
     correctly load its data to its appropriate sql table. Also handles the
     upload to a DB data frames with different geometry types.
 
-    .. ToDo:  need to check for id_db instead of only 'id' in index label names
-
     NOTE: This function does not check if the data frame columns
     matches the db_table fields, if they do not then no warning
     is given.
@@ -529,10 +546,10 @@ def export_df_to_db(engine, schema, df, tabletype):
 
 
 # ToDo: function works but throws unexpected error (versioning tbl dosent exists)
-def drop_ding0_db_tables(engine, schema):
+def drop_ding0_db_tables(engine):
     """
     Instructions: In order to drop tables all tables need to be stored in METADATA (create tables before dropping them)
-
+    Drops the tables in the schema where they have been created.
     Parameters
     ----------
     engine: sqlalchemy.engine.base.Engine`
@@ -695,7 +712,7 @@ def export_all_dataframes_to_db(engine, schema):
             raise KeyError("a run_id already present! No tables are input!")
 
     else:
-        print("There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
+        print("WARNING: There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
 
 
 if __name__ == "__main__":
@@ -709,6 +726,7 @@ if __name__ == "__main__":
 
     # Set the Database schema which you want to add the tables to
     SCHEMA = "model_draft"
+    # SCHEMA = "public"
 
     # #########Ding0 Network and NW Metadata################
 
@@ -725,7 +743,7 @@ if __name__ == "__main__":
     # RUN_ID = datetime.now().strftime("%Y%m%d%H%M%S")
 
     # choose MV Grid Districts to import
-    mv_grid_districts = [3040, 3046]
+    mv_grid_districts = [1, 2, 3, 4, 5]
 
     # run DING0 on selected MV Grid District
     nw.run_ding0(session=session,
@@ -744,11 +762,8 @@ if __name__ == "__main__":
     #####################################################
 
     create_ding0_sql_tables(oedb_engine, SCHEMA)
-    # drop_ding0_db_tables(oedb_engine, SCHEMA)
+    # drop_ding0_db_tables(oedb_engine)
     # db_tables_change_owner(oedb_engine, SCHEMA)
 
-    # parameter: export_network_to_db(engine, schema, df, tabletype, srid=None)
-    # export_network_to_db(reiners_engine, SCHEMA, lv_gen, "lv_gen", metadata_json)
-    # export_network_to_db(CONNECTION, SCHEMA, mv_stations, "mv_stations", metadata_json)
     export_all_dataframes_to_db(oedb_engine, SCHEMA)
 

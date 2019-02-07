@@ -16,9 +16,7 @@ import os
 
 from sqlalchemy import create_engine, MetaData, Table, exc
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.ext.declarative import declarative_base
-from geoalchemy2.types import Geometry, WKTElement
 
 from egoio.tools.db import connection
 
@@ -99,7 +97,7 @@ def migrate_tables_to_destination(from_db, s_schema, to_db, d_schema, runid=None
             table.schema = d_schema
             table.metadata.create_all(dengine, checkfirst=True)
         except exc.ProgrammingError:
-            print("WARNING: The Index already exists, warning can be ignored.")
+            print("WARNING: The Index on the table already exists, warning can be ignored.")
         table.schema = s_schema
         new_record = quick_mapper(table)
         columns = table.columns.keys()
