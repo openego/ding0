@@ -57,7 +57,8 @@ for grid_no in grids:
 
     # Send data to OEDB
     srid = str(int(nw.config['geo']['srid']))
-    metadata_json = json.loads(network.nw_metadata)
+    # ToDo:might not be necessary to use this metadata
+    # metadata_json = json.loads(network.metadata_json)
 
     export_all_dataframes_to_db(oedb_engine, SCHEMA, network)
 

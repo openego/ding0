@@ -673,15 +673,14 @@ def export_all_dataframes_to_db(engine, schema, network):
         if db_versioning.empty:
             # this leads to wrong run_id if run_id is SET in __main__ -> 'run_id': metadata_json['run_id']
             try:
-                metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
-                                            'description': str(metadata_json)}, index=[0])
+                metadata_df = pd.DataFrame({'run_id': network.metadata_json['run_id'],
+                                            'description': str(network.metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
             except:
                 print(network.metadata['run_id'])
-                metadata_df = pd.DataFrame({'run_id': network.metadata['run_id'],
-                                            'description': str(network.metadata)}, index=[0])
+                metadata_df = pd.DataFrame({'run_id': network.metadata_json['run_id'],
+                                            'description': str(network.metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
-
 
                 # 1
                 export_df_to_db(engine, schema, network.lines, "line")
@@ -760,13 +759,10 @@ if __name__ == "__main__":
     # return values from export_network() as tupels
     network = export_network(nw)
 
-    # df_list = [lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
-    #            mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
-    #            lines, mvlv_mapping]
 
     # any list of NetworkDing0 also provides run_id
     # nw_metadata = json.dumps(nw_metadata)
-    metadata_json = json.loads(network.nw_metadata)
+    metadata_json = json.loads(network.metadata_json)
 
     #####################################################
     # Creates all defined tables
