@@ -673,15 +673,14 @@ def export_all_dataframes_to_db(engine, schema, network):
         if db_versioning.empty:
             # json.load the metadata_json
             metadata_json = json.loads(network.metadata_json)
-            meta_run_id = int(network.metadata_json['run_id'])
             # this leads to wrong run_id if run_id is SET in __main__ -> 'run_id': metadata_json['run_id']
             try:
-                metadata_df = pd.DataFrame({'run_id': metadata_json,
+                metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
                                             'description': str(metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
             except:
-                print(network.metadata_json['run_id'])
-                metadata_df = pd.DataFrame({'run_id': metadata_json,
+                print(metadata_json['run_id'])
+                metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
                                             'description': str(metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
