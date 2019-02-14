@@ -671,14 +671,16 @@ def export_all_dataframes_to_db(engine, schema, network):
         # if metadata_json['run_id'] not in db_versioning['run_id']:
         # Use if just one run_id should be present to the DB table
         if db_versioning.empty:
+            # parse run_id to integer
+            meta_run_id = int(network.metadata_json['run_id'])
             # this leads to wrong run_id if run_id is SET in __main__ -> 'run_id': metadata_json['run_id']
             try:
-                metadata_df = pd.DataFrame({'run_id': network.metadata_json['run_id'],
+                metadata_df = pd.DataFrame({'run_id': meta_run_id,
                                             'description': str(network.metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
             except:
                 print(network.metadata_json['run_id'])
-                metadata_df = pd.DataFrame({'run_id': network.metadata_json['run_id'],
+                metadata_df = pd.DataFrame({'run_id': meta_run_id,
                                             'description': str(network.metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
