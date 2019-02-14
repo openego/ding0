@@ -1,4 +1,4 @@
-name: skeleton
+name: exporter
 channels:
   - conda-forge
   - defaults

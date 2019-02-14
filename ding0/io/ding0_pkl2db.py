@@ -30,17 +30,17 @@ db_tables_change_owner(oedb_engine, SCHEMA)
 # drop_ding0_db_tables(oedb_engine)
 
 # pickle file locations path to RLI_Daten_Flex01 mount
-pkl_filepath = "/home/local/RL-INSTITUT/bharadwaj.narasimhan/rli_daten_flex/Ding0/20180823154014/"
+pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/20180823154014"
 
 
 # choose MV Grid Districts to import
-grids = np.arange(1, 5)
+grids = list(range(1, 6))
 
 # generate all the grids and push them to oedb
 for grid_no in grids:
 
     nw = load_nd_from_pickle(os.path.join(pkl_filepath,
-                                          'ding0_grids__{}.pkl'.format(grid_no)))
+                            'ding0_grids__{}.pkl'.format(grid_no)))
 
     # Extract data from network and put it to DataFrames for csv and for oedb
     run_id, nw_metadata, \
@@ -48,10 +48,14 @@ for grid_no in grids:
     mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
     lines, mvlv_mapping = export_network(nw)
 
+    df_list = [lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
+                mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
+                lines, mvlv_mapping]
+
     # Send data to OEDB
     srid = str(int(nw.config['geo']['srid']))
     metadata_json = json.loads(nw_metadata)
 
-    export_all_dataframes_to_db(oedb_engine, SCHEMA)
+    export_all_dataframes_to_db(oedb_engine, SCHEMA, nw_metadata, df_list)
 
-#db_tables_change_owner(oedb_engine, SCHEMA)
+# db_tables_change_owner(oedb_engine, SCHEMA)

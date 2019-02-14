@@ -33,7 +33,7 @@ logger = setup_logger()
 # ===== MAIN =====
 
 # database connection/ session
-engine = db.connection(section='oedb')
+engine = db.connection(section='oedb_vpn')
 session = sessionmaker(bind=engine)()
 
 # instantiate new ding0 network object

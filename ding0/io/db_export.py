@@ -627,7 +627,7 @@ def db_tables_change_owner(engine, schema):
         change_owner(engine, tab, 'oeuser', schema)
 
 
-def export_all_dataframes_to_db(engine, schema):
+def export_all_dataframes_to_db(engine, schema, md=None, all_df_list=None):
     """
     exports all data frames from func. export_network() to the db tables
 
@@ -672,41 +672,47 @@ def export_all_dataframes_to_db(engine, schema):
         # Use if just one run_id should be present to the DB table
         if db_versioning.empty:
             # this leads to wrong run_id if run_id is SET in __main__ -> 'run_id': metadata_json['run_id']
-            metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
-                                        'description': str(metadata_json)}, index=[0])
+            try:
+                metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
+                                            'description': str(metadata_json)}, index=[0])
+                df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
+            except:
+                print(md['run_id'])
+                metadata_df = pd.DataFrame({'run_id': md['run_id'],
+                                            'description': str(md)}, index=[0])
+                df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
-            df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
-
-            # 1
-            export_df_to_db(engine, schema, lines, "line")
-            # 2
-            export_df_to_db(engine, schema, lv_cd, "lv_cd")
-            # 3
-            export_df_to_db(engine, schema, lv_gen, "lv_gen")
-            # 4
-            export_df_to_db(engine, schema, lv_stations, "lv_station")
-            # 5
-            export_df_to_db(engine, schema, lv_loads, "lv_load")
-            # 6
-            export_df_to_db(engine, schema, lv_grid, "lv_grid")
-            # 7
-            export_df_to_db(engine, schema, mv_cb, "mv_cb")
-            # 8
-            export_df_to_db(engine, schema, mv_cd, "mv_cd")
-            # 9
-            export_df_to_db(engine, schema, mv_gen, "mv_gen")
-            # 10
-            export_df_to_db(engine, schema, mv_stations, "mv_station")
-            # 11
-            export_df_to_db(engine, schema, mv_loads, "mv_load")
-            # 12
-            export_df_to_db(engine, schema, mv_grid, "mv_grid")
-            # 13
-            export_df_to_db(engine, schema, mvlv_trafos, "mvlv_trafo")
-            # 14
-            export_df_to_db(engine, schema, hvmv_trafos, "hvmv_trafo")
-            # 15
-            export_df_to_db(engine, schema, mvlv_mapping, "mvlv_mapping")
+            for df in all_df_list:
+                # 1
+                export_df_to_db(engine, schema, lines, "line")
+                # 2
+                export_df_to_db(engine, schema, lv_cd, "lv_cd")
+                # 3
+                export_df_to_db(engine, schema, lv_gen, "lv_gen")
+                # 4
+                export_df_to_db(engine, schema, lv_stations, "lv_station")
+                # 5
+                export_df_to_db(engine, schema, lv_loads, "lv_load")
+                # 6
+                export_df_to_db(engine, schema, lv_grid, "lv_grid")
+                # 7
+                export_df_to_db(engine, schema, mv_cb, "mv_cb")
+                # 8
+                export_df_to_db(engine, schema, mv_cd, "mv_cd")
+                # 9
+                export_df_to_db(engine, schema, mv_gen, "mv_gen")
+                # 10
+                export_df_to_db(engine, schema, mv_stations, "mv_station")
+                # 11
+                export_df_to_db(engine, schema, mv_loads, "mv_load")
+                # 12
+                export_df_to_db(engine, schema, mv_grid, "mv_grid")
+                # 13
+                export_df_to_db(engine, schema, mvlv_trafos, "mvlv_trafo")
+                # 14
+                export_df_to_db(engine, schema, hvmv_trafos, "hvmv_trafo")
+                # 15
+                export_df_to_db(engine, schema, mvlv_mapping, "mvlv_mapping")
 
         else:
             raise KeyError("a run_id already present! No tables are input!")
@@ -743,7 +749,8 @@ if __name__ == "__main__":
     # RUN_ID = datetime.now().strftime("%Y%m%d%H%M%S")
 
     # choose MV Grid Districts to import
-    mv_grid_districts = [1, 2, 3, 4, 5]
+    # needs to be a list with Integers
+    mv_grid_districts = list(range(1, 1001))
 
     # run DING0 on selected MV Grid District
     nw.run_ding0(session=session,
@@ -762,8 +769,5 @@ if __name__ == "__main__":
     #####################################################
 
     create_ding0_sql_tables(oedb_engine, SCHEMA)
-    # drop_ding0_db_tables(oedb_engine)
+    drop_ding0_db_tables(oedb_engine)
     # db_tables_change_owner(oedb_engine, SCHEMA)
-
-    export_all_dataframes_to_db(oedb_engine, SCHEMA)
-
