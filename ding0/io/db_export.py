@@ -627,7 +627,7 @@ def db_tables_change_owner(engine, schema):
         change_owner(engine, tab, 'oeuser', schema)
 
 
-def export_all_dataframes_to_db(engine, schema, md=None, all_df_list=None):
+def export_all_dataframes_to_db(engine, schema, network):
     """
     exports all data frames from func. export_network() to the db tables
 
@@ -677,42 +677,42 @@ def export_all_dataframes_to_db(engine, schema, md=None, all_df_list=None):
                                             'description': str(metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
             except:
-                print(md['run_id'])
-                metadata_df = pd.DataFrame({'run_id': md['run_id'],
-                                            'description': str(md)}, index=[0])
+                print(network.metadata['run_id'])
+                metadata_df = pd.DataFrame({'run_id': network.metadata['run_id'],
+                                            'description': str(network.metadata)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
-            for df in all_df_list:
+
                 # 1
-                export_df_to_db(engine, schema, lines, "line")
+                export_df_to_db(engine, schema, network.lines, "line")
                 # 2
-                export_df_to_db(engine, schema, lv_cd, "lv_cd")
+                export_df_to_db(engine, schema, network.lv_cd, "lv_cd")
                 # 3
-                export_df_to_db(engine, schema, lv_gen, "lv_gen")
+                export_df_to_db(engine, schema, network.lv_gen, "lv_gen")
                 # 4
-                export_df_to_db(engine, schema, lv_stations, "lv_station")
+                export_df_to_db(engine, schema, network.lv_stations, "lv_station")
                 # 5
-                export_df_to_db(engine, schema, lv_loads, "lv_load")
+                export_df_to_db(engine, schema, network.lv_loads, "lv_load")
                 # 6
-                export_df_to_db(engine, schema, lv_grid, "lv_grid")
+                export_df_to_db(engine, schema, network.lv_grid, "lv_grid")
                 # 7
-                export_df_to_db(engine, schema, mv_cb, "mv_cb")
+                export_df_to_db(engine, schema, network.mv_cb, "mv_cb")
                 # 8
-                export_df_to_db(engine, schema, mv_cd, "mv_cd")
+                export_df_to_db(engine, schema, network.mv_cd, "mv_cd")
                 # 9
-                export_df_to_db(engine, schema, mv_gen, "mv_gen")
+                export_df_to_db(engine, schema, network.mv_gen, "mv_gen")
                 # 10
-                export_df_to_db(engine, schema, mv_stations, "mv_station")
+                export_df_to_db(engine, schema, network.mv_stations, "mv_station")
                 # 11
-                export_df_to_db(engine, schema, mv_loads, "mv_load")
+                export_df_to_db(engine, schema, network.mv_loads, "mv_load")
                 # 12
-                export_df_to_db(engine, schema, mv_grid, "mv_grid")
+                export_df_to_db(engine, schema, network.mv_grid, "mv_grid")
                 # 13
-                export_df_to_db(engine, schema, mvlv_trafos, "mvlv_trafo")
+                export_df_to_db(engine, schema, network.mvlv_trafos, "mvlv_trafo")
                 # 14
-                export_df_to_db(engine, schema, hvmv_trafos, "hvmv_trafo")
+                export_df_to_db(engine, schema, network.hvmv_trafos, "hvmv_trafo")
                 # 15
-                export_df_to_db(engine, schema, mvlv_mapping, "mvlv_mapping")
+                export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping")
 
         else:
             raise KeyError("a run_id already present! No tables are input!")
@@ -750,24 +750,29 @@ if __name__ == "__main__":
 
     # choose MV Grid Districts to import
     # needs to be a list with Integers
-    mv_grid_districts = list(range(1, 1001))
+    mv_grid_districts = list(range(1, 5))
+
 
     # run DING0 on selected MV Grid District
     nw.run_ding0(session=session,
                  mv_grid_districts_no=mv_grid_districts)
 
     # return values from export_network() as tupels
-    run_id, nw_metadata, \
-    lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
-    mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
-    lines, mvlv_mapping = export_network(nw)
+    network = export_network(nw)
+
+    # df_list = [lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
+    #            mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
+    #            lines, mvlv_mapping]
 
     # any list of NetworkDing0 also provides run_id
     # nw_metadata = json.dumps(nw_metadata)
-    metadata_json = json.loads(nw_metadata)
+    metadata_json = json.loads(network.nw_metadata)
 
     #####################################################
-
+    # Creates all defined tables
     create_ding0_sql_tables(oedb_engine, SCHEMA)
     drop_ding0_db_tables(oedb_engine)
     # db_tables_change_owner(oedb_engine, SCHEMA)
+
+    # Export all Dataframes returned form export_network(nw) to DB
+    export_all_dataframes_to_db(oedb_engine, SCHEMA)

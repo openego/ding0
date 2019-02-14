@@ -43,19 +43,22 @@ for grid_no in grids:
                             'ding0_grids__{}.pkl'.format(grid_no)))
 
     # Extract data from network and put it to DataFrames for csv and for oedb
-    run_id, nw_metadata, \
-    lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
-    mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
-    lines, mvlv_mapping = export_network(nw)
+    network = export_network(nw)
 
-    df_list = [lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
-                mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
-                lines, mvlv_mapping]
+    # ToDo:How TO pass the dataframes to export_all_df func????????????????
+    # df_dict = {"lv_grid":lv_grid, "lv_gen":lv_gen, "":lv_cd, "":lv_stations, "":mvlv_trafos, "":lv_loads,
+    #             "": mv_grid, mv_gen, "": mv_cb, "": mv_cd, "":mv_stations, "":hvmv_trafos, "":mv_loads,
+    #             "":lines, "":mvlv_mapping}
+    #
+    # df_dict = [lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
+    #             mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
+    #             lines, mvlv_mapping]
+
 
     # Send data to OEDB
     srid = str(int(nw.config['geo']['srid']))
-    metadata_json = json.loads(nw_metadata)
+    metadata_json = json.loads(network.nw_metadata)
 
-    export_all_dataframes_to_db(oedb_engine, SCHEMA, nw_metadata, df_list)
+    export_all_dataframes_to_db(oedb_engine, SCHEMA, network)
 
 # db_tables_change_owner(oedb_engine, SCHEMA)

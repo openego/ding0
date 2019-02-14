@@ -14,6 +14,7 @@ __author__ = "nesnoj, gplssm"
 
 import numpy as np
 import pandas as pd
+from collections import namedtuple
 
 import json
 
@@ -26,6 +27,14 @@ from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
 from ding0.core import LVLoadAreaCentreDing0
 
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString, MultiPolygon, shape, mapping
+
+Network = namedtuple(
+    'Network',
+    [
+        'run_id', 'metadata_json', 'lv_grid', 'lv_gen', 'lv_cd', 'lv_stations', 'mvlv_trafos', 'lv_loads',
+        'mv_grid', 'mv_gen', 'mv_cb', 'mv_cd', 'mv_stations', 'hvmv_trafos', 'mv_loads', 'lines', 'mvlv_mapping'
+    ]
+)
 
 
 def export_network(nw, mode='', run_id=None):
@@ -599,7 +608,7 @@ def export_network(nw, mode='', run_id=None):
 
     lines = lines[sorted(lines.columns.tolist())]
 
-    return run_id, metadata_json, \
-           lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, \
-           mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads, \
-           lines, mvlv_mapping
+    return Network(
+        run_id, metadata_json, lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads, mv_grid, mv_gen, mv_cb,
+        mv_cd, mv_stations, hvmv_trafos, mv_loads, lines, mvlv_mapping
+    )
