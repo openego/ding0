@@ -677,7 +677,7 @@ def export_all_dataframes_to_db(engine, schema, network):
                                             'description': str(network.metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
             except:
-                print(network.metadata['run_id'])
+                print(network.metadata_json['run_id'])
                 metadata_df = pd.DataFrame({'run_id': network.metadata_json['run_id'],
                                             'description': str(network.metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
@@ -762,7 +762,8 @@ if __name__ == "__main__":
 
     # any list of NetworkDing0 also provides run_id
     # nw_metadata = json.dumps(nw_metadata)
-    metadata_json = json.loads(network.metadata_json)
+    # ToDo:might not be necessary to use this metadata
+    # metadata_json = json.loads(network.metadata_json)
 
     #####################################################
     # Creates all defined tables
