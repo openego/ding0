@@ -381,12 +381,14 @@ def create_wkt_element(geom):
         Returns None if the data frame does not contain any geometry
     """
     if geom is not None:
-        return WKTElement(geom, srid=int(SRID), extended=True)
+        # return WKTElement(geom, srid=int(SRID), extended=True)
+        # ToDo: hardset srid find better approach to make it work for dingo run and dingo from pickel
+        return WKTElement(geom, srid=4326, extended=True)
     else:
         return None
 
 
-def df_sql_write(engine, schema, db_table, dataframe, geom_type=None):
+def df_sql_write(engine, schema, db_table, dataframe, geom_type, SRID):
     """
     Convert data frames such that their column names
     are made small and the index is renamed 'id_db' so as to
@@ -627,7 +629,7 @@ def db_tables_change_owner(engine, schema):
         change_owner(engine, tab, 'oeuser', schema)
 
 
-def export_all_dataframes_to_db(engine, schema, network):
+def export_all_dataframes_to_db(engine, schema, network, srid):
     """
     exports all data frames from func. export_network() to the db tables
 
@@ -684,36 +686,36 @@ def export_all_dataframes_to_db(engine, schema, network):
                                             'description': str(metadata_json)}, index=[0])
                 df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
-                # 1
-                export_df_to_db(engine, schema, network.lines, "line")
-                # 2
-                export_df_to_db(engine, schema, network.lv_cd, "lv_cd")
-                # 3
-                export_df_to_db(engine, schema, network.lv_gen, "lv_gen")
-                # 4
-                export_df_to_db(engine, schema, network.lv_stations, "lv_station")
-                # 5
-                export_df_to_db(engine, schema, network.lv_loads, "lv_load")
-                # 6
-                export_df_to_db(engine, schema, network.lv_grid, "lv_grid")
-                # 7
-                export_df_to_db(engine, schema, network.mv_cb, "mv_cb")
-                # 8
-                export_df_to_db(engine, schema, network.mv_cd, "mv_cd")
-                # 9
-                export_df_to_db(engine, schema, network.mv_gen, "mv_gen")
-                # 10
-                export_df_to_db(engine, schema, network.mv_stations, "mv_station")
-                # 11
-                export_df_to_db(engine, schema, network.mv_loads, "mv_load")
-                # 12
-                export_df_to_db(engine, schema, network.mv_grid, "mv_grid")
-                # 13
-                export_df_to_db(engine, schema, network.mvlv_trafos, "mvlv_trafo")
-                # 14
-                export_df_to_db(engine, schema, network.hvmv_trafos, "hvmv_trafo")
-                # 15
-                export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping")
+            # 1
+            export_df_to_db(engine, schema, network.lines, "line", srid)
+            # 2
+            export_df_to_db(engine, schema, network.lv_cd, "lv_cd", srid)
+            # 3
+            export_df_to_db(engine, schema, network.lv_gen, "lv_gen", srid)
+            # 4
+            export_df_to_db(engine, schema, network.lv_stations, "lv_station", srid)
+            # 5
+            export_df_to_db(engine, schema, network.lv_loads, "lv_load", srid)
+            # 6
+            export_df_to_db(engine, schema, network.lv_grid, "lv_grid", srid)
+            # 7
+            export_df_to_db(engine, schema, network.mv_cb, "mv_cb", srid)
+            # 8
+            export_df_to_db(engine, schema, network.mv_cd, "mv_cd", srid)
+            # 9
+            export_df_to_db(engine, schema, network.mv_gen, "mv_gen", srid)
+            # 10
+            export_df_to_db(engine, schema, network.mv_stations, "mv_station", srid)
+            # 11
+            export_df_to_db(engine, schema, network.mv_loads, "mv_load", srid)
+            # 12
+            export_df_to_db(engine, schema, network.mv_grid, "mv_grid", srid)
+            # 13
+            export_df_to_db(engine, schema, network.mvlv_trafos, "mvlv_trafo", srid)
+            # 14
+            export_df_to_db(engine, schema, network.hvmv_trafos, "hvmv_trafo", srid)
+            # 15
+            export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping", srid)
 
         else:
             raise KeyError("a run_id already present! No tables are input!")
@@ -738,12 +740,12 @@ if __name__ == "__main__":
     # #########Ding0 Network and NW Metadata################
 
     # create ding0 Network instance
-    nw = NetworkDing0(name='network')
+    # nw = NetworkDing0(name='network')
     # nw = load_nd_from_pickle(filename='ding0_grids_example.pkl', path='ding0\ding0\examples\ding0_grids_example.pkl')
 
     # srid
     # ToDo: Check why converted to int and string
-    SRID = str(int(nw.config['geo']['srid']))
+    # SRID = str(int(nw.config['geo']['srid']))
 
     # provide run_id, note that the run_id is unique to the DB table
     # if not set it will be set
@@ -755,11 +757,11 @@ if __name__ == "__main__":
 
 
     # run DING0 on selected MV Grid District
-    nw.run_ding0(session=session,
-                 mv_grid_districts_no=mv_grid_districts)
+    # nw.run_ding0(session=session,
+    #              mv_grid_districts_no=mv_grid_districts)
 
     # return values from export_network() as tupels
-    network = export_network(nw)
+    # network = export_network(nw)
 
 
     # any list of NetworkDing0 also provides run_id
@@ -774,4 +776,4 @@ if __name__ == "__main__":
     # db_tables_change_owner(oedb_engine, SCHEMA)
 
     # Export all Dataframes returned form export_network(nw) to DB
-    export_all_dataframes_to_db(oedb_engine, SCHEMA)
+    # export_all_dataframes_to_db(oedb_engine, SCHEMA)

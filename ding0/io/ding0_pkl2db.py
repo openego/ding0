@@ -45,21 +45,11 @@ for grid_no in grids:
     # Extract data from network and put it to DataFrames for csv and for oedb
     network = export_network(nw)
 
-    # ToDo:How TO pass the dataframes to export_all_df func????????????????
-    # df_dict = {"lv_grid":lv_grid, "lv_gen":lv_gen, "":lv_cd, "":lv_stations, "":mvlv_trafos, "":lv_loads,
-    #             "": mv_grid, mv_gen, "": mv_cb, "": mv_cd, "":mv_stations, "":hvmv_trafos, "":mv_loads,
-    #             "":lines, "":mvlv_mapping}
-    #
-    # df_dict = [lv_grid, lv_gen, lv_cd, lv_stations, mvlv_trafos, lv_loads,
-    #             mv_grid, mv_gen, mv_cb, mv_cd, mv_stations, hvmv_trafos, mv_loads,
-    #             lines, mvlv_mapping]
-
-
     # Send data to OEDB
     srid = str(int(nw.config['geo']['srid']))
     # ToDo:might not be necessary to use this metadata
     # metadata_json = json.loads(network.metadata_json)
 
-    export_all_dataframes_to_db(oedb_engine, SCHEMA, network)
+    export_all_dataframes_to_db(oedb_engine, SCHEMA, network, srid)
 
 # db_tables_change_owner(oedb_engine, SCHEMA)
