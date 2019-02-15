@@ -799,7 +799,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no, run_id):
             # 15
             export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping", srid)
 
-            print('Griddistrict' + str(grid_no) + 'has been exported to the database')
+            print('Griddistrict_' + str(grid_no) + '_has been exported to the database')
         else:
             # 1
             export_df_to_db(engine, schema, network.lines, "line", srid)
@@ -832,7 +832,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no, run_id):
             # 15
             export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping", srid)
 
-            print('Griddistrict' + str(grid_no) + 'has been exported to the database')
+            print('Griddistrict_' + str(grid_no) + '_has been exported to the database')
 
     else:
         print("WARNING: There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
@@ -890,7 +890,7 @@ if __name__ == "__main__":
     #####################################################
     # Creates all defined tables
     create_ding0_sql_tables(oedb_engine, SCHEMA)
-    # drop_ding0_db_tables(oedb_engine)
+    drop_ding0_db_tables(oedb_engine)
     # db_tables_change_owner(oedb_engine, SCHEMA)
 
     # Export all Dataframes returned form export_network(nw) to DB
