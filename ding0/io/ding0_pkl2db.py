@@ -39,10 +39,11 @@ grids = list(range(1, 6))
 # generate all the grids and push them to oedb
 for grid_no in grids:
 
+    # ToDo: run_id changes for every file
     nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
 
     # Extract data from network and put it to DataFrames for csv and for oedb
-    network = export_network(nw)
+    network = export_network(nw, run_id=20190215122822)
 
     # Send data to OEDB
     srid = str(int(nw.config['geo']['srid']))
