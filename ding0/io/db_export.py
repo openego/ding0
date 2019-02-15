@@ -483,7 +483,7 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type, SRID):
             sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
 
-def export_df_to_db(engine, schema, df, tabletype):
+def export_df_to_db(engine, schema, df, tabletype, srid):
     """
     Writes values to the connected DB. Values from Pandas data frame.
     Decides which table by tabletype
@@ -501,50 +501,50 @@ def export_df_to_db(engine, schema, df, tabletype):
     """
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
-        df_sql_write(engine, schema, DING0_TABLES['line'], df, 'LINESTRING')
+        df_sql_write(engine, schema, DING0_TABLES['line'], df, 'LINESTRING', srid)
 
     elif tabletype == 'lv_cd':
         df = df.drop(['lv_grid_id'], axis=1)
-        df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df, 'POINT', srid)
 
     elif tabletype == 'lv_gen':
-        df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df, 'POINT', srid)
 
     elif tabletype == 'lv_load':
-        df_sql_write(engine, schema, DING0_TABLES['lv_load'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['lv_load'], df, 'POINT', srid)
 
     elif tabletype == 'lv_grid':
-        df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df, 'MULTIPOLYGON')
+        df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df, 'MULTIPOLYGON', srid)
 
     elif tabletype == 'lv_station':
-        df_sql_write(engine, schema, DING0_TABLES['lv_station'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['lv_station'], df, 'POINT', srid)
 
     elif tabletype == 'mvlv_trafo':
-        df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df, 'POINT', srid)
 
     elif tabletype == 'mvlv_mapping':
-        df_sql_write(engine, schema, DING0_TABLES['mvlv_mapping'], df)
+        df_sql_write(engine, schema, DING0_TABLES['mvlv_mapping'], df, srid)
 
     elif tabletype == 'mv_cd':
-        df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df, 'POINT', srid)
 
     elif tabletype == 'mv_cb':
-        df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df, 'POINT', srid)
 
     elif tabletype == 'mv_gen':
-        df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df, 'POINT', srid)
 
     elif tabletype == 'mv_load':
-        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'GEOMETRY')
+        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'GEOMETRY', srid)
 
     elif tabletype == 'mv_grid':
-        df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df, 'MULTIPOLYGON')
+        df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df, 'MULTIPOLYGON', srid)
 
     elif tabletype == 'mv_station':
-        df_sql_write(engine, schema, DING0_TABLES['mv_station'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['mv_station'], df, 'POINT', srid)
 
     elif tabletype == 'hvmv_trafo':
-        df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df, 'POINT')
+        df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df, 'POINT', srid)
 
 
 # ToDo: function works but throws unexpected error (versioning tbl dosent exists)
