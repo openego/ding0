@@ -764,7 +764,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no, run_id):
 
             metadata_json = json.loads(network.metadata_json)
 
-            metadata_df = pd.DataFrame({'run_id': run_id,
+            metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
                                         'description': str(metadata_json)}, index=[0])
             df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
@@ -874,12 +874,12 @@ if __name__ == "__main__":
     mv_grid_districts = list(range(1, 5))
 
 
-    # run DING0 on selected MV Grid District
-    nw.run_ding0(session=session,
-                 mv_grid_districts_no=mv_grid_districts)
-
-    # return values from export_network() as tupels
-    network = export_network(nw, run_id=run_id)
+    # # run DING0 on selected MV Grid District
+    # nw.run_ding0(session=session,
+    #              mv_grid_districts_no=mv_grid_districts)
+    #
+    # # return values from export_network() as tupels
+    # network = export_network(nw, run_id=run_id)
 
 
     # any list of NetworkDing0 also provides run_id
@@ -894,4 +894,4 @@ if __name__ == "__main__":
     # db_tables_change_owner(oedb_engine, SCHEMA)
 
     # Export all Dataframes returned form export_network(nw) to DB
-    export_all_dataframes_to_db(oedb_engine, SCHEMA, network=network, srid=SRID)
+    # export_all_dataframes_to_db(oedb_engine, SCHEMA, network=network, srid=SRID)
