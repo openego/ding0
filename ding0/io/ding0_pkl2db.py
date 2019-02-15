@@ -46,10 +46,15 @@ for grid_no in grids:
     network = export_network(nw, run_id=20190215122822)
 
     # Send data to OEDB
-    srid = str(int(nw.config['geo']['srid']))
+    # SRID = str(int(nw.config['geo']['srid']))
+    srid = int(nw.config['geo']['srid'])
+
+    # provide run id for pickle upload
+    run_id = 20190215122822
+
     # ToDo:might not be necessary to use this metadata
     # metadata_json = json.loads(network.metadata_json)
 
-    export_all_pkl_to_db(oedb_engine, SCHEMA, network, srid, grid_no)
+    export_all_pkl_to_db(oedb_engine, SCHEMA, network, srid, grid_no, run_id)
 
 # db_tables_change_owner(oedb_engine, SCHEMA)

@@ -485,7 +485,7 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None, SRID=None)
             sql_write_df.to_sql(db_table, con=engine, schema=schema, if_exists='append', index=None)
 
 
-def export_df_to_db(engine, schema, df, tabletype, srid):
+def export_df_to_db(engine, schema, df, tabletype, srid=None):
     """
     Writes values to the connected DB. Values from Pandas data frame.
     Decides which table by tabletype
@@ -633,7 +633,7 @@ def db_tables_change_owner(engine, schema):
         change_owner(engine, tab, 'oeuser', schema)
 
 
-def export_all_dataframes_to_db(engine, schema, network, srid):
+def export_all_dataframes_to_db(engine, schema, network=None, srid=None):
     """
     exports all data frames from func. export_network() to the db tables
     This works with a completely generated ding0 network(all grid districts have to be generated at once),
@@ -734,7 +734,7 @@ def export_all_dataframes_to_db(engine, schema, network, srid):
         print("WARNING: There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
 
 
-def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
+def export_all_pkl_to_db(engine, schema, network, srid, grid_no, run_id):
     """
     This function basically works the same way export_all_dataframes_to_db() does.
     It is implemented to handel the diffrent ways of executing the functions:
@@ -764,7 +764,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
 
             metadata_json = json.loads(network.metadata_json)
 
-            metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
+            metadata_df = pd.DataFrame({'run_id': run_id,
                                         'description': str(metadata_json)}, index=[0])
             df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
@@ -854,12 +854,16 @@ if __name__ == "__main__":
     # #########Ding0 Network and NW Metadata################
 
     # create ding0 Network instance
-    # nw = NetworkDing0(name='network')
+    nw = NetworkDing0(name='network')
     # nw = load_nd_from_pickle(filename='ding0_grids_example.pkl', path='ding0\ding0\examples\ding0_grids_example.pkl')
 
     # srid
     # ToDo: Check why converted to int and string
     # SRID = str(int(nw.config['geo']['srid']))
+    SRID = int(nw.config['geo']['srid'])
+
+    # provide run id for pickle upload
+    run_id = 20190215122822
 
     # provide run_id, note that the run_id is unique to the DB table
     # if not set it will be set
@@ -871,11 +875,11 @@ if __name__ == "__main__":
 
 
     # run DING0 on selected MV Grid District
-    # nw.run_ding0(session=session,
-    #              mv_grid_districts_no=mv_grid_districts)
+    nw.run_ding0(session=session,
+                 mv_grid_districts_no=mv_grid_districts)
 
     # return values from export_network() as tupels
-    # network = export_network(nw)
+    network = export_network(nw, run_id=run_id)
 
 
     # any list of NetworkDing0 also provides run_id
@@ -886,8 +890,8 @@ if __name__ == "__main__":
     #####################################################
     # Creates all defined tables
     create_ding0_sql_tables(oedb_engine, SCHEMA)
-    drop_ding0_db_tables(oedb_engine)
+    # drop_ding0_db_tables(oedb_engine)
     # db_tables_change_owner(oedb_engine, SCHEMA)
 
     # Export all Dataframes returned form export_network(nw) to DB
-    # export_all_dataframes_to_db(oedb_engine, SCHEMA)
+    export_all_dataframes_to_db(oedb_engine, SCHEMA, network=network, srid=SRID)
