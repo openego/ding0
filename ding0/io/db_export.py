@@ -388,7 +388,7 @@ def create_wkt_element(geom):
         return None
 
 
-def df_sql_write(engine, schema, db_table, dataframe, geom_type, SRID):
+def df_sql_write(engine, schema, db_table, dataframe, geom_type=None, SRID=None):
     """
     Convert data frames such that their column names
     are made small and the index is renamed 'id_db' so as to
@@ -663,6 +663,10 @@ def export_all_dataframes_to_db(engine, schema, network, srid):
         Sqlalchemy database engine
     schema : str
         The schema in which the tables are to be created
+    network: namedtuple
+        All the return values(Data Frames) from export_network()
+    srid: int
+        The current srid provided by the ding0 network
     """
 
     if engine.dialect.has_table(engine, DING0_TABLES["versioning"], schema=schema):
@@ -676,15 +680,15 @@ def export_all_dataframes_to_db(engine, schema, network, srid):
             # json.load the metadata_json
             metadata_json = json.loads(network.metadata_json)
             # this leads to wrong run_id if run_id is SET in __main__ -> 'run_id': metadata_json['run_id']
-            try:
-                metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
-                                            'description': str(metadata_json)}, index=[0])
-                df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
-            except:
-                print(metadata_json['run_id'])
-                metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
-                                            'description': str(metadata_json)}, index=[0])
-                df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
+            # try:
+            metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
+                                        'description': str(metadata_json)}, index=[0])
+            df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
+            # except:
+            #     print(metadata_json['run_id'])
+            #     metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
+            #                                 'description': str(metadata_json)}, index=[0])
+            #     df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
             # 1
             export_df_to_db(engine, schema, network.lines, "line", srid)
@@ -719,6 +723,112 @@ def export_all_dataframes_to_db(engine, schema, network, srid):
 
         else:
             raise KeyError("a run_id already present! No tables are input!")
+
+    else:
+        print("WARNING: There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
+
+
+def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
+    """
+    This function basicly works the same way export_all_dataframes_to_db() does.
+    It is implemented to handel the diffrent ways of executing the functions.
+
+    If loaded form pickel files a for loop is included and every grid district will be uploaded one after another.
+    This chances the requirements for this function.
+
+    Parameters
+    ----------
+    engine : sqlalchemy.engine.base.Engine
+        Sqlalchemy database engine
+    schema : str
+        The schema in which the tables are to be created
+    network: namedtuple
+        All the return values(Data Frames) from export_network()
+    srid: int
+        The current srid provided by the ding0 network
+    grid_no: int
+        The Griddistrict number
+    """
+
+    if engine.dialect.has_table(engine, DING0_TABLES["versioning"], schema=schema):
+
+        db_versioning = pd.read_sql_table(DING0_TABLES['versioning'], engine, schema,
+                                          columns=['run_id', 'description'])
+
+        if db_versioning.empty:
+
+            metadata_json = json.loads(network.metadata_json)
+
+            metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
+                                        'description': str(metadata_json)}, index=[0])
+            df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
+
+            # 1
+            export_df_to_db(engine, schema, network.lines, "line", srid)
+            # 2
+            export_df_to_db(engine, schema, network.lv_cd, "lv_cd", srid)
+            # 3
+            export_df_to_db(engine, schema, network.lv_gen, "lv_gen", srid)
+            # 4
+            export_df_to_db(engine, schema, network.lv_stations, "lv_station", srid)
+            # 5
+            export_df_to_db(engine, schema, network.lv_loads, "lv_load", srid)
+            # 6
+            export_df_to_db(engine, schema, network.lv_grid, "lv_grid", srid)
+            # 7
+            export_df_to_db(engine, schema, network.mv_cb, "mv_cb", srid)
+            # 8
+            export_df_to_db(engine, schema, network.mv_cd, "mv_cd", srid)
+            # 9
+            export_df_to_db(engine, schema, network.mv_gen, "mv_gen", srid)
+            # 10
+            export_df_to_db(engine, schema, network.mv_stations, "mv_station", srid)
+            # 11
+            export_df_to_db(engine, schema, network.mv_loads, "mv_load", srid)
+            # 12
+            export_df_to_db(engine, schema, network.mv_grid, "mv_grid", srid)
+            # 13
+            export_df_to_db(engine, schema, network.mvlv_trafos, "mvlv_trafo", srid)
+            # 14
+            export_df_to_db(engine, schema, network.hvmv_trafos, "hvmv_trafo", srid)
+            # 15
+            export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping", srid)
+
+            print('Griddistrict {} has been exported to the database').format(grid_no)
+
+        else:
+            # 1
+            export_df_to_db(engine, schema, network.lines, "line", srid)
+            # 2
+            export_df_to_db(engine, schema, network.lv_cd, "lv_cd", srid)
+            # 3
+            export_df_to_db(engine, schema, network.lv_gen, "lv_gen", srid)
+            # 4
+            export_df_to_db(engine, schema, network.lv_stations, "lv_station", srid)
+            # 5
+            export_df_to_db(engine, schema, network.lv_loads, "lv_load", srid)
+            # 6
+            export_df_to_db(engine, schema, network.lv_grid, "lv_grid", srid)
+            # 7
+            export_df_to_db(engine, schema, network.mv_cb, "mv_cb", srid)
+            # 8
+            export_df_to_db(engine, schema, network.mv_cd, "mv_cd", srid)
+            # 9
+            export_df_to_db(engine, schema, network.mv_gen, "mv_gen", srid)
+            # 10
+            export_df_to_db(engine, schema, network.mv_stations, "mv_station", srid)
+            # 11
+            export_df_to_db(engine, schema, network.mv_loads, "mv_load", srid)
+            # 12
+            export_df_to_db(engine, schema, network.mv_grid, "mv_grid", srid)
+            # 13
+            export_df_to_db(engine, schema, network.mvlv_trafos, "mvlv_trafo", srid)
+            # 14
+            export_df_to_db(engine, schema, network.hvmv_trafos, "hvmv_trafo", srid)
+            # 15
+            export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping", srid)
+
+            print('Griddistrict {} has been exported to the database').format(grid_no)
 
     else:
         print("WARNING: There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)

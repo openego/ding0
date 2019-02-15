@@ -12,7 +12,7 @@ from ding0.tools.logger import setup_logger
 from ding0.tools.results import load_nd_from_pickle
 from ding0.io.export import export_network
 from ding0.io.db_export import METADATA, create_ding0_sql_tables, \
-    export_all_dataframes_to_db, db_tables_change_owner, drop_ding0_db_tables
+    export_all_pkl_to_db, db_tables_change_owner, drop_ding0_db_tables
 from sqlalchemy.orm import sessionmaker
 
 
@@ -39,8 +39,7 @@ grids = list(range(1, 6))
 # generate all the grids and push them to oedb
 for grid_no in grids:
 
-    nw = load_nd_from_pickle(os.path.join(pkl_filepath,
-                            'ding0_grids__{}.pkl'.format(grid_no)))
+    nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
 
     # Extract data from network and put it to DataFrames for csv and for oedb
     network = export_network(nw)
@@ -50,6 +49,6 @@ for grid_no in grids:
     # ToDo:might not be necessary to use this metadata
     # metadata_json = json.loads(network.metadata_json)
 
-    export_all_dataframes_to_db(oedb_engine, SCHEMA, network, srid)
+    export_all_pkl_to_db(oedb_engine, SCHEMA, network, srid, grid_no)
 
 # db_tables_change_owner(oedb_engine, SCHEMA)
