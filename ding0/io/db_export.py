@@ -417,6 +417,8 @@ def df_sql_write(engine, schema, db_table, dataframe, geom_type=None, SRID=None)
 
     geom_type: str
         Prameter for handling data frames with different geometry types
+    SRID: int
+        The current srid provided by the ding0 network
     """
 
     # rename data frame column DB like
@@ -498,6 +500,8 @@ def export_df_to_db(engine, schema, df, tabletype, srid):
         df : pandas data frame
     tabletype : str
         Set the destination table where the pd data frame will be stored in
+    srid: int
+        The current srid provided by the ding0 network
     """
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
@@ -632,6 +636,8 @@ def db_tables_change_owner(engine, schema):
 def export_all_dataframes_to_db(engine, schema, network, srid):
     """
     exports all data frames from func. export_network() to the db tables
+    This works with a completely generated ding0 network(all grid districts have to be generated at once),
+    all provided DataFrames will be uploaded.
 
     Instructions:
     1. Create a database connection to the "OEDB" for example use the "from egoio.tools.db import connection" function
@@ -730,11 +736,10 @@ def export_all_dataframes_to_db(engine, schema, network, srid):
 
 def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
     """
-    This function basicly works the same way export_all_dataframes_to_db() does.
-    It is implemented to handel the diffrent ways of executing the functions.
-
-    If loaded form pickel files a for loop is included and every grid district will be uploaded one after another.
-    This chances the requirements for this function.
+    This function basically works the same way export_all_dataframes_to_db() does.
+    It is implemented to handel the diffrent ways of executing the functions:
+        If grids are loaded form pickle files a for loop is included and every grid district will be uploaded one after
+        another. This chances the requirements for this function.
 
     Parameters
     ----------
@@ -794,8 +799,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
             # 15
             export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping", srid)
 
-            print('Griddistrict {} has been exported to the database').format(grid_no)
-
+            print('Griddistrict' + str(grid_no) + 'has been exported to the database')
         else:
             # 1
             export_df_to_db(engine, schema, network.lines, "line", srid)
@@ -828,7 +832,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
             # 15
             export_df_to_db(engine, schema, network.mvlv_mapping, "mvlv_mapping", srid)
 
-            print('Griddistrict {} has been exported to the database').format(grid_no)
+            print('Griddistrict' + str(grid_no) + 'has been exported to the database')
 
     else:
         print("WARNING: There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
@@ -837,7 +841,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
 if __name__ == "__main__":
 
     # #########SQLAlchemy and DB table################
-    oedb_engine = connection(section='oedb')
+    oedb_engine = connection(section='vpn_oedb')
     session = sessionmaker(bind=oedb_engine)()
 
     # Testing Database
