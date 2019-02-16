@@ -185,8 +185,8 @@ class GridDing0:
 
             for node in g.nodes():
                 # get neighbors of station (=first node of each branch)
-                station_neighbors = sorted(list(
-                    g.neighbors(self.station()), key=lambda _: repr(_)))
+                station_neighbors = sorted(
+                    g.neighbors(self.station()), key=lambda _: repr(_))
 
                 # set x-offset according to count of branches
                 if len(station_neighbors) % 2 == 0:
