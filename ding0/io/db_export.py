@@ -734,7 +734,7 @@ def export_all_dataframes_to_db(engine, schema, network=None, srid=None):
         print("WARNING: There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
 
 
-def export_all_pkl_to_db(engine, schema, network, srid, grid_no, run_id):
+def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
     """
     This function basically works the same way export_all_dataframes_to_db() does.
     It is implemented to handel the diffrent ways of executing the functions:
@@ -802,6 +802,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no, run_id):
 
             print('Griddistrict_' + str(grid_no) + '_has been exported to the database')
         else:
+            # network.metadata['run_id']
             # 1
             export_df_to_db(engine, schema, network.lines, "line", srid)
             # 2
