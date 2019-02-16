@@ -74,7 +74,8 @@ def export_network(nw, mode='', run_id=None):
     # from datetime import datetime
     if not run_id:
         run_id = nw.metadata['run_id']  # datetime.now().strftime("%Y%m%d%H%M%S")
-
+    else:
+        nw.metadata['run_id'] = run_id
 
     metadata_json = json.dumps(nw.metadata)
     ##############################
