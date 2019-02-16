@@ -763,6 +763,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no, run_id):
         if db_versioning.empty:
 
             metadata_json = json.loads(network.metadata_json)
+            print(str(metadata_json['run_id']))
 
             metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
                                         'description': str(metadata_json)}, index=[0])
