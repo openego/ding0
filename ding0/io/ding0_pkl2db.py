@@ -41,7 +41,6 @@ for grid_no in grids:
 
     # ToDo: run_id changes for every file
     nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
-    nw.metadata(run_id=20190215122822)
 
 
     # Extract data from network and put it to DataFrames for csv and for oedb
