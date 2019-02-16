@@ -34,7 +34,7 @@ pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/
 
 
 # choose MV Grid Districts to import
-grids = list(range(1, 5))
+grids = list(range(3, 6))
 
 # generate all the grids and push them to oedb
 for grid_no in grids:
