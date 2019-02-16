@@ -78,9 +78,10 @@ def export_network(nw, mode='', run_id=None):
         metadata_json = json.dumps(nw.metadata)
     else:
         print("test")
-        nw.metadata['run_id'] = run_id
+        # nw.metadata['run_id'] = run_id
+
         print("2 " + str(run_id))
-        metadata_json = json.dumps(nw.metadata)
+        metadata_json = json.dumps(nw.metadata(run_id))
 
     metadata_json1 = json.loads(metadata_json)
     print("3" + str(metadata_json1['run_id']))
