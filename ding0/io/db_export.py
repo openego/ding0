@@ -760,9 +760,9 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
         db_versioning = pd.read_sql_table(DING0_TABLES['versioning'], engine, schema,
                                           columns=['run_id', 'description'])
 
-        if db_versioning.empty:
+        metadata_json = json.loads(network.metadata_json)
 
-            metadata_json = json.loads(network.metadata_json)
+        if db_versioning.empty:
             print("run_id: " + str(metadata_json['run_id']))
 
             metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
@@ -802,6 +802,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
 
             print('Griddistrict_' + str(grid_no) + '_has been exported to the database')
         else:
+            print("run_id: " + str(metadata_json['run_id']))
             # 1
             export_df_to_db(engine, schema, network.lines, "line", srid)
             # 2
