@@ -76,11 +76,17 @@ def export_network(nw, mode='', run_id=None):
     nw.metadata['run_id'] = run_id
     if not run_id:
         run_id = nw.metadata['run_id']  # datetime.now().strftime("%Y%m%d%H%M%S")
+        metadata_json = json.dumps(nw.metadata)
     else:
-        nw.metadata['run_id'] = run_id
-        print("else" + str(nw.metadata['run_id']))
+        # ToDo: This seems to have no effect so check why
+        # nw.metadata['run_id'] = run_id
+        
+        metadata_json = json.loads(nw.metadata)
+        metadata_json['run_id'] = run_id
+        metadata_json = json.dumps(metadata_json)
+        # print("else" + str(nw.metadata['run_id']))
+        print("else " + metadata_json['run_id'])
 
-    metadata_json = json.dumps(nw.metadata)
     ##############################
     #############################
     # go through the grid collecting info
