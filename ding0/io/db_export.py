@@ -763,11 +763,11 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
         if db_versioning.empty:
 
             metadata_json = json.loads(network.metadata_json)
-
+            print("db_e 1:" + str(metadata_json['run_id']))
 
             metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
                                         'description': str(metadata_json)}, index=[0])
-            print(str(metadata_json['run_id']))
+            print("db_e 2:" + str(metadata_json['run_id']))
             df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
             # 1
