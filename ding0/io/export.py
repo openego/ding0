@@ -72,20 +72,17 @@ def export_network(nw, mode='', run_id=None):
         lv_info = False
     ##############################
     # from datetime import datetime
-    print("1 " + str(run_id))
-    nw.metadata['run_id'] = run_id
     if not run_id:
         run_id = nw.metadata['run_id']  # datetime.now().strftime("%Y%m%d%H%M%S")
         metadata_json = json.dumps(nw.metadata)
     else:
         # ToDo: This seems to have no effect so check why
         # nw.metadata['run_id'] = run_id
+
         metadata_json = json.dumps(nw.metadata)
         metadata_json = json.loads(metadata_json)
         metadata_json['run_id'] = run_id
         metadata_json = json.dumps(metadata_json)
-        # print("else" + str(nw.metadata['run_id']))
-        # print("else " + metadata_json['run_id'])
 
     ##############################
     #############################

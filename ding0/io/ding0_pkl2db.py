@@ -34,7 +34,7 @@ pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/
 
 
 # choose MV Grid Districts to import
-grids = list(range(3, 6))
+grids = list(range(1, 3609))
 
 # generate all the grids and push them to oedb
 for grid_no in grids:
@@ -46,19 +46,10 @@ for grid_no in grids:
     # Extract data from network and put it to DataFrames for csv and for oedb
     network = export_network(nw, run_id=20180823154014)
 
-    # This will fail after the first grid no becuase every grid gets another run_d
-    # network = export_network(nw)
-
-
     # Send data to OEDB
-    # SRID = str(int(nw.config['geo']['srid']))
     srid = int(nw.config['geo']['srid'])
 
     # provide run id for pickle upload
-
-
-    # ToDo:might not be necessary to use this metadata
-    # metadata_json = json.loads(network.metadata_json)
 
     export_all_pkl_to_db(oedb_engine, SCHEMA, network, srid, grid_no)
 
