@@ -80,8 +80,8 @@ def export_network(nw, mode='', run_id=None):
     else:
         # ToDo: This seems to have no effect so check why
         # nw.metadata['run_id'] = run_id
-        
-        metadata_json = json.loads(nw.metadata)
+        metadata_json = json.dumps(nw.metadata)
+        metadata_json = json.loads(metadata_json)
         metadata_json['run_id'] = run_id
         metadata_json = json.dumps(metadata_json)
         # print("else" + str(nw.metadata['run_id']))
