@@ -44,7 +44,8 @@ for grid_no in grids:
 
 
     # Extract data from network and put it to DataFrames for csv and for oedb
-    network = export_network(nw, run_id=20180823154014)
+    # network = export_network(nw, run_id=20180823154014)
+    network = export_network(nw)
 
 
     # Send data to OEDB
