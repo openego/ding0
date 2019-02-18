@@ -382,7 +382,7 @@ def create_wkt_element(geom):
     """
     if geom is not None:
         # return WKTElement(geom, srid=int(SRID), extended=True)
-        # ToDo: hardset srid find better approach to make it work for dingo run and dingo from pickel
+        # ToDo: hardset srid for pickle export, find better approach to make it work for dingo run and dingo from pickel
         return WKTElement(geom, srid=4326, extended=True)
     else:
         return None
@@ -865,9 +865,6 @@ if __name__ == "__main__":
     # SRID = str(int(nw.config['geo']['srid']))
     SRID = int(nw.config['geo']['srid'])
 
-    # provide run id for pickle upload
-    run_id = 20190215122822
-
     # provide run_id, note that the run_id is unique to the DB table
     # if not set it will be set
     # RUN_ID = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -882,7 +879,7 @@ if __name__ == "__main__":
     #              mv_grid_districts_no=mv_grid_districts)
     #
     # # return values from export_network() as tupels
-    # network = export_network(nw, run_id=run_id)
+    # network = export_network(nw)
 
 
     # any list of NetworkDing0 also provides run_id
