@@ -34,14 +34,12 @@ pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/
 
 
 # choose MV Grid Districts to import
-grids = list(range(1, 3609))
+grids = list(range(43, 3609))
 
 # generate all the grids and push them to oedb
 for grid_no in grids:
 
-    # ToDo: run_id changes for every file
     nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
-
 
     # Extract data from network and put it to DataFrames for csv and for oedb
     network = export_network(nw, run_id=20180823154014)
