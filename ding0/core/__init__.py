@@ -76,9 +76,9 @@ class NetworkDing0:
         of typical assets in the energy system are stored in ding0.
         These are used in many parts of ding0's calculations.
         Data values:
-        - Typical cable types, and typical line types' electrical impedences,
+        - Typical cable types, and typical line types' electrical impedances,
             thermal ratings, operating voltage level.
-        - Typical transformers types' electrical impedences, voltage drops,
+        - Typical transformers types' electrical impedances, voltage drops,
             thermal ratings, winding voltages
         - Typical LV grid topologies' line types, line lengths and
             distribution
@@ -366,7 +366,8 @@ class NetworkDing0:
         Parameters
         ----------
         poly_id: int
-            ID of grid_district according to database table. Also used as ID for created grid #TODO: check type
+            ID of grid_district according to database table. Also used as ID
+            for created grid
         subst_id: int
             ID of station according to database table #TODO: check type
         grid_district_geo_data: :shapely:`Shapely Polygon object<polygons>`
@@ -531,7 +532,8 @@ class NetworkDing0:
         except OSError:
             logger.exception('cannot open config file.')
 
-        # build SQL query
+        # build SQL query to retrieve polygons of MV grid districts and
+        # location of corresponding HV-MV-substation
         grid_districts = session.query(self.orm['orm_mv_grid_districts'].subst_id,
                                        func.ST_AsText(func.ST_Transform(
                                            self.orm['orm_mv_grid_districts'].geom, srid)). \
@@ -782,6 +784,7 @@ class NetworkDing0:
     def import_lv_stations(self, session):
         """
         Import lv_stations within the given load_area
+
         Parameters
         ----------
         session : sqlalchemy.orm.session.Session
@@ -1896,7 +1899,6 @@ class NetworkDing0:
         )
 
         return metadata
-
 
     def __repr__(self):
         return str(self.name)
