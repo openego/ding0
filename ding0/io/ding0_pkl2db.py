@@ -50,7 +50,7 @@ pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/
 
 
 # choose MV Grid Districts to import
-grids = list(range(198, 3609))
+grids = list(range(197, 3609))
 
 # generate all the grids and push them to oedb
 for grid_no in grids:
@@ -58,10 +58,12 @@ for grid_no in grids:
     try:
         nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
     except:
-        print('Log entry in: {}'.format(LOG_FILE_PATH))
+        print('Create log entry in: {}'.format(LOG_FILE_PATH))
         with open(LOG_FILE_PATH, 'a') as log:
             log.write('ding0_grids__{}.pkl not present to the current directory\n'.format(grid_no))
             pass
+
+        continue
 
     # Extract data from network and put it to DataFrames for csv and for oedb
     network = export_network(nw, run_id=20180823154014)
