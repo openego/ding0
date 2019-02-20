@@ -598,7 +598,7 @@ def calculate_mvgd_stats(nw):
                                             mvlv_thermal_limits[lv_node] = mv_thermal_limit
 
                                         elif isinstance(lv_node, LVStationDing0):
-                                            n_outgoing_LV += len(G_lv.neighbors(lv_node))
+                                            n_outgoing_LV += len(list(G_lv.neighbors(lv_node)))
                                             n_stations_LV += 1
 
         # compute mean values by looping over terminal nodes
