@@ -534,7 +534,7 @@ def calculate_mvgd_stats(nw):
 
         G = district.mv_grid._graph
 
-        for node in G.nodes_iter():
+        for node in G.nodes():
             if isinstance(node, MVStationDing0):
                 n_outgoing_MV += len(list(G.neighbors(node)))
                 continue
