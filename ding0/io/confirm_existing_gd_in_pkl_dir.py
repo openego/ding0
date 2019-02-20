@@ -20,7 +20,7 @@ if not os.path.isfile(LOG_FILE_PATH):
         pass
 
 
-logging.basicConfig(filename=LOG_FILE_PATH, level=logging.DEBUG)
+# logging.basicConfig(filename=LOG_FILE_PATH, level=logging.DEBUG)
 
 # pickle file locations path to RLI_Daten_Flex01 mount
 pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/20180823154014"
@@ -32,4 +32,7 @@ for grid_no in grids:
     try:
         nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
     except:
-        logging.debug('ding0_grids__{}.pkl not present to the current directory'.format(grid_no))
+        # logging.debug('ding0_grids__{}.pkl not present to the current directory'.format(grid_no))
+        with open(LOG_FILE_PATH, 'a') as log:
+            log.write('ding0_grids__{}.pkl not present to the current directory'.format(grid_no))
+            pass
