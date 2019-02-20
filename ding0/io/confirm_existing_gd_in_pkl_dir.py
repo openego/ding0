@@ -32,4 +32,4 @@ for grid_no in grids:
     try:
         nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
     except:
-        logging.DEBUG('ding0_grids__{}.pkl not present to the current directory'.format(str(grid_no)))
+        logging.debug('ding0_grids__{}.pkl not present to the current directory'.format(grid_no))
