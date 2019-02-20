@@ -34,5 +34,5 @@ for grid_no in grids:
     except:
         # logging.debug('ding0_grids__{}.pkl not present to the current directory'.format(grid_no))
         with open(LOG_FILE_PATH, 'a') as log:
-            log.write('ding0_grids__{}.pkl not present to the current directory'.format(grid_no))
+            log.write('ding0_grids__{}.pkl not present to the current directory\n'.format(grid_no))
             pass

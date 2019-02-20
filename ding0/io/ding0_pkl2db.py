@@ -15,9 +15,25 @@ from ding0.io.db_export import METADATA, create_ding0_sql_tables, \
     export_all_pkl_to_db, db_tables_change_owner, drop_ding0_db_tables
 from sqlalchemy.orm import sessionmaker
 
+# ToDo: Create logger as function
+##################################
+# LOG_FILE_PATH = 'pickle_log'
+LOG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.ding0_log', 'pickle_log')
 
-# define logger
-logger = setup_logger()
+# does the file exist?
+if not os.path.isfile(LOG_FILE_PATH):
+    print('ding0 log-file {file} not found. '
+          'This might be the first run of the tool. '
+          .format(file=LOG_FILE_PATH))
+    base_path = os.path.split(LOG_FILE_PATH)[0]
+    if not os.path.isdir(base_path):
+        os.mkdir(base_path)
+        print('The directory {path} was created.'.format(path=base_path))
+
+    with open(LOG_FILE_PATH, 'a') as log:
+        log.write("List of missing grid districts:")
+        pass
+######################################################
 
 # database connection/ session
 oedb_engine = db.connection(section='oedb')
@@ -39,7 +55,13 @@ grids = list(range(198, 3609))
 # generate all the grids and push them to oedb
 for grid_no in grids:
 
-    nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
+    try:
+        nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
+    except:
+        print('Log entry in: {}'.format(LOG_FILE_PATH))
+        with open(LOG_FILE_PATH, 'a') as log:
+            log.write('ding0_grids__{}.pkl not present to the current directory\n'.format(grid_no))
+            pass
 
     # Extract data from network and put it to DataFrames for csv and for oedb
     network = export_network(nw, run_id=20180823154014)
