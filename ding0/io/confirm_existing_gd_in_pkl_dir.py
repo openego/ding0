@@ -16,7 +16,7 @@ if not os.path.isfile(LOG_FILE_PATH):
         print('The directory {path} was created.'.format(path=base_path))
 
     with open(LOG_FILE_PATH, 'a') as log:
-        log.write("List of missing grid districts:")
+        log.write("List of missing grid districts:\n")
         pass
 
 
