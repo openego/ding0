@@ -20,7 +20,9 @@ class TestMVGridDing0(object):
     @pytest.fixture
     def empty_mvgridding0(self):
         """
-        Returns an empty MVGridDing0 object
+        Returns an empty MVGridDing0 object with an MVStationDing0 object
+        with id_db = 0 and
+        with geo_data = shapely.geometry.Point(0.5, 0.5)
         """
         station = MVStationDing0(id_db=0, geo_data=Point(0.5, 0.5))
         grid = MVGridDing0(id_db=0,
@@ -28,6 +30,13 @@ class TestMVGridDing0(object):
         return grid
 
     def test_empty_mvgridding0(self, empty_mvgridding0):
+        """
+        Ccheck that initialization of an object of the
+        class MVGridDing0 results in the right attributes being empty
+        lists or NoneType objects, with the exception of the
+        MVStationDing0 object's id_db and geo_data, which are
+        0 and shapely.geometry.Point(0.5, 0.5) respectively.
+        """
         assert empty_mvgridding0._rings == []
         assert empty_mvgridding0._circuit_breakers == []
         assert empty_mvgridding0.default_branch_kind is None
@@ -40,6 +49,10 @@ class TestMVGridDing0(object):
         assert empty_mvgridding0._station.geo_data == Point(0.5, 0.5)
 
     def test_add_circuit_breakers(self, empty_mvgridding0):
+        """
+        Adding a circuit breaker into an empty_mvgridding0 and check if it
+        works
+        """
         circuit_breaker = CircuitBreakerDing0(id_db=0,
                                               geo_data=Point(0, 0),
                                               grid=empty_mvgridding0)
@@ -49,6 +62,10 @@ class TestMVGridDing0(object):
         assert circuit_breakers_in_grid[0] == circuit_breaker
 
     def test_add_circuit_breakers_negative(self, empty_mvgridding0):
+        """
+        Adding a GeneratorDing0 as a circuit_breaker through the
+        add_circuit_breaker just to see if the function rejects it.
+        """
         bad_object = GeneratorDing0(id_db=0)
         empty_mvgridding0.add_circuit_breaker(bad_object)
         circuit_breakers_in_grid = list(empty_mvgridding0.circuit_breakers())
@@ -74,6 +91,10 @@ class TestMVGridDing0(object):
         return grid
 
     def test_open_circuit_breakers(self, circuit_breaker_mvgridding0):
+        """
+        Checks that using open_circuit_breakers function used from
+        the MVGridDing0 object actually opens all the circuit breakers.
+        """
         circuit_breakers_in_grid = list(
             circuit_breaker_mvgridding0.circuit_breakers()
         )
@@ -82,6 +103,10 @@ class TestMVGridDing0(object):
         assert circuit_breakers_in_grid[0].status == 'open'
 
     def test_close_circuit_breakers(self, circuit_breaker_mvgridding0):
+        """
+        Checks that using close_circuit_breakers function used from
+        the MVGridDing0 object actually closes all the circuit breakers.
+        """
         circuit_breakers_in_grid = list(
             circuit_breaker_mvgridding0.circuit_breakers()
         )
@@ -136,21 +161,39 @@ class TestMVGridDing0(object):
         return (ring, grid)
 
     def test_add_ring(self, ring_mvgridding0):
+        """
+        Check if the number of rings are increased and the correct ring
+        is added by using the add_ring function inside of MVGriDing0
+        """
         ring, grid = ring_mvgridding0
         assert len(grid._rings) == 1
         assert grid._rings[0] == ring
 
     def test_rings_count(self, ring_mvgridding0):
+        """
+        Check if the number of rings are correctly reflected using the
+        rings_count function in MVGridDing0 and the correct ring
+        is added by using the add_ring function inside of MVGriDing0
+        """
         ring, grid = ring_mvgridding0
         assert grid.rings_count() == 1
         assert grid._rings[0] == ring
 
     def test_get_ring_from_node(self, ring_mvgridding0):
+        """
+        Checks that the ring obtained from the get_ring_from_node object
+        works as expected returning the correct ring.
+        """
         ring, grid = ring_mvgridding0
         station = grid.station()
         assert grid.get_ring_from_node(station) == ring
 
     def test_rings_nodes_root_only_include_root(self, ring_mvgridding0):
+        """
+        Checks that the ring obtained from the rings_nodes function
+        setting the include_root_node parameter to "True"
+        contains the list of nodes that are expected.
+        """
         ring, grid = ring_mvgridding0
         station = grid.station()
         generators = list(grid.generators())
@@ -163,6 +206,11 @@ class TestMVGridDing0(object):
         assert rings_nodes == rings_nodes_expected
 
     def test_rings_nodes_root_only_exclude_root(self, ring_mvgridding0):
+        """
+        Checks that the ring obtained from the rings_nodes function
+        setting the include_root_node parameter to "False"
+        contains the list of nodes that are expected.
+        """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
         circuit_breakers = list(grid.circuit_breakers())
@@ -174,6 +222,12 @@ class TestMVGridDing0(object):
 
     def test_rings_nodes_include_satellites_include_root(self,
                                                          ring_mvgridding0):
+        """
+        Checks that the ring obtained from the rings_nodes function
+        setting the include_root_node parameter to "True" and
+        setting the include_satellites to "True"
+        contains the list of nodes that are expected.
+        """
         ring, grid = ring_mvgridding0
         station = grid.station()
         generators = list(grid.generators())
@@ -189,6 +243,12 @@ class TestMVGridDing0(object):
 
     def test_rings_nodes_include_satellites_exclude_root(self,
                                                          ring_mvgridding0):
+        """
+        Checks that the ring obtained from the rings_nodes function
+        setting the include_root_node parameter to "False" and
+        setting the include_satellites to "True"
+        contains the list of nodes that are expected.
+        """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
         circuit_breakers = list(grid.circuit_breakers())
@@ -201,6 +261,10 @@ class TestMVGridDing0(object):
         assert rings_nodes == rings_nodes_expected
 
     def test_rings_full_data(self, ring_mvgridding0):
+        """
+        Checks if the function rings_full_data produces the expected
+        list of rings, list of branches and list of ring_nodes.
+        """
         ring, grid = ring_mvgridding0
         station = grid.station()
         generators = list(grid.generators())
@@ -226,6 +290,12 @@ class TestMVGridDing0(object):
         assert rings_nodes_out == rings_nodes_expected
 
     def test_graph_nodes_from_subtree_station(self, ring_mvgridding0):
+        """
+        Check the output of function graph_nodes_from_subtree using the
+        station as the source node. With this input, there should be no
+        nodes. This should mean an empty list is returned by the
+        graph_nodes_from_subtree function.
+        """
         ring, grid = ring_mvgridding0
         station = grid.station()
         nodes_out = grid.graph_nodes_from_subtree(station)
@@ -233,6 +303,12 @@ class TestMVGridDing0(object):
         assert nodes_out == nodes_expected
 
     def test_graph_nodes_from_subtree_circuit_breaker(self, ring_mvgridding0):
+        """
+        Check the output of function graph_nodes_from_subtree using the
+        circuit breaker as the source node. With this input, there should be no
+        nodes. This should mean an empty list is returned by the
+        graph_nodes_from_subtree function.
+        """
         ring, grid = ring_mvgridding0
         circuit_breakers = list(grid.circuit_breakers())
         nodes_out = grid.graph_nodes_from_subtree(circuit_breakers[0])
@@ -240,13 +316,29 @@ class TestMVGridDing0(object):
         assert nodes_out == nodes_expected
 
     def test_graph_nodes_from_subtree_ring_branch_left(self, ring_mvgridding0):
+        """
+        Check the output of function graph_nodes_from_subtree using the
+        generator on the left branch as the source node.
+        With this input, there should be no nodes.
+        This should mean an empty list is returned by the
+        graph_nodes_from_subtree function.
+        """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
         nodes_out = grid.graph_nodes_from_subtree(generators[0])
         nodes_expected = []
         assert nodes_out == nodes_expected
 
-    def test_graph_nodes_from_subtree_ring_branch_right(self, ring_mvgridding0):
+    def test_graph_nodes_from_subtree_ring_branch_right(self,
+                                                        ring_mvgridding0):
+        """
+        Check the output of function graph_nodes_from_subtree using the
+        generator on the right branch as the source node.
+        With this input, there should be one node,
+        the generator outside the ring connected to the right branch using
+        a stub. This should mean a list with this specific generator
+        should be returned by the graph_nodes_from_subtree function.
+        """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
         nodes_out = grid.graph_nodes_from_subtree(generators[1])
@@ -254,6 +346,13 @@ class TestMVGridDing0(object):
         assert nodes_out == nodes_expected
 
     def test_graph_nodes_from_subtree_off_ring(self, ring_mvgridding0):
+        """
+        Check the output of function graph_nodes_from_subtree using the
+        generator outside of the ring as the source node.
+        With this input, there should be no nodes.
+        This should mean an empty list is returned by the
+        graph_nodes_from_subtree function.
+        """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
         nodes_out = grid.graph_nodes_from_subtree(generators[2])
@@ -272,6 +371,10 @@ class TestMVGridDing0(object):
         session.close()
 
     def test_routing(self, oedb_session):
+        """
+        Using the grid district 460 as an example, the properties of the
+        networkx graph is tested before routing and after routing.
+        """
         # instantiate new ding0 network object
         nd = NetworkDing0(name='network')
 
