@@ -235,7 +235,7 @@ class TestMVGridDing0(object):
         rings_nodes_expected = [generators[0],
                                 circuit_breakers[0],
                                 generators[1],
-                                station,
+                                #station,
                                 generators[2]]
         rings_nodes = list(grid.rings_nodes(include_root_node=True,
                                             include_satellites=True))[0]
