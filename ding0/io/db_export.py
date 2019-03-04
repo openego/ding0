@@ -43,41 +43,41 @@ METADATA = DECLARATIVE_BASE.metadata
 # Metadata folder Path
 METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
 
-# set your Table names
-DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning',
-                'line': 'ego_grid_ding0_line',
-                'lv_branchtee': 'ego_grid_ding0_lv_branchtee',
-                'lv_generator': 'ego_grid_ding0_lv_generator',
-                'lv_load': 'ego_grid_ding0_lv_load',
-                'lv_grid': 'ego_grid_ding0_lv_grid',
-                'lv_station': 'ego_grid_ding0_lv_station',
-                'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer',
-                'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping',
-                'mv_branchtee': 'ego_grid_ding0_mv_branchtee',
-                'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker',
-                'mv_generator': 'ego_grid_ding0_mv_generator',
-                'mv_load': 'ego_grid_ding0_mv_load',
-                'mv_grid': 'ego_grid_ding0_mv_grid',
-                'mv_station': 'ego_grid_ding0_mv_station',
-                'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer'}
-
 # # set your Table names
-# DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning_test',
-#                 'line': 'ego_grid_ding0_line_test',
-#                 'lv_branchtee': 'ego_grid_ding0_lv_branchtee_test',
-#                 'lv_generator': 'ego_grid_ding0_lv_generator_test',
-#                 'lv_load': 'ego_grid_ding0_lv_load_test',
-#                 'lv_grid': 'ego_grid_ding0_lv_grid_test',
-#                 'lv_station': 'ego_grid_ding0_lv_station_test',
-#                 'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer_test',
-#                 'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping_test',
-#                 'mv_branchtee': 'ego_grid_ding0_mv_branchtee_test',
-#                 'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker_test',
-#                 'mv_generator': 'ego_grid_ding0_mv_generator_test',
-#                 'mv_load': 'ego_grid_ding0_mv_load_test',
-#                 'mv_grid': 'ego_grid_ding0_mv_grid_test',
-#                 'mv_station': 'ego_grid_ding0_mv_station_test',
-#                 'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer_test'}
+# DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning',
+#                 'line': 'ego_grid_ding0_line',
+#                 'lv_branchtee': 'ego_grid_ding0_lv_branchtee',
+#                 'lv_generator': 'ego_grid_ding0_lv_generator',
+#                 'lv_load': 'ego_grid_ding0_lv_load',
+#                 'lv_grid': 'ego_grid_ding0_lv_grid',
+#                 'lv_station': 'ego_grid_ding0_lv_station',
+#                 'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer',
+#                 'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping',
+#                 'mv_branchtee': 'ego_grid_ding0_mv_branchtee',
+#                 'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker',
+#                 'mv_generator': 'ego_grid_ding0_mv_generator',
+#                 'mv_load': 'ego_grid_ding0_mv_load',
+#                 'mv_grid': 'ego_grid_ding0_mv_grid',
+#                 'mv_station': 'ego_grid_ding0_mv_station',
+#                 'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer'}
+
+# set your Table names
+DING0_TABLES = {'versioning': 'ego_grid_ding0_versioning_test',
+                'line': 'ego_grid_ding0_line_test',
+                'lv_branchtee': 'ego_grid_ding0_lv_branchtee_test',
+                'lv_generator': 'ego_grid_ding0_lv_generator_test',
+                'lv_load': 'ego_grid_ding0_lv_load_test',
+                'lv_grid': 'ego_grid_ding0_lv_grid_test',
+                'lv_station': 'ego_grid_ding0_lv_station_test',
+                'mvlv_transformer': 'ego_grid_ding0_mvlv_transformer_test',
+                'mvlv_mapping': 'ego_grid_ding0_mvlv_mapping_test',
+                'mv_branchtee': 'ego_grid_ding0_mv_branchtee_test',
+                'mv_circuitbreaker': 'ego_grid_ding0_mv_circuitbreaker_test',
+                'mv_generator': 'ego_grid_ding0_mv_generator_test',
+                'mv_load': 'ego_grid_ding0_mv_load_test',
+                'mv_grid': 'ego_grid_ding0_mv_grid_test',
+                'mv_station': 'ego_grid_ding0_mv_station_test',
+                'hvmv_transformer': 'ego_grid_ding0_hvmv_transformer_test'}
 
 
 
