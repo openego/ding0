@@ -226,7 +226,7 @@ def create_ding0_sql_tables(engine, ding0_schema):
                           Column('id_db', BigInteger),
                           Column('name', String(100)),
                           # Column('geom', Geometry('MULTIPOLYGON', 4326)),
-                          Column('geom', Geometry('POLYGON', 4326)),
+                          Column('geom', Geometry('GEOMETRY', 4326)),
                           Column('population', BigInteger),
                           Column('voltage_nom', Float(10)),
                           schema=ding0_schema,
@@ -389,7 +389,7 @@ def create_wkt_element(geom):
         return None
 
 
-def df_sql_write(engine, schema, db_table, dataframe, geom_type=None, SRID=None):
+def df_sql_write(engine, schema, db_table, dataframe, SRID=None, geom_type=None):
     """
     Convert data frames such that their column names
     are made small and the index is renamed 'id_db' so as to
@@ -516,50 +516,50 @@ def export_df_to_db(engine, schema, df, tabletype, srid=None):
     """
     print("Exporting table type : {}".format(tabletype))
     if tabletype == 'line':
-        df_sql_write(engine, schema, DING0_TABLES['line'], df, 'LINESTRING', srid)
+        df_sql_write(engine, schema, DING0_TABLES['line'], df, srid, 'LINESTRING')
 
     elif tabletype == 'lv_cd':
         df = df.drop(['lv_grid_id'], axis=1)
-        df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['lv_branchtee'], df, srid, 'POINT')
 
     elif tabletype == 'lv_gen':
-        df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['lv_generator'], df, srid, 'POINT')
 
     elif tabletype == 'lv_load':
-        df_sql_write(engine, schema, DING0_TABLES['lv_load'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['lv_load'], df, srid, 'POINT')
 
     elif tabletype == 'lv_grid':
-        df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df, 'POLYGON', srid)
+        df_sql_write(engine, schema, DING0_TABLES['lv_grid'], df, srid, 'GEOMETRY')
 
     elif tabletype == 'lv_station':
-        df_sql_write(engine, schema, DING0_TABLES['lv_station'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['lv_station'], df, srid, 'POINT')
 
     elif tabletype == 'mvlv_trafo':
-        df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['mvlv_transformer'], df, srid, 'POINT')
 
     elif tabletype == 'mvlv_mapping':
         df_sql_write(engine, schema, DING0_TABLES['mvlv_mapping'], df, srid)
 
     elif tabletype == 'mv_cd':
-        df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['mv_branchtee'], df, srid, 'POINT')
 
     elif tabletype == 'mv_cb':
-        df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['mv_circuitbreaker'], df, srid, 'POINT')
 
     elif tabletype == 'mv_gen':
-        df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['mv_generator'], df, srid, 'POINT')
 
     elif tabletype == 'mv_load':
-        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, 'GEOMETRY', srid)
+        df_sql_write(engine, schema, DING0_TABLES['mv_load'], df, srid, 'GEOMETRY')
 
     elif tabletype == 'mv_grid':
-        df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df, 'MULTIPOLYGON', srid)
+        df_sql_write(engine, schema, DING0_TABLES['mv_grid'], df, srid, 'MULTIPOLYGON')
 
     elif tabletype == 'mv_station':
-        df_sql_write(engine, schema, DING0_TABLES['mv_station'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['mv_station'], df, srid, 'POINT')
 
     elif tabletype == 'hvmv_trafo':
-        df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df, 'POINT', srid)
+        df_sql_write(engine, schema, DING0_TABLES['hvmv_transformer'], df, srid, 'POINT')
 
 
 # ToDo: function works but throws unexpected error (versioning tbl dosent exists)
@@ -745,7 +745,7 @@ def export_all_dataframes_to_db(engine, schema, network=None, srid=None):
         print("WARNING: There is no " + DING0_TABLES["versioning"] + " table in the schema: " + schema)
 
 
-def export_all_pkl_to_db(engine, schema, network, srid, grid_no):
+def export_all_pkl_to_db(engine, schema, network, srid, grid_no=None):
     """
     This function basically works the same way export_all_dataframes_to_db() does.
     It is implemented to handel the diffrent ways of executing the functions:
@@ -881,7 +881,7 @@ if __name__ == "__main__":
 
     # choose MV Grid Districts to import
     # needs to be a list with Integers
-    mv_grid_districts = list(range(1, 5))
+    mv_grid_districts = list(range(473, 475))
 
 
     # # run DING0 on selected MV Grid District

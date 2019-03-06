@@ -12,6 +12,7 @@ __license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__ = "nesnoj, gplssm"
 
+import os
 import numpy as np
 import pandas as pd
 from collections import namedtuple
@@ -28,6 +29,7 @@ from ding0.core import LVLoadAreaCentreDing0
 
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString, MultiPolygon, shape, mapping
 
+os.environ['PROJ_LIB']=r"B:\Anaconda3\Library\share"
 #ToDo: python 3.5??? yes was new in version 2.6
 Network = namedtuple(
     'Network',
