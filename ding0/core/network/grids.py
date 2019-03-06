@@ -304,6 +304,7 @@ class MVGridDing0(GridDing0):
         if node_source in self._graph.nodes():
 
             # get all nodes that are member of a ring
+            node_ring = []
             for ring in self.rings_nodes(include_root_node=False):
                 if node_source in ring:
                     node_ring = ring
