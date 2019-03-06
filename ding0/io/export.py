@@ -28,6 +28,7 @@ from ding0.core import LVLoadAreaCentreDing0
 
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString, MultiPolygon, shape, mapping
 
+#ToDo: python 3.5??? yes was new in version 2.6
 Network = namedtuple(
     'Network',
     [
@@ -558,7 +559,7 @@ def export_network(nw, mode='', run_id=None):
                                 lines_dict[lines_idx] = {
                                     'id': branch['branch'].id_db,
                                     'edge_name': '_'.join(
-                                        [branch.__class__.__name__,
+                                        [branch['branch'].__class__.__name__,
                                          str(branch['branch'].id_db)]),
                                     'grid_name': lv_grid_name,
                                     'type_name': branch[
