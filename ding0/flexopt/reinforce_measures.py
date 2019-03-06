@@ -61,8 +61,14 @@ def reinforce_branches_current(grid, crit_branches):
 
     for branch, rel_overload in crit_branches.items():
         try:
-            type = branch_parameters.ix[branch_parameters[branch_parameters['I_max_th'] >=
-                                        branch['branch'].type['I_max_th'] * rel_overload]['I_max_th'].idxmin()]
+            type = branch_parameters.loc[
+                branch_parameters[
+                    branch_parameters['I_max_th'] >= branch['branch']
+                    .type['I_max_th'] * rel_overload
+                ].loc[
+                    :, 'I_max_th'
+                ].idxmin(), :
+            ]
             branch['branch'].type = type
             branch_ctr += 1
         except:
@@ -109,8 +115,13 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
 
     for branch in crit_branches:
         try:
-            type = branch_parameters.ix[branch_parameters.loc[branch_parameters['I_max_th'] >
-                                        branch.type['I_max_th']]['I_max_th'].idxmin()]
+            type = branch_parameters.loc[
+                branch_parameters.loc[
+                       branch_parameters['I_max_th'] > branch.type['I_max_th']
+                ].loc[
+                    :, 'I_max_th'
+                ].idxmin(), :
+            ]
             branch.type = type
             branch_ctr += 1
         except:
@@ -253,7 +264,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
         grid_level=grid_level)]
     trafo_s_max_max = max(trafo_params['S_nom'])
-    trafo_min_size = trafo_params.ix[trafo_params['S_nom'].idxmin()]
+    trafo_min_size = trafo_params.lox[trafo_params['S_nom'].idxmin(), :]
 
     v_diff_max_fc = cfg_ding0.get('assumptions', 'lv_max_v_level_fc_diff_normal')
     v_diff_max_lc = cfg_ding0.get('assumptions', 'lv_max_v_level_lc_diff_normal')
@@ -355,11 +366,11 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
                           > I_max_branch]
 
         if not suitable_cables.empty:
-            cable_type = suitable_cables.ix[suitable_cables['I_max_th'].idxmin()]
+            cable_type = suitable_cables.loc[suitable_cables['I_max_th'].idxmin(), :]
             branch['branch'].type = cable_type
             crit_branches.remove(branch)
         else:
-            cable_type_max = cables.ix[cables['I_max_th'].idxmax()]
+            cable_type_max = cables.loc[cables['I_max_th'].idxmax(), :]
             unsolved_branches.append(branch)
             branch['branch'].type = cable_type_max
             logger.error("No suitable cable type could be found for {branch} "
@@ -387,9 +398,13 @@ def extend_trafo_power(extendable_trafos, trafo_params):
     """
     trafo = extendable_trafos[0]
     trafo_s_max_a_before = trafo.s_max_a
-    trafo_nearest_larger = trafo_params.ix[
-        trafo_params.loc[trafo_params['S_nom'] > trafo_s_max_a_before][
-            'S_max'].idxmin()]
+    trafo_nearest_larger = trafo_params.loc[
+        trafo_params.loc[
+            trafo_params['S_nom'] > trafo_s_max_a_before
+        ].loc[
+            :, 'S_max'
+        ].idxmin(), :
+    ]
     trafo.s_max_a = trafo_nearest_larger['S_nom']
     trafo.r = trafo_nearest_larger['R']
     trafo.x = trafo_nearest_larger['X']

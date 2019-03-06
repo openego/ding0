@@ -374,8 +374,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
             (lvgd.lv_grid.network.static_data['LV_cables'][
                 'I_max_th'] * cable_lf) > I_max_load]
-        cable_type_stub = suitable_cables_stub.ix[
-            suitable_cables_stub['I_max_th'].idxmin()]
+        cable_type_stub = suitable_cables_stub.loc[
+            suitable_cables_stub['I_max_th'].idxmin(), :
+            ]
 
         # cable distributor to divert from main branch
         lv_cable_dist = LVCableDistributorDing0(
@@ -490,8 +491,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
                     (lvgd.lv_grid.network.static_data['LV_cables'][
                         'I_max_th'] * cable_lf) > I_max_branch]
-                cable_type = suitable_cables.ix[
-                    suitable_cables['I_max_th'].idxmin()]
+                cable_type = suitable_cables.loc[
+                    suitable_cables['I_max_th'].idxmin(), :
+                ]
 
                 # create Ding0 grid objects and add to graph
                 for load_no in list(range(1, val['max_loads_per_branch'] + 1)):
@@ -511,8 +513,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
                     (lvgd.lv_grid.network.static_data['LV_cables'][
                         'I_max_th'] * cable_lf) > I_max_branch]
-                cable_type = suitable_cables.ix[
-                    suitable_cables['I_max_th'].idxmin()]
+                cable_type = suitable_cables.loc[
+                    suitable_cables['I_max_th'].idxmin(), :
+                ]
 
                 branch_no += 1
 
