@@ -214,8 +214,6 @@ class MVGridDing0(GridDing0):
             if include_satellites:
                 ring_nodes = ring
                 satellites = []
-                if include_root_node:
-                    ring_nodes.remove(self._station)
                 for ring_node in ring:
                     # determine all branches diverging from each ring node
                     satellites.append(self.graph_nodes_from_subtree(ring_node))
