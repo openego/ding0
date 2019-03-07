@@ -23,7 +23,6 @@ from ding0.core.structure.regions import LVLoadAreaCentreDing0
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
-from shapely.geometry import LineString
 from pandas import Series, DataFrame, DatetimeIndex
 from pypsa.io import import_series_from_dataframe
 from pypsa import Network
@@ -33,6 +32,8 @@ import sys
 import os
 import logging
 
+if not 'READTHEDOCS' in os.environ:
+    from shapely.geometry import LineString
 
 logger = logging.getLogger('ding0')
 

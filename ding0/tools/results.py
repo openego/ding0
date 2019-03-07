@@ -18,7 +18,6 @@ import numpy as np
 import pandas as pd
 import time
 import os
-import json
 import re
 
 from matplotlib import pyplot as plt
@@ -30,28 +29,28 @@ from ding0.core import GeneratorDing0
 from ding0.core import LVCableDistributorDing0, MVCableDistributorDing0
 from ding0.core import MVStationDing0, LVStationDing0
 from ding0.core import CircuitBreakerDing0
-from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
+from ding0.core.network.loads import LVLoadDing0
 from ding0.core import LVLoadAreaCentreDing0
 
-from shapely.ops import transform
 import pyproj
 from functools import partial
 
 from geoalchemy2.shape import from_shape
 from sqlalchemy.orm import sessionmaker
-from shapely.wkt import loads as wkt_loads
-from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
-from shapely.geometry import shape, mapping
-
 import multiprocessing as mp
 
-from math import floor, ceil, pi
+from math import floor, pi
 
-from ding0.flexopt.check_tech_constraints import check_load, check_voltage, \
-    get_critical_line_loading, get_critical_voltage_at_nodes
+from ding0.flexopt.check_tech_constraints import get_critical_line_loading, \
+    get_critical_voltage_at_nodes
 from ding0.tools import config as cfg_ding0
 
 import networkx as nx
+
+if not 'READTHEDOCS' in os.environ:
+    from shapely.ops import transform
+    from shapely.geometry import LineString
+    from shapely.wkt import dumps as wkt_dumps
 
 #############################################
 plt.close('all')
@@ -160,9 +159,11 @@ def plot_cable_length(stats, plotpath):
     """
 
     # cable and line kilometer distribution
-    f, axarr = plt.subplots(2, sharex=True)
-    stats.hist(column=['km_cable'], bins=5, alpha=0.5, ax=axarr[0])
-    stats.hist(column=['km_line'], bins=5, alpha=0.5, ax=axarr[1])
+    f, axarr = plt.subplots(2, 2, sharex=True)
+    stats.hist(column=['Length of MV overhead lines'], bins=5, alpha=0.5, ax=axarr[0, 0])
+    stats.hist(column=['Length of MV underground cables'], bins=5, alpha=0.5, ax=axarr[0, 1])
+    stats.hist(column=['Length of LV overhead lines'], bins=5, alpha=0.5, ax=axarr[1, 0])
+    stats.hist(column=['Length of LV underground cables'], bins=5, alpha=0.5, ax=axarr[1, 1])
 
     plt.savefig(os.path.join(plotpath,
                              'Histogram_cable_line_length.pdf'))
@@ -170,10 +171,7 @@ def plot_cable_length(stats, plotpath):
 
 def plot_generation_over_load(stats, plotpath):
     """
-
-    :param stats:
-    :param plotpath:
-    :return:
+    Plot of generation over load
     """
 
     # Generation capacity vs. peak load
@@ -181,18 +179,24 @@ def plot_generation_over_load(stats, plotpath):
     sns.set_style("ticks")
 
     # reformat to MW
-    stats[['generation_capacity', 'peak_load']] = stats[['generation_capacity',
-                                                         'peak_load']] / 1e3
+
+    gen_cap_indexes = ["Gen. Cap. of MV at v_level 4",
+                       "Gen. Cap. of MV at v_level 5",
+                       "Gen. Cap. of LV at v_level 6",
+                       "Gen. Cap. of LV at v_level 7"]
+    peak_load_index = ["LA Total LV Peak Load total"]
+    stats['generation_capacity'] = stats[gen_cap_indexes].sum(axis=1) / 1e3
+    stats['peak_load'] = stats[peak_load_index] / 1e3
 
     sns.lmplot('generation_capacity', 'peak_load',
                data=stats,
                fit_reg=False,
-               hue='v_nom',
+               # hue='v_nom',
                # hue='Voltage level',
                scatter_kws={"marker": "D",
                             "s": 100},
                aspect=2)
-    plt.title('Peak load vs. generation capcity')
+    plt.title('Peak load vs. generation capacity')
     plt.xlabel('Generation capacity in MW')
     plt.ylabel('Peak load in MW')
 
@@ -1719,7 +1723,7 @@ def export_network(nw, mode=''):
         return aggr
 
     for mv_district in nw.mv_grid_districts():
-        from shapely.wkt import dumps as wkt_dumps
+
         mv_grid_id = mv_district.mv_grid.id_db
         mv_grid_id_db = '_'.join(
             [str(mv_district.mv_grid.__class__.__name__), 'MV', str(mv_grid_id), str(mv_district.mv_grid.id_db)])

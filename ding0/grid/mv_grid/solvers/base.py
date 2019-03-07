@@ -193,10 +193,18 @@ class BaseSolution(object):
             g.add_edges_from(e)
 
         plt.figure()
+        ax = plt.gca()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
 
         if anim is not None:
             nx.draw_networkx(g, nodes_pos, with_labels=False, node_size=50)
-            plt.savefig(anim.file_path + anim.file_prefix + (4 - len(str(anim.counter))) * '0' + str(anim.counter) + '.png')
+            plt.savefig(anim.file_path +
+                        anim.file_prefix +
+                        (4 - len(str(anim.counter))) * '0' +
+                        str(anim.counter) + '.png',
+                        dpi=150,
+                        bbox_inches='tight')
             anim.counter += 1
             plt.close()
         else:

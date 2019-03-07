@@ -10,18 +10,20 @@ We provide two examples of how to use Ding0 along with two example for analysis
 of resulting data. The
 :download:`first example <../ding0/examples/example_single_grid_district.py>` shows how Ding0
 is applied to a single medium-voltage grid district. Grid topology for the
-medium- and low-voltage grid level is generated an export to the *OEDB* and
-save to file (.pkl).
+medium- and low-voltage grid level is generated and saved to a file (.pkl).
 The :download:`analysis script <../ding0/examples/example_analyze_single_grid_district.py>`
-takes data generated the first example and produces exemplary output: key
+takes data generated in the first example and produces exemplary key
 figures and plots.
 
-The second example shows how to generate a larger number of grid topology data
+The :download:`second example <../ding0/examples/example_multiple_grid_districts.py>` shows 
+how to generate a larger number of grid topology data
 sets.
 As the current data source sometimes produces unuseful data or leads to program
-execution interruption, these are excluded from grid topology generation. This
+execution interruptions, grids that cannot be created are excluded from grid topology 
+generation. This
 is enable by setting :code:`failsafe=` to `True`.
-The according analysis script provides exemplary plots for data of multiple grid
+The according :download:`analysis script <../ding0/examples/example_analyze_multiple_grid_districts.py>` 
+provides exemplary plots for data of multiple grid
 districts.
 
 
@@ -31,35 +33,55 @@ High-level functions
 Run ding0
 ---------
 
-Check out :meth:`~core.Network.run_ding0()` as high-level function which is also used the
+Check out :meth:`~core.Network.run_ding0()` as high-level function which is also used in the
 :download:`example <../ding0/examples/example_single_grid_district.py>`.
 
 For larger calculation (parallelization)
 ----------------------------------------
 
-To generate data for a larger area consider to parallelize  execution of Ding0
-using :func:`~.examples.example_multiple_grid_districts.run_multiple_grid_districts`.
+To generate data for a larger area consider to parallelize execution of Ding0
+as done in the :download:`parallelization example <../ding0/examples/example_parallel_multiple_grid_districts.py>`.
 
 
 Analysis of grid data
 =====================
 
+Plot results
+------------
+
+The :func:`~.tools.plots.plot_mv_topology` allows plots of the MV grid including grid topology
+with line loadings and node voltages. You can simply fire it using an MVGrid instance or pass argument
+:code:`export_figures=True` to :meth:`~core.Network.run_ding0()` to export some key plots.
+The plotting allows to draw a background map. For this function, the package `contextily` is needed which
+is not included in the standard ding0 installation. If you want to use this feature, you can simply install it by
+
+.. code-block:: python
+
+    pip3 install contextily
+
+See plotting function for a detailed description of possible modes and parameters.
+
+Example plot:
+
+.. figure:: images/mvgd_plot_example1.png
+
 Export key figures
 ------------------
 
 We provide a set of functions to export key figures of the generated data.
-The following assumes a Ding0 network is available generated like
+The following assumes a Ding0 network is generated as follows:
 
 .. code-block:: python
 
     from egoio.tools import db
     from ding0.core import NetworkDing0
 
-    conn = db.connection(section='oedb')
+    engine = db.connection(section='oedb')
+    session = sessionmaker(bind=engine)()
 
     network = NetworkDing0(name='network')
     network.run_ding0(
-        conn=conn,
+        session=session,
         mv_grid_districts_no=[3040])
 
 
@@ -160,7 +182,7 @@ Lines
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Branchtees
------------
+--------------
 .. csv-table:: lv_branchtee.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -171,7 +193,7 @@ LV-Branchtees
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Generators
------------
+-------------
 .. csv-table:: lv_generator.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -222,7 +244,7 @@ LV-Stations
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 LV-Transformers
------------
+----------------
 .. csv-table:: lv_transformer.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -249,7 +271,7 @@ LV-Grids
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Branchtees
------------
+--------------
 .. csv-table:: mv_branchtee.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -260,7 +282,7 @@ MV-Branchtees
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Generators
------------
+--------------
 .. csv-table:: mv_generator.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30
@@ -312,7 +334,7 @@ MV-Stations
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"
 
 MV-Transformers
------------
+----------------
 .. csv-table:: lv_transformer.csv
    :header: "Field","type", "Description", "Unit"
    :widths: 15, 10, 10, 30

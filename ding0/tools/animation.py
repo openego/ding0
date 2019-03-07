@@ -13,21 +13,22 @@ __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-import ding0
 from ding0.tools import config as cfg_ding0
+from ding0.tools.logger import get_default_home_dir
 
 import os
 
 
 class AnimationDing0:
-    """ Class for visual animation of routing process.
+    """ Class for visual animation of the routing process (solving CVRP).
     
     (basically a central place to store information about output file and count of saved images).
     Use argument 'animation=True' of method 'NetworkDing0.mv_routing()' to enable image export.
+    The images are exported to ding0's home dir which is usually ~/.ding0/ .
     
     Subsequently, FFMPEG can be used to convert images to animation, e.g.
-    
-        ffmpeg -r 10 -i mv-routing_ani_%04d.png -c:v libx264 -vf fps=25 -pix_fmt yuv420p mv-routing_ani.mp4
+
+        ffmpeg -r 5 -i mv-routing_ani_%04d.png -vframes 200 -r 15 -vcodec libx264 -y -an mv-routing_ani.mp4 -s 640x480
     
     See Also
     --------
@@ -36,8 +37,7 @@ class AnimationDing0:
 
     def __init__(self, **kwargs):
         output_animation_file_prefix = cfg_ding0.get('output', 'animation_file_prefix')
-        package_path = ding0.__path__[0]
 
-        self.file_path = os.path.join(package_path, 'output/animation/')
+        self.file_path = os.path.join(get_default_home_dir(), 'animation/')
         self.file_prefix = output_animation_file_prefix
         self.counter = 1

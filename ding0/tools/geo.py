@@ -13,16 +13,17 @@ __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
+import os
 from geopy.distance import vincenty
-from shapely.geometry import LineString
-from shapely.ops import transform
-
 import pyproj
 from functools import partial
 
 from ding0.tools import config as cfg_ding0
 import logging
 
+if not 'READTHEDOCS' in os.environ:
+    from shapely.geometry import LineString
+    from shapely.ops import transform
 
 logger = logging.getLogger('ding0')
 
