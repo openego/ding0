@@ -264,7 +264,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
         grid_level=grid_level)]
     trafo_s_max_max = max(trafo_params['S_nom'])
-    trafo_min_size = trafo_params.lox[trafo_params['S_nom'].idxmin(), :]
+    trafo_min_size = trafo_params.loc[trafo_params['S_nom'].idxmin(), :]
 
     v_diff_max_fc = cfg_ding0.get('assumptions', 'lv_max_v_level_fc_diff_normal')
     v_diff_max_lc = cfg_ding0.get('assumptions', 'lv_max_v_level_lc_diff_normal')
