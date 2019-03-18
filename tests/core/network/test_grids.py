@@ -13,6 +13,7 @@ from ding0.core.network import (RingDing0, BranchDing0, CircuitBreakerDing0,
                                 GeneratorDing0, GeneratorFluctuatingDing0)
 from ding0.core.network.stations import MVStationDing0, LVStationDing0
 from ding0.core.network.grids import MVGridDing0, LVGridDing0
+from ding0.core.network.loads import LVLoadDing0
 
 
 class TestMVGridDing0(object):
@@ -31,7 +32,7 @@ class TestMVGridDing0(object):
 
     def test_empty_mvgridding0(self, empty_mvgridding0):
         """
-        Ccheck that initialization of an object of the
+        Check that initialization of an object of the
         class MVGridDing0 results in the right attributes being empty
         lists or NoneType objects, with the exception of the
         MVStationDing0 object's id_db and geo_data, which are
@@ -446,8 +447,54 @@ class TestLVGridDing0(object):
         Returns and empty LVGridDing0 object
         """
         lv_station = LVStationDing0(id_db=0, geo_data=Point(1, 1))
-        grid = LVGridDing0(id_db=0, station=lv_station)
+        grid = LVGridDing0(id_db=0,
+                           station=lv_station,
+                           grid_district=Polygon([(0,0),
+                                                  (0,2),
+                                                  (2,0),
+                                                  (2,2)]))
+
         return grid
+
+    def test_empty_grid(self,empty_lvgridding0):
+        ''' Check that initialization of an object of the
+        class LVGridDing0 results in the right attributes being empty
+        lists or NoneType objects, with the exception of the
+        LVStationDing0 object's id_db and geo_data, which are
+        0 and shapely.geometry.Point(1, 1) respectively.
+        Check if the type of branch is set to cable'''
+        assert empty_lvgridding0.default_branch_kind == 'cable'
+        assert empty_lvgridding0._station is None
+        assert empty_lvgridding0.population is None
+
+    def test_station(self,empty_lvgridding0):
+        """
+        Check if station function returns the current
+        given station
+        """
+        assert empty_lvgridding0.station() == empty_lvgridding0._station
+
+    def test_add_station(self,empty_lvgridding0):
+        """
+        Check if station is added correctly
+        """
+        new_lv = LVStationDing0(id_db=0,geo_data=(1,2))
+        empty_lvgridding0.add_station(new_lv)
+        assert empty_lvgridding0._station == new_lv
+
+    def test_add_station_negative(self,empty_lvgridding0):
+        """
+        Check if a non LVStation object is added as a station
+        or if raises the proper error
+        """
+        bad_station = GeneratorDing0(id_db=0)
+        with pytest.raises(Exception, match='not'):
+            empty_lvgridding0.add_station(bad_station)
+
+    def test_add_load(self,empty_lvgridding0):
+        new_load = LVLoadDing0()
+
+
 
 
 if __name__ == "__main__":
