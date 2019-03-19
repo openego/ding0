@@ -55,24 +55,41 @@ class NetworkDing0:
     """ Defines the DING0 Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.
 
-    This object does not do anything else but behave like a location to
+    This object behaves like a location to
     store all the constituent objects required to estimate the grid topology
     of a give set of shapes that need to be connected.
 
-    The classes of the objects that can are stored here are :
-    * run_id : A unique identification number to identify different runs of
-        Ding0. This is usually the date and the time in some compressed
-        format.
-    * mv_grid_districts : Essentially a list of mv_grid districts whose data
-        is stored in the current instance of the NetworkDing0 Object.
-    * config : These are the configurations that are required for the
+    Parameters
+    ----------
+    _mv_grid_districts : :obj:`list`
+        A list of :class:`~.ding0.core.structure.regions.MVGridDistrictDing0`
+        objects whose data is stored in the current instance of
+        the :class:`~.ding0.core.NetworkDing0` Object.
+        By default the list is empty. MV grid districts can be added by
+        using the function :func:`~.ding0.core.add_mv_grid_district`. This is done
+        within the function :func:`~.ding0.core.build_mv_grid_district`
+        in the normal course upon calling :func:`~.ding0.core.run_ding0`.
+
+    _config : :obj:`dict`
+        These are the configurations that are required for the
         construction of the network topology given the areas to be connected
-        together.
-    * pf_config : These are the configuration of the power flows that are
+        together. The configuration is imported by calling
+        :func:`~.ding0.core.import_config`.
+        The configurations are stored in text files within the
+        ding0 package in the config folder. These get imported into a
+        python dictionary-like configuration object.
+
+    _pf_config : :class:`~.ding0.core.powerflow.PFConfigDing0`
+        These are the configuration of the power flows that are
         run to ensure that the generated network is plausible and is
         capable of a reasonable amount of loading without causing any
-        grid issues.
-    * static_data : Data such as electrical and mechanical properties
+        grid issues. This object cannot be set at inititation, it gets set by
+        the function :func:`~.ding0.core.import_pf_config` which
+        takes the configurations from :attr:_config and sets up
+        the configurations for running power flow calculations.
+
+    _static_data : :obj:`dict`
+        Data such as electrical and mechanical properties
         of typical assets in the energy system are stored in ding0.
         These are used in many parts of ding0's calculations.
         Data values:
@@ -82,7 +99,9 @@ class NetworkDing0:
             thermal ratings, winding voltages
         - Typical LV grid topologies' line types, line lengths and
             distribution
-    * orm : The connection parameters to the OpenEnergy Platform and
+
+    _orm : :obj:`dict`
+        The connection parameters to the OpenEnergy Platform and
         the tables and datasets required for the functioning of ding0
 
     The most important function that defines ding0's use case is initiated
@@ -91,7 +110,13 @@ class NetworkDing0:
     Attributes
     ----------
     name : :obj:`str`
-        Name of the grid
+        A name given to the network. This defaults to `Network`.
+
+    run_id : :obj:`str`
+        A unique identification number to identify different runs of
+        Ding0. This is usually the date and the time in some compressed
+        format. e.g. 201901010900.
+
     mv_grid_districts: :obj:`list iterator`
         contains the MV Grid Districts where the topology has to be estimated
 
@@ -108,56 +133,92 @@ class NetworkDing0:
         self._orm = self.import_orm()
 
     def mv_grid_districts(self):
-        """Returns a generator for iterating over MV grid_districts"""
+        """
+        A generator for iterating over MV grid_districts
+
+        Returns
+        ------
+        :obj:`list iterator`
+            A list iterator containing the
+            :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` objects.
+        """
         for grid_district in self._mv_grid_districts:
             yield grid_district
 
     def add_mv_grid_district(self, mv_grid_district):
-        """Adds a MV grid_district to _mv_grid_districts if not already existing"""
+        """
+        A method to add mv_grid_districts to the
+        :class:`~.ding0.core.NetworkDing0` Object by adding it to the
+        :attr:_mv_grid_districts.
+        """
         # TODO: use setter method here (make attribute '_mv_grid_districts' private)
         if mv_grid_district not in self.mv_grid_districts():
             self._mv_grid_districts.append(mv_grid_district)
 
     @property
     def config(self):
-        """Returns config object"""
+        """
+        Getter for the configuration dictionary.
+        Returns
+        -------
+         :obj: `dict`
+         """
         return self._config
 
     @property
     def pf_config(self):
-        """Returns PF config object"""
+        """
+        Getter for the power flow calculation configurations.
+
+        Returns
+        -------
+        :class:`~.ding0.core.powerflow.PFConfigDing0`
+        """
         return self._pf_config
 
     @property
     def static_data(self):
-        """Returns static data"""
+        """
+        Getter for the static data
+
+        Returns
+        -------
+        :obj: `dict`
+        """
         return self._static_data
 
     @property
     def orm(self):
-        """Returns ORM data"""
+        """
+        Getter for the stored ORM configurations.
+
+        Returns
+        -------
+        :obj: `dict`
+        """
         return self._orm
 
     def run_ding0(self, session, mv_grid_districts_no=None, debug=False, export_figures=False):
-        """ Let DING0 run by shouting at this method (or just call
-            it from NetworkDing0 instance). This method is a wrapper
-            for the main functionality of DING0.
+        """
+        Let DING0 run by shouting at this method (or just call
+        it from NetworkDing0 instance). This method is a wrapper
+        for the main functionality of DING0.
 
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :obj:`sqlalchemy.orm.session.Session`
             Database session
-        mv_grid_districts_no : List of Integers
+        mv_grid_districts_no : :obj:`list` of :obj:`int` objects.
             List of MV grid_districts/stations to be imported (if empty,
             all grid_districts & stations are imported)
-        debug : bool, defaults to False
+        debug : obj:`bool`, defaults to False
             If True, information is printed during process
-        export_figures : bool, defaults to False
+        export_figures : :obj:`bool`, defaults to False
             If True, figures are shown or exported (default path: ~/.ding0/) during run.
 
         Returns
         -------
-        msg : str
+        msg : obj:`str`
             Message of invalidity of a grid district
 
         Notes
@@ -303,10 +364,12 @@ class NetworkDing0:
         return msg
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
-        """ Build dict with mapping from LVLoadAreaDing0 id to LVLoadAreaDing0 object,
-                                         MVGridDistrictDing0 id to MVGridDistrictDing0 object,
-                                         LVGridDistrictDing0 id to LVGridDistrictDing0 object and
-                                         LVStationDing0 id to LVStationDing0 object
+        """
+        Build dict with mapping from
+            LVLoadAreaDing0 id to LVLoadAreaDing0 object,
+            MVGridDistrictDing0 id to MVGridDistrictDing0 object,
+            LVGridDistrictDing0 id to LVGridDistrictDing0 object and
+            LVStationDing0 id to LVStationDing0 object
 
         Returns
         -------
@@ -361,13 +424,14 @@ class NetworkDing0:
 
     def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
                         station_geo_data):
-        """Initiates single MV grid_district including station and grid
+        """
+        Initiates single MV grid_district including station and grid
 
         Parameters
         ----------
-        poly_id: int
+        poly_id: :obj:`int`
             ID of grid_district according to database table. Also used as ID for created grid #TODO: check type
-        subst_id: int
+        subst_id: :obj:`int`
             ID of station according to database table #TODO: check type
         grid_district_geo_data: :shapely:`Shapely Polygon object<polygons>`
             Polygon of grid district
@@ -376,8 +440,7 @@ class NetworkDing0:
 
         Returns
         -------
-        :shapely:`Shapely Polygon object<polygons>`
-            Description of return #TODO: check
+        :class:`~.ding0.core.structure.regions.MVGridDistrictDing0`
 
         """
 
@@ -400,7 +463,8 @@ class NetworkDing0:
                                lv_load_area,
                                lv_grid_districts,
                                lv_stations):
-        """Instantiates and associates lv_grid_district incl grid and station.
+        """
+        Instantiates and associates lv_grid_district incl grid and station.
 
         The instantiation creates more or less empty objects including relevant
         data for transformer choice and grid creation
@@ -509,9 +573,10 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :obj:`sqlalchemy.orm.session.Session`
             Database session
-        mv_grid_districts : List of MV grid_districts/stations (int) to be imported (if empty,
+        mv_grid_districts : :obj:`list` of :obj:`int`
+            List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
 
         See Also
@@ -590,15 +655,16 @@ class NetworkDing0:
 
     def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts,
                              lv_stations):
-        """Imports load_areas (load areas) from database for a single MV grid_district
+        """
+        Imports load_areas (load areas) from database for a single MV grid_district
 
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
             Database session
         mv_grid_district : MV grid_district/station (instance of MVGridDistrictDing0 class) for
             which the import of load areas is performed
-        lv_grid_districts: DataFrame
+        lv_grid_districts: :pandas:`pandas.DataFrame<dataframe>`
             LV grid districts within this mv_grid_district
         lv_stations: :pandas:`pandas.DataFrame<dataframe>`
             LV stations within this mv_grid_district
@@ -703,7 +769,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
             Database session
 
         Returns
@@ -784,7 +850,7 @@ class NetworkDing0:
         Import lv_stations within the given load_area
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
             Database session
 
         Returns
@@ -817,16 +883,24 @@ class NetworkDing0:
         """
         Imports renewable (res) and conventional (conv) generators
 
-        Args:
-            session : sqlalchemy.orm.session.Session
-                Database session
-            debug: If True, information is printed during process
-        Notes:
-            Connection of generators is done later on in NetworkDing0's method connect_generators()
+        Parameters
+        ----------
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+            Database session
+        debug: :obj:`bool`, defaults to False
+            If True, information is printed during process
+
+        Notes
+        -----
+            Connection of generators is done later on in
+            :class:`~.ding0.core.NetworkDing0`'s method
+            :func:`~.ding0.core.NetworkDing0.connect_generators`
         """
 
         def import_res_generators():
-            """Imports renewable (res) generators"""
+            """
+            Imports renewable (res) generators
+            """
 
             # build query
             generators_sqla = session.query(
@@ -952,7 +1026,9 @@ class NetworkDing0:
                     lv_grid_district.lv_grid.add_generator(generator)
 
         def import_conv_generators():
-            """Imports conventional (conv) generators"""
+            """
+            Imports conventional (conv) generators
+            """
 
             # build query
             generators_sqla = session.query(
@@ -1020,12 +1096,13 @@ class NetworkDing0:
         logger.info('=====> Generators imported')
 
     def import_config(self):
-        """ Loads parameters from config files
+        """
+        Loads parameters from config files
 
         Returns
         -------
-        int
-            config object #TODO check type
+        :obj:`dict`
+            configuration key value pair dictionary
         """
 
         # load parameters from configs
@@ -1039,12 +1116,12 @@ class NetworkDing0:
         return cfg_dict
 
     def import_pf_config(self):
-        """ Creates power flow config class and imports config from file
+        """
+        Creates power flow config class and imports config from file
 
         Returns
         -------
-        PFConfigDing0
-            PFConfigDing0 object
+        :class:`~.ding0.core.powerflow.PFConfigDing0`
         """
 
         scenario = cfg_ding0.get("powerflow", "test_grid_stability_scenario")
@@ -1062,11 +1139,13 @@ class NetworkDing0:
                              resolution=resolution)
 
     def import_static_data(self):
-        """ Imports static data into NetworkDing0 such as equipment.
+        """
+        Imports static data into NetworkDing0 such as equipment.
 
         Returns
         -------
-        Dictionary with equipment data
+        :obj: `dict`
+            Dictionary with equipment data
         """
 
         package_path = ding0.__path__[0]
@@ -1156,14 +1235,19 @@ class NetworkDing0:
         return static_data
 
     def import_orm(self):
-        #TODO: check docstring
-        """ Import ORM classes for oedb access depending on input in config in
+        """
+        Import ORM classes names for  the correct connection to
+        open energy platform and access tables depending on input in config in
         self.config which is loaded from 'config_db_tables.cfg'
 
         Returns
         -------
-        int
-            Descr #TODO check type
+        :obj: `dict`
+            key value pairs of names of datasets versus
+            sqlalchmey maps to acess
+            various tables where the datasets
+            used to build grids are stored on the open
+            energy platform.
         """
 
         orm = {}
@@ -1228,11 +1312,13 @@ class NetworkDing0:
         return orm
 
     def validate_grid_districts(self):
-        #TODO: check docstring
-        """ Tests MV grid districts for validity concerning imported data such as:
+        """
+        Method to check the validity of the grid districts.
+        MV grid districts are considered valid if:
 
-            i) Uno
-            ii) Dos
+              i) The number of nodes of the graph should be greater than 1
+             ii) All the load areas in the grid district are NOT tagged as
+                 aggregated load areas.
 
         Invalid MV grid districts are subsequently deleted from Network.
         """
@@ -1264,19 +1350,16 @@ class NetworkDing0:
         return msg_invalidity
 
     def export_mv_grid(self, session, mv_grid_districts):
-        """ Exports MV grids to database for visualization purposes
+        """
+        Exports MV grids to database for visualization purposes
 
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
             Database session
-        mv_grid_districts : List of MV grid_districts (instances of MVGridDistrictDing0 class)
+        mv_grid_districts : :obj:`list` of
+            :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` objects
             whose MV grids are exported.
-
-        Returns
-        -------
-        int
-            Description #TODO
         """
 
         # check arguments
@@ -1392,15 +1475,11 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
             Database session
-        mv_grid_districts : List of MV grid_districts (instances of MVGridDistrictDing0 class)
+        mv_grid_districts : :obj:`list` of
+            :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` objects
             whose MV grids are exported.
-
-        Returns
-        -------
-        int
-            Description of return. #TODO
         """
 
         # check arguments
@@ -1512,7 +1591,8 @@ class NetworkDing0:
         logger.info('=====> MV Grids exported (NEW)')
 
     def to_dataframe(self):
-        """Export grid data to dataframes for statistical analysis.
+        """
+        Export grid data to dataframes for statistical analysis.
 
         The export to dataframe is similar to db tables exported by `export_mv_grid_new`.
 
@@ -1629,14 +1709,17 @@ class NetworkDing0:
         return nodes_df, edges_df
 
     def mv_routing(self, debug=False, animation=False):
-        """ Performs routing on all MV grids.
+        """
+        Performs routing on all MV grids.
 
         Parameters
         ----------
-        debug: bool, default to False
+        debug: :obj:`bool`, default to False
             If True, information is printed while routing
-        animation: bool, default to False
-            If True, images of route modification steps are exported during routing process. A new animation object is created.
+        animation: :obj:`bool`, default to False
+            If True, images of route modification
+            steps are exported during routing process.
+            A new animation object is created.
 
         See Also
         --------
@@ -1656,7 +1739,8 @@ class NetworkDing0:
                     'Stations) performed')
 
     def build_lv_grids(self):
-        """ Builds LV grids for every non-aggregated LA in every MV grid
+        """
+        Builds LV grids for every non-aggregated LA in every MV grid
         district using model grids.
         """
 
@@ -1673,11 +1757,12 @@ class NetworkDing0:
         logger.info('=====> LV model grids created')
 
     def connect_generators(self, debug=False):
-        """ Connects generators (graph nodes) to grid (graph) for every MV and LV Grid District
+        """
+        Connects generators (graph nodes) to grid (graph) for every MV and LV Grid District
 
-        Args
-        ----
-        debug: bool, defaults to False
+        Parameters
+        ----------
+        debug: :obj:`bool`, defaults to False
             If True, information is printed during process.
         """
 
@@ -1702,11 +1787,12 @@ class NetworkDing0:
         logger.info('=====> Generators connected')
 
     def mv_parametrize_grid(self, debug=False):
-        """ Performs Parametrization of grid equipment of all MV grids.
+        """
+        Performs Parametrization of grid equipment of all MV grids.
 
         Parameters
         ----------
-        debug: bool, defaults to False
+        debug: :obj:bool, defaults to False
             If True, information is printed during process.
 
         See Also
@@ -1720,7 +1806,9 @@ class NetworkDing0:
         logger.info('=====> MV Grids parametrized')
 
     def set_branch_ids(self):
-        """ Performs generation and setting of ids of branches for all MV and underlying LV grids.
+        """
+        Performs generation and setting of ids
+        of branches for all MV and underlying LV grids.
 
         See Also
         --------
@@ -1733,12 +1821,13 @@ class NetworkDing0:
         logger.info('=====> Branch IDs set')
 
     def set_circuit_breakers(self, debug=False):
-        """ Calculates the optimal position of the existing circuit breakers
+        """
+        Calculates the optimal position of the existing circuit breakers
         and relocates them within the graph for all MV grids.
 
-        Args
-        ----
-        debug: bool, defaults to False
+        Parameters
+        ----------
+        debug: :obj:`bool`, defaults to False
             If True, information is printed during process
 
         See Also
@@ -1753,11 +1842,12 @@ class NetworkDing0:
         logger.info('=====> MV Circuit Breakers relocated')
 
     def control_circuit_breakers(self, mode=None):
-        """ Opens or closes all circuit breakers of all MV grids.
+        """
+        Opens or closes all circuit breakers of all MV grids.
 
-        Args
-        ----
-        mode: str
+        Parameters
+        ---------
+        mode: :obj:`str`
             Set mode='open' to open, mode='close' to close
         """
 
@@ -1775,21 +1865,25 @@ class NetworkDing0:
             logger.info('=====> MV Circuit Breakers closed')
 
     def run_powerflow(self, session, method='onthefly', export_pypsa=False, debug=False):
-        """ Performs power flow calculation for all MV grids
+        """
+        Performs power flow calculation for all MV grids
 
-        Args:
-            session : sqlalchemy.orm.session.Session
-                Database session
-            method: str
-                Specify export method
-                If method='db' grid data will be exported to database
+        Parameters
+        ----------
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+            Database session
 
-                If method='onthefly' grid data will be passed to PyPSA directly (default)
-        export_pypsa: bool
+        method: :obj:`str`
+            Specify export method
+            If method='db' grid data will be exported to database
+
+            If method='onthefly' grid data will be passed to PyPSA directly (default)
+
+        export_pypsa: :obj:`bool`
             If True PyPSA networks will be exported as csv to output/debug/grid/<MV-GRID_NAME>/
-        debug: bool, defaults to False
-            If True, information is printed during process
 
+        debug: :obj:`bool`, defaults to False
+            If True, information is printed during process
         """
 
         if method == 'db':
@@ -1817,11 +1911,8 @@ class NetworkDing0:
                                                     debug=debug)
 
     def reinforce_grid(self):
-        """ Performs grid reinforcement measures for all MV and LV grids
-        Args:
-
-        Returns:
-
+        """
+        Performs grid reinforcement measures for all MV and LV grids
         """
         # TODO: Finish method and enable LV case
 
@@ -1842,13 +1933,13 @@ class NetworkDing0:
 
         Parameters
         ----------
-        run_id: str, (defaults to current date)
+        run_id: :obj:`str`, (defaults to current date)
             Distinguish multiple versions of Ding0 data by a `run_id`. If not
             set it defaults to current date in the format YYYYMMDDhhmmss
 
         Returns
         -------
-        dict
+        :obj:`dict`
             Metadata
         """
 
@@ -1899,20 +1990,33 @@ class NetworkDing0:
 
 
     def __repr__(self):
+        """"
+        A repr string representation of the NetworkDing0 object.
+        This prints out only the name attribute.
+        """
         return str(self.name)
 
     def list_generators(self, session):
         """
         List renewable (res) and conventional (conv) generators
 
-        Args
-        ----
-        session : sqlalchemy.orm.session.Session
+        Parameters
+        ----------
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
             Database session
 
         Returns
         -------
-        DataFrame
+        :pandas:`pandas.DataFrame<dataframe>`
+            A table containing the generator data, the columns being:
+            - subst_id,
+            - la_id (load area id),
+            - mv_lv_subst_id (id of the mv lv substation),
+            - electrical_capacity
+            - generation_type
+            - generation_subtype
+            - voltage_level
+            - geospatial coordinates as :shapely:`Shapely Point object<point>`
         """
         srid = str(int(cfg_ding0.get('geo', 'srid')))
 
@@ -1988,10 +2092,10 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
             Database session
-        mv_districts:
-            List of MV districts
+        mv_districts: :obj:`list` of
+            :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` objects
         """
 
         # threshold: load area peak load, if peak load < threshold => disregard
@@ -2037,14 +2141,15 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : sqlalchemy.orm.session.Session
+        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
             Database session
-        lv_stations:
+        lv_stations: :obj:`list`
             List required LV_stations==LV districts.
 
         Returns
         -------
-        pandas Dataframe
+        :pandas:`pandas.DataFrame<dataframe>`
+            Pandas Data Frame
             Table of lv_grid_districts
         """
         gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
