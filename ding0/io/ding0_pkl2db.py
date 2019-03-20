@@ -49,8 +49,9 @@ db_tables_change_owner(oedb_engine, SCHEMA)
 pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/20180823154014"
 
 
-# choose MV Grid Districts to import
-grids = list(range(3554, 3609))
+# choose MV Grid Districts to import use list of integers
+# f. e.: grids = list(range(1, 3609))
+grids = [1658]
 
 # generate all the grids and push them to oedb
 for grid_no in grids:
