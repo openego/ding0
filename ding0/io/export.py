@@ -189,6 +189,7 @@ def export_network(nw, mode='', run_id=None):
                     sum([_.zensus_sum
                          for _ in
                          mv_district._lv_load_areas
+                         #ToDo: Check if this returns any value -> changed np.inan to pd.isnull, fixes type error for the export
                          if not pd.isnull(_.zensus_sum)]),
                 'voltage_nom': mv_district.mv_grid.v_level,  # in kV
                 'run_id': run_id

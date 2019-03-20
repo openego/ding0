@@ -169,14 +169,14 @@ if __name__ == '__main__':
     # source
     oedb_engine = connection(section='oedb')
     # # Testing Database -> destination
-    reiners_engine = connection(section='reiners_db')
+    # reiners_engine = connection(section='reiners_db')
 
     SOURCE_SCHEMA = 'model_draft'
     DESTINATION_SCHEMA = 'grid'
     tables = get_table_names(DING0_TABLES)
 
     # Enter the current run_id, Inserted in scenario_log
-    RUN_ID = '20181022185643'
+    RUN_ID = '20180823154014'
 
     # Metadata folder Path
     METADATA_STRING_FOLDER = os.path.join(ding0.__path__[0], 'io', 'metadatastrings')
