@@ -20,16 +20,41 @@ from ding0.core.structure.regions import LVLoadAreaDing0, LVLoadAreaCentreDing0
 
 
 class GridDing0:
-    """ DING0 grid
+    """
+    The fundamental abstract class used to encapsulated
+    the networkx graph and the relevant attributes of a
+    power grid irrespective of voltage level. By design,
+    this class is not expected to be instantiated directly.
+    This class was designed to be inherited by
+    :class:`~.ding0.core.network.grids.MVGridDing0` or by
+    :class:`~.ding0.core.network.grids.LVGridDing0`.
 
     Parameters
     ----------
-    network : :obj:`int`
-        Name of the grid #TODO:check
-    id_db : :obj:`int`
-        id according to database table #TODO:check
+    network : :obj:`str`
+        Name of the grid
+    id_db : :obj:`str`
+        id according to database table
     grid_district : :shapely:`Shapely Polygon object<polygons>`
-        class, area that is covered by the lv grid #TODO:check
+        class, area that is covered by the lv grid
+    v_level: :obj:`int`
+        The integer value of the voltage level of the Grid in kV.
+        Typically either 10 or 20.
+    _cable_distributors: :obj:`list` of
+        :class:`~.ding0.core.network.CableDistributorDing0` Objects
+    _loads : :obj:`list` of
+        :class:`~.ding0.core.network.LoadDing0` Objects.
+        These are objects meant to be considered as MV-Level loads
+    _generators : :obj:`list` of
+        :class:`~.ding0.core.network.GeneratorDing0` or
+        :class:`~.ding0.core.network.GeneratorFluctuatingDing0`
+        Objects.
+        These are objects meant to be considered as MV-Level Generators.
+    _graph : :networkx:`networkx.Graph`
+        The networkx graph of the network. Initially this is an empty graph
+        which gets populated differently depending upon
+        which child class inherits this class, either MVGridDing0 or
+        LVGridDing0.
         
     """
 
@@ -45,65 +70,77 @@ class GridDing0:
         self._graph = nx.Graph()
 
     def cable_distributors(self):
-        """Returns a generator for iterating over cable distributors
+        """
+        Provides access to the cable distributors in the grid.
         
-        Yields
-        ------
-        int
-            Description #TODO check
+        Returns
+        -------
+        obj:`list` generator of
+            :class:`~.ding0.core.network.CableDistributorDing0` objects
         """
         for cable_dist in self._cable_distributors:
             yield cable_dist
 
     def cable_distributors_count(self):
-        """Returns the count of cable distributors in grid
+        """
+        Returns the count of cable distributors in grid
         
         Returns
         -------
-        int
-            Description #TODO check
+        :obj:`int`
+            Count of the
+            :class:`~.ding0.core.network.CableDistributorDing0` objects
+
         """
         return len(self._cable_distributors)
 
     def loads(self):
-        """Returns a generator for iterating over grid's loads
+        """
+        Returns a generator for iterating over grid's loads
         
-        Yields
-        ------
-        int
-            Description #TODO check
+        Returns
+        -------
+        obj:`list` generator of
+            :class:`~.ding0.core.network.LoadDing0` objects
         """
         for load in self._loads:
             yield load
 
     def loads_count(self):
-        """Returns the count of loads in grid
+        """
+        Returns the count of loads in grid
         
         Returns
         -------
-        int
-            Description #TODO check
+        :obj:`int`
+            Count of the
+            :class:`~.ding0.core.network.LoadDing0` objects
         """
         return len(self._loads)
 
     def generators(self):
-        """Returns a generator for iterating over grid's generators
+        """
+        Returns a generator for iterating over grid's generators
         
-        Yields
-        ------
-        GridDing0
-            Description #TODO check
+        Returns
+        -------
+        obj:`list` generator of
+            :class:`~.ding0.core.network.GeneratorDing0` and
+            :class:`~.ding0.core.network.GeneratorFluctuatingDing0`
+            objects
         """
         for generator in self._generators:
             yield generator
 
     def add_generator(self, generator):
-        """Adds a generator to _generators and grid graph if not already existing
+        """
+        Adds a generator to :attr:`_generators` and grid graph if not already existing
         
         Parameters
         ----------
-        generator : GridDing0
-            Description #TODO
+        generator : :class:`~.ding0.core.network.GeneratorDing0` or
+            :class:`~.ding0.core.network.GeneratorFluctuatingDing0`
+
         
         """
         if generator not in self._generators and isinstance(generator,
@@ -112,11 +149,18 @@ class GridDing0:
             self.graph_add_node(generator)
 
     def graph_add_node(self, node_object):
-        """Adds a station or cable distributor object to grid graph if not already existing
+        """
+        Adds a station or cable distributor object
+        to grid graph if not already existing
         
         Parameters
         ----------
-        node_object : GridDing0
+        node_object : :class:`~.ding0.core.network.GeneratorDing0` or
+            :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            :class:`~.ding0.core.network.LoadDing0` or
+            :class:`~.ding0.core.network.StationDing0` or
+            :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            :class:`~.ding0.core.network.CableDistributorDing0`
             Description #TODO
         
         """
