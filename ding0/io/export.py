@@ -189,7 +189,7 @@ def export_network(nw, mode='', run_id=None):
                     sum([_.zensus_sum
                          for _ in
                          mv_district._lv_load_areas
-                         if not np.isnan(_.zensus_sum)]),
+                         if not pd.isnull(_.zensus_sum)]),
                 'voltage_nom': mv_district.mv_grid.v_level,  # in kV
                 'run_id': run_id
             }
