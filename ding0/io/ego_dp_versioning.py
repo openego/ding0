@@ -75,7 +75,7 @@ def migrate_tables_to_destination(from_db, s_schema, to_db, d_schema, runid=None
     7. Call the function with parameters like:
         migrate_tables_to_destination(oedb_engine, SOURCE_SCHEMA, oedb_engine, DESTINATION_SCHEMA, RUN_ID)
     8. In function migrate_tables_to_destination() check the function write_scenario_log()
-    9. Check if the tables in your source schema exist and named eually to the table dict like in DING0_TABLES{}
+    9. Check if the tables in your source schema exist and named equally to the table dict like in DING0_TABLES{}
     Parameters
     ----------
     from_db:
