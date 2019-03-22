@@ -52,7 +52,8 @@ package_path = ding0.__path__[0]
 
 
 class NetworkDing0:
-    """ Defines the DING0 Network - not a real grid but a container for the
+    """
+    Defines the DING0 Network - not a real grid but a container for the
     MV-grids. Contains the NetworkX graph and associated attributes.
 
     This object behaves like a location to
@@ -109,6 +110,7 @@ class NetworkDing0:
         of typical assets in the energy system are stored in ding0.
         These are used in many parts of ding0's calculations.
         Data values:
+
         * Typical cable types, and typical line types' electrical impedences,
             thermal ratings, operating voltage level.
         * Typical transformers types' electrical impedences, voltage drops,
@@ -436,6 +438,7 @@ class NetworkDing0:
 
         Parameters
         ----------
+
         poly_id: :obj:`int`
             ID of grid_district according to database table. Also used as ID for created grid #TODO: check type
         subst_id: :obj:`int`
@@ -444,7 +447,7 @@ class NetworkDing0:
             Polygon of grid district, The geo-spatial polygon
             in the coordinate reference system with the
             SRID:4326 or epsg:4326, this is the project
-             used by the ellipsoid WGS 84.
+            used by the ellipsoid WGS 84.
         station_geo_data: :shapely:`Shapely Point object<points>`
             Point of station. The geo-spatial point
             in the coordinate reference
@@ -1331,9 +1334,9 @@ class NetworkDing0:
         Method to check the validity of the grid districts.
         MV grid districts are considered valid if:
 
-              i) The number of nodes of the graph should be greater than 1
-             ii) All the load areas in the grid district are NOT tagged as
-                 aggregated load areas.
+            1. The number of nodes of the graph should be greater than 1
+            2. All the load areas in the grid district are NOT tagged as
+               aggregated load areas.
 
         Invalid MV grid districts are subsequently deleted from Network.
         """

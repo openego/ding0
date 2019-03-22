@@ -45,15 +45,10 @@ class GridDing0:
 
     Attributes
     ----------
-    cable_distributors: :obj:`list` of
-        :class:`~.ding0.core.network.CableDistributorDing0` Objects
-    loads : :obj:`list` of
-        :class:`~.ding0.core.network.LoadDing0` Objects.
+    cable_distributors: :obj:`list` of :class:`~.ding0.core.network.CableDistributorDing0` Objects
+    loads : :obj:`list` of :class:`~.ding0.core.network.LoadDing0` Objects.
         These are objects meant to be considered as MV-Level loads
-    generators : :obj:`list` of
-        :class:`~.ding0.core.network.GeneratorDing0` or
-        :class:`~.ding0.core.network.GeneratorFluctuatingDing0`
-        Objects.
+    generators : |GridDing0_generators_types|
         These are objects meant to be considered as MV-Level Generators.
     graph : :networkx:`networkx.Graph`
         The networkx graph of the network. Initially this is an empty graph
@@ -61,7 +56,13 @@ class GridDing0:
         which child class inherits this class, either
         :class:`~.ding0.core.network.grids.LVGridDing0` or
         :class:`~.ding0.core.network.grids.MVGridDing0`.
-        
+
+
+    .. |GridDing0_generators_types| replace::
+        :obj:`list` of
+        :class:`~.ding0.core.network.GeneratorDing0` or
+        :class:`~.ding0.core.network.GeneratorFluctuatingDing0` Objects.
+
     """
 
     def __init__(self, **kwargs):
@@ -81,8 +82,7 @@ class GridDing0:
         
         Returns
         -------
-        obj:`list` generator of
-            :class:`~.ding0.core.network.CableDistributorDing0` objects
+        :obj:`list` generator of :class:`~.ding0.core.network.CableDistributorDing0` objects
         """
         for cable_dist in self._cable_distributors:
             yield cable_dist
@@ -106,8 +106,7 @@ class GridDing0:
         
         Returns
         -------
-        obj:`list` generator of
-            :class:`~.ding0.core.network.LoadDing0` objects
+        :obj:`list` generator of :class:`~.ding0.core.network.LoadDing0` objects
         """
         for load in self._loads:
             yield load
@@ -130,10 +129,10 @@ class GridDing0:
         
         Returns
         -------
-        obj:`list` generator of
-            :class:`~.ding0.core.network.GeneratorDing0` and
-            :class:`~.ding0.core.network.GeneratorFluctuatingDing0`
-            objects
+        :obj:`list` generator of
+        :class:`~.ding0.core.network.GeneratorDing0` and
+        :class:`~.ding0.core.network.GeneratorFluctuatingDing0`
+        objects
         """
         for generator in self._generators:
             yield generator
@@ -144,7 +143,12 @@ class GridDing0:
         
         Parameters
         ----------
-        generator : :class:`~.ding0.core.network.GeneratorDing0` or
+        generator : |GridDing0_add_generator_generator_types|
+            Ding0's generator object
+
+
+        .. |GridDing0_add_generator_generator_types| replace::
+            :class:`~.ding0.core.network.GeneratorDing0` or
             :class:`~.ding0.core.network.GeneratorFluctuatingDing0`
 
         
@@ -161,14 +165,18 @@ class GridDing0:
         
         Parameters
         ----------
-        node_object : :class:`~.ding0.core.network.GeneratorDing0` or
+        node_object : |GridDing0_graph_add_node_node_object_types|
+            The ding0 node object to be added to the graph
+
+
+        .. |GridDing0_graph_add_node_node_object_types| replace::
+            :class:`~.ding0.core.network.GeneratorDing0` or
             :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
             :class:`~.ding0.core.network.LoadDing0` or
             :class:`~.ding0.core.network.StationDing0` or
             :class:`~.ding0.core.network.CircuitBreakerDing0` or
             :class:`~.ding0.core.network.CableDistributorDing0`
-            Description #TODO
-        
+
         """
         if ((node_object not in self._graph.nodes()) and
             (isinstance(node_object, (StationDing0,
@@ -183,8 +191,8 @@ class GridDing0:
         Draws grid graph using networkx
 
         This method is for debugging purposes only.
-        Use ding0.tools.plots.plot_mv_topology()
-         for advanced plotting.
+        Use :meth:`~.ding0.tools.plots.plot_mv_topology()`
+        for advanced plotting.
 
         Parameters
         ----------

@@ -74,7 +74,7 @@ napoleon_use_keyword = False
 # Dictionary of external links
 extlinks = {
     'pandas': (
-        'https://pandas.pydata.org/pandas-docs/version/0.20/#s',
+        'http://pandas.pydata.org/pandas-docs/version/0.20/api.html#%s',
         'pandas.'
     ),
     'networkx': (

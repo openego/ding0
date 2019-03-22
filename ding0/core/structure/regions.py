@@ -155,11 +155,11 @@ class LVLoadAreaDing0(RegionDing0):
        Descr
     lv_load_area_group: :shapely:`Shapely Polygon object<polygons>`
        Descr
-    is_satellite: bool
+    is_satellite: :obj:`bool`
        Descr
-    is_aggregated: bool
+    is_aggregated: :obj:`bool`
        Descr
-    db_data: DataFrame
+    db_data: :pandas:`pandas.DatetimeIndex<datetimeindex>`
        Descr
     """
 
@@ -267,7 +267,8 @@ class LVLoadAreaDing0(RegionDing0):
 
 class LVLoadAreaCentreDing0:
     # TODO: check docstring
-    """Defines a region centre in Ding0.
+    """
+    Defines a region centre in Ding0.
     
     The centres are used in the MV routing as nodes.
     
@@ -286,7 +287,7 @@ class LVLoadAreaCentreDing0:
         The geo-spatial point in the coordinate reference
         system with the SRID:4326 or epsg:4326, this
         is the project used by the ellipsoid WGS 84.
-    lv_load_area: :class:`~.ding0.core.network.re
+    lv_load_area: :class:`~.ding0.core.network.regions.LVLoadAreaDing0`
         Descr
     """
     def __init__(self, **kwargs):

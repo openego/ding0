@@ -858,15 +858,16 @@ class LVGridDing0(GridDing0):
             self.grid_district.lv_load_area.mv_grid_district.mv_grid.graph_add_node(lv_station)
 
     def loads_sector(self, sector='res'):
-        """Returns a generator for iterating over grid's sectoral loads
+        """
+        Returns a generator for iterating over grid's sectoral loads
         
         Parameters
         ----------
-        sector: :obj:`str`ing
-            possible values::
+        sector: :obj:`str`
+            possible values:
                 
-                'res' (residential),
-                'ria' (retail, industrial, agricultural)
+                * 'res' (residential),
+                * 'ria' (retail, industrial, agricultural)
 
         Yields
         -------
