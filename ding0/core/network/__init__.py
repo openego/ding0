@@ -31,8 +31,9 @@ class GridDing0:
 
     Parameters
     ----------
-    network : :obj:`str`
-        Name of the grid
+    network : :class:`~.ding0.core.NetworkDing0`
+        The overarching :class:`~.ding0.core.network.CableDistributorDing0`
+        object that this object is connected to.
     id_db : :obj:`str`
         id according to database table
     grid_district : :shapely:`Shapely Polygon object<polygons>`
@@ -40,21 +41,26 @@ class GridDing0:
     v_level: :obj:`int`
         The integer value of the voltage level of the Grid in kV.
         Typically either 10 or 20.
-    _cable_distributors: :obj:`list` of
+
+
+    Attributes
+    ----------
+    cable_distributors: :obj:`list` of
         :class:`~.ding0.core.network.CableDistributorDing0` Objects
-    _loads : :obj:`list` of
+    loads : :obj:`list` of
         :class:`~.ding0.core.network.LoadDing0` Objects.
         These are objects meant to be considered as MV-Level loads
-    _generators : :obj:`list` of
+    generators : :obj:`list` of
         :class:`~.ding0.core.network.GeneratorDing0` or
         :class:`~.ding0.core.network.GeneratorFluctuatingDing0`
         Objects.
         These are objects meant to be considered as MV-Level Generators.
-    _graph : :networkx:`networkx.Graph`
+    graph : :networkx:`networkx.Graph`
         The networkx graph of the network. Initially this is an empty graph
         which gets populated differently depending upon
-        which child class inherits this class, either MVGridDing0 or
-        LVGridDing0.
+        which child class inherits this class, either
+        :class:`~.ding0.core.network.grids.LVGridDing0` or
+        :class:`~.ding0.core.network.grids.MVGridDing0`.
         
     """
 
@@ -134,7 +140,7 @@ class GridDing0:
 
     def add_generator(self, generator):
         """
-        Adds a generator to :attr:`_generators` and grid graph if not already existing
+        Adds a generator to :meth:`_generators` and grid graph if not already existing
         
         Parameters
         ----------
@@ -173,21 +179,26 @@ class GridDing0:
             self._graph.add_node(node_object)
 
     def graph_draw(self, mode):
-        """ Draws grid graph using networkx
+        """
+        Draws grid graph using networkx
 
         This method is for debugging purposes only.
-        Use ding0.tools.plots.plot_mv_topology() for advanced plotting.
+        Use ding0.tools.plots.plot_mv_topology()
+         for advanced plotting.
 
         Parameters
         ----------
-        mode : str
+        mode : :obj:`str`
             Mode selection 'MV' or 'LV'.
             
         Notes
         -----
-        The geo coords (for used crs see database import in class `NetworkDing0`)
-        are used as positions for drawing but networkx uses cartesian crs.
-        Since no coordinate transformation is performed, the drawn graph representation is falsified!
+        The geo coords (for used crs see
+        database import in class `NetworkDing0`)
+        are used as positions for drawing but
+        networkx uses cartesian crs.
+        Since no coordinate transformation is
+        performed, the drawn graph representation is falsified!
         """
 
         g = self._graph
@@ -269,28 +280,38 @@ class GridDing0:
             plt.show()
 
     def graph_nodes_sorted(self):
-        """ Returns an (ascending) sorted list of graph's nodes (name is used as key).
+        """
+        Returns an sorted list of graph's nodes.
+        The nodes are arranged based on the name in ascending order.
         
         Returns
         -------
-        :any:`list`
+        :obj:`list`
             Description #TODO check
 
         """
         return sorted(self._graph.nodes(), key=lambda _: repr(_))
 
     def graph_nodes_from_branch(self, branch):
-        """ Returns nodes that are connected by `branch`
+        """
+        Returns nodes that are connected by `branch` i.e.
+        a :class:`~.ding0.core.network.BranchDing0` object.
 
-        Args
-        ----
-        branch: BranchDing0
-            Description #TODO
+        Parameters
+        ----------
+        branch: :class:`~.ding0.core.network.BranchDing0`
+
                 
         Returns
         -------
-        (:obj:`GridDing0`, :obj:`GridDing0`)
-            2-tuple of nodes (Ding0 objects) #TODO:Check
+        :obj:`tuple` of node objects in ding0.
+            2-tuple of Ding0 node objects i.e.
+            :class:`~.ding0.core.network.GeneratorDing0` or
+            :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            :class:`~.ding0.core.network.LoadDing0` or
+            :class:`~.ding0.core.network.StationDing0` or
+            :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            :class:`~.ding0.core.network.CableDistributorDing0`
         """
         edges = nx.get_edge_attributes(self._graph, 'branch')
         nodes = list(edges.keys())[list(edges.values()).index(branch)]
@@ -299,20 +320,33 @@ class GridDing0:
     def graph_branches_from_node(self, node):
         """ Returns branches that are connected to `node`
 
-        Args
-        ----
-        node: GridDing0
-            Ding0 object (member of graph)
+        Parameters
+        ----------
+        node: node objects in ding0
+            Ding0 node object (member of graph) either
+            :class:`~.ding0.core.network.GeneratorDing0` or
+            :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            :class:`~.ding0.core.network.LoadDing0` or
+            :class:`~.ding0.core.network.StationDing0` or
+            :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            :class:`~.ding0.core.network.CableDistributorDing0`
         
         Returns
         -------
-        :any:`list`
-            List of tuples (node in :obj:`GridDing0`, branch in :obj:`BranchDing0`) ::
+        :obj:`list` of :obj:`tuple` objects
+            List of tuples (node, branch in :obj:`BranchDing0`) ::
             
                 (node , branch_0 ),
                 ...,
                 (node , branch_N ),
-                
+
+            node in ding0 is either
+            :class:`~.ding0.core.network.GeneratorDing0` or
+            :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            :class:`~.ding0.core.network.LoadDing0` or
+            :class:`~.ding0.core.network.StationDing0` or
+            :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            :class:`~.ding0.core.network.CableDistributorDing0`
         """
         # TODO: This method can be replaced and speed up by using NetworkX' neighbors()
 
@@ -323,30 +357,49 @@ class GridDing0:
         return sorted(branches, key=lambda _: repr(_))
 
     def graph_edges(self):
-        """ Returns a generator for iterating over graph edges
+        """
+        Returns a generator for iterating over graph edges
 
-        The edge of a graph is described by the two adjacent node and the branch
-        object itself. Whereas the branch object is used to hold all relevant
+        The edge of a graph is described
+        by the two adjacent node and the branch
+        object itself. Whereas the branch
+        object is used to hold all relevant
         power system parameters.
 
-        Yields
+        Returns
         ------
-        int
-            Description #TODO check
+        :obj:`dict` generator with the keys
+            * `adj_nodes` paired to the Ding0 node object i.e.
+                :class:`~.ding0.core.network.GeneratorDing0` or
+                :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+                :class:`~.ding0.core.network.LoadDing0` or
+                :class:`~.ding0.core.network.StationDing0` or
+                :class:`~.ding0.core.network.CircuitBreakerDing0` or
+                :class:`~.ding0.core.network.CableDistributorDing0`
+            * `branch` paried with the Ding0 branch object
+                :class:`~.ding0.core.network.BranchDing0`
         
         Note
         ----
-        There are generator functions for nodes (`Graph.nodes()`) and edges
-        (`Graph.edges()`) in NetworkX but unlike graph nodes, which can be
-        represented by objects, branch objects can only be accessed by using an
+        There are generator functions for
+        nodes (`Graph.nodes()`) and edges
+        (`Graph.edges()`) in NetworkX but
+        unlike graph nodes, which can be
+        represented by objects, branch
+        objects can only be accessed by using an
         edge attribute ('branch' is used here)
 
-        To make access to attributes of the branch objects simpler and more
-        intuitive for the user, this generator yields a dictionary for each edge
-        that contains information about adjacent nodes and the branch object.
+        To make access to attributes of
+        the branch objects simpler and more
+        intuitive for the user, this
+        generator yields a dictionary for each edge
+        that contains information about
+        adjacent nodes and the branch object.
 
-        Note, the construction of the dictionary highly depends on the structure
-        of the in-going tuple (which is defined by the needs of networkX). If
+        Note, the construction of the
+        dictionary highly depends on the structure
+        of the in-going tuple (which is
+        defined by the needs of networkX). If
         this changes, the code will break.
         """
 
@@ -360,34 +413,63 @@ class GridDing0:
             yield {'adj_nodes': edge[0], 'branch': edge[1]}
 
     def find_path(self, node_source, node_target, type='nodes'):
-        """Determines shortest path
+        """
+        Determines shortest path
 
         Determines the shortest path from `node_source` to
         `node_target` in _graph using networkx' shortest path
         algorithm.
 
-        Args
-        ----
-        node_source: GridDing0
-            source node, member of _graph
-        node_target: GridDing0
-            target node, member of _graph
-        type : str
+        Parameters
+        ----------
+        node_source: source node, member of _graph, ding0 node object i.e.
+
+            * :class:`~.ding0.core.network.GeneratorDing0` or
+            * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            * :class:`~.ding0.core.network.LoadDing0` or
+            * :class:`~.ding0.core.network.StationDing0` or
+            * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            * :class:`~.ding0.core.network.CableDistributorDing0`
+
+        node_target: target node, member of _graph, ding0 node object i.e.
+
+            * :class:`~.ding0.core.network.GeneratorDing0` or
+            * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            * :class:`~.ding0.core.network.LoadDing0` or
+            * :class:`~.ding0.core.network.StationDing0` or
+            * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            * :class:`~.ding0.core.network.CableDistributorDing0`
+
+        type : :obj:`str`
             Specify if nodes or edges should be returned. Default
             is `nodes`
 
         Returns
         -------
-        :any:`list` of :obj:`GridDing0`
-            path: shortest path from `node_source` to `node_target` (list of nodes in _graph)
+        :obj:`list` of ding0 node object i.e.
+
+            * :class:`~.ding0.core.network.GeneratorDing0` or
+            * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            * :class:`~.ding0.core.network.LoadDing0` or
+            * :class:`~.ding0.core.network.StationDing0` or
+            * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            * :class:`~.ding0.core.network.CableDistributorDing0`
+
+        path: shortest path from `node_source` to
+            `node_target` (list of nodes in _graph)
 
         Notes
         -----
-        WARNING: The shortest path is calculated using the count of hops, not the actual line lengths!
-        As long as the circuit breakers are open, this works fine since there's only one path. But if
-        they are closed, there are 2 possible paths. The result is a path which have min. count of hops
-        but might have a longer total path length than the second sone.
-        See networkx' function shortest_path() function for details on how the path is calculated.
+        WARNING: The shortest path is calculated
+        using the count of hops, not the actual line lengths!
+        As long as the circuit breakers are open,
+        this works fine since there's only one path. But if
+        they are closed, there are 2 possible paths.
+        The result is a path which have min. count of hops
+        but might have a longer total path length
+        than the second sone.
+        See networkx' function shortest_path()
+        function for details on how the path is calculated.
         """
         if (node_source in self._graph.nodes()) and (node_target in self._graph.nodes()):
             path = nx.shortest_path(self._graph, node_source, node_target)
@@ -402,20 +484,37 @@ class GridDing0:
             raise ValueError('Please specify type as nodes or edges')
 
     def find_and_union_paths(self, node_source, nodes_target):
-        """ Determines shortest paths from `node_source` to all nodes in `node_target` in _graph using find_path().
+        """ Determines shortest paths from
+        `node_source` to all nodes in `node_target`
+        in _graph using find_path().
             
-        The branches of all paths are stored in a set - the result is a list of unique branches.
+        The branches of all paths are stored in
+        a set - the result is a list of unique branches.
 
-        Args
-        ----
-        node_source: GridDing0 
-            source node, member of _graph
-        node_target: GridDing0
-            target node, member of _graph
+        Parameters
+        ----------
+        node_source: source node, member of _graph, ding0 node object i.e.
+
+            * :class:`~.ding0.core.network.GeneratorDing0` or
+            * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            * :class:`~.ding0.core.network.LoadDing0` or
+            * :class:`~.ding0.core.network.StationDing0` or
+            * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            * :class:`~.ding0.core.network.CableDistributorDing0`
+
+        node_target: target node, member of _graph, ding0 node object i.e.
+
+            * :class:`~.ding0.core.network.GeneratorDing0` or
+            * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            * :class:`~.ding0.core.network.LoadDing0` or
+            * :class:`~.ding0.core.network.StationDing0` or
+            * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            * :class:`~.ding0.core.network.CableDistributorDing0`
+
 
         Returns
         -------
-        :any:`list` of :obj:`BranchDing0`
+        :obj:`list` of :obj:`BranchDing0`
             branches: list of branches (list of nodes in _graph) #TODO:check
         """
         branches = set()
@@ -428,19 +527,35 @@ class GridDing0:
         return list(branches)
 
     def graph_path_length(self, node_source, node_target):
-        """ Calculates the absolute distance between `node_source` and `node_target` in meters using find_path() and branches' length attribute.
+        """
+        Calculates the absolute distance between `node_source`
+        and `node_target` in meters using find_path()
+        and branches' length attribute.
             
-        Args
-        ----
-        node_source: GridDing0 
-            source node, member of _graph
-        node_target: GridDing0
-            target node, member of _graph
+        Parameters
+        ----------
+        node_source: source node, member of _graph, ding0 node object i.e.
+
+            * :class:`~.ding0.core.network.GeneratorDing0` or
+            * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            * :class:`~.ding0.core.network.LoadDing0` or
+            * :class:`~.ding0.core.network.StationDing0` or
+            * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            * :class:`~.ding0.core.network.CableDistributorDing0`
+
+        node_target: target node, member of _graph, ding0 node object i.e.
+
+            * :class:`~.ding0.core.network.GeneratorDing0` or
+            * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            * :class:`~.ding0.core.network.LoadDing0` or
+            * :class:`~.ding0.core.network.StationDing0` or
+            * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            * :class:`~.ding0.core.network.CableDistributorDing0`
 
         Returns
         -------
-        float
-            path length in m
+        :obj:`float`
+            path length in meters
         """
 
         length = 0
@@ -453,12 +568,19 @@ class GridDing0:
         return length
 
     def graph_isolated_nodes(self):
-        """ Finds isolated nodes = nodes with no neighbors (degree zero)
+        """
+        Finds isolated nodes = nodes with no neighbors (degree zero)
 
         Returns
         -------
-        :any:`list` of :obj:`GridDing0`
-            List of nodes (Ding0 objects)
+        :obj:`list` of ding0 node object i.e.
+
+            * :class:`~.ding0.core.network.GeneratorDing0` or
+            * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+            * :class:`~.ding0.core.network.LoadDing0` or
+            * :class:`~.ding0.core.network.StationDing0` or
+            * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+            * :class:`~.ding0.core.network.CableDistributorDing0`
         """
         return sorted(nx.isolates(self._graph), key=lambda x: repr(x))
 
@@ -467,9 +589,9 @@ class GridDing0:
         
         A capacity factor of 0.6 means that all generators are to provide a capacity of 60% of their nominal power.
 
-        Args
-        ----
-        capacity_factor: float
+        Parameters
+        ----------
+        capacity_factor: :obj:`float`
             Value between 0 and 1.
         """
 
@@ -479,26 +601,40 @@ class GridDing0:
 
 class StationDing0:
     """
-    Defines a HV-MV or MV-LV station in DINGO
+    The abstract definition of a substation irrespective
+    of voltage level. This object encapsulates the attributes
+    that can appropriately represent a station in a
+    networkx graph as a node. By design,
+    this class is not expected to be instantiated directly.
+    This class was designed to be inherited by
+    :class:`~.ding0.core.network.stations.MVStationDing0` or by
+    :class:`~.ding0.core.network.stations.LVStationDing0`.
 
     Parameters
     ----------
-    id_db: :obj:`int`
+    id_db : :obj:`str`
         id according to database table
     v_level_operation: :obj:`float`
-        operation voltage level at station (the station's voltage level differs from the nominal voltage level of 
+        operation voltage level in kilovolts (kV) at station
+        (the station's voltage level differs from
+        the nominal voltage level of
         the grid due to grid losses).
-        It is usually set to a slightly higher value than the nominal voltage, e.g. 104% in MV grids.
+        It is usually set to a slightly higher value
+        than the nominal voltage, e.g. 104% in MV grids.
     geo_data : :shapely:`Shapely Point object<points>`
-        Descr #TODO
-    grid : :obj:`int`
-        Desc #TODO
-    busbar : :obj:`int`
-        Desc #TODO
+        The geo-spatial point in the coordinate reference
+        system with the SRID:4326 or epsg:4326, this
+        is the project used by the ellipsoid WGS 84.
+    grid : :class:`~.ding0.core.network.GridDing0`
+        Either a :class:`~.ding0.core.network.grid.MVGridDing0` or
+        :class:`~.ding0.core.network.grid.MVGridDing0` object
+    _transformers: :obj:`list` of
+        :class:`~.ding0.core.network.TransformerDing0` objects
             
     See Also
     --------
-     (see attribute `v_level` in class MVGridDing0) #TODO where is this?
+     (see attribute `v_level` in class
+     :class:`~.ding0.core.network.grid.MVGridDing0`)
     """
 
     def __init__(self, **kwargs):
@@ -513,7 +649,8 @@ class StationDing0:
         return self.grid.network
 
     def transformers(self):
-        """Returns a generator for iterating over transformers
+        """
+        Returns a generator for iterating over transformers
         
         Yields
         ------
@@ -686,7 +823,9 @@ class GeneratorDing0:
     v_level : :obj:`float`
         voltage level
     geo_data : :shapely:`Shapely Point object<points>`
-        Descr #TODO
+        The geo-spatial point in the coordinate reference
+        system with the SRID:4326 or epsg:4326, this
+        is the project used by the ellipsoid WGS 84.
     mv_grid : :obj:`int`
         Descr #TODO
     lv_load_area : :obj:`int`
@@ -775,7 +914,9 @@ class CableDistributorDing0:
     id_db : :obj:`int`
         id according to database table
     geo_data : :shapely:`Shapely Point object<points>`
-        Descr #TODO
+        The geo-spatial point in the coordinate reference
+        system with the SRID:4326 or epsg:4326, this
+        is the project used by the ellipsoid WGS 84.
     grid : :obj:`int`
         Descr #TODO
     
@@ -799,7 +940,9 @@ class LoadDing0:
     id_db : :obj:`int`
         id according to database table
     geo_data : :shapely:`Shapely Point object<points>`
-        Descr #TODO
+        The geo-spatial point in the coordinate reference
+        system with the SRID:4326 or epsg:4326, this
+        is the project used by the ellipsoid WGS 84.
     grid : :obj:`int`
         Descr #TODO
     peak_load : :obj:`float`
@@ -828,7 +971,9 @@ class CircuitBreakerDing0:
     id_db : :obj:`int`
         id according to database table
     geo_data : :shapely:`Shapely Point object<points>`
-        Descr #TODO
+        The geo-spatial point in the coordinate reference
+        system with the SRID:4326 or epsg:4326, this
+        is the project used by the ellipsoid WGS 84.
     grid : :obj:`int`
         Descr #TODO
     branch : :obj:`BranchDing0`

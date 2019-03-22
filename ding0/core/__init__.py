@@ -59,55 +59,11 @@ class NetworkDing0:
     store all the constituent objects required to estimate the grid topology
     of a give set of shapes that need to be connected.
 
-    Parameters
-    ----------
-    _mv_grid_districts : :obj:`list`
-        A list of :class:`~.ding0.core.structure.regions.MVGridDistrictDing0`
-        objects whose data is stored in the current instance of
-        the :class:`~.ding0.core.NetworkDing0` Object.
-        By default the list is empty. MV grid districts can be added by
-        using the function :func:`~.ding0.core.add_mv_grid_district`. This is done
-        within the function :func:`~.ding0.core.build_mv_grid_district`
-        in the normal course upon calling :func:`~.ding0.core.run_ding0`.
-
-    _config : :obj:`dict`
-        These are the configurations that are required for the
-        construction of the network topology given the areas to be connected
-        together. The configuration is imported by calling
-        :func:`~.ding0.core.import_config`.
-        The configurations are stored in text files within the
-        ding0 package in the config folder. These get imported into a
-        python dictionary-like configuration object.
-
-    _pf_config : :class:`~.ding0.core.powerflow.PFConfigDing0`
-        These are the configuration of the power flows that are
-        run to ensure that the generated network is plausible and is
-        capable of a reasonable amount of loading without causing any
-        grid issues. This object cannot be set at inititation, it gets set by
-        the function :func:`~.ding0.core.import_pf_config` which
-        takes the configurations from :attr:_config and sets up
-        the configurations for running power flow calculations.
-
-    _static_data : :obj:`dict`
-        Data such as electrical and mechanical properties
-        of typical assets in the energy system are stored in ding0.
-        These are used in many parts of ding0's calculations.
-        Data values:
-        - Typical cable types, and typical line types' electrical impedences,
-            thermal ratings, operating voltage level.
-        - Typical transformers types' electrical impedences, voltage drops,
-            thermal ratings, winding voltages
-        - Typical LV grid topologies' line types, line lengths and
-            distribution
-
-    _orm : :obj:`dict`
-        The connection parameters to the OpenEnergy Platform and
-        the tables and datasets required for the functioning of ding0
-
     The most important function that defines ding0's use case is initiated
-    from this class i.e. run_ding0. 
+    from this class i.e. :meth:`~.core.NetworkDing0.run_ding0`.
 
-    Attributes
+
+    Parameters
     ----------
     name : :obj:`str`
         A name given to the network. This defaults to `Network`.
@@ -117,8 +73,52 @@ class NetworkDing0:
         Ding0. This is usually the date and the time in some compressed
         format. e.g. 201901010900.
 
+
+    Attributes
+    ----------
     mv_grid_districts: :obj:`list iterator`
-        contains the MV Grid Districts where the topology has to be estimated
+        Contains the MV Grid Districts where the topology has to be estimated
+        A list of :class:`~.ding0.core.structure.regions.MVGridDistrictDing0`
+        objects whose data is stored in the current instance of
+        the :class:`~.ding0.core.NetworkDing0` Object.
+        By default the list is empty. MV grid districts can be added by
+        using the function :meth:`~.core.NetworkDing0.add_mv_grid_district`. This is done
+        within the function :meth:`~.core.NetworkDing0.build_mv_grid_district`
+        in the normal course upon calling :meth:`~.core.NetworkDing0.run_ding0`.
+
+    config : :obj:`dict`
+        These are the configurations that are required for the
+        construction of the network topology given the areas to be connected
+        together. The configuration is imported by calling
+        :meth:`~.core.NetworkDing0.import_config`.
+        The configurations are stored in text files within the
+        ding0 package in the config folder. These get imported into a
+        python dictionary-like configuration object.
+
+    pf_config : :class:`~.ding0.core.powerflow.PFConfigDing0`
+        These are the configuration of the power flows that are
+        run to ensure that the generated network is plausible and is
+        capable of a reasonable amount of loading without causing any
+        grid issues. This object cannot be set at inititation, it gets set by
+        the function :meth:`~.core.NetworkDing0.import_pf_config` which
+        takes the configurations from :attr:_config and sets up
+        the configurations for running power flow calculations.
+
+    static_data : :obj:`dict`
+        Data such as electrical and mechanical properties
+        of typical assets in the energy system are stored in ding0.
+        These are used in many parts of ding0's calculations.
+        Data values:
+        * Typical cable types, and typical line types' electrical impedences,
+            thermal ratings, operating voltage level.
+        * Typical transformers types' electrical impedences, voltage drops,
+            thermal ratings, winding voltages
+        * Typical LV grid topologies' line types, line lengths and
+            distribution
+
+    orm : :obj:`dict`
+        The connection parameters to the OpenEnergy Platform and
+        the tables and datasets required for the functioning of ding0
 
     """
 
@@ -148,8 +148,8 @@ class NetworkDing0:
     def add_mv_grid_district(self, mv_grid_district):
         """
         A method to add mv_grid_districts to the
-        :class:`~.ding0.core.NetworkDing0` Object by adding it to the
-        :attr:_mv_grid_districts.
+        :class:`~.core.NetworkDing0` Object by adding it to the
+        :attr:`~.core.NetworkDing0.mv_grid_districts`.
         """
         # TODO: use setter method here (make attribute '_mv_grid_districts' private)
         if mv_grid_district not in self.mv_grid_districts():
@@ -159,9 +159,11 @@ class NetworkDing0:
     def config(self):
         """
         Getter for the configuration dictionary.
+
+
         Returns
         -------
-         :obj: `dict`
+         :obj:`dict`
          """
         return self._config
 
@@ -365,11 +367,16 @@ class NetworkDing0:
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
         """
-        Build dict with mapping from
-            LVLoadAreaDing0 id to LVLoadAreaDing0 object,
-            MVGridDistrictDing0 id to MVGridDistrictDing0 object,
-            LVGridDistrictDing0 id to LVGridDistrictDing0 object and
-            LVStationDing0 id to LVStationDing0 object
+        Build dict with mapping from:
+
+        * :class:`~.ding0.core.structure.regions.LVLoadAreaDing0` ``id`` to
+          :class:`~.ding0.core.structure.regions.LVLoadAreaDing0` object,
+        * :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` ``id`` to
+          :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` object,
+        * :class:`~.ding0.core.structure.regions.LVGridDistrictDing0` ``id`` to
+          :class:`~.ding0.core.structure.regions.LVGridDistrictDing0` object
+        * :class:`~.ding0.core.network.stations.LVStationDing0` ``id`` to
+          :class:`~.ding0.core.network.stations.LVStationDing0` object
 
         Returns
         -------
@@ -434,9 +441,15 @@ class NetworkDing0:
         subst_id: :obj:`int`
             ID of station according to database table #TODO: check type
         grid_district_geo_data: :shapely:`Shapely Polygon object<polygons>`
-            Polygon of grid district
+            Polygon of grid district, The geo-spatial polygon
+            in the coordinate reference system with the
+            SRID:4326 or epsg:4326, this is the project
+             used by the ellipsoid WGS 84.
         station_geo_data: :shapely:`Shapely Point object<points>`
-            Point of station
+            Point of station. The geo-spatial point
+            in the coordinate reference
+            system with the SRID:4326 or epsg:4326, this
+            is the project used by the ellipsoid WGS 84.
 
         Returns
         -------
@@ -568,8 +581,9 @@ class NetworkDing0:
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
     def import_mv_grid_districts(self, session, mv_grid_districts_no=None):
-        """ Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
-            and MV-LV stations, instantiates and initiates objects.
+        """
+        Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
+        and MV-LV stations, instantiates and initiates objects.
 
         Parameters
         ----------
@@ -660,7 +674,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
         mv_grid_district : MV grid_district/station (instance of MVGridDistrictDing0 class) for
             which the import of load areas is performed
@@ -769,7 +783,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
 
         Returns
@@ -848,9 +862,10 @@ class NetworkDing0:
     def import_lv_stations(self, session):
         """
         Import lv_stations within the given load_area
+
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
 
         Returns
@@ -885,7 +900,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
         debug: :obj:`bool`, defaults to False
             If True, information is printed during process
@@ -894,7 +909,7 @@ class NetworkDing0:
         -----
             Connection of generators is done later on in
             :class:`~.ding0.core.NetworkDing0`'s method
-            :func:`~.ding0.core.NetworkDing0.connect_generators`
+            :meth:`~.core.NetworkDing0.connect_generators`
         """
 
         def import_res_generators():
@@ -1355,7 +1370,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
         mv_grid_districts : :obj:`list` of
             :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` objects
@@ -1475,7 +1490,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
         mv_grid_districts : :obj:`list` of
             :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` objects
@@ -1870,7 +1885,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
 
         method: :obj:`str`
@@ -2002,7 +2017,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
 
         Returns
@@ -2092,7 +2107,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
         mv_districts: :obj:`list` of
             :class:`~.ding0.core.structure.regions.MVGridDistrictDing0` objects
@@ -2141,7 +2156,7 @@ class NetworkDing0:
 
         Parameters
         ----------
-        session : :sqlalchemy:`sqlalchemy.orm.session.Session`
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
             Database session
         lv_stations: :obj:`list`
             List required LV_stations==LV districts.

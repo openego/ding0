@@ -101,7 +101,7 @@ def save_nd_to_pickle(nd, path='', filename=None):
     ----------
     nd : NetworkDing0
         Ding0 grid container object
-    path : str
+    path : :obj:`str`
         Absolute or relative path where pickle should be saved. Default is ''
         which means pickle is save to PWD
 
@@ -133,9 +133,9 @@ def load_nd_from_pickle(filename=None, path=''):
 
     Parameters
     ----------
-    filename : str
+    filename : :obj:`str`
         Filename of nd pickle
-    path : str
+    path : :obj:`str`
         Absolute or relative path where pickle should be saved. Default is ''
         which means pickle is save to PWD
 
@@ -235,7 +235,7 @@ def concat_nd_pickles(self, mv_grid_districts):
 
     Parameters
     ----------
-    mv_grid_districts : list
+    mv_grid_districts : :obj:`list`
         Ints describing MV grid districts
     """
 
@@ -284,12 +284,12 @@ def calculate_lvgd_stats(nw):
 
     Parameters
     ----------
-    nw: :any:`list` of NetworkDing0
+    nw: :obj:`list` of NetworkDing0
         The MV grid(s) to be studied
 
     Returns
     -------
-    lvgd_stats : pandas.DataFrame
+    lvgd_stats : :pandas:`pandas.DataFrame<dataframe>`
         Dataframe containing several statistical numbers about the LVGD
     """
     ##############################
@@ -473,12 +473,12 @@ def calculate_mvgd_stats(nw):
 
     Parameters
     ----------
-    nw: :any:`list` of NetworkDing0
+    nw: :obj:`list` of NetworkDing0
         The MV grid(s) to be studied
 
     Returns
     -------
-    mvgd_stats : pandas.DataFrame
+    mvgd_stats : :pandas:`pandas.DataFrame<dataframe>`
         Dataframe containing several statistical numbers about the MVGD
     """
     ##############################
@@ -1050,14 +1050,14 @@ def calculate_mvgd_voltage_current_stats(nw):
 
     Parameters
     ----------
-    nw: :any:`list` of NetworkDing0
+    nw: :obj:`list` of NetworkDing0
         The MV grid(s) to be studied
 
     Returns
     -------
-    pandas.DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         nodes_df : Dataframe containing voltage statistics for every node in the MVGD
-    pandas.DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         lines_df : Dataframe containing voltage statistics for every edge in the MVGD
     """
     ##############################
@@ -1129,16 +1129,16 @@ def calculate_lvgd_voltage_current_stats(nw):
 
     Parameters
     ----------
-    nw: :any:`list` of NetworkDing0
+    nw: :obj:`list` of NetworkDing0
         The MV grid(s) to be studied
 
     Returns
     -------
-    pandas.DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         nodes_df : Dataframe containing voltage, respectively current, statis
         for every critical node, resp. every critical station, in every LV grid
         in nw.
-    pandas.DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         lines_df : Dataframe containing current statistics for every critical
         line,  in every LV grid in nw.
     """
@@ -1221,9 +1221,9 @@ def init_mv_grid(mv_grid_districts=[3545], filename='ding0_tests_grids_1.pkl'):
 
     Parameters
     ----------
-    mv_grid_districts: :any:`list` of :obj:`int`
+    mv_grid_districts: :obj:`list` of :obj:`int`
         Districts IDs: Defaults to [3545]
-    filename: str
+    filename: :obj:`str`
         Defaults to 'ding0_tests_grids_1.pkl'
         If filename=False, then the network is not saved
 
@@ -1270,20 +1270,20 @@ def process_stats(mv_districts,
 
     Parameters
     ----------
-    districts_list: list of int
+    districts_list: :obj:`list` of int
         List with all districts to be run.
-    n_of_districts: int
+    n_of_districts: :obj:`int`
         Number of districts to be run in each cluster
-    source: str
+    source: :obj:`str`
         If 'pkl', pickle files are read.
         If 'ding0', ding0 is run over the districts.
-    mode: str
+    mode: :obj:`str`
         If 'MV', medium voltage stats are calculated.
         If 'LV', low voltage stats are calculated.
         If empty, medium and low voltage stats are calculated.
     critical: bool
         If True, critical nodes and branches are returned
-    filename: str
+    filename: :obj:`str`
         filename prefix for saving pickles
     output:
         outer variable where the output is stored as a tuple of 6 lists::
@@ -1399,22 +1399,22 @@ def parallel_running_stats(districts_list,
 
     Parameters
     ----------
-    districts_list: list of int
+    districts_list: :obj:`list` of int
         List with all districts to be run.
-    n_of_processes: int
+    n_of_processes: :obj:`int`
         Number of processes to run in parallel
-    n_of_districts: int
+    n_of_districts: :obj:`int`
         Number of districts to be run in each cluster given as argument to
         process_stats()
-    source: str
+    source: :obj:`str`
         If 'pkl', pickle files are read. Otherwise, ding0 is run over the districts.
-    mode: str
+    mode: :obj:`str`
         If 'MV', medium voltage stats are calculated.
         If 'LV', low voltage stats are calculated.
         If empty, medium and low voltage stats are calculated.
     critical: bool
         If True, critical nodes and branches are returned
-    path: str
+    path: :obj:`str`
         path to save the pkl and csv files
 
     Returns
@@ -1582,18 +1582,18 @@ def export_network(nw, mode=''):
 
     Parameters
     ----------
-    nw: :any:`list` of NetworkDing0
+    nw: :obj:`list` of NetworkDing0
         The MV grid(s) to be studied
-    mode: str
+    mode: :obj:`str`
         If 'MV' export only medium voltage nodes and lines
         If 'LV' export only low voltage nodes and lines
         else, exports MV and LV nodes and lines
 
     Returns
     -------
-    pandas.DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         nodes_df : Dataframe containing nodes and its attributes
-    pandas.DataFrame
+    :pandas:`pandas.DataFrame<dataframe>`
         lines_df : Dataframe containing lines and its attributes
     """
 

@@ -30,7 +30,9 @@ class MVGridDistrictDing0(RegionDing0):
     mv_grid: :obj:`int`
        Descr
     geo_data : :shapely:`Shapely Polygon object<polygons>`
-       Descr
+        The geo-spatial Polygon in the coordinate reference
+        system with the SRID:4326 or epsg:4326, this
+        is the project used by the ellipsoid WGS 84.
     peak_load: :obj:`float`
        Descr
     peak_load_satellites: :obj:`float`
@@ -78,8 +80,8 @@ class MVGridDistrictDing0(RegionDing0):
         
         Additionally, adds the associated centre object to MV grid's _graph as node.
 
-        Args
-        ----
+        Parameters
+        ----------
         lv_load_area: LVLoadAreaDing0
             instance of class LVLoadAreaDing0
         """
@@ -145,7 +147,7 @@ class LVLoadAreaDing0(RegionDing0):
 
     Attributes
     ----------
-    ring: int
+    ring: :obj:`int`
        Descr
     mv_grid_district : :shapely:`Shapely Polygon object<polygons>`
        Descr
@@ -237,8 +239,8 @@ class LVLoadAreaDing0(RegionDing0):
         # TODO: check docstring
         """Adds a LV grid district to _lv_grid_districts if not already existing
         
-        Args
-        ----
+        Parameters
+        ----------
         lv_grid_district: :shapely:`Shapely Polygon object<polygons>`
             Descr
         """
@@ -276,13 +278,15 @@ class LVLoadAreaCentreDing0:
 
     Parameters
     ----------
-    id_db: int
+    id_db: :obj:`int`
         unique ID in database (=id of associated load area)
-    grid: int
+    grid: :obj:`int`
         Descr
     geo_data: :shapely:`Shapely Point object<points>`
-        Descr
-    lv_load_area: int
+        The geo-spatial point in the coordinate reference
+        system with the SRID:4326 or epsg:4326, this
+        is the project used by the ellipsoid WGS 84.
+    lv_load_area: :class:`~.ding0.core.network.re
         Descr
     """
     def __init__(self, **kwargs):
@@ -310,7 +314,9 @@ class LVGridDistrictDing0(RegionDing0):
     Parameters
     ----------
     geo_data: :shapely:`Shapely Polygon object<polygons>`
-       Descr
+        The geo-spatial polygon in the coordinate reference
+        system with the SRID:4326 or epsg:4326, this
+        is the project used by the ellipsoid WGS 84.
     lv_load_area : :shapely:`Shapely Polygon object<polygons>`
        Descr
     lv_grid: :shapely:`Shapely Polygon object<polygons>`

@@ -191,7 +191,7 @@ class MVGridDing0(GridDing0):
             
         Yields
         ------
-        :any:`list` of :obj:`GridDing0`
+        :obj:`list` of :obj:`GridDing0`
             List with nodes of each ring of _graph in- or excluding root node (HV/MV station) (arg `include_root_node`),
             format::
              
@@ -298,7 +298,7 @@ class MVGridDing0(GridDing0):
 
         Returns
         -------
-        :any:`list` of :obj:`GridDing0`
+        :obj:`list` of :obj:`GridDing0`
             List of nodes (Ding0 objects)
         """
         if node_source in self._graph.nodes():
@@ -437,7 +437,7 @@ class MVGridDing0(GridDing0):
 
         Parameters
         ----------
-        mode: str
+        mode: :obj:`str`
             method to determine voltage level
             
             * 'load_density': Decision on voltage level is determined by load density
@@ -651,9 +651,9 @@ class MVGridDing0(GridDing0):
     def set_nodes_aggregation_flag(self, peak_current_branch_max):
         """ Set Load Areas with too high demand to aggregated type.
 
-        Args
-        ----
-        peak_current_branch_max: float
+        Parameters
+        ----------
+        peak_current_branch_max: :obj:`float`
             Max. allowed current for line/cable
 
         """
@@ -674,21 +674,22 @@ class MVGridDing0(GridDing0):
 
         Parameters
         ----------
-        session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
-            Description
-        method: str
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Database session
+        method: :obj:`str`
             Specify export method::
             
-            'db': grid data will be exported to database
-            'onthefly': grid data will be passed to PyPSA directly (default)
+            * 'db': grid data will be exported to database
+            * 'onthefly': grid data will be passed to PyPSA directly (default)
 
         Notes
         -----
         It has to be proven that this method works for LV grids as well!
 
         Ding0 treats two stationary case of powerflow:
-        1) Full load: We assume no generation and loads to be set to peak load
-        2) Generation worst case:
+
+            1) Full load: We assume no generation and loads to be set to peak load
+            2) Generation worst case:
         """
 
         # definitions for temp_resolution table
@@ -740,13 +741,13 @@ class MVGridDing0(GridDing0):
 
         Args
         ----
-        session: :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
-            Description #TODO
-        export_pypsa_dir: str
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Database session
+        export_pypsa_dir: :obj:`str`
             Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
             
             Export is omitted if argument is empty.
-        method: str
+        method: :obj:`str`
             Specify export method::
             
             'db': grid data will be exported to database
@@ -826,7 +827,7 @@ class LVGridDing0(GridDing0):
     ----------
     region : LVLoadAreaDing0
         LV region that is associated with grid
-    default_branch_kind : str
+    default_branch_kind : :obj:`str`
         description #TODO
     population : 
         description #TODO
@@ -861,7 +862,7 @@ class LVGridDing0(GridDing0):
         
         Parameters
         ----------
-        sector: String
+        sector: :obj:`str`ing
             possible values::
                 
                 'res' (residential),

@@ -40,7 +40,7 @@ def create_results_dirs(base_path):
 
     Parameters
     ----------
-    base_path : str
+    base_path : :obj:`str`
         The base path has subdirectories for raw and processed results
     """
 
@@ -64,16 +64,16 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
 
     Parameters
     ----------
-    mv_grid_districs : list
+    mv_grid_districs : :obj:`list`
         Integers describing grid districts
-    run_id: str
+    run_id: :obj:`str`
         Identifier for a run of Ding0. For example it is used to create a
         subdirectory of os.path.join(`base_path`, 'results')
     failsafe : bool
         Setting to True enables failsafe mode where corrupt grid districts
         (mostly due to data issues) are reported and skipped. Report is to be
          found in the log dir under :code:`~/.ding0` . Default is False.
-    base_path : str
+    base_path : :obj:`str`
         Base path for ding0 data (input, results and logs).
         Default is `None` which sets it to :code:`~/.ding0` (may deviate on
         windows systems).
@@ -82,7 +82,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
 
     Returns
     -------
-    msg : str
+    msg : :obj:`str`
         Traceback of error computing corrupt MV grid district
         .. TODO: this is only true if try-except environment is moved into this
             fundion and traceback return is implemented

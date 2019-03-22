@@ -181,7 +181,7 @@ def select_grid_model_ria(lvgd, sector):
     ----------
     lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
-    sector : str
+    sector : :obj:`str`
         Either 'retail/industrial' or 'agricultural'. Depending on choice
         different parameters to grid topology apply
 

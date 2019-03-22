@@ -37,12 +37,12 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     ----------
     grid : :obj:`MVGridDing0`
         MV grid to plot.
-    subtitle : str
+    subtitle : :obj:`str`
         Extend plot's title by this string.
-    filename : str
+    filename : :obj:`str`
         If provided, the figure will be saved and not displayed (default path: ~/.ding0/).
         A prefix is added to the file name.
-    testcase : str
+    testcase : :obj:`str`
         Defines which case is to be used. Refer to config_calc.cfg to see further
         assumptions for the cases. Possible options are:
         
@@ -50,7 +50,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
           Heavy-load-flow case
         * 'feedin'
           Feedin-case
-    line_color : str
+    line_color : :obj:`str`
         Defines whereby to choose line colors. Possible options are:
 
         * 'loading'
@@ -59,7 +59,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         * None (default)
           Lines are plotted in black. Is also the fallback option in case of
           wrong input.
-    node_color : str
+    node_color : :obj:`str`
         Defines whereby to choose node colors. Possible options are:
 
         * 'type' (default)

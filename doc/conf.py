@@ -72,19 +72,32 @@ napoleon_use_param = True
 napoleon_use_rtype = False
 napoleon_use_keyword = False
 # Dictionary of external links
-extlinks = {'pandas':('http://pandas.pydata.org/pandas-docs/stable/api.html#%s',
-                      'pandas.'),
-            'networkx':('https://networkx.readthedocs.io/en/stable/reference/classes.graph.html%s',
-                      'NetworkX Graph Obj'),
-            'sqlalchemy':('http://docs.sqlalchemy.org/en/latest/%s',
-                      'SQLAlchemy object'),
-            'shapely':('http://toblerity.org/shapely/manual.html#%s',
-                      'Shapely object'),
-            'pypsa':('https://pypsa.org/doc/components.html#%s',
-                      'pypsa.'),
-            'pyproj':('https://jswhit.github.io/pyproj/pyproj.Proj-class.html%s',
-                      'pyproj.'),
-            }
+extlinks = {
+    'pandas': (
+        'https://pandas.pydata.org/pandas-docs/version/0.20/#s',
+        'pandas.'
+    ),
+    'networkx': (
+        'https://networkx.github.io/documentation/networkx-1.9.1/_modules/networkx/classes/graph.html%s',
+        'NetworkX Graph Obj'
+    ),
+    'sqlalchemy': (
+        'https://docs.sqlalchemy.org/en/rel_1_2/%s',
+        'SQLAlchemy object'
+    ),
+    'shapely': (
+        'http://toblerity.org/shapely/manual.html#%s',
+        'Shapely object'
+    ),
+    'pypsa': (
+        'https://pypsa.org/doc/components.html#%s',
+        'pypsa.'
+    ),
+    'pyproj': (
+        'https://jswhit.github.io/pyproj/pyproj.Proj-class.html%s',
+        'pyproj.'
+    ),
+}
 
 
 # Add any paths that contain templates here, relative to this directory.

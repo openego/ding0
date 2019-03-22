@@ -22,15 +22,15 @@ class PFConfigDing0:
 
     Parameters
     ----------
-    scenarios:  :any:`list` of  :obj:`str`
+    scenarios:  :obj:`list` of  :obj:`str`
         List of strings describing the scenarios
-    timerange: :any:`list` of :pandas:`pandas.DatetimeIndex<datetimeindex>`  
+    timerange: :obj:`list` of :pandas:`pandas.DatetimeIndex<datetimeindex>`
         List of Pandas DatetimeIndex objects
-    timesteps_count: int
+    timesteps_count: :obj:`int`
         count of timesteps the timesteps to be created
     timestep_start: :pandas:`pandas.DatetimeIndex<datetimeindex>`  
         Description #TODO
-    resolution: str
+    resolution: :obj:`str`
         String or pandas offset object, e.g. 'H'=hourly resolution,
         
         to learn more see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases

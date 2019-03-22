@@ -36,7 +36,7 @@ class MVStationDing0(StationDing0):
 
         Parameters
         ----------
-        mode: str
+        mode: :obj:`str`
             determines which generators are included::
 
             'MV':   Only generation capacities of MV level are considered.

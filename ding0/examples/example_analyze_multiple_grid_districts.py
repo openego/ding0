@@ -40,9 +40,9 @@ def ding0_exemplary_plots(stats, base_path=BASEPATH):
 
     Parameters
     ----------
-    stats : pandas.DataFrame
+    stats : :pandas:`pandas.DataFrame<dataframe>`
         Statistics of each MV grid districts
-    base_path : str
+    base_path : :obj:`str`
         Root directory of Ding0 data structure, i.e. '~/.ding0' (which is
         default).
 
@@ -67,15 +67,15 @@ def nd_load_and_stats(filenames, base_path=BASEPATH):
 
     Parameters
     ----------
-    filenames : list of str
+    filenames : :obj:`list` of :obj:`str`
         Provide list of files you want to analyze
-    base_path : str
+    base_path : :obj:`str`
         Root directory of Ding0 data structure, i.e. '~/.ding0' (which is
         default).
 
     Returns
     -------
-    stats : pandas.DataFrame
+    stats : :pandas:`pandas.DataFrame<dataframe>`
         Statistics of each MV grid districts
 
     """

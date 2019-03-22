@@ -118,8 +118,8 @@ class LocalSearchSolver(BaseSolver):
         same route (all possible positions). Performes best move (max. saving)
         and starts over again with new route until no improvement is found.
         
-        Args
-        ----
+        Parameters
+        ----------
         graph: :networkx:`NetworkX Graph Obj< >`
             A NetworkX graaph is used.
         solution: BaseSolution
@@ -226,8 +226,8 @@ class LocalSearchSolver(BaseSolver):
         position with max. saving and procedure starts over again with newly
         created graph as input. Stops when no improvement is found.
         
-        Args
-        ----
+        Parameters
+        ----------
         graph: :networkx:`NetworkX Graph Obj< >`
             A NetworkX graaph is used.
         solution: BaseSolution
@@ -337,8 +337,8 @@ class LocalSearchSolver(BaseSolver):
         position with max. saving and procedure starts over again with newly
         created graph as input. Stops when no improvement is found.
         
-        Args
-        ----
+        Parameters
+        ----------
         graph: :networkx:`NetworkX Graph Obj< >`
             A NetworkX graaph is used.
         solution: BaseSolution
@@ -474,8 +474,8 @@ class LocalSearchSolver(BaseSolver):
         position with max. saving and procedure starts over again with newly
         created graph as input. Stops when no improvement is found.
         
-        Args
-        ----
+        Parameters
+        ----------
         graph: :networkx:`NetworkX Graph Obj< >`
             Descr
         solution: BaseSolution
@@ -509,8 +509,8 @@ class LocalSearchSolver(BaseSolver):
     def benchmark_operator_order(self, graph, solution, op_diff_round_digits):
         """performs all possible permutations of route improvement and prints graph length
         
-        Args
-        ----
+        Parameters
+        ----------
         graph: :networkx:`NetworkX Graph Obj< >`
             A NetworkX graaph is used.
         solution: BaseSolution
@@ -551,7 +551,7 @@ class LocalSearchSolver(BaseSolver):
             Graph instance
         savings_solution: SavingsSolution
             initial solution of CVRP problem (instance of `SavingsSolution` class)
-        timeout: int
+        timeout: :obj:`int`
             max processing time in seconds
         debug: bool, defaults to False
             If True, information is printed while routing
