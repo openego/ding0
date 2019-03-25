@@ -15,12 +15,10 @@ class TestGridDing0(object):
     @pytest.fixture
     def empty_grid(self):
         """
-        Returns and empty GridDing0 object
+        Returns an empty GridDing0 object.
         """
         return GridDing0()
 
-    # There is no setter function for providing a list
-    # of cable_distributors to the empty_grid
     @pytest.fixture
     def cable_distributor_grid(self):
         """
@@ -37,6 +35,8 @@ class TestGridDing0(object):
         cable_distributor2 = CableDistributorDing0(id_db=1,
                                                    geo_data=geo_data2,
                                                    grid=cable_distributor_grid)
+        # There is no setter function for providing a list
+        # of cable_distributors to the empty_grid
         cable_distributor_grid._cable_distributors = [cable_distributor1,
                                                       cable_distributor2]
         return cable_distributor_grid
@@ -54,8 +54,6 @@ class TestGridDing0(object):
     def test_cable_distributors_count(self, cable_distributor_grid):
         assert cable_distributor_grid.cable_distributors_count() == 2
 
-    # There is no setter function for providing a list
-    # of loads to the empty_grid
     @pytest.fixture
     def load_grid(self):
         """
@@ -70,6 +68,8 @@ class TestGridDing0(object):
         load1 = LoadDing0(id_db=0,
                           geo_data=geo_data1,
                           grid=load_grid)
+        # There is no setter function for providing a list
+        # of loads to the empty_grid
         load_grid._loads = [load1]
         geo_data2 = Point(0, 1)
         load2 = LoadDing0(id_db=0,
