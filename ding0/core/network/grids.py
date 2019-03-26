@@ -216,7 +216,12 @@ class MVGridDing0(GridDing0):
                 satellites = []
                 for ring_node in ring:
                     # determine all branches diverging from each ring node
-                    satellites.append(self.graph_nodes_from_subtree(ring_node))
+                    satellites.append(
+                        self.graph_nodes_from_subtree(
+                            ring_node,
+                            include_root_node=include_root_node
+                        )
+                    )
                 # return ring and satellite nodes (flatted list of lists)
                 yield ring + [_ for sublist in satellites for _ in sublist]
             else:
@@ -281,7 +286,7 @@ class MVGridDing0(GridDing0):
         except:
             raise Exception('Cannot get node\'s associated ring.')
 
-    def graph_nodes_from_subtree(self, node_source):
+    def graph_nodes_from_subtree(self, node_source, include_root_node=False):
         """ Finds all nodes of a tree that is connected to `node_source` and are (except `node_source`) not part of the 
         ring of `node_source` (traversal of graph from `node_source` excluding nodes along ring).
             
@@ -293,6 +298,8 @@ class MVGridDing0(GridDing0):
         ----
         node_source: GridDing0
             source node (Ding0 object), member of _graph
+        include_root_node: bool, defaults to False
+            If True, the root node is included in the list of ring nodes.
 
         Returns
         -------
@@ -303,7 +310,7 @@ class MVGridDing0(GridDing0):
 
             # get all nodes that are member of a ring
             node_ring = []
-            for ring in self.rings_nodes(include_root_node=False):
+            for ring in self.rings_nodes(include_root_node=include_root_node):
                 if node_source in ring:
                     node_ring = ring
                     break
