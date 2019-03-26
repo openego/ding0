@@ -37,7 +37,6 @@ setup(name='ding0',
                         'pypsa >= 0.11.0, <= 0.11.0',
                         'seaborn',
                         'unittest2',
-                        'pytest',
                         'oedialect',
                         'geopandas',
                         'descartes'
