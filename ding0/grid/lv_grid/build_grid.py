@@ -639,7 +639,8 @@ def build_lv_graph_residential(lvgd, selected_string_df):
     for i, row in selected_string_df.iterrows():
 
         # get overall count of branches to set unique branch_no
-        branch_count_sum = len(lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station()))
+        branch_count_sum = len(list(
+            lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station())))
 
         # iterate over it's occurences
         for branch_no in range(1, int(row['occurence']) + 1):
