@@ -4,7 +4,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
-  - "3.7-dev"  # 3.7 development branch
+#  - "3.7-dev"  # 3.7 development branch
 # command to install dependencies
 install:
   - EGOIOCONFIGDIR=`python -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
