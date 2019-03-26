@@ -8,7 +8,6 @@ python:
 # command to install dependencies
 install:
   - EGOIOCONFIGDIR=`python -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
-  - echo $EGOIOCONFIGDIR
   - mkdir $EGOIOCONFIGDIR
   - ls $EGOIOCONFIGDIR
   - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = oe2.iws.cs.ovgu.de' 'port = 80' 'username = ' 'password = '> $EGOIOCONFIGDIR/config.ini
