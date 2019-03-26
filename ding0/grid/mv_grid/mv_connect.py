@@ -393,13 +393,13 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
             # -> insert node into route (change existing route)
             if (target_obj['dist'] < conn_dist_ring_mod):
                 # backup kind and type of branch
-                branch_type = graph.edge[adj_node1][adj_node2]['branch'].type
-                branch_kind = graph.edge[adj_node1][adj_node2]['branch'].kind
-                branch_ring = graph.edge[adj_node1][adj_node2]['branch'].ring
+                branch_type = graph.adj[adj_node1][adj_node2]['branch'].type
+                branch_kind = graph.adj[adj_node1][adj_node2]['branch'].kind
+                branch_ring = graph.adj[adj_node1][adj_node2]['branch'].ring
 
                 # check if there's a circuit breaker on current branch,
                 # if yes set new position between first node (adj_node1) and newly inserted node
-                circ_breaker = graph.edge[adj_node1][adj_node2]['branch'].circuit_breaker
+                circ_breaker = graph.adj[adj_node1][adj_node2]['branch'].circuit_breaker
                 if circ_breaker is not None:
                     circ_breaker.geo_data = calc_geo_centre_point(adj_node1, node)
 
@@ -440,7 +440,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
                 # check if there's a circuit breaker on current branch,
                 # if yes set new position between first node (adj_node1) and newly created cable distributor
-                circ_breaker = graph.edge[adj_node1][adj_node2]['branch'].circuit_breaker
+                circ_breaker = graph.adj[adj_node1][adj_node2]['branch'].circuit_breaker
                 if circ_breaker is not None:
                     circ_breaker.geo_data = calc_geo_centre_point(adj_node1, cable_dist)
 
@@ -448,9 +448,9 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 # ===========================================================================================
 
                 # backup kind and type of branch
-                branch_kind = graph.edge[adj_node1][adj_node2]['branch'].kind
-                branch_type = graph.edge[adj_node1][adj_node2]['branch'].type
-                branch_ring = graph.edge[adj_node1][adj_node2]['branch'].ring
+                branch_kind = graph.adj[adj_node1][adj_node2]['branch'].kind
+                branch_type = graph.adj[adj_node1][adj_node2]['branch'].type
+                branch_ring = graph.adj[adj_node1][adj_node2]['branch'].ring
 
                 graph.remove_edge(adj_node1, adj_node2)
 
@@ -557,15 +557,15 @@ def disconnect_node(node, target_obj_result, graph, debug):
     """
 
     # backup kind and type of branch
-    branch_kind = graph.edge[node][target_obj_result]['branch'].kind
-    branch_type = graph.edge[node][target_obj_result]['branch'].type
-    branch_ring = graph.edge[node][target_obj_result]['branch'].ring
+    branch_kind = graph.adj[node][target_obj_result]['branch'].kind
+    branch_type = graph.adj[node][target_obj_result]['branch'].type
+    branch_ring = graph.adj[node][target_obj_result]['branch'].ring
 
     graph.remove_edge(node, target_obj_result)
 
     if isinstance(target_obj_result, MVCableDistributorDing0):
 
-        neighbor_nodes = graph.neighbors(target_obj_result)
+        neighbor_nodes = list(graph.neighbors(target_obj_result))
 
         if len(neighbor_nodes) == 2:
             node.grid.remove_cable_distributor(target_obj_result)

@@ -220,7 +220,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     if line_color == 'loading':
         edges_color = []
         for n1, n2 in g.edges():
-            edge = g.edge[n1][n2]
+            edge = g.adj[n1][n2]
             if hasattr(edge['branch'], 's_res'):
                 edges_color.append(edge['branch'].s_res[case_idx] * 1e3 /
                                    (3 ** 0.5 * edge['branch'].type['U_n'] * edge['branch'].type['I_max_th']))
