@@ -54,7 +54,7 @@ def get_branches(grid):
     # else:
     #     ancestors = None
     # return ancestors
-    branch_heads = nx.neighbors(tree, station)
+    branch_heads = list(nx.neighbors(tree, station))
 
     descendants = {branch_head: list(nx.descendants(tree, branch_head)) for
                    branch_head in branch_heads}
