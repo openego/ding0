@@ -7,9 +7,11 @@ python:
   - "3.7-dev"  # 3.7 development branch
 # command to install dependencies
 install:
-  - mkdir ~/.ego.io
-  - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = oe2.iws.cs.ovgu.de' 'port = 80' 'database = oedb'> ~/.ego.io/config.ini
-  - cat ~/.ego.io/config.ini
+  - EGOIOCONFIGDIR=`python -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
+  - mkdir "$EGOIOCONFIGDIR
+  - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = oe2.iws.cs.ovgu.de' 'port = 80' 'password = '> EGOIOCONFIGDIR/config.ini
+  - ls EGOIOCONFDIR
+  - cat EGOIOCONFDIR/config.ini
   - pip install -r requirements.txt
 # command to run tests
 script:
