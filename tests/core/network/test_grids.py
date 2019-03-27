@@ -247,7 +247,7 @@ class TestMVGridDing0(object):
         rings_nodes_expected = [generators[0],
                                 circuit_breakers[0],
                                 generators[1],
-                                #station,
+                                station,
                                 generators[2]]
         rings_nodes = list(grid.rings_nodes(include_root_node=True,
                                             include_satellites=True))[0]
@@ -318,7 +318,7 @@ class TestMVGridDing0(object):
         """
         ring, grid = ring_mvgridding0
         station = grid.station()
-        with pytest.raises(UnboundLocalError):
+        with pytest.raises(ValueError):
             nodes_out = grid.graph_nodes_from_subtree(station)
 
     def test_graph_nodes_from_subtree_circuit_breaker(self, ring_mvgridding0):
@@ -374,10 +374,8 @@ class TestMVGridDing0(object):
         """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
-        with pytest.raises(UnboundLocalError):
+        with pytest.raises(ValueError):
             nodes_out = grid.graph_nodes_from_subtree(generators[2])
-        # nodes_expected = []
-        # assert nodes_out == nodes_expected
 
     @pytest.fixture
     def oedb_session(self):
