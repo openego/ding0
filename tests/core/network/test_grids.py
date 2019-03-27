@@ -191,6 +191,10 @@ class TestMVGridDing0(object):
         Checks that the ring obtained from the rings_nodes function
         setting the include_root_node parameter to "True"
         contains the list of nodes that are expected.
+        Currently the test doesn't check the consistency of the
+        order of the items in the resulting list. It only checks
+        if all the nodes expected are present and the
+        length of the list is the same
         """
         ring, grid = ring_mvgridding0
         station = grid.station()
@@ -201,7 +205,8 @@ class TestMVGridDing0(object):
                                 generators[1],
                                 station]
         rings_nodes = list(grid.rings_nodes(include_root_node=True))[0]
-        assert rings_nodes == rings_nodes_expected
+        assert len(rings_nodes) == len(rings_nodes_expected)
+        assert set(rings_nodes) == set(rings_nodes_expected)
 
     def test_rings_nodes_root_only_exclude_root(self, ring_mvgridding0):
         """
