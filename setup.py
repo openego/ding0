@@ -16,6 +16,8 @@ __author__     = "nesnoj, gplssm"
 from setuptools import find_packages, setup
 import os
 
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
 
 setup(name='ding0',
       version='v0.1.11dev',
@@ -25,22 +27,7 @@ setup(name='ding0',
       url='https://github.com/openego/ding0',
       license='GNU GPLv3',
       packages=find_packages(),
-      install_requires=['networkx >= 1.11, < 2.0',
-                        'geopy >= 1.11.0, <= 1.11.0',
-                        'pandas >= 0.20.3, <= 0.20.3',
-                        'pyproj >= 1.9.5.1, <= 1.9.5.1',
-                        'sqlalchemy >= 1.0.11, <= 1.2.0',
-                        'geoalchemy2 >= 0.2.6, <= 0.4.1',
-                        'matplotlib  >= 1.5.3, <= 2.0.2',
-                        'egoio >= 0.4.5',
-                        'shapely >= 1.5.12, <= 1.6.3',
-                        'pypsa >= 0.11.0, <= 0.11.0',
-                        'seaborn',
-                        'unittest2',
-                        'oedialect',
-                        'geopandas',
-                        'descartes'
-                        ],
+      install_requires=requirements,
       package_data={
           'ding0': [
               os.path.join('config',
