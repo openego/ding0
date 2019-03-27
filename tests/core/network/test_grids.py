@@ -208,6 +208,10 @@ class TestMVGridDing0(object):
         Checks that the ring obtained from the rings_nodes function
         setting the include_root_node parameter to "False"
         contains the list of nodes that are expected.
+        Currently the test doesn't check the consistency of the
+        order of the items in the resulting list. It only checks
+        if all the nodes expected are present and the
+        length of the list is the same
         """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
@@ -216,7 +220,8 @@ class TestMVGridDing0(object):
                                 circuit_breakers[0],
                                 generators[1]]
         rings_nodes = list(grid.rings_nodes(include_root_node=False))[0]
-        assert rings_nodes == rings_nodes_expected
+        assert len(rings_nodes) == len(rings_nodes_expected)
+        assert set(rings_nodes) == set(rings_nodes_expected)
 
     def test_rings_nodes_include_satellites_include_root(self,
                                                          ring_mvgridding0):
@@ -225,6 +230,10 @@ class TestMVGridDing0(object):
         setting the include_root_node parameter to "True" and
         setting the include_satellites to "True"
         contains the list of nodes that are expected.
+        Currently the test doesn't check the consistency of the
+        order of the items in the resulting list. It only checks
+        if all the nodes expected are present and the
+        length of the list is the same
         """
         ring, grid = ring_mvgridding0
         station = grid.station()
@@ -237,7 +246,8 @@ class TestMVGridDing0(object):
                                 generators[2]]
         rings_nodes = list(grid.rings_nodes(include_root_node=True,
                                             include_satellites=True))[0]
-        assert rings_nodes == rings_nodes_expected
+        assert len(rings_nodes) == len(rings_nodes_expected)
+        assert set(rings_nodes) == set(rings_nodes_expected)
 
     def test_rings_nodes_include_satellites_exclude_root(self,
                                                          ring_mvgridding0):
@@ -246,6 +256,10 @@ class TestMVGridDing0(object):
         setting the include_root_node parameter to "False" and
         setting the include_satellites to "True"
         contains the list of nodes that are expected.
+        Currently the test doesn't check the consistency of the
+        order of the items in the resulting list. It only checks
+        if all the nodes expected are present and the
+        length of the list is the same
         """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
@@ -256,7 +270,8 @@ class TestMVGridDing0(object):
                                 generators[2]]
         rings_nodes = list(grid.rings_nodes(include_root_node=False,
                                             include_satellites=True))[0]
-        assert rings_nodes == rings_nodes_expected
+        assert len(rings_nodes) == len(rings_nodes_expected)
+        assert set(rings_nodes) == set(rings_nodes_expected)
 
     def test_rings_full_data(self, ring_mvgridding0):
         """
@@ -284,8 +299,10 @@ class TestMVGridDing0(object):
          branches_out,
          rings_nodes_out) = list(grid.rings_full_data())[0]
         assert ring_out == ring_expected
-        assert branches_out == branches_expected
-        assert rings_nodes_out == rings_nodes_expected
+        assert len(branches_out) == len(branches_expected)
+        assert set(branches_out) == set(branches_expected)
+        assert len(rings_nodes_out) == len(rings_nodes_expected)
+        assert set(rings_nodes_out) == set(rings_nodes_expected)
 
     def test_graph_nodes_from_subtree_station(self, ring_mvgridding0):
         """
@@ -298,8 +315,6 @@ class TestMVGridDing0(object):
         station = grid.station()
         with pytest.raises(UnboundLocalError):
             nodes_out = grid.graph_nodes_from_subtree(station)
-        # nodes_expected = []
-        #  assert nodes_out == nodes_expected
 
     def test_graph_nodes_from_subtree_circuit_breaker(self, ring_mvgridding0):
         """
