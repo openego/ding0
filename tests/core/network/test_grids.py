@@ -1476,15 +1476,15 @@ class TestLVGridDing0(object):
         basic_lv_grid.grid_district.peak_load_residential = 300
         basic_lv_grid.build_grid()
 
-        assert len(basic_lv_grid._loads) == 29+3
-        assert len(basic_lv_grid._graph.node) == 32 + 2*32 + 1
+        assert len(basic_lv_grid._loads) == 29
+        assert len(basic_lv_grid._graph.node) == 29 + 2*29 + 1
         assert (round(basic_lv_grid._loads[n].peak_load) == 10.0
-                for n in range(0, len(basic_lv_grid._loads[n].peak_load)))
+                for n in range(0, 29))
 
         #2 Branches from LV_station
         assert len(list(nx.all_neighbors(
-            self._graph,
-            nx.nodes(self._graph)[0]))) == 2
+            basic_lv_grid._graph,
+            nx.nodes(basic_lv_grid._graph)[0]))) == 2
 
 
 if __name__ == "__main__":
