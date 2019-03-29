@@ -1492,7 +1492,13 @@ class TestLVGridDing0(object):
         basic_lv_grid.add_generator(new_gen)
         assert len(basic_lv_grid._generators) == 1
 
+    def test_reinforce_grid(self,basic_lv_grid):
 
+
+        basic_lv_grid.grid_district.peak_load_agricultural = 580
+        basic_lv_grid.grid_district.sector_count_agricultural = 5
+        basic_lv_grid.build_grid()
+        basic_lv_grid.reinforce_grid()
 
 if __name__ == "__main__":
    pass
