@@ -1442,7 +1442,7 @@ class TestLVGridDing0(object):
         basic_lv_grid.build_grid()
         assert len(basic_lv_grid.station()._transformers) == 2
 
-    def test_build_grid_ria_branches(self,basic_lv_grid):
+    def test_build_grid_ria_branches(self, basic_lv_grid):
         '''
         Check if the correct number of branches and nodes
         is created. As the peak load for retail/industrial
@@ -1463,7 +1463,7 @@ class TestLVGridDing0(object):
         assert (basic_lv_grid._loads[n].peak_load == 176 for n in range(0, 4))
         assert (basic_lv_grid._loads[n].peak_load == 56 for n in range(4, 9))
 
-    def test_build_grid_residential_branches(self,basic_lv_grid):
+    def test_build_grid_residential_branches(self, basic_lv_grid):
         '''
         Verifies that the number of loads created corresponds
         to the peak_load and population given for
@@ -1484,19 +1484,11 @@ class TestLVGridDing0(object):
             basic_lv_grid._graph,
             list(nx.nodes(basic_lv_grid._graph))[0]))) == 2
 
-    def test_connect_generators(self,basic_lv_grid):
+    def test_connect_generators(self, basic_lv_grid):
         '''Check if generator is added to the graph'''
         new_gen = GeneratorDing0()
         basic_lv_grid.add_generator(new_gen)
         assert len(basic_lv_grid._generators) == 1
-
-    def test_reinforce_grid(self,basic_lv_grid):
-
-
-        basic_lv_grid.grid_district.peak_load_agricultural = 580
-        basic_lv_grid.grid_district.sector_count_agricultural = 5
-        basic_lv_grid.build_grid()
-        basic_lv_grid.reinforce_grid()
 
 if __name__ == "__main__":
    pass
