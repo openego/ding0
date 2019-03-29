@@ -96,8 +96,7 @@ class TestMVGridDing0(object):
         with geo_data = shapely.geometry.Point(0.5, 0.5)
         """
         station = MVStationDing0(id_db=0, geo_data=Point(0.5, 0.5))
-        grid = MVGridDing0(id_db=0,
-                           station=station)
+        grid = MVGridDing0(id_db=0, station=station)
         return grid
 
     def test_empty_mvgridding0(self, empty_mvgridding0):
@@ -106,7 +105,7 @@ class TestMVGridDing0(object):
         class MVGridDing0 results in the right attributes being empty
         lists or NoneType objects, with the exception of the
         MVStationDing0 object's id_db and geo_data, which are
-        0 and shapely.geometry.Point(0.5, 0.5) respectively.
+        0 and shapely.geometry.Point(0.5, 0.5), respectively.
         """
         assert empty_mvgridding0._rings == []
         assert empty_mvgridding0._circuit_breakers == []
@@ -122,7 +121,7 @@ class TestMVGridDing0(object):
     def test_add_circuit_breakers(self, empty_mvgridding0):
         """
         Adding a circuit breaker into an empty_mvgridding0 and check if it
-        works
+        works.
         """
         circuit_breaker = CircuitBreakerDing0(id_db=0,
                                               geo_data=Point(0, 0),
@@ -146,11 +145,10 @@ class TestMVGridDing0(object):
     def circuit_breaker_mvgridding0(self):
         """
         Returns an MVGridDing0 object with a branch and a
-        circuit breaker
+        circuit breaker.
         """
         station = MVStationDing0(id_db=0, geo_data=Point(0.5, 0.5))
-        grid = MVGridDing0(id_db=0,
-                           station=station)
+        grid = MVGridDing0(id_db=0, station=station)
         branch = BranchDing0(id_db=0, length=2.0, kind='cable')
         circuit_breaker = CircuitBreakerDing0(id_db=0,
                                               geo_data=Point(0, 0),
@@ -190,8 +188,8 @@ class TestMVGridDing0(object):
     @pytest.fixture
     def ring_mvgridding0(self):
         """
-        Returns an MVGridDing0 object with 2 branches
-        a circuitbreaker and a ring
+        Returns an MVGridDing0 object with 2 branches,
+        a circuit breaker and a ring.
         """
         station = MVStationDing0(id_db=0, geo_data=Point(1, 1))
         grid = MVGridDing0(id_db=0,
@@ -233,8 +231,8 @@ class TestMVGridDing0(object):
 
     def test_add_ring(self, ring_mvgridding0):
         """
-        Check if the number of rings are increased and the correct ring
-        is added by using the add_ring function inside of MVGriDing0
+        Check if the number of rings is increased and the correct ring
+        is added by using the add_ring function inside of MVGriDing0.
         """
         ring, grid = ring_mvgridding0
         assert len(grid._rings) == 1
@@ -242,9 +240,9 @@ class TestMVGridDing0(object):
 
     def test_rings_count(self, ring_mvgridding0):
         """
-        Check if the number of rings are correctly reflected using the
+        Check if the number of rings is correctly reflected using the
         rings_count function in MVGridDing0 and the correct ring
-        is added by using the add_ring function inside of MVGriDing0
+        is added by using the add_ring function inside of MVGriDing0.
         """
         ring, grid = ring_mvgridding0
         assert grid.rings_count() == 1
