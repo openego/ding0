@@ -1168,7 +1168,7 @@ class TestLVGridDing0(object):
 
     def test_add_station(self, empty_lvgridding0):
         """
-        Check if station is added correctly
+        Check if a new station is added correctly
         """
         lv_grid,lv_load_area = empty_lvgridding0
         new_lv = LVStationDing0(id_db=0,
@@ -1485,6 +1485,13 @@ class TestLVGridDing0(object):
         assert len(list(nx.all_neighbors(
             basic_lv_grid._graph,
             nx.nodes(basic_lv_grid._graph)[0]))) == 2
+
+    def test_connect_generators(self,basic_lv_grid):
+        '''Check if generator is added to the graph'''
+        new_gen = GeneratorDing0()
+        basic_lv_grid.add_generator(new_gen)
+        assert len(basic_lv_grid._generators) == 1
+
 
 
 if __name__ == "__main__":

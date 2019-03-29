@@ -918,7 +918,7 @@ class LVGridDing0(GridDing0):
         # add branches of sector residential
         build_grid.build_residential_branches(self.grid_district)
 
-        #self.graph_draw(mode='LV')
+        self.graph_draw(mode='LV')
 
     def connect_generators(self, debug=False):
         """ Connects LV generators (graph nodes) to grid (graph)
