@@ -1154,7 +1154,7 @@ class TestLVGridDing0(object):
         empty_lvgridding0,lv_load_area = empty_lvgridding0
         assert empty_lvgridding0.default_branch_kind == 'cable'
         assert empty_lvgridding0._station is None
-        assert empty_lvgridding0.population is None
+        assert empty_lvgridding0.population == 0
 
     def test_station(self, empty_lvgridding0):
         """
@@ -1482,7 +1482,7 @@ class TestLVGridDing0(object):
         #2 Branches from LV_station
         assert len(list(nx.all_neighbors(
             basic_lv_grid._graph,
-            nx.nodes(basic_lv_grid._graph)[0]))) == 2
+            list(nx.nodes(basic_lv_grid._graph))[0]))) == 2
 
     def test_connect_generators(self,basic_lv_grid):
         '''Check if generator is added to the graph'''
