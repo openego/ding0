@@ -260,7 +260,8 @@ class TestGridDing0(object):
         grid, station, generator, branch = simple_graph_grid
         nodes_from_branch = grid.graph_nodes_from_branch(branch)
         assert type(nodes_from_branch) == tuple
-        assert nodes_from_branch == (station, generator)
+        assert len(nodes_from_branch) == 2
+        assert set(nodes_from_branch) =={station, generator}
 
     def test_graph_branches_from_node(self, simple_graph_grid):
         grid, station, generator, branch = simple_graph_grid
@@ -270,8 +271,15 @@ class TestGridDing0(object):
     def test_graph_edges(self, simple_graph_grid):
         grid, station, generator, branch = simple_graph_grid
         graph_edges = list(grid.graph_edges())
-        assert graph_edges[0] == dict(adj_nodes=(station, generator),
-                                      branch=branch)
+        assert type(graph_edges[0]) == dict
+        assert len(list(graph_edges[0].keys())) == 2
+        assert set(list(graph_edges[0].keys())) == {'adj_nodes', 'branch'}
+        adj_nodes_out = graph_edges[0]['adj_nodes']
+        assert type(adj_nodes_out) == tuple
+        assert len(adj_nodes_out) == 2
+        assert set(adj_nodes_out) == {station, generator}
+        branch_out = graph_edges[0]['branch']
+        assert branch_out == branch
 
     def test_find_path(self, simple_graph_grid):
         grid, station, generator, branch = simple_graph_grid
