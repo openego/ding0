@@ -1512,7 +1512,7 @@ class TestLVGridDing0(object):
         #2 Branches from LV_station
         assert len(list(nx.all_neighbors(
             basic_lv_grid._graph,
-            nx.nodes(basic_lv_grid._graph[0]))) == 2)
+            list(basic_lv_grid._graph.node)[0]))) == 2)
 
     def test_connect_generators(self, basic_lv_grid):
         """
