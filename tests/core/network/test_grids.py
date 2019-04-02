@@ -1,5 +1,9 @@
 import pytest
 
+#Avoid interactive back-end
+import matplotlib
+matplotlib.use('Agg')
+
 import configparser as cp
 import os.path as path
 import ding0
