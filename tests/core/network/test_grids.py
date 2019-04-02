@@ -1076,7 +1076,10 @@ class TestLVGridDing0(object):
 
     @pytest.fixture
     def lv_grid_district_data(self):
-        """... """
+        """
+        Creates a pandas DataFrame containing the data
+        needed for the creation of an LVGridDisctrict
+        """
         distance_scaling_factor = 3
         source = Point(8.638204, 49.867307)
 
@@ -1110,13 +1113,15 @@ class TestLVGridDing0(object):
     @pytest.fixture
     def empty_lvgridding0(self,lv_grid_district_data):
         """
-        Returns and empty LVGridDing0 object
+        Returns and empty LVGridDing0 object, belonging
+        to an LVGridDisctrict with the corresponding
+        fixture data
         """
 
         network = NetworkDing0(name='network')
         mv_station = MVStationDing0(network=network)
-        mv_grid = MVGridDing0(station=mv_station, network = network)
-        mv_grid_district = MVGridDistrictDing0(mv_grid = mv_grid)
+        mv_grid = MVGridDing0(station=mv_station, network=network)
+        mv_grid_district = MVGridDistrictDing0(mv_grid=mv_grid)
 
         lv_load_area = LVLoadAreaDing0(id_db=0,
                                        db_data=lv_grid_district_data.iloc[0],
@@ -1165,12 +1170,14 @@ class TestLVGridDing0(object):
         return grid, lv_load_area
 
     def test_empty_grid(self, empty_lvgridding0):
-        ''' Check that initialization of an object of the
+        """
+        Check that the initialization of an object of the
         class LVGridDing0 results in the right attributes being empty
         lists or NoneType objects, with the exception of the
         LVStationDing0 object's id_db and geo_data, which are
         0 and shapely.geometry.Point(1, 1) respectively.
-        Check if the type of branch is set to cable by default'''
+        Check if the type of branch is set to cable by default
+        """
         empty_lvgridding0,lv_load_area = empty_lvgridding0
         assert empty_lvgridding0.default_branch_kind == 'cable'
         assert empty_lvgridding0._station is None
@@ -1188,7 +1195,7 @@ class TestLVGridDing0(object):
         """
         Check if a new station is added correctly
         """
-        lv_grid,lv_load_area = empty_lvgridding0
+        lv_grid, lv_load_area = empty_lvgridding0
         new_lv = LVStationDing0(id_db=0,
                                 geo_data=(1,2),
                                 lv_grid=lv_grid,
@@ -1440,11 +1447,11 @@ class TestLVGridDing0(object):
         """
 
     def test_build_grid_transformers(self, basic_lv_grid):
-        '''
+        """
         Check if transformers are added correctly to
         the grid. Transformers are added according to
         s_max in load case.
-        '''
+        """
         #s_max / cosphi < 1000
         basic_lv_grid.grid_district.peak_load = 969
         basic_lv_grid.build_grid()
@@ -1463,12 +1470,12 @@ class TestLVGridDing0(object):
         assert len(basic_lv_grid.station()._transformers) == 2
 
     def test_build_grid_ria_branches(self, basic_lv_grid):
-        '''
+        """
         Check if the correct number of branches and nodes
         is created. As the peak load for retail/industrial
         areas is surpassed, the number of loads created
         doubles by redistributing the load.
-        '''
+        """
         basic_lv_grid.grid_district.peak_load_retail = 564
         basic_lv_grid.grid_district.peak_load_industrial = 140
         basic_lv_grid.grid_district.peak_load_agricultural = 280
@@ -1484,11 +1491,14 @@ class TestLVGridDing0(object):
         assert (basic_lv_grid._loads[n].peak_load == 56 for n in range(4, 9))
 
     def test_build_grid_residential_branches(self, basic_lv_grid):
-        '''
-        Verifies that the number of loads created corresponds
-        to the peak_load and population given for
-        the residential area
-        '''
+        """
+        Verifies that the number of loads and nodes
+        created correspond to the peak_load and population given for
+        the residential area. Additionally checks
+        if the load value of every node corresponds
+        to the predicted one and if the strings
+        used are the ones defined by the heuristic.
+        """
 
         basic_lv_grid.grid_district.population = 100
         basic_lv_grid.grid_district.peak_load_residential = 300
@@ -1505,7 +1515,9 @@ class TestLVGridDing0(object):
             list(nx.nodes(basic_lv_grid._graph))[0]))) == 2
 
     def test_connect_generators(self, basic_lv_grid):
-        '''Check if generator is added to the graph'''
+        """
+        Check if generator is added to the graph
+        """
         new_gen = GeneratorDing0()
         basic_lv_grid.add_generator(new_gen)
         assert len(basic_lv_grid._generators) == 1
