@@ -262,11 +262,8 @@ class TestMVGridDing0(object):
         """
         Checks that the ring obtained from the rings_nodes function
         setting the include_root_node parameter to "True"
-        contains the list of nodes that are expected.
-        Currently the test doesn't check the consistency of the
-        order of the items in the resulting list. It only checks
-        if all the nodes expected are present and the
-        length of the list is the same
+        contains all nodes that are expected and that the length of the list
+        is as expected.
         """
         ring, grid = ring_mvgridding0
         station = grid.station()
@@ -284,11 +281,8 @@ class TestMVGridDing0(object):
         """
         Checks that the ring obtained from the rings_nodes function
         setting the include_root_node parameter to "False"
-        contains the list of nodes that are expected.
-        Currently the test doesn't check the consistency of the
-        order of the items in the resulting list. It only checks
-        if all the nodes expected are present and the
-        length of the list is the same
+        contains all nodes that are expected and that the length of the list
+        is as expected.
         """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())
@@ -306,11 +300,8 @@ class TestMVGridDing0(object):
         Checks that the ring obtained from the rings_nodes function
         setting the include_root_node parameter to "True" and
         setting the include_satellites to "True"
-        contains the list of nodes that are expected.
-        Currently the test doesn't check the consistency of the
-        order of the items in the resulting list. It only checks
-        if all the nodes expected are present and the
-        length of the list is the same
+        contains all nodes that are expected and that the length of the list
+        is as expected.
         """
         ring, grid = ring_mvgridding0
         station = grid.station()
@@ -332,11 +323,8 @@ class TestMVGridDing0(object):
         Checks that the ring obtained from the rings_nodes function
         setting the include_root_node parameter to "False" and
         setting the include_satellites to "True"
-        contains the list of nodes that are expected.
-        Currently the test doesn't check the consistency of the
-        order of the items in the resulting list. It only checks
-        if all the nodes expected are present and the
-        length of the list is the same
+        contains all nodes that are expected and that the length of the list
+        is as expected.
         """
         ring, grid = ring_mvgridding0
         generators = list(grid.generators())

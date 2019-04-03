@@ -261,7 +261,7 @@ class TestGridDing0(object):
         nodes_from_branch = grid.graph_nodes_from_branch(branch)
         assert type(nodes_from_branch) == tuple
         assert len(nodes_from_branch) == 2
-        assert set(nodes_from_branch) =={station, generator}
+        assert set(nodes_from_branch) == {station, generator}
 
     def test_graph_branches_from_node(self, simple_graph_grid):
         grid, station, generator, branch = simple_graph_grid
