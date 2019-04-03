@@ -16,7 +16,7 @@ __author__     = "nesnoj, gplssm"
 # from ding0.core.network import GridDing0
 from . import GridDing0
 from ding0.core.network.stations import *
-from ding0.core.network import RingDing0, BranchDing0, CircuitBreakerDing0
+from ding0.core.network import RingDing0, CircuitBreakerDing0
 from ding0.core.network.loads import *
 from ding0.core.network.cable_distributors import MVCableDistributorDing0, LVCableDistributorDing0
 from ding0.grid.mv_grid import mv_routing, mv_connect
@@ -27,13 +27,15 @@ from ding0.grid.mv_grid.tools import set_circuit_breakers
 from ding0.flexopt.reinforce_grid import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
 
+import os
 import networkx as nx
 from datetime import datetime
-from shapely.ops import transform
 import pyproj
 from functools import partial
 import logging
 
+if not 'READTHEDOCS' in os.environ:
+    from shapely.ops import transform
 
 logger = logging.getLogger('ding0')
 
@@ -212,11 +214,14 @@ class MVGridDing0(GridDing0):
             if include_satellites:
                 ring_nodes = ring
                 satellites = []
-                if include_root_node:
-                    ring_nodes.remove(self._station)
                 for ring_node in ring:
                     # determine all branches diverging from each ring node
-                    satellites.append(self.graph_nodes_from_subtree(ring_node))
+                    satellites.append(
+                        self.graph_nodes_from_subtree(
+                            ring_node,
+                            include_root_node=include_root_node
+                        )
+                    )
                 # return ring and satellite nodes (flatted list of lists)
                 yield ring + [_ for sublist in satellites for _ in sublist]
             else:
@@ -281,7 +286,7 @@ class MVGridDing0(GridDing0):
         except:
             raise Exception('Cannot get node\'s associated ring.')
 
-    def graph_nodes_from_subtree(self, node_source):
+    def graph_nodes_from_subtree(self, node_source, include_root_node=False):
         """ Finds all nodes of a tree that is connected to `node_source` and are (except `node_source`) not part of the 
         ring of `node_source` (traversal of graph from `node_source` excluding nodes along ring).
             
@@ -293,6 +298,8 @@ class MVGridDing0(GridDing0):
         ----
         node_source: GridDing0
             source node (Ding0 object), member of _graph
+        include_root_node: bool, defaults to False
+            If True, the root node is included in the list of ring nodes.
 
         Returns
         -------
@@ -302,7 +309,8 @@ class MVGridDing0(GridDing0):
         if node_source in self._graph.nodes():
 
             # get all nodes that are member of a ring
-            for ring in self.rings_nodes(include_root_node=False):
+            node_ring = []
+            for ring in self.rings_nodes(include_root_node=include_root_node):
                 if node_source in ring:
                     node_ring = ring
                     break

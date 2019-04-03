@@ -9,11 +9,10 @@ It is developed in the project open_eGo: https://openegoproject.wordpress.com
 DING0 lives at github: https://github.com/openego/ding0/
 The documentation is available on RTD: http://ding0.readthedocs.io"""
 
-__copyright__  = "Reiner Lemoine Institut gGmbH"
-__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
-__author__     = "nesnoj, gplssm"
-
+__copyright__ = "Reiner Lemoine Institut gGmbH"
+__license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
+__author__ = "nesnoj, gplssm"
 
 import matplotlib.pyplot as plt
 import time
@@ -44,7 +43,6 @@ def create_results_dirs(base_path):
     base_path : str
         The base path has subdirectories for raw and processed results
     """
-
 
     if not os.path.exists(base_path):
         print("Creating directory {} for results data.".format(base_path))
@@ -111,21 +109,21 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         # instantiate ding0  network object
         nd = NetworkDing0(name='network', run_id=run_id)
 
-        if not os.path.exists(os.path.join(base_path, run_id)):
-            os.mkdir(os.path.join(base_path, run_id))
+        if not os.path.exists(os.path.join(base_path, "grids")):
+            os.mkdir(os.path.join(base_path, "grids"))
 
         if not failsafe:
             # run DING0 on selected MV Grid District
             msg = nd.run_ding0(session=session,
-                         mv_grid_districts_no=[mvgd])
+                               mv_grid_districts_no=[mvgd])
 
             # save results
-            results.save_nd_to_pickle(nd, os.path.join(base_path, run_id))
+            results.save_nd_to_pickle(nd, os.path.join(base_path, "grids"))
         else:
             # try to perform ding0 run on grid district
             try:
                 msg = nd.run_ding0(session=session,
-                         mv_grid_districts_no=[mvgd])
+                                   mv_grid_districts_no=[mvgd])
                 # if not successful, put grid district to report
                 if msg:
                     corrupt_grid_districts = corrupt_grid_districts.append(
@@ -135,7 +133,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                 # if successful, save results
                 else:
                     results.save_nd_to_pickle(nd, os.path.join(base_path,
-                                                               run_id))
+                                                               "grids"))
             except Exception as e:
                 corrupt_grid_districts = corrupt_grid_districts.append(
                     pd.Series({'id': mvgd,
@@ -154,9 +152,8 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
             else:
                 metadata['mv_grid_districts'].append(mvgd)
 
-
     # Save metadata to disk
-    with open(os.path.join(base_path, run_id, 'Ding0_{}.meta'.format(run_id)),
+    with open(os.path.join(base_path, "grids", 'Ding0_{}.meta'.format(run_id)),
               'w') as f:
         json.dump(metadata, f)
 
@@ -164,14 +161,13 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
     corrupt_grid_districts.to_csv(
         os.path.join(
             base_path,
-            run_id,
+            "grids",
             'corrupt_mv_grid_districts.txt'),
         index=False,
         float_format='%.0f')
 
     print('Elapsed time for', str(len(mv_grid_districts)),
           'MV grid districts (seconds): {}'.format(time.time() - start))
-
 
     return msg
 

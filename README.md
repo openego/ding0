@@ -1,17 +1,13 @@
 <img align="right" width="300" height="300" src="https://github.com/openego/ding0/blob/dev/doc/images/DING0_Logo_300px.png">
 
-[![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://ding0.readthedocs.io/en/dev/?badge=dev)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.795283.svg)](https://doi.org/10.5281/zenodo.795283)
+[![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://dingo.readthedocs.io/en/dev)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.834751.svg)](https://doi.org/10.5281/zenodo.834751)
+[![Build Status](https://travis-ci.org/openego/ding0.svg?branch=dev)](https://travis-ci.org/openego/ding0)
 
 DING0
 =====
 DIstribution Network GeneratOr -- A tool to generate synthetic medium and low
 voltage power distribution grids based on open (or at least accessible) data.
-
-WARNING: Note, currently the data source Ding0 relies on - the
-[Open Energy Database](http://oep.iks.cs.ovgu.de/dataedit/) - has no public
-accessible API, yet. Thus, currently you won't be able to run Ding0 without
-modifications.
 
 Installation and usage
 ----------------------

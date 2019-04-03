@@ -13,10 +13,12 @@ __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
+import os
 from . import RegionDing0
 from ding0.tools import config as cfg_ding0
 
-from shapely.wkt import loads as wkt_loads
+if not 'READTHEDOCS' in os.environ:
+    from shapely.wkt import loads as wkt_loads
 
 
 class MVGridDistrictDing0(RegionDing0):
