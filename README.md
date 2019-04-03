@@ -2,6 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://dingo.readthedocs.io/en/dev)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.834751.svg)](https://doi.org/10.5281/zenodo.834751)
+[![Build Status](https://travis-ci.org/openego/ding0.svg?branch=dev)](https://travis-ci.org/openego/ding0)
 
 DING0
 =====
