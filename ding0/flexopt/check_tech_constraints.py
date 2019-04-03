@@ -334,7 +334,7 @@ def peak_load_generation_at_node(nodes):
 
 
 def get_critical_voltage_at_nodes(grid):
-    """
+    r"""
     Estimate voltage drop/increase induced by loads/generators connected to the
     grid.
 

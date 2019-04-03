@@ -125,7 +125,7 @@ def _parse_nodes_section(f, current_section, nodes):
         line = strip(line)
 
         # Check dimensions
-        definitions = re.split('\s*', line)
+        definitions = re.split(r'\s*', line)
         if len(definitions) != dimensions:
             raise ParseException('Invalid dimensions from section {}. Expected: {}'.format(current_section, dimensions))
 
@@ -160,7 +160,7 @@ def _parse_edge_weight(f, nodes):
     for line in f:
         line = strip(line)
 
-        regex = re.compile('\s+')
+        regex = re.compile(r'\s+')
 
         row = regex.split(line)
 
