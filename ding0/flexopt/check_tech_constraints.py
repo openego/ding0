@@ -21,6 +21,7 @@ from ding0.core.network.loads import LVLoadDing0
 from ding0.core.network import GeneratorDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core.network.stations import LVStationDing0
+from ding0.core.powerflow import q_sign
 import networkx as nx
 import math
 
@@ -526,7 +527,7 @@ def get_critical_voltage_at_nodes(grid):
     return crit_nodes
 
 
-def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
+def voltage_delta_vde(v_nom, s_max, r, x, cos_phi, cos_phi_mode):
     """
     Estimate voltrage drop/increase
 
@@ -545,7 +546,15 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
         Short-circuit reactance from node to HV/MV substation (in ohm). Must
         be a signed number indicating (+) inductive reactive consumer (load
         case) or (-) inductive reactive supplier (generation case)
-    cos_phi : float
+    cos_phi : :obj:`float`
+        The cosine phi of the power flowing though the line
+    cos_phi_mode : :obj:`str`
+        The mode of the power:
+
+            * inductive
+            * capacitve
+
+        Note : Here the sign convention expected is generator sign convention
 
     Returns
     -------
@@ -559,8 +568,9 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
         Erzeugungsanlagen am Niederspannungsnetz, 2011
 
     """
+    cos_phi_sign = q_sign(cos_phi_mode, 'generator')
     delta_v = (s_max * (
-        r * cos_phi + x * math.sin(math.acos(cos_phi)))) / v_nom ** 2
+        r * cos_phi +  x * cosphi_sign * math.sin(math.acos(cos_phi)))) / v_nom ** 2
     return delta_v
 
 
@@ -622,7 +632,9 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
         Delta voltage for node
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
@@ -641,9 +653,9 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
 
     # determine voltage increase/ drop a node
     voltage_delta_load = voltage_delta_vde(v_nom, s_max_load, r, x,
-                                           cos_phi_load)
+                                           cos_phi_load, cos_phi_load_mode)
     voltage_delta_gen = voltage_delta_vde(v_nom, s_max_feedin, r, -x,
-                                          cos_phi_feedin)
+                                          cos_phi_feedin, cos_phi_feedin_mode)
 
     return [voltage_delta_load, voltage_delta_gen, r, x]
 
@@ -700,7 +712,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
         Delta voltage for node
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
@@ -716,7 +730,7 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
     if s_max_gen:
         s_max_gen = s_max_gen[0]
         v_delta_stub_gen = voltage_delta_vde(v_nom, s_max_gen, r_stub + r_preceeding,
-                                             x_stub + x_preceedig, cos_phi_feedin)
+                                             x_stub + x_preceedig, cos_phi_feedin, cos_phi_feedin_mode)
     else:
         v_delta_stub_gen = 0
 
@@ -726,7 +740,7 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
     if s_max_load:
         s_max_load = s_max_load[0]
         v_delta_stub_load = voltage_delta_vde(v_nom, s_max_load, r_stub + r_preceeding,
-                                              x_stub + x_preceedig, cos_phi_load)
+                                              x_stub + x_preceedig, cos_phi_load, cos_phi_load_mode)
     else:
         v_delta_stub_load = 0
 
@@ -758,7 +772,9 @@ def get_voltage_at_bus_bar(grid, tree):
     x_trafo = sum([tr.x for tr in grid._station._transformers])
 
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
 
     # loads and generators connected to bus bar
@@ -773,11 +789,13 @@ def get_voltage_at_bus_bar(grid, tree):
                                                   bus_bar_load,
                                                   (r_mv_grid + r_trafo),
                                                   (x_mv_grid + x_trafo),
-                                                  cos_phi_load)
+                                                  cos_phi_load,
+                                                  cos_phi_load_mode)
     v_delta_gen_case_bus_bar = voltage_delta_vde(v_nom,
                                                  bus_bar_generation,
                                                  (r_mv_grid + r_trafo),
                                                  -(x_mv_grid + x_trafo),
-                                                 cos_phi_feedin)
+                                                 cos_phi_feedin,
+                                                 cos_phi_feedin_mode)
 
     return v_delta_load_case_bus_bar, v_delta_gen_case_bus_bar
