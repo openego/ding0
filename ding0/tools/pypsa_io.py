@@ -20,6 +20,7 @@ from ding0.core.network.stations import LVStationDing0, MVStationDing0
 from ding0.core.network import BranchDing0, CircuitBreakerDing0, GeneratorDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.core.powerflow import q_sign
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
@@ -55,43 +56,6 @@ def export_to_dir(network, export_dir):
                                               'debug',
                                               'grid',
                                               export_dir))
-
-
-def q_sign(reactive_power_mode_string, sign_convention):
-    """
-    Gets the correct sign for Q time series given 'inductive' and 'capacitive' and the 'generator'
-    or 'load' convention.
-
-    Parameters
-    ----------
-    reactive_power_mode_string: :obj:`str`
-        Either 'inductive' or 'capacitive'
-    sign_convention: :obj:`str`
-        Either 'load' or 'generator'
-    Return
-    ------
-    :obj: `int` : +1 or -1
-        A sign to mulitply to Q time sereis
-    """
-
-    comparestr = reactive_power_mode_string.lower()
-
-    if comparestr == 'inductive':
-        if sign_convention == 'generator':
-            return -1
-        elif sign_convention == 'load':
-            return 1
-        else:
-            raise ValueError("Unknown sign conention {}".format(sign_convention))
-    elif comparestr == 'capacitive':
-        if sign_convention =='generator':
-            return 1
-        elif sign_convention =='load':
-            return -1
-        else:
-            raise ValueError("Unknown sign conention {}".format(sign_convention))
-    else:
-        raise ValueError("Unknown value {} in power_factor_mode".format(reactive_power_mode_string))
 
 
 def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):

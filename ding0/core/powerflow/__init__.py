@@ -103,3 +103,40 @@ class PFConfigDing0:
     def srid(self):
         """ Returns SRID"""
         return self._srid
+
+
+def q_sign(reactive_power_mode_string, sign_convention):
+    """
+    Gets the correct sign for Q time series given 'inductive' and 'capacitive' and the 'generator'
+    or 'load' convention.
+
+    Parameters
+    ----------
+    reactive_power_mode_string: :obj:`str`
+        Either 'inductive' or 'capacitive'
+    sign_convention: :obj:`str`
+        Either 'load' or 'generator'
+    Return
+    ------
+    :obj: `int` : +1 or -1
+        A sign to mulitply to Q time sereis
+    """
+
+    comparestr = reactive_power_mode_string.lower()
+
+    if comparestr == 'inductive':
+        if sign_convention == 'generator':
+            return -1
+        elif sign_convention == 'load':
+            return 1
+        else:
+            raise ValueError("Unknown sign conention {}".format(sign_convention))
+    elif comparestr == 'capacitive':
+        if sign_convention =='generator':
+            return 1
+        elif sign_convention =='load':
+            return -1
+        else:
+            raise ValueError("Unknown sign convention {}".format(sign_convention))
+    else:
+        raise ValueError("Unknown value {} in power_factor_mode".format(reactive_power_mode_string))
