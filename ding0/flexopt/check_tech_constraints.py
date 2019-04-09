@@ -644,10 +644,12 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     s_max_feedin = gen_capacity / cos_phi_feedin
 
     # determine voltage increase/ drop a node
-    voltage_delta_load = voltage_delta_vde(v_nom, s_max_load, r, x,
-                                           cos_phi_load, cos_phi_load_mode)
-    voltage_delta_gen = voltage_delta_vde(v_nom, s_max_feedin, r, -x,
-                                          cos_phi_feedin, cos_phi_feedin_mode)
+    x_sign_load = q_sign(cos_phi_load_mode, 'load')
+    voltage_delta_load = voltage_delta_vde(v_nom, s_max_load, r, x_sign_load * x, # originally +ve
+                                           cos_phi_load)
+    x_sign_gen = q_sign(cos_phi_feedin_mode, 'generator')
+    voltage_delta_gen = voltage_delta_vde(v_nom, s_max_feedin, r, x_sign_gen * x, # originally -ve
+                                          cos_phi_feedin)
 
     return [voltage_delta_load, voltage_delta_gen, r, x]
 
@@ -721,8 +723,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
                  if isinstance(_, GeneratorDing0)]
     if s_max_gen:
         s_max_gen = s_max_gen[0]
-        v_delta_stub_gen = voltage_delta_vde(v_nom, s_max_gen, r_stub + r_preceeding,
-                                             x_stub + x_preceedig, cos_phi_feedin, cos_phi_feedin_mode)
+        x_sign_load = q_sign(cos_phi_load_mode, 'load')
+        v_delta_stub_gen = voltage_delta_vde(v_nom, s_max_gen, r_stub + r_preceeding, # x is + ve orignially
+                                             x_sign_load * (x_stub + x_preceedig), cos_phi_feedin)
     else:
         v_delta_stub_gen = 0
 
@@ -731,8 +734,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
                   if isinstance(_, LVLoadDing0)]
     if s_max_load:
         s_max_load = s_max_load[0]
-        v_delta_stub_load = voltage_delta_vde(v_nom, s_max_load, r_stub + r_preceeding,
-                                              x_stub + x_preceedig, cos_phi_load, cos_phi_load_mode)
+        x_sign_gen = q_sign(cos_phi_feedin_mode, 'generator')
+        v_delta_stub_load = voltage_delta_vde(v_nom, s_max_load, r_stub + r_preceeding, # x is + ve here too orignially
+                                              x_sign_gen * (x_stub + x_preceedig), cos_phi_load)
     else:
         v_delta_stub_load = 0
 
@@ -777,17 +781,17 @@ def get_voltage_at_bus_bar(grid, tree):
         [node.capacity for node in tree.successors(grid._station)
          if isinstance(node, GeneratorDing0)]) / cos_phi_feedin
 
+    x_sign_load = q_sign(cos_phi_load_mode, 'load')
     v_delta_load_case_bus_bar = voltage_delta_vde(v_nom,
                                                   bus_bar_load,
                                                   (r_mv_grid + r_trafo),
-                                                  (x_mv_grid + x_trafo),
-                                                  cos_phi_load,
-                                                  cos_phi_load_mode)
+                                                  x_sign_load * (x_mv_grid + x_trafo), # originally +ve
+                                                  cos_phi_load)
+    x_sign_gen = q_sign(cos_phi_feedin_mode, 'generator')
     v_delta_gen_case_bus_bar = voltage_delta_vde(v_nom,
                                                  bus_bar_generation,
                                                  (r_mv_grid + r_trafo),
-                                                 -(x_mv_grid + x_trafo),
-                                                 cos_phi_feedin,
-                                                 cos_phi_feedin_mode)
+                                                 x_sign_gen * (x_mv_grid + x_trafo), # originally -ve
+                                                 cos_phi_feedin)
 
     return v_delta_load_case_bus_bar, v_delta_gen_case_bus_bar
