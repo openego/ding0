@@ -570,7 +570,7 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi, cos_phi_mode):
     """
     cos_phi_sign = q_sign(cos_phi_mode, 'generator')
     delta_v = (s_max * (
-        r * cos_phi +  x * cos_phi_sign * math.sin(math.acos(cos_phi)))) / v_nom ** 2
+        r * cos_phi + x * cos_phi_sign * math.sin(math.acos(cos_phi)))) / v_nom ** 2
     return delta_v
 
 
