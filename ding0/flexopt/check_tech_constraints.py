@@ -527,7 +527,7 @@ def get_critical_voltage_at_nodes(grid):
     return crit_nodes
 
 
-def voltage_delta_vde(v_nom, s_max, r, x, cos_phi, cos_phi_mode):
+def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
     """
     Estimate voltrage drop/increase
 
@@ -548,13 +548,6 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi, cos_phi_mode):
         case) or (-) inductive reactive supplier (generation case)
     cos_phi : :obj:`float`
         The cosine phi of the power flowing though the line
-    cos_phi_mode : :obj:`str`
-        The mode of the power:
-
-            * inductive
-            * capacitve
-
-        Note : Here the sign convention expected is generator sign convention
 
     Returns
     -------
@@ -568,9 +561,8 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi, cos_phi_mode):
         Erzeugungsanlagen am Niederspannungsnetz, 2011
 
     """
-    cos_phi_sign = q_sign(cos_phi_mode, 'generator')
     delta_v = (s_max * (
-        r * cos_phi + x * cos_phi_sign * math.sin(math.acos(cos_phi)))) / v_nom ** 2
+        r * cos_phi + x * math.sin(math.acos(cos_phi)))) / v_nom ** 2
     return delta_v
 
 
