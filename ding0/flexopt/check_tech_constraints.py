@@ -536,13 +536,13 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
 
     Parameters
     ----------
-    v_nom : int
+    v_nom : :obj:`int`
         Nominal voltage
-    s_max : float
+    s_max : :obj:`float`
         Apparent power
-    r : float
+    r : :obj:`float`
         Short-circuit resistance from node to HV/MV substation (in ohm)
-    x : float
+    x : :obj:`float`
         Short-circuit reactance from node to HV/MV substation (in ohm). Must
         be a signed number indicating (+) inductive reactive consumer (load
         case) or (-) inductive reactive supplier (generation case)
@@ -551,7 +551,7 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
 
     Returns
     -------
-    :any:`float`
+    :obj:`float`
         Voltage drop or increase
         
     References
