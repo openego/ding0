@@ -2,10 +2,7 @@ import pytest
 
 from numpy import sqrt
 from ding0.flexopt.check_tech_constraints import (
-    voltage_delta_vde,
-    get_voltage_delta_branch,
-    get_voltage_at_bus_bar,
-    voltage_delta_stub
+    voltage_delta_vde
 )
 
 
@@ -43,7 +40,7 @@ def test_voltage_delta_vde():
     """
 
     v_nom = 1  # kV
-    s_max = 1  # MVA/kVA (doesn't matter)
+    s_max = 1  # MVA/kVA
     r = 1  # Ohms
     x = 1  # Ohms
     cos_phi = 1/sqrt(2)  # no unit i.e. 1/ sqrt(2) => angle is 45 degrees
