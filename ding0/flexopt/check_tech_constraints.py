@@ -647,7 +647,7 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     x_sign_load = q_sign(cos_phi_load_mode, 'load')
     voltage_delta_load = voltage_delta_vde(v_nom, s_max_load, r, x_sign_load * x, # originally +ve
                                            cos_phi_load)
-    x_sign_gen = q_sign(cos_phi_feedin_mode, 'generator')
+    x_sign_gen = q_sign(cos_phi_feedin_mode, 'load')
     voltage_delta_gen = voltage_delta_vde(v_nom, s_max_feedin, r, x_sign_gen * x, # originally -ve
                                           cos_phi_feedin)
 
@@ -723,9 +723,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
                  if isinstance(_, GeneratorDing0)]
     if s_max_gen:
         s_max_gen = s_max_gen[0]
-        x_sign_load = q_sign(cos_phi_load_mode, 'load')
+        x_sign_gen = q_sign(cos_phi_feedin_mode, 'load')
         v_delta_stub_gen = voltage_delta_vde(v_nom, s_max_gen, r_stub + r_preceeding, # x is + ve orignially
-                                             x_sign_load * (x_stub + x_preceedig), cos_phi_feedin)
+                                             x_sign_gen * (x_stub + x_preceedig), cos_phi_feedin)
     else:
         v_delta_stub_gen = 0
 
@@ -734,9 +734,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
                   if isinstance(_, LVLoadDing0)]
     if s_max_load:
         s_max_load = s_max_load[0]
-        x_sign_gen = q_sign(cos_phi_feedin_mode, 'generator')
+        x_sign_load = q_sign(cos_phi_load_mode, 'load')
         v_delta_stub_load = voltage_delta_vde(v_nom, s_max_load, r_stub + r_preceeding, # x is + ve here too orignially
-                                              x_sign_gen * (x_stub + x_preceedig), cos_phi_load)
+                                              x_sign_load * (x_stub + x_preceedig), cos_phi_load)
     else:
         v_delta_stub_load = 0
 
@@ -787,7 +787,7 @@ def get_voltage_at_bus_bar(grid, tree):
                                                   (r_mv_grid + r_trafo),
                                                   x_sign_load * (x_mv_grid + x_trafo), # originally +ve
                                                   cos_phi_load)
-    x_sign_gen = q_sign(cos_phi_feedin_mode, 'generator')
+    x_sign_gen = q_sign(cos_phi_feedin_mode, 'load')
     v_delta_gen_case_bus_bar = voltage_delta_vde(v_nom,
                                                  bus_bar_generation,
                                                  (r_mv_grid + r_trafo),
