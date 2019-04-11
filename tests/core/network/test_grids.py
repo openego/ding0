@@ -55,6 +55,7 @@ from egoio.tools import db
 from sqlalchemy.orm import sessionmaker
 import oedialect
 
+import numpy as np
 from math import isnan
 
 
@@ -1417,35 +1418,6 @@ class TestLVGridDing0(object):
 
         return lv_grid
 
-        """
-        mv_grid_district.add_peak_demand()
-        mv_grid.set_voltage_level()
-
-        # set MV station's voltage level
-        mv_grid._station.set_operation_voltage_level()
-
-        # set default branch types (normal, aggregated areas and within settlements)
-        print(mv_grid.network)
-        (mv_grid.default_branch_type,
-         mv_grid.default_branch_type_aggregated,
-         mv_grid.default_branch_type_settle) = mv_grid.set_default_branch_type(
-            debug=True
-        )
-
-        # set default branch kinds
-        mv_grid.default_branch_kind_aggregated = mv_grid.default_branch_kind
-        mv_grid.default_branch_kind_settle = 'cable'
-
-        # choose appropriate transformers for each HV/MV sub-station
-        mv_grid._station.select_transformers()
-
-        # parameterize the network
-        mv_grid.network.mv_parametrize_grid(debug=True)
-
-        # build the lv_grids
-        mv_grid.network.build_lv_grids()
-        """
-
     def test_build_grid_transformers(self, basic_lv_grid):
         """
         Check if transformers are added correctly to
@@ -1510,9 +1482,9 @@ class TestLVGridDing0(object):
                 for n in range(0, 29))
 
         #2 Branches from LV_station
-        assert len(list(nx.all_neighbors(basic_lv_grid._graph,
-                                         basic_lv_grid._graph.nodes()[0]))) \
-               == 2
+        assert len(np.nonzero(nx.adjacency_matrix(basic_lv_grid._graph)[0, :]
+                              .toarray())) == 2
+
 
     def test_connect_generators(self, basic_lv_grid):
         """
