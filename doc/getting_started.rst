@@ -69,8 +69,8 @@ checked out code. A developer mode installation is achieved by
 Installation under Windows
 --------------------------
 To install Ding0 in windows, it is currently recommended to use
-`Anaconda`<https://www.anaconda.com/distribution/> or
-`Miniconda`<https://docs.conda.io/en/latest/miniconda.html>
+`Anaconda <https://www.anaconda.com/distribution/>`_ or
+`Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
 and create an environment with the ding0_env.yml file provided.
 
 .. note::
@@ -133,7 +133,7 @@ Or install it from the pypi repository with the command:
 after this, it is possible to install ding0 directly from pip within the
 conda enviornment
 
-.. code-bloc:: bash
+.. code-block:: bash
 
     conda activate ding0_env
 
