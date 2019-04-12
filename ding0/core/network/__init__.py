@@ -202,7 +202,7 @@ class GridDing0:
         mode : :obj:`str`
             Mode selection 'MV' or 'LV'.
             
-        Notes
+        Note
         -----
         The geo coords (for used crs see
         database import in class `NetworkDing0`)
@@ -366,11 +366,12 @@ class GridDing0:
         Returns
         ------
         :obj:`dict` generator
-            with the keys
-            * `adj_nodes` paired to the Ding0 node object i.e.
-                |ding0_node_object_types|
-            * `branch` paried with the Ding0 branch object
-                :class:`~.ding0.core.network.BranchDing0`
+            Dictionary generator with the keys:
+
+                * `adj_nodes` paired to the Ding0 node object i.e.
+                  |ding0_node_object_types|
+                * `branch` paried with the Ding0 branch object
+                  :class:`~.ding0.core.network.BranchDing0`
         
         Note
         ----
@@ -434,7 +435,7 @@ class GridDing0:
         path: shortest path from `node_source` to
             `node_target` (list of nodes in _graph)
 
-        Notes
+        Note
         -----
         WARNING: The shortest path is calculated
         using the count of hops, not the actual line lengths!
@@ -639,7 +640,7 @@ class StationDing0:
         :obj:`float`
             Peak load of the current :class:`~.ding0.core.network.StationDing0` object
 
-        Notes
+        Note
         -----
         This peak load includes all loads which are located within Grid District:
         When called from MV station, all loads of all Load Areas are considered
@@ -748,7 +749,7 @@ class BranchDing0:
         This a designation of if the branch is critical or not,
         defaults to False.
 
-    Notes
+    Note
     -----
     Important: id_db is not set until whole grid is finished (setting at the end).
         
@@ -1102,7 +1103,7 @@ class CircuitBreakerDing0:
     status: :obj:`str`, default 'closed'
         The ``open`` or ``closed`` state of the Circuit Breaker.
         
-    Notes
+    Note
     -----
     Circuit breakers are nodes of a graph,
     but are NOT connected via an edge.

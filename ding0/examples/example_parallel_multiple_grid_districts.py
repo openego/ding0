@@ -9,7 +9,7 @@ It is developed in the project open_eGo: https://openegoproject.wordpress.com
 DINGO lives at github: https://github.com/openego/ding0/
 The documentation is available on RTD: http://ding0.readthedocs.io
 
-Notes
+Note
 -----
 
 This example file creates ding0 grids for all 3608 grid districts.

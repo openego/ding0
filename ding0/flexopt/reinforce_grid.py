@@ -39,7 +39,7 @@ def reinforce_grid(grid, mode):
     mode: :obj:`str`
         Choose of: 'MV' or 'LV'
 
-    Notes
+    Note
     -----
     Currently only MV branch reinforcement is implemented. HV-MV stations are not
     reinforced since not required for status-quo scenario.

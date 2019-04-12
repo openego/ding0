@@ -142,7 +142,7 @@ class LocalSearchSolver(BaseSolver):
         LocalSearchSolution
            A solution (LocalSearchSolution class)
         
-        Notes
+        Note
         -----
         Since Or-Opt is an intra-route operator, it has not to be checked if route can allocate (Route's method
         can_allocate()) nodes during relocation regarding max. peak load/current because the line/cable type is the
@@ -250,7 +250,7 @@ class LocalSearchSolver(BaseSolver):
         LocalSearchSolution
            A solution (LocalSearchSolution class)
         
-        Notes
+        Note
         -----
         (Inner) Loop variables:
         
@@ -361,7 +361,7 @@ class LocalSearchSolver(BaseSolver):
         LocalSearchSolution
            A solution (LocalSearchSolution class)
         
-        Notes
+        Note
         -----
         (Inner) Loop variables:
         

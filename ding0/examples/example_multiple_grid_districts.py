@@ -87,7 +87,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         .. TODO: this is only true if try-except environment is moved into this
             fundion and traceback return is implemented
 
-    Notes
+    Note
     -----
     Consider that a large amount of MV grid districts may take hours or up to
     days to compute. A computational run for a single grid district may consume

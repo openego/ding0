@@ -95,7 +95,7 @@ class MVStationDing0(StationDing0):
             Should contain a value behind the key 'peak_load'
 
 
-        Notes
+        Note
         -----
         Parametrization of transformers bases on [#]_.
         

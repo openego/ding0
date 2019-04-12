@@ -37,7 +37,7 @@ class PFConfigDing0:
     srid: type
         partial reference system indentifier used by PyPSA's plots #TODO
 
-    Notes
+    Note
     -----
     This class can be called as follows:
     

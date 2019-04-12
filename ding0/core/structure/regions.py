@@ -272,7 +272,7 @@ class LVLoadAreaCentreDing0:
     
     The centres are used in the MV routing as nodes.
     
-    Notes
+    Note
     -----
     Centre is a point within a region's polygon that is located most central 
     (e.g. in a simple region shape like a circle it's the geometric center).

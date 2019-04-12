@@ -84,7 +84,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         The additional package `contextily` is needed for this functionality.
         Default: True
 
-    Notes
+    Note
     -----
     WGS84 pseudo mercator (epsg:3857) is used as coordinate reference system (CRS).
     Therefore, the drawn graph representation may be falsified!

@@ -588,7 +588,7 @@ def parametrize_lines(mv_grid):
     mv_grid: MVGridDing0
         MV grid instance
 
-    Notes
+    Note
     -----
     During the connection process of satellites, new branches are created - 
     these have to be parametrized.
@@ -620,7 +620,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     debug: bool, defaults to False
          If True, information is printed during process
 
-    Notes
+    Note
     -----
     conn_dist_weight: The satellites can be connected to line (new terminal is
     created) or to one station where the line ends, depending on the distance

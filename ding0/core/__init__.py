@@ -225,7 +225,7 @@ class NetworkDing0:
         msg : obj:`str`
             Message of invalidity of a grid district
 
-        Notes
+        Note
         -----
         The steps performed in this method are to be kept in the given order
         since there are hard dependencies between them. Short description of
@@ -908,7 +908,7 @@ class NetworkDing0:
         debug: :obj:`bool`, defaults to False
             If True, information is printed during process
 
-        Notes
+        Note
         -----
             Connection of generators is done later on in
             :class:`~.ding0.core.NetworkDing0`'s method

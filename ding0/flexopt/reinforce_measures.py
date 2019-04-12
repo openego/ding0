@@ -39,7 +39,7 @@ def reinforce_branches_current(grid, crit_branches):
     crit_branches : dict
         Dict of critical branches with max. relative overloading.
         
-    Notes
+    Note
     -----
     The branch type to be installed is determined per branch using the rel. overloading. According to [#]_ 
     only cables are installed.
@@ -95,7 +95,7 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
         Specifying either 'MV' for medium-voltage grid or 'LV' for
         low-voltage grid level.
         
-    Notes
+    Note
     -----
     The branch type to be installed is determined per branch - the next larger cable available is used.
     According to Ackermann only cables are installed.
@@ -154,7 +154,7 @@ def extend_substation(grid, critical_stations, grid_level):
     grid_level : :obj:`str`
         Either "LV" or "MV". Basis to select right equipment.
     
-    Notes
+    Note
     -----
     Curently straight forward implemented for LV stations
 
@@ -246,7 +246,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     i) Existing transformers are extended by replacement with large nominal
        apparent power
       
-    ii) New additional transformers added to substation (see 'Notes')
+    ii) New additional transformers added to substation (see 'Note')
 
     Parameters
     ----------
@@ -255,7 +255,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     grid_level : :obj:`str`
         Specifiy grid level: 'MV' or 'LV'
 
-    Notes
+    Note
     -----
     At maximum 2 new of largest (currently 630 kVA) transformer are additionally
     built to resolve voltage issues at MV-LV substation bus bar.
@@ -339,7 +339,7 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
     crit_branches : :obj:`list`
         List of critical branches incl. its line loading
 
-    Notes
+    Note
     -----
     If maximum size cable is not capable to resolve issue due to line
     overloading largest available cable type is assigned to branch.

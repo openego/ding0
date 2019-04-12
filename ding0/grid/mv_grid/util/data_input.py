@@ -208,7 +208,7 @@ def _post_process_specs(specs):
     specs :
     
     
-    Notes
+    Note
     -----
     Modifies the specs object
     """

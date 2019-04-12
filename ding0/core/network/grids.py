@@ -197,7 +197,7 @@ class MVGridDing0(GridDing0):
              
             [ ring_m_node_1, ..., ring_m_node_n ]
             
-        Notes
+        Note
         -----
             Circuit breakers must be closed to find rings, this is done automatically.
         """
@@ -233,7 +233,7 @@ class MVGridDing0(GridDing0):
         Yields
         ------
             For each ring, tuple composed by ring ID, list of edges, list of nodes
-        Notes
+        Note
         -----
             Circuit breakers must be closed to find rings, this is done automatically.
         """
@@ -413,7 +413,7 @@ class MVGridDing0(GridDing0):
         debug: bool, defaults to False
             If True, information is printed during process.
             
-        Notes
+        Note
         -----
         It is assumed that only cables are used within settlements.
         """
@@ -538,7 +538,7 @@ class MVGridDing0(GridDing0):
         :pandas:`pandas.Series<series>`    
             default branch type max: pandas Series object. Largest available line/cable type
 
-        Notes
+        Note
         -----
         Parameter values for cables and lines are taken from [#]_, [#]_ and [#]_.
 
@@ -688,7 +688,7 @@ class MVGridDing0(GridDing0):
             * 'db': grid data will be exported to database
             * 'onthefly': grid data will be passed to PyPSA directly (default)
 
-        Notes
+        Note
         -----
         It has to be proven that this method works for LV grids as well!
 
@@ -762,7 +762,7 @@ class MVGridDing0(GridDing0):
         debug: bool, defaults to False
             If True, information is printed during process
 
-        Notes
+        Note
         -----
         It has to be proven that this method works for LV grids as well!
 
@@ -838,7 +838,7 @@ class LVGridDing0(GridDing0):
     population : 
         description #TODO
 
-    Notes
+    Note
     -----
         It is assumed that LV grid have got cables only (attribute 'default_branch_kind')
     """

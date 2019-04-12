@@ -55,7 +55,7 @@ def check_load(grid, mode):
         
         [trafo_1, ..., trafo_m]
 
-    Notes
+    Note
     -----
         Lines'/cables' max. capacity (load case and feed-in case) are taken from [#]_.
         
@@ -175,7 +175,7 @@ def check_voltage(grid, mode):
 
         List of critical nodes, sorted descending by voltage difference.
 
-    Notes
+    Note
     -----
         The examination is done in two steps, according to [#]_ :
         
@@ -384,7 +384,7 @@ def get_critical_voltage_at_nodes(grid):
     grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 LV grid object
 
-    Notes
+    Note
     -----
     The implementation highly depends on topology of LV grid. This must not
     change its topology from radial grid with stubs branching from radial
