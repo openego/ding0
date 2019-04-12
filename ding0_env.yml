@@ -4,6 +4,7 @@ channels:
       - defaults
 dependencies:
     - python = 3.6.5
+    - pip = 19.0.3
 
     # plotting packages
     - descartes
@@ -35,7 +36,7 @@ dependencies:
     - conda-forge::pyshp
     - conda-forge::geopandas
     - conda-forge::geopy = 1.11.0
-    - conda-forge::shapely >= 1.5.12, <= 1.6.3
+    - conda-forge::shapely >= 1.5.12, <= 1.7
     - conda-forge::libgdal
 
     - pip:
