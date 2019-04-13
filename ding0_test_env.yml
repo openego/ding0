@@ -33,7 +33,7 @@ dependencies:
     - conda-forge::pyshp
     - conda-forge::geopandas
     - conda-forge::geopy >= 1.11.0
-    - conda-forge::shapely >= 1.5.12,
+    - conda-forge::shapely >= 1.5.12
     - conda-forge::libgdal
 
     - pip:
