@@ -551,7 +551,7 @@ class MVGridDing0(GridDing0):
         References
         ----------
         .. [#] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
-        .. [#] René Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
+        .. [#] Rene Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
         .. [#] Suedkabel GmbH, "Einadrige VPE-isolierte Mittelspannungskabel",
             http://www.suedkabel.de/cms/upload/pdf/Garnituren/Einadrige_VPE-isolierte_Mittelspannungskabel.pdf, 2017
         .. [#] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
