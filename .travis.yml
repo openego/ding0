@@ -24,8 +24,7 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 install:
-  - conda create -q -n ding0_env python=$PYTHON_VERSION
-  - conda env update -q -n ding0_env --file=ding0_test_env.yml
+  - conda env create -q -n ding0_env python=$PYTHON_VERSION --file=ding0_test_env.yml
   - source activate ding0_env
   - EGOIOCONFIGDIR=`python -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
   - mkdir $EGOIOCONFIGDIR
