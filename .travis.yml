@@ -25,7 +25,7 @@ before_install:
   - conda info -a
 install:
   - conda create -q -n ding0_env python=$PYTHON_VERSION
-  - conda env update -q -n ding0_env --file=requirements.yml
+  - conda env update -q -n ding0_env --file=ding0_test_env.yml
   - conda activate ding0_env
   - EGOIOCONFIGDIR=`python -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
   - mkdir $EGOIOCONFIGDIR
