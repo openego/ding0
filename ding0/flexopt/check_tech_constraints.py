@@ -392,7 +392,7 @@ def get_critical_voltage_at_nodes(grid):
     References
     ----------
     .. [#VDE] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
-        Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
+        Technische Mindestanforderungen fuer Anschluss und Parallelbetrieb von
         Erzeugungsanlagen am Niederspannungsnetz, 2011
     """
 
@@ -555,7 +555,7 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
     References
     ----------
     .. [#] VDE Anwenderrichtlinie: Erzeugungsanlagen am Niederspannungsnetz –
-        Technische Mindestanforderungen für Anschluss und Parallelbetrieb von
+        Technische Mindestanforderungen fuer Anschluss und Parallelbetrieb von
         Erzeugungsanlagen am Niederspannungsnetz, 2011
 
     """

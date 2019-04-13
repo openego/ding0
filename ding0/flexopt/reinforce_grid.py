@@ -49,7 +49,7 @@ def reinforce_grid(grid, mode):
     .. [DENA] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012
     .. [VNSRP] Ackermann, T., Untsch, S., Koch, M., & Rothfuchs, H. (2014).
-            Verteilnetzstudie Rheinland-Pfalz. Hg. v. Ministerium für
+            Verteilnetzstudie Rheinland-Pfalz. Hg. v. Ministerium fuer
             Wirtschaft, Klimaschutz, Energie und Landesplanung Rheinland-Pfalz
             (MWKEL). energynautics GmbH.
 

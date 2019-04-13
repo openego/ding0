@@ -99,8 +99,8 @@ class LocalSearchSolver(BaseSolver):
     References
     ----------
     .. [#] W. Wenger, "Multikriterielle Tourenplanung", Dissertation, 2009
-    .. [#] M. Kämpf, "Probleme der Tourenbildung", Chemnitzer Informatik-Berichte, 2006
-    .. [#] O. Bräysy, M. Gendreau, "Vehicle Routing Problem with Time Windows,
+    .. [#] M. Kaempf, "Probleme der Tourenbildung", Chemnitzer Informatik-Berichte, 2006
+    .. [#] O. Braeysy, M. Gendreau, "Vehicle Routing Problem with Time Windows,
         Part I: Route Construction and Local Search Algorithms",
         Transportation Science, vol. 39, Issue 1, pp. 104-118, 2005
     .. [#] C. Boomgaarden, "Dynamische Tourenplanung und -steuerung",

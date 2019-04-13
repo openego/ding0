@@ -57,8 +57,8 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
     References
     ----------
     .. [#] X. Tao, "Automatisierte Grundsatzplanung von Mittelspannungsnetzen", Dissertation, 2006
-    .. [#] FGH e.V.: "Technischer Bericht 302: Ein Werkzeug zur Optimierung der Störungsbeseitigung
-        für Planung und Betrieb von Mittelspannungsnetzen", Tech. rep., 2008
+    .. [#] FGH e.V.: "Technischer Bericht 302: Ein Werkzeug zur Optimierung der Stoerungsbeseitigung
+        fuer Planung und Betrieb von Mittelspannungsnetzen", Tech. rep., 2008
 
     """
 
