@@ -9,7 +9,7 @@ dependencies:
     - seaborn
 
     # numerical processing packages
-    - pandas = 0.20.3
+    - pandas >= 0.20.3
 
     # graph theory processing
     - networkx >= 2.0
@@ -29,7 +29,7 @@ dependencies:
 
     # GIS dependencies have to come all from conda-forge
     - conda-forge::fiona
-    - conda-forge::pyproj = 1.9.5.1
+    - conda-forge::pyproj >= 1.9.5.1
     - conda-forge::pyshp
     - conda-forge::geopandas
     - conda-forge::geopy >= 1.11.0
