@@ -402,7 +402,7 @@ def extend_trafo_power(extendable_trafos, trafo_params):
         trafo_params.loc[
             trafo_params['S_nom'] > trafo_s_max_a_before
         ].loc[
-            :, 'S_max'
+            :, 'S_nom'
         ].idxmin(), :
     ]
     trafo.s_max_a = trafo_nearest_larger['S_nom']
