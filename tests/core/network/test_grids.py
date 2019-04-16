@@ -1,19 +1,35 @@
 import pytest
 
-from egoio.tools import db
-from sqlalchemy.orm import sessionmaker
-import oedialect
+
+
+from math import isnan
 
 import networkx as nx
 import pandas as pd
 
 from shapely.geometry import Point, LineString, LinearRing, Polygon
-from ding0.core import NetworkDing0
-from ding0.core.network import (RingDing0, BranchDing0, CircuitBreakerDing0,
-                                GeneratorDing0, GeneratorFluctuatingDing0)
-from ding0.core.network.stations import MVStationDing0, LVStationDing0
-from ding0.core.network.grids import MVGridDing0, LVGridDing0
 
+from ding0.core import NetworkDing0
+from ding0.core.network import (GridDing0, StationDing0,
+                                TransformerDing0,
+                                RingDing0, BranchDing0,
+                                CableDistributorDing0, CircuitBreakerDing0,
+                                GeneratorDing0, GeneratorFluctuatingDing0,
+                                LoadDing0)
+from ding0.core.network.grids import MVGridDing0, LVGridDing0
+from ding0.core.network.stations import MVStationDing0, LVStationDing0
+from ding0.core.structure.regions import (MVGridDistrictDing0,
+                                          LVLoadAreaDing0,
+                                          LVLoadAreaCentreDing0,
+                                          LVGridDistrictDing0)
+from ding0.tools.tools import (get_dest_point,
+                               get_cart_dest_point,
+                               create_poly_from_source)
+from ding0.core import NetworkDing0
+
+from egoio.tools import db
+from sqlalchemy.orm import sessionmaker
+import oedialect
 
 class TestMVGridDing0(object):
 
@@ -375,6 +391,577 @@ class TestMVGridDing0(object):
         yield session
         print("closing session")
         session.close()
+
+    @pytest.fixture
+    def minimal_unrouted_grid(self):
+        """
+        Returns an MVGridDing0 object with a few artificially
+        generated information about a fictious set of load
+        areas and mv grid district.
+        All the data created here is typically a replacement
+        for the data that ding0 draws from the openenergy-platform.
+        The flow of this function follows the :meth:`~.core.NetworkDing0.run_ding0` function
+        in :class:`~.core.NetworkDing0`.
+
+        Returns
+        -------
+        """
+        # define source Coordinates EPSG 4326
+        source = Point(8.638204, 49.867307)
+
+        # distance_scaling factor
+        distance_scaling_factor = 3
+
+        # Create NetworkDing0 object
+        network = NetworkDing0(name='network')
+
+        # Create MVStationDing0 and the HV-MV Transformers
+        mv_station = MVStationDing0(
+            id_db=0,
+            geo_data=source,
+            peak_load=10000.0,
+            v_level_operation=20.0
+        )
+
+        hvmv_transformers = [
+            TransformerDing0(
+                id_db=0,
+                s_max_longterm=63000.0,
+                v_level=20.0
+            ),
+            TransformerDing0(
+                id_db=1,
+                s_max_longterm=63000.0,
+                v_level=20.0
+            )
+        ]
+
+        # Add the transformers to the station
+
+        for hvmv_transfromer in hvmv_transformers:
+            mv_station.add_transformer(hvmv_transfromer)
+
+        # Create the MV Grid
+        mv_grid = MVGridDing0(
+            id_db=0,
+            network=network,
+            v_level=20.0,
+            station=mv_station,
+            default_branch_kind='line',
+            default_branch_kind_aggregated='line',
+            default_branch_kind_settle='cable',
+            default_branch_type=pd.Series(
+                dict(name='48-AL1/8-ST1A',
+                     U_n=20.0,
+                     I_max_th=210.0,
+                     R=0.37,
+                     L=1.18,
+                     C=0.0098,
+                     reinforce_only=0)
+            ),
+            default_branch_type_aggregated=pd.Series(
+                dict(name='122-AL1/20-ST1A',
+                     U_n=20.0,
+                     I_max_th=410.0,
+                     R=0.34,
+                     L=1.08,
+                     C=0.0106,
+                     reinforce_only=0)
+            ),
+            default_branch_type_settle=pd.Series(
+                dict(name='NA2XS2Y 3x1x150 RE/25',
+                     U_n=20.0,
+                     I_max_th=319.0,
+                     R=0.206,
+                     L=0.4011,
+                     C=0.24,
+                     reinforce_only=0)
+            )
+        )
+        # Add some MV Generators that are directly connected at the station
+
+        mv_generators = [
+            GeneratorDing0(
+                id_db=0,
+                capacity=200.0,
+                mv_grid=mv_grid,
+                type='biomass',
+                subtype='biogas_from_grid',
+                v_level=5,
+                geo_data=source
+            ),
+            GeneratorDing0(
+                id_db=1,
+                capacity=200.0,
+                mv_grid=mv_grid,
+                type='biomass',
+                subtype='biogas_from_grid',
+                v_level=5,
+                geo_data=source
+            ),
+            GeneratorFluctuatingDing0(
+                id_db=2,
+                weather_cell_id=0,
+                capacity=1000.0,
+                mv_grid=mv_grid,
+                type='wind',
+                subtype='wind_onshore',
+                v_level=5,
+                geo_data=source
+            ),
+            GeneratorFluctuatingDing0(
+                id_db=3,
+                weather_cell_id=1,
+                capacity=1000.0,
+                mv_grid=mv_grid,
+                type='wind',
+                subtype='wind_onshore',
+                v_level=5,
+                geo_data=source
+            )
+        ]
+        for mv_gen in mv_generators:
+            mv_grid.add_generator(mv_gen)
+
+        # Create the MV Grid District
+
+        mv_grid_district_geo_data = create_poly_from_source(
+            source,
+            distance_scaling_factor * 5000,
+            distance_scaling_factor * 10000,
+            distance_scaling_factor * 5000,
+            distance_scaling_factor * 8000
+        )
+
+        mv_grid_district = MVGridDistrictDing0(id_db=10000,
+                                               mv_grid=mv_grid,
+                                               geo_data=mv_grid_district_geo_data)
+        mv_grid.grid_district = mv_grid_district
+        mv_station.grid = mv_grid
+
+        # Put the MV Grid District into Network
+
+        network.add_mv_grid_district(mv_grid_district)
+
+        # Create the LV Grid Districts
+        lv_grid_districts_data = pd.DataFrame(
+            dict(
+                la_id=list(range(19)),
+                population=[
+                    223, 333, 399, 342,
+                    429, 493, 431, 459,
+                    221, 120, 111, 140, 70, 156, 83, 4, 10,
+                    679,
+                    72
+                ],
+                peak_load_residential=[
+                    141.81529461443094,
+                    226.7797238255373,
+                    162.89215815390679,
+                    114.27072719604516,
+                    102.15005942005169,
+                    198.71310283772826,
+                    147.79521215488836,
+                    159.08248928315558,
+                    35.977009995358891,
+                    84.770575023989707,
+                    29.61665986331883,
+                    48.544967225998533,
+                    41.253931841299796,
+                    50.2394059644368,
+                    14.69162136059512,
+                    88.790542939734,
+                    98.03,
+                    500.73283157785517,
+                    137.54926972703203
+                ],
+                peak_load_retail=[
+                    34.0,
+                    0.0,
+                    0.0,
+                    82.0,
+                    63.0,
+                    20.0,
+                    0.0,
+                    0.0,
+                    28.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    37.0,
+                    0.0,
+                    19.0,
+                    0.0,
+                    0.0,
+                    120.0,
+                    0.0
+                ],
+                peak_load_industrial=[
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    300.0,
+                    0.0,
+                    0.0,
+                    158.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    100.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                peak_load_agricultural=[
+                    0.0,
+                    0.0,
+                    120.0,
+                    0.0,
+                    0.0,
+                    30.0,
+                    0.0,
+                    140.0,
+                    0.0,
+                    0.0,
+                    60.0,
+                    40.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    20.0,
+                    80.0,
+                    0.0,
+                    0.0
+                ],
+                geom=[
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -1000 * distance_scaling_factor,
+                            1000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -1000 * distance_scaling_factor,
+                            4000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -4000 * distance_scaling_factor,
+                            4000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -4000 * distance_scaling_factor,
+                            1000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),  # ----
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -1000 * distance_scaling_factor,
+                            -1000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -1000 * distance_scaling_factor,
+                            -4000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -4000 * distance_scaling_factor,
+                            -4000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -4000 * distance_scaling_factor,
+                            -1000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -2500 * distance_scaling_factor,
+                            -5500 * distance_scaling_factor
+                        ),
+                        50,
+                        50,
+                        50,
+                        50
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -2500 * distance_scaling_factor,
+                            -6500 * distance_scaling_factor
+                        ),
+                        50,
+                        50,
+                        50,
+                        50
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -3500 * distance_scaling_factor,
+                            -7500 * distance_scaling_factor
+                        ),
+                        50,
+                        50,
+                        50,
+                        50
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -1500 * distance_scaling_factor,
+                            -7500 * distance_scaling_factor
+                        ),
+                        50,
+                        50,
+                        50,
+                        50
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -500 * distance_scaling_factor,
+                            -6500 * distance_scaling_factor
+                        ),
+                        50,
+                        50,
+                        50,
+                        50
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -500 * distance_scaling_factor,
+                            -5500 * distance_scaling_factor
+                        ),
+                        50,
+                        50,
+                        50,
+                        50
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -500 * distance_scaling_factor,
+                            -7500 * distance_scaling_factor
+                        ),
+                        50,
+                        50,
+                        50,
+                        50
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            -1500 * distance_scaling_factor,
+                            -6500 * distance_scaling_factor
+                        ),
+                        50,
+                        50,
+                        50,
+                        50
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            2500 * distance_scaling_factor,
+                            2500 * distance_scaling_factor
+                        ),
+                        150,
+                        150,
+                        150,
+                        150
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            9000 * distance_scaling_factor,
+                            4000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                    create_poly_from_source(
+                        get_cart_dest_point(
+                            source,
+                            9000 * distance_scaling_factor,
+                            -7000 * distance_scaling_factor
+                        ),
+                        100,
+                        100,
+                        100,
+                        100
+                    ),
+                ]
+            )
+        )
+
+        lv_grid_districts_data.loc[:, 'peak_load'] = (
+            lv_grid_districts_data.loc[:, ['peak_load_residential',
+                                           'peak_load_retail',
+                                           'peak_load_industrial',
+                                           'peak_load_agricultural']].sum(axis=1)
+        )
+
+        # Create the LVGridDing0 objects and all its constituents
+        # from the LVGridDistrictDing0 data
+
+        lv_nominal_voltage = 400.0
+        # assuming that the lv_grid districts and lv_load_areas are the same!
+        # or 1 lv_griddistrict is 1 lv_loadarea
+        for id_db, row in lv_grid_districts_data.iterrows():
+            lv_load_area = LVLoadAreaDing0(id_db=id_db,
+                                           db_data=row,
+                                           mv_grid_district=mv_grid_district,
+                                           peak_load=row['peak_load'])
+            lv_load_area.geo_area = row['geom']
+            lv_load_area.geo_centre = row['geom'].centroid
+            lv_grid_district = LVGridDistrictDing0(
+                id_db=id,
+                lv_load_area=lv_load_area,
+                geo_data=row['geom'],
+                population=(0
+                            if isnan(row['population'])
+                            else int(row['population'])),
+                peak_load_residential=row['peak_load_residential'],
+                peak_load_retail=row['peak_load_retail'],
+                peak_load_industrial=row['peak_load_industrial'],
+                peak_load_agricultural=row['peak_load_agricultural'],
+                peak_load=(row['peak_load_residential']
+                           + row['peak_load_retail']
+                           + row['peak_load_industrial']
+                           + row['peak_load_agricultural']),
+                sector_count_residential=(0
+                                          if row['peak_load_residential'] == 0.0
+                                          else 1),
+                sector_count_retail=(0
+                                     if row['peak_load_retail'] == 0.0
+                                     else 1),
+                sector_count_agricultural=(0
+                                           if row['peak_load_agricultural'] == 0.0
+                                           else 1),
+                sector_count_industrial=(0
+                                         if row['peak_load_industrial'] == 0.0
+                                         else 1),
+                sector_consumption_residential=row['peak_load_residential'],
+                sector_consumption_retail=row['peak_load_retail'],
+                sector_consumption_industrial=row['peak_load_industrial'],
+                sector_consumption_agricultural=row['peak_load_agricultural']
+            )
+
+            # be aware, lv_grid takes grid district's geom!
+            lv_grid = LVGridDing0(network=network,
+                                  grid_district=lv_grid_district,
+                                  id_db=id,
+                                  geo_data=row['geom'],
+                                  v_level=lv_nominal_voltage)
+
+            # create LV station
+            lv_station = LVStationDing0(
+                id_db=id,
+                grid=lv_grid,
+                lv_load_area=lv_load_area,
+                geo_data=row['geom'].centroid,
+                peak_load=lv_grid_district.peak_load
+            )
+
+            # assign created objects
+            # note: creation of LV grid is done separately,
+            # see NetworkDing0.build_lv_grids()
+            lv_grid.add_station(lv_station)
+            lv_grid_district.lv_grid = lv_grid
+            lv_load_area.add_lv_grid_district(lv_grid_district)
+
+            lv_load_area_centre = LVLoadAreaCentreDing0(id_db=id_db,
+                                                        geo_data=row['geom'].centroid,
+                                                        lv_load_area=lv_load_area,
+                                                        grid=mv_grid_district.mv_grid)
+            lv_load_area.lv_load_area_centre = lv_load_area_centre
+            mv_grid_district.add_lv_load_area(lv_load_area)
+
+        mv_grid_district.add_peak_demand()
+        mv_grid.set_voltage_level()
+
+        # set MV station's voltage level
+        mv_grid._station.set_operation_voltage_level()
+
+        # set default branch types (normal, aggregated areas and within settlements)
+        (mv_grid.default_branch_type,
+         mv_grid.default_branch_type_aggregated,
+         mv_grid.default_branch_type_settle) = mv_grid.set_default_branch_type(
+            debug=True
+        )
+
+        # set default branch kinds
+        mv_grid.default_branch_kind_aggregated = mv_grid.default_branch_kind
+        mv_grid.default_branch_kind_settle = 'cable'
+
+        # choose appropriate transformers for each HV/MV sub-station
+        mv_grid._station.select_transformers()
+
+        # parameterize the network
+        mv_grid.network.mv_parametrize_grid(debug=True)
+
+        # build the lv_grids
+        mv_grid.network.build_lv_grids()
+
+        return network, mv_grid, source
 
     def test_routing(self, oedb_session):
         """
