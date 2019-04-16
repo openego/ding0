@@ -963,6 +963,22 @@ class TestMVGridDing0(object):
 
         return network, mv_grid, source
 
+    def test_local_routing(self, minimal_unrouted_grid):
+        """
+        Rigours test to the function :meth:`~.core.network.grids.MVGridDing0.routing`
+        """
+        nd, mv_grid, source = minimal_unrouted_grid()
+
+        graph = mv_grid._graph
+
+        # pre-routing asserts
+
+        nd.mv_routing()
+
+        # post-routing asserts
+        # check that the connections are between the expected
+        # load areas
+
     def test_routing(self, oedb_session):
         """
         Using the grid district 460 as an example, the properties of the
