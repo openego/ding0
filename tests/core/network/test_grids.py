@@ -976,7 +976,6 @@ class TestMVGridDing0(object):
 
         # pre-routing asserts
         # check the grid_district
-        assert mv_grid.grid_district.id_db == 1000
         assert len(list(mv_grid.grid_district.lv_load_areas())) == 19
         assert len(list(mv_grid.grid_district.lv_load_area_groups())) == 0
         assert mv_grid.grid_district.peak_load == pytest.approx(
