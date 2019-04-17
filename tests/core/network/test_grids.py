@@ -970,7 +970,7 @@ class TestMVGridDing0(object):
         """
         Rigorous test to the function :meth:`~.core.network.grids.MVGridDing0.routing`
         """
-        nd, mv_grid, lv_stations = minimal_unrouted_grid()
+        nd, mv_grid, lv_stations = minimal_unrouted_grid
 
         graph = mv_grid._graph
 
