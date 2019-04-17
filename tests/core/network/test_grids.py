@@ -865,6 +865,7 @@ class TestMVGridDing0(object):
         lv_nominal_voltage = 400.0
         # assuming that the lv_grid districts and lv_load_areas are the same!
         # or 1 lv_griddistrict is 1 lv_loadarea
+        lv_stations = []
         for id_db, row in lv_grid_districts_data.iterrows():
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
                                            db_data=row,
@@ -908,13 +909,13 @@ class TestMVGridDing0(object):
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDing0(network=network,
                                   grid_district=lv_grid_district,
-                                  id_db=id,
+                                  id_db=id_db,
                                   geo_data=row['geom'],
                                   v_level=lv_nominal_voltage)
 
             # create LV station
             lv_station = LVStationDing0(
-                id_db=id,
+                id_db=id_db,
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=row['geom'].centroid,
@@ -934,7 +935,9 @@ class TestMVGridDing0(object):
                                                         grid=mv_grid_district.mv_grid)
             lv_load_area.lv_load_area_centre = lv_load_area_centre
             mv_grid_district.add_lv_load_area(lv_load_area)
+            lv_stations.append(lv_station)
 
+        lv_stations = sorted(lv_stations, key=lambda x: repr(x))
         mv_grid_district.add_peak_demand()
         mv_grid.set_voltage_level()
 
@@ -961,23 +964,112 @@ class TestMVGridDing0(object):
         # build the lv_grids
         mv_grid.network.build_lv_grids()
 
-        return network, mv_grid, source
+        return network, mv_grid, lv_stations
 
     def test_local_routing(self, minimal_unrouted_grid):
         """
-        Rigours test to the function :meth:`~.core.network.grids.MVGridDing0.routing`
+        Rigorous test to the function :meth:`~.core.network.grids.MVGridDing0.routing`
         """
-        nd, mv_grid, source = minimal_unrouted_grid()
+        nd, mv_grid, lv_stations = minimal_unrouted_grid()
 
         graph = mv_grid._graph
 
         # pre-routing asserts
+        # check the grid_district
+        assert mv_grid.grid_district.id_db == 1000
+        assert len(list(mv_grid.grid_district.lv_load_areas())) == 19
+        assert len(list(mv_grid.grid_district.lv_load_area_groups())) == 0
+        assert mv_grid.grid_district.peak_load == pytest.approx(
+            3834.695583,
+            abs=0.001
+        )
 
+        # check mv_grid graph attributes
+        assert len(list(graph.nodes())) == 43
+        assert len(list(graph.edges())) == 0
+        assert len(list(nx.isolates(graph))) == 43
+        assert pd.Series(dict(graph.degree())).sum(axis=0) == 0
+        assert pd.Series(dict(graph.degree())).mean(axis=0) == 0.0
+        assert len(list(nx.get_edge_attributes(graph, 'branch'))) == 0
+        assert nx.average_node_connectivity(graph) == 0.0
+        assert pd.Series(
+            nx.degree_centrality(graph)
+        ).mean(axis=0) == 0.0
+        assert pd.Series(
+            nx.closeness_centrality(graph)
+        ).mean(axis=0) == 0.0
+        assert pd.Series(
+            nx.betweenness_centrality(graph)
+        ).mean(axis=0) == 0.0
+
+        # do the routing
         nd.mv_routing()
 
         # post-routing asserts
         # check that the connections are between the expected
         # load areas
+        mv_station = mv_grid.station()
+        mv_cable_distributors = sorted(list(mv_grid.cable_distributors()), key=lambda x: repr(x))
+        expected_edges_list = [
+            (mv_station, mv_cable_distributors[0]),
+            (mv_station, mv_cable_distributors[1]),
+            (mv_station, mv_cable_distributors[2]),
+            (mv_station, lv_stations[0]),
+            (mv_station, lv_stations[1]),
+            (mv_station, lv_stations[5]),
+            (mv_station, lv_stations[8]),
+            (mv_station, lv_stations[9]),
+            (mv_station, lv_stations[10]),
+            (mv_station, lv_stations[13]),
+            (mv_station, lv_stations[14]),
+            (mv_station, lv_stations[16]),
+            (lv_stations[0], lv_stations[12]),
+            (lv_stations[1], lv_stations[11]),
+            (lv_stations[11], lv_stations[12]),
+            (lv_stations[13], lv_stations[17]),
+            (lv_stations[14], lv_stations[15]),
+            (lv_stations[15], lv_stations[16]),
+            (lv_stations[17], mv_cable_distributors[3]),
+            (lv_stations[18], lv_stations[2]),
+            (lv_stations[18], mv_cable_distributors[3]),
+            (lv_stations[3], lv_stations[7]),
+            (lv_stations[4], mv_cable_distributors[4]),
+            (lv_stations[5], mv_cable_distributors[4]),
+            (lv_stations[6], lv_stations[7]),
+            (lv_stations[7], mv_cable_distributors[3]),
+            (lv_stations[7], mv_cable_distributors[4]),
+            (lv_stations[8], mv_cable_distributors[0]),
+            (lv_stations[9], mv_cable_distributors[1]),
+            (lv_stations[10], mv_cable_distributors[2]),
+        ]
+
+        assert set(expected_edges_list) == set(graph.edges)
+
+        # check graph attributes
+        assert len(list(graph.nodes())) == 35
+        assert len(list(graph.edges())) == 30
+        assert len(list(nx.isolates(graph))) == 10
+        assert pd.Series(dict(graph.degree())).sum(axis=0) == 60
+        assert pd.Series(
+            dict(graph.degree())
+        ).mean(axis=0) == pytest.approx(1.714, 0.001)
+        assert len(list(nx.get_edge_attributes(graph, 'branch'))) == 30
+        assert nx.average_node_connectivity(graph) == pytest.approx(
+            0.5815,
+            abs=0.0001
+        )
+        assert pd.Series(
+            nx.degree_centrality(graph)
+        ).mean(axis=0) == pytest.approx(0.0504, abs=0.001)
+        assert pd.Series(
+            nx.closeness_centrality(graph)
+        ).mean(axis=0) == pytest.approx(0.16379069, abs=0.00001)
+        assert pd.Series(
+            nx.betweenness_centrality(graph)
+        ).mean(axis=0) == pytest.approx(0.033613445, abs=0.00001)
+        assert pd.Series(
+            nx.edge_betweenness_centrality(graph)
+        ).mean(axis=0) == pytest.approx(0.05378151, abs=0.00001)
 
     def test_routing(self, oedb_session):
         """
