@@ -1042,7 +1042,7 @@ class TestMVGridDing0(object):
             (lv_stations[10], mv_cable_distributors[2]),
         ]
 
-        assert set(expected_edges_list) == set(graph.edges)
+        assert set(expected_edges_list) == set(graph.edges())
 
         # check graph attributes
         assert len(list(graph.nodes())) == 35
