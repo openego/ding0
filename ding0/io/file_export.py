@@ -64,7 +64,7 @@ if __name__ == '__main__':
     pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/20180823154014"
 
     # static path, .csv will be stored here
-    destination_path = pkl_filepath
+    destination_path = os.path.join(os.path.expanduser("~"), '.ding0_log', 'pickle_log')
 
     # choose MV Grid Districts to import use list of integers
     # f. e.: grids = list(range(1, 3609)) - 1 to 3608
