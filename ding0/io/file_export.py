@@ -29,8 +29,8 @@ def export_data_tocsv(path, network, csv_sep=','):
     # put a text file with the metadata
     metadata = json.loads(network.metadata_json)
     # can´t test this -> no permission for my user
-    # with open(os.path.join(path, 'metadata.json'), 'w') as metafile:
-    #     json.dump(metadata, metafile)
+    with open(os.path.join(path, 'metadata.json'), 'w') as metafile:
+        json.dump(metadata, metafile)
 
     # Exports data to csv
     def export_network_tocsv(path, table, tablename):
@@ -55,6 +55,12 @@ def export_data_tocsv(path, network, csv_sep=','):
 
 
 if __name__ == '__main__':
+    """
+    Advise:
+    First off check for existing .csv files in your destination folder. 
+    Existing files will be extended.
+    Multiple grids will be stored all in one file. 
+    """
 
     # Path to user dir, Log file for missing Grid_Districts, Will be crated if not existing
     LOG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.ding0_log', 'pickle_log')
@@ -66,10 +72,11 @@ if __name__ == '__main__':
 
     # static path, .csv will be stored here
     # change this to your own destination folder
-    destination_path = os.path.join(os.path.expanduser("~"), '.ding0_log')
+    destination_path = pkl_filepath
 
     # choose MV Grid Districts to import use list of integers
     # Multiple grids f. e.: grids = list(range(1, 3609)) - 1 to 3608(all of the existing)
+    # Single grids f. e.: grids = [2]
     grids = list(range(1, 3))
 
     # Loop over all selected Grids, exports every singele one to file like .csv
