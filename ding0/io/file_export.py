@@ -28,8 +28,9 @@ def create_destination_dir():
 def export_data_tocsv(path, network, csv_sep=','):
     # put a text file with the metadata
     metadata = json.loads(network.metadata_json)
-    with open(os.path.join(path, 'metadata.json'), 'w') as metafile:
-        json.dump(metadata, metafile)
+    # can´t test this -> no permission for my user
+    # with open(os.path.join(path, 'metadata.json'), 'w') as metafile:
+    #     json.dump(metadata, metafile)
 
     # Exports data to csv
     def export_network_tocsv(path, table, tablename):
