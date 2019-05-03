@@ -131,10 +131,13 @@ class GridDing0:
     def graph_draw(self, mode):
         """ Draws grid graph using networkx
 
+        This method is for debugging purposes only.
+        Use ding0.tools.plots.plot_mv_topology() for advanced plotting.
+
         Parameters
         ----------
         mode : str
-            Mode selection 'MV' or 'LV'.  #TODO: check
+            Mode selection 'MV' or 'LV'.
             
         Notes
         -----
@@ -182,7 +185,8 @@ class GridDing0:
 
             for node in g.nodes():
                 # get neighbors of station (=first node of each branch)
-                station_neighbors = sorted(g.neighbors(self.station()), key=lambda _: repr(_))
+                station_neighbors = sorted(
+                    g.neighbors(self.station()), key=lambda _: repr(_))
 
                 # set x-offset according to count of branches
                 if len(station_neighbors) % 2 == 0:
@@ -204,7 +208,7 @@ class GridDing0:
                     nodes_color.append((0.5, 0.5, 1))
                 elif isinstance(node, GeneratorDing0):
                     # get neighbor of geno
-                    neighbor = g.neighbors(node)[0]
+                    neighbor = list(g.neighbors(node))[0]
 
                     # neighbor is cable distributor of building
                     if isinstance(neighbor, CableDistributorDing0):
@@ -270,7 +274,7 @@ class GridDing0:
         # TODO: This method can be replaced and speed up by using NetworkX' neighbors()
 
         branches = []
-        branches_dict = self._graph.edge[node]
+        branches_dict = self._graph.adj[node]
         for branch in branches_dict.items():
             branches.append(branch)
         return sorted(branches, key=lambda _: repr(_))
@@ -349,19 +353,19 @@ class GridDing0:
         if type == 'nodes':
             return path
         elif type == 'edges':
-            return [_ for _ in self._graph.edges_iter(nbunch=path, data=True)
+            return [_ for _ in self._graph.edges(nbunch=path, data=True)
                     if (_[0] in path and _[1] in path)]
         else:
             raise ValueError('Please specify type as nodes or edges')
 
     def find_and_union_paths(self, node_source, nodes_target):
         """ Determines shortest paths from `node_source` to all nodes in `node_target` in _graph using find_path().
-            
+
         The branches of all paths are stored in a set - the result is a list of unique branches.
 
         Args
         ----
-        node_source: GridDing0 
+        node_source: GridDing0
             source node, member of _graph
         node_target: GridDing0
             target node, member of _graph
@@ -376,16 +380,16 @@ class GridDing0:
             path = self.find_path(node_source, node_target)
             node_pairs = list(zip(path[0:len(path) - 1], path[1:len(path)]))
             for n1, n2 in node_pairs:
-                branches.add(self._graph.edge[n1][n2]['branch'])
+                branches.add(self._graph.adj[n1][n2]['branch'])
 
         return list(branches)
 
     def graph_path_length(self, node_source, node_target):
         """ Calculates the absolute distance between `node_source` and `node_target` in meters using find_path() and branches' length attribute.
-            
+
         Args
         ----
-        node_source: GridDing0 
+        node_source: GridDing0
             source node, member of _graph
         node_target: GridDing0
             target node, member of _graph
@@ -401,7 +405,7 @@ class GridDing0:
         node_pairs = list(zip(path[0:len(path)-1], path[1:len(path)]))
 
         for n1, n2 in node_pairs:
-            length += self._graph.edge[n1][n2]['branch'].length
+            length += self._graph.adj[n1][n2]['branch'].length
 
         return length
 
@@ -417,7 +421,7 @@ class GridDing0:
 
     def control_generators(self, capacity_factor):
         """ Sets capacity factor of all generators of a grid.
-        
+
         A capacity factor of 0.6 means that all generators are to provide a capacity of 60% of their nominal power.
 
         Args

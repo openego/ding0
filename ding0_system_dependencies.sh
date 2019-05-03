@@ -12,8 +12,8 @@ apt-get install -y gcc
 apt-get install -y g++
 apt-get install -y python3-tk
 
-# addionatly dependencies, maybe required on Solydxk 8
-# Only tested with debian stable with didn't required packages listed below
+# additional dependencies, maybe required on Solydxk 8
+# Only tested with debian stable with required packages listed below
 
 # apt-get install -y libfreetype6-dev
 # apt-get install -y pkg-config

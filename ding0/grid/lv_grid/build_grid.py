@@ -374,8 +374,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
             (lvgd.lv_grid.network.static_data['LV_cables'][
                 'I_max_th'] * cable_lf) > I_max_load]
-        cable_type_stub = suitable_cables_stub.ix[
-            suitable_cables_stub['I_max_th'].idxmin()]
+        cable_type_stub = suitable_cables_stub.loc[
+            suitable_cables_stub['I_max_th'].idxmin(), :
+            ]
 
         # cable distributor to divert from main branch
         lv_cable_dist = LVCableDistributorDing0(
@@ -490,8 +491,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
                     (lvgd.lv_grid.network.static_data['LV_cables'][
                         'I_max_th'] * cable_lf) > I_max_branch]
-                cable_type = suitable_cables.ix[
-                    suitable_cables['I_max_th'].idxmin()]
+                cable_type = suitable_cables.loc[
+                    suitable_cables['I_max_th'].idxmin(), :
+                ]
 
                 # create Ding0 grid objects and add to graph
                 for load_no in list(range(1, val['max_loads_per_branch'] + 1)):
@@ -511,8 +513,9 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
                     (lvgd.lv_grid.network.static_data['LV_cables'][
                         'I_max_th'] * cable_lf) > I_max_branch]
-                cable_type = suitable_cables.ix[
-                    suitable_cables['I_max_th'].idxmin()]
+                cable_type = suitable_cables.loc[
+                    suitable_cables['I_max_th'].idxmin(), :
+                ]
 
                 branch_no += 1
 
@@ -636,7 +639,8 @@ def build_lv_graph_residential(lvgd, selected_string_df):
     for i, row in selected_string_df.iterrows():
 
         # get overall count of branches to set unique branch_no
-        branch_count_sum = len(lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station()))
+        branch_count_sum = len(list(
+            lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station())))
 
         # iterate over it's occurences
         for branch_no in range(1, int(row['occurence']) + 1):

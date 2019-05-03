@@ -1,11 +1,11 @@
-ding0\.grid\.mv\_grid\.models package
-=====================================
+ding0.grid.mv\_grid.models package
+==================================
 
 Submodules
 ----------
 
-ding0\.grid\.mv\_grid\.models\.models module
---------------------------------------------
+ding0.grid.mv\_grid.models.models module
+----------------------------------------
 
 .. automodule:: ding0.grid.mv_grid.models.models
     :members:

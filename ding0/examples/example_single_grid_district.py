@@ -27,6 +27,7 @@ from ding0.tools.results import save_nd_to_pickle
 from sqlalchemy.orm import sessionmaker
 import oedialect
 
+
 # define logger
 logger = setup_logger()
 
@@ -40,15 +41,11 @@ session = sessionmaker(bind=engine)()
 nd = NetworkDing0(name='network')
 
 # choose MV Grid Districts to import
-mv_grid_districts = [3040]
+mv_grid_districts = [460]
 
 # run DING0 on selected MV Grid District
 nd.run_ding0(session=session,
              mv_grid_districts_no=mv_grid_districts)
-
-# export grids to database
-# nd.export_mv_grid(conn, mv_grid_districts)
-# nd.export_mv_grid_new(conn, mv_grid_districts)
 
 # export grid to file (pickle)
 save_nd_to_pickle(nd, filename='ding0_grids_example.pkl')
