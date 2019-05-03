@@ -60,14 +60,16 @@ if __name__ == '__main__':
     LOG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.ding0_log', 'pickle_log')
     pickle_export_logger(LOG_FILE_PATH)
 
-    # static path, Insert your own path
+    # static path
+    # Insert your own path
     pkl_filepath = "/home/local/RL-INSTITUT/jonas.huber/rli/Daten_flexibel_01/Ding0/20180823154014"
 
     # static path, .csv will be stored here
-    destination_path = os.path.join(os.path.expanduser("~"), '.ding0_log')
+    # change this to your own destination folder
+    destination_path = pkl_filepath
 
     # choose MV Grid Districts to import use list of integers
-    # f. e.: grids = list(range(1, 3609)) - 1 to 3608
+    # Multiple grids f. e.: grids = list(range(1, 3609)) - 1 to 3608(all of the existing)
     grids = [1658]
 
     # Loop over all selected Grids, exports every singele one to file like .csv
