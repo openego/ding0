@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     # choose MV Grid Districts to import use list of integers
     # Multiple grids f. e.: grids = list(range(1, 3609)) - 1 to 3608(all of the existing)
-    grids = [1658]
+    grids = list(range(1, 3))
 
     # Loop over all selected Grids, exports every singele one to file like .csv
     for grid_no in grids:
