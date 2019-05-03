@@ -57,7 +57,7 @@ def export_data_tocsv(path, network, csv_sep=','):
 if __name__ == '__main__':
 
     # Path to user dir, Log file for missing Grid_Districts, Will be crated if not existing
-    LOG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.ding0_log', 'pickle_log')
+    LOG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.ding0_log')
     pickle_export_logger(LOG_FILE_PATH)
 
     # static path, Insert your own path
