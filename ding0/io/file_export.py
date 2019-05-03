@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     # static path, .csv will be stored here
     # change this to your own destination folder
-    destination_path = pkl_filepath
+    destination_path = os.path.join(os.path.expanduser("~"), '.ding0_log')
 
     # choose MV Grid Districts to import use list of integers
     # Multiple grids f. e.: grids = list(range(1, 3609)) - 1 to 3608(all of the existing)
