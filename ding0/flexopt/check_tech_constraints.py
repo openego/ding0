@@ -33,9 +33,9 @@ def check_load(grid, mode):
 
     Parameters
     ----------
-    grid : GridDing0
+    grid : :class:`~.ding0.core.GridDing0`
         Grid identifier.
-    mode : str
+    mode : :obj:`str`
         Kind of grid ('MV' or 'LV').
 
     Returns
@@ -50,12 +50,12 @@ def check_load(grid, mode):
             branch_n: rel_overloading_n
             }
         
-    :any:`list` of :obj:`GridDing0`
+    :obj:`list` of :class:`~.ding0.core.network.TransformerDing0` objects
         List of critical transformers with the following format::
         
         [trafo_1, ..., trafo_m]
 
-    Notes
+    Note
     -----
         Lines'/cables' max. capacity (load case and feed-in case) are taken from [#]_.
         
@@ -157,17 +157,25 @@ def check_voltage(grid, mode):
 
     Parameters
     ----------
-    grid : GridDing0
+    grid : :class:`~.ding0.core.GridDing0`
         Grid identifier.
-    mode : str
+    mode : :obj:`str`
         Kind of grid ('MV' or 'LV').
 
     Returns
     -------
-    :any:`list` of :any:`GridDing0`
+    :obj:`list` of Ding0 node object (member of graph) either
+
+        * :class:`~.ding0.core.network.GeneratorDing0` or
+        * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+        * :class:`~.ding0.core.network.LoadDing0` or
+        * :class:`~.ding0.core.network.StationDing0` or
+        * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+        * :class:`~.ding0.core.network.CableDistributorDing0`
+
         List of critical nodes, sorted descending by voltage difference.
 
-    Notes
+    Note
     -----
         The examination is done in two steps, according to [#]_ :
         
@@ -222,14 +230,14 @@ def get_critical_line_loading(grid):
 
     Parameters
     ----------
-    grid : ding0.core.network.grids.LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 LV grid object
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         List of critical branches incl. its line loading
-    :any:`list`
+    :obj:`list`
         List of critical stations incl. its transformer loading
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
@@ -311,7 +319,7 @@ def peak_load_generation_at_node(nodes):
 
     Parameters
     ----------
-    nodes : :any:`list`
+    nodes : :obj:`list`
         Any LV grid Ding0 node object that is part of the grid topology
 
     Return
@@ -373,10 +381,10 @@ def get_critical_voltage_at_nodes(grid):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 LV grid object
 
-    Notes
+    Note
     -----
     The implementation highly depends on topology of LV grid. This must not
     change its topology from radial grid with stubs branching from radial
@@ -535,7 +543,7 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
 
     Parameters
     ----------
-    v_nom : int
+    v_nom : :obj:`int`
         Nominal voltage
     s_max : float
         Apparent power
@@ -578,7 +586,7 @@ def get_house_conn_gen_load(graph, node):
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         A list containing two items
         
         # peak load of connected house branch
@@ -605,7 +613,7 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology
@@ -654,11 +662,11 @@ def get_mv_impedance(grid):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         List containing resistance and reactance of MV grid
     """
 
@@ -681,7 +689,7 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology
@@ -739,14 +747,14 @@ def get_voltage_at_bus_bar(grid, tree):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology:
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         Voltage at bus bar. First item refers to load case, second item refers
         to voltage in feedin (generation) case
     """

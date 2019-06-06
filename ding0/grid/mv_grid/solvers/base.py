@@ -43,7 +43,7 @@ class BaseSolution(object):
         
         Parameters
         ----------
-        pair : :any:`list` of nodes
+        pair : :obj:`list` of nodes
             Descr
             
         Returns
@@ -124,7 +124,7 @@ class BaseSolution(object):
 
         Parameters
         ----------
-        pairs:  :any:`list` of pairs
+        pairs:  :obj:`list` of pairs
             List of pairs
             
         Returns
@@ -227,9 +227,9 @@ class BaseSolver(object):
         ----------
         data: type 
             Graph instance
-        vehicles: int
+        vehicles: :obj:`int`
             Vehicles number
-        timeout: int
+        timeout: :obj:`int`
             max processing time in seconds
  
         Todo

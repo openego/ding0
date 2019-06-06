@@ -276,7 +276,7 @@ class Route(object):
         int
             position of circuit breaker on route (index of last node on 1st half-ring preceding the circuit breaker)
 
-        Notes
+        Note
         -----
         According to planning principles of MV grids, a MV ring is run as two strings (half-rings) separated by a
         circuit breaker which is open at normal operation.
@@ -332,7 +332,7 @@ class Route(object):
         * current rating of cable/line
         * voltage stability at all nodes
 
-        Notes
+        Note
         -----
             The validation is done for every tested MV grid configuration during CVRP algorithm. The current rating is
             checked using load factors from [#]_. Due to the high amount of steps the voltage rating cannot be checked

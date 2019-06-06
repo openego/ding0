@@ -96,8 +96,8 @@ class SavingsSolution(BaseSolution):
 
         Returns a new instance (deep copy) of self object
         
-        Args
-        ----
+        Parameters
+        ----------
         pair : type
             description
             
@@ -144,7 +144,7 @@ class SavingsSolution(BaseSolution):
 
         Parameters
         ----------
-        pairs: :any:`list` of pairs of Route
+        pairs: :obj:`list` of pairs of Route
             List of pairs
             
         Returns
@@ -174,14 +174,14 @@ class ClarkeWrightSolver(BaseSolver):
 
         S is calculated by S = d(0,i) + d(0,j) - d(i,j) (CLARKE; WRIGHT, 1964)
         
-        Args
-        ----
+        Parameters
+        ----------
         graph: :networkx:`NetworkX Graph Obj< >`
             A NetworkX graaph is used.
         
         Returns
         -------
-        :any:`list` of `Node`
+        :obj:`list` of `Node`
             List of nodes sorted by its savings
         """
 
@@ -210,7 +210,7 @@ class ClarkeWrightSolver(BaseSolver):
         ----------
         graph: :networkx:`NetworkX Graph Obj< >`
             A NetworkX graaph is used.
-        timeout: int
+        timeout: :obj:`int`
             max processing time in seconds
         debug: bool, defaults to False
             If True, information is printed while routing

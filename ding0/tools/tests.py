@@ -110,8 +110,8 @@ def dataframe_equal(network_one, network_two):
     
     Parameters
     ----------
-    network_one: GridDing0
-    network_two: GridDing0
+    network_one: :class:`~.ding0.core.GridDing0`
+    network_two: :class:`~.ding0.core.GridDing0`
     
     Returns
     -------
@@ -222,9 +222,9 @@ def init_files_for_tests( mv_grid_districts= [3545],filename='ding0_tests_grids_
     
     Parameters
     ----------
-    mv_grid_districts: :any:`list` of :obj:`int`
+    mv_grid_districts: :obj:`list` of :obj:`int`
         Districts IDs: Defaults to [3545]
-    filename: str
+    filename: :obj:`str`
         Defaults to 'ding0_tests_grids_1.pkl'
     
     '''
@@ -254,9 +254,9 @@ def manual_ding0_test(mv_grid_districts=[3545],
     
     Parameters
     ----------
-    mv_grid_districts: :any:`list` of :obj:`int`
+    mv_grid_districts: :obj:`list` of :obj:`int`
         Districts IDs: Defaults to [3545]
-    filename: str
+    filename: :obj:`str`
         Defaults to 'ding0_tests_grids_1.pkl'
     '''
     print('\n########################################')

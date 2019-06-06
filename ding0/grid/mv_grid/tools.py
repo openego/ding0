@@ -34,7 +34,7 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
        If True, information is printed during process
     
 
-    Notes
+    Note
     -----
     According to planning principles of MV grids, a MV ring is run as two strings (half-rings) separated by a
     circuit breaker which is open at normal operation [#]_, [#]_.

@@ -75,7 +75,7 @@ def select_transformers(grid, s_max=None):
     :obj:`int` 
         Count of transformers
 
-    Notes
+    Note
     -----
     The LV transformer with the next higher available nominal apparent power is
     chosen. Therefore, a max. allowed transformer loading of 100% is implicitly
@@ -181,7 +181,7 @@ def select_grid_model_ria(lvgd, sector):
     ----------
     lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
-    sector : str
+    sector : :obj:`str`
         Either 'retail/industrial' or 'agricultural'. Depending on choice
         different parameters to grid topology apply
 
@@ -355,7 +355,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 }
             }
 
-    Notes
+    Note
     -----
     We assume a distance from the load to the branch it is connected to of
     30 m. This assumption is defined in the config files.
@@ -556,7 +556,7 @@ def select_grid_model_residential(lvgd):
     :pandas:`pandas.DataFrame<dataframe>`
         Parameters of chosen Transformer
 
-    Notes
+    Note
     -----
     In total 196 distinct LV grid topologies are available that are chosen
     by population in the LV grid district. Population is translated to
@@ -608,7 +608,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
     selected_string_df: :pandas:`pandas.DataFrame<dataframe>`
         Table of strings of the selected grid model
 
-    Notes
+    Note
     -----
     To understand what is happening in this method a few data table columns
     are explained here
