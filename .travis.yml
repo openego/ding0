@@ -26,6 +26,8 @@ before_install:
 install:
   - conda create -n ding0_env python=$PYTHON_VERSION
   - echo "python == $PYTHON_VERSION" >> $HOME/miniconda/envs/ding0_env/pinned
+  # What is pinned there?
+  - cat $HOME/miniconda/envs/ding0_env/pinned
   - conda env update -n ding0_env --file=ding0_test_env.yml
   - source activate ding0_env
   # which pip instance is used?

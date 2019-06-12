@@ -25,6 +25,7 @@ dependencies:
 
     # other utilities
     - keyring
+    - pip
 
 
     # GIS dependencies have to come all from conda-forge
