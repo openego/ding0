@@ -26,14 +26,8 @@ before_install:
 install:
   - conda create -n ding0_env python=$PYTHON_VERSION
   - echo "python == $PYTHON_VERSION" >> $HOME/miniconda/envs/ding0_env/pinned
-  # What is pinned there?
-  - cat $HOME/miniconda/envs/ding0_env/pinned
   - conda env update -n ding0_env --file=ding0_test_env.yml
   - source activate ding0_env
-  # which pip instance is used?
-  - which pip
-  - pip --version
-
   - EGOIOCONFIGDIR=`python3 -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
   - mkdir $EGOIOCONFIGDIR
   - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = openenergy-platform.org' 'port = 443' 'database = oedb' 'username = Ding0_test_user' 'password = 659193bb5925d401943e4f77d4bac7479bcd9214'> $EGOIOCONFIGDIR/config.ini
