@@ -29,16 +29,16 @@ install:
   - conda env update -n ding0_env --file=ding0_test_env.yml
   - source activate ding0_env
   # which pip instance is used?
-  - which pip3
-  - pip3 --version
+  - which pip
+  - pip --version
 
   - EGOIOCONFIGDIR=`python3 -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
   - mkdir $EGOIOCONFIGDIR
   - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = openenergy-platform.org' 'port = 443' 'database = oedb' 'username = Ding0_test_user' 'password = 659193bb5925d401943e4f77d4bac7479bcd9214'> $EGOIOCONFIGDIR/config.ini
   - cat $EGOIOCONFIGDIR/config.ini
-  - pip3 install --no-cache-dir .
+  - pip install --no-cache-dir .
   - conda list
-  - pip3 list
+  - pip list
 # command to run tests
 script:
   - pytest -vv
