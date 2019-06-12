@@ -27,13 +27,14 @@ install:
   - conda create -n ding0_env python=$PYTHON_VERSION
   - echo "python == $PYTHON_VERSION" >> $HOME/miniconda/envs/ding0_env/pinned
   - conda env update -n ding0_env --file=ding0_test_env.yml
-  -
+  - source activate ding0_env
   # which python instance is used?
   - which python3
-  - conda activate ding0_env
-  # which python instance is used?
-  - which python3
+  - python3 -V
+  - which python
+  - python -V
   # which pip instance is used?
+  - which pip
   - pip --version
 
   - EGOIOCONFIGDIR=`python -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
