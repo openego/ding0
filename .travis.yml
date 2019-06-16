@@ -1,33 +1,54 @@
-# Modified from
-# https://github.com/PyPSA/PyPSA/blob/master/.travis.yml
+# Examples of how to test on travis with windows
+# 1. https://github.com/kangwonlee/travis-yml-conda-posix-nt/blob/master/.travis.yml (using conda)
+# 2. https://github.com/cclauss/itinerant-tester-windows/blob/master/.travis.yml (using choco)
 
-dist: xenial
-language: python
-sudo: false # use container based infrastructure
-matrix:
-  include:
-    - env:
-        - PYTHON_VERSION="3.4"
-    - env:
-        - PYTHON_VERSION="3.5"
-    - env:
-        - PYTHON_VERSION="3.6"
-    - env:
-        - PYTHON_VERSION="3.7"
+
+
+language : shell
+
+env:
+  - CONDA_PYTHON=3.6
+
+os:
+  - windows
+
 before_install:
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
+  # set conda path info
+  - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
+      MINICONDA_PATH=$HOME/miniconda;
+      MINICONDA_SUB_PATH=$MINICONDA_PATH/bin;
+    elif [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
+      MINICONDA_PATH=/c/tools/miniconda3/;
+      MINICONDA_PATH_WIN=`cygpath --windows $MINICONDA_PATH`;
+      MINICONDA_SUB_PATH=$MINICONDA_PATH/Scripts;
+    fi;
+  # obtain miniconda installer
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    elif  [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
+    fi;
+
 install:
-  - conda create -n ding0_env python=$PYTHON_VERSION
-  - echo "python == $PYTHON_VERSION" >> $HOME/miniconda/envs/ding0_env/pinned
-  - conda env update -n ding0_env --file=ding0_test_env.yml
+  # install miniconda
+  # pip and conda will also need OpenSSL for Windows
+  - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
+      bash miniconda.sh -b -p $HOME/miniconda;
+    elif  [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
+      choco install openssl.light;
+      choco install miniconda3 --params="'/AddToPath:1 /D:$MINICONDA_PATH_WIN'";
+    fi;
+  - export PATH="$MINICONDA_PATH:$MINICONDA_SUB_PATH:$PATH";
+  # for conda version 4.4 or later
+  - source $MINICONDA_PATH/etc/profile.d/conda.sh;
+  - hash -r;
+  - conda config --set always_yes yes --set changeps1 no;
+  - conda update -q conda;
+  - echo "Python $CONDA_PYTHON running on $TRAVIS_OS_NAME";
+  - conda env create --name ding0_env python=$CONDA_PYTHON --file=ding0_test_env.yml;
+#  - conda activate test-environment;
   - source activate ding0_env
+  - conda --version ; python --version ; pip --version;
   - EGOIOCONFIGDIR=`python3 -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
   - mkdir $EGOIOCONFIGDIR
   - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = openenergy-platform.org' 'port = 443' 'database = oedb' 'username = Ding0_test_user' 'password = 659193bb5925d401943e4f77d4bac7479bcd9214'> $EGOIOCONFIGDIR/config.ini
@@ -35,6 +56,6 @@ install:
   - pip install --no-cache-dir .
   - conda list
   - pip list
-# command to run tests
+
 script:
-  - pytest -vv
+  pytest -vv
