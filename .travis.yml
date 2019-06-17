@@ -23,7 +23,7 @@ before_install:
       MINICONDA_PATH=/c/tools/miniconda3/;
       MINICONDA_PATH_WIN=`cygpath --windows $MINICONDA_PATH`;
       MINICONDA_SUB_PATH=$MINICONDA_PATH/Scripts;
-      set "EGOIOCONFIGDIR=%HOMEDRIVE%\%HOMEPATH%\.egoio";
+      EGOIOCONFIGDIR="$HOMEDRIVE\$HOMEPATH\.egoio";
     fi;
   # obtain miniconda installer
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
@@ -31,7 +31,7 @@ before_install:
     elif  [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
     fi;
-  - echo "$MINICONDA_PATH $MINICONDA_SUB_PATH $EGOIOCONFIGDIR"
+  - echo "$MINICONDA_PATH"; echo "$MINICONDA_SUB_PATH"; echo "$EGOIOCONFIGDIR"
 
 install:
   # install miniconda
