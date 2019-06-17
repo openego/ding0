@@ -19,7 +19,6 @@ before_install:
       MINICONDA_SUB_PATH=$MINICONDA_PATH/bin;
       # EGOIOCONFIGDIR=$HOME/.egoio;
     elif [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-      echo %HOMEPATH%
       MINICONDA_PATH=/c/tools/miniconda3/;
       MINICONDA_PATH_WIN=`cygpath --windows $MINICONDA_PATH`;
       MINICONDA_SUB_PATH=$MINICONDA_PATH/Scripts;
