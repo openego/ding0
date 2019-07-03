@@ -1,77 +1,24 @@
 import pytest
 
-import configparser as cp
-import os.path as path
-import ding0
-from matplotlib import pyplot as plt
-
-from egoio.tools import db
-from sqlalchemy.orm import sessionmaker
-import oedialect
-from geopy import distance
-from math import isnan
-from math import isnan
-
-import networkx as nx
-import pandas as pd
-
-from shapely.geometry import Point, LineString, LinearRing, Polygon
-from ding0.tools import config
-
-from ding0.core import NetworkDing0
-from ding0.core.network import (GridDing0, StationDing0,
-                                TransformerDing0,
-                                RingDing0, BranchDing0,
-                                CableDistributorDing0, CircuitBreakerDing0,
-                                GeneratorDing0, GeneratorFluctuatingDing0,
-                                LoadDing0)
-from ding0.core.network.stations import MVStationDing0, LVStationDing0
-from ding0.core.network import (GridDing0, StationDing0,
-                                TransformerDing0,
-                                RingDing0, BranchDing0,
-                                CableDistributorDing0, CircuitBreakerDing0,
-                                GeneratorDing0, GeneratorFluctuatingDing0,
-                                LoadDing0)
-from ding0.core.network.grids import MVGridDing0, LVGridDing0
-from ding0.core.network.stations import MVStationDing0, LVStationDing0
-from ding0.core.structure.regions import (MVGridDistrictDing0,
-                                          LVLoadAreaDing0,
-                                          LVLoadAreaCentreDing0,
-                                          LVGridDistrictDing0)
-from ding0.tools.tools import (get_dest_point,
-                               get_cart_dest_point,
+from ding0.tools.tools import (get_cart_dest_point,
                                create_poly_from_source)
 
 from ding0.core.network.loads import LVLoadDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
-from ding0.core.structure.regions import LVLoadAreaDing0,\
-    LVGridDistrictDing0,MVGridDistrictDing0
 
-from geopy import distance
-from shapely.geometry import Polygon, Point
-from matplotlib import pyplot as plt
+from shapely.geometry import Point
 import pandas as pd
 import networkx as nx
-import geopandas as gpd
-from matplotlib import pyplot as plt
-from ding0.core.network import (GridDing0, StationDing0,
-                                TransformerDing0,
+from ding0.core.network import (TransformerDing0,
                                 RingDing0, BranchDing0,
-                                CableDistributorDing0, CircuitBreakerDing0,
-                                GeneratorDing0, GeneratorFluctuatingDing0,
-                                LoadDing0)
+                                CircuitBreakerDing0,
+                                GeneratorDing0, GeneratorFluctuatingDing0)
 from ding0.core.network.grids import MVGridDing0, LVGridDing0
 from ding0.core.network.stations import MVStationDing0, LVStationDing0
 from ding0.core.structure.regions import (MVGridDistrictDing0,
                                           LVLoadAreaDing0,
                                           LVLoadAreaCentreDing0,
                                           LVGridDistrictDing0)
-from ding0.core import NetworkDing0
-
-from egoio.tools import db
-from sqlalchemy.orm import sessionmaker
-import oedialect
-
 import numpy as np
 from math import isnan
 
@@ -80,7 +27,7 @@ from ding0.core import NetworkDing0
 
 from egoio.tools import db
 from sqlalchemy.orm import sessionmaker
-import oedialect
+
 
 class TestMVGridDing0(object):
 
