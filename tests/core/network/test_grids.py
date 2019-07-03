@@ -1106,7 +1106,7 @@ class TestMVGridDing0(object):
             nx.betweenness_centrality(graph)
             ).mean(axis=0) == 0.0
 
-        nd.mv_routing()
+        #nd.mv_routing()
 
         assert len(list(graph.nodes())) == 269
         assert len(list(graph.edges())) == 218
