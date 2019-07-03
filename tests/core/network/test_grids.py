@@ -10,12 +10,14 @@ from sqlalchemy.orm import sessionmaker
 import oedialect
 from geopy import distance
 from math import isnan
+from math import isnan
 
 import networkx as nx
 import pandas as pd
 
 from shapely.geometry import Point, LineString, LinearRing, Polygon
 from ding0.tools import config
+
 from ding0.core import NetworkDing0
 from ding0.core.network import (GridDing0, StationDing0,
                                 TransformerDing0,
@@ -24,7 +26,21 @@ from ding0.core.network import (GridDing0, StationDing0,
                                 GeneratorDing0, GeneratorFluctuatingDing0,
                                 LoadDing0)
 from ding0.core.network.stations import MVStationDing0, LVStationDing0
+from ding0.core.network import (GridDing0, StationDing0,
+                                TransformerDing0,
+                                RingDing0, BranchDing0,
+                                CableDistributorDing0, CircuitBreakerDing0,
+                                GeneratorDing0, GeneratorFluctuatingDing0,
+                                LoadDing0)
 from ding0.core.network.grids import MVGridDing0, LVGridDing0
+from ding0.core.network.stations import MVStationDing0, LVStationDing0
+from ding0.core.structure.regions import (MVGridDistrictDing0,
+                                          LVLoadAreaDing0,
+                                          LVLoadAreaCentreDing0,
+                                          LVGridDistrictDing0)
+from ding0.tools.tools import (get_dest_point,
+                               get_cart_dest_point,
+                               create_poly_from_source)
 from ding0.core.network.loads import LVLoadDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core.structure.regions import LVLoadAreaDing0,\
@@ -59,6 +75,11 @@ import numpy as np
 from math import isnan
 
 
+from ding0.core import NetworkDing0
+
+from egoio.tools import db
+from sqlalchemy.orm import sessionmaker
+import oedialect
 def get_dest_point(source_point, distance_m, bearing_deg):
     geopy_dest = (distance
                   .distance(meters=distance_m)
@@ -449,18 +470,35 @@ class TestMVGridDing0(object):
         session.close()
 
     @pytest.fixture
-    def test_routing2(self):
-
+    def minimal_unrouted_grid(self):
+        """
+        Returns an MVGridDing0 object with a few artificially
+        generated information about a fictious set of load
+        areas and mv grid district.
+        All the data created here is typically a replacement
+        for the data that ding0 draws from the openenergy-platform.
+        The flow of this function follows the :meth:`~.core.NetworkDing0.run_ding0` function
+        in :class:`~.core.NetworkDing0`.
+        Returns
+        -------
+        """
+        # define source Coordinates EPSG 4326
         source = Point(8.638204, 49.867307)
+
+        # distance_scaling factor
         distance_scaling_factor = 3
 
+        # Create NetworkDing0 object
         network = NetworkDing0(name='network')
+
+        # Create MVStationDing0 and the HV-MV Transformers
         mv_station = MVStationDing0(
             id_db=0,
             geo_data=source,
             peak_load=10000.0,
             v_level_operation=20.0
         )
+
         hvmv_transformers = [
             TransformerDing0(
                 id_db=0,
@@ -473,8 +511,13 @@ class TestMVGridDing0(object):
                 v_level=20.0
             )
         ]
+
+        # Add the transformers to the station
+
         for hvmv_transfromer in hvmv_transformers:
             mv_station.add_transformer(hvmv_transfromer)
+
+        # Create the MV Grid
         mv_grid = MVGridDing0(
             id_db=0,
             network=network,
@@ -511,6 +554,8 @@ class TestMVGridDing0(object):
                      reinforce_only=0)
             )
         )
+        # Add some MV Generators that are directly connected at the station
+
         mv_generators = [
             GeneratorDing0(
                 id_db=0,
@@ -554,6 +599,8 @@ class TestMVGridDing0(object):
         for mv_gen in mv_generators:
             mv_grid.add_generator(mv_gen)
 
+        # Create the MV Grid District
+
         mv_grid_district_geo_data = create_poly_from_source(
             source,
             distance_scaling_factor * 5000,
@@ -567,7 +614,12 @@ class TestMVGridDing0(object):
                                                geo_data=mv_grid_district_geo_data)
         mv_grid.grid_district = mv_grid_district
         mv_station.grid = mv_grid
+
+        # Put the MV Grid District into Network
+
         network.add_mv_grid_district(mv_grid_district)
+
+        # Create the LV Grid Districts
         lv_grid_districts_data = pd.DataFrame(
             dict(
                 la_id=list(range(19)),
@@ -882,18 +934,14 @@ class TestMVGridDing0(object):
                                            'peak_load_industrial',
                                            'peak_load_agricultural']].sum(axis=1)
         )
-        lvgd_data = gpd.GeoDataFrame(lv_grid_districts_data.drop('geom', axis=1),
-                                     geometry=lv_grid_districts_data['geom'],
-                                     crs={'init': 'epsg:4326'})
-        mvgd_geodata = gpd.GeoSeries({'mv_griddistrict': 10000,
-                                      'geometry': mv_grid_district_geo_data},
-                                     crs={'init': 'epsg:4326'})
-        mvstation_geodata = gpd.GeoSeries({'mv_station': 0,
-                                           'geometry': source})
+
+        # Create the LVGridDing0 objects and all its constituents
+        # from the LVGridDistrictDing0 data
 
         lv_nominal_voltage = 400.0
         # assuming that the lv_grid districts and lv_load_areas are the same!
         # or 1 lv_griddistrict is 1 lv_loadarea
+        lv_stations = []
         for id_db, row in lv_grid_districts_data.iterrows():
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
                                            db_data=row,
@@ -937,13 +985,13 @@ class TestMVGridDing0(object):
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDing0(network=network,
                                   grid_district=lv_grid_district,
-                                  id_db=id,
+                                  id_db=id_db,
                                   geo_data=row['geom'],
                                   v_level=lv_nominal_voltage)
 
             # create LV station
             lv_station = LVStationDing0(
-                id_db=id,
+                id_db=id_db,
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=row['geom'].centroid,
@@ -963,7 +1011,9 @@ class TestMVGridDing0(object):
                                                         grid=mv_grid_district.mv_grid)
             lv_load_area.lv_load_area_centre = lv_load_area_centre
             mv_grid_district.add_lv_load_area(lv_load_area)
+            lv_stations.append(lv_station)
 
+        lv_stations = sorted(lv_stations, key=lambda x: repr(x))
         mv_grid_district.add_peak_demand()
         mv_grid.set_voltage_level()
 
@@ -971,7 +1021,6 @@ class TestMVGridDing0(object):
         mv_grid._station.set_operation_voltage_level()
 
         # set default branch types (normal, aggregated areas and within settlements)
-        print(mv_grid.network)
         (mv_grid.default_branch_type,
          mv_grid.default_branch_type_aggregated,
          mv_grid.default_branch_type_settle) = mv_grid.set_default_branch_type(
@@ -991,7 +1040,112 @@ class TestMVGridDing0(object):
         # build the lv_grids
         mv_grid.network.build_lv_grids()
 
-        return lv_station,lv_grid,lv_grid_district,lv_load_area
+        return network, mv_grid, lv_stations
+
+    def test_local_routing(self, minimal_unrouted_grid):
+        """
+        Rigorous test to the function :meth:`~.core.network.grids.MVGridDing0.routing`
+        """
+        nd, mv_grid, lv_stations = minimal_unrouted_grid
+
+        graph = mv_grid._graph
+
+        # pre-routing asserts
+        # check the grid_district
+        assert len(list(mv_grid.grid_district.lv_load_areas())) == 19
+        assert len(list(mv_grid.grid_district.lv_load_area_groups())) == 0
+        assert mv_grid.grid_district.peak_load == pytest.approx(
+            3834.695583,
+            abs=0.001
+        )
+
+        # check mv_grid graph attributes
+        assert len(list(graph.nodes())) == 43
+        assert len(list(graph.edges())) == 0
+        assert len(list(nx.isolates(graph))) == 43
+        assert pd.Series(dict(graph.degree())).sum(axis=0) == 0
+        assert pd.Series(dict(graph.degree())).mean(axis=0) == 0.0
+        assert len(list(nx.get_edge_attributes(graph, 'branch'))) == 0
+        assert nx.average_node_connectivity(graph) == 0.0
+        assert pd.Series(
+            nx.degree_centrality(graph)
+        ).mean(axis=0) == 0.0
+        assert pd.Series(
+            nx.closeness_centrality(graph)
+        ).mean(axis=0) == 0.0
+        assert pd.Series(
+            nx.betweenness_centrality(graph)
+        ).mean(axis=0) == 0.0
+
+        # do the routing
+        nd.mv_routing()
+
+        # post-routing asserts
+        # check that the connections are between the expected
+        # load areas
+        mv_station = mv_grid.station()
+        mv_cable_distributors = sorted(list(mv_grid.cable_distributors()), key=lambda x: repr(x))
+        expected_edges_list = [
+            (mv_station, mv_cable_distributors[0]),
+            (mv_station, mv_cable_distributors[1]),
+            (mv_station, mv_cable_distributors[2]),
+            (mv_station, lv_stations[0]),
+            (mv_station, lv_stations[1]),
+            (mv_station, lv_stations[5]),
+            (mv_station, lv_stations[8]),
+            (mv_station, lv_stations[9]),
+            (mv_station, lv_stations[10]),
+            (mv_station, lv_stations[13]),
+            (mv_station, lv_stations[14]),
+            (mv_station, lv_stations[16]),
+            (lv_stations[0], lv_stations[12]),
+            (lv_stations[1], lv_stations[11]),
+            (lv_stations[11], lv_stations[12]),
+            (lv_stations[13], lv_stations[17]),
+            (lv_stations[14], lv_stations[15]),
+            (lv_stations[15], lv_stations[16]),
+            (lv_stations[17], mv_cable_distributors[3]),
+            (lv_stations[18], lv_stations[2]),
+            (lv_stations[18], mv_cable_distributors[3]),
+            (lv_stations[3], lv_stations[7]),
+            (lv_stations[4], mv_cable_distributors[4]),
+            (lv_stations[5], mv_cable_distributors[4]),
+            (lv_stations[6], lv_stations[7]),
+            (lv_stations[7], mv_cable_distributors[3]),
+            (lv_stations[7], mv_cable_distributors[4]),
+            (lv_stations[8], mv_cable_distributors[0]),
+            (lv_stations[9], mv_cable_distributors[1]),
+            (lv_stations[10], mv_cable_distributors[2]),
+        ]
+
+        mv_grid.graph_draw('MV')
+        assert set(expected_edges_list) == set(graph.edges())
+
+        # check graph attributes
+        assert len(list(graph.nodes())) == 35
+        assert len(list(graph.edges())) == 30
+        assert len(list(nx.isolates(graph))) == 10
+        assert pd.Series(dict(graph.degree())).sum(axis=0) == 60
+        assert pd.Series(
+            dict(graph.degree())
+        ).mean(axis=0) == pytest.approx(1.714, 0.001)
+        assert len(list(nx.get_edge_attributes(graph, 'branch'))) == 30
+        assert nx.average_node_connectivity(graph) == pytest.approx(
+            0.5815,
+            abs=0.0001
+        )
+        assert pd.Series(
+            nx.degree_centrality(graph)
+        ).mean(axis=0) == pytest.approx(0.0504, abs=0.001)
+        assert pd.Series(
+            nx.closeness_centrality(graph)
+        ).mean(axis=0) == pytest.approx(0.16379069, abs=0.00001)
+        assert pd.Series(
+            nx.betweenness_centrality(graph)
+        ).mean(axis=0) == pytest.approx(0.033613445, abs=0.00001)
+        assert pd.Series(
+            nx.edge_betweenness_centrality(graph)
+        ).mean(axis=0) == pytest.approx(0.05378151, abs=0.00001)
 
     def test_routing(self, oedb_session):
         """
@@ -1057,6 +1211,46 @@ class TestMVGridDing0(object):
         assert pd.Series(
             nx.edge_betweenness_centrality(graph)
             ).mean(axis=0) == pytest.approx(0.04636150, abs=0.00001)
+
+    def test_construct(self, minimal_unrouted_grid):
+        """Creates a syntetic mv grid containing enough nodes
+        for the routing algorithm to work and verifies:
+        -Number of mv grid connections
+        -Number of rings
+        -Right connections for the cable distr.
+        -Right type of cable for the circuit breakers"""
+
+        network, mv_grid, lv_stations = minimal_unrouted_grid
+        network.mv_routing(debug=True)
+
+        assert len(list(list(mv_grid._graph.adj.values())[0].values())) == 12
+
+        assert len(mv_grid._rings) == 6
+
+        #Check cable Distributors have right connections
+        assert len(mv_grid._cable_distributors) == 5
+        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
+                             [[25], :].nonzero()[1]) for i in [21, 0]) == True
+        assert nx.adjacency_matrix(mv_grid._graph)[27, :].nnz == 2
+        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
+                             [[27], :].nonzero()[1]) for i in [22, 0]) == True
+        assert nx.adjacency_matrix(mv_grid._graph)[29, :].nnz == 2
+        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
+                             [[29], :].nonzero()[1]) for i in [23, 0]) == True
+        assert nx.adjacency_matrix(mv_grid._graph)[33, :].nnz == 3
+        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
+                             [[33], :].nonzero()[1]) for i in [13,14,20]) == True
+        assert nx.adjacency_matrix(mv_grid._graph)[34, :].nnz == 3
+        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
+                             [[34], :].nonzero()[1]) for i in [17,18,20]) == True
+
+        #Thermal Capacity of circuit breaker's branch
+        mv_grid._circuit_breakers[0].branch.type['I_max_th'] == 210
+        mv_grid._circuit_breakers[1].branch.type['I_max_th'] == 210
+        mv_grid._circuit_breakers[2].branch.type['I_max_th'] == 210
+        mv_grid._circuit_breakers[3].branch.type['I_max_th'] == 210
+        mv_grid._circuit_breakers[4].branch.type['I_max_th'] == 210
+        mv_grid._circuit_breakers[5].branch.type['I_max_th'] == 210
 
 
 class TestLVGridDing0(object):
