@@ -35,22 +35,22 @@ def print_upper_triangular_matrix(matrix):
     # Print column header
     # Assumes first row contains all needed headers
     first = sorted(matrix.keys())[0]
-    print('\t', end=' ')
+    print('\t', end=" ")
     for i in matrix[first]:
-        print('{}\t'.format(i), end=' ')
+        print('{}\t'.format(i), end=" ")
     print()
 
     indent_count = 0
 
     for i in matrix:
         # Print line header
-        print('{}\t'.format(i), end=' ')
+        print('{}\t'.format(i), end=" ")
 
         if indent_count:
-            print('\t' * indent_count, end=' ')
+            print('\t' * indent_count, end=" ")
 
         for j in sorted(matrix[i]): # required because dict doesn't guarantee insertion order
-            print('{}\t'.format(matrix[i][j]), end=' ')
+            print('{}\t'.format(matrix[i][j]), end=" ")
 
         print()
 
@@ -73,7 +73,7 @@ def print_upper_triangular_matrix_as_complete(matrix):
             if a > b:
                 a, b = b, a
 
-            print(matrix[a][b], end=' ')
+            print(matrix[a][b], end=" ")
 
         print()
 

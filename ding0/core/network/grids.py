@@ -460,8 +460,8 @@ class MVGridDing0(GridDing0):
 
         References
         ----------
-        .. [#] Falk Schaller et al., "Modellierung realitätsnaher zukünftiger Referenznetze im Verteilnetzsektor zur
-            Überprüfung der Elektroenergiequalität", Internationaler ETG-Kongress Würzburg, 2011
+        .. [#] Falk Schaller et al., "Modellierung realitaetsnaher zukuenftiger Referenznetze im Verteilnetzsektor zur
+            Ueberpruefung der Elektroenergiequalitaet", Internationaler ETG-Kongress Wuerzburg, 2011
         .. [#] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
 
         """
@@ -551,8 +551,8 @@ class MVGridDing0(GridDing0):
         References
         ----------
         .. [#] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
-        .. [#] René Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
-        .. [#] Südkabel GmbH, "Einadrige VPE-isolierte Mittelspannungskabel",
+        .. [#] Rene Flosdorff et al., "Elektrische Energieverteilung", Vieweg+Teubner, 2005
+        .. [#] Suedkabel GmbH, "Einadrige VPE-isolierte Mittelspannungskabel",
             http://www.suedkabel.de/cms/upload/pdf/Garnituren/Einadrige_VPE-isolierte_Mittelspannungskabel.pdf, 2017
         .. [#] Deutsche Energie-Agentur GmbH (dena), "dena-Verteilnetzstudie. Ausbau- und Innovationsbedarf der
             Stromverteilnetze in Deutschland bis 2030.", 2012

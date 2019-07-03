@@ -114,8 +114,8 @@ def routing_solution_to_ding0_graph(graph, solution):
     :networkx:`NetworkX Graph Obj< >` 
         NetworkX graph object with nodes and edges
     """
-    # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
-    # TODO: des Routing-Tools auch für die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
+    # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfaehigkeit
+    # TODO: des Routing-Tools auch fuer die TestCases zu erhalten. Es wird ggf. notwendig, diese direkt im Routing vorzunehmen.
 
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}

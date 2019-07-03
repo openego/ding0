@@ -1,0 +1,45 @@
+name: ding0_env
+channels:
+      - conda-forge
+      - defaults
+dependencies:
+    # plotting packages
+    - descartes
+    - matplotlib >= 1.5.3
+    - seaborn
+
+    # numerical processing packages
+    - pandas >= 0.20.3
+
+    # graph theory processing
+    - networkx >= 2.0
+
+    # testing packages
+    - unittest2
+    - pytest
+
+    # database packages
+    - sqlalchemy >= 1.0.11
+    - geoalchemy2 >= 0.2.6
+    - psycopg2
+
+    # other utilities
+    - keyring
+
+
+    # GIS dependencies have to come all from conda-forge
+    - conda-forge::fiona
+    - conda-forge::pyproj >= 1.9.5.1
+    - conda-forge::pyshp
+    - conda-forge::geopandas
+    - conda-forge::geopy >= 1.11.0
+    - conda-forge::shapely >= 1.5.12
+    - conda-forge::libgdal
+
+    - pip:
+        - demandlib
+        - egoio >= 0.4.5
+        - keyrings.alt
+        - oedialect
+        - pypsa == 0.11.0
+        - workalendar

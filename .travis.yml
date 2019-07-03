@@ -1,16 +1,39 @@
+# Modified from
+# https://github.com/PyPSA/PyPSA/blob/master/.travis.yml
+
+dist: xenial
 language: python
-python:
-  - "3.4"
-  - "3.5"
-  - "3.6"
-  # - "3.7"
-# command to install dependencies
+sudo: false # use container based infrastructure
+matrix:
+  include:
+    - env:
+        - PYTHON_VERSION="3.4"
+    - env:
+        - PYTHON_VERSION="3.5"
+    - env:
+        - PYTHON_VERSION="3.6"
+    - env:
+        - PYTHON_VERSION="3.7"
+before_install:
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
 install:
+  - conda create -n ding0_env python=$PYTHON_VERSION
+  - echo "python == $PYTHON_VERSION" >> $HOME/miniconda/envs/ding0_env/pinned
+  - conda env update -n ding0_env --file=ding0_test_env.yml
+  - source activate ding0_env
   - EGOIOCONFIGDIR=`python -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
   - mkdir $EGOIOCONFIGDIR
   - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = openenergy-platform.org' 'port = 443' 'database = oedb' 'username = Ding0_test_user' 'password = 659193bb5925d401943e4f77d4bac7479bcd9214'> $EGOIOCONFIGDIR/config.ini
   - cat $EGOIOCONFIGDIR/config.ini
-  - pip install -r requirements.txt
+  - pip install --no-cache-dir .
+  - conda list
   - pip list
 # command to run tests
 script:

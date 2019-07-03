@@ -348,8 +348,8 @@ class Route(object):
         .. [#] M. Sakulin, W. Hipp, "Netzaspekte von dezentralen Erzeugungseinheiten,
             Studie im Auftrag der E-Control GmbH", TU Graz, 2004
         .. [#] Klaus Heuck et al., "Elektrische Energieversorgung", Vieweg+Teubner, Wiesbaden, 2007
-        .. [#] FGH e.V.: "Technischer Bericht 302: Ein Werkzeug zur Optimierung der Störungsbeseitigung
-            für Planung und Betrieb von Mittelspannungsnetzen", Tech. rep., 2008
+        .. [#] FGH e.V.: "Technischer Bericht 302: Ein Werkzeug zur Optimierung der Stoerungsbeseitigung
+            fuer Planung und Betrieb von Mittelspannungsnetzen", Tech. rep., 2008
         """
 
         # load parameters
