@@ -16,25 +16,25 @@ dependencies:
 
     # testing packages
     - unittest2
-    - pytest
+    #- pytest
 
     # database packages
     - sqlalchemy >= 1.0.11
     - geoalchemy2 >= 0.2.6
-    - psycopg2
+    #- psycopg2
 
     # other utilities
-    - keyring
+    #- keyring
 
 
     # GIS dependencies have to come all from conda-forge
-    - conda-forge::fiona
+    #- conda-forge::fiona
     - conda-forge::pyproj >= 1.9.5.1
-    - conda-forge::pyshp
+    #- conda-forge::pyshp
     - conda-forge::geopandas
     - conda-forge::geopy >= 1.11.0
     - conda-forge::shapely >= 1.5.12
-    - conda-forge::libgdal
+    #- conda-forge::libgdal
 
     - pip:
         - demandlib
@@ -43,3 +43,11 @@ dependencies:
         - oedialect
         - pypsa == 0.11.0
         - workalendar
+
+#List of packages which were not in the mv_routing_test branch (possibly causing the lag)
+#pytest
+#psycopg2
+#keyring
+#fiona
+#pyshp
+#libgdal
