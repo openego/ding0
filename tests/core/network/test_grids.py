@@ -41,6 +41,7 @@ from ding0.core.structure.regions import (MVGridDistrictDing0,
 from ding0.tools.tools import (get_dest_point,
                                get_cart_dest_point,
                                create_poly_from_source)
+
 from ding0.core.network.loads import LVLoadDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core.structure.regions import LVLoadAreaDing0,\
@@ -80,33 +81,6 @@ from ding0.core import NetworkDing0
 from egoio.tools import db
 from sqlalchemy.orm import sessionmaker
 import oedialect
-def get_dest_point(source_point, distance_m, bearing_deg):
-    geopy_dest = (distance
-                  .distance(meters=distance_m)
-                  .destination((source_point.y,
-                                source_point.x)
-                               , bearing_deg))
-    return Point(geopy_dest.longitude, geopy_dest.latitude)
-
-
-def get_cart_dest_point(source_point, east_meters, north_meters):
-    x_dist = abs(east_meters)
-    y_dist = abs(north_meters)
-    x_dir = (-90 if east_meters < 0
-             else 90)
-    y_dir = (180 if north_meters < 0
-             else 0)
-    intermediate_dest = get_dest_point(source_point, x_dist, x_dir)
-    return get_dest_point(intermediate_dest, y_dist, y_dir)
-
-
-def create_poly_from_source(source_point, left_m, right_m, up_m, down_m):
-    poly_points = [get_cart_dest_point(source_point, -1 * left_m, -1 * down_m),
-                   get_cart_dest_point(source_point, -1 * left_m, up_m),
-                   get_cart_dest_point(source_point, right_m, up_m),
-                   get_cart_dest_point(source_point, right_m, -1 * down_m),
-                   get_cart_dest_point(source_point, -1 * left_m, -1 * down_m)]
-    return Polygon(sum(map(list, (p.coords for p in poly_points)), []))
 
 class TestMVGridDing0(object):
 
@@ -1118,7 +1092,7 @@ class TestMVGridDing0(object):
             (lv_stations[10], mv_cable_distributors[2]),
         ]
 
-        mv_grid.graph_draw('MV')
+        #mv_grid.graph_draw('MV')
         assert set(expected_edges_list) == set(graph.edges())
 
         # check graph attributes
