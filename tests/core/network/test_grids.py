@@ -1076,16 +1076,16 @@ class TestMVGridDing0(object):
         # instantiate new ding0 network object
         nd = NetworkDing0(name='network')
 
-        #nd.import_mv_grid_districts(oedb_session,
+        nd.import_mv_grid_districts(oedb_session,
                                     mv_grid_districts_no=[460])
         # STEP 2: Import generators
-        #nd.import_generators(oedb_session)
+        nd.import_generators(oedb_session)
         # STEP 3: Parametrize MV grid
         nd.mv_parametrize_grid()
         # STEP 4: Validate MV Grid Districts
         nd.validate_grid_districts()
         # STEP 5: Build LV grids
-        nd.build_lv_grids()
+        #nd.build_lv_grids()
 
         graph = nd._mv_grid_districts[0].mv_grid._graph
 
