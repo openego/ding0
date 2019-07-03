@@ -1076,10 +1076,10 @@ class TestMVGridDing0(object):
         # instantiate new ding0 network object
         nd = NetworkDing0(name='network')
 
-        nd.import_mv_grid_districts(oedb_session,
+        #nd.import_mv_grid_districts(oedb_session,
                                     mv_grid_districts_no=[460])
         # STEP 2: Import generators
-        nd.import_generators(oedb_session)
+        #nd.import_generators(oedb_session)
         # STEP 3: Parametrize MV grid
         nd.mv_parametrize_grid()
         # STEP 4: Validate MV Grid Districts
@@ -1106,7 +1106,7 @@ class TestMVGridDing0(object):
             nx.betweenness_centrality(graph)
             ).mean(axis=0) == 0.0
 
-        #nd.mv_routing()
+        nd.mv_routing()
 
         assert len(list(graph.nodes())) == 269
         assert len(list(graph.edges())) == 218
