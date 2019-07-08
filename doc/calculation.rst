@@ -32,7 +32,7 @@ Apparent power
 Sign Convention
 ###############
 
-Generators and Loads in an AC power system can behave either like an inductor
+Generators and loads in an AC power system can behave either like an inductor
 or a capacitor. Mathematically, this has two different sign conventions,
 either from the generator perspective or from the load perspective.
 This is defined by the direction of power flow from the component.
@@ -58,3 +58,5 @@ Ding0 makes the sign convention easier by allowing the user to provide
 the string values "inductive" or "capacitive" to describe the behaviour
 of the different assets better. The sign convention for different parts of
 ding0 are handled internally.
+By default, generators are assumed to behave capacitively, while loads are
+assumed to behave inductively.
