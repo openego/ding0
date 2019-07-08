@@ -13,11 +13,11 @@ def test_voltage_delta_vde():
 
     The formulation is:
 
-        * for change in voltage across an inductive component:
+        * for change in voltage across an inductive generator:
             .. math::
                 \\Delta u = \\frac{S_{Amax} \cdot ( R_{kV} \cdot cos(\phi) + X_{kV} \cdot sin(\phi) )}{U_{nom}}
 
-        * for change in voltage across a capacitive component:
+        * for change in voltage across a capacitive generator:
             .. math::
                 \\Delta u = \\frac{S_{Amax} \cdot ( R_{kV} \cdot cos(\phi) - X_{kV} \cdot sin(\phi) )}{U_{nom}}
 
@@ -44,8 +44,8 @@ def test_voltage_delta_vde():
     r = 1  # Ohms
     x = 1  # Ohms
     cos_phi = 1/sqrt(2)  # no unit i.e. 1/ sqrt(2) => angle is 45 degrees
-    x_sign_capacitive = -1
-    x_sign_inductive = 1
+    x_sign_capacitive = 1
+    x_sign_inductive = -1
     voltage_delta_inductive = voltage_delta_vde(v_nom,
                                                 s_max,
                                                 r,

@@ -132,9 +132,9 @@ def q_sign(reactive_power_mode_string, sign_convention):
         else:
             raise ValueError("Unknown sign conention {}".format(sign_convention))
     elif comparestr == 'capacitive':
-        if sign_convention =='generator':
+        if sign_convention == 'generator':
             return 1
-        elif sign_convention =='load':
+        elif sign_convention == 'load':
             return -1
         else:
             raise ValueError("Unknown sign convention {}".format(sign_convention))
