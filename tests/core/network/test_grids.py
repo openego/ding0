@@ -1173,18 +1173,6 @@ class TestMVGridDing0(object):
         assert set([lv_stations[12],lv_stations[13],lv_stations[15]]) == \
                set((mv_grid._graph.adj[mv_grid._cable_distributors[4]]))
 
-        assert nx.adjacency_matrix(mv_grid._graph)[27, :].nnz == 2
-        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
-                             [[27], :].nonzero()[1]) for i in [22, 0]) == True
-        assert nx.adjacency_matrix(mv_grid._graph)[29, :].nnz == 2
-        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
-                             [[29], :].nonzero()[1]) for i in [23, 0]) == True
-        assert nx.adjacency_matrix(mv_grid._graph)[33, :].nnz == 3
-        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
-                             [[33], :].nonzero()[1]) for i in [13,14,20]) == True
-        assert nx.adjacency_matrix(mv_grid._graph)[34, :].nnz == 3
-        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
-                             [[34], :].nonzero()[1]) for i in [17,18,20]) == True
 
         #Thermal Capacity of circuit breaker's branch
         mv_grid._circuit_breakers[0].branch.type['I_max_th'] == 210
