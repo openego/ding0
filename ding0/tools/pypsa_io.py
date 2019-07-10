@@ -331,15 +331,15 @@ def edges_to_dict_of_dataframes(grid, edges):
         # TODO: find the real cause for being L, C, I_th_max type of Series
         if (isinstance(edge['branch'].type['L'], Series) or
                 isinstance(edge['branch'].type['C'], Series)):
-            x = omega * edge['branch'].type['L'].values[0] * 1e-3
+            x_l = omega * edge['branch'].type['L'].values[0] * 1e-3
         else:
 
-            x = omega * edge['branch'].type['L'] * 1e-3
+            x_l = omega * edge['branch'].type['L'] * 1e-3
 
         if isinstance(edge['branch'].type['R'], Series):
-            r = edge['branch'].type['R'].values[0]
+            r_l = edge['branch'].type['R'].values[0]
         else:
-            r = edge['branch'].type['R']
+            r_l = edge['branch'].type['R']
 
         if (isinstance(edge['branch'].type['I_max_th'], Series) or
                 isinstance(edge['branch'].type['U_n'], Series)):
@@ -355,8 +355,8 @@ def edges_to_dict_of_dataframes(grid, edges):
         lines['line_id'].append(line_name)
         lines['bus0'].append(edge['adj_nodes'][0].pypsa_id)
         lines['bus1'].append(edge['adj_nodes'][1].pypsa_id)
-        lines['x'].append(x * l)
-        lines['r'].append(r * l)
+        lines['x'].append(x_l * l)
+        lines['r'].append(r_l * l)
         lines['s_nom'].append(s_nom)
         lines['length'].append(l)
         lines['cables'].append(3)

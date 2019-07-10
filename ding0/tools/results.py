@@ -328,15 +328,15 @@ def calculate_lvgd_stats(nw):
                     'Peak Load Retail': lv_district.peak_load_retail,
                     'Peak Load Industrial': lv_district.peak_load_industrial,
                     'Peak Load Agricultural': lv_district.peak_load_agricultural,
-                    'N° of Sector Residential': lv_district.sector_count_residential,
-                    'N° of Sector Retail': lv_district.sector_count_retail,
-                    'N° of Sector Industrial': lv_district.sector_count_industrial,
-                    'N° of Sector Agricultural': lv_district.sector_count_agricultural,
+                    'Number of Sector Residential': lv_district.sector_count_residential,
+                    'Number of Sector Retail': lv_district.sector_count_retail,
+                    'Number of Sector Industrial': lv_district.sector_count_industrial,
+                    'Number of Sector Agricultural': lv_district.sector_count_agricultural,
                     'Accum. Consumption Residential': lv_district.sector_consumption_residential,
                     'Accum. Consumption Retail': lv_district.sector_consumption_retail,
                     'Accum. Consumption Industrial': lv_district.sector_consumption_industrial,
                     'Accum. Consumption Agricultural': lv_district.sector_consumption_agricultural,
-                    'N° of branches from LV Station': branches_from_station,
+                    'Number of branches from LV Station': branches_from_station,
                     'Load Area is Aggregated': LA.is_aggregated,
                     'Load Area is Satellite': LA.is_satellite,
                 }
@@ -415,17 +415,17 @@ def calculate_lvgd_stats(nw):
         # number of residential loads
         lv_loads = load_df[load_df['load_type'] == 'residential'].groupby(['LV_grid_id'])[
             'load_type'].count().to_frame()  # .unstack(level=-1)
-        lv_loads.columns = ['N° of loads residential']
+        lv_loads.columns = ['Number of loads residential']
         lvgd_stats = pd.concat([lvgd_stats, lv_loads], axis=1)
         # number of agricultural loads
         lv_loads = load_df[load_df['load_type'] == 'agricultural'].groupby(['LV_grid_id'])[
             'load_type'].count().to_frame()  # .unstack(level=-1)
-        lv_loads.columns = ['N° of loads agricultural']
+        lv_loads.columns = ['Number of loads agricultural']
         lvgd_stats = pd.concat([lvgd_stats, lv_loads], axis=1)
         # number of mixed industrial / retail loads
         lv_loads = load_df[load_df['load_type'] == 'ind_ret'].groupby(['LV_grid_id'])[
             'load_type'].count().to_frame()  # .unstack(level=-1)
-        lv_loads.columns = ['N° of loads mixed industrial/retail']
+        lv_loads.columns = ['Number of loads mixed industrial/retail']
         lvgd_stats = pd.concat([lvgd_stats, lv_loads], axis=1)
 
     if not branch_df.empty:
@@ -442,19 +442,19 @@ def calculate_lvgd_stats(nw):
         lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
         # N°of branches
         lv_branches = branch_df.groupby(['LV_grid_id', 'type_name'])['length'].count().to_frame().unstack(level=-1)
-        lv_branches.columns = ['N° of branches Type ' + _[1] if isinstance(_, tuple) else _ for _ in
+        lv_branches.columns = ['Number of branches Type ' + _[1] if isinstance(_, tuple) else _ for _ in
                                lv_branches.columns]
         lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
         lv_branches = branch_df[branch_df['type_kind'] == 'line'].groupby(['LV_grid_id'])['length'].count().to_frame()
-        lv_branches.columns = ['N° of branches overhead lines']
+        lv_branches.columns = ['Number of branches overhead lines']
         lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
         lv_branches = branch_df[branch_df['type_kind'] == 'cable'].groupby(['LV_grid_id'])['length'].count().to_frame()
-        lv_branches.columns = ['N° of branches underground cables']
+        lv_branches.columns = ['Number of branches underground cables']
         lvgd_stats = pd.concat([lvgd_stats, lv_branches], axis=1)
     if not trafos_df.empty:
         # N of trafos
         lv_trafos = trafos_df.groupby(['LV_grid_id'])['s_max_a'].count().to_frame()
-        lv_trafos.columns = ['N° of MV/LV Trafos']
+        lv_trafos.columns = ['Number of MV/LV Trafos']
         lvgd_stats = pd.concat([lvgd_stats, lv_trafos], axis=1)
         # Capacity of trafos
         lv_trafos = trafos_df.groupby(['LV_grid_id'])['s_max_a'].sum().to_frame()
@@ -799,7 +799,7 @@ def calculate_mvgd_stats(nw):
                     lv_branches_dict[lv_branches_idx] = {
                         'grid_id': district.mv_grid.id_db,
                         'length': br['branch'].length / 1e3,
-                        'type_name': br['branch'].type.to_frame().columns[0],  # why is it different as for MV grids?
+                        'type_name': br['branch'].type.to_frame().columns[0],  # why is it different as for MV grids? can be replaced by br['branch'].type.name
                         'type_kind': br['branch'].kind,
                     }
 
@@ -843,7 +843,7 @@ def calculate_mvgd_stats(nw):
     if not trafos_df.empty:
         mvgd_stats = pd.concat([mvgd_stats, trafos_df.groupby('grid_id').count()['s_max_a']], axis=1)
         mvgd_stats = pd.concat([mvgd_stats, trafos_df.groupby('grid_id').sum()[['s_max_a']]], axis=1)
-        mvgd_stats.columns = ['N° of HV/MV Trafos', 'Trafos HV/MV Acc s_max_a']
+        mvgd_stats.columns = ['Number of HV/MV Trafos', 'Trafos HV/MV Acc s_max_a']
 
     ###################################
     # Aggregated data Generators
@@ -864,18 +864,18 @@ def calculate_mvgd_stats(nw):
         # Isolated generators
         mv_generation = generators_df[generators_df['isolation']].groupby(
             ['grid_id'])['gen_cap'].count().to_frame()  # .unstack(level=-1)
-        mv_generation.columns = ['N° of isolated MV Generators']
+        mv_generation.columns = ['Number of isolated MV Generators']
         mvgd_stats = pd.concat([mvgd_stats, mv_generation], axis=1)
 
     ###################################
     # Aggregated data of other nodes
     if not other_nodes_df.empty:
         # print(other_nodes_df['CD_count'].to_frame())
-        mvgd_stats['N° of Cable Distr'] = other_nodes_df['CD_count'].to_frame().astype(int)
-        mvgd_stats['N° of LV Stations'] = other_nodes_df['LV_count'].to_frame().astype(int)
-        mvgd_stats['N° of Circuit Breakers'] = other_nodes_df['CB_count'].to_frame().astype(int)
+        mvgd_stats['Number of Cable Distr'] = other_nodes_df['CD_count'].to_frame().astype(int)
+        mvgd_stats['Number of LV Stations'] = other_nodes_df['LV_count'].to_frame().astype(int)
+        mvgd_stats['Number of Circuit Breakers'] = other_nodes_df['CB_count'].to_frame().astype(int)
         mvgd_stats['District Area'] = other_nodes_df['Dist_area'].to_frame()
-        mvgd_stats['N° of MV/LV Trafos'] = other_nodes_df['MVLV_trafo_count'].to_frame().astype(int)
+        mvgd_stats['Number of MV/LV Trafos'] = other_nodes_df['MVLV_trafo_count'].to_frame().astype(int)
         mvgd_stats['Trafos MV/LV Acc s_max_a'] = other_nodes_df['MVLV_trafo_cap'].to_frame()
         mvgd_stats['Length of MV max path'] = other_nodes_df['max_mv_path'].to_frame()
         mvgd_stats['Length of MVLV max path'] = other_nodes_df['max_mvlv_path'].to_frame()
@@ -919,9 +919,9 @@ def calculate_mvgd_stats(nw):
         ring_br = branches_df[branches_df['in_ring']].groupby(
             ['grid_id'])['length'].count().to_frame()
         branches_data = total_br - ring_br
-        total_br.columns = ['N° of MV branches']
+        total_br.columns = ['Number of MV branches']
         mvgd_stats = pd.concat([mvgd_stats, total_br], axis=1)
-        branches_data.columns = ['N° of MV branches not in a ring']
+        branches_data.columns = ['Number of MV branches not in a ring']
         mvgd_stats = pd.concat([mvgd_stats, branches_data], axis=1)
 
     ###################################
@@ -948,7 +948,7 @@ def calculate_mvgd_stats(nw):
 
         # n° of branches
         total_lv_br = lv_branches_df.groupby(['grid_id'])['length'].count().to_frame()
-        total_lv_br.columns = ['N° of LV branches']
+        total_lv_br.columns = ['Number of LV branches']
         mvgd_stats = pd.concat([mvgd_stats, total_lv_br], axis=1)
 
     ###################################
@@ -956,7 +956,7 @@ def calculate_mvgd_stats(nw):
     if not ring_df.empty:
         # N° of rings
         ring_data = ring_df.groupby(['grid_id'])['grid_id'].count().to_frame()
-        ring_data.columns = ['N° of MV Rings']
+        ring_data.columns = ['Number of MV Rings']
         mvgd_stats = pd.concat([mvgd_stats, ring_data], axis=1)
 
         # min,max,mean km of all rings
@@ -990,7 +990,7 @@ def calculate_mvgd_stats(nw):
     # Aggregated data of Load Areas
     if not LA_df.empty:
         LA_data = LA_df.groupby(['grid_id'])['population'].count().to_frame()
-        LA_data.columns = ['N° of Load Areas']
+        LA_data.columns = ['Number of Load Areas']
 
         mvgd_stats = pd.concat([mvgd_stats, LA_data], axis=1)
 
@@ -1021,12 +1021,12 @@ def calculate_mvgd_stats(nw):
     if not LA_df.empty:
         agg_LA_data = LA_df[LA_df['is_agg']].groupby(
             ['grid_id'])['population'].count().to_frame()
-        agg_LA_data.columns = ['N° of Load Areas - Aggregated']
+        agg_LA_data.columns = ['Number of Load Areas - Aggregated']
         mvgd_stats = pd.concat([mvgd_stats, agg_LA_data], axis=1)
 
         sat_LA_data = LA_df[LA_df['is_sat']].groupby(
             ['grid_id'])['population'].count().to_frame()
-        sat_LA_data.columns = ['N° of Load Areas - Satellite']
+        sat_LA_data.columns = ['Number of Load Areas - Satellite']
         mvgd_stats = pd.concat([mvgd_stats, sat_LA_data], axis=1)
 
         agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])['population',
