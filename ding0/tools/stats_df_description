@@ -183,12 +183,12 @@ Load Area ID                                 : ID of the Load Area to which the 
 Load Area is Aggregated                         : True if respective Load Area is aggregated, False otherwise.
 Load Area is Satellite                          : True if respective Load Area is satellite, False otherwise.
 MV_grid_id                                   : ID of the MV District to which the LV District LV_grid_id belongs.
-N° of MV/LV Trafos                           : Number of MV/LV trafos in disctric's main station
-N° of Sector Agricultural                    : Number of Agricultural sectors in the corresponding map
-N° of Sector Industrial                      : Number of Industrial sectors in the corresponding map
-N° of Sector Residential                     : Number of Residential sectors in the corresponding map
-N° of Sector Retail                          : Number of Retail sectors in the corresponding map
-N° of branches Type <type>		     : Number of branches where cable type <type> was used. 
+Number of MV/LV Trafos                           : Number of MV/LV trafos in disctric's main station
+Number of Sector Agricultural                    : Number of Agricultural sectors in the corresponding map
+Number of Sector Industrial                      : Number of Industrial sectors in the corresponding map
+Number of Sector Residential                     : Number of Residential sectors in the corresponding map
+Number of Sector Retail                          : Number of Retail sectors in the corresponding map
+Number of branches Type <type>		     : Number of branches where cable type <type> was used.
 					       * See: Length Type <type>.
 N° of branches from LV Station               : Number of branches that come out from the LV Station
 N° of branches overhead lines                : Number of overhead branches

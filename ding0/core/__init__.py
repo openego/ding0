@@ -1175,7 +1175,7 @@ class NetworkDing0:
         static_data['MV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
                                    equipment_mv_parameters_trafos),
                                    comment='#',
-                                   delimiter=',',
+                                   delimiter=';',
                                    decimal='.',
                                    converters={'S_nom': lambda x: int(x)})
 
@@ -1185,6 +1185,8 @@ class NetworkDing0:
         static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
                                            equipment_mv_parameters_lines),
                                            comment='#',
+                                           delimiter=';',
+                                           decimal='.',
                                            converters={'I_max_th': lambda x: int(x),
                                                        'U_n': lambda x: int(x),
                                                        'reinforce_only': lambda x: int(x)})
@@ -1194,6 +1196,8 @@ class NetworkDing0:
         static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
                                    equipment_mv_parameters_cables),
                                    comment='#',
+                                   delimiter=';',
+                                   decimal='.',
                                    converters={'I_max_th': lambda x: int(x),
                                                'U_n': lambda x: int(x),
                                                'reinforce_only': lambda x: int(x)})
@@ -1203,6 +1207,8 @@ class NetworkDing0:
         static_data['LV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
                                    equipment_lv_parameters_cables),
                                    comment='#',
+                                   delimiter=';',
+                                   decimal='.',
                                    index_col='name',
                                    converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
 
@@ -1211,7 +1217,7 @@ class NetworkDing0:
         static_data['LV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
                                    equipment_lv_parameters_trafos),
                                    comment='#',
-                                   delimiter=',',
+                                   delimiter=';',
                                    decimal='.',
                                    converters={'S_nom': lambda x: int(x)})
 
