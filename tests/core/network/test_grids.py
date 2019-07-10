@@ -1162,6 +1162,18 @@ class TestMVGridDing0(object):
 
         #Check cable Distributors have right connections
         assert len(mv_grid._cable_distributors) == 5
+        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[0]])
+                   for i in [mv_grid._station,lv_stations[16]])
+        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[1]])
+                   for i in [mv_grid._station,lv_stations[17]])
+        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[2]])
+                   for i in [mv_grid._station,lv_stations[18]])
+        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[3]])
+                   for i in [lv_stations[8],lv_stations[9],lv_stations[15]])
+        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[4]])
+                   for i in [lv_stations[12],lv_stations[13],lv_stations[15]])
+
+        """
         assert set([mv_grid._station,lv_stations[16]]) == \
                set((mv_grid._graph.adj[mv_grid._cable_distributors[0]]))
         assert set([mv_grid._station,lv_stations[17]]) == \
@@ -1172,6 +1184,7 @@ class TestMVGridDing0(object):
                set((mv_grid._graph.adj[mv_grid._cable_distributors[3]]))
         assert set([lv_stations[12],lv_stations[13],lv_stations[15]]) == \
                set((mv_grid._graph.adj[mv_grid._cable_distributors[4]]))
+        """
 
 
         #Thermal Capacity of circuit breaker's branch
