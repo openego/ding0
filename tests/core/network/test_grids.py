@@ -1039,8 +1039,15 @@ class TestMVGridDing0(object):
             (lv_stations[10], mv_cable_distributors[2]),
         ]
 
-        #mv_grid.graph_draw('MV')
-        assert set(expected_edges_list) == set(graph.edges())
+        correct_edge = []
+        for i in len(expected_edges_list):
+            if set(graph.edges()[i]) == set(expected_edges_list[i]):
+                correct_edge.append(True)
+            else:
+                correct_edge.append(False)
+
+        #Check if every tuple of the expected edges is in the list, disregarding order
+        assert len(list(filter(lambda x: x != True, correct_edge))) == 0
 
         # check graph attributes
         assert len(list(graph.nodes())) == 35
