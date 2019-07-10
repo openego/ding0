@@ -33,8 +33,8 @@ logger = logging.getLogger('ding0')
 def ding0_graph_to_routing_specs(graph):
     """ Build data dictionary from graph nodes for routing (translation)
 
-    Args
-    ----
+    Parameters
+    ----------
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes
 
@@ -102,8 +102,8 @@ def ding0_graph_to_routing_specs(graph):
 def routing_solution_to_ding0_graph(graph, solution):
     """ Insert `solution` from routing into `graph`
 
-    Args
-    ----
+    Parameters
+    ----------
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes
     solution: BaseSolution
@@ -239,8 +239,8 @@ def solve(graph, debug=False, anim=None):
     
     Translate data from node objects to appropriate format before.
 
-    Args
-    ----
+    Parameters
+    ----------
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes
     debug: bool, defaults to False

@@ -34,12 +34,12 @@ def reinforce_branches_current(grid, crit_branches):
     
     Parameters
     ----------
-    grid : GridDing0
+    grid : :class:`~.ding0.core.GridDing0`
         Grid identifier.
     crit_branches : dict
         Dict of critical branches with max. relative overloading.
         
-    Notes
+    Note
     -----
     The branch type to be installed is determined per branch using the rel. overloading. According to [#]_ 
     only cables are installed.
@@ -87,15 +87,15 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
 
     Parameters
     ----------
-    grid : GridDing0
+    grid : :class:`~.ding0.core.GridDing0`
         Grid identifier.
-    crit_branches : :any:`list` of :obj:`int`
+    crit_branches : :obj:`list` of :obj:`int`
         List of critical branches. #TODO: check if a list or a dictionary
-    grid_level : str
+    grid_level : :obj:`str`
         Specifying either 'MV' for medium-voltage grid or 'LV' for
         low-voltage grid level.
         
-    Notes
+    Note
     -----
     The branch type to be installed is determined per branch - the next larger cable available is used.
     According to Ackermann only cables are installed.
@@ -147,14 +147,14 @@ def extend_substation(grid, critical_stations, grid_level):
 
     Parameters
     ----------
-    grid: GridDing0
+    grid: :class:`~.ding0.core.GridDing0`
         Ding0 grid container
-    critical_stations : :any:`list`
+    critical_stations : :obj:`list`
         List of stations with overloading
-    grid_level : str
+    grid_level : :obj:`str`
         Either "LV" or "MV". Basis to select right equipment.
     
-    Notes
+    Note
     -----
     Curently straight forward implemented for LV stations
 
@@ -246,16 +246,16 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     i) Existing transformers are extended by replacement with large nominal
        apparent power
       
-    ii) New additional transformers added to substation (see 'Notes')
+    ii) New additional transformers added to substation (see 'Note')
 
     Parameters
     ----------
-    crit_stations : :any:`list`
+    crit_stations : :obj:`list`
         List of stations with overloading or voltage issues.
-    grid_level : str
+    grid_level : :obj:`str`
         Specifiy grid level: 'MV' or 'LV'
 
-    Notes
+    Note
     -----
     At maximum 2 new of largest (currently 630 kVA) transformer are additionally
     built to resolve voltage issues at MV-LV substation bus bar.
@@ -323,7 +323,7 @@ def new_substation(grid):
 
     Parameters
     ----------
-    grid : MVGridDing0
+    grid : :class:`~.ding0.core.network.grids.MVGridDing0`
         MV Grid identifier.
     """
 
@@ -334,19 +334,19 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 LV grid object
-    crit_branches : :any:`list`
+    crit_branches : :obj:`list`
         List of critical branches incl. its line loading
 
-    Notes
+    Note
     -----
     If maximum size cable is not capable to resolve issue due to line
     overloading largest available cable type is assigned to branch.
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         unsolved_branches : List of braches no suitable cable could be found
     """
     unsolved_branches = []
@@ -391,7 +391,7 @@ def extend_trafo_power(extendable_trafos, trafo_params):
 
     Parameters
     ----------
-    extendable_trafos : :any:`list`
+    extendable_trafos : :obj:`list`
         Trafos with rated power below maximum size available trafo
     trafo_params : :pandas:`pandas.DataFrame<dataframe>`
         Transformer parameters

@@ -9,7 +9,7 @@ It is developed in the project open_eGo: https://openegoproject.wordpress.com
 DING0 lives at github: https://github.com/openego/ding0/
 The documentation is available on RTD: http://ding0.readthedocs.io
 
-Notes
+Note
 -----
 
 This example file assumes you have already run the example file

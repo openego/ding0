@@ -21,7 +21,7 @@ def merge_two_dicts(x, y):
     x: dict
     y: dict
 
-    Notes
+    Note
     -----
     This function was originally proposed by
     http://stackoverflow.com/questions/38987/how-to-merge-two-python-dictionaries-in-a-single-expression

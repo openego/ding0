@@ -37,19 +37,19 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
 
     Parameters
     ----------
-    mv_grid : MVGridDing0
+    mv_grid : :class:`~.ding0.core.network.grids.MVGridDing0`
         MV Grid object. Edges contained in `mv_grid.graph_edges()` are taken
         for the test.
     polygon : :shapely:`Shapely Point object<points>`
         Polygon that contains edges.
-    mode : str
+    mode : :obj:`str`
         Choose between 'intersects' or 'contains'.
-    proj : int
+    proj : :obj:`int`
         EPSG code to specify projection
 
     Returns
     -------
-    :any:`list` of :any:`BranchDing0` objects
+    :obj:`list` of :any:`BranchDing0` objects
         List of branches
 
     """
@@ -90,13 +90,13 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
         buffer radius in m
     radius_inc : float
         radius increment in m
-    proj : int
+    proj : :obj:`int`
         pyproj projection object: nodes' CRS to equidistant CRS
         (e.g. WGS84 -> ETRS)
 
     Returns
     -------
-    :any:`list` of :networkx:`NetworkX Graph Obj< >`
+    :obj:`list` of :networkx:`NetworkX Graph Obj< >`
         List of branches (NetworkX branch objects)
 
     """

@@ -9,7 +9,7 @@ It is developed in the project open_eGo: https://openegoproject.wordpress.com
 DINGO lives at github: https://github.com/openego/ding0/
 The documentation is available on RTD: http://ding0.readthedocs.io
 
-Notes
+Note
 -----
 
 This example file creates ding0 grids for all 3608 grid districts.
@@ -53,17 +53,17 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
 
     Parameters
     ----------
-    districts_list: list of int
+    districts_list: :obj:`list` of int
         List with all districts to be run.
-    n_of_processes: int
+    n_of_processes: :obj:`int`
         Number of processes to run in parallel
-    n_of_districts: int
+    n_of_districts: :obj:`int`
         Number of districts to be run in each cluster given as argument to
         process_stats()
-    run_id: str
+    run_id: :obj:`str`
         Identifier for a run of Ding0. For example it is used to create a
         subdirectory of os.path.join(`base_path`, 'results')
-    base_path : str
+    base_path : :obj:`str`
         Base path for ding0 data (input, results and logs).
         Default is `None` which sets it to :code:`~/.ding0` (may deviate on
         windows systems).
@@ -130,16 +130,16 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
 
     Parameters
     ----------
-    mv_districts: list of int
+    mv_districts: :obj:`list` of int
         List with all districts to be run.
-    n_of_districts: int
+    n_of_districts: :obj:`int`
         Number of districts in a cluster
     output_info:
         Info about how the run went
-    run_id: str
+    run_id: :obj:`str`
         Identifier for a run of Ding0. For example it is used to create a
         subdirectory of os.path.join(`base_path`, 'results')
-    base_path : str
+    base_path : :obj:`str`
         Base path for ding0 data (input, results and logs).
         Default is `None` which sets it to :code:`~/.ding0` (may deviate on
         windows systems).
@@ -194,7 +194,7 @@ def process_metadata(meta):
 
     Parameters
     ----------
-    meta: list of dict
+    meta: :obj:`list` of dict
         Metadata of run of each MV grid district
 
     Returns

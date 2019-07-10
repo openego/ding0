@@ -27,7 +27,7 @@ def print_upper_triangular_matrix(matrix):
     matrix : dict
         Description
         
-    Notes
+    Note
     -----
     It is assummed that the first row of matrix contains all needed headers.
     """
