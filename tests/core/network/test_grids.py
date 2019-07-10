@@ -1135,6 +1135,7 @@ class TestMVGridDing0(object):
             ).mean(axis=0) == pytest.approx(0.04636150, abs=0.00001)
 
     def test_construct(self, minimal_unrouted_grid):
+
         """Creates a syntetic mv grid containing enough nodes
         for the routing algorithm to work and verifies:
         -Number of mv grid connections
@@ -1142,17 +1143,36 @@ class TestMVGridDing0(object):
         -Right connections for the cable distr.
         -Right type of cable for the circuit breakers"""
 
-        network, mv_grid, lv_stations = minimal_unrouted_grid
+        network, mv_grid, lv_stations =minimal_unrouted_grid
+        lv_stations = sorted(lv_stations,key=lambda x: x.id_db)
+
         network.mv_routing(debug=True)
 
-        assert len(list(list(mv_grid._graph.adj.values())[0].values())) == 12
+        #Check mv_stations connections (generators should not be connected)
+        assert len(list(mv_grid._graph.adj[mv_grid._station])) == 12
+        assert any(j in list(mv_grid._graph.adj[mv_grid._station])
+                   for j in mv_grid._generators[0:4]) == False
+
+        b = [0,1,13,16,17,18,4,5,7]
+        lv_stations_mvstat = [lv_stations[i] for i in b]
+        assert all(j in list(mv_grid._graph.adj[mv_grid._station])
+                   for j in lv_stations_mvstat) == True
 
         assert len(mv_grid._rings) == 6
 
         #Check cable Distributors have right connections
         assert len(mv_grid._cable_distributors) == 5
-        assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
-                             [[25], :].nonzero()[1]) for i in [21, 0]) == True
+        assert set([mv_grid._station,lv_stations[16]]) == \
+               set((mv_grid._graph.adj[mv_grid._cable_distributors[0]]))
+        assert set([mv_grid._station,lv_stations[17]]) == \
+               set((mv_grid._graph.adj[mv_grid._cable_distributors[1]]))
+        assert set([mv_grid._station,lv_stations[18]]) == \
+               set((mv_grid._graph.adj[mv_grid._cable_distributors[2]]))
+        assert set([lv_stations[8],lv_stations[9],lv_stations[15]]) == \
+               set((mv_grid._graph.adj[mv_grid._cable_distributors[3]]))
+        assert set([lv_stations[12],lv_stations[13],lv_stations[15]]) == \
+               set((mv_grid._graph.adj[mv_grid._cable_distributors[4]]))
+
         assert nx.adjacency_matrix(mv_grid._graph)[27, :].nnz == 2
         assert all(i in list(nx.adjacency_matrix(mv_grid._graph)
                              [[27], :].nonzero()[1]) for i in [22, 0]) == True
