@@ -7,10 +7,14 @@
 language : shell
 
 env:
+  - CONDA_PYTHON=3.4
+  - CONDA_PYTHON=3.5
   - CONDA_PYTHON=3.6
+  - CONDA_PYTHON=3.7
 
 os:
   - windows
+  - linux
 
 before_install:
   # set conda path info
