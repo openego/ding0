@@ -1,7 +1,5 @@
-# Examples of how to test on travis with windows
-# 1. https://github.com/kangwonlee/travis-yml-conda-posix-nt/blob/master/.travis.yml (using conda)
-# 2. https://github.com/cclauss/itinerant-tester-windows/blob/master/.travis.yml (using choco)
-
+# Thanks to @kangwonlee for showing how to test on travis with windows using conda
+# https://github.com/kangwonlee/travis-yml-conda-posix-nt/blob/master/.travis.yml
 
 
 language : shell
@@ -28,7 +26,7 @@ before_install:
       MINICONDA_SUB_PATH=$MINICONDA_PATH/Scripts;
       EGOIOCONFIGDIR=$USERPROFILE/.egoio;
     fi;
-    echo "$EGOIOCONFIGDIR";
+
   # obtain miniconda installer
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -47,6 +45,7 @@ install:
       choco install miniconda3 --params="'/AddToPath:1 /D:$MINICONDA_PATH_WIN'";
     fi;
   - export PATH="$MINICONDA_PATH:$MINICONDA_SUB_PATH:$PATH";
+
   # for conda version 4.4 or later
   - source $MINICONDA_PATH/etc/profile.d/conda.sh;
   - hash -r;
@@ -54,14 +53,17 @@ install:
   - conda update -q conda;
   - echo "Python $CONDA_PYTHON running on $TRAVIS_OS_NAME";
   - conda env create --name ding0_env python=$CONDA_PYTHON --file=ding0_test_env.yml;
+
   #- conda activate test-environment;
   - source activate ding0_env
-  - conda --version ; python --version ; pip --version;
-  #- EGOIOCONFIGDIR=`python3 -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
+
+  # Create config file for database access
   - mkdir $EGOIOCONFIGDIR
   - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = openenergy-platform.org' 'port = 443' 'database = oedb' 'username = Ding0_test_user' 'password = 659193bb5925d401943e4f77d4bac7479bcd9214'> $EGOIOCONFIGDIR/config.ini
   - cat $EGOIOCONFIGDIR/config.ini
   - pip install --no-cache-dir .
+
+  # List installed packages for debugging
   - conda list
   - pip list
 
