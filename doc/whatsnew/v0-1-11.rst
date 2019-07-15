@@ -1,2 +1,6 @@
 Release v0.1.11 month day, year
 +++++++++++++++++++++++++++++++
+
+* Ding0 is now tested in Travis CI for Linux and Windows OS and Python
+  versions 3.4, 3.5, 3.6 and 3.7 using conda environments
+  (PR `#294 <https://github.com/openego/ding0/pull/294>`_)
