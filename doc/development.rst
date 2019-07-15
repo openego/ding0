@@ -91,3 +91,12 @@ This suite will run three tests:
 
 * Compare the results of two fresh runs of ding0 in district [3545].
 
+Travis
+------
+
+We use Travis CI's service for automatically testing code changes on push.
+The `Travis CI config file <https://github.com/openego/ding0/blob/dev/.travis.yml>`_
+installs a Python environment based on a `conda environment file
+<https://github.com/openego/ding0/blob/dev/ding0_test_env.yml>`_ and runs the
+test suite forthe Python versions 3.4, 3.5, 3.6 and 3.7 Linux and Windows.
+
