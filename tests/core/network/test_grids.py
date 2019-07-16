@@ -1047,7 +1047,7 @@ class TestMVGridDing0(object):
                 correct_edge.append(False)
 
         #Check if every tuple of the expected edges is in the list, disregarding order
-        assert len(list(filter(lambda x: x != True, correct_edge))) == 0
+        assert len(list(filter(lambda x: x != True, correct_edge))) == False
 
         # check graph attributes
         assert len(list(graph.nodes())) == 35
