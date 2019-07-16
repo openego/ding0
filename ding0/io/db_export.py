@@ -315,35 +315,45 @@ def db_tables_change_owner(engine, schema):
         change_owner(engine, tab, 'oeuser', schema)
 
 
-def export_all_dataframes_to_db(engine, schema, network=None, srid=None):
+def export_all_dataframes_to_db(engine, schema, network=None, srid=None, grid_no=None):
     """
     exports all data frames from func. export_network() to the db tables
     This works with a completely generated ding0 network(all grid districts have to be generated at once),
     all provided DataFrames will be uploaded.
 
+    Note_1: Executing this script for all GridDistricts available in Ding0 the export appears to be
+    quit time consuming. Plan carefully if you want to export more then a couple 100 GridDistricts at once.
+
+    Note_2: Ding0 creates a dataset that is about 20GB large when running on all available (3608) GridDistricts.
+    Not using a for-loop when running ding0 + exporting ding0 would use too much memory capacity on most local
+    machines. Example usage with for-loop see script ding0_pkl2db.py.
+
     Instructions:
-    1. Create a database connection to the "OEDB" for example use the "from egoio.tools.db import connection" function
+    1. Create a database connection/engine to the "OEDB" for example use the "from egoio.tools.db import
+       connection" function
     2. Create a SA session: session = sessionmaker(bind=oedb_engine)()
-    3. Create a ding0 network instance: nw = NetworkDing0(name='network')
-    4. SET the srid from network config: SRID = str(int(nw.config['geo']['srid']))
-    5. Choose the grid_districts for the ding0 run (nothing chosen all grid_districts will be imported)
-        mv_grid_districts = [3040, 3045]
-    6. run ding0 on selected mv_grid_district
-    7. call function export_network from export.py -> this provides the run_id, network metadata as json
-        and all ding0 result data as pandas data frames
-    8. json.loads the metadata, it is needed to provide the values for the
-        versioning table
-    9. Create a database connection to your database for example use the "from egoio.tools.db import connection" function
-    10. SET the SCHEMA you want to use within the connected database
-    11. Create the ding0 sql tables: create_ding0_sql_tables(engine, SCHEMA)
-    12. Call the function: export_all_dataframes_to_db(engine, SCHEMA) with your destination database and SCHEMA
-    additionally:
-    13. If you used the "OEDB" as destination database change the table owner using the function:
+    3. SET the SCHEMA you want to use destination for table creation and data export.
+       One can set the SCHEMA within the exporter_config.cfg file located in ding0/config folder
+    4. Create a ding0 network instance: nw = NetworkDing0(name='network')
+    5. SET the srid from network-object config: SRID = str(int(nw.config['geo']['srid']))
+    6. Choose the grid_districts for the ding0 run (nothing chosen all grid_districts will be imported)
+       mv_grid_districts = [3040, 3045], see Note_2.
+    7. run ding0 on selected mv_grid_district
+    8. call function export_network from export.py -> this provides the network metadata
+       as json and all ding0 result data as pandas data frames
+    9. Create the ding0 sql tables: create_ding0_sql_tables(engine, SCHEMA)
+    10. Call the function: export_all_dataframes_to_db(engine, SCHEMA) with your destination database and SCHEMA
+
+    Additionally, if you use the "OEDB/OEP" as destination database:
+    11. change the table owner using the function:
         db_tables_change_owner(engine, schema)
-    14. If you need to drop the table call the function drop_ding0_db_tables(engine, schema) immediately after
+    12. If you need to drop the table call the function drop_ding0_db_tables(engine, schema) immediately after
         the called create function:  create_ding0_sql_tables(oedb_engine, SCHEMA)
                                     drop_ding0_db_tables(oedb_engine, SCHEMA)
-    15. Check if all metadata strings are present to the current folder and added as SQL comment on table
+
+    Validate:
+    13. Check if all metadata strings are present to the current folder and added as SQL comment on table
+    14. Check if the export worked as expected and filled the tables with data
 
     Parameters
     ----------
@@ -355,6 +365,10 @@ def export_all_dataframes_to_db(engine, schema, network=None, srid=None):
         All the return values(Data Frames) from export_network()
     srid: int
         The current srid provided by the ding0 network
+    grid_no: int
+        Optional: not implemented yet. ID of currently exported GridDistrict.
+        This is used to get further information while exporting a range of grids using a for-loop.
+        Usage example see export_all_pkl_to_db().
     """
 
     if engine.dialect.has_table(engine, DING0_TABLES["versioning"], schema=schema):
@@ -365,10 +379,8 @@ def export_all_dataframes_to_db(engine, schema, network=None, srid=None):
         # if metadata_json['run_id'] not in db_versioning['run_id']:
         # Use if just one run_id should be present to the DB table
         if db_versioning.empty:
-            # json.load the metadata_json
+
             metadata_json = json.loads(network.metadata_json)
-            # this leads to wrong run_id if run_id is SET in __main__ -> 'run_id': metadata_json['run_id']
-            # try:
             metadata_df = pd.DataFrame({'run_id': metadata_json['run_id'],
                                         'description': str(metadata_json)}, index=[0])
             df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
@@ -421,7 +433,7 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no=None):
     This function basically works the same way export_all_dataframes_to_db() does.
     It is implemented to handel the diffrent ways of executing the functions:
         If grids are loaded form pickle files a for loop is included and every grid district will be uploaded one after
-        another. This chances the requirements for this function.
+        another. This changes the requirements for the export to db functionality.
 
     Parameters
     ----------
@@ -533,7 +545,6 @@ if __name__ == "__main__":
     # Set the Database schema which you want to add the tables to.
     # Configure the SCHEMA in config file located in: ding0/config/exporter_config.cfg .
     SCHEMA = exporter_config['EXPORTER_DB']['SCHEMA']
-
     # hardset for testing
     # SCHEMA = "public"
 
@@ -551,6 +562,7 @@ if __name__ == "__main__":
     # Single grids f. e.: grids = [2]
     mv_grid_districts = list(range(2, 6))
 
+    # ToDo: Add for-loop here. Exporting ding0 the GridDistricts should be created and exported incrementally.
     # run DING0 on selected MV Grid District
     nw.run_ding0(session=session,
                  mv_grid_districts_no=mv_grid_districts)
