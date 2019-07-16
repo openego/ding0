@@ -1041,7 +1041,7 @@ class TestMVGridDing0(object):
 
         correct_edge = []
         for i in range(0,len(expected_edges_list)):
-            if set(graph.edges()[i]) == set(expected_edges_list[i]):
+            if set(list(graph.edges())[i]) == set(expected_edges_list[i]):
                 correct_edge.append(True)
             else:
                 correct_edge.append(False)
@@ -1180,18 +1180,6 @@ class TestMVGridDing0(object):
         assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[4]])
                    for i in [lv_stations[12],lv_stations[13],lv_stations[15]])
 
-        """
-        assert set([mv_grid._station,lv_stations[16]]) == \
-               set((mv_grid._graph.adj[mv_grid._cable_distributors[0]]))
-        assert set([mv_grid._station,lv_stations[17]]) == \
-               set((mv_grid._graph.adj[mv_grid._cable_distributors[1]]))
-        assert set([mv_grid._station,lv_stations[18]]) == \
-               set((mv_grid._graph.adj[mv_grid._cable_distributors[2]]))
-        assert set([lv_stations[8],lv_stations[9],lv_stations[15]]) == \
-               set((mv_grid._graph.adj[mv_grid._cable_distributors[3]]))
-        assert set([lv_stations[12],lv_stations[13],lv_stations[15]]) == \
-               set((mv_grid._graph.adj[mv_grid._cable_distributors[4]]))
-        """
 
 
         #Thermal Capacity of circuit breaker's branch
