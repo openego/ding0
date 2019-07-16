@@ -7,64 +7,87 @@ Installation
 ============
 
 .. note::
-    Installation is only tested on (debian like) linux OS.
+    The installation is tested on Ubuntu Ubuntu 16.04 (xenial) and `Windows Server
+    1803 <https://docs.travis-ci.com/user/reference/windows/#windows-version>`_
+    through running tests on `Travis CI <https://travis-ci.org/openego/ding0>`_.
 
-Ding0 is provided through PyPi package management and, thus, installable from
+Ding0 is published through PyPi package management and, thus, installable from
 sources of pip3.
-You may need to additionally install some specific system packages for a
-successful installation of Ding0 and its dependencies.
+We recommend installing Ding0 (and in general third-party) python packages in a
+virtual environment, encapsulated from the system python distribution.
+Conda is the preferred way, but virtualenv works as well. In particular for
+Windows users, we recommend to use conda.
 
-The script `ding0_system_dependencies.sh` installs required system package
-dependencies.
+Using conda
+-----------
+
+Once `conda is installed
+<https://docs.conda.io/projects/conda/en/latest/user-guide/install/>`_, use the
+`environment file <https://github.com/openego/ding0/blob/dev/ding0_env.yml>`_
+to install required packages.
 
 .. code-block:: bash
 
-    cd <your-ding0-install-path>
+    conda create -n ding0 -p python3 --file ding0_env.yml
 
-    chmod +x ding0_system_dependencies.sh
+Activate the environment
 
-    sudo ./ding0_system_dependencies.sh
+.. code-block:: bash
+
+    conda activate ding0
+
+and install ding0 in it's latest version
+
+.. code-block:: python
+
+    pip install ding0
+
+or install the developer version by cloning the ding0 repository and
+installing it in developer mode.
+
+.. code-block:: python
+
+    pip install -e <path-to-local-ding0-repo>
 
 
-We recommend installing Ding0 (and in general third-party) python packages in a
-virtual environment, encapsulated from the system python distribution.
-This is optional. If you want to follow our suggestion, install the tool
+Using virtualenv
+----------------
+
+First, you might need to install the tool
 `virtualenv <https://virtualenv.pypa.io/en/stable/>`_ by
 
 .. code-block:: bash
 
-    sudo apt-get install virtualenv # since Ubuntu 16.04
+    sudo apt install virtualenv
 
-Afterwards `virtualenv` allows you to create multiple parallel python distributions.
-Since Ding0 relies on Python 3, we specify this in the virtualenv creation.
-Create a new one for Ding0 by
+Subsequently, you can use it to create a virtual environment
 
 .. code-block:: bash
 
     # Adjust path to your specific needs
     virtualenv -p python3 ~/.virtualenvs/ding0
 
-Jump into (aka. activate) this python distribution by
+Activate the environment
 
 .. code-block:: bash
 
     # Adjust path to your specific needs
     source ~/.virtualenvs/ding0/bin/activate
 
-From that, the latest release of Ding0 is installed by
+and install latest version of ding0
 
 .. code-block:: python
 
     pip3 install ding0
 
-
-Pip allows to install a developer version of a package that uses currently
-checked out code. A developer mode installation is achieved by
+or install the developer version by cloning the ding0 repository and
+installing it in developer mode.
 
 .. code-block:: python
 
-    pip3 install -e path/to/cloned/ding0/repository
-    
+    pip3 install -e <path-to-local-ding0-repo>
+
+
 Setup database connection
 ==========================
  
@@ -97,3 +120,11 @@ Use Ding0
 =========
 
 Have a look at the :ref:`ding0-examples`.
+
+
+Troubleshooting
+===============
+
+If you have trouble with versions of installed python packages, see
+`the package list <https://github.com/openego/ding0/wiki/Installed-packages>`_
+of the last release.
