@@ -1040,7 +1040,7 @@ class TestMVGridDing0(object):
         ]
 
         correct_edge = []
-        for i in len(expected_edges_list):
+        for i in range(0,len(expected_edges_list)):
             if set(graph.edges()[i]) == set(expected_edges_list[i]):
                 correct_edge.append(True)
             else:
