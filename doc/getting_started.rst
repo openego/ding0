@@ -28,7 +28,7 @@ to install required packages.
 
 .. code-block:: bash
 
-    conda create -n ding0 -p python3 --file ding0_env.yml
+    conda create -n ding0 python=3 --file ding0_env.yml
 
 Activate the environment
 
