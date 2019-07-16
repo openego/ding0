@@ -155,6 +155,52 @@ Parameter Description                             Unit
 km_cable  Cumulative length of underground cables km
 ========= ======================================= ====
 
+Ding0 IO : Ding0 exporter
+=========================
+Introduction
+--------------
+The ding0 exporter contains different input/output functionality. The main component is the export.py.
+The following will explain the main usage of the exporter.py and introduce inputs and outputs.
+
+The exporter contains the function export_network(). This function takes three parameters: a network
+object, the mode which is not relevant here, and the run_id. The run_id should be set if the network
+is not created but imported from pickle files.
+
+What is the input?
+------------------
+Ding0Network can be run for multiple GridDistricts. As mentioned a Ding0Network can be created from a
+versioned run that has been stored in pickle files or a new run can be initialized. The difference will
+be most obviously be noticed by looking at the run_id.
+So the input would the ding0 network and the run_id.
+
+What is the output?
+-------------------
+The function export_network() returns a list of nametuples. The nametuple contains 17 elements. The main
+purpose of that is to return Pandas dataframes that store the Ding0Network data. But 2 elements also provide
+further information like the actual run_id that was set or newly created and a metadata_json that stores
+the assumptions ding0 uses to create the network topology.
+Since Pandas is a Python package that is used very frequently the IO functionality of pandas can be used
+for several tasks. See pandas IO.
+
+What IO functionality is implemented?
+-------------------------------------
+Currently the Ding0Network can be serialized as pickle files in python. It can also be stored in:
+Tables on a relational database as well as saved to CSV file.
+
+IO settings
+-----------
+The io settings are provided within a config file that is located in the ding0/config folder. The file is
+named exporter_config.cfg. In the current state it just stores the database schema that is used as destination
+for any exports to a database. The config file is imported as config-object using the package "ConfigObj".
+
+Export ding0 to database
+=========================
+This exporter depends on existing tables. The table definition for tables that can store ding0 objects is used
+to create these tables is provided.
+
+Ding0 export provides the Ding0 objects as Pandas dataframes. Pandas provides a IO functionality to export
+Dataframes to a database. This is used to export the dataframes.
+
 
 CSV file export
 ===============
