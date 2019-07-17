@@ -29,6 +29,8 @@ Apparent power
   .. math::
       S = U \cdot I = U \cdot I_{th,max}
 
+.. _sign-convention-pq:
+
 Sign Convention
 ###############
 

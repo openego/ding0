@@ -1,2 +1,9 @@
 Release v0.1.11 month day, year
 +++++++++++++++++++++++++++++++
+
+Changes
+-------
+
+* A proper sign convention (see :ref:`sign-convention-pq`)for P,Q is introduced
+  `#266 <https://github.com/openego/ding0/issues/266>`_,
+  see also `PR #271 <https://github.com/openego/ding0/pull/271>`_.
