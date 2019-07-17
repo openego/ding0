@@ -20,6 +20,7 @@ from ding0.core.network.stations import LVStationDing0, MVStationDing0
 from ding0.core.network import BranchDing0, CircuitBreakerDing0, GeneratorDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.core.powerflow import q_sign
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
@@ -78,12 +79,13 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     components_data: dict of :pandas:`pandas.DataFrame<dataframe>`
         DataFrame containing components time-varying data
     """
-
     generator_instances = [MVStationDing0, GeneratorDing0]
     # TODO: MVStationDing0 has a slack generator
 
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     srid = int(cfg_ding0.get('geo', 'srid'))
 
     load_in_generation_case = cfg_ding0.get('assumptions',
@@ -91,8 +93,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     generation_in_load_case = cfg_ding0.get('assumptions',
                                             'generation_in_load_case')
 
-    Q_factor_load = tan(acos(cos_phi_load))
-    Q_factor_generation = tan(acos(cos_phi_feedin))
+    Q_factor_load = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
+    Q_factor_generation = q_sign(cos_phi_feedin_mode, 'generator') * tan(acos(cos_phi_feedin))
 
     voltage_set_slack = cfg_ding0.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
