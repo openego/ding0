@@ -1141,7 +1141,7 @@ class TestMVGridDing0(object):
 
     def test_construct(self, minimal_unrouted_grid):
 
-        """Creates a syntetic mv grid containing enough nodes
+        """Creates a synthetic mv grid containing enough nodes
         for the routing algorithm to work and verifies:
         -Number of mv grid connections
         -Number of rings
@@ -1149,7 +1149,7 @@ class TestMVGridDing0(object):
         -Right type of cable for the circuit breakers"""
 
         network, mv_grid, lv_stations =minimal_unrouted_grid
-        lv_stations = sorted(lv_stations,key=lambda x: x.id_db)
+        lv_stations = sorted(lv_stations, key=lambda x: x.id_db)
 
         network.mv_routing(debug=True)
 
@@ -1160,14 +1160,51 @@ class TestMVGridDing0(object):
 
         b = [0,1,13,16,17,18,4,5,7]
         lv_stations_mvstat = [lv_stations[i] for i in b]
+
         assert all(j in list(mv_grid._graph.adj[mv_grid._station])
                    for j in lv_stations_mvstat) == True
 
         assert len(mv_grid._rings) == 6
 
-        #Check cable Distributors have right connections
+        """Check cable Distributors have right connections
+        (Single Connections)"""
+
         assert len(mv_grid._cable_distributors) == 5
-        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[0]])
+        assert any(y in mv_grid._graph.adj[lv_stations[8]]
+                   for y in mv_grid._cable_distributors)
+
+        assert any(y in mv_grid._graph.adj[lv_stations[9]]
+                   for y in mv_grid._cable_distributors)
+
+        assert any(y in mv_grid._graph.adj[lv_stations[12]]
+                   for y in mv_grid._cable_distributors)
+
+        assert any(y in mv_grid._graph.adj[lv_stations[13]]
+                   for y in mv_grid._cable_distributors)
+
+        assert any(y in mv_grid._graph.adj[lv_stations[16]]
+                   for y in mv_grid._cable_distributors)
+
+        assert any(y in mv_grid._graph.adj[lv_stations[17]]
+                   for y in mv_grid._cable_distributors)
+
+        assert any(y in mv_grid._graph.adj[lv_stations[18]]
+                   for y in mv_grid._cable_distributors)
+
+        """Check cable Distributors have right connections
+        (Double Connections disregarding order)
+        """
+        mv_stat_cdt = list(y in mv_grid._graph.adj[mv_grid._station]
+                           for y in mv_grid._cable_distributors)
+
+        lv_15_cdt = list(y in mv_grid._graph.adj[lv_stations[15]]
+                         for y in mv_grid._cable_distributors)
+
+        assert len(list(filter(lambda x: x == True, mv_stat_cdt))) == 3
+        assert len(list(filter(lambda x: x == True, lv_15_cdt))) == 2
+
+        """
+        assert all(i in ([mv_grid._cable_distributors[0]])
                    for i in [mv_grid._station,lv_stations[16]])
         assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[1]])
                    for i in [mv_grid._station,lv_stations[17]])
@@ -1177,7 +1214,7 @@ class TestMVGridDing0(object):
                    for i in [lv_stations[8],lv_stations[9],lv_stations[15]])
         assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[4]])
                    for i in [lv_stations[12],lv_stations[13],lv_stations[15]])
-
+        """
 
 
         #Thermal Capacity of circuit breaker's branch
