@@ -1,2 +1,9 @@
 Release v0.1.11 month day, year
 +++++++++++++++++++++++++++++++
+
+This release includes new tests for MV-/ as well as for LV-Grids
+
+These test verify the functionality of most of the functions in '~/core/network/grids.py'
+including the creation and modification of MV and LV Grids (e.g. adding generators/transformators..)
+. Focus lies on the appropriate creation of the graphs and it's corresponding routings;
+Test are done in grids created with oedb-extracted data and/or synthetic grids, depending on the feature to be tested.
