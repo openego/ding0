@@ -1005,11 +1005,7 @@ class TestMVGridDing0(object):
         # check that the connections are between the expected
         # load areas
         mv_station = mv_grid.station()
-        mv_cable_distributors = sorted(list(mv_grid.cable_distributors()), key=lambda x: repr(x))
         expected_edges_list = [
-            (mv_station, mv_cable_distributors[0]),
-            (mv_station, mv_cable_distributors[1]),
-            (mv_station, mv_cable_distributors[2]),
             (mv_station, lv_stations[0]),
             (mv_station, lv_stations[1]),
             (mv_station, lv_stations[5]),
@@ -1025,27 +1021,31 @@ class TestMVGridDing0(object):
             (lv_stations[13], lv_stations[17]),
             (lv_stations[14], lv_stations[15]),
             (lv_stations[15], lv_stations[16]),
-            (lv_stations[17], mv_cable_distributors[3]),
             (lv_stations[18], lv_stations[2]),
-            (lv_stations[18], mv_cable_distributors[3]),
             (lv_stations[3], lv_stations[7]),
-            (lv_stations[4], mv_cable_distributors[4]),
-            (lv_stations[5], mv_cable_distributors[4]),
             (lv_stations[6], lv_stations[7]),
-            (lv_stations[7], mv_cable_distributors[3]),
-            (lv_stations[7], mv_cable_distributors[4]),
-            (lv_stations[8], mv_cable_distributors[0]),
-            (lv_stations[9], mv_cable_distributors[1]),
-            (lv_stations[10], mv_cable_distributors[2]),
         ]
 
-        correct_edge = []
-        for i in range(0,len(expected_edges_list)):
-            if set(list(graph.edges())[i]) == set(expected_edges_list[i]):
-                correct_edge.append(1)
 
-        #Check if every tuple of the expected edges is in the list, disregarding order
-        assert len(list(filter(lambda x: x != True, correct_edge))) == 0
+        #real edges sorted
+        real_edges_sort = []
+        for i in range(0,len(list(graph.edges()))):
+            real_edges_sort.append(
+                tuple(sorted(list(graph.edges())[i], key=lambda x: repr(x))))
+
+        #sort the tuples and compare them
+        correct_edges = []
+        for i in range(0, len(expected_edges_list)):
+            if tuple(sorted(expected_edges_list[i], key=lambda x:repr(x))) in\
+                    real_edges_sort:
+                correct_edges.append(True)
+            else:
+                correct_edges.append((False))
+                print('Tuple', expected_edges_list[i], 'not in set')
+
+
+        #check if every tuple of the expected edges is in the list, disregarding order
+        assert len(list(filter(lambda x: x == True, correct_edges))) == 18
 
         # check graph attributes
         assert len(list(graph.nodes())) == 35
@@ -1202,19 +1202,6 @@ class TestMVGridDing0(object):
 
         assert len(list(filter(lambda x: x == True, mv_stat_cdt))) == 3
         assert len(list(filter(lambda x: x == True, lv_15_cdt))) == 2
-
-        """
-        assert all(i in ([mv_grid._cable_distributors[0]])
-                   for i in [mv_grid._station,lv_stations[16]])
-        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[1]])
-                   for i in [mv_grid._station,lv_stations[17]])
-        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[2]])
-                   for i in [mv_grid._station,lv_stations[18]])
-        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[3]])
-                   for i in [lv_stations[8],lv_stations[9],lv_stations[15]])
-        assert all(i in (mv_grid._graph.adj[mv_grid._cable_distributors[4]])
-                   for i in [lv_stations[12],lv_stations[13],lv_stations[15]])
-        """
 
 
         #Thermal Capacity of circuit breaker's branch
