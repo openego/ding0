@@ -4,3 +4,10 @@ Release v0.1.11 month day, year
 * Ding0 is now tested in Travis CI for Linux and Windows OS and Python
   versions 3.4, 3.5, 3.6 and 3.7 using conda environments
   (PR `#294 <https://github.com/openego/ding0/pull/294>`_)
+
+* This release includes new tests for MV-/ as well as for LV-Grids
+
+  These test verify the functionality of most of the functions in '~/core/network/grids.py'
+  including the creation and modification of MV and LV Grids (e.g. adding generators/transformators..)
+  . Focus lies on the appropriate creation of the graphs and it's corresponding routings;
+  Test are done in grids created with oedb-extracted data and/or synthetic grids, depending on the feature to be tested.
