@@ -31,7 +31,7 @@ dependencies:
 
     # GIS dependencies have to come all from conda-forge
     - conda-forge::fiona
-    - conda-forge::pyproj >= 1.9.5.1
+    - conda-forge::pyproj >= 1.9.5.1, <= 1.9.6
     - conda-forge::pyshp
     - conda-forge::geopandas
     - conda-forge::geopy >= 1.11.0
