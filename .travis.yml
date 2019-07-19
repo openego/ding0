@@ -55,7 +55,7 @@ install:
   - conda info --all
   - echo "Python $CONDA_PYTHON running on $TRAVIS_OS_NAME";
   - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
-      conda create --name ding0_env python=$CONDA_PYTHON --file=ding0_env.yml;
+      conda env create --name ding0_env python=$CONDA_PYTHON --file=ding0_env.yml;
     elif  [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
       conda env create --name ding0_env python=$CONDA_PYTHON;
       conda env update  --name ding0_env --file=ding0_env.yml;
