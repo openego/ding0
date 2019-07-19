@@ -56,6 +56,7 @@ install:
 
   #- conda activate test-environment;
   - source activate ding0_env
+  - which pip; which python; pip -V; python -V; which pip3; which python3;
 
   # Create config file for database access
   - mkdir $EGOIOCONFIGDIR
