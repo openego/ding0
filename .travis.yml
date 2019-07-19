@@ -52,7 +52,11 @@ install:
   - conda config --set always_yes yes --set changeps1 no;
   - conda update -q conda;
   - echo "Python $CONDA_PYTHON running on $TRAVIS_OS_NAME";
-  - conda create --name ding0_env python=$CONDA_PYTHON
+  - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
+    conda create --name ding0_env python=$CONDA_PYTHON
+    elif  [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
+    conda env create --name ding0_env python=$CONDA_PYTHON
+    fi;
   - which pip; which python; pip -V; python -V; which pip3; which python3;
   - conda env update -n ding0_env --file=ding0_env.yml;
   #- conda activate test-environment;
