@@ -8,4 +8,4 @@ Assignment of loads to generators in lv_connect_generators was made deterministi
 Should solve 
 `#245 <https://github.com/openego/ding0/issues/245>`_
 and at least parts of 
-`#40 <https://github.com/openego/ding0/issues/40>`_
+`#40 <https://github.com/openego/ding0/issues/40>`_.
