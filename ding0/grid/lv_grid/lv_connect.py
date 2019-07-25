@@ -47,6 +47,8 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                              'load_factor_lv_cable_fc_normal')
     cos_phi_gen = cfg_ding0.get('assumptions',
                                 'cos_phi_gen')
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1000  # v_nom in kV
+
     # get predefined random seed and initialize random generator
     seed = int(cfg_ding0.get('random', 'seed'))
     random.seed(a=seed)
@@ -81,7 +83,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
             branch_length = calc_geo_dist_vincenty(generator, lv_station)
             branch_type = cable_type(
                 generator.capacity / (cable_lf * cos_phi_gen),
-                0.4,
+                v_nom,
                 lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
             branch = BranchDing0(length=branch_length,
@@ -136,7 +138,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
             # determine appropriate type of cable
             branch_type = cable_type(
                 generator.capacity / (cable_lf * cos_phi_gen),
-                0.4,
+                v_nom,
                 lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
             # connect to cable dist. of building
