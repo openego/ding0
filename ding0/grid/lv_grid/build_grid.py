@@ -167,8 +167,8 @@ def transformer(grid):
             id_db=id,
             v_level=v_nom,
             s_max_longterm=transformer['S_nom'],
-            r=transformer['R'],
-            x=transformer['X'])
+            r_pu=transformer['r_pu'],
+            x_pu=transformer['x_pu'])
 
         # add each transformer to its station
         grid._station.add_transformer(lv_transformer)

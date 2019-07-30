@@ -228,8 +228,8 @@ def extend_substation(grid, critical_stations, grid_level):
                     id_db=id,
                     v_level=v_nom,
                     s_max_longterm=trafo_type['S_nom'],
-                    r=trafo_type['R'],
-                    x=trafo_type['X'])
+                    r_pu=trafo_type['r_pu'],
+                    x_pu=trafo_type['x_pu'])
 
                 # add each transformer to its station
                 grid._station.add_transformer(lv_transformer)
@@ -298,8 +298,8 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                     id_db=id,
                     v_level=v_nom,
                     s_max_longterm=trafo_min_size['S_nom'],
-                    r=trafo_min_size['R'],
-                    x=trafo_min_size['X'])
+                    r_pu=trafo_min_size['r_pu'],
+                    x_pu=trafo_min_size['x_pu'])
 
                 # add each transformer to its station
                 grid._station.add_transformer(lv_transformer)
@@ -412,5 +412,5 @@ def extend_trafo_power(extendable_trafos, trafo_params):
         ].idxmin(), :
     ]
     trafo.s_max_a = trafo_nearest_larger['S_nom']
-    trafo.r = trafo_nearest_larger['R']
-    trafo.x = trafo_nearest_larger['X']
+    trafo.r_pu = trafo_nearest_larger['r_pu']
+    trafo.x_pu = trafo_nearest_larger['x_pu']
