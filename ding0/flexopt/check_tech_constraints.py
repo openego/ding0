@@ -549,8 +549,8 @@ def get_delta_voltage_preceding_line(grid, tree, node):
               _[0] in list(tree.predecessors(node))][0][1]
 
     # calculate impedance of preceding branch
-    r_line = (branch['branch'].type['R'] * branch['branch'].length/1e3)
-    x_line = (branch['branch'].type['L'] / 1e3 * omega *
+    r_line = (branch['branch'].type['R_l'] * branch['branch'].length/1e3)
+    x_line = (branch['branch'].type['L_l'] / 1e3 * omega *
          branch['branch'].length/1e3)
 
     # get voltage drop over preceeding line
@@ -652,9 +652,9 @@ def get_mv_impedance_at_voltage_level(grid, voltage_level):
 
     mv_grid = grid.grid_district.lv_load_area.mv_grid_district.mv_grid
     edges = mv_grid.find_path(grid._station, mv_grid._station, type='edges')
-    r_mv_grid = sum([e[2]['branch'].type['R'] * e[2]['branch'].length / 1e3
+    r_mv_grid = sum([e[2]['branch'].type['R_l'] * e[2]['branch'].length / 1e3
                      for e in edges])
-    x_mv_grid = sum([e[2]['branch'].type['L'] / 1e3 * omega * e[2][
+    x_mv_grid = sum([e[2]['branch'].type['L_l'] / 1e3 * omega * e[2][
         'branch'].length / 1e3 for e in edges])
     # rescale to voltage level
     r_mv_grid_vl = r_mv_grid * (voltage_level / mv_grid.v_level) ** 2

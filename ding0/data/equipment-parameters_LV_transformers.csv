@@ -2,6 +2,7 @@ S_nom;R;X
 #kVA;Ohm;Ohm
 # Source 100..1000 kVar transformers: Torsten Werth; Netzberechnung mit Erzeugungsprofilen --;
 # Grundlagen, Berechnung, Anwendung; Springer;2016
+# Note that only values used for calculation are saved in this table, for more values look into source. Only insert literature values here, calculations in code for better comprehensibility
 100;0.0175;0.0360
 160;0.0147;0.0372
 250;0.0130;0.0378

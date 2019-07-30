@@ -399,8 +399,8 @@ class Route(object):
         # factor to calc reactive from active power
         Q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
         # line/cable params per km
-        r_l = self._problem._branch_type['R']  # unit for r_l: ohm/km
-        x_l = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x_l: ohm/km
+        r_l = self._problem._branch_type['R_l']  # unit for r_l: ohm/km
+        x_l = self._problem._branch_type['L_l'] * 2*pi * 50 / 1e3  # unit for x_l: ohm/km
 
         # step 3: check if total lengths of half-rings exceed max. allowed distance
         if (self.length_from_nodelist(nodes_hring1) > max_half_ring_length or
