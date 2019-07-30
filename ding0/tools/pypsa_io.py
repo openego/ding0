@@ -327,17 +327,17 @@ def edges_to_dict_of_dataframes(grid, edges):
                               str(edge['branch'].id_db)])
 
         # TODO: find the real cause for being L, C, I_th_max type of Series
-        if (isinstance(edge['branch'].type['L'], Series) or
-                isinstance(edge['branch'].type['C'], Series)):
-            x_l = omega * edge['branch'].type['L'].values[0] * 1e-3
+        if (isinstance(edge['branch'].type['L_l'], Series) or#warum wird hier c abgefragt?
+                isinstance(edge['branch'].type['C_l'], Series)):
+            x_l = omega * edge['branch'].type['L_l'].values[0] * 1e-3
         else:
 
-            x_l = omega * edge['branch'].type['L'] * 1e-3
+            x_l = omega * edge['branch'].type['L_l'] * 1e-3
 
-        if isinstance(edge['branch'].type['R'], Series):
-            r_l = edge['branch'].type['R'].values[0]
+        if isinstance(edge['branch'].type['R_l'], Series):
+            r_l = edge['branch'].type['R_l'].values[0]
         else:
-            r_l = edge['branch'].type['R']
+            r_l = edge['branch'].type['R_l']
 
         if (isinstance(edge['branch'].type['I_max_th'], Series) or
                 isinstance(edge['branch'].type['U_n'], Series)):

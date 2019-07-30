@@ -637,9 +637,9 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     # add resitance/ reactance to preceeding
     in_edge = [_ for _ in grid.graph_branches_from_node(node) if
                _[0] in list(tree.predecessors(node))][0][1]
-    r = r_preceeding + (in_edge['branch'].type['R'] *
+    r = r_preceeding + (in_edge['branch'].type['R_l'] *
                      in_edge['branch'].length)
-    x = x_preceeding + (in_edge['branch'].type['L'] / 1e3 * omega *
+    x = x_preceeding + (in_edge['branch'].type['L_l'] / 1e3 * omega *
                      in_edge['branch'].length)
 
     # get apparent power for load and generation case
@@ -674,9 +674,9 @@ def get_mv_impedance(grid):
 
     mv_grid = grid.grid_district.lv_load_area.mv_grid_district.mv_grid
     edges = mv_grid.find_path(grid._station, mv_grid._station, type='edges')
-    r_mv_grid = sum([e[2]['branch'].type['R'] * e[2]['branch'].length / 1e3
+    r_mv_grid = sum([e[2]['branch'].type['R_l'] * e[2]['branch'].length / 1e3
                      for e in edges])
-    x_mv_grid = sum([e[2]['branch'].type['L'] / 1e3 * omega * e[2][
+    x_mv_grid = sum([e[2]['branch'].type['L_l'] / 1e3 * omega * e[2][
         'branch'].length / 1e3 for e in edges])
 
     return [r_mv_grid, x_mv_grid]
@@ -714,9 +714,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
 
     stub_branch = [_ for _ in grid.graph_branches_from_node(main_branch_node) if
                    _[0] == stub_node][0][1]
-    r_stub = stub_branch['branch'].type['R'] * stub_branch[
+    r_stub = stub_branch['branch'].type['R_l'] * stub_branch[
         'branch'].length / 1e3
-    x_stub = stub_branch['branch'].type['L'] / 1e3 * omega * \
+    x_stub = stub_branch['branch'].type['L_l'] / 1e3 * omega * \
              stub_branch['branch'].length / 1e3
     s_max_gen = [_.capacity / cos_phi_feedin
                  for _ in tree.successors(stub_node)
