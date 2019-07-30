@@ -226,10 +226,10 @@ MV_grid_id				     : MV Grid District ID number
 V nominal				     : Nominal voltage of the MV District in kV
 V_res_0					     : Voltage Res 0. It can be either
 					       * A numeric value: 
-                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+                                               * The string 'NA': in which case the node was not part of the dataflow analysis
 V_res_1					     : Voltage Res 1. It can be either
 					       * A numeric value: 
-                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+                                               * The string 'NA': in which case the node was not part of the dataflow analysis
 ----------------------------------------------------------------------------------------------------------------------------
 
 
@@ -246,10 +246,10 @@ branch id				     : MV branch Identification (DataFrame is indexed by this field
 MV_grid_id				     : MV Grid District ID number
 s_res_0					     : Apparante Power Res 0. It can be either
 					       * A numeric value: 
-                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+                                               * The string 'NA': in which case the node was not part of the dataflow analysis
 s_res_1					     : Apparante Power Res 1. It can be either
 					       * A numeric value: 
-                                               * The string 'Not available': in which case the node was not part of the dataflow analysis
+                                               * The string 'NA': in which case the node was not part of the dataflow analysis
 ----------------------------------------------------------------------------------------------------------------------------
 
 

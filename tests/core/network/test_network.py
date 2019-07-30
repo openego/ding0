@@ -8,6 +8,14 @@ from ding0.core.network import (GridDing0,
                                 GeneratorDing0, GeneratorFluctuatingDing0,
                                 LoadDing0)
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.tools.results import (calculate_lvgd_stats, calculate_lvgd_voltage_current_stats, calculate_mvgd_stats,
+                                 calculate_mvgd_voltage_current_stats)
+import pandas as pd
+from pandas.util.testing import assert_frame_equal
+import os
+import numpy as np
+from egoio.tools import db
+from sqlalchemy.orm import sessionmaker
 
 
 class TestGridDing0(object):
@@ -40,6 +48,17 @@ class TestGridDing0(object):
         cable_distributor_grid._cable_distributors = [cable_distributor1,
                                                       cable_distributor2]
         return cable_distributor_grid
+
+    @pytest.fixture
+    def oedb_session(self):
+        """
+        Returns an ego.io oedb session and closes it on finishing the test
+        """
+        engine = db.connection(section='oedb')
+        session = sessionmaker(bind=engine)()
+        yield session
+        print("closing session")
+        session.close()
 
     def test_get_cable_distributors_list(self, cable_distributor_grid):
         cable_distributor_list = list(
@@ -295,6 +314,60 @@ class TestGridDing0(object):
         grid, station, generator, branch = simple_graph_grid
         isolates = grid.graph_isolated_nodes()
         assert isolates == []
+
+    def test_grid_stats(self, oedb_session):
+        '''
+        Using grid district 460 to check if statistical data stay the same
+        :param oedb_session:
+        :return:
+        '''
+        # instantiate new ding0 network object
+        path = os.path.dirname(os.path.abspath(__file__))
+
+        nd = NetworkDing0(name='network')
+
+        mv_grid_districts = [460]
+
+        nd.run_ding0(session=oedb_session,
+             mv_grid_districts_no=mv_grid_districts)
+
+        # check mv grid statistics
+        mvgd_stats = calculate_mvgd_stats(nd)
+        mvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path, 'testdata/mvgd_stats.csv'))
+        assert_frame_equal(mvgd_stats, mvgd_stats_comparison,check_dtype=False)
+
+        # check mv grid statistics voltages and currents
+        mvgd_voltage_current_stats = calculate_mvgd_voltage_current_stats(nd)
+        mvgd_current_branches = mvgd_voltage_current_stats[1]
+        mvgd_voltage_nodes = mvgd_voltage_current_stats[0]
+        mvgd_current_branches_comparison = pd.DataFrame.from_csv(
+            os.path.join(path, 'testdata/mvgd_current_branches.csv'))
+        mvgd_current_branches_comparison = mvgd_current_branches_comparison.replace(np.NaN, 'NA')
+        mvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
+            os.path.join(path, 'testdata/mvgd_voltage_nodes.csv'))
+        mvgd_voltage_nodes_comparison = mvgd_voltage_nodes_comparison.replace(np.NaN, 'NA')
+        assert_frame_equal(mvgd_current_branches, mvgd_current_branches_comparison,check_dtype=False)
+        assert_frame_equal(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison,check_dtype=False)
+
+        # check lv grid statistics
+        lvgd_stats = calculate_lvgd_stats(nd)
+        lvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path,'testdata/lvgd_stats.csv'))
+        assert_frame_equal(lvgd_stats, lvgd_stats_comparison,check_dtype=False)
+
+        # check lv grid statistics voltages and currents
+        lvgd_voltage_current_stats = calculate_lvgd_voltage_current_stats(nd)
+        lvgd_current_branches = lvgd_voltage_current_stats[1]
+        lvgd_voltage_nodes = lvgd_voltage_current_stats[0]
+        lvgd_current_branches_comparison = pd.DataFrame.from_csv(
+            os.path.join(path, 'testdata/lvgd_current_branches.csv'))
+        lvgd_current_branches_comparison = lvgd_current_branches_comparison.replace(np.NaN, 'NA')
+        lvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
+            os.path.join(path, 'testdata/lvgd_voltage_nodes.csv'))
+        lvgd_voltage_nodes_comparison = lvgd_voltage_nodes_comparison.replace(np.NaN, 'NA')
+        assert_frame_equal(lvgd_current_branches, lvgd_current_branches_comparison,check_dtype=False)
+        assert_frame_equal(lvgd_voltage_nodes, lvgd_voltage_nodes_comparison,check_dtype=False)
+
+
 
 
 class TestStationDing0(object):

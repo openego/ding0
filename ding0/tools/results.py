@@ -1076,8 +1076,8 @@ def calculate_mvgd_voltage_current_stats(nw):
                 Vres0 = node.voltage_res[0]
                 Vres1 = node.voltage_res[1]
             else:
-                Vres0 = 'Not available'
-                Vres1 = 'Not available'
+                Vres0 = 'NA'
+                Vres1 = 'NA'
             nodes_dict[nodes_idx] = {'MV_grid_id': district.mv_grid.id_db,
                                      'node id': node.__repr__(),
                                      'V_res_0': Vres0,
@@ -1090,8 +1090,8 @@ def calculate_mvgd_voltage_current_stats(nw):
                 s_res0 = branch['branch'].s_res[0]
                 s_res1 = branch['branch'].s_res[1]
             else:
-                s_res0 = 'Not available'
-                s_res1 = 'Not available'
+                s_res0 = 'NA'
+                s_res1 = 'NA'
 
             branches_dict[branches_idx] = {
                 'MV_grid_id': district.mv_grid.id_db,
