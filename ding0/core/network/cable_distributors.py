@@ -39,7 +39,7 @@ class MVCableDistributorDing0(CableDistributorDing0):
                                   'cld', str(self.id_db)])
 
     def __repr__(self):
-        return 'mv_cable_dist_' + str(self.id_db)
+        return repr(self.grid) + '_mv_cable_dist_' + str(self.id_db)
 
 
 class LVCableDistributorDing0(CableDistributorDing0):
@@ -68,4 +68,4 @@ class LVCableDistributorDing0(CableDistributorDing0):
         self.in_building = kwargs.get('in_building', False)
 
     def __repr__(self):
-        return 'lv_cable_dist_' + str(self.id_db)
+        return repr(self.grid) + '_lv_cable_dist_' + str(self.id_db)
