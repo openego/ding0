@@ -436,8 +436,8 @@ def get_critical_voltage_at_nodes(grid):
     # voltage at substation bus bar
     r_mv_grid, x_mv_grid = get_mv_impedance(grid)
 
-    r_trafo = sum([tr.r for tr in grid._station._transformers])
-    x_trafo = sum([tr.x for tr in grid._station._transformers])
+    r_trafo = sum([tr.r_pu for tr in grid._station._transformers]) # Müsste das nicht 1/r sein?
+    x_trafo = sum([tr.x_pu for tr in grid._station._transformers])
 
     v_delta_load_case_bus_bar, \
     v_delta_gen_case_bus_bar = get_voltage_at_bus_bar(grid, tree)
@@ -762,8 +762,8 @@ def get_voltage_at_bus_bar(grid, tree):
     # voltage at substation bus bar
     r_mv_grid, x_mv_grid = get_mv_impedance(grid)
 
-    r_trafo = sum([tr.r for tr in grid._station._transformers])
-    x_trafo = sum([tr.x for tr in grid._station._transformers])
+    r_trafo = sum([tr.r_pu for tr in grid._station._transformers]) #müsste das nicht 1/r sein?
+    x_trafo = sum([tr.x_pu for tr in grid._station._transformers]) #s.o.
 
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')

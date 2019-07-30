@@ -402,8 +402,8 @@ def get_line_and_trafo_dict(nw):
                 for trafo in lv_district.lv_grid._station._transformers:
                     lv_transformer_dict[str(lv_district.lv_grid._station.id_db)+ "_"+ str(trafo_count)] = {
                         'power': trafo.s_max_a,
-                        'resistance': trafo.r,
-                        'ractance': trafo.x
+                        'resistance': trafo.r_pu,
+                        'ractance': trafo.x_pu
                     }
     return mv_branches_dict, lv_branches_dict,lv_transformer_dict
 

@@ -1220,6 +1220,8 @@ class NetworkDing0:
                                    delimiter=';',
                                    decimal='.',
                                    converters={'S_nom': lambda x: int(x)})
+        static_data['LV_trafos']['r_pu'] = static_data['LV_trafos']['P_k'] / (static_data['LV_trafos']['S_nom']*1000)
+        static_data['LV_trafos']['x_pu'] = np.sqrt((static_data['LV_trafos']['u_kr']/100)**2-static_data['LV_trafos']['r_pu']**2)
 
         # import LV model grids
         model_grids_lv_string_properties = cfg_ding0.get('model_grids',

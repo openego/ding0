@@ -1788,8 +1788,8 @@ def export_network(nw, mode=''):
                                 'LV_grid_id_db': '_'.join(['LVGridDing0', 'LV', str(node.id_db), str(node.id_db)]),
                                 'voltage_op': t.v_level,
                                 'S_nom': t.s_max_a,
-                                'X': t.x,
-                                'R': t.r,
+                                'x_pu': t.x_pu,
+                                'r_pu': t.r_pu,
                                 'run_id': run_id,
                             }
 
@@ -1812,8 +1812,8 @@ def export_network(nw, mode=''):
                             'MV_grid_id_db': mv_grid_id_db,
                             'voltage_op': t.v_level,
                             'S_nom': t.s_max_a,
-                            'X': t.x,
-                            'R': t.r,
+                            'x_pu': t.x_pu,
+                            'r_pu': t.r_pu,
                             'run_id': run_id,
                         }
 
