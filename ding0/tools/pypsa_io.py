@@ -311,7 +311,8 @@ def edges_to_dict_of_dataframes(grid, edges):
     -------
     edges_dict: dict
     """
-    omega = 2 * pi * 50
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * pi * freq
     srid = int(cfg_ding0.get('geo', 'srid'))
 
     lines = {'line_id': [], 'bus0': [], 'bus1': [], 'x': [], 'r': [],

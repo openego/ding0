@@ -409,8 +409,6 @@ def get_critical_voltage_at_nodes(grid):
     v_delta_tolerable_lc = cfg_ding0.get('assumptions',
                                       'lv_max_v_level_lc_diff_normal')
 
-    omega = 2 * math.pi * 50
-
     crit_nodes = []
 
     # get list of nodes of main branch in right order
@@ -632,7 +630,8 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
-    omega = 2 * math.pi * 50
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * math.pi * freq
 
     # add resitance/ reactance to preceeding
     in_edge = [_ for _ in grid.graph_branches_from_node(node) if
@@ -669,8 +668,8 @@ def get_mv_impedance(grid):
     :obj:`list`
         List containing resistance and reactance of MV grid
     """
-
-    omega = 2 * math.pi * 50
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * math.pi * freq
 
     mv_grid = grid.grid_district.lv_load_area.mv_grid_district.mv_grid
     edges = mv_grid.find_path(grid._station, mv_grid._station, type='edges')
@@ -710,7 +709,8 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
-    omega = 2 * math.pi * 50
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * math.pi * freq
 
     stub_branch = [_ for _ in grid.graph_branches_from_node(main_branch_node) if
                    _[0] == stub_node][0][1]
