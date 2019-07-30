@@ -542,7 +542,8 @@ def get_delta_voltage_preceding_line(grid, tree, node):
     """
 
     # get impedance of preceding line
-    omega = 2 * math.pi * 50  # ToDo: change 50 to meta frequency when merged to branch with introduction of this value
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * math.pi * freq
 
     # choose preceding branch
     branch = [_ for _ in grid.graph_branches_from_node(node) if
@@ -648,7 +649,8 @@ def get_mv_impedance_at_voltage_level(grid, voltage_level):
         List containing resistance and reactance of MV grid
     """
 
-    omega = 2 * math.pi * 50
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * math.pi * freq
 
     mv_grid = grid.grid_district.lv_load_area.mv_grid_district.mv_grid
     edges = mv_grid.find_path(grid._station, mv_grid._station, type='edges')

@@ -482,8 +482,8 @@ def calculate_mvgd_stats(nw):
         Dataframe containing several statistical numbers about the MVGD
     """
     ##############################
-
-    omega = 2 * pi * 50
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * pi * freq
 
     # close circuit breakers
     nw.control_circuit_breakers(mode='close')
