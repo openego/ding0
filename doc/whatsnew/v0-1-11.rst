@@ -1,9 +1,27 @@
 Release v0.1.11 month day, year
 +++++++++++++++++++++++++++++++
 
-This release includes new tests for MV-/ as well as for LV-Grids
 
-These test verify the functionality of most of the functions in '~/core/network/grids.py'
+Changes
+-------
+
+* Assignment of loads to generators in lv_connect_generators
+  was made deterministic. Before this happened randomly leading
+  to different lv_grids using the same input data. The network
+  creation is now reproduceable while lv_branches were reinforced
+  differently before.
+
+  Should solve
+  `#245 <https://github.com/openego/ding0/issues/245>`_
+  and at least parts of
+  `#40 <https://github.com/openego/ding0/issues/40>`_.
+* A proper sign convention (see :ref:`sign-convention-pq`)for P,Q is introduced
+  `#266 <https://github.com/openego/ding0/issues/266>`_,
+  see also `PR #271 <https://github.com/openego/ding0/pull/271>`_.
+
+* This release includes new tests for MV-/ as well as for LV-Grids
+
+*  These test verify the functionality of most of the functions in '~/core/network/grids.py'
 including the creation and modification of MV and LV Grids (e.g. adding generators/transformators..)
 . Focus lies on the appropriate creation of the graphs and it's corresponding routings;
 Test are done in grids created with oedb-extracted data and/or synthetic grids, depending on the feature to be tested.
