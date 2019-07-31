@@ -20,7 +20,7 @@ class MVLoadDing0(LoadDing0):
     """
     Load in MV grids
 
-    Notes
+    Note
     -----
     Currently not used, check later if still required
     """
@@ -37,7 +37,7 @@ class LVLoadDing0(LoadDing0):
     """
     Load in LV grids
 
-    Notes
+    Note
     -----
     Current attributes to fulfill requirements of typified model grids.
     """

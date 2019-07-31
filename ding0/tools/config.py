@@ -58,7 +58,7 @@ def load_config(filename):
     
     Parameters
     ----------
-    filename : str
+    filename : :obj:`str`
         Description of filename
     """
     package_path = ding0.__path__[0]
@@ -77,9 +77,9 @@ def get(section, key):
     
     Parameters
     ----------
-    section : str
+    section : :obj:`str`
         the section.
-    key : str
+    key : :obj:`str`
         the key
     
     Returns
@@ -113,9 +113,9 @@ def set(section, key, value):
     
     Parameters
     ----------
-    section: str
+    section: :obj:`str`
         the section.
-    key: str
+    key: :obj:`str`
         the key.
     value: float, int, str
         the value.

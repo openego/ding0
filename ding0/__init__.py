@@ -24,7 +24,7 @@ def adapt_numpy_int64(numpy_int64):
 
     Parameters
     ----------
-    numpy_int64 : int 
+    numpy_int64 : :obj:`int`
         numpty 64bits integer.
           
     Returns

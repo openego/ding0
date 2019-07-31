@@ -45,8 +45,8 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
     
     The resulting stack (list) is sorted ascending by distance from node.
 
-    Args
-    ----
+    Parameters
+    ----------
     node_shp: :shapely:`Shapely Point object<points>`
         Shapely Point object of node
     branches: BranchDing0
@@ -62,7 +62,7 @@ def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug,
 
     Returns
     -------
-    :any:`list` 
+    :obj:`list`
         List of connection objects. 
         Each object is represented by dict with Ding0 object,
         shapely object, and distance to node.
@@ -172,8 +172,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 
     Function searches from nearest to most far object.
     
-    Args
-    ----
+    Parameters
+    ----------
     node: LVLoadAreaCentreDing0, i.e.
         Origin node - Ding0 graph object (e.g. LVLoadAreaCentreDing0)
     node_shp: :shapely:`Shapely Point object<points>`
@@ -182,7 +182,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
         NetworkX graph object with nodes
     proj: :pyproj:`pyproj Proj object< >`
         equidistant CRS to conformal CRS (e.g. ETRS -> WGS84)
-    conn_objects_min_stack: list
+    conn_objects_min_stack: :obj:`list`
         List of connection objects. 
         
         Each object is represented by dict with Ding0 object, shapely object,
@@ -341,8 +341,8 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
 def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_ring_mod, debug):
     """ Connects `node` to `target_obj`.
 
-    Args
-    ----
+    Parameters
+    ----------
     node: LVLoadAreaCentreDing0, i.e.
         Origin node - Ding0 graph object (e.g. LVLoadAreaCentreDing0)
     node_shp: :shapely:`Shapely Point object<points>`
@@ -543,8 +543,8 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 def disconnect_node(node, target_obj_result, graph, debug):
     """ Disconnects `node` from `target_obj`
 
-    Args
-    ----
+    Parameters
+    ----------
     node: LVLoadAreaCentreDing0, i.e.
         Origin node - Ding0 graph object (e.g. LVLoadAreaCentreDing0)
     target_obj_result: LVLoadAreaCentreDing0, i.e.
@@ -583,12 +583,12 @@ def disconnect_node(node, target_obj_result, graph, debug):
 def parametrize_lines(mv_grid):
     """ Set unparametrized branches to default branch type
     
-    Args
-    ----
+    Parameters
+    ----------
     mv_grid: MVGridDing0
         MV grid instance
 
-    Notes
+    Note
     -----
     During the connection process of satellites, new branches are created - 
     these have to be parametrized.
@@ -604,13 +604,13 @@ def parametrize_lines(mv_grid):
 def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     """ Connect satellites (small Load Areas) to MV grid
 
-    Args
-    ----
+    Parameters
+    ----------
     mv_grid: MVGridDing0
         MV grid instance
     graph: :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes
-    mode: str, defaults to 'normal'
+    mode: :obj:`str`, defaults to 'normal'
         Specify mode how satellite `LVLoadAreaCentreDing0` are connected to the
         grid. Mode normal (default) considers for restrictions like max.
         string length, max peak load per string.
@@ -620,7 +620,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     debug: bool, defaults to False
          If True, information is printed during process
 
-    Notes
+    Note
     -----
     conn_dist_weight: The satellites can be connected to line (new terminal is
     created) or to one station where the line ends, depending on the distance
@@ -725,8 +725,8 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
 def mv_connect_stations(mv_grid_district, graph, debug=False):
     """ Connect LV stations to MV grid
 
-    Args
-    ----
+    Parameters
+    ----------
     mv_grid_district: MVGridDistrictDing0
         MVGridDistrictDing0 object for which the connection process has to be done
     graph: :networkx:`NetworkX Graph Obj< >`
@@ -901,8 +901,8 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 def mv_connect_generators(mv_grid_district, graph, debug=False):
     """Connect MV generators to MV grid
 
-    Args
-    ----
+    Parameters
+    ----------
     mv_grid_district: MVGridDistrictDing0
         MVGridDistrictDing0 object for which the connection process has to be
         done

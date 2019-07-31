@@ -21,6 +21,7 @@ from ding0.core.network.loads import LVLoadDing0
 from ding0.core.network import GeneratorDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core.network.stations import LVStationDing0
+from ding0.core.powerflow import q_sign
 import networkx as nx
 import math
 
@@ -33,9 +34,9 @@ def check_load(grid, mode):
 
     Parameters
     ----------
-    grid : GridDing0
+    grid : :class:`~.ding0.core.GridDing0`
         Grid identifier.
-    mode : str
+    mode : :obj:`str`
         Kind of grid ('MV' or 'LV').
 
     Returns
@@ -50,12 +51,12 @@ def check_load(grid, mode):
             branch_n: rel_overloading_n
             }
         
-    :any:`list` of :obj:`GridDing0`
+    :obj:`list` of :class:`~.ding0.core.network.TransformerDing0` objects
         List of critical transformers with the following format::
         
         [trafo_1, ..., trafo_m]
 
-    Notes
+    Note
     -----
         Lines'/cables' max. capacity (load case and feed-in case) are taken from [#]_.
         
@@ -157,17 +158,25 @@ def check_voltage(grid, mode):
 
     Parameters
     ----------
-    grid : GridDing0
+    grid : :class:`~.ding0.core.GridDing0`
         Grid identifier.
-    mode : str
+    mode : :obj:`str`
         Kind of grid ('MV' or 'LV').
 
     Returns
     -------
-    :any:`list` of :any:`GridDing0`
+    :obj:`list` of Ding0 node object (member of graph) either
+
+        * :class:`~.ding0.core.network.GeneratorDing0` or
+        * :class:`~.ding0.core.network.GeneratorFluctuatingDing0` or
+        * :class:`~.ding0.core.network.LoadDing0` or
+        * :class:`~.ding0.core.network.StationDing0` or
+        * :class:`~.ding0.core.network.CircuitBreakerDing0` or
+        * :class:`~.ding0.core.network.CableDistributorDing0`
+
         List of critical nodes, sorted descending by voltage difference.
 
-    Notes
+    Note
     -----
         The examination is done in two steps, according to [#]_ :
         
@@ -222,14 +231,14 @@ def get_critical_line_loading(grid):
 
     Parameters
     ----------
-    grid : ding0.core.network.grids.LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 LV grid object
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         List of critical branches incl. its line loading
-    :any:`list`
+    :obj:`list`
         List of critical stations incl. its transformer loading
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
@@ -311,7 +320,7 @@ def peak_load_generation_at_node(nodes):
 
     Parameters
     ----------
-    nodes : :any:`list`
+    nodes : :obj:`list`
         Any LV grid Ding0 node object that is part of the grid topology
 
     Return
@@ -373,10 +382,10 @@ def get_critical_voltage_at_nodes(grid):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 LV grid object
 
-    Notes
+    Note
     -----
     The implementation highly depends on topology of LV grid. This must not
     change its topology from radial grid with stubs branching from radial
@@ -535,21 +544,23 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
 
     Parameters
     ----------
-    v_nom : int
+    v_nom : :obj:`int`
         Nominal voltage
-    s_max : float
+    s_max : :obj:`float`
         Apparent power
-    r : float
+    r : :obj:`float`
         Short-circuit resistance from node to HV/MV substation (in ohm)
-    x : float
+    x : :obj:`float`
         Short-circuit reactance from node to HV/MV substation (in ohm). Must
         be a signed number indicating (+) inductive reactive consumer (load
         case) or (-) inductive reactive supplier (generation case)
-    cos_phi : float
+    cos_phi : :obj:`float`
+        The cosine phi of the connected generator or load that induces the
+        voltage change
 
     Returns
     -------
-    :any:`float`
+    :obj:`float`
         Voltage drop or increase
         
     References
@@ -560,7 +571,7 @@ def voltage_delta_vde(v_nom, s_max, r, x, cos_phi):
 
     """
     delta_v = (s_max * (
-        r * cos_phi + x * math.sin(math.acos(cos_phi)))) / v_nom ** 2
+        r * cos_phi - x * math.sin(math.acos(cos_phi)))) / v_nom ** 2
     return delta_v
 
 
@@ -578,7 +589,7 @@ def get_house_conn_gen_load(graph, node):
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         A list containing two items
         
         # peak load of connected house branch
@@ -605,7 +616,7 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology
@@ -622,7 +633,9 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
         Delta voltage for node
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
@@ -640,9 +653,11 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     s_max_feedin = gen_capacity / cos_phi_feedin
 
     # determine voltage increase/ drop a node
-    voltage_delta_load = voltage_delta_vde(v_nom, s_max_load, r, x,
+    x_sign_load = q_sign(cos_phi_load_mode, 'load')
+    voltage_delta_load = voltage_delta_vde(v_nom, s_max_load, r, x_sign_load * x,
                                            cos_phi_load)
-    voltage_delta_gen = voltage_delta_vde(v_nom, s_max_feedin, r, -x,
+    x_sign_gen = q_sign(cos_phi_feedin_mode, 'load')
+    voltage_delta_gen = voltage_delta_vde(v_nom, s_max_feedin, r, x_sign_gen * x,
                                           cos_phi_feedin)
 
     return [voltage_delta_load, voltage_delta_gen, r, x]
@@ -654,11 +669,11 @@ def get_mv_impedance(grid):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         List containing resistance and reactance of MV grid
     """
 
@@ -681,7 +696,7 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology
@@ -700,7 +715,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
         Delta voltage for node
     """
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
     omega = 2 * math.pi * 50
 
@@ -715,8 +732,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
                  if isinstance(_, GeneratorDing0)]
     if s_max_gen:
         s_max_gen = s_max_gen[0]
+        x_sign_gen = q_sign(cos_phi_feedin_mode, 'load')
         v_delta_stub_gen = voltage_delta_vde(v_nom, s_max_gen, r_stub + r_preceeding,
-                                             x_stub + x_preceedig, cos_phi_feedin)
+                                             x_sign_gen * (x_stub + x_preceedig), cos_phi_feedin)
     else:
         v_delta_stub_gen = 0
 
@@ -725,8 +743,9 @@ def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
                   if isinstance(_, LVLoadDing0)]
     if s_max_load:
         s_max_load = s_max_load[0]
+        x_sign_load = q_sign(cos_phi_load_mode, 'load')
         v_delta_stub_load = voltage_delta_vde(v_nom, s_max_load, r_stub + r_preceeding,
-                                              x_stub + x_preceedig, cos_phi_load)
+                                              x_sign_load * (x_stub + x_preceedig), cos_phi_load)
     else:
         v_delta_stub_load = 0
 
@@ -739,14 +758,14 @@ def get_voltage_at_bus_bar(grid, tree):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 grid object
     tree : :networkx:`NetworkX Graph Obj< >`
         Tree of grid topology:
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         Voltage at bus bar. First item refers to load case, second item refers
         to voltage in feedin (generation) case
     """
@@ -758,7 +777,9 @@ def get_voltage_at_bus_bar(grid, tree):
     x_trafo = sum([tr.x for tr in grid._station._transformers])
 
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
 
     # loads and generators connected to bus bar
@@ -769,15 +790,17 @@ def get_voltage_at_bus_bar(grid, tree):
         [node.capacity for node in tree.successors(grid._station)
          if isinstance(node, GeneratorDing0)]) / cos_phi_feedin
 
+    x_sign_load = q_sign(cos_phi_load_mode, 'load')
     v_delta_load_case_bus_bar = voltage_delta_vde(v_nom,
                                                   bus_bar_load,
                                                   (r_mv_grid + r_trafo),
-                                                  (x_mv_grid + x_trafo),
+                                                  x_sign_load * (x_mv_grid + x_trafo),
                                                   cos_phi_load)
+    x_sign_gen = q_sign(cos_phi_feedin_mode, 'load')
     v_delta_gen_case_bus_bar = voltage_delta_vde(v_nom,
                                                  bus_bar_generation,
                                                  (r_mv_grid + r_trafo),
-                                                 -(x_mv_grid + x_trafo),
+                                                 x_sign_gen * (x_mv_grid + x_trafo),
                                                  cos_phi_feedin)
 
     return v_delta_load_case_bus_bar, v_delta_gen_case_bus_bar

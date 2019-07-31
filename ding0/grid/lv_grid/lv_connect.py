@@ -47,13 +47,15 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                              'load_factor_lv_cable_fc_normal')
     cos_phi_gen = cfg_ding0.get('assumptions',
                                 'cos_phi_gen')
+    seed = int(cfg_ding0.get('random', 'seed'))
+    random.seed(a=seed)
 
     # generate random list (without replacement => unique elements)
     # of loads (residential) to connect genos (P <= 30kW) to.
     lv_loads_res = sorted(lv_grid_district.lv_grid.loads_sector(sector='res'),
                           key=lambda _: repr(_))
     if len(lv_loads_res) > 0:
-        lv_loads_res_rnd = set(random.sample(lv_loads_res,
+        lv_loads_res_rnd = (random.sample(lv_loads_res,
                                              len(lv_loads_res)))
     else:
         lv_loads_res_rnd = None
@@ -64,7 +66,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
     lv_loads_ria = sorted(lv_grid_district.lv_grid.loads_sector(sector='ria'),
                           key=lambda _: repr(_))
     if len(lv_loads_ria) > 0:
-        lv_loads_ria_rnd = set(random.sample(lv_loads_ria,
+        lv_loads_ria_rnd = (random.sample(lv_loads_ria,
                                              len(lv_loads_ria)))
     else:
         lv_loads_ria_rnd = None
@@ -96,7 +98,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                     lv_load = lv_loads_res_rnd.pop()
                 # if random load list is empty, create new one
                 else:
-                    lv_loads_res_rnd = set(random.sample(lv_loads_res,
+                    lv_loads_res_rnd = (random.sample(lv_loads_res,
                                                      len(lv_loads_res))
                                        )
                     lv_load = lv_loads_res_rnd.pop()
@@ -111,7 +113,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                     lv_load = lv_loads_ria_rnd.pop()
                 # if random load list is empty, create new one
                 else:
-                    lv_loads_ria_rnd = set(random.sample(lv_loads_ria,
+                    lv_loads_ria_rnd = (random.sample(lv_loads_ria,
                                                          len(lv_loads_ria))
                                            )
                     lv_load = lv_loads_ria_rnd.pop()

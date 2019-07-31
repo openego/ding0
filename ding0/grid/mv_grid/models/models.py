@@ -20,8 +20,10 @@ __author__     = "nesnoj, gplssm"
 
 
 from ding0.tools import config as cfg_ding0
+from ding0.tools.pypsa_io import q_sign
 
 from math import pi, tan, acos
+
 import logging
 
 
@@ -276,7 +278,7 @@ class Route(object):
         int
             position of circuit breaker on route (index of last node on 1st half-ring preceding the circuit breaker)
 
-        Notes
+        Note
         -----
         According to planning principles of MV grids, a MV ring is run as two strings (half-rings) separated by a
         circuit breaker which is open at normal operation.
@@ -332,7 +334,7 @@ class Route(object):
         * current rating of cable/line
         * voltage stability at all nodes
 
-        Notes
+        Note
         -----
             The validation is done for every tested MV grid configuration during CVRP algorithm. The current rating is
             checked using load factors from [#]_. Due to the high amount of steps the voltage rating cannot be checked
@@ -377,6 +379,7 @@ class Route(object):
         mv_max_v_level_lc_diff_malfunc = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                              'mv_max_v_level_lc_diff_malfunc'))
         cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+        cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
 
 
         # step 0: check if route has got more nodes than allowed
@@ -394,7 +397,7 @@ class Route(object):
         nodes_ring1 = [self._problem._depot] + self._nodes
         nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
         # factor to calc reactive from active power
-        Q_factor = tan(acos(cos_phi_load))
+        Q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
         # line/cable params per km
         r = self._problem._branch_type['R']  # unit for r: ohm/km
         x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km

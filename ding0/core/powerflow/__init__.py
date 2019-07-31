@@ -22,22 +22,22 @@ class PFConfigDing0:
 
     Parameters
     ----------
-    scenarios:  :any:`list` of  :obj:`str`
+    scenarios:  :obj:`list` of  :obj:`str`
         List of strings describing the scenarios
-    timerange: :any:`list` of :pandas:`pandas.DatetimeIndex<datetimeindex>`  
+    timerange: :obj:`list` of :pandas:`pandas.DatetimeIndex<datetimeindex>`
         List of Pandas DatetimeIndex objects
-    timesteps_count: int
+    timesteps_count: :obj:`int`
         count of timesteps the timesteps to be created
     timestep_start: :pandas:`pandas.DatetimeIndex<datetimeindex>`  
         Description #TODO
-    resolution: str
+    resolution: :obj:`str`
         String or pandas offset object, e.g. 'H'=hourly resolution,
         
         to learn more see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     srid: type
         partial reference system indentifier used by PyPSA's plots #TODO
 
-    Notes
+    Note
     -----
     This class can be called as follows:
     
@@ -103,3 +103,40 @@ class PFConfigDing0:
     def srid(self):
         """ Returns SRID"""
         return self._srid
+
+
+def q_sign(reactive_power_mode_string, sign_convention):
+    """
+    Gets the correct sign for Q time series given 'inductive' and 'capacitive' and the 'generator'
+    or 'load' convention.
+
+    Parameters
+    ----------
+    reactive_power_mode_string: :obj:`str`
+        Either 'inductive' or 'capacitive'
+    sign_convention: :obj:`str`
+        Either 'load' or 'generator'
+    Return
+    ------
+    :obj: `int` : +1 or -1
+        A sign to mulitply to Q time sereis
+    """
+
+    comparestr = reactive_power_mode_string.lower()
+
+    if comparestr == 'inductive':
+        if sign_convention == 'generator':
+            return -1
+        elif sign_convention == 'load':
+            return 1
+        else:
+            raise ValueError("Unknown sign conention {}".format(sign_convention))
+    elif comparestr == 'capacitive':
+        if sign_convention == 'generator':
+            return 1
+        elif sign_convention == 'load':
+            return -1
+        else:
+            raise ValueError("Unknown sign convention {}".format(sign_convention))
+    else:
+        raise ValueError("Unknown value {} in power_factor_mode".format(reactive_power_mode_string))

@@ -20,6 +20,7 @@ from ding0.core.network.stations import LVStationDing0, MVStationDing0
 from ding0.core.network import BranchDing0, CircuitBreakerDing0, GeneratorDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.core.powerflow import q_sign
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
@@ -42,10 +43,12 @@ def export_to_dir(network, export_dir):
     """
     Exports PyPSA network as CSV files to directory
 
-    Args:
-        network: pypsa.Network
-        export_dir: str
-            Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
+    Parameters
+    ----------
+        network: :pypsa:pypsa.Network
+        export_dir: :obj:`str`
+            Sub-directory in output/debug/grid/
+            where csv Files of PyPSA network are exported to.
     """
 
     package_path = ding0.__path__[0]
@@ -64,24 +67,25 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     Parameters
     ----------
     grid: ding0.Network
-    nodes: list of ding0 grid components objects
+    nodes: :obj:`list` of ding0 grid components objects
         Nodes of the grid graph
     lv_transformer: bool, True
         Toggle transformer representation in power flow analysis
 
     Returns:
-    components: dict of pandas.DataFrame
+    components: dict of :pandas:`pandas.DataFrame<dataframe>`
         DataFrames contain components attributes. Dict is keyed by components
         type
-    components_data: dict of pandas.DataFrame
+    components_data: dict of :pandas:`pandas.DataFrame<dataframe>`
         DataFrame containing components time-varying data
     """
-
     generator_instances = [MVStationDing0, GeneratorDing0]
     # TODO: MVStationDing0 has a slack generator
 
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+    cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
+    cos_phi_feedin_mode = cfg_ding0.get('assumptions', 'cos_phi_gen_mode')
     srid = int(cfg_ding0.get('geo', 'srid'))
 
     load_in_generation_case = cfg_ding0.get('assumptions',
@@ -89,8 +93,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
     generation_in_load_case = cfg_ding0.get('assumptions',
                                             'generation_in_load_case')
 
-    Q_factor_load = tan(acos(cos_phi_load))
-    Q_factor_generation = tan(acos(cos_phi_feedin))
+    Q_factor_load = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
+    Q_factor_generation = q_sign(cos_phi_feedin_mode, 'generator') * tan(acos(cos_phi_feedin))
 
     voltage_set_slack = cfg_ding0.get("mv_routing_tech_constraints",
                                       "mv_station_v_level_operation")
@@ -302,7 +306,7 @@ def edges_to_dict_of_dataframes(grid, edges):
     Parameters
     ----------
     grid: ding0.Network
-    edges: list
+    edges: :obj:`list`
         Edges of Ding0.Network graph
 
     Returns
@@ -375,9 +379,9 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
 
     Parameters
     ----------
-    components: dict of pandas.DataFrame
-    components_data: dict of pandas.DataFrame
-    export_pypsa_dir: str
+    components: dict of :pandas:`pandas.DataFrame<dataframe>`
+    components_data: dict of :pandas:`pandas.DataFrame<dataframe>`
+    export_pypsa_dir: :obj:`str`
         Sub-directory in output/debug/grid/ where csv Files of PyPSA network are exported to.
         Export is omitted if argument is empty.
     """
@@ -495,9 +499,9 @@ def process_pf_results(network):
 
     Returns
     -------
-    bus_data: pandas.DataFrame
+    bus_data: :pandas:`pandas.DataFrame<dataframe>`
         Voltage level results at buses
-    line_data: pandas.DataFrame
+    line_data: :pandas:`pandas.DataFrame<dataframe>`
         Resulting apparent power at lines
     """
 
@@ -528,7 +532,7 @@ def assign_bus_results(grid, bus_data):
     Parameters
     ----------
     grid: ding0.network
-    bus_data: pandas.DataFrame
+    bus_data: :pandas:`pandas.DataFrame<dataframe>`
         DataFrame containing voltage levels obtained from PF analysis
     """
 
@@ -557,7 +561,7 @@ def assign_line_results(grid, line_data):
     Parameters
     -----------
     grid: ding0.network
-    line_data: pandas.DataFrame
+    line_data: :pandas:`pandas.DataFrame<dataframe>`
         DataFrame containing active/reactive at nodes obtained from PF analysis
     """
 

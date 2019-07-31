@@ -34,12 +34,12 @@ def reinforce_grid(grid, mode):
     
     Parameters
     ----------
-    grid: GridDing0
+    grid: :class:`~.ding0.core.GridDing0`
         Grid instance
-    mode: str
+    mode: :obj:`str`
         Choose of: 'MV' or 'LV'
 
-    Notes
+    Note
     -----
     Currently only MV branch reinforcement is implemented. HV-MV stations are not
     reinforced since not required for status-quo scenario.
