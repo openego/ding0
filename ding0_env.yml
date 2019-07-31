@@ -45,4 +45,3 @@ dependencies:
         - oedialect
         - pypsa == 0.11.0
         - workalendar
-        - pytest
