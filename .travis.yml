@@ -11,7 +11,7 @@ env:
   - CONDA_PYTHON=3.7
 
 os:
-  # - windows
+  - windows
   - linux
 
 before_install:
