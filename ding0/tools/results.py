@@ -546,20 +546,19 @@ def calculate_mvgd_stats(nw):
                     #print(node, node.lv_load_area.is_aggregated) # only debug
                 else:
                     path = nx.shortest_path(G, root, node)
-                    for i in range(len(path) - 1):#falsch berechnet
-                        mv_impedance += np.sqrt(
-                            (G.adj[path[i]][path[i + 1]]['branch'].type[
+                    for i in range(len(path) - 1):
+                        mv_impedance += (G.adj[path[i]][path[i + 1]]['branch'].type[
                                  'L_l'] * 1e-3 * omega * \
                              G.adj[path[i]][path[i + 1]][
-                                 'branch'].length) ** 2. + \
+                                 'branch'].length) *1j  + \
                             (G.adj[path[i]][path[i + 1]]['branch'].type[
                                  'R_l'] * \
                              G.adj[path[i]][path[i + 1]][
-                                 'branch'].length) ** 2.)
+                                 'branch'].length)
                         mv_path_length += G.adj[path[i]][path[i + 1]][
                             'branch'].length
 
-                    mv_impedances[node] = mv_impedance
+                    mv_impedances[node] = abs(mv_impedance)
                     mv_path_lengths[node] = mv_path_length
                     mv_thermal_limit = G.adj[path[0]][path[1]]['branch'].type['I_max_th']
                     mv_thermal_limits[node] = mv_thermal_limit
@@ -568,7 +567,7 @@ def calculate_mvgd_stats(nw):
                         # add impedance of transformers in LV station
                         lvstation_impedance = 0.
                         for trafo in node.transformers():
-                            lvstation_impedance += 1. / np.hypot(trafo.r,trafo.x)  # transformers operating in parallel
+                            lvstation_impedance += 1. / trafo.z()  # transformers operating in parallel
                         if lvstation_impedance > 0.:  # avoid dividing by zero
                             lvstation_impedance = 1. / lvstation_impedance
                         else:
@@ -584,15 +583,15 @@ def calculate_mvgd_stats(nw):
                                             path = nx.shortest_path(G_lv, node, lv_node)
                                             lv_impedance = lvstation_impedance
                                             lv_path_length = 0.
-                                            for i in range(len(path)-1):#falsch berechnet
-                                                lv_impedance += np.sqrt((G_lv.adj[path[i]][path[i+1]]['branch'].type['L_l'] * 1e-3 * omega * \
-                                                                          G_lv.adj[path[i]][path[i+1]]['branch'].length)**2. + \
+                                            for i in range(len(path)-1):
+                                                lv_impedance += (G_lv.adj[path[i]][path[i+1]]['branch'].type['L_l'] * 1e-3 * omega * \
+                                                                          G_lv.adj[path[i]][path[i+1]]['branch'].length) *1j + \
                                                                          (G_lv.adj[path[i]][path[i+1]]['branch'].type['R_l'] * \
-                                                                          G_lv.adj[path[i]][path[i+1]]['branch'].length)**2.)
+                                                                          G_lv.adj[path[i]][path[i+1]]['branch'].length)
                                                 lv_path_length += G_lv.adj[path[i]][path[i+1]]['branch'].length
                                             lv_thermal_limit = G_lv.adj[path[0]][path[1]]['branch'].type['I_max_th']
 
-                                            mvlv_impedances[lv_node] = mv_impedance + lv_impedance
+                                            mvlv_impedances[lv_node] = abs( mv_impedance + lv_impedance )
                                             mvlv_path_lengths[lv_node] = mv_path_length + lv_path_length
                                             lv_thermal_limits[lv_node] = lv_thermal_limit
                                             mvlv_thermal_limits[lv_node] = mv_thermal_limit
