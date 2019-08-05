@@ -159,19 +159,23 @@ Ding0 IO : Ding0 exporter
 =========================
 Introduction
 --------------
-The ding0 exporter contains different input/output functionality. The main component is the export.py.
-The following will explain the main usage of the exporter.py and introduce inputs and outputs.
+The ding0 exporter provides the ding0 network topology data in a structured format. The main component is the
+export.py which transforms the ding0 network to several pandas dataframes. The main purpose is to provide
+the Data as table based format using a broadly known technology. The following will explain
+the main usage of the exporter.py and introduce its inputs and possible outputs.
 
 The exporter contains the function export_network(). This function takes three parameters: a network
-object, the mode which is not relevant here, and the run_id. The run_id should be set if the network
-is not created but imported from pickle files.
+object, the mode which is currently not implemented, and the run_id.
+
+Note:
+The run_id should be set if the network is not created but imported from pickle files.
 
 What is the input?
 ------------------
-Ding0Network can be run for multiple GridDistricts. As mentioned a Ding0Network can be created from a
-versioned run that has been stored in pickle files or a new run can be initialized. The difference will
-be most obviously be noticed by looking at the run_id.
-So the input would the ding0 network and the run_id.
+Ding0Network can be run for a single or multiple GridDistricts. As mentioned a Ding0Network must be created
+from a versioned Ding0 "run" that has been stored in pickle files before. The other options is to initialize
+a new version by running ding0 again. The difference will be most obviously be noticed by looking at the run_id.
+So the input would the ding0 network and the coherent run_id.
 
 What is the output?
 -------------------
@@ -184,28 +188,47 @@ for several tasks. See pandas IO.
 
 What IO functionality is implemented?
 -------------------------------------
-Currently the Ding0Network can be serialized as pickle files in python. It can also be stored in:
-Tables on a relational database as well as saved to CSV file.
+Currently the Ding0Network can be serialized as pickle files in python. It can also be stored in
+Tables on a relational database as well as saved to CSV files.
 
 IO settings
 -----------
 The io settings are provided within a config file that is located in the ding0/config folder. The file is
 named exporter_config.cfg. In the current state it just stores the database schema that is used as destination
 for any exports to a database. The config file is imported as config-object using the package "ConfigObj".
+In the future all static options should be stored in this file.
 
 Export ding0 to database
 =========================
-This exporter depends on existing tables. The table definition for tables that can store ding0 objects is used
-to create these tables is provided.
+Ding0 Table
+-----------
+In order to export the provided, ding0 related, Pandas dataframes to a database one must create specific tables
+first. The table definition and metadata(using string version 1.3) is provided within the module "ding0_db_tables.py".
 
-Ding0 export provides the Ding0 objects as Pandas dataframes. Pandas provides a IO functionality to export
-Dataframes to a database. This is used to export the dataframes.
+The table definition is implemented using SQLAlchemy.
 
+Ding0 Table Metadata
+--------------------
+The "ding0 metadata" JSON-strings are located in the "metadatastrings" folder within in the "ding0.io" folder.
+They are created using the a versioned metadatastring witch is under continuous development. The provided Metadata
+is using the string in version 1.3.
+
+Database export
+---------------
+This exporter depends on existing tables.
+The functionality for this module is implemented in "db_export.py". This module provides functionality to establish
+a database connection, create the tables, drop the tables, as well as change the database specific owner for each table.
+The core functionality is the data export. This is implemented using Pandas dataframes and a provided Pandas.IO
+functionality.
+
+Note: The export to a Database will take a lot of time (about 1 Week). The reason for this is the quantity of the data
+ding0 provides. Therefore it is not recommended to export all 3608 available GridDistricts at once. This could be error
+prone caused by connection timeout or similar reasons. We work on speeding up the export in the future.
 
 CSV file export
 ===============
 
-Ding0 objects are exported in csv files.
+Ding0 objects can be exported in csv files. The functionality is provided by Pandas.IO.
 
 Lines
 -----
