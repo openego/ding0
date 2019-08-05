@@ -434,8 +434,9 @@ def get_critical_voltage_at_nodes(grid):
     # voltage at substation bus bar
     r_mv_grid, x_mv_grid = get_mv_impedance(grid)
 
-    r_trafo = sum([tr.r_pu for tr in grid._station._transformers]) # Müsste das nicht 1/r sein?
-    x_trafo = sum([tr.x_pu for tr in grid._station._transformers])
+    z_trafo = 1/sum(1/(tr.z(voltage_level = grid.v_level/1000)) for tr in grid._station._transformers)
+    r_trafo = z_trafo.real
+    x_trafo = z_trafo.imag
 
     v_delta_load_case_bus_bar, \
     v_delta_gen_case_bus_bar = get_voltage_at_bus_bar(grid, tree)
@@ -633,7 +634,7 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     freq = cfg_ding0.get('assumptions', 'frequency')
     omega = 2 * math.pi * freq
 
-    # add resitance/ reactance to preceeding
+    # add resistance/ reactance to preceeding
     in_edge = [_ for _ in grid.graph_branches_from_node(node) if
                _[0] in list(tree.predecessors(node))][0][1]
     r = r_preceeding + (in_edge['branch'].type['R_l'] *
@@ -762,8 +763,9 @@ def get_voltage_at_bus_bar(grid, tree):
     # voltage at substation bus bar
     r_mv_grid, x_mv_grid = get_mv_impedance(grid)
 
-    r_trafo = sum([tr.r_pu for tr in grid._station._transformers]) #müsste das nicht 1/r sein?
-    x_trafo = sum([tr.x_pu for tr in grid._station._transformers]) #s.o.
+    z_trafo = 1 / sum(1 / (tr.z(voltage_level = grid.v_level/1000)) for tr in grid._station._transformers)
+    r_trafo = z_trafo.real
+    x_trafo = z_trafo.imag
 
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
     cos_phi_feedin = cfg_ding0.get('assumptions', 'cos_phi_gen')
