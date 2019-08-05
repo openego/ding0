@@ -822,7 +822,7 @@ class TransformerDing0:
         self.id_db = kwargs.get('id_db', None)
         self.grid = kwargs.get('grid', None)
         # self.v_level_p = kwargs.get('v_level_p', None) # primary side voltage
-        self.v_level_s = kwargs.get('v_level', None)  # secondary side voltage
+        self.v_level = kwargs.get('v_level', None)  # secondary side voltage
         self.s_max_a = kwargs.get('s_max_longterm', None)
         self.s_max_b = kwargs.get('s_max_shortterm', None)
         self.s_max_c = kwargs.get('s_max_emergency', None)
@@ -852,7 +852,7 @@ class TransformerDing0:
         :return: Z_tr in [Ohm]
         '''
         if voltage_level is None:
-            voltage_level = self.v_level_s
+            voltage_level = self.v_level
         # calculates z in Ohm with Z = z_pu * Z_nom and Z_nom = U_nom^2 / S_nom
         Z_tr = (self.r_pu + self.x_pu * 1j) * voltage_level**2 / self.s_max_a *1000
         return Z_tr
