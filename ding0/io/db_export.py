@@ -390,6 +390,8 @@ def export_all_dataframes_to_db(engine, schema, network=None, srid=None, grid_no
             #                                 'description': str(metadata_json)}, index=[0])
             #     df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
+            # ToDo: use DING0_TABLES from ding0_db_tables.py and the df label (name of df) to loop over
+            # Use a loop based on a list that is compared with the df name for insert the df in the corresponding table
             # 1
             export_df_to_db(engine, schema, network.lines, "line", srid)
             # 2
@@ -463,6 +465,8 @@ def export_all_pkl_to_db(engine, schema, network, srid, grid_no=None):
                                         'description': str(metadata_json)}, index=[0])
             df_sql_write(engine, schema, DING0_TABLES['versioning'], metadata_df)
 
+            # ToDo: use DING0_TABLES from ding0_db_tables.py and the df label (name of df) to loop over
+            # Use a loop based on a list that is compared with the df name for insert the df in the corresponding table
             # 1
             export_df_to_db(engine, schema, network.lines, "line", srid)
             # 2
