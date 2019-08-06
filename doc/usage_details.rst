@@ -212,11 +212,13 @@ table as foreignKey. All tables depend on the existing run_id.
 
 versioning
 ----------
+<!--table-->
 | name        | description                       | unit           |
-|-------------|-----------------------------------|----------------|
+| ------------- | ----------------------------------- | ---------------- |
 | id          | unambiguous unique numer          | integer        |
 | run_id      | time and date of table generation | yyyyMMddhhmmss |
 | description | Used parameters for this run      | string         |
+<!--endtable-->
 
 line
 ----
