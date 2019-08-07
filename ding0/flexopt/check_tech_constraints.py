@@ -435,7 +435,7 @@ def get_critical_voltage_at_nodes(grid):
             grid_conn_points.append(node)
 
     # voltage at substation bus bar
-    r_mv_grid, x_mv_grid = get_mv_impedance_at_voltage_level(grid, grid.v_level/1000)
+    r_mv_grid, x_mv_grid = get_mv_impedance_at_voltage_level(grid, grid.v_level/1e3)
 
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
@@ -775,7 +775,7 @@ def get_voltage_at_bus_bar(grid, tree):
     """
 
     # voltage at substation bus bar
-    r_mv_grid, x_mv_grid = get_mv_impedance_at_voltage_level(grid, grid.v_level/1000)
+    r_mv_grid, x_mv_grid = get_mv_impedance_at_voltage_level(grid, grid.v_level/1e3)
 
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
