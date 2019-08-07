@@ -1,7 +1,6 @@
 import pytest
 
-from ding0.tools.tools import (get_cart_dest_point,
-                               create_poly_from_source)
+from ding0.tools.tools import (get_cart_dest_point, create_poly_from_source)
 
 from ding0.core.network.loads import LVLoadDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
@@ -1212,9 +1211,6 @@ class TestMVGridDing0(object):
         mv_grid._circuit_breakers[4].branch.type['I_max_th'] == 210
         mv_grid._circuit_breakers[5].branch.type['I_max_th'] == 210
 
-
-class TestLVGridDing0(object):
-
     @pytest.fixture
     def lv_grid_district_data(self):
         """
@@ -1250,131 +1246,6 @@ class TestLVGridDing0(object):
                                               'peak_load_industrial',
                                               'peak_load_agricultural']].sum(axis=1))
         return lv_grid_district_data
-
-    @pytest.fixture
-    def empty_lvgridding0(self,lv_grid_district_data):
-        """
-        Returns and empty LVGridDing0 object, belonging
-        to an LVGridDisctrict with the corresponding
-        fixture data
-        """
-
-        network = NetworkDing0(name='network')
-        mv_station = MVStationDing0(network=network)
-        mv_grid = MVGridDing0(station=mv_station, network=network)
-        mv_grid_district = MVGridDistrictDing0(mv_grid=mv_grid)
-
-        lv_load_area = LVLoadAreaDing0(id_db=0,
-                                       db_data=lv_grid_district_data.iloc[0],
-                                       mv_grid_district=mv_grid_district,
-                                       peak_load=lv_grid_district_data['peak_load'])
-
-        lv_load_area.geo_area = lv_grid_district_data['geom'][0]
-        lv_load_area.geo_centre = lv_grid_district_data['geom'][0].centroid
-        lv_grid_district = LVGridDistrictDing0(
-            id_db=id,
-            lv_load_area=lv_load_area,
-            geo_data=lv_grid_district_data['geom'],
-            population=(0
-                        if isnan(lv_grid_district_data['population'])
-                        else int(lv_grid_district_data['population'])),
-            peak_load_residential=lv_grid_district_data['peak_load_residential'],
-            peak_load_retail=lv_grid_district_data['peak_load_retail'],
-            peak_load_industrial=lv_grid_district_data['peak_load_industrial'],
-            peak_load_agricultural=lv_grid_district_data['peak_load_agricultural'],
-            peak_load=(lv_grid_district_data['peak_load_residential']
-                       + lv_grid_district_data['peak_load_retail']
-                       + lv_grid_district_data['peak_load_industrial']
-                       + lv_grid_district_data['peak_load_agricultural']),
-            sector_count_residential=(0
-                                      if lv_grid_district_data['peak_load_residential'][0] == 0.0
-                                      else 1),
-            sector_count_retail=(0
-                                 if lv_grid_district_data['peak_load_retail'][0] == 0.0
-                                 else 1),
-            sector_count_agricultural=(0
-                                       if lv_grid_district_data['peak_load_agricultural'][0] == 0.0
-                                       else 1),
-            sector_count_industrial=(0
-                                     if lv_grid_district_data['peak_load_industrial'][0] == 0.0
-                                     else 1),
-            sector_consumption_residential=lv_grid_district_data['peak_load_residential'][0],
-            sector_consumption_retail=lv_grid_district_data['peak_load_retail'][0],
-            sector_consumption_industrial=lv_grid_district_data['peak_load_industrial'][0],
-            sector_consumption_agricultural=lv_grid_district_data['peak_load_agricultural'][0]
-        )
-        grid = LVGridDing0(id_db=0,
-                           grid_district=lv_grid_district,
-                           population=lv_grid_district.population,
-                           network=network)
-
-        return grid, lv_load_area
-
-    def test_empty_grid(self, empty_lvgridding0):
-        """
-        Check that the initialization of an object of the
-        class LVGridDing0 results in the right attributes being empty
-        lists or NoneType objects, with the exception of the
-        LVStationDing0 object's id_db and geo_data, which are
-        0 and shapely.geometry.Point(1, 1) respectively.
-        Check if the type of branch is set to cable by default
-        """
-        empty_lvgridding0,lv_load_area = empty_lvgridding0
-        assert empty_lvgridding0.default_branch_kind == 'cable'
-        assert empty_lvgridding0._station is None
-        assert empty_lvgridding0.population == 0
-
-    def test_station(self, empty_lvgridding0):
-        """
-        Check if station function returns the current
-        given station
-        """
-        empty_lvgridding0,lv_load_area = empty_lvgridding0
-        assert empty_lvgridding0.station() == empty_lvgridding0._station
-
-    def test_add_station(self, empty_lvgridding0):
-        """
-        Check if a new station is added correctly
-        """
-        lv_grid, lv_load_area = empty_lvgridding0
-        new_lv = LVStationDing0(id_db=0,
-                                geo_data=(1,2),
-                                lv_grid=lv_grid,
-                                lv_load_area=lv_load_area)
-
-        graph = lv_grid._graph
-        n = nx.number_of_nodes(graph)
-        lv_grid.add_station(new_lv)
-        m = nx.number_of_nodes(graph)
-        assert m == n+1
-
-    def test_add_station_negative(self, empty_lvgridding0):
-        """
-        Check if adding a non LVStation object is added as a station
-        raises the proper error
-        """
-        lv_grid, lv_load_area = empty_lvgridding0
-        bad_station = GeneratorDing0(id_db=0)
-        with pytest.raises(Exception, match='not'):
-            lv_grid.add_station(bad_station)
-
-    def test_add_load(self, empty_lvgridding0):
-        """
-        Check if load gets added correctly
-        """
-        empty_lvgridding0,lv_load_area = empty_lvgridding0
-        new_lv_load = LVLoadDing0(grid=empty_lvgridding0)
-        empty_lvgridding0.add_load(new_lv_load)
-        assert empty_lvgridding0.loads_count() == 1
-
-    def test_add_cable_dist(self, empty_lvgridding0):
-        """
-        Check if cable distributor is added properly
-        """
-        empty_lvgridding0,lv_load_area = empty_lvgridding0
-        new_cable_dist = LVCableDistributorDing0(grid=empty_lvgridding0)
-        empty_lvgridding0.add_cable_dist(new_cable_dist)
-        assert empty_lvgridding0.cable_distributors_count() == 1
 
     @pytest.fixture
     def basic_lv_grid(self, lv_grid_district_data):
@@ -1558,6 +1429,368 @@ class TestLVGridDing0(object):
 
         return lv_grid
 
+    def test_reinforce_grid(self, ring_mvgridding0, basic_lv_grid):
+        """
+        Verifies the correction of the lines which present current and
+        voltage issues. Critical HV-MV stations are NOT reinforced, as the
+        function MVStationDing0.choose_transformers() chooses the transformer
+        in such a way that it does not overload
+
+        """
+        (ring,grid) = ring_mvgridding0
+
+        grid.reinforce_grid()
+
+
+
+class TestLVGridDing0(object):
+
+    @pytest.fixture
+    def lv_grid_district_data(self):
+        """
+        Creates a pandas DataFrame containing the data
+        needed for the creation of an LVGridDisctrict
+        """
+        distance_scaling_factor = 3
+        source = Point(8.638204, 49.867307)
+
+        lv_grid_district_data = pd.DataFrame(
+            dict(
+                la_id=1,
+                population=0,
+                peak_load_residential=0.0,
+                peak_load_retail=0.0,
+                peak_load_industrial=0.0,
+                peak_load_agricultural=0.0,
+                geom=create_poly_from_source(
+                        get_cart_dest_point(source,
+                                            -1000*distance_scaling_factor,
+                                            1000*distance_scaling_factor),
+                        100,
+                        100,
+                        100,
+                        100)
+
+            ), index=[0]
+        )
+
+        lv_grid_district_data.loc[:, 'peak_load'] = (
+                lv_grid_district_data.loc[:, ['peak_load_residential',
+                                              'peak_load_retail',
+                                              'peak_load_industrial',
+                                              'peak_load_agricultural']].sum(axis=1))
+        return lv_grid_district_data
+
+
+    @pytest.fixture
+    def basic_lv_grid(self, lv_grid_district_data):
+        """
+        Minimal needed LVGridDing0 to run LVGridDing0.build_grid
+        """
+
+        source = Point(8.638204, 49.867307)
+        distance_scaling_factor = 3
+
+        network = NetworkDing0(name='network')
+        mv_station = MVStationDing0(
+            id_db=0,
+            geo_data=source,
+            peak_load=10000.0,
+            v_level_operation=20.0
+        )
+        hvmv_transformer = TransformerDing0(
+                id_db=0,
+                s_max_longterm=63000.0,
+                v_level=20.0)
+
+        mv_station.add_transformer(hvmv_transformer)
+
+        mv_grid = MVGridDing0(
+            id_db=0,
+            network=network,
+            v_level=20.0,
+            station=mv_station,
+            default_branch_kind='line',
+            default_branch_kind_aggregated='line',
+            default_branch_kind_settle='cable',
+            default_branch_type=pd.Series(
+                dict(name='48-AL1/8-ST1A',
+                     U_n=20.0,
+                     I_max_th=210.0,
+                     R=0.37,
+                     L=1.18,
+                     C=0.0098,
+                     reinforce_only=0)
+            ),
+            default_branch_type_aggregated=pd.Series(
+                dict(name='122-AL1/20-ST1A',
+                     U_n=20.0,
+                     I_max_th=410.0,
+                     R=0.34,
+                     L=1.08,
+                     C=0.0106,
+                     reinforce_only=0)
+            ),
+            default_branch_type_settle=pd.Series(
+                dict(name='NA2XS2Y 3x1x150 RE/25',
+                     U_n=20.0,
+                     I_max_th=319.0,
+                     R=0.206,
+                     L=0.4011,
+                     C=0.24,
+                     reinforce_only=0)
+            )
+        )
+        mv_generators = [
+            GeneratorDing0(
+                id_db=0,
+                capacity=200.0,
+                mv_grid=mv_grid,
+                type='biomass',
+                subtype='biogas_from_grid',
+                v_level=5,
+                geo_data=source
+            ),
+
+            GeneratorFluctuatingDing0(
+                id_db=2,
+                weather_cell_id=1,
+                capacity=1000.0,
+                mv_grid=mv_grid,
+                type='wind',
+                subtype='wind_onshore',
+                v_level=5,
+                geo_data=source
+            )
+        ]
+        # 2 Generator: 1 Constant,1 Fluctating
+        for mv_gen in mv_generators:
+            mv_grid.add_generator(mv_gen)
+
+        mv_grid_district_geo_data = create_poly_from_source(
+            source,
+            distance_scaling_factor * 5000,
+            distance_scaling_factor * 10000,
+            distance_scaling_factor * 5000,
+            distance_scaling_factor * 8000
+        )
+
+        mv_grid_district = MVGridDistrictDing0(id_db=10000,
+                                               mv_grid=mv_grid,
+                                               geo_data=mv_grid_district_geo_data)
+
+        mv_grid.grid_district = mv_grid_district
+        mv_station.grid = mv_grid
+        network.add_mv_grid_district(mv_grid_district)
+
+        lv_grid_district_data.loc[:, 'peak_load'] = (
+            lv_grid_district_data.loc[:, ['peak_load_residential',
+                                           'peak_load_retail',
+                                           'peak_load_industrial',
+                                           'peak_load_agricultural']].sum(axis=1)
+        )
+        lv_nominal_voltage = 400.0
+        # assuming that the lv_grid districts and lv_load_areas are the same!
+        # or 1 lv_griddistrict is 1 lv_loadarea
+        lv_load_area = LVLoadAreaDing0(id_db=0,
+                                       db_data=lv_grid_district_data.iloc[0],
+                                       mv_grid_district=mv_grid_district,
+                                       peak_load=lv_grid_district_data['peak_load'])
+
+        lv_load_area.geo_area = lv_grid_district_data['geom'][0]
+        lv_load_area.geo_centre = lv_grid_district_data['geom'][0].centroid
+        lv_grid_district = LVGridDistrictDing0(
+            id_db=27,
+            lv_load_area=lv_load_area,
+            geo_data=lv_grid_district_data['geom'][0],
+            population=(0
+                        if isnan(lv_grid_district_data['population'][0])
+                        else int(lv_grid_district_data['population'][0])),
+            peak_load_residential=lv_grid_district_data['peak_load_residential'][0],
+            peak_load_retail=lv_grid_district_data['peak_load_retail'][0],
+            peak_load_industrial=lv_grid_district_data['peak_load_industrial'][0],
+            peak_load_agricultural=lv_grid_district_data['peak_load_agricultural'][0],
+            peak_load=(lv_grid_district_data['peak_load_residential'][0]
+                       + lv_grid_district_data['peak_load_retail'][0]
+                       + lv_grid_district_data['peak_load_industrial'][0]
+                       + lv_grid_district_data['peak_load_agricultural'][0]),
+            sector_count_residential=(0
+                                      if lv_grid_district_data['peak_load_residential'][0] == 0.0
+                                      else 1),
+            sector_count_retail=(0
+                                 if lv_grid_district_data['peak_load_retail'][0] == 0.0
+                                 else 1),
+            sector_count_agricultural=(0
+                                       if lv_grid_district_data['peak_load_agricultural'][0] == 0.0
+                                       else 1),
+            sector_count_industrial=(0
+                                     if lv_grid_district_data['peak_load_industrial'][0] == 0.0
+                                     else 1),
+            sector_consumption_residential=lv_grid_district_data['peak_load_residential'][0],
+            sector_consumption_retail=lv_grid_district_data['peak_load_retail'][0],
+            sector_consumption_industrial=lv_grid_district_data['peak_load_industrial'][0],
+            sector_consumption_agricultural=lv_grid_district_data['peak_load_agricultural'][0]
+        )
+
+        #be aware, lv_grid takes grid district's geom!
+        lv_grid = LVGridDing0(network=network,
+                              grid_district=lv_grid_district,
+                              id_db=1,
+                              geo_data=lv_grid_district_data['geom'][0],
+                              v_level=lv_nominal_voltage)
+
+        # create LV station
+        lv_station = LVStationDing0(
+            id_db=1,
+            grid=lv_grid,
+            lv_load_area=lv_load_area,
+            geo_data=lv_grid_district_data['geom'][0].centroid,
+            peak_load=lv_grid_district.peak_load
+        )
+
+        # assign created objects
+        # note: creation of LV grid is done separately,
+        # see NetworkDing0.build_lv_grids()
+        lv_grid.add_station(lv_station)
+        lv_grid_district.lv_grid = lv_grid
+        lv_load_area.add_lv_grid_district(lv_grid_district)
+
+        lv_load_area_centre = LVLoadAreaCentreDing0(id_db=1,
+                                                    geo_data=lv_grid_district_data['geom'][0].centroid,
+                                                    lv_load_area=lv_load_area,
+                                                    grid=mv_grid_district.mv_grid)
+
+        lv_load_area.lv_load_area_centre = lv_load_area_centre
+        mv_grid_district.add_lv_load_area(lv_load_area)
+        mv_grid.routing()
+
+        return lv_grid
+
+    @pytest.fixture
+    def empty_lvgridding0(self,lv_grid_district_data):
+        """
+        Returns and empty LVGridDing0 object, belonging
+        to an LVGridDisctrict with the corresponding
+        fixture data
+        """
+
+        network = NetworkDing0(name='network')
+        mv_station = MVStationDing0(network=network)
+        mv_grid = MVGridDing0(station=mv_station, network=network)
+        mv_grid_district = MVGridDistrictDing0(mv_grid=mv_grid)
+
+        lv_load_area = LVLoadAreaDing0(id_db=0,
+                                       db_data=lv_grid_district_data.iloc[0],
+                                       mv_grid_district=mv_grid_district,
+                                       peak_load=lv_grid_district_data['peak_load'])
+
+        lv_load_area.geo_area = lv_grid_district_data['geom'][0]
+        lv_load_area.geo_centre = lv_grid_district_data['geom'][0].centroid
+        lv_grid_district = LVGridDistrictDing0(
+            id_db=id,
+            lv_load_area=lv_load_area,
+            geo_data=lv_grid_district_data['geom'],
+            population=(0
+                        if isnan(lv_grid_district_data['population'])
+                        else int(lv_grid_district_data['population'])),
+            peak_load_residential=lv_grid_district_data['peak_load_residential'],
+            peak_load_retail=lv_grid_district_data['peak_load_retail'],
+            peak_load_industrial=lv_grid_district_data['peak_load_industrial'],
+            peak_load_agricultural=lv_grid_district_data['peak_load_agricultural'],
+            peak_load=(lv_grid_district_data['peak_load_residential']
+                       + lv_grid_district_data['peak_load_retail']
+                       + lv_grid_district_data['peak_load_industrial']
+                       + lv_grid_district_data['peak_load_agricultural']),
+            sector_count_residential=(0
+                                      if lv_grid_district_data['peak_load_residential'][0] == 0.0
+                                      else 1),
+            sector_count_retail=(0
+                                 if lv_grid_district_data['peak_load_retail'][0] == 0.0
+                                 else 1),
+            sector_count_agricultural=(0
+                                       if lv_grid_district_data['peak_load_agricultural'][0] == 0.0
+                                       else 1),
+            sector_count_industrial=(0
+                                     if lv_grid_district_data['peak_load_industrial'][0] == 0.0
+                                     else 1),
+            sector_consumption_residential=lv_grid_district_data['peak_load_residential'][0],
+            sector_consumption_retail=lv_grid_district_data['peak_load_retail'][0],
+            sector_consumption_industrial=lv_grid_district_data['peak_load_industrial'][0],
+            sector_consumption_agricultural=lv_grid_district_data['peak_load_agricultural'][0]
+        )
+        grid = LVGridDing0(id_db=0,
+                           grid_district=lv_grid_district,
+                           population=lv_grid_district.population,
+                           network=network)
+
+        return grid, lv_load_area
+
+    def test_empty_grid(self, empty_lvgridding0):
+        """
+        Check that the initialization of an object of the
+        class LVGridDing0 results in the right attributes being empty
+        lists or NoneType objects, with the exception of the
+        LVStationDing0 object's id_db and geo_data, which are
+        0 and shapely.geometry.Point(1, 1) respectively.
+        Check if the type of branch is set to cable by default
+        """
+        empty_lvgridding0,lv_load_area = empty_lvgridding0
+        assert empty_lvgridding0.default_branch_kind == 'cable'
+        assert empty_lvgridding0._station is None
+        assert empty_lvgridding0.population == 0
+
+    def test_station(self, empty_lvgridding0):
+        """
+        Check if station function returns the current
+        given station
+        """
+        empty_lvgridding0,lv_load_area = empty_lvgridding0
+        assert empty_lvgridding0.station() == empty_lvgridding0._station
+
+    def test_add_station(self, empty_lvgridding0):
+        """
+        Check if a new station is added correctly
+        """
+        lv_grid, lv_load_area = empty_lvgridding0
+        new_lv = LVStationDing0(id_db=0,
+                                geo_data=(1,2),
+                                lv_grid=lv_grid,
+                                lv_load_area=lv_load_area)
+
+        graph = lv_grid._graph
+        n = nx.number_of_nodes(graph)
+        lv_grid.add_station(new_lv)
+        m = nx.number_of_nodes(graph)
+        assert m == n+1
+
+    def test_add_station_negative(self, empty_lvgridding0):
+        """
+        Check if adding a non LVStation object is added as a station
+        raises the proper error
+        """
+        lv_grid, lv_load_area = empty_lvgridding0
+        bad_station = GeneratorDing0(id_db=0)
+        with pytest.raises(Exception, match='not'):
+            lv_grid.add_station(bad_station)
+
+    def test_add_load(self, empty_lvgridding0):
+        """
+        Check if load gets added correctly
+        """
+        empty_lvgridding0,lv_load_area = empty_lvgridding0
+        new_lv_load = LVLoadDing0(grid=empty_lvgridding0)
+        empty_lvgridding0.add_load(new_lv_load)
+        assert empty_lvgridding0.loads_count() == 1
+
+    def test_add_cable_dist(self, empty_lvgridding0):
+        """
+        Check if cable distributor is added properly
+        """
+        empty_lvgridding0,lv_load_area = empty_lvgridding0
+        new_cable_dist = LVCableDistributorDing0(grid=empty_lvgridding0)
+        empty_lvgridding0.add_cable_dist(new_cable_dist)
+        assert empty_lvgridding0.cable_distributors_count() == 1
+
     def test_build_grid_transformers(self, basic_lv_grid):
         """
         Check if transformers are added correctly to
@@ -1625,7 +1858,6 @@ class TestLVGridDing0(object):
         assert len(np.nonzero(nx.adjacency_matrix(basic_lv_grid._graph)[0, :]
                               .toarray())) == 2
 
-
     def test_connect_generators(self, basic_lv_grid):
         """
         Check if generator is added to the graph
@@ -1633,6 +1865,33 @@ class TestLVGridDing0(object):
         new_gen = GeneratorDing0()
         basic_lv_grid.add_generator(new_gen)
         assert len(basic_lv_grid._generators) == 1
+
+    def test_reinforce_grid(self, basic_lv_grid):
+        """Verifies the correct creation of an LV_Grid Graph,
+        regarding number of nodes, as well as type of cables and
+        then checks if the grid reinforcement is done correctly
+        by inspecting this attributes for the new graph
+        """
+        basic_lv_grid.grid_district.population = 20
+        basic_lv_grid.grid_district.peak_load_residential = 3000
+        basic_lv_grid.build_grid()
+        hola = 'hola'
+
+        #Verify the LV_Grid._graph gets constructed correctly
+        assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station)))\
+               == 1
+
+        assert basic_lv_grid._graph.edge[basic_lv_grid._station][basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
+
+        basic_lv_grid.reinforce_grid()
+
+        assert basic_lv_grid._graph.edge[basic_lv_grid._station]\
+        [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
+
+        basic_lv_grid.build_grid()
+
+        assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station))) \
+               == 2
 
 
 
