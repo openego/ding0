@@ -435,7 +435,7 @@ def get_critical_voltage_at_nodes(grid):
             grid_conn_points.append(node)
 
     # voltage at substation bus bar
-    r_mv_grid, x_mv_grid = get_mv_impedance(grid)
+    r_mv_grid, x_mv_grid = get_mv_impedance_at_voltage_level(grid, grid.v_level/1000)
 
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
@@ -663,13 +663,15 @@ def get_voltage_delta_branch(grid, tree, node, r_preceeding, x_preceeding):
     return [voltage_delta_load, voltage_delta_gen, r, x]
 
 
-def get_mv_impedance(grid):
+def get_mv_impedance_at_voltage_level(grid, voltage_level):
     """
     Determine MV grid impedance (resistance and reactance separately)
 
     Parameters
     ----------
     grid : :class:`~.ding0.core.network.grids.LVGridDing0`
+    voltage_level: float
+        voltage level to which impedance is rescaled (normally 0.4 kV for LV)
 
     Returns
     -------
@@ -685,8 +687,10 @@ def get_mv_impedance(grid):
                      for e in edges])
     x_mv_grid = sum([e[2]['branch'].type['L'] / 1e3 * omega * e[2][
         'branch'].length / 1e3 for e in edges])
-
-    return [r_mv_grid, x_mv_grid]
+    # rescale to voltage level
+    r_mv_grid_vl = r_mv_grid * (voltage_level / mv_grid.v_level) ** 2
+    x_mv_grid_vl = x_mv_grid * (voltage_level / mv_grid.v_level) ** 2
+    return [r_mv_grid_vl, x_mv_grid_vl]
 
 
 def voltage_delta_stub(grid, tree, main_branch_node, stub_node, r_preceeding,
@@ -771,7 +775,7 @@ def get_voltage_at_bus_bar(grid, tree):
     """
 
     # voltage at substation bus bar
-    r_mv_grid, x_mv_grid = get_mv_impedance(grid)
+    r_mv_grid, x_mv_grid = get_mv_impedance_at_voltage_level(grid, grid.v_level/1000)
 
     r_trafo = sum([tr.r for tr in grid._station._transformers])
     x_trafo = sum([tr.x for tr in grid._station._transformers])
