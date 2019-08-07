@@ -108,7 +108,7 @@ def reinforce_grid(grid, mode):
         # get overloaded branches
         # overloading issues
         critical_branches, critical_stations = get_critical_line_loading(grid)
-
+        no_crit_branches = len(critical_branches)
 
         # reinforce overloaded lines by increasing size
         unresolved = reinforce_lv_branches_overloading(grid, critical_branches)
@@ -116,7 +116,7 @@ def reinforce_grid(grid, mode):
             "Out of {crit_branches} with overloading {unresolved} remain "
             "with unresolved issues due to line overloading. "
             "LV grid: {grid}".format(
-                crit_branches=len(critical_branches),
+                crit_branches=no_crit_branches,
                 unresolved=len(unresolved),
                 grid=grid))
 

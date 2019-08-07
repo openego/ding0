@@ -358,8 +358,8 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     # resolve overloading issues for each branch segment
     for branch in crit_branches:
-        I_max_branch_load = branch['s_max'][0]
-        I_max_branch_gen = branch['s_max'][1]
+        I_max_branch_load = branch['s_max'][0]/(3**0.5 * grid.v_level / 1e3)
+        I_max_branch_gen = branch['s_max'][1]/(3**0.5 * grid.v_level / 1e3)
         I_max_branch = max([I_max_branch_load, I_max_branch_gen])
 
         suitable_cables = cables[(cables['I_max_th'] * cable_lf)
