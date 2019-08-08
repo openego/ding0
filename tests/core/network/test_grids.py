@@ -1,6 +1,7 @@
 import pytest
 
 from ding0.tools.tools import (get_cart_dest_point, create_poly_from_source)
+#from ding0.flexopt.check_tech_constraints import get_critical_line_loading
 
 from ding0.core.network.loads import LVLoadDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
@@ -1871,28 +1872,53 @@ class TestLVGridDing0(object):
         regarding number of nodes, as well as type of cables and
         then checks if the grid reinforcement is done correctly
         by inspecting this attributes for the new graph
-        """
-        basic_lv_grid.grid_district.population = 20
-        basic_lv_grid.grid_district.peak_load_residential = 3000
-        basic_lv_grid.build_grid()
-        hola = 'hola'
 
-        #Verify the LV_Grid._graph gets constructed correctly
+        TODO: -Import get critical branches and stations to assert if theyre chosen correctly
+        """
+
+        basic_lv_grid.grid_district.population = 20
+        basic_lv_grid.grid_district.peak_load_residential = 300
+        basic_lv_grid.build_grid()
+        #crit_branches,crit_stations = get_critical_line_loading(basic_lv_grid)
+
+        #from ding0.flexopt.check_tech_constraints import get_critical_line_loading
+
+        # Verify the LV_Grid._graph gets constructed correctly and that it only has one
+        #Transformer
         assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station)))\
                == 1
 
-        assert basic_lv_grid._graph.edge[basic_lv_grid._station][basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
+        assert len(basic_lv_grid._station._transformers) == 1
+
+        # Branches HH_1,HH_2,HH_3 should have as default the corresponding cable
+        assert basic_lv_grid._graph.edge[basic_lv_grid._station]\
+                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
+
+        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[2]]\
+                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
+
+        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[4]]\
+                   [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x150"
 
         basic_lv_grid.reinforce_grid()
-
-        assert basic_lv_grid._graph.edge[basic_lv_grid._station]\
-        [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
-
         basic_lv_grid.build_grid()
+        hola = "hola"
 
+        # Verify that the station is reinforced with another transformer
         assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station))) \
                == 2
 
+        assert len(basic_lv_grid._station._transformers) == 2
+
+        #Verify that the critical branches get the cables changed with the correct ones
+        assert basic_lv_grid._graph.edge[basic_lv_grid._station] \
+                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x240"
+
+        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[2]]\
+                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x185"
+
+        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[4]]\
+                   [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x120"
 
 
 if __name__ == "__main__":
