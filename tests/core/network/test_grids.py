@@ -1872,8 +1872,6 @@ class TestLVGridDing0(object):
         regarding number of nodes, as well as type of cables and
         then checks if the grid reinforcement is done correctly
         by inspecting this attributes for the new graph
-
-        TODO: -Import get critical branches and stations to assert if theyre chosen correctly
         """
 
         basic_lv_grid.grid_district.population = 20
@@ -1902,7 +1900,7 @@ class TestLVGridDing0(object):
 
         basic_lv_grid.reinforce_grid()
         basic_lv_grid.build_grid()
-        hola = "hola"
+
 
         # Verify that the station is reinforced with another transformer
         assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station))) \
