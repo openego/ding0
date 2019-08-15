@@ -1430,18 +1430,6 @@ class TestMVGridDing0(object):
 
         return lv_grid
 
-    def test_reinforce_grid(self, ring_mvgridding0, basic_lv_grid):
-        """
-        Verifies the correction of the lines which present current and
-        voltage issues. Critical HV-MV stations are NOT reinforced, as the
-        function MVStationDing0.choose_transformers() chooses the transformer
-        in such a way that it does not overload
-
-        """
-        (ring,grid) = ring_mvgridding0
-
-        grid.reinforce_grid()
-
 
 
 class TestLVGridDing0(object):
@@ -1875,7 +1863,7 @@ class TestLVGridDing0(object):
         """
 
         basic_lv_grid.grid_district.population = 20
-        basic_lv_grid.grid_district.peak_load_residential = 300
+        basic_lv_grid.grid_district.peak_load_residential = 200
         basic_lv_grid.build_grid()
         #crit_branches,crit_stations = get_critical_line_loading(basic_lv_grid)
 
@@ -1910,13 +1898,13 @@ class TestLVGridDing0(object):
 
         #Verify that the critical branches get the cables changed with the correct ones
         assert basic_lv_grid._graph.edge[basic_lv_grid._station] \
-                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x240"
-
-        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[2]]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x185"
 
+        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[2]]\
+                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
+
         assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[4]]\
-                   [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x120"
+                   [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x300"
 
 
 if __name__ == "__main__":
