@@ -1877,13 +1877,13 @@ class TestLVGridDing0(object):
         assert len(basic_lv_grid._station._transformers) == 1
 
         # Branches HH_1,HH_2,HH_3 should have as default the corresponding cable
-        assert basic_lv_grid._graph.edge[basic_lv_grid._station]\
+        assert basic_lv_grid._graph._adj[basic_lv_grid._station]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
 
-        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[2]]\
+        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[2]]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
 
-        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[4]]\
+        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[4]]\
                    [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x150"
 
         basic_lv_grid.reinforce_grid()
@@ -1897,13 +1897,13 @@ class TestLVGridDing0(object):
         assert len(basic_lv_grid._station._transformers) == 2
 
         #Verify that the critical branches get the cables changed with the correct ones
-        assert basic_lv_grid._graph.edge[basic_lv_grid._station] \
+        assert basic_lv_grid._graph._adj[basic_lv_grid._station] \
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x185"
 
-        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[2]]\
+        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[2]]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
 
-        assert basic_lv_grid._graph.edge[basic_lv_grid._cable_distributors[4]]\
+        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[4]]\
                    [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x300"
 
 
