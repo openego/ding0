@@ -1,2 +1,30 @@
 Release v0.1.11 month day, year
 +++++++++++++++++++++++++++++++
+
+Changes
+-------
+
+* Assignment of loads to generators in lv_connect_generators
+  was made deterministic. Before this happened randomly leading
+  to different lv_grids using the same input data. The network
+  creation is now reproducible while lv_branches were reinforced
+  differently before. 
+  
+  Should solve 
+  `#245 <https://github.com/openego/ding0/issues/245>`_
+  and at least parts of 
+  `#40 <https://github.com/openego/ding0/issues/40>`_.
+* A proper sign convention (see :ref:`sign-convention-pq`)for P,Q is introduced
+  `#266 <https://github.com/openego/ding0/issues/266>`_,
+  see also `PR #271 <https://github.com/openego/ding0/pull/271>`_.
+  
+* Equipment table data is cleaned sothat only necessary literature values are used.
+
+  Should solve 
+  `#296 <https://github.com/openego/ding0/issues/296>`_
+
+* Tests for debugging are introduced. Can be used to check whether electrical data has changed or not.
+
+* Various bugfixes that come with this PR.
+
+* Reproducible labels.

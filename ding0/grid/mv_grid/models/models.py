@@ -20,8 +20,10 @@ __author__     = "nesnoj, gplssm"
 
 
 from ding0.tools import config as cfg_ding0
+from ding0.tools.pypsa_io import q_sign
 
 from math import pi, tan, acos
+
 import logging
 
 
@@ -377,6 +379,7 @@ class Route(object):
         mv_max_v_level_lc_diff_malfunc = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                              'mv_max_v_level_lc_diff_malfunc'))
         cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+        cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
 
 
         # step 0: check if route has got more nodes than allowed
@@ -394,7 +397,7 @@ class Route(object):
         nodes_ring1 = [self._problem._depot] + self._nodes
         nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
         # factor to calc reactive from active power
-        Q_factor = tan(acos(cos_phi_load))
+        Q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
         # line/cable params per km
         r_l = self._problem._branch_type['R_l']  # unit for r_l: ohm/km
         x_l = self._problem._branch_type['L_l'] * 2*pi * 50 / 1e3  # unit for x_l: ohm/km
