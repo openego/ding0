@@ -430,8 +430,8 @@ class TestStationDing0(object):
         assert transformer2_in_empty_stationding0.s_max_c == 1100.0
         assert transformer2_in_empty_stationding0.phase_angle == 0.01
         assert transformer2_in_empty_stationding0.tap_ratio == 1.00
-        assert transformer2_in_empty_stationding0.r == 0.01
-        assert transformer2_in_empty_stationding0.x == 0.001
+        assert transformer2_in_empty_stationding0.r_pu == 0.01
+        assert transformer2_in_empty_stationding0.x_pu == 0.001
 
 
 if __name__ == "__main__":
