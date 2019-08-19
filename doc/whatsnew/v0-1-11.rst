@@ -1,2 +1,16 @@
 Release v0.1.11 month day, year
 +++++++++++++++++++++++++++++++
+
+Changes
+-------
+
+* Equipment table data is cleaned sothat only necessary literature values are used.
+
+  Should solve 
+  `#296 <https://github.com/openego/ding0/issues/296>`_
+
+* Tests for debugging are introduced. Can be used to check whether electrical data has changed or not.
+
+* Various bugfixes that come with this PR.
+
+* Reproducible labels.
