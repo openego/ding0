@@ -317,7 +317,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                     station=station['node']))
                 break
 
-        if (v_delta[0] > v_delta_initially_lc) or (v_delta[1] > v_delta_initially_fc):
+        if (v_delta[0] > v_diff_max_lc) or (v_delta[1] > v_diff_max_fc):
             raise Exception ('Voltage issue at substation {} could not be resolved. LV grid reinforcement'
                              'can therefore never result in correct grids. Check MV grid for line reinforcement.'.format(station))
 
