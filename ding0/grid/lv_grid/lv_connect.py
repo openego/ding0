@@ -116,7 +116,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                 # if random load list is empty, create new one
                 else:
                     lv_loads_ria_rnd = random.sample(lv_loads_ria,
-                                                         len(lv_loads_ria)
+                                                         len(lv_loads_ria))
                     lv_load = lv_loads_ria_rnd.pop()
 
                 # get cable distributor of building
