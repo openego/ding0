@@ -125,6 +125,13 @@ def reinforce_grid(grid, mode):
 
         # get node with over-voltage
         crit_nodes = get_critical_voltage_at_nodes(grid) #over-voltage issues
+        # reinforcement of LV stations on voltage issues
+        crit_stations_voltage = [_ for _ in crit_nodes  # Is this ever reached?
+                                 if isinstance(_['node'], LVStationDing0)]
+        if crit_stations_voltage:
+            extend_substation_voltage(crit_stations_voltage, grid_level='LV')
+            for station in crit_stations_voltage:
+                crit_nodes.remove(station)
 
         crit_nodes_count_prev_step = len(crit_nodes)
 
@@ -159,9 +166,5 @@ def reinforce_grid(grid, mode):
             logger.info('==> All voltage issues in {mode} grid could be '
                         'solved using reinforcement.'.format(mode=mode))
 
-        # reinforcement of LV stations on voltage issues
-        crit_stations_voltage = [_ for _ in crit_nodes
-                        if isinstance(_['node'], LVStationDing0)]
-        if crit_stations_voltage:
-            extend_substation_voltage(crit_stations_voltage, grid_level='LV')
+
 
