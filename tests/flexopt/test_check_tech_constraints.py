@@ -39,8 +39,8 @@ def test_voltage_delta_vde():
         Erzeugungsanlagen am Niederspannungsnetz, 2011
     """
 
-    v_nom = 1  # kV
-    s_max = 1  # MVA/kVA
+    v_nom = 1000  # V
+    s_max = 1  # kVA
     r = 1  # Ohms
     x = 1  # Ohms
     cos_phi = 1/sqrt(2)  # no unit i.e. 1/ sqrt(2) => angle is 45 degrees
@@ -51,7 +51,7 @@ def test_voltage_delta_vde():
                                                 r,
                                                 x_sign_inductive * x,
                                                 cos_phi)
-    voltage_delta_inductive_expected = sqrt(2)
+    voltage_delta_inductive_expected = sqrt(2)/1000
     voltage_delta_capacitive = voltage_delta_vde(v_nom,
                                                  s_max,
                                                  r,
