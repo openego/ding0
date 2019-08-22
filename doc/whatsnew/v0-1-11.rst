@@ -18,7 +18,7 @@ Changes
   `#266 <https://github.com/openego/ding0/issues/266>`_,
   see also `PR #271 <https://github.com/openego/ding0/pull/271>`_.
   
-* Equipment table data is cleaned sothat only necessary literature values are used.
+* Equipment table data is cleaned so that only necessary literature values are used.
 
   Should solve 
   `#296 <https://github.com/openego/ding0/issues/296>`_
