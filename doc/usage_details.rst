@@ -208,7 +208,7 @@ the module "ding0_db_tables.py".
 
 The table definition is implemented using SQLAlchemy.
 
-The following gives a short description for all tables. Note that all tables have the run_id form the versioning
+The following gives a short description for all tables. Note that all tables own the run_id form the versioning
 table as foreignKey. All tables depend on the existing run_id.
 
 Table specification
@@ -216,6 +216,11 @@ Table specification
 OpenEnergyDatabase schema name: grid
 
 The database schema is selected based on the topic for which the data provides information.
+
+Note: The following tables can be generated automatically from a metadata string.
+To create the tables this script_ is provided.
+
+.. _script: https://gist.github.com/gplssm/63f11276387875763f2bbc7f9a5fdb8f
 
 versioning
 ----------
