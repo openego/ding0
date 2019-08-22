@@ -455,7 +455,7 @@ The "ding0 metadata" JSON-strings are located in the "metadatastrings" folder wi
 They are created using the a versioned metadatastring witch is under continuous development. The provided Metadata
 is using a OEP specific json string in version1.3_.
 
-.. _version1.3: herf=https://github.com/OpenEnergyPlatform/examples/blob/master/metadata/archiv/oep_metadata_template_v1.3.json
+.. _version1.3: https://github.com/OpenEnergyPlatform/examples/blob/master/metadata/archiv/oep_metadata_template_v1.3.json
 
 Database export
 ---------------
