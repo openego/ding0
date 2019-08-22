@@ -18,3 +18,8 @@ Changes
   `#266 <https://github.com/openego/ding0/issues/266>`_,
   see also `PR #271 <https://github.com/openego/ding0/pull/271>`_.
 
+* Identification of critical nodes by VDE norm AR 4105 fixed. All power flows behind
+  node are taken into account now.
+
+  Should solve `#300 <https://github.com/openego/ding0/issues/300>`_.
+

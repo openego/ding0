@@ -225,7 +225,7 @@ def extend_substation(grid, critical_stations, grid_level):
                 lv_transformer = TransformerDing0(
                     grid=grid,
                     id_db=id,
-                    v_level=0.4,
+                    v_level=0.4, #ToDo: replace hard coded number by meta v_nom
                     s_max_longterm=trafo_type['S_nom'],
                     r=trafo_type['R'],
                     x=trafo_type['X'])
@@ -294,7 +294,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                 lv_transformer = TransformerDing0(
                     grid=grid,
                     id_db=id,
-                    v_level=0.4,
+                    v_level=0.4, #ToDo: replace hardcoded number by meta v_nom
                     s_max_longterm=trafo_min_size['S_nom'],
                     r=trafo_min_size['R'],
                     x=trafo_min_size['X'])
@@ -316,6 +316,10 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                                "extension is halted.".format(
                     station=station['node']))
                 break
+
+        if (v_delta[0] > v_diff_max_lc) or (v_delta[1] > v_diff_max_fc):
+            raise Exception ('Voltage issue at substation {} could not be resolved. LV grid reinforcement'
+                             'can therefore never result in correct grids. Check MV grid for line reinforcement.'.format(station))
 
 
 def new_substation(grid):
@@ -358,8 +362,8 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     # resolve overloading issues for each branch segment
     for branch in crit_branches:
-        I_max_branch_load = branch['s_max'][0]
-        I_max_branch_gen = branch['s_max'][1]
+        I_max_branch_load = branch['s_max'][0]/(3**0.5 * grid.v_level / 1e3)
+        I_max_branch_gen = branch['s_max'][1]/(3**0.5 * grid.v_level / 1e3)
         I_max_branch = max([I_max_branch_load, I_max_branch_gen])
 
         suitable_cables = cables[(cables['I_max_th'] * cable_lf)
