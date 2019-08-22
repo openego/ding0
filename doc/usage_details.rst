@@ -479,6 +479,24 @@ CSV file export
 
 Ding0 objects can be exported in csv files. The functionality is provided by Pandas.IO.
 
+Usage
+-----
+The export functionality is implemented here: file_export_.
+
+The CSV exporter is used as a command line script. Its core functionality is realized by using Pandas io functions.
+
+To use the CSV exporter, you need to specify the specific destination folder in the script to specify where the
+generated CSV files should be stored. The operator must also specify the range of grid districts to be exported.
+
+The prerequisite is that you are able to create (or have access to) a ding0 network from pickle files or from the
+actual ding0 run process. The current state of the script assumes that you are using pickle files to create
+the ding0 network.
+
+.. _file_export: https://github.com/openego/ding0/blob/features/stats-export/ding0/io/file_export.py
+
+CSV Table specification
+-----------------------
+
 Lines
 -----
 .. csv-table:: line.csv
