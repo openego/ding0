@@ -203,12 +203,19 @@ Export ding0 to database
 Ding0 Table
 -----------
 In order to export the provided, ding0 related, Pandas dataframes to a database one must create specific tables
-first. The table definition and metadata(using string version 1.3) is provided within the module "ding0_db_tables.py".
+first. The table definition and metadata(using string version 1.3: see Ding0 table metadata) is provided within
+the module "ding0_db_tables.py".
 
 The table definition is implemented using SQLAlchemy.
 
 The following gives a short description for all tables. Note that all tables have the run_id form the versioning
 table as foreignKey. All tables depend on the existing run_id.
+
+Table specification
+-------------------
+OpenEnergyDatabase schema name: grid
+
+The database schema is selected based on the topic for which the data provides information.
 
 versioning
 ----------
@@ -288,6 +295,7 @@ geom         geometric coordinates                                    WGS84 MULT
 population   population in LV-Grid                                    integer
 voltage_nom  voltage level of grid as float                           kV
 ===========  =======================================================  ==================
+
 lv_load
 ------------
 ===========  ==================================================================================  ==============
@@ -445,7 +453,9 @@ Ding0 Table Metadata
 --------------------
 The "ding0 metadata" JSON-strings are located in the "metadatastrings" folder within in the "ding0.io" folder.
 They are created using the a versioned metadatastring witch is under continuous development. The provided Metadata
-is using the string in version 1.3.
+is using a OEP specific json string in version1.3_.
+
+.. _version1.3: herf=https://github.com/OpenEnergyPlatform/examples/blob/master/metadata/archiv/oep_metadata_template_v1.3.json
 
 Database export
 ---------------
