@@ -198,22 +198,31 @@ named exporter_config.cfg. In the current state it just stores the database sche
 for any exports to a database. The config file is imported as config-object using the package "ConfigObj".
 In the future all static options should be stored in this file.
 
-Export ding0 to database
-=========================
+
 Ding0 Table
------------
+===========
 In order to export the provided, ding0 related, Pandas dataframes to a database one must create specific tables
 first. The table definition and metadata(using string version 1.3: see Ding0 table metadata) is provided within
 the module "ding0_db_tables.py".
 
-The table definition is implemented using SQLAlchemy.
+The table definition is implemented using SQLAlchemy and can be found here: ding0_sqla_tables_.
 
-The following gives a short description for all tables. Note that all tables own the run_id form the versioning
-table as foreignKey. All tables depend on the existing run_id.
+.. _ding0_sqla_tables: https://github.com/openego/ding0/blob/features/stats-export/ding0/io/ding0_db_tables.py
+
+
+Ding0 Table Metadata
+--------------------
+The "ding0 metadata" JSON-strings are located in the "metadatastrings" folder within in the "ding0.io" folder.
+They are created using the a versioned metadatastring witch is under continuous development. The provided Metadata
+is using a OEP specific json string in version1.3_.
+
+.. _version1.3: https://github.com/OpenEnergyPlatform/examples/blob/master/metadata/archiv/oep_metadata_template_v1.3.json
+
 
 Table specification
 -------------------
-OpenEnergyDatabase schema name: grid
+In the following a short description is given, which covers all tables. Note that all tables own the run_id form
+the versioning table as foreignKey. All tables depend on the existing run_id.
 
 The database schema is selected based on the topic for which the data provides information.
 
@@ -221,6 +230,8 @@ Note: The following tables can be generated automatically from a metadata string
 To create the tables this script_ is provided.
 
 .. _script: https://gist.github.com/gplssm/63f11276387875763f2bbc7f9a5fdb8f
+
+**OpenEnergyDatabase schema name: grid.tablename**
 
 versioning
 ----------
@@ -454,18 +465,13 @@ r           as float                           Ohm
 ==========  =================================  ==============
 
 
-Ding0 Table Metadata
---------------------
-The "ding0 metadata" JSON-strings are located in the "metadatastrings" folder within in the "ding0.io" folder.
-They are created using the a versioned metadatastring witch is under continuous development. The provided Metadata
-is using a OEP specific json string in version1.3_.
-
-.. _version1.3: https://github.com/OpenEnergyPlatform/examples/blob/master/metadata/archiv/oep_metadata_template_v1.3.json
+Export ding0 to database
+=========================
 
 Database export
 ---------------
 This exporter depends on existing tables.
-The functionality for this module is implemented in "db_export.py". This module provides functionality to establish
+The functionality for this module is implemented in db_export.py_ . This module provides functionality to establish
 a database connection, create the tables, drop the tables, as well as change the database specific owner for each table.
 The core functionality is the data export. This is implemented using Pandas dataframes and a provided Pandas.IO
 functionality.
@@ -473,6 +479,23 @@ functionality.
 Note: The export to a Database will take a lot of time (about 1 Week). The reason for this is the quantity of the data
 ding0 provides. Therefore it is not recommended to export all 3608 available GridDistricts at once. This could be error
 prone caused by connection timeout or similar reasons. We work on speeding up the export in the future.
+
+.. _db_export.py: https://github.com/openego/ding0/blob/features/stats-export/ding0/io/db_export.py
+
+Usage
+-----
+The module is implemented as a command line based script. To run the script one needs to be able to create a
+ding0 network by using pickle files or by using a new ding0 run as mentioned before. The ding0 network is used as
+input for the export_network function which returns the pandas dataframes as nametupels(see Ding0 IO : Ding0 exporter).
+
+The nametupels are one of the parameters that are input for the export functionality. Other Inputs are a valid
+connection to the Open Energy Platform (the tcp based connection is used here), the schema name that specifies the
+destination on the database as well as the value for the srid.
+
+.. code-block:: python
+    # Export all Dataframes returned form export_network(nw) to DB
+    export_all_dataframes_to_db(oedb_engine, SCHEMA, network=network, srid=SRID)
+
 
 CSV file export
 ===============
