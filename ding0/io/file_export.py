@@ -10,7 +10,7 @@ The documentation is available on RTD: http://ding0.readthedocs.io"""
 __copyright__ = "Reiner Lemoine Institut gGmbH"
 __license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
-__author__ = "nesnoj, gplssm"
+__author__ = "nesnoj, gplssm, jh-RLI"
 
 import os
 
