@@ -243,7 +243,7 @@ i_max_th   stored as float                                                      
 geom       geometric coordinates                                                                 WGS84 LINESTRING
 =========  ====================================================================================  ================
 
-lv_branchtee.json
+lv_branchtee
 -----------------
 ======  =========================================================================  ==============
 name    discription                                                                unit
@@ -255,7 +255,7 @@ id_db   unambiguous number of LV-Grid                                           
 name    unambiguous name: 'LVCableDistributorDing0_LV_#lvgridid#_#ascendingnumber  string
 ======  =========================================================================  ==============
 
-lv_generator.json
+lv_generator
 -----------------
 ================  ====================================================================  ==============
 name              description                                                           unit
@@ -275,7 +275,7 @@ is_aggregated     True if load is aggregated load, else False                   
 weather_cell_id   unambiguous number of the corresponding weather cell                  integer
 ================  ====================================================================  ==============
 
-lv_grid.json
+lv_grid
 ------------
 ===========  =======================================================  ==================
 name         description                                              unit
@@ -288,7 +288,7 @@ geom         geometric coordinates                                    WGS84 MULT
 population   population in LV-Grid                                    integer
 voltage_nom  voltage level of grid as float                           kV
 ===========  =======================================================  ==================
-lv_load.json
+lv_load
 ------------
 ===========  ==================================================================================  ==============
 name         description                                                                         unit
@@ -302,7 +302,7 @@ geom         geometric coordinates                                              
 consumption  type of load {residential, agricultural, industrial} and corresponding consumption  string
 ===========  ==================================================================================  ==============
 
-lv_station.json
+lv_station
 ---------------
 ======  ===================================================  ===========
 name    description                                          unit
@@ -314,7 +314,7 @@ geom    geometric coordinates                                WGS84 POINT
 name    FIXME                                                string
 ======  ===================================================  ===========
 
-mv_branchtee.json
+mv_branchtee
 -----------------
 ======  ===========================================================================  ==============
 name    description                                                                  unit
@@ -425,7 +425,7 @@ x           as float                                             Ohm
 r           as float                                             Ohm
 ==========  ===================================================  ===========
 
-hvmv_transformer.json
+hvmv_transformer
 ---------------------
 ==========  =================================  ==============
 name        description                        unit
