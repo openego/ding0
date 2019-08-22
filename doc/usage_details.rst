@@ -212,204 +212,233 @@ table as foreignKey. All tables depend on the existing run_id.
 
 versioning
 ----------
-<!--table-->
-| name        | description                       | unit           |
-| ------------- | ----------------------------------- | ---------------- |
-| id          | unambiguous unique numer          | integer        |
-| run_id      | time and date of table generation | yyyyMMddhhmmss |
-| description | Used parameters for this run      | string         |
-<!--endtable-->
+===========  =================================  ==============
+name         description                        unit
+===========  =================================  ==============
+id           unambiguous unique numer           integer
+run_id       time and date of table generation  yyyyMMddhhmmss
+description  Used parameters for this run       string
+===========  =================================  ==============
 
 line
 ----
-| name      | description                                                                          | unit             |
-|-----------|--------------------------------------------------------------------------------------|------------------|
-| id        | unambiguous unique numer                                                             | integer          |
-| run_id    | time and date of table generation                                                    | yyyyMMddhhmmss   |
-| id_db     | unambiguous number of corresponding grid (MVgrid-id if MV-edge, LVgrid-id if LV-edge | integer          |
-| edge_name | unambiguous name of edge                                                             | string           |
-| grid_name | unambiguous name of grid                                                             | string           |
-| node1     | id_db of first node                                                                  | string           |
-| node2     | id_db of second node                                                                 | string           |
-| type_kind | n/a                                                                                  | string           |
-| type_name | n/a                                                                                  | string           |
-| length    | length of line as float                                                              | km               |
-| u_n       | nominal voltage as float                                                             | kV               |
-| c         | inductive resistance at 50Hz as float                                                | uF/km            |
-| l         | stored as float                                                                      | mH/km            |
-| r         | stored as float                                                                      | Ohm/km           |
-| i_max_th  | stored as float                                                                      | A                |
-| geom      | geometric coordinates                                                                | WGS84 LINESTRING |
+=========  ====================================================================================  ================
+name       description                                                                           unit
+=========  ====================================================================================  ================
+id         unambiguous unique numer                                                              integer
+run_id     time and date of table generation                                                     yyyyMMddhhmmss
+id_db      unambiguous number of corresponding grid (MVgrid-id if MV-edge, LVgrid-id if LV-edge  integer
+edge_name  unambiguous name of edge                                                              string
+grid_name  unambiguous name of grid                                                              string
+node1      id_db of first node                                                                   string
+node2      id_db of second node                                                                  string
+type_kind  n/a                                                                                   string
+type_name  n/a                                                                                   string
+length     length of line as float                                                               km
+u_n        nominal voltage as float                                                              kV
+c          inductive resistance at 50Hz as float                                                 uF/km
+l          stored as float                                                                       mH/km
+r          stored as float                                                                       Ohm/km
+i_max_th   stored as float                                                                       A
+geom       geometric coordinates                                                                 WGS84 LINESTRING
+=========  ====================================================================================  ================
 
 lv_branchtee.json
 -----------------
-| name   | discription                                                               | unit           |
-|--------|---------------------------------------------------------------------------|----------------|
-| id     | unambiguous unique numer                                                  | integer        |
-| run_id | time and date of table generation                                         | yyyyMMddhhmmss |
-| geom   | geometric coordinates                                                     | WGS84 POINT    |
-| id_db  | unambiguous number of LV-Grid                                             | integer        |
-| name   | unambiguous name: 'LVCableDistributorDing0_LV_#lvgridid#_#ascendingnumber | string         |
+======  =========================================================================  ==============
+name    discription                                                                unit
+======  =========================================================================  ==============
+id      unambiguous unique numer                                                   integer
+run_id  time and date of table generation                                          yyyyMMddhhmmss
+geom    geometric coordinates                                                      WGS84 POINT
+id_db   unambiguous number of LV-Grid                                              integer
+name    unambiguous name: 'LVCableDistributorDing0_LV_#lvgridid#_#ascendingnumber  string
+======  =========================================================================  ==============
 
 lv_generator.json
 -----------------
-| name             | description                                                          | unit           |
-|------------------|----------------------------------------------------------------------|----------------|
-| id               | unambiguous unique numer                                             | integer        |
-| run_id           | time and date of table generation                                    | yyyyMMddhhmmss |
-| id_db            | unambiguous number of LV-Grid                                        | integer        |
-| la_id            | FIXME                                                                | integer        |
-| name             | unambiguous name: 'LVGeneratorDing0_LV_#lvgridid#_#ascendingnumber#' | string         |
-| lv_grid_id       | unambiguous id_db of LV-Grid                                         | integer        |
-| geom             | geometric coordinates                                                | WGS84, POINT   |
-| type             | type of generation {solar; biomass}                                  | string         |
-| subtype          | subtype of generation: {solar_roof_mounted, unknown; biomass}        | string         |
-| v_level          | voltage level of generator as integer                                | FIXME          |
-| nominal_capacity | nominal capacity as float                                            | FIXME          |
-| is_aggregated    | True if load is aggregated load, else False                          | boolean        |
-| weather_cell_id  | unambiguous number of the corresponding weather cell                 | integer        |
+================  ====================================================================  ==============
+name              description                                                           unit
+================  ====================================================================  ==============
+id                unambiguous unique numer                                              integer
+run_id            time and date of table generation                                     yyyyMMddhhmmss
+id_db             unambiguous number of LV-Grid                                         integer
+la_id             FIXME                                                                 integer
+name              unambiguous name: 'LVGeneratorDing0_LV_#lvgridid#_#ascendingnumber#'  string
+lv_grid_id        unambiguous id_db of LV-Grid                                          integer
+geom              geometric coordinates                                                 WGS84, POINT
+type              type of generation {solar; biomass}                                   string
+subtype           subtype of generation: {solar_roof_mounted, unknown; biomass}         string
+v_level           voltage level of generator as integer                                 FIXME
+nominal_capacity  nominal capacity as float                                             FIXME
+is_aggregated     True if load is aggregated load, else False                           boolean
+weather_cell_id   unambiguous number of the corresponding weather cell                  integer
+================  ====================================================================  ==============
 
 lv_grid.json
 ------------
-| name        | description                                             | unit               |
-|-------------|---------------------------------------------------------|--------------------|
-| id          | unambiguous unique numer                                | integer            |
-| run_id      | time and date of table generation                       | yyyyMMddhhmmss     |
-| id_db       | unambiguous number of LV-Grid                           | integer            |
-| name        | unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid# | string             |
-| geom        | geometric coordinates                                   | WGS84 MULTIPOLYGON |
-| population  | population in LV-Grid                                   | integer            |
-| voltage_nom | voltage level of grid as float                          | kV                 |
-
+===========  =======================================================  ==================
+name         description                                              unit
+===========  =======================================================  ==================
+id           unambiguous unique numer                                 integer
+run_id       time and date of table generation                        yyyyMMddhhmmss
+id_db        unambiguous number of LV-Grid                            integer
+name         unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#  string
+geom         geometric coordinates                                    WGS84 MULTIPOLYGON
+population   population in LV-Grid                                    integer
+voltage_nom  voltage level of grid as float                           kV
+===========  =======================================================  ==================
 lv_load.json
 ------------
-| name        | description                                                                        | unit           |
-|-------------|------------------------------------------------------------------------------------|----------------|
-| id          | unambiguous unique numer                                                           | integer        |
-| run_id      | time and date of table generation                                                  | yyyyMMddhhmmss |
-| id_db       | unambiguous number of LV-Grid                                                      | integer        |
-| name        | unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'                    | string         |
-| lv_grid_id  | unambiguous id_db of LV-Grid                                                       | integer        |
-| geom        | geometric coordinates                                                              | WGS84 POINT    |
-| consumption | type of load {residential, agricultural, industrial} and corresponding consumption | string         |
+===========  ==================================================================================  ==============
+name         description                                                                         unit
+===========  ==================================================================================  ==============
+id           unambiguous unique numer                                                            integer
+run_id       time and date of table generation                                                   yyyyMMddhhmmss
+id_db        unambiguous number of LV-Grid                                                       integer
+name         unambiguous name: 'LVLoadDing0_LV_#lvgridid#_#ascendingnumber#'                     string
+lv_grid_id   unambiguous id_db of LV-Grid                                                        integer
+geom         geometric coordinates                                                               WGS84 POINT
+consumption  type of load {residential, agricultural, industrial} and corresponding consumption  string
+===========  ==================================================================================  ==============
 
 lv_station.json
 ---------------
-| name   | description                                         | unit        |
-|--------|-----------------------------------------------------|-------------|
-| id     | unambiguous unique numer                            | integer     |
-| run_id | time and date of table generation in yyyyMMddhhmmss | integer     |
-| id_db  | unambiguous number of LV-Grid                       | integer     |
-| geom   | geometric coordinates                               | WGS84 POINT |
-| name   | FIXME                                               | string      |
+======  ===================================================  ===========
+name    description                                          unit
+======  ===================================================  ===========
+id      unambiguous unique numer                             integer
+run_id  time and date of table generation in yyyyMMddhhmmss  integer
+id_db   unambiguous number of LV-Grid                        integer
+geom    geometric coordinates                                WGS84 POINT
+name    FIXME                                                string
+======  ===================================================  ===========
 
 mv_branchtee.json
 -----------------
-| name   | description                                                                 | unit           |
-|--------|-----------------------------------------------------------------------------|----------------|
-| id     | unambiguous unique numer                                                    | integer        |
-| run_id | time and date of table generation                                           | yyyyMMddhhmmss |
-| id_db  | unambiguous number of MV-Grid                                               | integer        |
-| geom   | geometric coordinates                                                       | WGS84 POINT    |
-| name   | unambiguous name: 'MVCableDistributorDing0_MV_#mvgridid#_#ascendingnumber#' | string         |
+======  ===========================================================================  ==============
+name    description                                                                  unit
+======  ===========================================================================  ==============
+id      unambiguous unique numer                                                     integer
+run_id  time and date of table generation                                            yyyyMMddhhmmss
+id_db   unambiguous number of MV-Grid                                                integer
+geom    geometric coordinates                                                        WGS84 POINT
+name    unambiguous name: 'MVCableDistributorDing0_MV_#mvgridid#_#ascendingnumber#'  string
+======  ===========================================================================  ==============
 
 mv_circuitbreaker
 -----------------
-| name   | description                       | unit           |
-|--------|-----------------------------------|----------------|
-| id     | unambiguous unique numer          | integer        |
-| run_id | time and date of table generation | yyyyMMddhhmmss |
-| id_db  | unambiguous number of MV-Grid     | integer        |
-| geom   | geometric coordinates             | WGS84 POINT    |
-| name   | FIXME                             | string         |
-| status | FIXME                             | string         |
+======  =================================  ==============
+name    description                        unit
+======  =================================  ==============
+id      unambiguous unique numer           integer
+run_id  time and date of table generation  yyyyMMddhhmmss
+id_db   unambiguous number of MV-Grid      integer
+geom    geometric coordinates              WGS84 POINT
+name    FIXME                              string
+status  FIXME                              string
+======  =================================  ==============
 
 mv_generator
 ------------
-| name             | description                                                                                 | unit           |
-|------------------|---------------------------------------------------------------------------------------------|----------------|
-| id               | unambiguous unique numer                                                                    | integer        |
-| run_id           | time and date of table generation                                                           | yyyyMMddhhmmss |
-| id_db            | unambiguous number of MV-Grid                                                               | integer        |
-| name             | unambiguous name: 'MVGeneratorDing0_MV_#mvgridid#_#ascendingnumber#'                        | string         |
-| geom             | geometric coordinates                                                                       | WGS84 POINT    |
-| type             | type of generation: {solar; biomass}                                                        | string         |
-| subtype          | subtype of generation: {solar_ground_mounted, solar_roof_mounted, unknown; biomass, biogas} | string         |
-| v_level          | voltage level of generator as integer                                                       | FIXME          |
-| nominal_capacity | nominal capacity as float                                                                   | FIXME          |
-| weather_cell_id  | unambiguous number of the corresponding weather cell                                        | integer        |
-| is_aggregated    | True if load is aggregated load, else False                                                 | boolean        |
+================  ===========================================================================================  ==============
+name              description                                                                                  unit
+================  ===========================================================================================  ==============
+id                unambiguous unique numer                                                                     integer
+run_id            time and date of table generation                                                            yyyyMMddhhmmss
+id_db             unambiguous number of MV-Grid                                                                integer
+name              unambiguous name: 'MVGeneratorDing0_MV_#mvgridid#_#ascendingnumber#'                         string
+geom              geometric coordinates                                                                        WGS84 POINT
+type              type of generation: {solar; biomass}                                                         string
+subtype           subtype of generation: {solar_ground_mounted, solar_roof_mounted, unknown; biomass, biogas}  string
+v_level           voltage level of generator as integer                                                        FIXME
+nominal_capacity  nominal capacity as float                                                                    FIXME
+weather_cell_id   unambiguous number of the corresponding weather cell                                         integer
+is_aggregated     True if load is aggregated load, else False                                                  boolean
+================  ===========================================================================================  ==============
 
 mv_grid
 -------
-| name        | description                                              | unit               |
-|-------------|----------------------------------------------------------|--------------------|
-| id          | unambiguous unique numer                                 | integer            |
-| run_id      | time and date of table generation                        | yyyyMMddhhmmss     |
-| id_db       | unambiguous number of MV-Grid                            | integer            |
-| geom        | geometric coordinates                                    | WGS84 MULTIPOLYGON |
-| name        | unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#' | string             |
-| population  | population in MV-Grid                                    | integer            |
-| voltage_nom | voltage level of grid as float                           | kV                 |
+===========  ========================================================  ==================
+name         description                                               unit
+===========  ========================================================  ==================
+id           unambiguous unique numer                                  integer
+run_id       time and date of table generation                         yyyyMMddhhmmss
+id_db        unambiguous number of MV-Grid                             integer
+geom         geometric coordinates                                     WGS84 MULTIPOLYGON
+name         unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#'  string
+population   population in MV-Grid                                     integer
+voltage_nom  voltage level of grid as float                            kV
+===========  ========================================================  ==================
 
 mv_load
 -------
-| name          | description                                                                                | unit           |
-|---------------|--------------------------------------------------------------------------------------------|----------------|
-| id            | unambiguous unique numer                                                                   | integer        |
-| run_id        | time and date of table generation                                                          | yyyyMMddhhmmss |
-| name          | unambiguous name: 'MVLoadDing0_MV_#mvgridid#_#ascendingnumber#'                            | string         |
-| geom          | geometric coordinates                                                                      | WGS84 GEOMETRY |
-| is_aggregated | True if load is aggregated load, else False                                                | boolean        |
-| consumption   | type of load {retail, residential, agricultural, industrial} and corresponding consumption | string         |
+=============  ==========================================================================================  ==============
+name           description                                                                                 unit
+=============  ==========================================================================================  ==============
+id             unambiguous unique numer                                                                    integer
+run_id         time and date of table generation                                                           yyyyMMddhhmmss
+name           unambiguous name: 'MVLoadDing0_MV_#mvgridid#_#ascendingnumber#'                             string
+geom           geometric coordinates                                                                       WGS84 GEOMETRY
+is_aggregated  True if load is aggregated load, else False                                                 boolean
+consumption    type of load {retail, residential, agricultural, industrial} and corresponding consumption  string
+=============  ==========================================================================================  ==============
 
 mv_station
 ----------
-| name   | description                                                | unit           |
-|--------|------------------------------------------------------------|----------------|
-| id     | unambiguous unique numer                                   | integer        |
-| run_id | time and date of table generation                          | yyyyMMddhhmmss |
-| id_db  | unambiguous number of MV-Grid                              | integer        |
-| geom   | geometric coordinates                                      | WGS84 POINT    |
-| name   | unambiguous name: 'LVStationDing0_MV_#mvgridid#_#lvgridid# | string         |
+======  ==========================================================  ==============
+name    description                                                 unit
+======  ==========================================================  ==============
+id      unambiguous unique numer                                    integer
+run_id  time and date of table generation                           yyyyMMddhhmmss
+id_db   unambiguous number of MV-Grid                               integer
+geom    geometric coordinates                                       WGS84 POINT
+name    unambiguous name: 'LVStationDing0_MV_#mvgridid#_#lvgridid#  string
+======  ==========================================================  ==============
 
 mvlv_mapping
 ------------
-| name         | description                                              | unit    |
-|--------------|----------------------------------------------------------|---------|
-| id           | unambiguous unique numer                                 | integer |
-| run_id       | time and date of table generation in yyyyMMddhhmmss      | integer |
-| lv_grid_id   | unambiguous number of LV-Grid                            | integer |
-| lv_grid_name | unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#' | string  |
-| mv_grid_id   | unambiguous number of MV-Grid                            | integer |
-| mv_grid_name | unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#' | string  |
+============  ========================================================  =======
+name          description                                               unit
+============  ========================================================  =======
+id            unambiguous unique numer                                  integer
+run_id        time and date of table generation in yyyyMMddhhmmss       integer
+lv_grid_id    unambiguous number of LV-Grid                             integer
+lv_grid_name  unambiguous name: 'LVGridDing0_LV_#lvgridid#_#lvgridid#'  string
+mv_grid_id    unambiguous number of MV-Grid                             integer
+mv_grid_name  unambiguous name: 'MVGridDing0_MV_#mvgridid#_#mvgridid#'  string
+============  ========================================================  =======
 
 mvlv_transformer
 ----------------
-| name       | description                                         | unit        |
-|------------|-----------------------------------------------------|-------------|
-| id         | unambiguous unique numer                            | integer     |
-| run_id     | time and date of table generation in yyyyMMddhhmmss | integer     |
-| id_db      | unambiguous number of LV-Grid                       | integer     |
-| geom       | geometric coordinates                               | WGS84 POINT |
-| name       | FIXME                                               | string      |
-| voltage_op | as float                                            | kV          |
-| s_nom      | nominal apparent power as float                     | kVA         |
-| x          | as float                                            | Ohm         |
-| r          | as float                                            | Ohm         |
+==========  ===================================================  ===========
+name        description                                          unit
+==========  ===================================================  ===========
+id          unambiguous unique numer                             integer
+run_id      time and date of table generation in yyyyMMddhhmmss  integer
+id_db       unambiguous number of LV-Grid                        integer
+geom        geometric coordinates                                WGS84 POINT
+name        FIXME                                                string
+voltage_op  as float                                             kV
+s_nom       nominal apparent power as float                      kVA
+x           as float                                             Ohm
+r           as float                                             Ohm
+==========  ===================================================  ===========
 
 hvmv_transformer.json
 ---------------------
-| name       | description                       | unit           |
-|------------|-----------------------------------|----------------|
-| id         | unambiguous unique numer          | integer        |
-| run_id     | time and date of table generation | yyyyMMddhhmmss |
-| geom       | geometric coordinates             | WGS84 POINT    |
-| name       | FIXME                             | string         |
-| voltage_op | FIXME                             | float          |
-| s_nom      | nominal apparent power as float   | kVA            |
-| x          | as float                          | Ohm            |
-| r          | as float                          | Ohm            |
+==========  =================================  ==============
+name        description                        unit
+==========  =================================  ==============
+id          unambiguous unique numer           integer
+run_id      time and date of table generation  yyyyMMddhhmmss
+geom        geometric coordinates              WGS84 POINT
+name        FIXME                              string
+voltage_op  FIXME                              float
+s_nom       nominal apparent power as float    kVA
+x           as float                           Ohm
+r           as float                           Ohm
+==========  =================================  ==============
 
 
 Ding0 Table Metadata
