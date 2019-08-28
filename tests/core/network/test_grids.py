@@ -1901,10 +1901,10 @@ class TestLVGridDing0(object):
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
 
         assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[2]]\
-                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
+                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x240"
 
         assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[4]]\
-                   [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x300"
+                   [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x240"
 
 
 if __name__ == "__main__":
