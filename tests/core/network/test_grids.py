@@ -1898,7 +1898,7 @@ class TestLVGridDing0(object):
 
         #Verify that the critical branches get the cables changed with the correct ones
         assert basic_lv_grid._graph._adj[basic_lv_grid._station] \
-                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x185"
+                   [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
 
         assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[2]]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
