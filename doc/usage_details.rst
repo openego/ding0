@@ -177,14 +177,52 @@ from a versioned Ding0 "run" that has been stored in pickle files before. The ot
 a new version by running ding0 again. The difference will be most obviously be noticed by looking at the run_id.
 So the input would the ding0 network and the coherent run_id.
 
+.. code-block:: python
+
+    # 1.
+    # example pickle file path
+    pkl_filepath = "/home/local/user/Ding0/20180823154014"
+
+    # 2.
+    # choose MV Grid Districts to import, use list of integers
+    grids = list(range(2, 6))
+
+    # 3.
+    # loop over selected grids in the a directory
+    for grid_no in grids:
+    try:
+        nw = load_nd_from_pickle(os.path.join(pkl_filepath, 'ding0_grids__{}.pkl'.format(grid_no)))
+    except:
+        print('Something went wrong')
+        continue
+
 What is the output?
 -------------------
-The function export_network() returns a list of nametuples. The nametuple contains 17 elements. The main
-purpose of that is to return Pandas dataframes that store the Ding0Network data. But 2 elements also provide
-further information like the actual run_id that was set or newly created and a metadata_json that stores
-the assumptions ding0 uses to create the network topology.
-Since Pandas is a Python package that is used very frequently the IO functionality of pandas can be used
-for several tasks. See pandas IO.
+The export_network() function returns a list of nametuples. The nametuple contains 17 elements. They contain all
+data of a Ding0Network instance as well as the corresponding metadata.
+15 elements store the Ding0Network data and 2 elements contain meta information like the current run_id and
+Metadata_json. The metadata_json contains the assumptions that ding0 uses to create the network topology.
+
+Since Pandas is a Python package that is used very often, the goal was to improve the usability of the IO functionality
+of ding0 with it. For further information see Panda's IO.
+
+.. code-block:: python
+
+    # 4.
+    # Create 15 pandas dataframes and 2 metadata elements as namedtuple
+    # use the run_id from the pickle files in this case = 20180823154014
+    network = export_network(nw, run_id=pickled_run_id_value)
+
+
+    # available namedtuple
+    'Network',
+    [
+        'run_id', 'metadata_json', 'lv_grid', 'lv_gen', 'lv_cd', 'lv_stations', 'mvlv_trafos', 'lv_loads',
+        'mv_grid', 'mv_gen', 'mv_cb', 'mv_cd', 'mv_stations', 'hvmv_trafos', 'mv_loads', 'lines', 'mvlv_mapping'
+    ]
+
+
+
 
 What IO functionality is implemented?
 -------------------------------------
@@ -193,15 +231,15 @@ Tables on a relational database as well as saved to CSV files.
 
 IO settings
 -----------
-The io settings are provided within a config file that is located in the ding0/config folder. The file is
-named exporter_config.cfg. In the current state it just stores the database schema that is used as destination
-for any exports to a database. The config file is imported as config-object using the package "ConfigObj".
+The IO settings are provided within a config file that is located in the ding0/config folder. The file is
+named exporter_config.cfg. In the current state it just stores the database schema name that is used as destination
+for any data export to a database. The config file is imported as config-object using the package "ConfigObj".
 In the future all static options should be stored in this file.
 
 
 Ding0 Table
 ===========
-In order to export the provided, ding0 related, Pandas dataframes to a database one must create specific tables
+In order to export a Pandas dataframe to a database one must create specific tables
 first. The table definition and metadata(using string version 1.3: see Ding0 table metadata) is provided within
 the module "ding0_db_tables.py".
 
@@ -213,7 +251,7 @@ The table definition is implemented using SQLAlchemy and can be found here: ding
 Ding0 Table Metadata
 --------------------
 The "ding0 metadata" JSON-strings are located in the "metadatastrings" folder within in the "ding0.io" folder.
-They are created using the a versioned metadatastring witch is under continuous development. The provided Metadata
+They are created using the a versioned metadatastring which is under continuous development. The provided Metadata
 is using a OEP specific json string in version1.3_.
 
 .. _version1.3: https://github.com/OpenEnergyPlatform/examples/blob/master/metadata/archiv/oep_metadata_template_v1.3.json
@@ -221,8 +259,8 @@ is using a OEP specific json string in version1.3_.
 
 Table specification
 -------------------
-In the following a short description is given, which covers all tables. Note that all tables own the run_id form
-the versioning table as foreignKey. All tables depend on the existing run_id.
+In the following a short description is given, which covers the structure of all tables. Note that all tables own
+the run_id column form the versioning table as foreignKey. All tables depend on the same value in run_id.
 
 The database schema is selected based on the topic for which the data provides information.
 
@@ -470,15 +508,15 @@ Export ding0 to database
 
 Database export
 ---------------
-This exporter depends on existing tables.
+This exporter depends on existing tables as described in chapter "Ding0 Table".
 The functionality for this module is implemented in db_export.py_ . This module provides functionality to establish
 a database connection, create the tables, drop the tables, as well as change the database specific owner for each table.
 The core functionality is the data export. This is implemented using Pandas dataframes and a provided Pandas.IO
 functionality.
 
-Note: The export to a Database will take a lot of time (about 1 Week). The reason for this is the quantity of the data
-ding0 provides. Therefore it is not recommended to export all 3608 available GridDistricts at once. This could be error
-prone caused by connection timeout or similar reasons. We work on speeding up the export in the future.
+Note: The export to a Database will take a lot of time (about 1 Week). The reason for this is the amount of the data
+provided by ding0. Therefore it is not recommended to export all 3608 available GridDistricts at once. This could be
+error prone caused by connection timeout or similar reasons. We work on speeding up the export in the future.
 
 .. _db_export.py: https://github.com/openego/ding0/blob/features/stats-export/ding0/io/db_export.py
 
@@ -488,12 +526,42 @@ The module is implemented as a command line based script. To run the script one 
 ding0 network by using pickle files or by using a new ding0 run as mentioned before. The ding0 network is used as
 input for the export_network function which returns the pandas dataframes as nametupels(see Ding0 IO : Ding0 exporter).
 
+.. code-block:: python
+
+    # create ding0 Network instance
+    nw = NetworkDing0(name='network')
+
+    #geo. ref. sys. e.g. 4326==WGS84
+    SRID = int(nw.config['geo']['srid'])
+
+    # choose MV Grid Districts to import, use list of integers
+    mv_grid_districts = list(range(2, 6))
+
+    # run DING0 on selected MV Grid District
+    nw.run_ding0(session=session,
+                 mv_grid_districts_no=mv_grid_districts)
+
+    # return values from export_network() as tupels
+    network = export_network(nw)
+
 The nametupels are one of the parameters that are input for the export functionality. Other Inputs are a valid
 connection to the Open Energy Platform (the tcp based connection is used here), the schema name that specifies the
 destination on the database as well as the value for the srid.
 
 .. code-block:: python
+
+    # establish database connection and SQLAlchemy session
+    # one need a database user
+    # example OEP-API is not supported yet
+    oedb_engine = connection(section='oedb')
+    session = sessionmaker(bind=oedb_engine)()
+
+    # Set the Database schema which you want to add the tables to.
+    # Configure the SCHEMA in config file located in: ding0/config/exporter_config.cfg .
+    SCHEMA = exporter_config['EXPORTER_DB']['SCHEMA']
+
     # Export all Dataframes returned form export_network(nw) to DB
+    # example: export_all_dataframes_to_db(oedb_engine, my_schema_name, network=ding0_network_tuples, srid=4326)
     export_all_dataframes_to_db(oedb_engine, SCHEMA, network=network, srid=SRID)
 
 
