@@ -544,6 +544,13 @@ input for the export_network function which returns the pandas dataframes as nam
     # return values from export_network() as tupels
     network = export_network(nw)
 
+
+Before the data can be exported, the tables must be created in the database.
+
+.. code-block:: python
+
+    # db_export.py
+
     # Create Tables
     # Creates all defined tables from "ding0_db_tables.py"
     create_ding0_sql_tables(oedb_engine, SCHEMA)
@@ -556,7 +563,7 @@ input for the export_network function which returns the pandas dataframes as nam
 
 The nametupels are one of the parameters that are input for the export functionality. Other Inputs are a valid
 connection to the Open Energy Platform (the tcp based connection is used here), the schema name that specifies the
-destination on the database as well as the value for the srid.
+destination on the database as well as the srid.
 
 .. code-block:: python
 
