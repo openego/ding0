@@ -208,20 +208,18 @@ of ding0 with it. For further information see Panda's IO.
 
 .. code-block:: python
 
-    # 4.
+    # 4. inside for-loop
     # Create 15 pandas dataframes and 2 metadata elements as namedtuple
     # use the run_id from the pickle files in this case = 20180823154014
     network = export_network(nw, run_id=pickled_run_id_value)
 
-
+    # This is the structure of the output:
     # available namedtuple
     'Network',
     [
         'run_id', 'metadata_json', 'lv_grid', 'lv_gen', 'lv_cd', 'lv_stations', 'mvlv_trafos', 'lv_loads',
         'mv_grid', 'mv_gen', 'mv_cb', 'mv_cd', 'mv_stations', 'hvmv_trafos', 'mv_loads', 'lines', 'mvlv_mapping'
     ]
-
-
 
 
 What IO functionality is implemented?
@@ -528,6 +526,8 @@ input for the export_network function which returns the pandas dataframes as nam
 
 .. code-block:: python
 
+    # db_export.py
+
     # create ding0 Network instance
     nw = NetworkDing0(name='network')
 
@@ -544,26 +544,36 @@ input for the export_network function which returns the pandas dataframes as nam
     # return values from export_network() as tupels
     network = export_network(nw)
 
+    # Create Tables
+    # Creates all defined tables from "ding0_db_tables.py"
+    create_ding0_sql_tables(oedb_engine, SCHEMA)
+
+    # Delete only the created tables
+    drop_ding0_db_tables(oedb_engine)
+
+    # change the owner (open-energy-database specific function)
+    db_tables_change_owner(oedb_engine, SCHEMA)
+
 The nametupels are one of the parameters that are input for the export functionality. Other Inputs are a valid
 connection to the Open Energy Platform (the tcp based connection is used here), the schema name that specifies the
 destination on the database as well as the value for the srid.
 
 .. code-block:: python
 
+    # db_export.py
+
     # establish database connection and SQLAlchemy session
-    # one need a database user
-    # example OEP-API is not supported yet
+    # one need a database user (OEP-API is not supported yet)
     oedb_engine = connection(section='oedb')
     session = sessionmaker(bind=oedb_engine)()
 
-    # Set the Database schema which you want to add the tables to.
+    # Set the Database schema which you want to add the tables
     # Configure the SCHEMA in config file located in: ding0/config/exporter_config.cfg .
     SCHEMA = exporter_config['EXPORTER_DB']['SCHEMA']
 
     # Export all Dataframes returned form export_network(nw) to DB
     # example: export_all_dataframes_to_db(oedb_engine, my_schema_name, network=ding0_network_tuples, srid=4326)
     export_all_dataframes_to_db(oedb_engine, SCHEMA, network=network, srid=SRID)
-
 
 CSV file export
 ===============
