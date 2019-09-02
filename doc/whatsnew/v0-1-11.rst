@@ -22,7 +22,13 @@ Changes
   node are taken into account now. Solves
   `#300 <https://github.com/openego/ding0/issues/300>`_.
 
-* This release includes new tests for MV-/ as well as for LV-Grids.\
-    These test verify the \
-    functionality of most of the functions in '~/core/network/grids.py' including the creation and modification of MV and LV Grids (e.g. adding generators/transformators..). Focus lies on the appropriate creation of the graphs and it's corresponding routings;
-    Test are done in grids created with oedb-extracted data and/or synthetic grids, depending on the feature being tested.
+* This release includes new tests for MV and LV grids.
+  Additionally, synthetically created grids are introduced, that can be used for
+  testing.
+  These tests verify the functionality of most of the functions in
+  :mod:`~.core.network.grids` including the creation and modification of MV and
+  LV grids (e.g. adding generators/transformators..). Focus lies on the appropriate
+  creation of the graphs and it's corresponding routings.
+
+  Test are done in grids created with oedb-extracted data and/or synthetic grids,
+  depending on the feature being tested.
