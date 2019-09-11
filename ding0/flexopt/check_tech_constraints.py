@@ -543,15 +543,16 @@ def get_delta_voltage_preceding_line(grid, tree, node):
     """
 
     # get impedance of preceding line
-    omega = 2 * math.pi * 50  # ToDo: change 50 to meta frequency when merged to branch with introduction of this value
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * math.pi * freq
 
     # choose preceding branch
     branch = [_ for _ in grid.graph_branches_from_node(node) if
               _[0] in list(tree.predecessors(node))][0][1]
 
     # calculate impedance of preceding branch
-    r_line = (branch['branch'].type['R'] * branch['branch'].length/1e3)
-    x_line = (branch['branch'].type['L'] / 1e3 * omega *
+    r_line = (branch['branch'].type['R_l'] * branch['branch'].length/1e3)
+    x_line = (branch['branch'].type['L_l'] / 1e3 * omega *
          branch['branch'].length/1e3)
 
     # get voltage drop over preceeding line
