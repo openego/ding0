@@ -16,6 +16,7 @@ import os
 import numpy as np
 from egoio.tools import db
 from sqlalchemy.orm import sessionmaker
+from tests.tools.help_functions import compare_data_frames_by_tolerance
 
 
 class TestGridDing0(object):
@@ -334,7 +335,9 @@ class TestGridDing0(object):
         # check mv grid statistics
         mvgd_stats = calculate_mvgd_stats(nd)
         mvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path, 'testdata/mvgd_stats.csv'))
-        assert_frame_equal(mvgd_stats, mvgd_stats_comparison,check_dtype=False)
+        check = compare_data_frames_by_tolerance(mvgd_stats, mvgd_stats_comparison)
+        if (check is False):
+            raise Exception("mvgd_stats differ from original values")
 
         # check mv grid statistics voltages and currents
         mvgd_voltage_current_stats = calculate_mvgd_voltage_current_stats(nd)
@@ -342,17 +345,23 @@ class TestGridDing0(object):
         mvgd_voltage_nodes = mvgd_voltage_current_stats[0]
         mvgd_current_branches_comparison = pd.DataFrame.from_csv(
             os.path.join(path, 'testdata/mvgd_current_branches.csv'))
-        mvgd_current_branches_comparison = mvgd_current_branches_comparison.replace(np.NaN, 'NA')
+        mvgd_current_branches = mvgd_current_branches.replace('NA', np.NaN)
         mvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
             os.path.join(path, 'testdata/mvgd_voltage_nodes.csv'))
-        mvgd_voltage_nodes_comparison = mvgd_voltage_nodes_comparison.replace(np.NaN, 'NA')
-        assert_frame_equal(mvgd_current_branches, mvgd_current_branches_comparison,check_dtype=False)
-        assert_frame_equal(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison,check_dtype=False)
+        mvgd_voltage_nodes = mvgd_voltage_nodes.replace('NA', np.NaN)
+        check = compare_data_frames_by_tolerance(mvgd_current_branches, mvgd_current_branches_comparison)
+        if (check is False):
+            raise Exception("mvgd_current_stats differ from original values")
+        check = compare_data_frames_by_tolerance(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison)
+        if (check is False):
+            raise Exception("mvgd_voltage_stats differ from original values")
 
         # check lv grid statistics
         lvgd_stats = calculate_lvgd_stats(nd)
         lvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path,'testdata/lvgd_stats.csv'))
-        assert_frame_equal(lvgd_stats, lvgd_stats_comparison,check_dtype=False)
+        check = compare_data_frames_by_tolerance(lvgd_stats, lvgd_stats_comparison)
+        if (check is False):
+            raise Exception("lvgd_stats differ from original values")
 
         # check lv grid statistics voltages and currents
         lvgd_voltage_current_stats = calculate_lvgd_voltage_current_stats(nd)
@@ -360,12 +369,16 @@ class TestGridDing0(object):
         lvgd_voltage_nodes = lvgd_voltage_current_stats[0]
         lvgd_current_branches_comparison = pd.DataFrame.from_csv(
             os.path.join(path, 'testdata/lvgd_current_branches.csv'))
-        lvgd_current_branches_comparison = lvgd_current_branches_comparison.replace(np.NaN, 'NA')
+        lvgd_current_branches = lvgd_current_branches.replace('NA', np.NaN)
         lvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
             os.path.join(path, 'testdata/lvgd_voltage_nodes.csv'))
-        lvgd_voltage_nodes_comparison = lvgd_voltage_nodes_comparison.replace(np.NaN, 'NA')
-        assert_frame_equal(lvgd_current_branches, lvgd_current_branches_comparison,check_dtype=False)
-        assert_frame_equal(lvgd_voltage_nodes, lvgd_voltage_nodes_comparison,check_dtype=False)
+        lvgd_voltage_nodes = lvgd_voltage_nodes.replace('NA', np.NaN)
+        check = compare_data_frames_by_tolerance(lvgd_current_branches, lvgd_current_branches_comparison)
+        if (check is False):
+            raise Exception("lvgd_current_stats differ from original values")
+        check = compare_data_frames_by_tolerance(lvgd_voltage_nodes, lvgd_voltage_nodes_comparison)
+        if (check is False):
+            raise Exception("lvgd_voltage_stats differ from original values")
 
 
 
