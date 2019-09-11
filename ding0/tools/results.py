@@ -732,8 +732,8 @@ def calculate_mvgd_stats(nw):
             elif isinstance(node, CircuitBreakerDing0):
                 cb_count += 1
 
-            max_mv_path = max(max_mv_path, mv_path_length / 1000)
-            max_mvlv_path = max(max_mvlv_path, mvlv_path_length / 1000)
+            max_mv_path = max(max_mv_path, mv_path_length / 1e3)
+            max_mvlv_path = max(max_mvlv_path, mvlv_path_length / 1e3)
 
         other_nodes_dict[district.mv_grid.id_db] = {
             'CD_count': cd_count,
