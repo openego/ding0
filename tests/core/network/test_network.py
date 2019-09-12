@@ -349,7 +349,7 @@ class TestGridDing0(object):
         mvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
             os.path.join(path, 'testdata/mvgd_voltage_nodes.csv'))
         mvgd_voltage_nodes = mvgd_voltage_nodes.replace('NA', np.NaN)
-        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_current_branches, mvgd_current_branches_comparison, relative_tolerance=5e-5)
+        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_current_branches, mvgd_current_branches_comparison)
         if not is_equal:
             raise Exception('mvgd_current_stats differ from original values, {} unequal entries.'.format(count_unequal))
         is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison)

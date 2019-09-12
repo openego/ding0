@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def compare_data_frames_by_tolerance(df_orig, df_comp, absolute_tolerance = 1e-5, relative_tolerance = 1e-3):
+def compare_data_frames_by_tolerance(df_orig, df_comp, absolute_tolerance = 1e-5, relative_tolerance = 1e-2):
     '''
     Function that compares pandas.DataFrames by absolute and relative tolerance. Returns True if inserted dataframes
     fulfill defined either absolute or relative tolerances.
