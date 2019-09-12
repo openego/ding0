@@ -335,9 +335,9 @@ class TestGridDing0(object):
         # check mv grid statistics
         mvgd_stats = calculate_mvgd_stats(nd)
         mvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path, 'testdata/mvgd_stats.csv'))
-        check = compare_data_frames_by_tolerance(mvgd_stats, mvgd_stats_comparison)
-        if (check is False):
-            raise Exception("mvgd_stats differ from original values")
+        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_stats, mvgd_stats_comparison)
+        if not is_equal:
+            raise Exception('mvgd_stats differ from original values, {} unequal entries.'.format(count_unequal))
 
         # check mv grid statistics voltages and currents
         mvgd_voltage_current_stats = calculate_mvgd_voltage_current_stats(nd)
@@ -349,20 +349,19 @@ class TestGridDing0(object):
         mvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
             os.path.join(path, 'testdata/mvgd_voltage_nodes.csv'))
         mvgd_voltage_nodes = mvgd_voltage_nodes.replace('NA', np.NaN)
-        check = compare_data_frames_by_tolerance(mvgd_current_branches, mvgd_current_branches_comparison, relative_tolerance=5e-5)
-        assert_frame_equal(mvgd_current_branches, mvgd_current_branches_comparison, check_dtype=False)
-        if (check is False):
-            raise Exception("mvgd_current_stats differ from original values")
-        check = compare_data_frames_by_tolerance(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison)
-        if (check is False):
-            raise Exception("mvgd_voltage_stats differ from original values")
+        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_current_branches, mvgd_current_branches_comparison, relative_tolerance=5e-5)
+        if not is_equal:
+            raise Exception('mvgd_current_stats differ from original values, {} unequal entries.'.format(count_unequal))
+        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison)
+        if not is_equal:
+            raise Exception('mvgd_voltage_stats differ from original values, {} unequal entries.'.format(count_unequal))
 
         # check lv grid statistics
         lvgd_stats = calculate_lvgd_stats(nd)
         lvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path,'testdata/lvgd_stats.csv'))
-        check = compare_data_frames_by_tolerance(lvgd_stats, lvgd_stats_comparison)
-        if (check is False):
-            raise Exception("lvgd_stats differ from original values")
+        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_stats, lvgd_stats_comparison)
+        if not is_equal:
+            raise Exception('lvgd_stats differ from original values, {} unequal entries.'.format(count_unequal))
 
         # check lv grid statistics voltages and currents
         lvgd_voltage_current_stats = calculate_lvgd_voltage_current_stats(nd)
@@ -374,12 +373,12 @@ class TestGridDing0(object):
         lvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
             os.path.join(path, 'testdata/lvgd_voltage_nodes.csv'))
         lvgd_voltage_nodes = lvgd_voltage_nodes.replace('NA', np.NaN)
-        check = compare_data_frames_by_tolerance(lvgd_current_branches, lvgd_current_branches_comparison)
-        if (check is False):
-            raise Exception("lvgd_current_stats differ from original values")
-        check = compare_data_frames_by_tolerance(lvgd_voltage_nodes, lvgd_voltage_nodes_comparison)
-        if (check is False):
-            raise Exception("lvgd_voltage_stats differ from original values")
+        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_current_branches, lvgd_current_branches_comparison)
+        if not is_equal:
+            raise Exception('lvgd_current_stats differ from original values, {} unequal entries.'.format(count_unequal))
+        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_voltage_nodes, lvgd_voltage_nodes_comparison)
+        if not is_equal:
+            raise Exception('lvgd_voltage_stats differ from original values, {} unequal entries.'.format(count_unequal))
 
 
 

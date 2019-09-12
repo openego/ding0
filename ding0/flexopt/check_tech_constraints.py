@@ -514,7 +514,7 @@ def get_voltage_at_bus_bar(grid, tree):
         """
     # impedance of mv grid and transformer
     r_mv_grid, x_mv_grid = get_mv_impedance_at_voltage_level(grid, grid.v_level / 1e3)
-    z_trafo = 1 / sum(1 / (tr.z(voltage_level=grid.v_level / 1000)) for tr in grid._station._transformers)
+    z_trafo = 1 / sum(1 / (tr.z(voltage_level=grid.v_level / 1e3)) for tr in grid._station._transformers)
     r_trafo = z_trafo.real
     x_trafo = z_trafo.imag
     # cumulative resistance/reactance at bus bar

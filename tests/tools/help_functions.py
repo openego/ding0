@@ -21,6 +21,7 @@ def compare_data_frames_by_tolerance(df_orig, df_comp, absolute_tolerance = 1e-5
     -------
     is_equal: bool
         Boolean that indicates whether dataframes are seen as equal given the selected tolerances
+    count_of_unequal entries: int
     '''
 
     # check which entries are exactly the same
@@ -38,4 +39,4 @@ def compare_data_frames_by_tolerance(df_orig, df_comp, absolute_tolerance = 1e-5
     count_of_unequal_entries = sum(sum(~is_same*~is_nan*~is_almost_equal*~is_relatively_equal))
     # check weather all entries are equal
     is_equal = count_of_unequal_entries == 0
-    return is_equal
+    return is_equal, count_of_unequal_entries
