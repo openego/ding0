@@ -173,6 +173,7 @@ def extend_substation(grid, critical_stations, grid_level):
     trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
         grid_level=grid_level)]
     trafo_s_max_max = max(trafo_params['S_nom'])
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
 
 
     for station in critical_stations:
@@ -225,7 +226,7 @@ def extend_substation(grid, critical_stations, grid_level):
                 lv_transformer = TransformerDing0(
                     grid=grid,
                     id_db=id,
-                    v_level=0.4, #ToDo: replace hard coded number by meta v_nom
+                    v_level=v_nom,
                     s_max_longterm=trafo_type['S_nom'],
                     r=trafo_type['R'],
                     x=trafo_type['X'])
@@ -260,6 +261,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     At maximum 2 new of largest (currently 630 kVA) transformer are additionally
     built to resolve voltage issues at MV-LV substation bus bar.
     """
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
     grid = crit_stations[0]['node'].grid
     trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
         grid_level=grid_level)]
@@ -294,7 +296,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                 lv_transformer = TransformerDing0(
                     grid=grid,
                     id_db=id,
-                    v_level=0.4, #ToDo: replace hardcoded number by meta v_nom
+                    v_level=v_nom,
                     s_max_longterm=trafo_min_size['S_nom'],
                     r=trafo_min_size['R'],
                     x=trafo_min_size['X'])
