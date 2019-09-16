@@ -32,3 +32,13 @@ Changes
 
   Test are done in grids created with oedb-extracted data and/or synthetic grids,
   depending on the feature being tested.
+
+
+* Equipment table data is cleaned sothat only necessary literature values are used.
+
+  Should solve
+  `#296 <https://github.com/openego/ding0/issues/296>`_
+
+* Various bugfixes that come with this PR.
+
+* Reproducible labels.
