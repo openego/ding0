@@ -805,9 +805,9 @@ class TransformerDing0:
     grid : :class:`~.ding0.core.network.grids.MVGridDing0`
         The MV grid that this ring is to be a part of.
     v_level : :obj:`float`
-        voltage level	
+        voltage level [kV]
     s_max_a : :obj:`float`
-        rated power (long term)	
+        rated power (long term)	[kVA]
     s_max_b : :obj:`float`
         rated power (short term)	        
     s_max_c : :obj:`float`
@@ -841,6 +841,20 @@ class TransformerDing0:
         :class:`~.ding0.core.network.NetworkDing0`
         """
         return self.grid.network
+
+    def z(self,voltage_level=None):
+        '''
+        Calculates the complex impedance in Ohm related to voltage_level. If voltage_level is not inserted, the secondary
+        voltage of the transformer is chosen as a default.
+        :param voltage_level:
+        voltage in [kV]
+        :return: Z_tr in [Ohm]
+        '''
+        if voltage_level is None:
+            voltage_level = self.v_level
+        # calculates z in Ohm with Z = z_pu * Z_nom and Z_nom = U_nom^2 / S_nom
+        Z_tr = (self.r_pu + self.x_pu * 1j) * voltage_level**2 / self.s_max_a *1000
+        return Z_tr
 
 
 class GeneratorDing0:
