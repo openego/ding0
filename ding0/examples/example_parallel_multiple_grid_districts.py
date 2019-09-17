@@ -153,7 +153,7 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
     '''
     #######################################################################
     # database connection/ session
-    engine = db.connection(section='oedb')
+    engine = db.connection(readonly=True)
     session = sessionmaker(bind=engine)()
 
     #############################

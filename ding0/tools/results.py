@@ -1235,7 +1235,7 @@ def init_mv_grid(mv_grid_districts=[3545], filename='ding0_tests_grids_1.pkl'):
     print('\n########################################')
     print('  Running ding0 for district', mv_grid_districts)
     # database connection/ session
-    engine = db.connection(section='oedb')
+    engine = db.connection(readonly=True)
     session = sessionmaker(bind=engine)()
 
     # instantiate new ding0 network object
@@ -1346,7 +1346,7 @@ def process_stats(mv_districts,
                 continue
         else:
             # database connection/ session
-            engine = db.connection(section='oedb')
+            engine = db.connection(readonly=True)
             session = sessionmaker(bind=engine)()
 
             print('\n########################################')

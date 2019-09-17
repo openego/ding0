@@ -411,7 +411,7 @@ def get_line_and_trafo_dict(nw):
 ########################################################
 if __name__ == "__main__":
     # database connection/ session
-    engine = db.connection(section='oedb')
+    engine = db.connection(readonly=True)
     session = sessionmaker(bind=engine)()
 
     nw = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')
