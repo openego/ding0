@@ -451,27 +451,27 @@ class TestMVGridDing0(object):
                 dict(name='48-AL1/8-ST1A',
                      U_n=20.0,
                      I_max_th=210.0,
-                     R=0.37,
-                     L=1.18,
-                     C=0.0098,
+                     R_per_km=0.37,
+                     L_per_km=1.18,
+                     C_per_km=0.0098,
                      reinforce_only=0)
             ),
             default_branch_type_aggregated=pd.Series(
                 dict(name='122-AL1/20-ST1A',
                      U_n=20.0,
                      I_max_th=410.0,
-                     R=0.34,
-                     L=1.08,
-                     C=0.0106,
+                     R_per_km=0.34,
+                     L_per_km=1.08,
+                     C_per_km=0.0106,
                      reinforce_only=0)
             ),
             default_branch_type_settle=pd.Series(
                 dict(name='NA2XS2Y 3x1x150 RE/25',
                      U_n=20.0,
                      I_max_th=319.0,
-                     R=0.206,
-                     L=0.4011,
-                     C=0.24,
+                     R_per_km=0.206,
+                     L_per_km=0.4011,
+                     C_per_km=0.24,
                      reinforce_only=0)
             )
         )
@@ -1253,7 +1253,7 @@ class TestMVGridDing0(object):
         """
         Minimal needed LVGridDing0 to run LVGridDing0.build_grid
         """
-
+        #ToDo: Check if definition of own function makes sense so both MVTest and LVTest can use it. Makes changes easier and reduces code.
         source = Point(8.638204, 49.867307)
         distance_scaling_factor = 3
 
@@ -1283,27 +1283,27 @@ class TestMVGridDing0(object):
                 dict(name='48-AL1/8-ST1A',
                      U_n=20.0,
                      I_max_th=210.0,
-                     R=0.37,
-                     L=1.18,
-                     C=0.0098,
+                     R_per_km=0.37,
+                     L_per_km=1.18,
+                     C_per_km=0.0098,
                      reinforce_only=0)
             ),
             default_branch_type_aggregated=pd.Series(
                 dict(name='122-AL1/20-ST1A',
                      U_n=20.0,
                      I_max_th=410.0,
-                     R=0.34,
-                     L=1.08,
-                     C=0.0106,
+                     R_per_km=0.34,
+                     L_per_km=1.08,
+                     C_per_km=0.0106,
                      reinforce_only=0)
             ),
             default_branch_type_settle=pd.Series(
                 dict(name='NA2XS2Y 3x1x150 RE/25',
                      U_n=20.0,
                      I_max_th=319.0,
-                     R=0.206,
-                     L=0.4011,
-                     C=0.24,
+                     R_per_km=0.206,
+                     L_per_km=0.4011,
+                     C_per_km=0.24,
                      reinforce_only=0)
             )
         )
@@ -1476,6 +1476,7 @@ class TestLVGridDing0(object):
         """
         Minimal needed LVGridDing0 to run LVGridDing0.build_grid
         """
+        # ToDo: Check if definition of own function makes sense so both MVTest and LVTest can use it. Makes changes easier and reduces code.
 
         source = Point(8.638204, 49.867307)
         distance_scaling_factor = 3
@@ -1506,27 +1507,27 @@ class TestLVGridDing0(object):
                 dict(name='48-AL1/8-ST1A',
                      U_n=20.0,
                      I_max_th=210.0,
-                     R=0.37,
-                     L=1.18,
-                     C=0.0098,
+                     R_per_km=0.37,
+                     L_per_km=1.18,
+                     C_per_km=0.0098,
                      reinforce_only=0)
             ),
             default_branch_type_aggregated=pd.Series(
                 dict(name='122-AL1/20-ST1A',
                      U_n=20.0,
                      I_max_th=410.0,
-                     R=0.34,
-                     L=1.08,
-                     C=0.0106,
+                     R_per_km=0.34,
+                     L_per_km=1.08,
+                     C_per_km=0.0106,
                      reinforce_only=0)
             ),
             default_branch_type_settle=pd.Series(
                 dict(name='NA2XS2Y 3x1x150 RE/25',
                      U_n=20.0,
                      I_max_th=319.0,
-                     R=0.206,
-                     L=0.4011,
-                     C=0.24,
+                     R_per_km=0.206,
+                     L_per_km=0.4011,
+                     C_per_km=0.24,
                      reinforce_only=0)
             )
         )

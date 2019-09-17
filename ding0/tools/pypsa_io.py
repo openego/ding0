@@ -313,7 +313,8 @@ def edges_to_dict_of_dataframes(grid, edges):
     -------
     edges_dict: dict
     """
-    omega = 2 * pi * 50
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * pi * freq
     srid = int(cfg_ding0.get('geo', 'srid'))
 
     lines = {'line_id': [], 'bus0': [], 'bus1': [], 'x': [], 'r': [],
@@ -329,17 +330,17 @@ def edges_to_dict_of_dataframes(grid, edges):
                               str(edge['branch'].id_db)])
 
         # TODO: find the real cause for being L, C, I_th_max type of Series
-        if (isinstance(edge['branch'].type['L'], Series) or
-                isinstance(edge['branch'].type['C'], Series)):
-            x = omega * edge['branch'].type['L'].values[0] * 1e-3
+        if (isinstance(edge['branch'].type['L_per_km'], Series) or#warum wird hier c abgefragt?
+                isinstance(edge['branch'].type['C_per_km'], Series)):
+            x_per_km = omega * edge['branch'].type['L_per_km'].values[0] * 1e-3
         else:
 
-            x = omega * edge['branch'].type['L'] * 1e-3
+            x_per_km = omega * edge['branch'].type['L_per_km'] * 1e-3
 
-        if isinstance(edge['branch'].type['R'], Series):
-            r = edge['branch'].type['R'].values[0]
+        if isinstance(edge['branch'].type['R_per_km'], Series):
+            r_per_km = edge['branch'].type['R_per_km'].values[0]
         else:
-            r = edge['branch'].type['R']
+            r_per_km = edge['branch'].type['R_per_km']
 
         if (isinstance(edge['branch'].type['I_max_th'], Series) or
                 isinstance(edge['branch'].type['U_n'], Series)):
@@ -355,8 +356,8 @@ def edges_to_dict_of_dataframes(grid, edges):
         lines['line_id'].append(line_name)
         lines['bus0'].append(edge['adj_nodes'][0].pypsa_id)
         lines['bus1'].append(edge['adj_nodes'][1].pypsa_id)
-        lines['x'].append(x * l)
-        lines['r'].append(r * l)
+        lines['x'].append(x_per_km * l)
+        lines['r'].append(r_per_km * l)
         lines['s_nom'].append(s_nom)
         lines['length'].append(l)
         lines['cables'].append(3)

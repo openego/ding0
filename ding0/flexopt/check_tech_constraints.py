@@ -514,8 +514,9 @@ def get_voltage_at_bus_bar(grid, tree):
         """
     # impedance of mv grid and transformer
     r_mv_grid, x_mv_grid = get_mv_impedance_at_voltage_level(grid, grid.v_level / 1e3)
-    r_trafo = sum([tr.r for tr in grid._station._transformers]) # ToDo: change calculation of transformer impedance according to branch transformer data
-    x_trafo = sum([tr.x for tr in grid._station._transformers])
+    z_trafo = 1 / sum(1 / (tr.z(voltage_level=grid.v_level / 1e3)) for tr in grid._station._transformers)
+    r_trafo = z_trafo.real
+    x_trafo = z_trafo.imag
     # cumulative resistance/reactance at bus bar
     r_busbar = r_mv_grid + r_trafo
     x_busbar = x_mv_grid + x_trafo
@@ -542,15 +543,16 @@ def get_delta_voltage_preceding_line(grid, tree, node):
     """
 
     # get impedance of preceding line
-    omega = 2 * math.pi * 50  # ToDo: change 50 to meta frequency when merged to branch with introduction of this value
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * math.pi * freq
 
     # choose preceding branch
     branch = [_ for _ in grid.graph_branches_from_node(node) if
               _[0] in list(tree.predecessors(node))][0][1]
 
     # calculate impedance of preceding branch
-    r_line = (branch['branch'].type['R'] * branch['branch'].length/1e3)
-    x_line = (branch['branch'].type['L'] / 1e3 * omega *
+    r_line = (branch['branch'].type['R_per_km'] * branch['branch'].length/1e3)
+    x_line = (branch['branch'].type['L_per_km'] / 1e3 * omega *
          branch['branch'].length/1e3)
 
     # get voltage drop over preceeding line
@@ -648,13 +650,14 @@ def get_mv_impedance_at_voltage_level(grid, voltage_level):
         List containing resistance and reactance of MV grid
     """
 
-    omega = 2 * math.pi * 50
+    freq = cfg_ding0.get('assumptions', 'frequency')
+    omega = 2 * math.pi * freq
 
     mv_grid = grid.grid_district.lv_load_area.mv_grid_district.mv_grid
     edges = mv_grid.find_path(grid._station, mv_grid._station, type='edges')
-    r_mv_grid = sum([e[2]['branch'].type['R'] * e[2]['branch'].length / 1e3
+    r_mv_grid = sum([e[2]['branch'].type['R_per_km'] * e[2]['branch'].length / 1e3
                      for e in edges])
-    x_mv_grid = sum([e[2]['branch'].type['L'] / 1e3 * omega * e[2][
+    x_mv_grid = sum([e[2]['branch'].type['L_per_km'] / 1e3 * omega * e[2][
         'branch'].length / 1e3 for e in edges])
     # rescale to voltage level
     r_mv_grid_vl = r_mv_grid * (voltage_level / mv_grid.v_level) ** 2

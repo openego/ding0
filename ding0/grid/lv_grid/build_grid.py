@@ -156,7 +156,7 @@ def transformer(grid):
     grid: LVGridDing0
         LV grid data
     """
-
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
     # choose size and amount of transformers
     transformer, transformer_cnt = select_transformers(grid)
 
@@ -165,10 +165,10 @@ def transformer(grid):
         lv_transformer = TransformerDing0(
             grid=grid,
             id_db=id,
-            v_level=0.4,
+            v_level=v_nom,
             s_max_longterm=transformer['S_nom'],
-            r=transformer['R'],
-            x=transformer['X'])
+            r_pu=transformer['r_pu'],
+            x_pu=transformer['x_pu'])
 
         # add each transformer to its station
         grid._station.add_transformer(lv_transformer)
@@ -368,7 +368,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
         # determine maximum current occuring due to peak load
         # of this load load_no
-        I_max_load = val['single_peak_load'] / (3 ** 0.5 * 0.4) / cos_phi_load
+        I_max_load = val['single_peak_load'] / (3 ** 0.5 * v_nom) / cos_phi_load
 
         # determine suitable cable for this current
         suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
@@ -470,7 +470,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                              'load_factor_lv_cable_lc_normal')
     cos_phi_load = cfg_ding0.get('assumptions',
                                  'cos_phi_load')
-
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
     # iterate over branches for sectors retail/industrial and agricultural
     for sector, val in grid_model_params.items():
         if sector == 'retail/industrial':
@@ -484,7 +484,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
                 # determine maximum current occuring due to peak load of branch
                 I_max_branch = (val['max_loads_per_branch'] *
-                                val['single_peak_load']) / (3 ** 0.5 * 0.4) / (
+                                val['single_peak_load']) / (3 ** 0.5 * v_nom) / (
                     cos_phi_load)
 
                 # determine suitable cable for this current
@@ -506,7 +506,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     branch_no = 0
                 # determine maximum current occuring due to peak load of branch
                 I_max_branch = (val['max_loads_per_branch'] *
-                                val['single_peak_load']) / (3 ** 0.5 * 0.4) / (
+                                val['single_peak_load']) / (3 ** 0.5 * v_nom) / (
                     cos_phi_load)
 
                 # determine suitable cable for this current

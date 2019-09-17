@@ -1214,6 +1214,8 @@ class NetworkDing0:
                                    delimiter=',',
                                    decimal='.',
                                    converters={'S_nom': lambda x: int(x)})
+        static_data['LV_trafos']['r_pu'] = static_data['LV_trafos']['P_k'] / (static_data['LV_trafos']['S_nom']*1000)
+        static_data['LV_trafos']['x_pu'] = np.sqrt((static_data['LV_trafos']['u_kr']/100)**2-static_data['LV_trafos']['r_pu']**2)
 
         # import LV model grids
         model_grids_lv_string_properties = cfg_ding0.get('model_grids',
@@ -1221,8 +1223,8 @@ class NetworkDing0:
         static_data['LV_model_grids_strings'] = pd.read_csv(os.path.join(package_path, 'data',
                                                 model_grids_lv_string_properties),
                                                 comment='#',
-                                                delimiter=';',
-                                                decimal=',',
+                                                delimiter=',',
+                                                decimal='.',
                                                 index_col='string_id',
                                                 converters={'string_id': lambda x: int(x),
                                                             'type': lambda x: int(x),
@@ -1244,8 +1246,8 @@ class NetworkDing0:
         static_data['LV_model_grids_strings_per_grid'] = pd.read_csv(os.path.join(package_path, 'data',
                                                          model_grids_lv_apartment_string),
                                                          comment='#',
-                                                         delimiter=';',
-                                                         decimal=',',
+                                                         delimiter=',',
+                                                         decimal='.',
                                                          index_col='apartment_count',
                                                          converters=dict({'apartment_count': lambda x: int(x)},
                                                                          **converters_ids))
