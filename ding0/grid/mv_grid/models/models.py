@@ -399,8 +399,8 @@ class Route(object):
         # factor to calc reactive from active power
         Q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
         # line/cable params per km
-        r_l = self._problem._branch_type['R_l']  # unit for r_l: ohm/km
-        x_l = self._problem._branch_type['L_l'] * 2*pi * 50 / 1e3  # unit for x_l: ohm/km
+        r_per_km = self._problem._branch_type['R_per_km']  # unit for r_per_km: ohm/km
+        x_per_km = self._problem._branch_type['L_per_km'] * 2*pi * 50 / 1e3  # unit for x_per_km: ohm/km
 
         # step 3: check if total lengths of half-rings exceed max. allowed distance
         if (self.length_from_nodelist(nodes_hring1) > max_half_ring_length or
@@ -435,7 +435,7 @@ class Route(object):
             v_level_op =\
             self._problem._v_level * 1e3
 
-        # set initial r_l and x_l
+        # set initial r_per_km and x_per_km
         r_hring1 =\
             r_hring2 =\
             x_hring1 =\
@@ -446,15 +446,15 @@ class Route(object):
             x_ring_dir2 = 0
 
         for n1, n2 in zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]):
-            r_hring1 += self._problem.distance(n1, n2) * r_l
-            x_hring1 += self._problem.distance(n1, n2) * x_l
+            r_hring1 += self._problem.distance(n1, n2) * r_per_km
+            x_hring1 += self._problem.distance(n1, n2) * x_per_km
             v_level_hring1 -= n2.demand() * 1e3 * (r_hring1 + x_hring1*Q_factor) / v_level_op
             if (v_level_op - v_level_hring1) > (v_level_op * mv_max_v_level_lc_diff_normal):
                 return False
 
         for n1, n2 in zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)]):
-            r_hring2 += self._problem.distance(n1, n2) * r_l
-            x_hring2 += self._problem.distance(n1, n2) * x_l
+            r_hring2 += self._problem.distance(n1, n2) * r_per_km
+            x_hring2 += self._problem.distance(n1, n2) * x_per_km
             v_level_hring2 -= n2.demand() * 1e3 * (r_hring2 + x_hring2 * Q_factor) / v_level_op
             if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_lc_diff_normal):
                 return False
@@ -463,10 +463,10 @@ class Route(object):
         # (for full ring calculating both directions simultaneously using max. voltage diff. for malfunction operation)
         for (n1, n2), (n3, n4) in zip(zip(nodes_ring1[0:len(nodes_ring1)-1], nodes_ring1[1:len(nodes_ring1)]),
                                       zip(nodes_ring2[0:len(nodes_ring2)-1], nodes_ring2[1:len(nodes_ring2)])):
-            r_ring_dir1 += self._problem.distance(n1, n2) * r_l
-            r_ring_dir2 += self._problem.distance(n3, n4) * r_l
-            x_ring_dir1 += self._problem.distance(n1, n2) * x_l
-            x_ring_dir2 += self._problem.distance(n3, n4) * x_l
+            r_ring_dir1 += self._problem.distance(n1, n2) * r_per_km
+            r_ring_dir2 += self._problem.distance(n3, n4) * r_per_km
+            x_ring_dir1 += self._problem.distance(n1, n2) * x_per_km
+            x_ring_dir2 += self._problem.distance(n3, n4) * x_per_km
             v_level_ring_dir1 -= (n2.demand() * 1e3 * (r_ring_dir1 + x_ring_dir1 * Q_factor) / v_level_op)
             v_level_ring_dir2 -= (n4.demand() * 1e3 * (r_ring_dir2 + x_ring_dir2 * Q_factor) / v_level_op)
             if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_lc_diff_malfunc) or

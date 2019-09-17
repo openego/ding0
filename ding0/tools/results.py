@@ -548,11 +548,11 @@ def calculate_mvgd_stats(nw):
                     path = nx.shortest_path(G, root, node)
                     for i in range(len(path) - 1):
                         mv_impedance += (G.adj[path[i]][path[i + 1]]['branch'].type[
-                                 'L_l'] * 1e-3 * omega * \
+                                 'L_per_km'] * 1e-3 * omega * \
                              G.adj[path[i]][path[i + 1]][
                                  'branch'].length) *1j  + \
                             (G.adj[path[i]][path[i + 1]]['branch'].type[
-                                 'R_l'] * \
+                                 'R_per_km'] * \
                              G.adj[path[i]][path[i + 1]][
                                  'branch'].length)
                         mv_path_length += G.adj[path[i]][path[i + 1]][
@@ -1920,9 +1920,9 @@ def export_network(nw, mode=''):
                                             'length': 1,
                                             'U_n': aggr_line_type.U_n,
                                             'I_max_th': aggr_line_type.I_max_th,
-                                            'R_l': aggr_line_type.R_l,
-                                            'L_l': aggr_line_type.L_l,
-                                            'C_l': aggr_line_type.C_l,
+                                            'R_per_km': aggr_line_type.R_per_km,
+                                            'L_per_km': aggr_line_type.L_per_km,
+                                            'C_per_km': aggr_line_type.C_per_km,
                                             'node1': '_'.join(
                                                 [str(aggr_gen.__class__.__name__), 'MV', str(mv_grid_id),
                                                  str(aggr_gen.id_db), str(mvgenaggr_idx)]),
@@ -1962,9 +1962,9 @@ def export_network(nw, mode=''):
                                     'length': 1e-3,  # in km
                                     'U_n': aggr_line_type.U_n,
                                     'I_max_th': aggr_line_type.I_max_th,
-                                    'R_l': aggr_line_type.R_l,
-                                    'L_l': aggr_line_type.L_l,
-                                    'C_l': aggr_line_type.C_l,
+                                    'R_per_km': aggr_line_type.R_per_km,
+                                    'L_per_km': aggr_line_type.L_per_km,
+                                    'C_per_km': aggr_line_type.C_per_km,
                                     'node1': '_'.join(
                                         ['AggregatedLoad', 'MV', str(mv_grid_id), str(mvloads_idx)]),
                                     'node2': '_'.join([
@@ -2011,9 +2011,9 @@ def export_network(nw, mode=''):
                         'length': branch['branch'].length / 1e3,
                         'U_n': branch['branch'].type['U_n'],
                         'I_max_th': branch['branch'].type['I_max_th'],
-                        'R_l': branch['branch'].type['R_l'],
-                        'L_l': branch['branch'].type['L_l'],
-                        'C_l': branch['branch'].type['C_l'],
+                        'R_per_km': branch['branch'].type['R_per_km'],
+                        'L_per_km': branch['branch'].type['L_per_km'],
+                        'C_per_km': branch['branch'].type['C_per_km'],
                         'node1': '_'.join([str(branch['adj_nodes'][0].__class__.__name__), 'MV', str(mv_grid_id),
                                            str(branch['adj_nodes'][0].id_db)]),
                         'node2': '_'.join([str(branch['adj_nodes'][1].__class__.__name__), 'MV', str(mv_grid_id),
@@ -2124,8 +2124,8 @@ def export_network(nw, mode=''):
                                     'length': branch['branch'].length / 1e3,  # length in km
                                     'U_n': branch['branch'].type['U_n'] / 1e3,  # U_n in kV
                                     'I_max_th': branch['branch'].type['I_max_th'],
-                                    'R_l': branch['branch'].type['R_l'],
-                                    'L_l': branch['branch'].type['L_l'],
+                                    'R_per_km': branch['branch'].type['R_per_km'],
+                                    'L_per_km': branch['branch'].type['L_per_km'],
                                     'node1': '_'.join(
                                         [str(branch['adj_nodes'][0].__class__.__name__), 'LV', str(lv_grid_id),
                                          str(branch['adj_nodes'][0].id_db)])
@@ -2212,9 +2212,9 @@ def export_network_to_oedb(session, table, tabletype, srid):
                         type_name=row['type_name'],
                         length=row['length'],
                         U_n=row['U_n'],
-                        C_l=row['C_l'],
-                        L_l=row['L_l'],
-                        R_l=row['R_l'],
+                        C_per_km=row['C_per_km'],
+                        L_per_km=row['L_per_km'],
+                        R_per_km=row['R_per_km'],
                         I_max_th=row['I_max_th'],
                     ))
                     , axis=1)

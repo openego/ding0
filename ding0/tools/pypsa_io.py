@@ -330,17 +330,17 @@ def edges_to_dict_of_dataframes(grid, edges):
                               str(edge['branch'].id_db)])
 
         # TODO: find the real cause for being L, C, I_th_max type of Series
-        if (isinstance(edge['branch'].type['L_l'], Series) or#warum wird hier c abgefragt?
-                isinstance(edge['branch'].type['C_l'], Series)):
-            x_l = omega * edge['branch'].type['L_l'].values[0] * 1e-3
+        if (isinstance(edge['branch'].type['L_per_km'], Series) or#warum wird hier c abgefragt?
+                isinstance(edge['branch'].type['C_per_km'], Series)):
+            x_per_km = omega * edge['branch'].type['L_per_km'].values[0] * 1e-3
         else:
 
-            x_l = omega * edge['branch'].type['L_l'] * 1e-3
+            x_per_km = omega * edge['branch'].type['L_per_km'] * 1e-3
 
-        if isinstance(edge['branch'].type['R_l'], Series):
-            r_l = edge['branch'].type['R_l'].values[0]
+        if isinstance(edge['branch'].type['R_per_km'], Series):
+            r_per_km = edge['branch'].type['R_per_km'].values[0]
         else:
-            r_l = edge['branch'].type['R_l']
+            r_per_km = edge['branch'].type['R_per_km']
 
         if (isinstance(edge['branch'].type['I_max_th'], Series) or
                 isinstance(edge['branch'].type['U_n'], Series)):
@@ -356,8 +356,8 @@ def edges_to_dict_of_dataframes(grid, edges):
         lines['line_id'].append(line_name)
         lines['bus0'].append(edge['adj_nodes'][0].pypsa_id)
         lines['bus1'].append(edge['adj_nodes'][1].pypsa_id)
-        lines['x'].append(x_l * l)
-        lines['r'].append(r_l * l)
+        lines['x'].append(x_per_km * l)
+        lines['r'].append(r_per_km * l)
         lines['s_nom'].append(s_nom)
         lines['length'].append(l)
         lines['cables'].append(3)

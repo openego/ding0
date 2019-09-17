@@ -385,8 +385,8 @@ def get_line_and_trafo_dict(nw):
                 'limiting current': branch['branch'].type['I_max_th'],
                 'length': branch['branch'].length / 1e3,
                 'type': branch['branch'].type['name'],
-                'resistance': branch['branch'].type['R_l'],
-                'inductance': branch['branch'].type['L_l']}
+                'resistance': branch['branch'].type['R_per_km'],
+                'inductance': branch['branch'].type['L_per_km']}
 
         for LA in mv_district.lv_load_areas():
             for lv_district in LA.lv_grid_districts():
@@ -395,8 +395,8 @@ def get_line_and_trafo_dict(nw):
                         'limiting current': branch['branch'].type['I_max_th'],
                         'length': branch['branch'].length / 1e3,
                         'type': branch['branch'].type.name,
-                        'resistance': branch['branch'].type['R_l'],
-                        'inductance': branch['branch'].type['L_l']
+                        'resistance': branch['branch'].type['R_per_km'],
+                        'inductance': branch['branch'].type['L_per_km']
                     }
                 trafo_count = 0
                 for trafo in lv_district.lv_grid._station._transformers:
