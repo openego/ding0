@@ -50,6 +50,7 @@ def get_dest_point(source_point, distance_m, bearing_deg):
     a source point in a given bearing (in degrees)
     like the `bsdgame trek <https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game)`_
     on linux (0 degrees being North and clockwise is positive).
+
     Parameters
     ----------
     source_point: :shapely:`Shapely Point object<points>`
@@ -61,12 +62,14 @@ def get_dest_point(source_point, distance_m, bearing_deg):
         0 degrees being North and clockwise is positive
         (like the `bsdgame trek <https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game)`_
         on linux).
+
     Returns
     -------
     :shapely:`Shapely Point object<points>`
         The point in WGS84 or epsg 4326 coordinates
         at the destination which is distance meters
         away from the source_point in the bearing provided
+
     """
     geopy_dest = (distance
                   .distance(meters=distance_m)
