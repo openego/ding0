@@ -1,13 +1,13 @@
-Release v0.1.11 month day, year
-+++++++++++++++++++++++++++++++
+Release v0.1.11 September 17, 2019
++++++++++++++++++++++++++++++++++++
 
 Changes
 -------
 
-* Assignment of loads to generators in lv_connect_generators
-  was made deterministic. Before this happened randomly leading
+* Connection of generators in lv_connect_generators
+  was made deterministic. Before, this happened randomly leading
   to different lv_grids using the same input data. The network
-  creation is now reproduceable while lv_branches were reinforced
+  creation is now reproducible while lv_branches were reinforced
   differently before. 
   
   Should solve 
@@ -22,7 +22,7 @@ Changes
   node are taken into account now. Solves
   `#300 <https://github.com/openego/ding0/issues/300>`_.
 
-* This release includes new tests for MV and LV grids.
+* Tests for MV and LV grids are introduced.
   Additionally, synthetically created grids are introduced, that can be used for
   testing.
   These tests verify the functionality of most of the functions in
@@ -30,15 +30,16 @@ Changes
   LV grids (e.g. adding generators/transformators..). Focus lies on the appropriate
   creation of the graphs and it's corresponding routings.
 
-  Test are done in grids created with oedb-extracted data and/or synthetic grids,
+  Tests are done in grids created with oedb-extracted data and/or synthetic grids,
   depending on the feature being tested.
 
 
-* Equipment table data is cleaned sothat only necessary literature values are used.
+* Equipment table data is cleaned so that only necessary literature values are used.
 
   Should solve
   `#296 <https://github.com/openego/ding0/issues/296>`_
 
-* Various bugfixes that come with this PR.
+* Labels of all components were made unique.
 
-* Reproducible labels.
+* ding0 now works without an OpenEnergy DataBase account thanks to changes
+  in the ego.io package that allow readonly queries without a token.
