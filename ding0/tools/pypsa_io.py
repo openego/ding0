@@ -17,10 +17,11 @@ import ding0
 
 from ding0.tools import config as cfg_ding0
 from ding0.core.network.stations import LVStationDing0, MVStationDing0
-from ding0.core.network import BranchDing0, CircuitBreakerDing0, GeneratorDing0
+from ding0.core.network import BranchDing0, CircuitBreakerDing0, GeneratorDing0, GeneratorFluctuatingDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.core.powerflow import q_sign
+from ding0.core.network.cable_distributors import LVCableDistributorDing0
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
@@ -32,6 +33,8 @@ from datetime import datetime
 import sys
 import os
 import logging
+import pandas as pd
+import numpy as np
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
@@ -66,7 +69,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
     Parameters
     ----------
-    grid: ding0.Network
+    grid: ding0.MVGridDing0
     nodes: :obj:`list` of ding0 grid components objects
         Nodes of the grid graph
     lv_transformer: bool, True
@@ -298,6 +301,170 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
     return components, components_data
 
+def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df, loads_df, only_export_mv = False):
+    """
+    Creates dictionary of dataframes containing grid
+
+    Parameters
+    ----------
+    grid: ding0.Network
+    nodes: :obj:`list` of ding0 grid components objects
+        Nodes of the grid graph
+    lv_transformer: bool, True
+        Toggle transformer representation in power flow analysis
+
+    Returns:
+    components: dict of :pandas:`pandas.DataFrame<dataframe>`
+        DataFrames contain components attributes. Dict is keyed by components
+        type
+    """
+
+
+    # TODO: MVStationDing0 has a slack generator, Do we want this?
+
+    srid = int(cfg_ding0.get('geo', 'srid'))
+
+    generator_instances = [MVStationDing0, GeneratorDing0]
+    for node in nodes:
+        if node not in grid.graph_isolated_nodes():
+            # buses only
+            if isinstance(node, MVCableDistributorDing0):
+                buses_df = append_buses_df(buses_df, grid, node, srid)
+
+
+            # bus + generator
+            elif isinstance(node, tuple(generator_instances)):
+                # slack generator
+                if isinstance(node, MVStationDing0):
+                    # add dummy generator
+                    slack = pd.Series({'name':('_'.join(['MV', str(grid.id_db), 'slack'])),
+                                       'bus':node.pypsa_id, 'control':'Slack', 'p_nom':0, 'type': 'station',
+                                       'subtype':'mv_station'})
+                    generators_df = generators_df.append(slack, ignore_index=True)
+                    # add HV side bus
+                    bus_HV = pd.Series({'name':'_'.join(['HV_bus', str(grid.id_db)]), 'v_nom':110, 
+                                        'geom':from_shape(node.geo_data, srid=srid),'mv_grid_id': grid.id_db, 
+                                        'in_building': False})
+                    buses_df = buses_df.append(bus_HV,ignore_index=True)
+
+                # other generators
+                if isinstance(node, GeneratorDing0):
+                    generators_df = append_generators_df(generators_df, node)
+
+                buses_df = append_buses_df(buses_df, grid, node, srid)
+
+            # aggregated load at hv/mv substation
+            elif isinstance(node, LVLoadAreaCentreDing0):
+                if (node.lv_load_area.peak_load!=0):
+                    loads_df = append_load_areas_to_load_df(grid, loads_df, node)
+
+                # generator representing generation capacity of aggregate LA
+                # analogously to load, generation is connected directly to
+                # HV-MV substation
+                # ToDo: Split generation into different types and subtypes
+                if (node.lv_load_area.peak_generation!=0):
+                    generator = pd.Series({'name':('_'.join(['MV', str(grid.id_db), 'lcg', str(node.id_db)])),
+                                           'bus':('_'.join(['HV', str(grid.id_db), 'trd'])), 'control':'PQ',
+                                           'p_nom':node.lv_load_area.peak_generation, 'type':'LVLoadArea'})
+                    generators_df = generators_df.append(generator,ignore_index=True)
+
+            # bus + aggregate load of lv grids (at mv/ls substation)
+            elif isinstance(node, LVStationDing0):
+                # Aggregated load representing load in LV grid, only needed when LV_grids are not exported
+                if only_export_mv:
+                    if (node.lv_load_area.peak_load != 0):
+                        loads_df = append_load_areas_to_load_df(grid, loads_df, node)
+                    # ToDo: Split generation into different types and subtypes
+                    # generator representing generation capacity in LV grid
+                    if(node.peak_generation!=0):
+                        generator = pd.Series({'name': ('_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)])),
+                                               'bus': node.pypsa_id, 'control': 'PQ','p_nom': node.peak_generation})
+                        generators_df = generators_df.append(generator, ignore_index=True)
+
+                # bus at primary MV-LV transformer side
+                buses_df = append_buses_df(buses_df, grid, node, srid)
+
+            elif isinstance(node, CircuitBreakerDing0):
+                # TODO: remove this elif-case if CircuitBreaker are removed from graph
+                continue
+            else:
+                raise TypeError("Node of type", node, "cannot be handled here")
+        else:
+            if not isinstance(node, CircuitBreakerDing0):
+                add_info =  "LA is aggr. {0}".format(
+                    node.lv_load_area.is_aggregated)
+            else:
+                add_info = ""
+            logger.warning("Node {0} is not connected to the graph and will " \
+                  "be omitted in power flow analysis. {1}".format(
+                node, add_info))
+
+    nodal_components = {'Bus': buses_df.set_index('name'),
+                  'Generator': generators_df.set_index('name'),
+                  'Load': loads_df.set_index('name')}
+
+
+    return nodal_components
+
+
+def append_load_areas_to_load_df(grid, loads_df, node):
+    name_load = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)])
+    if isinstance(node,LVStationDing0):
+        name_bus = node.pypsa_id
+    elif isinstance(node,LVLoadAreaCentreDing0):
+        name_bus = '_'.join(['HV', str(grid.id_db), 'trd'])
+    else:
+        raise TypeError("Only LVStationDing0 or LVLoadAreaCentreDing0 can be inserted into function append_load_areas_to_load_df.")
+    if (node.lv_load_area.peak_load_agricultural != 0):
+        load = pd.Series({'name': '_'.join([name_load,'agr']), 'bus': name_bus,
+                          'peak_load': node.lv_load_area.peak_load_agricultural, 'sector': "agricultural"})
+        loads_df = loads_df.append(load, ignore_index=True)
+    if (node.lv_load_area.peak_load_industrial != 0):
+        load = pd.Series({'name': '_'.join([name_load,'ind']), 'bus': name_bus,
+                          'peak_load': node.lv_load_area.peak_load_industrial,
+                          'sector': "industrial"})
+        loads_df = loads_df.append(load, ignore_index=True)
+    if (node.lv_load_area.peak_load_residential != 0):
+        load = pd.Series({'name': '_'.join([name_load,'res']), 'bus': name_bus,
+                          'peak_load': node.lv_load_area.peak_load_residential,
+                          'sector': "residential"})
+        loads_df = loads_df.append(load, ignore_index=True)
+    if (node.lv_load_area.peak_load_retail != 0):
+        load = pd.Series({'name': '_'.join([name_load,'ret']), 'bus': name_bus,
+                          'peak_load': node.lv_load_area.peak_load_retail,
+                          'sector': "retail"})
+        loads_df = loads_df.append(load, ignore_index=True)
+    return loads_df
+
+
+def append_generators_df(generators_df, node):
+    if isinstance(node,GeneratorFluctuatingDing0):
+        weather_cell_id = node.weather_cell_id
+    else:
+        weather_cell_id = np.NaN
+    generator = pd.Series({'name':repr(node),
+                           'bus': node.pypsa_id, 'control':'PQ', 'p_nom':(node.capacity * node.capacity_factor),
+                           'type':node.type, 'subtype':node.subtype, 'weather_cell_id':weather_cell_id})
+    generators_df = generators_df.append(generator, ignore_index=True)
+    return generators_df
+
+
+def append_buses_df(buses_df, mv_grid, node, srid):
+    if isinstance(node, LVCableDistributorDing0):
+        in_building = node.in_building
+    else:
+        in_building = False
+    bus = pd.Series({'name':node.pypsa_id,'v_nom':mv_grid.v_level, 'geom':from_shape(node.geo_data, srid=srid),
+                     'mv_grid_id':mv_grid.id_db, 'in_building': in_building})
+    buses_df = buses_df.append(bus, ignore_index=True)
+    return buses_df
+
+def append_transformers_df(transformers_df, trafo, name_trafo, name_bus0):
+    trafo_tmp = pd.Series({'name': name_trafo, 'bus0':name_bus0, 
+                           'bus1':trafo.grid.station().pypsa_id, 'x':trafo.x, 'r':trafo.r, 
+                           's_nom':trafo.s_max_a, 'type':' '.join([str(trafo.s_max_a), 'kVA'])})
+    transformers_df = transformers_df.append(trafo_tmp,ignore_index=True)
+    return transformers_df
 
 def edges_to_dict_of_dataframes(grid, edges):
     """

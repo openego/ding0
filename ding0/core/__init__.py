@@ -26,6 +26,7 @@ from ding0.tools import pypsa_io
 from ding0.tools.animation import AnimationDing0
 from ding0.tools.plots import plot_mv_topology
 from ding0.flexopt.reinforce_grid import *
+from ding0.tools.logger import get_default_home_dir
 
 import os
 import logging
@@ -1725,6 +1726,42 @@ class NetworkDing0:
                         's_res1': branch['branch'].s_res[1]}), ignore_index=True)
 
         return nodes_df, edges_df
+
+    def to_csv(self, dir = ''):
+        '''
+        Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
+        Respectively saves files for network, buses, lines, transformers, loads and generators.
+
+        Parameters
+        ----------
+        dir: :obj:`str`
+            Directory to which network is saved.
+        '''
+
+        srid = str(int(cfg_ding0.get('geo', 'srid')))
+        cols = {'network_columns': ['name', 'srid', 'mv_grid_district', 'mv_grid_district_population'],
+                'buses_columns': ['name', 'geom', 'mv_grid_id', 'lv_grid_id', 'v_nom', 'in_building'],
+                'lines_columns': ['bus0', 'bus1', 'length', 'r', 'x', 's_nom', 'num_parallel', 'type'],
+                'transformer_columns': ['name', 'bus0', 'bus1', 's_nom', 'r', 'x', 'type'],
+                'generators_columns': ['name', 'bus', 'control', 'p_nom', 'type', 'weather_cell_id', 'subtype'],
+                'loads_columns': ['name', 'bus', 'peak_load', 'sector']}
+
+        if (dir == ''):
+            dir = get_default_home_dir() # eventuell ändern
+
+        for grid_district in self.mv_grid_districts():
+            # initialize dataframes
+            network_df = pd.DataFrame(columns=cols['network_columns'])
+            buses_df = pd.DataFrame(columns=cols['buses_columns'])
+            lines_df = pd.DataFrame(columns=cols['lines_columns'])
+            transformer_df = pd.DataFrame(columns=cols['transformer_columns'])
+            generators_df = pd.DataFrame(columns=cols['generators_columns'])
+            loads_df = pd.DataFrame(columns=cols['loads_columns'])
+            # fill dataframes
+            mv_grid = grid_district.mv_grid
+            mv_components = mv_grid.fill_component_dataframes(cols, buses_df, lines_df, transformer_df, generators_df, loads_df)
+        print()
+
 
     def mv_routing(self, debug=False, animation=False):
         """

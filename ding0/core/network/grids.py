@@ -742,6 +742,41 @@ class MVGridDing0(GridDing0):
         else:
             raise ValueError('Sorry, this export method does not exist!')
 
+    def fill_component_dataframes(self, cols, buses_df, lines_df, transformer_df, generators_df, loads_df):
+        '''
+
+        :param grid_district_df:
+        :param buses_df:
+        :param lines_df:
+        :param transformer_df:
+        :param generators_df:
+        :param loads_df:
+        :return:
+        '''
+        nodes = self._graph.nodes()
+
+        edges = [edge for edge in list(self.graph_edges())
+                 if (edge['adj_nodes'][0] in nodes and not isinstance(
+                edge['adj_nodes'][0], LVLoadAreaCentreDing0))
+                 and (edge['adj_nodes'][1] in nodes and not isinstance(
+                edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
+        trafo_count=0
+        for trafo in self.station()._transformers:
+            transformer_df=pypsa_io.append_transformers_df(transformer_df,trafo,
+                                                           name_trafo='_'.join([repr(trafo.grid), 'transformer', str(trafo_count)]),
+                                                           name_bus0='_'.join(['HV_bus', str(trafo.grid.id_db)]))
+            trafo_count+=1
+
+        node_components = pypsa_io.nodes_to_dict_of_dataframes_for_csv_export(self, nodes, buses_df, generators_df, loads_df)
+        
+        branch_components = {} #Todo: insert function for lines
+        branch_components['Transformer'] = transformer_df
+        components = tools.merge_two_dicts(branch_components,node_components)
+        return components
+
+
+
+
     def run_powerflow(self, session, export_pypsa_dir=None,  method='onthefly', debug=False):
         """ Performs power flow calculation for all MV grids
 
