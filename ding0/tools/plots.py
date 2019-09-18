@@ -88,6 +88,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     -----
     WGS84 pseudo mercator (epsg:3857) is used as coordinate reference system (CRS).
     Therefore, the drawn graph representation may be falsified!
+
     """
 
     def set_nodes_style_and_position(nodes):
