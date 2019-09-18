@@ -25,7 +25,7 @@ def create_dir(dirpath):
 
     Parameters
     ----------
-    dirpath : str
+    dirpath : :obj:`str`
         Directory including path
     """
 
@@ -42,7 +42,7 @@ def create_home_dir(ding0_path=None):
 
     Parameters
     ----------
-    ding0_path : str
+    ding0_path : :obj:`str`
         Path to store Ding0 related data (logging, etc)
     """
 
@@ -72,7 +72,7 @@ def setup_logger(log_dir=None, loglevel=logging.DEBUG):
 
     Parameters
     ----------
-    log_dir: str
+    log_dir: :obj:`str`
         Directory to save log, default: ~/.ding0/logging/
     loglevel: 
         Level of logger.

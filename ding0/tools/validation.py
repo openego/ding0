@@ -294,9 +294,124 @@ def validate_lv_districts(session, nw):
     return compare_by_district, compare_by_load
 
 ########################################################
+def compare_grid_impedances(nw1, nw2):
+    '''Compare if two grids have the same impedances.
+
+    Parameters
+    ----------
+    nw1:
+        Network 1
+    nw2:
+        Network 2
+
+    Returns
+    -------
+    Bool
+        True if network elements have same impedances.
+    '''
+
+
+    # get dictionaries with all branches in mv and lv grids of nw1 and nw2
+    branches_dict_1, lv_branches_dict_1, lv_transformer_dict_1 = get_line_and_trafo_dict(nw1)
+    branches_dict_2, lv_branches_dict_2, lv_transformer_dict_2 = get_line_and_trafo_dict(nw2)
+
+    # Check if all entries of dicts are the same
+
+    # region LINES
+    # MV Lines
+    same = True
+    for branch in branches_dict_1:
+        for var in branches_dict_1[branch]:
+            try:
+                if branches_dict_1[branch][var]!=branches_dict_2[branch][var]:
+                    print("Variable ", var, " of MV line ", branch, " is not the same: ", \
+                            branches_dict_1[branch][var], " and ", branches_dict_2[branch][var])
+                    same = False
+            except:
+                print("Either MV branch ", branch, " does not exist in second nw or ", var, " does not exist in branch.")
+                same = False
+    # LV Lines
+    for branch in lv_branches_dict_1:
+        for var in lv_branches_dict_1[branch]:
+            try:
+                if lv_branches_dict_1[branch][var] != lv_branches_dict_2[branch][var]:
+                    print("Variable ", var, " of LV line ", branch, " is not the same: ", \
+                            lv_branches_dict_1[branch][var], " and ", lv_branches_dict_2[branch][var])
+                    same = False
+            except:
+                print("Either LV branch ", branch, " does not exist in second nw or ", var, " does not exist in branch.")
+                same = False
+    #endregion
+
+    #region TRANSFORMERS
+    for trafo in lv_transformer_dict_1:
+        for var in lv_transformer_dict_1[trafo]:
+            try:
+                if lv_transformer_dict_1[trafo][var] != lv_transformer_dict_2[trafo][var]:
+                    print("Variable ", var, " of LV transformer ", trafo, " is not the same: ", \
+                            lv_transformer_dict_1[trafo][var], " and ", lv_transformer_dict_2[trafo][var])
+                    same = False
+            except:
+                print("Either LV transformer ", trafo, " does not exist in second nw or ", var, " does not exist in transformer.")
+                same = False
+    #endregion
+
+    return same
+
+
+def get_line_and_trafo_dict(nw):
+    ''' Get dictionaries of line and transformer data (in order to compare two networks)
+
+    Parameters
+    ----------
+    nw:
+        Network
+
+    Returns
+    -------
+    Dictionary
+        mv_branches_dict
+    Dictionary
+        lv_branches_dict
+    Dictionary
+        lv_transformer_dict
+    '''
+    mv_branches_dict = {}
+    lv_branches_dict = {}
+    lv_transformer_dict = {}
+    for mv_district in nw._mv_grid_districts:
+        for branch in mv_district.mv_grid.graph_edges():
+            mv_branches_dict[branch['branch'].id_db] = {
+                'limiting current': branch['branch'].type['I_max_th'],
+                'length': branch['branch'].length / 1e3,
+                'type': branch['branch'].type['name'],
+                'resistance': branch['branch'].type['R_per_km'],
+                'inductance': branch['branch'].type['L_per_km']}
+
+        for LA in mv_district.lv_load_areas():
+            for lv_district in LA.lv_grid_districts():
+                for branch in lv_district.lv_grid.graph_edges():
+                    lv_branches_dict[branch['branch'].id_db] = {
+                        'limiting current': branch['branch'].type['I_max_th'],
+                        'length': branch['branch'].length / 1e3,
+                        'type': branch['branch'].type.name,
+                        'resistance': branch['branch'].type['R_per_km'],
+                        'inductance': branch['branch'].type['L_per_km']
+                    }
+                trafo_count = 0
+                for trafo in lv_district.lv_grid._station._transformers:
+                    lv_transformer_dict[str(lv_district.lv_grid._station.id_db)+ "_"+ str(trafo_count)] = {
+                        'power': trafo.s_max_a,
+                        'resistance': trafo.r_pu,
+                        'ractance': trafo.x_pu
+                    }
+    return mv_branches_dict, lv_branches_dict,lv_transformer_dict
+
+
+########################################################
 if __name__ == "__main__":
     # database connection/ session
-    engine = db.connection(section='oedb')
+    engine = db.connection(readonly=True)
     session = sessionmaker(bind=engine)()
 
     nw = load_nd_from_pickle(filename='ding0_tests_grids_1.pkl')

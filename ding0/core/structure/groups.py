@@ -69,8 +69,8 @@ class LoadAreaGroupDing0:
         # TODO: check docstring
         """Adds a LV load_area to _lv_load_areas if not already existing
         
-        Args
-        ----
+        Parameters
+        ----------
         lv_load_area: :shapely:`Shapely Polygon object<polygons>`
             Descr
         """
@@ -84,14 +84,14 @@ class LoadAreaGroupDing0:
         
         That is, total peak load for satellite string
         
-        Args
-        ----
-        node: GridDing0
+        Parameters
+        ----------
+        node: :class:`~.ding0.core.GridDing0`
             Descr
         
         Returns
         -------
-        bool
+        :obj: `bool`
             True if ????
         
         """

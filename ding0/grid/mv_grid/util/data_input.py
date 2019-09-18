@@ -34,8 +34,8 @@ class ParseException(Exception):
     value: type
         Description
     
-    Args
-    ----
+    Parameters
+    ----------
     value: type
         Description
     """
@@ -51,7 +51,7 @@ def strip(line):
     
     Parameters
     ----------
-    line: str
+    line: :obj:`str`
         
     
     Returns
@@ -81,9 +81,9 @@ def sanitize(filename):
 def _parse_depot_section(f):
     """Parse TSPLIB DEPOT_SECTION data part from file descriptor f
     
-    Args
-    ----
-    f : str
+    Parameters
+    ----------
+    f : :obj:`str`
         File descriptor
     Returns
     -------
@@ -125,7 +125,7 @@ def _parse_nodes_section(f, current_section, nodes):
         line = strip(line)
 
         # Check dimensions
-        definitions = re.split('\s*', line)
+        definitions = re.split(r'\s*', line)
         if len(definitions) != dimensions:
             raise ParseException('Invalid dimensions from section {}. Expected: {}'.format(current_section, dimensions))
 
@@ -160,7 +160,7 @@ def _parse_edge_weight(f, nodes):
     for line in f:
         line = strip(line)
 
-        regex = re.compile('\s+')
+        regex = re.compile(r'\s+')
 
         row = regex.split(line)
 
@@ -180,8 +180,8 @@ def _parse_edge_weight(f, nodes):
 def calculate_euc_distance(a, b):
     """Calculates Eclidian distances from two points a and b
     
-    Args
-    ----
+    Parameters
+    ----------
     a : (:obj:`float`, :obj:`float`)
         Two-dimension tuple (x1,y1)
     b : (:obj:`float`, :obj:`float`)
@@ -203,12 +203,12 @@ def _post_process_specs(specs):
 
     Casts any number expected values into integers
     
-    Args
-    ----
+    Parameters
+    ----------
     specs :
     
     
-    Notes
+    Note
     -----
     Modifies the specs object
     """
@@ -379,9 +379,9 @@ def _parse_tsplib(f):
 def read_file(filename):
     """Reads a TSPLIB file and returns the problem data.
     
-    Args
-    ----
-    filename: str
+    Parameters
+    ----------
+    filename: :obj:`str`
     
     Returns
     -------

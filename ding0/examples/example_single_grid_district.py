@@ -27,13 +27,14 @@ from ding0.tools.results import save_nd_to_pickle
 from sqlalchemy.orm import sessionmaker
 import oedialect
 
+
 # define logger
 logger = setup_logger()
 
 # ===== MAIN =====
 
 # database connection/ session
-engine = db.connection(section='oedb')
+engine = db.connection(readonly=True)
 session = sessionmaker(bind=engine)()
 
 # instantiate new ding0 network object

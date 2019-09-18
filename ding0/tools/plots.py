@@ -37,27 +37,29 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     ----------
     grid : :obj:`MVGridDing0`
         MV grid to plot.
-    subtitle : str
+    subtitle : :obj:`str`
         Extend plot's title by this string.
-    filename : str
+    filename : :obj:`str`
         If provided, the figure will be saved and not displayed (default path: ~/.ding0/).
         A prefix is added to the file name.
-    testcase : str
+    testcase : :obj:`str`
         Defines which case is to be used. Refer to config_calc.cfg to see further
         assumptions for the cases. Possible options are:
+        
         * 'load' (default)
           Heavy-load-flow case
         * 'feedin'
           Feedin-case
-    line_color : str
+    line_color : :obj:`str`
         Defines whereby to choose line colors. Possible options are:
+
         * 'loading'
           Line color is set according to loading of the line in heavy load case.
           You can use parameter `limits_cb_lines` to adjust the color range.
         * None (default)
           Lines are plotted in black. Is also the fallback option in case of
           wrong input.
-    node_color : str
+    node_color : :obj:`str`
         Defines whereby to choose node colors. Possible options are:
 
         * 'type' (default)
@@ -82,10 +84,11 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         The additional package `contextily` is needed for this functionality.
         Default: True
 
-    Notes
+    Note
     -----
     WGS84 pseudo mercator (epsg:3857) is used as coordinate reference system (CRS).
     Therefore, the drawn graph representation may be falsified!
+
     """
 
     def set_nodes_style_and_position(nodes):
@@ -218,7 +221,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     if line_color == 'loading':
         edges_color = []
         for n1, n2 in g.edges():
-            edge = g.edge[n1][n2]
+            edge = g.adj[n1][n2]
             if hasattr(edge['branch'], 's_res'):
                 edges_color.append(edge['branch'].s_res[case_idx] * 1e3 /
                                    (3 ** 0.5 * edge['branch'].type['U_n'] * edge['branch'].type['I_max_th']))

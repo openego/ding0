@@ -20,8 +20,10 @@ __author__     = "nesnoj, gplssm"
 
 
 from ding0.tools import config as cfg_ding0
+from ding0.tools.pypsa_io import q_sign
 
 from math import pi, tan, acos
+
 import logging
 
 
@@ -276,7 +278,7 @@ class Route(object):
         int
             position of circuit breaker on route (index of last node on 1st half-ring preceding the circuit breaker)
 
-        Notes
+        Note
         -----
         According to planning principles of MV grids, a MV ring is run as two strings (half-rings) separated by a
         circuit breaker which is open at normal operation.
@@ -332,7 +334,7 @@ class Route(object):
         * current rating of cable/line
         * voltage stability at all nodes
 
-        Notes
+        Note
         -----
             The validation is done for every tested MV grid configuration during CVRP algorithm. The current rating is
             checked using load factors from [#]_. Due to the high amount of steps the voltage rating cannot be checked
@@ -377,6 +379,7 @@ class Route(object):
         mv_max_v_level_lc_diff_malfunc = float(cfg_ding0.get('mv_routing_tech_constraints',
                                                              'mv_max_v_level_lc_diff_malfunc'))
         cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+        cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
 
 
         # step 0: check if route has got more nodes than allowed
@@ -394,10 +397,10 @@ class Route(object):
         nodes_ring1 = [self._problem._depot] + self._nodes
         nodes_ring2 = list(reversed(self._nodes + [self._problem._depot]))
         # factor to calc reactive from active power
-        Q_factor = tan(acos(cos_phi_load))
+        Q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
         # line/cable params per km
-        r = self._problem._branch_type['R']  # unit for r: ohm/km
-        x = self._problem._branch_type['L'] * 2*pi * 50 / 1e3  # unit for x: ohm/km
+        r_per_km = self._problem._branch_type['R_per_km']  # unit for r_per_km: ohm/km
+        x_per_km = self._problem._branch_type['L_per_km'] * 2*pi * 50 / 1e3  # unit for x_per_km: ohm/km
 
         # step 3: check if total lengths of half-rings exceed max. allowed distance
         if (self.length_from_nodelist(nodes_hring1) > max_half_ring_length or
@@ -432,7 +435,7 @@ class Route(object):
             v_level_op =\
             self._problem._v_level * 1e3
 
-        # set initial r and x
+        # set initial r_per_km and x_per_km
         r_hring1 =\
             r_hring2 =\
             x_hring1 =\
@@ -443,15 +446,15 @@ class Route(object):
             x_ring_dir2 = 0
 
         for n1, n2 in zip(nodes_hring1[0:len(nodes_hring1)-1], nodes_hring1[1:len(nodes_hring1)]):
-            r_hring1 += self._problem.distance(n1, n2) * r
-            x_hring1 += self._problem.distance(n1, n2) * x
+            r_hring1 += self._problem.distance(n1, n2) * r_per_km
+            x_hring1 += self._problem.distance(n1, n2) * x_per_km
             v_level_hring1 -= n2.demand() * 1e3 * (r_hring1 + x_hring1*Q_factor) / v_level_op
             if (v_level_op - v_level_hring1) > (v_level_op * mv_max_v_level_lc_diff_normal):
                 return False
 
         for n1, n2 in zip(nodes_hring2[0:len(nodes_hring2)-1], nodes_hring2[1:len(nodes_hring2)]):
-            r_hring2 += self._problem.distance(n1, n2) * r
-            x_hring2 += self._problem.distance(n1, n2) * x
+            r_hring2 += self._problem.distance(n1, n2) * r_per_km
+            x_hring2 += self._problem.distance(n1, n2) * x_per_km
             v_level_hring2 -= n2.demand() * 1e3 * (r_hring2 + x_hring2 * Q_factor) / v_level_op
             if (v_level_op - v_level_hring2) > (v_level_op * mv_max_v_level_lc_diff_normal):
                 return False
@@ -460,10 +463,10 @@ class Route(object):
         # (for full ring calculating both directions simultaneously using max. voltage diff. for malfunction operation)
         for (n1, n2), (n3, n4) in zip(zip(nodes_ring1[0:len(nodes_ring1)-1], nodes_ring1[1:len(nodes_ring1)]),
                                       zip(nodes_ring2[0:len(nodes_ring2)-1], nodes_ring2[1:len(nodes_ring2)])):
-            r_ring_dir1 += self._problem.distance(n1, n2) * r
-            r_ring_dir2 += self._problem.distance(n3, n4) * r
-            x_ring_dir1 += self._problem.distance(n1, n2) * x
-            x_ring_dir2 += self._problem.distance(n3, n4) * x
+            r_ring_dir1 += self._problem.distance(n1, n2) * r_per_km
+            r_ring_dir2 += self._problem.distance(n3, n4) * r_per_km
+            x_ring_dir1 += self._problem.distance(n1, n2) * x_per_km
+            x_ring_dir2 += self._problem.distance(n3, n4) * x_per_km
             v_level_ring_dir1 -= (n2.demand() * 1e3 * (r_ring_dir1 + x_ring_dir1 * Q_factor) / v_level_op)
             v_level_ring_dir2 -= (n4.demand() * 1e3 * (r_ring_dir2 + x_ring_dir2 * Q_factor) / v_level_op)
             if ((v_level_op - v_level_ring_dir1) > (v_level_op * mv_max_v_level_lc_diff_malfunc) or

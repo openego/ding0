@@ -65,33 +65,77 @@ checked out code. A developer mode installation is achieved by
 
     pip3 install -e path/to/cloned/ding0/repository
     
-Setup database connection
-==========================
- 
-Ding0 relies on data provided in the `OpenEnergy DataBase (oedb) <https://openenergy-platform.org/dataedit/>`_.
-In order to use ding0 you therefore need an account on the 
-`OpenEnergy Platform (OEP) <https://openenergy-platform.org/>`_. You can create a new account
-`here <http://openenergy-platform.org/login/>`_.
 
-The package `ego.io <https://github.com/openego/ego.io>`_ gives you a python SQL-Alchemy representations of
-the oedb and access to it by using the
-`oedialect <https://github.com/openego/oedialect>`_, an SQL-Alchemy dialect used by the
-OEP. Your API
-access / login data will be saved in the folder ``.egoio`` in the file
-``config.ini``. The ``config.ini`` is automatically created from user input when it does not exist. It 
-holds the following information:
+Installation under Windows
+--------------------------
+To install Ding0 in windows, it is currently recommended to use
+`Anaconda <https://www.anaconda.com/distribution/>`_ or
+`Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
+and create an environment with the ding0_env.yml file provided.
+
+.. note::
+    Normally both miniconda and Anaconda are packaged with the Anaconda
+    Prompt to be used in Windows. Within typical installations, this
+    restricts the use of the conda command to only within this prompt.
+    Depending on your convenience, it may be a wise choice to add
+    the conda command to your path during the installation by checking
+    the appropriate checkbox. This would allow conda to be used
+    from anywhere in the operating system except for PowerShell
+
+.. note::
+    Conda and Powershell don't seem to be working well together at
+    the moment. There seems to be an issue with Powershell spawning
+    a new command prompt for the execution of every command.
+    This makes the environment activate in a different prompt
+    from the one you may be working with after activation.
+    This may eventually get fixed later on but for now,
+    we would recommend using only the standard cmd.exe on windows.
+
+To create a ding0 environment using the yaml file in conda,
+use the command:
 
 .. code-block:: bash
 
-  [oedb]
-  dialect  = oedialect
-  username = <username>
-  database = oedb
-  host     = openenergy-platform.org
-  port     = 80
-  password = <token>
+    conda env create -f ding0_env.yml
+
+By default this environment will be called ding0_env. If you would
+like to use a custom name for your environment use the following variant
+of the command:
+
+.. code-block:: bash
+
+    conda env create -n custom_env_name -f ding0_env.yml
+
+An to activate this environment, from any folder in the operating system,
+use the command:
+
+.. code-block:: bash
+
+    conda activate ding0_env
+
+Once the environment is activated, you have two options to install ding0.
+Either install it from the local repository with the commands:
+
+.. code-block:: bash
+
+    conda activate ding0_env
+    pip install -U -e \path\to\ding0\
+
+Or install it from the pypi repository with the command:
+
+.. code-block:: bash
+
+    conda activate ding0_env
+    pip install ding0
 
 
+
+after this, it is possible to install ding0 directly from pip within the
+conda enviornment
+
+.. code-block:: bash
+
+    conda activate ding0_env
 
 Use Ding0
 =========

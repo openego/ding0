@@ -1,6 +1,7 @@
-S_nom,R,X
-#kVA,Ohm,Ohm
-20000,0,0
-32000,0,0
-40000,0,0
-63000,0,0
+S_nom
+#kVA
+# Note that only values used for calculation are saved in this table. Only insert literature values here, calculations in code for better comprehensibility
+20000
+32000
+40000
+63000

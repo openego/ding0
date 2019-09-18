@@ -21,9 +21,9 @@ def parallel_branch(grid, node_target):
 
     Parameters
     ----------
-        grid : GridDing0
+        grid : :class:`~.ding0.core.GridDing0`
             Grid identifier.
-        node_target: int
+        node_target: :obj:`int`
             node where the parallel cable (starting from HV/MV substation) is connected to (used when grid is a MV grid)
 
     Returns
@@ -39,7 +39,7 @@ def split_ring(grid):
     
     Parameters
     ----------
-        grid : MVGridDing0
+        grid : :class:`~.ding0.core.network.grids.MVGridDing0`
             Grid identifier.
           
     Returns
@@ -55,7 +55,7 @@ def extend_substation(grid):
 
     Parameters
     ----------
-        grid : GridDing0
+        grid : :class:`~.ding0.core.GridDing0`
             Grid identifier.
 
     Returns
@@ -71,7 +71,7 @@ def new_substation(grid):
 
     Parameters
     ----------
-        grid : MVGridDing0
+        grid : :class:`~.ding0.core.network.grids.MVGridDing0`
             Grid identifier.
             
     Returns

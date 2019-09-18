@@ -34,7 +34,7 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
        If True, information is printed during process
     
 
-    Notes
+    Note
     -----
     According to planning principles of MV grids, a MV ring is run as two strings (half-rings) separated by a
     circuit breaker which is open at normal operation [#]_, [#]_.
@@ -141,7 +141,7 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         # relocate circuit breaker
         node1 = ring[position-1]
         node2 = ring[position]
-        circ_breaker.branch = mv_grid._graph.edge[node1][node2]['branch']
+        circ_breaker.branch = mv_grid._graph.adj[node1][node2]['branch']
         circ_breaker.branch_nodes = (node1, node2)
         circ_breaker.branch.circuit_breaker = circ_breaker
         circ_breaker.geo_data = calc_geo_centre_point(node1, node2)

@@ -75,7 +75,7 @@ def select_transformers(grid, s_max=None):
     :obj:`int` 
         Count of transformers
 
-    Notes
+    Note
     -----
     The LV transformer with the next higher available nominal apparent power is
     chosen. Therefore, a max. allowed transformer loading of 100% is implicitly
@@ -156,7 +156,7 @@ def transformer(grid):
     grid: LVGridDing0
         LV grid data
     """
-
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
     # choose size and amount of transformers
     transformer, transformer_cnt = select_transformers(grid)
 
@@ -165,10 +165,10 @@ def transformer(grid):
         lv_transformer = TransformerDing0(
             grid=grid,
             id_db=id,
-            v_level=0.4,
+            v_level=v_nom,
             s_max_longterm=transformer['S_nom'],
-            r=transformer['R'],
-            x=transformer['X'])
+            r_pu=transformer['r_pu'],
+            x_pu=transformer['x_pu'])
 
         # add each transformer to its station
         grid._station.add_transformer(lv_transformer)
@@ -181,7 +181,7 @@ def select_grid_model_ria(lvgd, sector):
     ----------
     lvgd : ding0.core.structure.regions.LVGridDistrictDing0
         Low-voltage grid district object
-    sector : str
+    sector : :obj:`str`
         Either 'retail/industrial' or 'agricultural'. Depending on choice
         different parameters to grid topology apply
 
@@ -355,7 +355,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 }
             }
 
-    Notes
+    Note
     -----
     We assume a distance from the load to the branch it is connected to of
     30 m. This assumption is defined in the config files.
@@ -368,14 +368,15 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
         # determine maximum current occuring due to peak load
         # of this load load_no
-        I_max_load = val['single_peak_load'] / (3 ** 0.5 * 0.4) / cos_phi_load
+        I_max_load = val['single_peak_load'] / (3 ** 0.5 * v_nom) / cos_phi_load
 
         # determine suitable cable for this current
         suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
             (lvgd.lv_grid.network.static_data['LV_cables'][
                 'I_max_th'] * cable_lf) > I_max_load]
-        cable_type_stub = suitable_cables_stub.ix[
-            suitable_cables_stub['I_max_th'].idxmin()]
+        cable_type_stub = suitable_cables_stub.loc[
+            suitable_cables_stub['I_max_th'].idxmin(), :
+            ]
 
         # cable distributor to divert from main branch
         lv_cable_dist = LVCableDistributorDing0(
@@ -469,7 +470,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                              'load_factor_lv_cable_lc_normal')
     cos_phi_load = cfg_ding0.get('assumptions',
                                  'cos_phi_load')
-
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
     # iterate over branches for sectors retail/industrial and agricultural
     for sector, val in grid_model_params.items():
         if sector == 'retail/industrial':
@@ -483,15 +484,16 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
                 # determine maximum current occuring due to peak load of branch
                 I_max_branch = (val['max_loads_per_branch'] *
-                                val['single_peak_load']) / (3 ** 0.5 * 0.4) / (
+                                val['single_peak_load']) / (3 ** 0.5 * v_nom) / (
                     cos_phi_load)
 
                 # determine suitable cable for this current
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
                     (lvgd.lv_grid.network.static_data['LV_cables'][
                         'I_max_th'] * cable_lf) > I_max_branch]
-                cable_type = suitable_cables.ix[
-                    suitable_cables['I_max_th'].idxmin()]
+                cable_type = suitable_cables.loc[
+                    suitable_cables['I_max_th'].idxmin(), :
+                ]
 
                 # create Ding0 grid objects and add to graph
                 for load_no in list(range(1, val['max_loads_per_branch'] + 1)):
@@ -504,15 +506,16 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     branch_no = 0
                 # determine maximum current occuring due to peak load of branch
                 I_max_branch = (val['max_loads_per_branch'] *
-                                val['single_peak_load']) / (3 ** 0.5 * 0.4) / (
+                                val['single_peak_load']) / (3 ** 0.5 * v_nom) / (
                     cos_phi_load)
 
                 # determine suitable cable for this current
                 suitable_cables = lvgd.lv_grid.network.static_data['LV_cables'][
                     (lvgd.lv_grid.network.static_data['LV_cables'][
                         'I_max_th'] * cable_lf) > I_max_branch]
-                cable_type = suitable_cables.ix[
-                    suitable_cables['I_max_th'].idxmin()]
+                cable_type = suitable_cables.loc[
+                    suitable_cables['I_max_th'].idxmin(), :
+                ]
 
                 branch_no += 1
 
@@ -553,7 +556,7 @@ def select_grid_model_residential(lvgd):
     :pandas:`pandas.DataFrame<dataframe>`
         Parameters of chosen Transformer
 
-    Notes
+    Note
     -----
     In total 196 distinct LV grid topologies are available that are chosen
     by population in the LV grid district. Population is translated to
@@ -605,7 +608,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
     selected_string_df: :pandas:`pandas.DataFrame<dataframe>`
         Table of strings of the selected grid model
 
-    Notes
+    Note
     -----
     To understand what is happening in this method a few data table columns
     are explained here
@@ -636,7 +639,8 @@ def build_lv_graph_residential(lvgd, selected_string_df):
     for i, row in selected_string_df.iterrows():
 
         # get overall count of branches to set unique branch_no
-        branch_count_sum = len(lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station()))
+        branch_count_sum = len(list(
+            lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station())))
 
         # iterate over it's occurences
         for branch_no in range(1, int(row['occurence']) + 1):

@@ -34,12 +34,12 @@ def reinforce_grid(grid, mode):
     
     Parameters
     ----------
-    grid: GridDing0
+    grid: :class:`~.ding0.core.GridDing0`
         Grid instance
-    mode: str
+    mode: :obj:`str`
         Choose of: 'MV' or 'LV'
 
-    Notes
+    Note
     -----
     Currently only MV branch reinforcement is implemented. HV-MV stations are not
     reinforced since not required for status-quo scenario.
@@ -108,7 +108,7 @@ def reinforce_grid(grid, mode):
         # get overloaded branches
         # overloading issues
         critical_branches, critical_stations = get_critical_line_loading(grid)
-
+        no_crit_branches = len(critical_branches)
 
         # reinforce overloaded lines by increasing size
         unresolved = reinforce_lv_branches_overloading(grid, critical_branches)
@@ -116,7 +116,7 @@ def reinforce_grid(grid, mode):
             "Out of {crit_branches} with overloading {unresolved} remain "
             "with unresolved issues due to line overloading. "
             "LV grid: {grid}".format(
-                crit_branches=len(critical_branches),
+                crit_branches=no_crit_branches,
                 unresolved=len(unresolved),
                 grid=grid))
 
@@ -125,6 +125,13 @@ def reinforce_grid(grid, mode):
 
         # get node with over-voltage
         crit_nodes = get_critical_voltage_at_nodes(grid) #over-voltage issues
+        # reinforcement of LV stations on voltage issues
+        crit_stations_voltage = [_ for _ in crit_nodes  # Is this ever reached?
+                                 if isinstance(_['node'], LVStationDing0)]
+        if crit_stations_voltage:
+            extend_substation_voltage(crit_stations_voltage, grid_level='LV')
+            for station in crit_stations_voltage:
+                crit_nodes.remove(station)
 
         crit_nodes_count_prev_step = len(crit_nodes)
 
@@ -159,9 +166,5 @@ def reinforce_grid(grid, mode):
             logger.info('==> All voltage issues in {mode} grid could be '
                         'solved using reinforcement.'.format(mode=mode))
 
-        # reinforcement of LV stations on voltage issues
-        crit_stations_voltage = [_ for _ in crit_nodes
-                        if isinstance(_['node'], LVStationDing0)]
-        if crit_stations_voltage:
-            extend_substation_voltage(crit_stations_voltage, grid_level='LV')
+
 

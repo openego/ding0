@@ -34,12 +34,12 @@ def reinforce_branches_current(grid, crit_branches):
     
     Parameters
     ----------
-    grid : GridDing0
+    grid : :class:`~.ding0.core.GridDing0`
         Grid identifier.
     crit_branches : dict
         Dict of critical branches with max. relative overloading.
         
-    Notes
+    Note
     -----
     The branch type to be installed is determined per branch using the rel. overloading. According to [#]_ 
     only cables are installed.
@@ -61,8 +61,14 @@ def reinforce_branches_current(grid, crit_branches):
 
     for branch, rel_overload in crit_branches.items():
         try:
-            type = branch_parameters.ix[branch_parameters[branch_parameters['I_max_th'] >=
-                                        branch['branch'].type['I_max_th'] * rel_overload]['I_max_th'].idxmin()]
+            type = branch_parameters.loc[
+                branch_parameters[
+                    branch_parameters['I_max_th'] >= branch['branch']
+                    .type['I_max_th'] * rel_overload
+                ].loc[
+                    :, 'I_max_th'
+                ].idxmin(), :
+            ]
             branch['branch'].type = type
             branch_ctr += 1
         except:
@@ -81,15 +87,15 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
 
     Parameters
     ----------
-    grid : GridDing0
+    grid : :class:`~.ding0.core.GridDing0`
         Grid identifier.
-    crit_branches : :any:`list` of :obj:`int`
+    crit_branches : :obj:`list` of :obj:`int`
         List of critical branches. #TODO: check if a list or a dictionary
-    grid_level : str
+    grid_level : :obj:`str`
         Specifying either 'MV' for medium-voltage grid or 'LV' for
         low-voltage grid level.
         
-    Notes
+    Note
     -----
     The branch type to be installed is determined per branch - the next larger cable available is used.
     According to Ackermann only cables are installed.
@@ -109,8 +115,13 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
 
     for branch in crit_branches:
         try:
-            type = branch_parameters.ix[branch_parameters.loc[branch_parameters['I_max_th'] >
-                                        branch.type['I_max_th']]['I_max_th'].idxmin()]
+            type = branch_parameters.loc[
+                branch_parameters.loc[
+                       branch_parameters['I_max_th'] > branch.type['I_max_th']
+                ].loc[
+                    :, 'I_max_th'
+                ].idxmin(), :
+            ]
             branch.type = type
             branch_ctr += 1
         except:
@@ -136,14 +147,14 @@ def extend_substation(grid, critical_stations, grid_level):
 
     Parameters
     ----------
-    grid: GridDing0
+    grid: :class:`~.ding0.core.GridDing0`
         Ding0 grid container
-    critical_stations : :any:`list`
+    critical_stations : :obj:`list`
         List of stations with overloading
-    grid_level : str
+    grid_level : :obj:`str`
         Either "LV" or "MV". Basis to select right equipment.
     
-    Notes
+    Note
     -----
     Curently straight forward implemented for LV stations
 
@@ -162,6 +173,7 @@ def extend_substation(grid, critical_stations, grid_level):
     trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
         grid_level=grid_level)]
     trafo_s_max_max = max(trafo_params['S_nom'])
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
 
 
     for station in critical_stations:
@@ -214,10 +226,10 @@ def extend_substation(grid, critical_stations, grid_level):
                 lv_transformer = TransformerDing0(
                     grid=grid,
                     id_db=id,
-                    v_level=0.4,
+                    v_level=v_nom,
                     s_max_longterm=trafo_type['S_nom'],
-                    r=trafo_type['R'],
-                    x=trafo_type['X'])
+                    r_pu=trafo_type['r_pu'],
+                    x_pu=trafo_type['x_pu'])
 
                 # add each transformer to its station
                 grid._station.add_transformer(lv_transformer)
@@ -235,25 +247,26 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     i) Existing transformers are extended by replacement with large nominal
        apparent power
       
-    ii) New additional transformers added to substation (see 'Notes')
+    ii) New additional transformers added to substation (see 'Note')
 
     Parameters
     ----------
-    crit_stations : :any:`list`
+    crit_stations : :obj:`list`
         List of stations with overloading or voltage issues.
-    grid_level : str
+    grid_level : :obj:`str`
         Specifiy grid level: 'MV' or 'LV'
 
-    Notes
+    Note
     -----
     At maximum 2 new of largest (currently 630 kVA) transformer are additionally
     built to resolve voltage issues at MV-LV substation bus bar.
     """
+    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
     grid = crit_stations[0]['node'].grid
     trafo_params = grid.network._static_data['{grid_level}_trafos'.format(
         grid_level=grid_level)]
     trafo_s_max_max = max(trafo_params['S_nom'])
-    trafo_min_size = trafo_params.ix[trafo_params['S_nom'].idxmin()]
+    trafo_min_size = trafo_params.loc[trafo_params['S_nom'].idxmin(), :]
 
     v_diff_max_fc = cfg_ding0.get('assumptions', 'lv_max_v_level_fc_diff_normal')
     v_diff_max_lc = cfg_ding0.get('assumptions', 'lv_max_v_level_lc_diff_normal')
@@ -283,10 +296,10 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                 lv_transformer = TransformerDing0(
                     grid=grid,
                     id_db=id,
-                    v_level=0.4,
+                    v_level=v_nom,
                     s_max_longterm=trafo_min_size['S_nom'],
-                    r=trafo_min_size['R'],
-                    x=trafo_min_size['X'])
+                    r_pu=trafo_min_size['r_pu'],
+                    x_pu=trafo_min_size['x_pu'])
 
                 # add each transformer to its station
                 grid._station.add_transformer(lv_transformer)
@@ -306,13 +319,17 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                     station=station['node']))
                 break
 
+        if (v_delta[0] > v_diff_max_lc) or (v_delta[1] > v_diff_max_fc):
+            raise Exception ('Voltage issue at substation {} could not be resolved. LV grid reinforcement'
+                             'can therefore never result in correct grids. Check MV grid for line reinforcement.'.format(station))
+
 
 def new_substation(grid):
     """ Reinforce MV grid by installing a new primary substation opposite to the existing one
 
     Parameters
     ----------
-    grid : MVGridDing0
+    grid : :class:`~.ding0.core.network.grids.MVGridDing0`
         MV Grid identifier.
     """
 
@@ -323,19 +340,19 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     Parameters
     ----------
-    grid : LVGridDing0
+    grid : :class:`~.ding0.core.network.grids.LVGridDing0`
         Ding0 LV grid object
-    crit_branches : :any:`list`
+    crit_branches : :obj:`list`
         List of critical branches incl. its line loading
 
-    Notes
+    Note
     -----
     If maximum size cable is not capable to resolve issue due to line
     overloading largest available cable type is assigned to branch.
 
     Returns
     -------
-    :any:`list`
+    :obj:`list`
         unsolved_branches : List of braches no suitable cable could be found
     """
     unsolved_branches = []
@@ -347,19 +364,19 @@ def reinforce_lv_branches_overloading(grid, crit_branches):
 
     # resolve overloading issues for each branch segment
     for branch in crit_branches:
-        I_max_branch_load = branch['s_max'][0]
-        I_max_branch_gen = branch['s_max'][1]
+        I_max_branch_load = branch['s_max'][0]/(3**0.5 * grid.v_level / 1e3)
+        I_max_branch_gen = branch['s_max'][1]/(3**0.5 * grid.v_level / 1e3)
         I_max_branch = max([I_max_branch_load, I_max_branch_gen])
 
         suitable_cables = cables[(cables['I_max_th'] * cable_lf)
                           > I_max_branch]
 
         if not suitable_cables.empty:
-            cable_type = suitable_cables.ix[suitable_cables['I_max_th'].idxmin()]
+            cable_type = suitable_cables.loc[suitable_cables['I_max_th'].idxmin(), :]
             branch['branch'].type = cable_type
             crit_branches.remove(branch)
         else:
-            cable_type_max = cables.ix[cables['I_max_th'].idxmax()]
+            cable_type_max = cables.loc[cables['I_max_th'].idxmax(), :]
             unsolved_branches.append(branch)
             branch['branch'].type = cable_type_max
             logger.error("No suitable cable type could be found for {branch} "
@@ -380,16 +397,20 @@ def extend_trafo_power(extendable_trafos, trafo_params):
 
     Parameters
     ----------
-    extendable_trafos : :any:`list`
+    extendable_trafos : :obj:`list`
         Trafos with rated power below maximum size available trafo
     trafo_params : :pandas:`pandas.DataFrame<dataframe>`
         Transformer parameters
     """
     trafo = extendable_trafos[0]
     trafo_s_max_a_before = trafo.s_max_a
-    trafo_nearest_larger = trafo_params.ix[
-        trafo_params.loc[trafo_params['S_nom'] > trafo_s_max_a_before][
-            'S_max'].idxmin()]
+    trafo_nearest_larger = trafo_params.loc[
+        trafo_params.loc[
+            trafo_params['S_nom'] > trafo_s_max_a_before
+        ].loc[
+            :, 'S_nom'
+        ].idxmin(), :
+    ]
     trafo.s_max_a = trafo_nearest_larger['S_nom']
-    trafo.r = trafo_nearest_larger['R']
-    trafo.x = trafo_nearest_larger['X']
+    trafo.r_pu = trafo_nearest_larger['r_pu']
+    trafo.x_pu = trafo_nearest_larger['x_pu']
