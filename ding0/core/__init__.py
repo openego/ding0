@@ -1762,6 +1762,11 @@ class NetworkDing0:
             # fill dataframes
             mv_grid = grid_district.mv_grid
             mv_components = mv_grid.fill_component_dataframes(cols, buses_df, lines_df, transformer_df, generators_df, loads_df)
+            lv_components = {}
+            for lv_load_area in grid_district.lv_load_areas():
+                for lv_grid_district in lv_load_area.lv_grid_districts():
+                    lv_grid = lv_grid_district.lv_grid
+                    lv_components_tmp = lv_grid.fill_component_dataframes(buses_df, lines_df, transformer_df, generators_df, loads_df)
         print()
 
 
