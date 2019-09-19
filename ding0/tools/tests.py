@@ -64,7 +64,7 @@ class Ding0RunTest(unittest.TestCase):
         print('  Running ding0 for the same configuration...')
 
         # database connection/ session
-        engine = db.connection(section='oedb')
+        engine = db.connection(readonly=True)
         session = sessionmaker(bind=engine)()
         mv_grid_districts = [3545]
 
@@ -82,7 +82,7 @@ class Ding0RunTest(unittest.TestCase):
         print('\n########################################')
         print('Test ding0 vs ding0')
         # database connection/ session
-        engine = db.connection(section='oedb')
+        engine = db.connection(readonly=True)
         session = sessionmaker(bind=engine)()
 
         mv_grid_districts = [3545]
@@ -232,7 +232,7 @@ def init_files_for_tests( mv_grid_districts= [3545],filename='ding0_tests_grids_
     print('  Running ding0 for district',mv_grid_districts)
 
     # database connection/ session
-    engine = db.connection(section='oedb')
+    engine = db.connection(readonly=True)
     session = sessionmaker(bind=engine)()
 
     # instantiate new ding0 network object
@@ -269,7 +269,7 @@ def manual_ding0_test(mv_grid_districts=[3545],
     print('  Running ding0 for district',mv_grid_districts, '...')
 
     # database connection/ session
-    engine = db.connection(section='oedb')
+    engine = db.connection(readonly=True)
     session = sessionmaker(bind=engine)()
 
     nw_2 = NetworkDing0(name='network')

@@ -322,8 +322,8 @@ class TestStationDing0(object):
                                         s_max_emergency=800.0,
                                         phase_angle=0.0,
                                         tap_ratio=1.02,
-                                        r=0.02,
-                                        x=0.002)
+                                        r_pu=0.02,
+                                        x_pu=0.002)
         transformer2 = TransformerDing0(id_db=1,
                                         v_level=4,
                                         s_max_longterm=600.0,
@@ -331,8 +331,8 @@ class TestStationDing0(object):
                                         s_max_emergency=1100.0,
                                         phase_angle=0.01,
                                         tap_ratio=1.00,
-                                        r=0.01,
-                                        x=0.001)
+                                        r_pu=0.01,
+                                        x_pu=0.001)
         empty_stationding0.add_transformer(transformer1)  # added 1
         empty_stationding0.add_transformer(transformer2)  # added 2
         transformer_list = list(empty_stationding0.transformers())
@@ -346,8 +346,8 @@ class TestStationDing0(object):
         assert transformer1_in_empty_stationding0.s_max_c == 800.0
         assert transformer1_in_empty_stationding0.phase_angle == 0.0
         assert transformer1_in_empty_stationding0.tap_ratio == 1.02
-        assert transformer1_in_empty_stationding0.r == 0.02
-        assert transformer1_in_empty_stationding0.x == 0.002
+        assert transformer1_in_empty_stationding0.r_pu == 0.02
+        assert transformer1_in_empty_stationding0.x_pu == 0.002
         transformer2_in_empty_stationding0 = transformer_list[1]
         assert transformer2_in_empty_stationding0 == transformer2
         assert transformer2_in_empty_stationding0.id_db == 1
@@ -357,8 +357,8 @@ class TestStationDing0(object):
         assert transformer2_in_empty_stationding0.s_max_c == 1100.0
         assert transformer2_in_empty_stationding0.phase_angle == 0.01
         assert transformer2_in_empty_stationding0.tap_ratio == 1.00
-        assert transformer2_in_empty_stationding0.r == 0.01
-        assert transformer2_in_empty_stationding0.x == 0.001
+        assert transformer2_in_empty_stationding0.r_pu == 0.01
+        assert transformer2_in_empty_stationding0.x_pu == 0.001
 
 
 if __name__ == "__main__":

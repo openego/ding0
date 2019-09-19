@@ -100,7 +100,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         base_path = BASEPATH
 
     # database connection/ session
-    engine = db.connection(section='oedb')
+    engine = db.connection(readonly=True)
     session = sessionmaker(bind=engine)()
 
     corrupt_grid_districts = pd.DataFrame(columns=['id', 'message'])

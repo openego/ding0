@@ -137,34 +137,6 @@ conda enviornment
 
     conda activate ding0_env
 
-Setup database connection
-==========================
- 
-Ding0 relies on data provided in the `OpenEnergy DataBase (oedb) <https://openenergy-platform.org/dataedit/>`_.
-In order to use ding0 you therefore need an account on the 
-`OpenEnergy Platform (OEP) <https://openenergy-platform.org/>`_. You can create a new account
-`here <http://openenergy-platform.org/login/>`_.
-
-The package `ego.io <https://github.com/openego/ego.io>`_ gives you a python SQL-Alchemy representations of
-the oedb and access to it by using the
-`oedialect <https://github.com/openego/oedialect>`_, an SQL-Alchemy dialect used by the
-OEP. Your API
-access / login data will be saved in the folder ``.egoio`` in the file
-``config.ini``. The ``config.ini`` is automatically created from user input when it does not exist. It 
-holds the following information:
-
-.. code-block:: bash
-
-  [oedb]
-  dialect  = oedialect
-  username = <username>
-  database = oedb
-  host     = openenergy-platform.org
-  port     = 80
-  password = <token>
-
-
-
 Use Ding0
 =========
 

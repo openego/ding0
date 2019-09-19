@@ -78,18 +78,18 @@ Length of MV type <type>		     : Length (in km) of all branches with wire type <
 Length of MV underground cable               : Length (in km) of all underground cable branches at medium voltage level.
 Length of MVLV max path 		     : Length (in km) of longest path between MV District Station to last LV node (LV load, LV Generator, etc).
 					       * The MVLV max path is not necessary longer than the MV max path as it does not include the path from MV Station to MV Generators.
-N° of Aggregated Load Areas                  : Number of aggregated load areas.
-N° of Cable Distr                            : Number of cable distributors
-N° of Circuit Breakers                       : Number of circuit breakers (** Bug: It should be the same as N° of MV Rings)
-N° of HV/MV Trafos                           : Number of HV/MV trafos in disctric's main station
-N° of LV Stations                            : Number of LV stations =? Number of LV districts (Confirm this)
-N° of Load Areas                             : Number of Load areas (including aggregated and satellite)
-N° of MV Rings                               : Number of of medium voltage rings
-N° of MV branches                            : Number of total medium voltage branches
-N° of MV branches not in a ring              : Number of medium voltage branches not in a ring **BUG: this number is wrong. to be corrected
-N° of MV/LV Trafos                           : Total number of MV/LV trafos in all LV Stations
-N° of Satellite Load Areas                   : Number of satellite load areas
-N° of isolated MV Generators                 : Number of medium voltage generators not coonected to a ring
+Number of Aggregated Load Areas              : Number of aggregated load areas.
+Number of Cable Distr                        : Number of cable distributors
+Number of Circuit Breakers                   : Number of circuit breakers (** Bug: It should be the same as Number of MV Rings)
+Number of HV/MV Trafos                       : Number of HV/MV trafos in disctric's main station
+Number of LV Stations                        : Number of LV stations =? Number of LV districts (Confirm this)
+Number of Load Areas                         : Number of Load areas (including aggregated and satellite)
+Number of MV Rings                           : Number of of medium voltage rings
+Number of MV branches                        : Number of total medium voltage branches
+Number of MV branches not in a ring          : Number of medium voltage branches not in a ring **BUG: this number is wrong. to be corrected
+Number of MV/LV Trafos                       : Total number of MV/LV trafos in all LV Stations
+Number of Satellite Load Areas               : Number of satellite load areas
+Number of isolated MV Generators             : Number of medium voltage generators not coonected to a ring
 Trafos HV/MV Acc s_max_a                     : Accumulate capacity of trafos in main station (in KW)
 ----------------------------------------------------------------------------------------------------------------------------
 
@@ -183,19 +183,19 @@ Load Area ID                                 : ID of the Load Area to which the 
 Load Area is Aggregated                         : True if respective Load Area is aggregated, False otherwise.
 Load Area is Satellite                          : True if respective Load Area is satellite, False otherwise.
 MV_grid_id                                   : ID of the MV District to which the LV District LV_grid_id belongs.
-N° of MV/LV Trafos                           : Number of MV/LV trafos in disctric's main station
-N° of Sector Agricultural                    : Number of Agricultural sectors in the corresponding map
-N° of Sector Industrial                      : Number of Industrial sectors in the corresponding map
-N° of Sector Residential                     : Number of Residential sectors in the corresponding map
-N° of Sector Retail                          : Number of Retail sectors in the corresponding map
-N° of branches Type <type>		     : Number of branches where cable type <type> was used. 
+Number of MV/LV Trafos                           : Number of MV/LV trafos in disctric's main station
+Number of Sector Agricultural                    : Number of Agricultural sectors in the corresponding map
+Number of Sector Industrial                      : Number of Industrial sectors in the corresponding map
+Number of Sector Residential                     : Number of Residential sectors in the corresponding map
+Number of Sector Retail                          : Number of Retail sectors in the corresponding map
+Number of branches Type <type>		     : Number of branches where cable type <type> was used.
 					       * See: Length Type <type>.
-N° of branches from LV Station               : Number of branches that come out from the LV Station
-N° of branches overhead lines                : Number of overhead branches
-N° of branches underground cables            : Number of underground branches
-N° of loads agricultural                     : N° of load nodes from Agricultural sector
-N° of loads mixed industrial/retail          : N° of load nodes from mixed Industrial/Retail sector
-N° of loads residential                      : N° of load nodes from Residential sector
+Number of branches from LV Station               : Number of branches that come out from the LV Station
+Number of branches overhead lines                : Number of overhead branches
+Number of branches underground cables            : Number of underground branches
+Number of loads agricultural                     : Number of load nodes from Agricultural sector
+Number of loads mixed industrial/retail          : Number of load nodes from mixed Industrial/Retail sector
+Number of loads residential                      : Number of load nodes from Residential sector
 Peak Load Agricultural                       : Peak Load Agricultural sector
 Peak Load Industrial                         : Peak Load Agricultural sector
 Peak Load Residential                        : Peak Load Agricultural sector
