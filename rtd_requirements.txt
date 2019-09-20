@@ -10,7 +10,7 @@ egoio >=0.4.7
 pypsa >=0.11.0, <=0.11.0
 seaborn
 unittest2
-oedialect >= 0.0.6.dev0
+oedialect == 0.0.6.dev0
 mock
 
 
