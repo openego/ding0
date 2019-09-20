@@ -1,16 +1,16 @@
 sphinx_rtd_theme
-networkx >= 1.11, <=1.11
+networkx >= 2.0
 geopy >=1.11.0, <=1.11.0
 pandas >=0.20.3, <=0.20.3
 pyproj >=1.9.5.1, <=1.9.5.1
 sqlalchemy >= 1.0.11, <= 1.2.0
 geoalchemy2 >= 0.2.6, <= 0.4.1
-matplotlib >=1.5.3, <=1.5.3
-egoio >=0.4.5
+matplotlib >=2.0.0, <=2.0.2
+egoio >=0.4.7
 pypsa >=0.11.0, <=0.11.0
 seaborn
 unittest2
-oedialect
+oedialect >= 0.0.6.dev0
 mock
 
 

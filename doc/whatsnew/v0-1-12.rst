@@ -1,4 +1,4 @@
-Release v0.1.11 September 17, 2019
+Release v0.1.11 September 20, 2019
 +++++++++++++++++++++++++++++++++++
 
 Changes
@@ -9,9 +9,9 @@ Changes
   to different lv_grids using the same input data. The network
   creation is now reproducible while lv_branches were reinforced
   differently before.
-  Should solve 
+  Should solve
   `#245 <https://github.com/openego/ding0/issues/245>`_
-  and at least parts of 
+  and at least parts of
   `#40 <https://github.com/openego/ding0/issues/40>`_.
 * A proper sign convention (see :ref:`sign-convention-pq`) for P,Q is introduced
   `#266 <https://github.com/openego/ding0/issues/266>`_,

@@ -10,6 +10,6 @@ shapely >= 1.5.12, <= 1.7
 pypsa >= 0.11.0, <= 0.11.0
 seaborn
 unittest2
-oedialect
+oedialect >= 0.0.6.dev0
 geopandas
 descartes

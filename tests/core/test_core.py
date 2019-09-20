@@ -21,7 +21,7 @@ class TestNetworkDing0(object):
         """
         Returns an ego.io oedb session and closes it on finishing the test
         """
-        engine = db.connection(section='oedb')
+        engine = db.connection(readonly=True)
         session = sessionmaker(bind=engine)()
         yield session
         print("closing session")
