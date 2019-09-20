@@ -76,7 +76,7 @@ The following assumes a Ding0 network is generated as follows:
     from egoio.tools import db
     from ding0.core import NetworkDing0
 
-    engine = db.connection(section='oedb')
+    engine = db.connection(readonly=True)
     session = sessionmaker(bind=engine)()
 
     network = NetworkDing0(name='network')
