@@ -547,14 +547,22 @@ class GridDing0:
             
     def fill_component_dataframes(self, buses_df, lines_df, transformer_df, generators_df, loads_df):
         '''
-
-        :param grid_district_df:
-        :param buses_df:
-        :param lines_df:
-        :param transformer_df:
-        :param generators_df:
-        :param loads_df:
-        :return:
+        Parameters
+        ----------
+        buses_df: :pandas:`pandas.DataFrame<dataframe>`
+            Dataframe of buses with entries name,v_nom,geom,mv_grid_id,lv_grid_id,in_building
+        lines_df: :pandas:`pandas.DataFrame<dataframe>`
+            Dataframe of lines with entries name,bus0,bus1,length,x,r,s_nom,num_parallel,type
+        transformer_df: :pandas:`pandas.DataFrame<dataframe>`
+            Dataframe of trafos with entries name,bus0,bus1,x,r,s_nom,type
+        generators_df: :pandas:`pandas.DataFrame<dataframe>`
+            Dataframe of generators with entries name,bus,control,p_nom,type,weather_cell_id,subtype
+        loads_df: :pandas:`pandas.DataFrame<dataframe>`
+            Dataframe of loads with entries name,bus,peak_load,sector
+        Returns
+        -------
+        :obj:`dict`
+            Dictionary of component Dataframes 'Bus', 'Generator', 'Line', 'Load', 'Transformer'
         '''
         nodes = self._graph.nodes()
         
@@ -571,7 +579,7 @@ class GridDing0:
             trafo_count+=1
 
         node_components = tl.pypsa_io.nodes_to_dict_of_dataframes_for_csv_export(self, nodes, buses_df, generators_df, loads_df)       
-        branch_components = tl.pypsa_io.edges_to_dict_of_dataframes_for_csv_export(self, edges, lines_df)
+        branch_components = tl.pypsa_io.edges_to_dict_of_dataframes_for_csv_export(edges, lines_df)
         branch_components['Transformer'] = transformer_df.set_index('name')
         components = tl.tools.merge_two_dicts(branch_components,node_components)
         return components

@@ -312,8 +312,14 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
     grid: ding0.Network
     nodes: :obj:`list` of ding0 grid components objects
         Nodes of the grid graph
-    lv_transformer: bool, True
-        Toggle transformer representation in power flow analysis
+    buses_df: :pandas:`pandas.DataFrame<dataframe>`
+            Dataframe of buses with entries name,v_nom,geom,mv_grid_id,lv_grid_id,in_building
+    generators_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of generators with entries name,bus,control,p_nom,type,weather_cell_id,subtype
+    loads_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of loads with entries name,bus,peak_load,sector
+    only_export_mv: bool
+        Bool that indicates whether only mv grid should be exported, per default lv grids are exported too
 
     Returns:
     components: dict of :pandas:`pandas.DataFrame<dataframe>`
@@ -419,6 +425,22 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
 
 
 def append_load_areas_to_load_df(grid, loads_df, node):
+    '''
+    Appends lv load area to dataframe of nodes. Each sector (agricultural, industrial, residential, retail)
+    is represented by own entry.
+
+    Parameters
+    ----------
+    grid: ding0.Network
+    loads_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of loads with entries name,bus,peak_load,sector
+    node: :obj: ding0 grid components object
+        Node of lv load area or lv station
+
+    Returns:
+    loads_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of loads with entries name,bus,peak_load,sector
+    '''
     name_load = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)])
     if isinstance(node,LVStationDing0):
         name_bus = node.pypsa_id
@@ -449,6 +471,20 @@ def append_load_areas_to_load_df(grid, loads_df, node):
 
 
 def append_generators_df(generators_df, node):
+    '''
+    Appends generator to dataframe of generators in pypsa format.
+
+    Parameters
+    ----------
+    generators_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of generators with entries name,bus,control,p_nom,type,weather_cell_id,subtype
+    node: :obj: ding0 grid components object
+        GeneratorDing0
+
+    Returns:
+    generators_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of generators with entries name,bus,control,p_nom,type,weather_cell_id,subtype
+    '''
     if isinstance(node,GeneratorFluctuatingDing0):
         weather_cell_id = node.weather_cell_id
     else:
@@ -461,6 +497,23 @@ def append_generators_df(generators_df, node):
 
 
 def append_buses_df(buses_df, grid, node, srid, node_name =''):
+    '''
+    Appends buses to dataframe of buses in pypsa format.
+
+    Parameters
+    ----------
+    buses_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of buses with entries name,v_nom,geom,mv_grid_id,lv_grid_id,in_building
+    grid: ding0.Network
+    node: :obj: ding0 grid components object
+    srid: int
+    node_name: str
+        name of node, per default is set to node.pypsa_id
+
+    Returns:
+    buses_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of buses with entries name,v_nom,geom,mv_grid_id,lv_grid_id,in_building
+    '''
     # set default name of node
     if node_name == '':
         node_name = node.pypsa_id
@@ -489,6 +542,24 @@ def append_buses_df(buses_df, grid, node, srid, node_name =''):
     return buses_df
 
 def append_transformers_df(transformers_df, trafo, name_trafo, name_bus1):
+    '''
+    Appends transformer to dataframe of buses in pypsa format.
+
+    Parameters
+    ----------
+    transformers_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of trafos with entries name,bus0,bus1,x,r,s_nom,type
+    trafo: :obj:TransformerDing0
+        Transformer to be added
+    name_trafo: str
+        Name of transformer
+    name_bus1: str
+        name of secondary bus
+
+    Returns:
+    transformers_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of trafos with entries name,bus0,bus1,x,r,s_nom,type
+    '''
     trafo_tmp = pd.Series({'name': name_trafo, 'bus0':trafo.grid.station().pypsa_id, 
                            'bus1':name_bus1, 'x':trafo.x_pu, 'r':trafo.r_pu, 
                            's_nom':trafo.s_max_a, 'type':' '.join([str(trafo.s_max_a), 'kVA'])})
@@ -565,15 +636,17 @@ def edges_to_dict_of_dataframes(grid, edges):
 
     return {'Line': DataFrame(lines).set_index('line_id')}
 
-def edges_to_dict_of_dataframes_for_csv_export(grid, edges, lines_df):
+def edges_to_dict_of_dataframes_for_csv_export(edges, lines_df):
     """
     Export edges to DataFrame
 
     Parameters
     ----------
-    grid: ding0.Network
     edges: :obj:`list`
         Edges of Ding0.Network graph
+    lines_df: :pandas:`pandas.DataFrame<dataframe>`
+            Dataframe of lines with entries name,bus0,bus1,length,x,r,s_nom,num_parallel,type
+        
 
     Returns
     -------
@@ -582,11 +655,6 @@ def edges_to_dict_of_dataframes_for_csv_export(grid, edges, lines_df):
 
     # iterate over edges and add them one by one
     for edge in edges:
-
-        #line_name = '_'.join(['MV',
-                              #str(grid.id_db),
-                              #'lin',
-                              #str(edge['branch'].id_db)])
 
         lines_df = append_lines_df(edge, lines_df)
 

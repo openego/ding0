@@ -1764,14 +1764,17 @@ class NetworkDing0:
                 pd.Series({'name':grid_district.id_db, 'srid':srid, 'mv_grid_district_geom':grid_district.geo_data,
                            'mv_grid_district_population':0}),ignore_index=True
             ).set_index('name')
+            # add mv grid components
             mv_grid = grid_district.mv_grid
             mv_components = mv_grid.fill_component_dataframes(buses_df, lines_df, transformer_df, generators_df, loads_df)
             components = mv_components
+            # add lv grid components
             for lv_load_area in grid_district.lv_load_areas():
                 for lv_grid_district in lv_load_area.lv_grid_districts():
                     lv_grid = lv_grid_district.lv_grid
                     lv_components_tmp = lv_grid.fill_component_dataframes(buses_df, lines_df, transformer_df, generators_df, loads_df)
                     components = tools.merge_two_component_dicts(components,lv_components_tmp)
+            # save network and components to csv
             path = os.path.join(dir,str(grid_district.id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
