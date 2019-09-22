@@ -29,8 +29,6 @@ class MVLoadDing0(LoadDing0):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def __repr__(self):
-        return 'mv_load_' + str(self.id_db)
 
 
 class LVLoadDing0(LoadDing0):
@@ -49,5 +47,3 @@ class LVLoadDing0(LoadDing0):
         self.branch_no = kwargs.get('branch_no', None)
         self.load_no = kwargs.get('load_no', None)
 
-    def __repr__(self):
-        return 'lv_load_' + str(self.id_db)

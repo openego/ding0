@@ -17,17 +17,19 @@ import ding0
 
 from ding0.tools import config as cfg_ding0
 from ding0.core.network.stations import LVStationDing0, MVStationDing0
-from ding0.core.network import BranchDing0, CircuitBreakerDing0, GeneratorDing0, GeneratorFluctuatingDing0
+from ding0.core.network import LoadDing0, CircuitBreakerDing0, GeneratorDing0, GeneratorFluctuatingDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.core.powerflow import q_sign
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
+from ding0.core import network as ding0_nw
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
 from pandas import Series, DataFrame, DatetimeIndex
 from pypsa.io import import_series_from_dataframe
 from pypsa import Network
+from shapely.geometry import Point
 
 from datetime import datetime
 import sys
@@ -301,7 +303,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
     return components, components_data
 
-def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df, loads_df,mode, only_export_mv = False):
+def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df, loads_df,only_export_mv = False):
     """
     Creates dictionary of dataframes containing grid
 
@@ -331,7 +333,7 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                 buses_df = append_buses_df(buses_df, grid, node, srid)
       
             # slack generator
-            if isinstance(node, MVStationDing0):
+            elif isinstance(node, MVStationDing0):
                 # add dummy generator
                 slack = pd.Series({'name':('_'.join(['MV', str(grid.id_db), 'slack'])),
                                    'bus':node.pypsa_id, 'control':'Slack', 'p_nom':0, 'type': 'station',
@@ -346,9 +348,16 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                 buses_df = append_buses_df(buses_df, grid, node, srid, repr(node))
 
             # other generators
-            if isinstance(node, GeneratorDing0):
+            elif isinstance(node, GeneratorDing0):
                 generators_df = append_generators_df(generators_df, node)
                 buses_df = append_buses_df(buses_df, grid, node, srid)
+                
+            elif isinstance(node, LoadDing0):
+                # Todo: Discuss how to handle sectors and difference between peak_load and consumption
+                load = pd.Series({'name': repr(node), 'bus':node.pypsa_id,
+                                     'peak_load':node.peak_load, 'sector':'unknown'})
+                loads_df = loads_df.append(load,ignore_index=True)
+                buses_df = append_buses_df(buses_df,grid,node,srid)
 
             # aggregated load at hv/mv substation
             elif isinstance(node, LVLoadAreaCentreDing0):
@@ -367,7 +376,7 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
 
             # bus + aggregate load of lv grids (at mv/ls substation)
             elif isinstance(node, LVStationDing0):
-                if mode == 'MV':
+                if isinstance(grid, ding0_nw.grids.MVGridDing0):
                     # Aggregated load representing load in LV grid, only needed when LV_grids are not exported
                     if only_export_mv:
                         if (node.lv_load_area.peak_load != 0):
@@ -381,9 +390,10 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
 
                     # bus at primary MV-LV transformer side
                     buses_df = append_buses_df(buses_df, grid, node, srid)
-                elif mode == 'LV':
+                elif isinstance(grid, ding0_nw.grids.LVGridDing0):
                     buses_df = append_buses_df(buses_df, grid, node, srid,repr(node)) #Todo: Überlegen, wie die heißen sollen
-
+                else: 
+                    raise TypeError('Something went wrong. Only LVGridDing0 or MVGridDing0 can be handled as grid.')
             elif isinstance(node, CircuitBreakerDing0):
                 # TODO: remove this elif-case if CircuitBreaker are removed from graph
                 continue
@@ -398,6 +408,7 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
             logger.warning("Node {0} is not connected to the graph and will " \
                   "be omitted in power flow analysis. {1}".format(
                 node, add_info))
+            #Todo: Should these nodes not be exported?
 
     nodal_components = {'Bus': buses_df.set_index('name'),
                   'Generator': generators_df.set_index('name'),
@@ -449,15 +460,31 @@ def append_generators_df(generators_df, node):
     return generators_df
 
 
-def append_buses_df(buses_df, mv_grid, node, srid, node_name = ''):
+def append_buses_df(buses_df, grid, node, srid, node_name =''):
+    # set default name of node
     if node_name == '':
         node_name = node.pypsa_id
+    # check if node is in building
     if isinstance(node, LVCableDistributorDing0):
         in_building = node.in_building
     else:
         in_building = False
-    bus = pd.Series({'name': node_name,'v_nom':mv_grid.v_level, 'geom':from_shape(node.geo_data, srid=srid),
-                     'mv_grid_id':mv_grid.id_db, 'in_building': in_building})
+    # set geodata, if existing
+    geo = np.NaN
+    if isinstance(node.geo_data,Point):
+        geo = from_shape(node.geo_data, srid=srid)
+    #set grid_ids
+    if isinstance(grid, ding0_nw.grids.MVGridDing0):
+        mv_grid_id = grid.id_db
+        lv_grid_id = np.NaN
+    elif isinstance(grid, ding0_nw.grids.LVGridDing0):
+        mv_grid_id = grid.grid_district.lv_load_area.mv_grid_district.mv_grid.id_db
+        lv_grid_id = grid.id_db
+    else:
+        raise TypeError('Something went wrong, only MVGridDing0 and LVGridDing0 should be inserted as grid.')
+    # create bus dataframe
+    bus = pd.Series({'name': node_name,'v_nom':grid.v_level, 'geom':geo,
+                     'mv_grid_id':mv_grid_id,'lv_grid_id':lv_grid_id, 'in_building': in_building})
     buses_df = buses_df.append(bus, ignore_index=True)
     return buses_df
 
@@ -570,8 +597,7 @@ def append_lines_df(edge, lines_df):
     freq = cfg_ding0.get('assumptions', 'frequency')
     omega = 2 * pi * freq
     # TODO: find the real cause for being L, C, I_th_max type of Series
-    if (isinstance(edge['branch'].type['L_per_km'], Series) or  # warum wird hier c abgefragt?
-            isinstance(edge['branch'].type['C_per_km'], Series)):
+    if (isinstance(edge['branch'].type['L_per_km'], Series)):
         x_per_km = omega * edge['branch'].type['L_per_km'].values[0] * 1e-3
     else:
 
@@ -589,9 +615,15 @@ def append_lines_df(edge, lines_df):
                 edge['branch'].type['U_n']
     # get lengths of line
     length = edge['branch'].length / 1e3
+    #Todo: change into same format
+    if 'name' in edge['branch'].type:
+        type = edge['branch'].type['name']
+    else:
+        type = edge['branch'].type.name
+
     line = pd.Series({'name':repr(edge['branch']),'bus0':edge['adj_nodes'][0].pypsa_id, 'bus1':edge['adj_nodes'][1].pypsa_id,
                       'x':x_per_km * length, 'r':r_per_km * length, 's_nom':s_nom, 'length':length, 
-                      'num_parallel':1, 'type':edge['branch'].type['name']})
+                      'num_parallel':1, 'type':type})
     lines_df = lines_df.append(line, ignore_index=True)
     return lines_df
 

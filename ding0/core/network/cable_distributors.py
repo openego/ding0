@@ -67,5 +67,12 @@ class LVCableDistributorDing0(CableDistributorDing0):
         self.id_db = self.grid.cable_distributors_count() + 1
         self.in_building = kwargs.get('in_building', False)
 
+    @property
+    def pypsa_id(self):
+        """ :obj:`str`: Returns ...#TODO
+        """
+        return '_'.join(['LV', str(self.grid.id_db),
+                         'cld', str(self.id_db)])
+
     def __repr__(self):
         return 'lv_cable_dist_' + repr(self.grid) + '_' + str(self.id_db)

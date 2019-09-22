@@ -42,7 +42,26 @@ def merge_two_dicts(x, y):
     z.update(y)
     return z
 
+def merge_two_component_dicts(components1, components2):
+    '''
+    Given two dicts with entries 'Buses', 'Loads', 'Generators', 'Lines', 'Transformers', merge them.
 
+    Parameters
+    ----------
+    components1: dict of dataframes
+    components2: dict of dataframes
+    
+    
+    '''
+    merged_dict={}
+    merged_dict['Transformer']= components1['Transformer'].append(components2['Transformer'])
+    merged_dict['Bus']= components1['Bus'].append(components2['Bus'])
+    merged_dict['Line'] =components1['Line'].append(components2['Line'])
+    merged_dict['Load'] = components1['Load'].append(components2['Load'])
+    merged_dict['Generator'] = components1['Generator'].append(components2['Generator'])
+    return merged_dict
+    
+    
 def get_dest_point(source_point, distance_m, bearing_deg):
     """
     Get the WGS84 point in the coordinate reference system

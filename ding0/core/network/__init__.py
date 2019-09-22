@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from ding0.core.structure.regions import LVLoadAreaDing0, LVLoadAreaCentreDing0
+import ding0.tools as tl
 
 
 class GridDing0:
@@ -543,6 +544,37 @@ class GridDing0:
 
         for generator in self.generators():
             generator.capacity_factor = capacity_factor
+            
+    def fill_component_dataframes(self, buses_df, lines_df, transformer_df, generators_df, loads_df):
+        '''
+
+        :param grid_district_df:
+        :param buses_df:
+        :param lines_df:
+        :param transformer_df:
+        :param generators_df:
+        :param loads_df:
+        :return:
+        '''
+        nodes = self._graph.nodes()
+        
+        edges = [edge for edge in list(self.graph_edges())
+                 if (edge['adj_nodes'][0] in nodes and not isinstance(
+                edge['adj_nodes'][0], LVLoadAreaCentreDing0))
+                 and (edge['adj_nodes'][1] in nodes and not isinstance(
+                edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
+        trafo_count=0
+        for trafo in self.station()._transformers:
+            transformer_df=tl.pypsa_io.append_transformers_df(transformer_df,trafo,
+                                                           name_trafo='_'.join([repr(trafo.grid), 'transformer', str(trafo_count)]),
+                                                           name_bus1=repr(self.station()))
+            trafo_count+=1
+
+        node_components = tl.pypsa_io.nodes_to_dict_of_dataframes_for_csv_export(self, nodes, buses_df, generators_df, loads_df)       
+        branch_components = tl.pypsa_io.edges_to_dict_of_dataframes_for_csv_export(self, edges, lines_df)
+        branch_components['Transformer'] = transformer_df.set_index('name')
+        components = tl.tools.merge_two_dicts(branch_components,node_components)
+        return components
 
 
 class StationDing0:
@@ -965,7 +997,11 @@ class GeneratorDing0:
         -------
         :obj:`str`
         """
-        return '_'.join(['MV', str(self.mv_grid.id_db),
+        if self.lv_grid != None:
+            return '_'.join(['bus', repr(self.lv_grid),
+                             'gen', str(self.id_db)])
+        else:
+            return '_'.join(['bus', repr(self.mv_grid.id_db),
                                   'gen', str(self.id_db)])
 
     def __repr__(self):
@@ -1094,6 +1130,30 @@ class LoadDing0:
         :class:`~.ding0.core.network.NetworkDing0`
         """
         return self.grid.network
+
+    @property
+    def pypsa_id(self):
+        """
+        Creates a unique identification for the generator
+        to export to pypsa using the id_db of the mv_grid
+        and the current object
+
+        Returns
+        -------
+        :obj:`str`
+        """
+        return '_'.join(['bus', repr(self.grid),
+                         'loa', str(self.id_db)])
+    
+    def __repr__(self):
+        """
+        The Representative of the :class:`~.ding0.core.network.CircuitBreakerDing0` object.
+
+        Returns
+        -------
+        :obj:`str`
+        """
+        return '_'.join(['load', repr(self.grid), str(self.id_db)])
 
 
 class CircuitBreakerDing0:

@@ -1741,9 +1741,9 @@ class NetworkDing0:
         '''
 
         srid = str(int(cfg_ding0.get('geo', 'srid')))
-        cols = {'network_columns': ['name', 'srid', 'mv_grid_district', 'mv_grid_district_population'],
+        cols = {'network_columns': ['name', 'srid', 'mv_grid_district_geom', 'mv_grid_district_population'],
                 'buses_columns': ['name', 'geom', 'mv_grid_id', 'lv_grid_id', 'v_nom', 'in_building'],
-                'lines_columns': ['bus0', 'bus1', 'length', 'r', 'x', 's_nom', 'num_parallel', 'type'],
+                'lines_columns': ['name','bus0', 'bus1', 'length', 'r', 'x', 's_nom', 'num_parallel', 'type'],
                 'transformer_columns': ['name', 'bus0', 'bus1', 's_nom', 'r', 'x', 'type'],
                 'generators_columns': ['name', 'bus', 'control', 'p_nom', 'type', 'weather_cell_id', 'subtype'],
                 'loads_columns': ['name', 'bus', 'peak_load', 'sector']}
@@ -1760,14 +1760,32 @@ class NetworkDing0:
             generators_df = pd.DataFrame(columns=cols['generators_columns'])
             loads_df = pd.DataFrame(columns=cols['loads_columns'])
             # fill dataframes
+            network_df = network_df.append(
+                pd.Series({'name':grid_district.id_db, 'srid':srid, 'mv_grid_district_geom':grid_district.geo_data,
+                           'mv_grid_district_population':0}),ignore_index=True
+            ).set_index('name')
             mv_grid = grid_district.mv_grid
-            mv_components = mv_grid.fill_component_dataframes(cols, buses_df, lines_df, transformer_df, generators_df, loads_df)
-            lv_components = {}
+            mv_components = mv_grid.fill_component_dataframes(buses_df, lines_df, transformer_df, generators_df, loads_df)
+            components = mv_components
             for lv_load_area in grid_district.lv_load_areas():
                 for lv_grid_district in lv_load_area.lv_grid_districts():
                     lv_grid = lv_grid_district.lv_grid
                     lv_components_tmp = lv_grid.fill_component_dataframes(buses_df, lines_df, transformer_df, generators_df, loads_df)
-        print()
+                    components = tools.merge_two_component_dicts(components,lv_components_tmp)
+            path = os.path.join(dir,str(grid_district.id_db))
+            if not os.path.exists(path):
+                os.makedirs(path)
+            network_df.to_csv(os.path.join(path,'network_{}.csv'.format(str(grid_district.id_db))))
+            components['Transformer'].to_csv(
+                os.path.join(path,'transformers_{}.csv'.format(str(grid_district.id_db))))
+            components['Bus'].to_csv(
+                os.path.join(path, 'buses_{}.csv'.format(str(grid_district.id_db))))
+            components['Line'].to_csv(
+                os.path.join(path, 'lines_{}.csv'.format(str(grid_district.id_db))))
+            components['Load'].to_csv(
+                os.path.join(path, 'loads_{}.csv'.format(str(grid_district.id_db))))
+            components['Generator'].to_csv(
+                os.path.join(path, 'generators_{}.csv'.format(str(grid_district.id_db))))
 
 
     def mv_routing(self, debug=False, animation=False):
