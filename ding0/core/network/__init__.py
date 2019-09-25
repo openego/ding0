@@ -545,44 +545,7 @@ class GridDing0:
         for generator in self.generators():
             generator.capacity_factor = capacity_factor
             
-    def fill_component_dataframes(self, buses_df, lines_df, transformer_df, generators_df, loads_df):
-        '''
-        Parameters
-        ----------
-        buses_df: :pandas:`pandas.DataFrame<dataframe>`
-            Dataframe of buses with entries name,v_nom,geom,mv_grid_id,lv_grid_id,in_building
-        lines_df: :pandas:`pandas.DataFrame<dataframe>`
-            Dataframe of lines with entries name,bus0,bus1,length,x,r,s_nom,num_parallel,type
-        transformer_df: :pandas:`pandas.DataFrame<dataframe>`
-            Dataframe of trafos with entries name,bus0,bus1,x,r,s_nom,type
-        generators_df: :pandas:`pandas.DataFrame<dataframe>`
-            Dataframe of generators with entries name,bus,control,p_nom,type,weather_cell_id,subtype
-        loads_df: :pandas:`pandas.DataFrame<dataframe>`
-            Dataframe of loads with entries name,bus,peak_load,sector
-        Returns
-        -------
-        :obj:`dict`
-            Dictionary of component Dataframes 'Bus', 'Generator', 'Line', 'Load', 'Transformer'
-        '''
-        nodes = self._graph.nodes()
-        
-        edges = [edge for edge in list(self.graph_edges())
-                 if (edge['adj_nodes'][0] in nodes and not isinstance(
-                edge['adj_nodes'][0], LVLoadAreaCentreDing0))
-                 and (edge['adj_nodes'][1] in nodes and not isinstance(
-                edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
-        trafo_count=0
-        for trafo in self.station()._transformers:
-            transformer_df=tl.pypsa_io.append_transformers_df(transformer_df,trafo,
-                                                           name_trafo='_'.join([repr(trafo.grid), 'transformer', str(trafo_count)]),
-                                                           name_bus1=repr(self.station()))
-            trafo_count+=1
-
-        node_components = tl.pypsa_io.nodes_to_dict_of_dataframes_for_csv_export(self, nodes, buses_df, generators_df, loads_df)       
-        branch_components = tl.pypsa_io.edges_to_dict_of_dataframes_for_csv_export(edges, lines_df)
-        branch_components['Transformer'] = transformer_df.set_index('name')
-        components = tl.tools.merge_two_dicts(branch_components,node_components)
-        return components
+    
 
 
 class StationDing0:

@@ -22,11 +22,12 @@ from ding0.core.network.grids import *
 from ding0.core.network.stations import *
 from ding0.core.structure.regions import *
 from ding0.core.powerflow import *
-from ding0.tools import pypsa_io
+from ding0.tools.pypsa_io import fill_component_dataframes
 from ding0.tools.animation import AnimationDing0
 from ding0.tools.plots import plot_mv_topology
 from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
+from ding0.tools.tools import merge_two_component_dicts
 
 import os
 import logging
@@ -1739,7 +1740,6 @@ class NetworkDing0:
         dir: :obj:`str`
             Directory to which network is saved.
         '''
-
         srid = str(int(cfg_ding0.get('geo', 'srid')))
         cols = {'network_columns': ['name', 'srid', 'mv_grid_district_geom', 'mv_grid_district_population'],
                 'buses_columns': ['name', 'geom', 'mv_grid_id', 'lv_grid_id', 'v_nom', 'in_building'],
@@ -1766,14 +1766,14 @@ class NetworkDing0:
             ).set_index('name')
             # add mv grid components
             mv_grid = grid_district.mv_grid
-            mv_components = mv_grid.fill_component_dataframes(buses_df, lines_df, transformer_df, generators_df, loads_df)
+            mv_components = fill_component_dataframes(mv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df)
             components = mv_components
             # add lv grid components
             for lv_load_area in grid_district.lv_load_areas():
                 for lv_grid_district in lv_load_area.lv_grid_districts():
                     lv_grid = lv_grid_district.lv_grid
-                    lv_components_tmp = lv_grid.fill_component_dataframes(buses_df, lines_df, transformer_df, generators_df, loads_df)
-                    components = tools.merge_two_component_dicts(components,lv_components_tmp)
+                    lv_components_tmp = fill_component_dataframes(lv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df)
+                    components = merge_two_component_dicts(components,lv_components_tmp)
             # save network and components to csv
             path = os.path.join(dir,str(grid_district.id_db))
             if not os.path.exists(path):
