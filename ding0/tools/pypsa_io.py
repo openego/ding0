@@ -135,12 +135,12 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
         if node not in grid.graph_isolated_nodes():
             # buses only
             if isinstance(node, MVCableDistributorDing0):
-                buses['bus_id'].append(node.pypsa_id)
+                buses['bus_id'].append(node.pypsa_bus_id)
                 buses['v_nom'].append(grid.v_level)
                 buses['geom'].append(from_shape(node.geo_data, srid=srid))
                 buses['grid_id'].append(grid.id_db)
 
-                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['bus_id'].append(node.pypsa_bus_id)
                 bus_v_mag_set['temp_id'].append(1)
                 bus_v_mag_set['v_mag_pu_set'].append([1, 1])
                 bus_v_mag_set['grid_id'].append(grid.id_db)
@@ -176,26 +176,26 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                     generator_pq_set['grid_id'].append(grid.id_db)
                     bus_v_mag_set['v_mag_pu_set'].append([1, 1])
 
-                buses['bus_id'].append(node.pypsa_id)
+                buses['bus_id'].append(node.pypsa_bus_id)
                 buses['v_nom'].append(grid.v_level)
                 buses['geom'].append(from_shape(node.geo_data, srid=srid))
                 buses['grid_id'].append(grid.id_db)
 
-                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['bus_id'].append(node.pypsa_bus_id)
                 bus_v_mag_set['temp_id'].append(1)
                 bus_v_mag_set['grid_id'].append(grid.id_db)
 
                 generator['grid_id'].append(grid.id_db)
-                generator['bus'].append(node.pypsa_id)
+                generator['bus'].append(node.pypsa_bus_id)
 
 
             # aggregated load at hv/mv substation
             elif isinstance(node, LVLoadAreaCentreDing0):
-                load['load_id'].append(node.pypsa_id)
+                load['load_id'].append(node.pypsa_bus_id)
                 load['bus'].append('_'.join(['HV', str(grid.id_db), 'trd']))
                 load['grid_id'].append(grid.id_db)
 
-                load_pq_set['load_id'].append(node.pypsa_id)
+                load_pq_set['load_id'].append(node.pypsa_bus_id)
                 load_pq_set['temp_id'].append(1)
                 load_pq_set['p_set'].append(
                     [node.lv_load_area.peak_load * kw2mw,
@@ -231,7 +231,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 # Aggregated load representing load in LV grid
                 load['load_id'].append(
                     '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
-                load['bus'].append(node.pypsa_id)
+                load['bus'].append(node.pypsa_bus_id)
                 load['grid_id'].append(grid.id_db)
 
                 load_pq_set['load_id'].append(
@@ -246,12 +246,12 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 load_pq_set['grid_id'].append(grid.id_db)
 
                 # bus at primary MV-LV transformer side
-                buses['bus_id'].append(node.pypsa_id)
+                buses['bus_id'].append(node.pypsa_bus_id)
                 buses['v_nom'].append(grid.v_level)
                 buses['geom'].append(from_shape(node.geo_data, srid=srid))
                 buses['grid_id'].append(grid.id_db)
 
-                bus_v_mag_set['bus_id'].append(node.pypsa_id)
+                bus_v_mag_set['bus_id'].append(node.pypsa_bus_id)
                 bus_v_mag_set['temp_id'].append(1)
                 bus_v_mag_set['v_mag_pu_set'].append([1, 1])
                 bus_v_mag_set['grid_id'].append(grid.id_db)
@@ -262,7 +262,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 generator['control'].append('PQ')
                 generator['p_nom'].append(node.peak_generation)
                 generator['grid_id'].append(grid.id_db)
-                generator['bus'].append(node.pypsa_id)
+                generator['bus'].append(node.pypsa_bus_id)
 
                 generator_pq_set['generator_id'].append('_'.join(
                     ['MV', str(grid.id_db), 'gen', str(node.id_db)]))
@@ -334,10 +334,7 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df, generato
             edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
     trafo_count = 0
     for trafo in grid.station()._transformers:
-        transformer_df = append_transformers_df(transformer_df, trafo,
-                                                name_trafo='_'.join([repr(trafo.grid), 'transformer',
-                                                                                 str(trafo_count)]),
-                                                name_bus1=repr(grid.station()))
+        transformer_df = append_transformers_df(transformer_df, trafo)
         trafo_count += 1
 
     node_components = nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df,
@@ -375,6 +372,13 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
     # TODO: MVStationDing0 has a slack generator, Do we want this?
 
     srid = int(cfg_ding0.get('geo', 'srid'))
+    for isl_node in grid.graph_isolated_nodes():
+        if isinstance(isl_node,LVStationDing0) and isl_node.lv_load_area.is_aggregated:
+            continue
+        elif isinstance(isl_node, CircuitBreakerDing0):
+            continue
+        else:
+            print("{} is isolated node. Please check.".format(repr(isl_node))) #Todo: Umwandeln in Exception
 
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
@@ -386,16 +390,16 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
             elif isinstance(node, MVStationDing0):
                 # add dummy generator
                 slack = pd.Series({'name':('_'.join(['MV', str(grid.id_db), 'slack'])),
-                                   'bus':node.pypsa_id, 'control':'Slack', 'p_nom':0, 'type': 'station',
+                                   'bus':node.pypsa_bus0_id, 'control':'Slack', 'p_nom':0, 'type': 'station',
                                    'subtype':'mv_station'})
                 generators_df = generators_df.append(slack, ignore_index=True)
                 # add HV side bus
-                bus_HV = pd.Series({'name':node.pypsa_id, 'v_nom':110, 
+                bus_HV = pd.Series({'name':node.pypsa_bus0_id, 'v_nom':110,
                                     'geom':from_shape(node.geo_data, srid=srid),'mv_grid_id': grid.id_db, 
                                     'in_building': False})
                 buses_df = buses_df.append(bus_HV,ignore_index=True)
                 #add MV side bus
-                buses_df = append_buses_df(buses_df, grid, node, srid, repr(node))
+                buses_df = append_buses_df(buses_df, grid, node, srid)
 
             # other generators
             elif isinstance(node, GeneratorDing0):
@@ -404,7 +408,7 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                 
             elif isinstance(node, LoadDing0):
                 for sector in node.consumption:
-                    load = pd.Series({'name': repr(node), 'bus': node.pypsa_id,
+                    load = pd.Series({'name': repr(node), 'bus': node.pypsa_bus_id,
                                       'peak_load': node.peak_load, 'sector': sector})
                     loads_df = loads_df.append(load, ignore_index=True)
                 buses_df = append_buses_df(buses_df,grid,node,srid)
@@ -419,10 +423,11 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                 # HV-MV substation
                 # ToDo: Split generation into different types and subtypes
                 if (node.lv_load_area.peak_generation!=0):
-                    generator = pd.Series({'name':('_'.join(['MV', str(grid.id_db), 'lcg', str(node.id_db)])),
-                                           'bus':('_'.join(['HV', str(grid.id_db), 'trd'])), 'control':'PQ',
+                    generator = pd.Series({'name':('_'.join(['Generator'+ str(grid.id_db), 'lcg', str(node.id_db)])),
+                                           'bus':node.grid.station().pypsa_bus_id, 'control':'PQ',
                                            'p_nom':node.lv_load_area.peak_generation, 'type':'LVLoadArea'})
                     generators_df = generators_df.append(generator,ignore_index=True)
+
 
             # bus + aggregate load of lv grids (at mv/ls substation)
             elif isinstance(node, LVStationDing0):
@@ -435,13 +440,13 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                         # generator representing generation capacity in LV grid
                         if(node.peak_generation!=0):
                             generator = pd.Series({'name': ('_'.join(['MV', str(grid.id_db), 'gen', str(node.id_db)])),
-                                                   'bus': node.pypsa_id, 'control': 'PQ','p_nom': node.peak_generation})
+                                                   'bus': node.pypsa_bus_id, 'control': 'PQ','p_nom': node.peak_generation})
                             generators_df = generators_df.append(generator, ignore_index=True)
 
                     # bus at primary MV-LV transformer side
                     buses_df = append_buses_df(buses_df, grid, node, srid)
                 elif isinstance(grid, ding0_nw.grids.LVGridDing0):
-                    buses_df = append_buses_df(buses_df, grid, node, srid,repr(node)) #Todo: Überlegen, wie die heißen sollen
+                    buses_df = append_buses_df(buses_df, grid, node, srid,node.pypsa_bus0_id) #Todo: Überlegen, wie die heißen sollen
                 else: 
                     raise TypeError('Something went wrong. Only LVGridDing0 or MVGridDing0 can be handled as grid.')
             elif isinstance(node, CircuitBreakerDing0):
@@ -487,9 +492,9 @@ def append_load_areas_to_load_df(grid, loads_df, node):
     '''
     name_load = '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)])
     if isinstance(node,LVStationDing0):
-        name_bus = node.pypsa_id
+        name_bus = node.pypsa_bus_id
     elif isinstance(node,LVLoadAreaCentreDing0):
-        name_bus = '_'.join(['HV', str(grid.id_db), 'trd'])
+        name_bus = node.grid.station().pypsa_bus_id
     else:
         raise TypeError("Only LVStationDing0 or LVLoadAreaCentreDing0 can be inserted into function append_load_areas_to_load_df.")
     if (node.lv_load_area.peak_load_agricultural != 0):
@@ -534,7 +539,7 @@ def append_generators_df(generators_df, node):
     else:
         weather_cell_id = np.NaN
     generator = pd.Series({'name':repr(node),
-                           'bus': node.pypsa_id, 'control':'PQ', 'p_nom':(node.capacity * node.capacity_factor),
+                           'bus': node.pypsa_bus_id, 'control':'PQ', 'p_nom':(node.capacity * node.capacity_factor),
                            'type':node.type, 'subtype':node.subtype, 'weather_cell_id':weather_cell_id})
     generators_df = generators_df.append(generator, ignore_index=True)
     return generators_df
@@ -552,7 +557,7 @@ def append_buses_df(buses_df, grid, node, srid, node_name =''):
     node: :obj: ding0 grid components object
     srid: int
     node_name: str
-        name of node, per default is set to node.pypsa_id
+        name of node, per default is set to node.pypsa_bus_id
 
     Returns:
     buses_df: :pandas:`pandas.DataFrame<dataframe>`
@@ -560,7 +565,7 @@ def append_buses_df(buses_df, grid, node, srid, node_name =''):
     '''
     # set default name of node
     if node_name == '':
-        node_name = node.pypsa_id
+        node_name = node.pypsa_bus_id
     # check if node is in building
     if isinstance(node, LVCableDistributorDing0):
         in_building = node.in_building
@@ -585,7 +590,7 @@ def append_buses_df(buses_df, grid, node, srid, node_name =''):
     buses_df = buses_df.append(bus, ignore_index=True)
     return buses_df
 
-def append_transformers_df(transformers_df, trafo, name_trafo, name_bus1):
+def append_transformers_df(transformers_df, trafo):
     '''
     Appends transformer to dataframe of buses in pypsa format.
 
@@ -604,8 +609,8 @@ def append_transformers_df(transformers_df, trafo, name_trafo, name_bus1):
     transformers_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of trafos with entries name,bus0,bus1,x,r,s_nom,type
     '''
-    trafo_tmp = pd.Series({'name': name_trafo, 'bus0':trafo.grid.station().pypsa_id, 
-                           'bus1':name_bus1, 'x':trafo.x_pu, 'r':trafo.r_pu, 
+    trafo_tmp = pd.Series({'name': repr(trafo), 'bus0':trafo.grid.station().pypsa_bus0_id,
+                           'bus1':trafo.grid.station().pypsa_bus_id, 'x':trafo.x_pu, 'r':trafo.r_pu,
                            's_nom':trafo.s_max_a, 'type':' '.join([str(trafo.s_max_a), 'kVA'])})
     transformers_df = transformers_df.append(trafo_tmp,ignore_index=True)
     return transformers_df
@@ -665,8 +670,8 @@ def edges_to_dict_of_dataframes(grid, edges):
         l = edge['branch'].length / 1e3
 
         lines['line_id'].append(line_name)
-        lines['bus0'].append(edge['adj_nodes'][0].pypsa_id)
-        lines['bus1'].append(edge['adj_nodes'][1].pypsa_id)
+        lines['bus0'].append(edge['adj_nodes'][0].pypsa_bus_id)
+        lines['bus1'].append(edge['adj_nodes'][1].pypsa_bus_id)
         lines['x'].append(x_per_km * l)
         lines['r'].append(r_per_km * l)
         lines['s_nom'].append(s_nom)
@@ -699,8 +704,13 @@ def edges_to_dict_of_dataframes_for_csv_export(edges, lines_df):
 
     # iterate over edges and add them one by one
     for edge in edges:
+        if not edge['branch'].connects_aggregated:
+            lines_df = append_lines_df(edge, lines_df)
+        else:
+            node = edge['adj_nodes']
 
-        lines_df = append_lines_df(edge, lines_df)
+        if isinstance(edge['adj_nodes'][0], LVLoadAreaCentreDing0) or isinstance(edge['adj_nodes'][1],LVLoadAreaCentreDing0):
+            print()
 
     return {'Line': lines_df.set_index('name')}
 
@@ -733,7 +743,7 @@ def append_lines_df(edge, lines_df):
     else:
         type = edge['branch'].type.name
 
-    line = pd.Series({'name':repr(edge['branch']),'bus0':edge['adj_nodes'][0].pypsa_id, 'bus1':edge['adj_nodes'][1].pypsa_id,
+    line = pd.Series({'name':repr(edge['branch']),'bus0':edge['adj_nodes'][0].pypsa_bus_id, 'bus1':edge['adj_nodes'][1].pypsa_bus_id,
                       'x':x_per_km * length, 'r':r_per_km * length, 's_nom':s_nom, 'length':length, 
                       'num_parallel':1, 'type':type})
     lines_df = lines_df.append(line, ignore_index=True)
@@ -914,12 +924,12 @@ def assign_bus_results(grid, bus_data):
             and not isinstance(node,
                                LVLoadAreaCentreDing0)):
             if isinstance(node, LVStationDing0):
-                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                node.voltage_res = bus_data.loc[node.pypsa_bus_id, 'v_mag_pu']
             elif isinstance(node, (LVStationDing0, LVLoadAreaCentreDing0)):
                 if node.lv_load_area.is_aggregated:
-                    node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                    node.voltage_res = bus_data.loc[node.pypsa_bus_id, 'v_mag_pu']
             elif not isinstance(node, CircuitBreakerDing0):
-                node.voltage_res = bus_data.loc[node.pypsa_id, 'v_mag_pu']
+                node.voltage_res = bus_data.loc[node.pypsa_bus_id, 'v_mag_pu']
             else:
                 logger.warning("Object {} has been skipped while importing "
                                "results!")

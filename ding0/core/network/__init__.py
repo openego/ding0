@@ -859,6 +859,9 @@ class TransformerDing0:
         Z_tr = (self.r_pu + self.x_pu * 1j) * voltage_level**2 / self.s_max_a *1000
         return Z_tr
 
+    def __repr__(self):
+        return 'Transformer' + str(self.id_db)
+
 
 class GeneratorDing0:
     """ Generators (power plants of any kind)
@@ -958,7 +961,7 @@ class GeneratorDing0:
         return self.mv_grid.network
 
     @property
-    def pypsa_id(self):
+    def pypsa_bus_id(self):
         """
         Creates a unique identification for the generator
         to export to pypsa using the id_db of the mv_grid
@@ -969,11 +972,11 @@ class GeneratorDing0:
         :obj:`str`
         """
         if self.lv_grid != None:
-            return '_'.join(['bus', repr(self.lv_grid),
-                             'gen', str(self.id_db)])
+            return '_'.join(['Bus', 'mvgd'+ str(self.mv_grid.id_db),
+                             'lvgd'+str(self.lv_grid.id_db),'gen' + str(self.id_db)])
         else:
-            return '_'.join(['bus', repr(self.mv_grid.id_db),
-                                  'gen', str(self.id_db)])
+            return '_'.join(['Bus', 'mvgd'+str(self.mv_grid.id_db),
+                                  'gen'+ str(self.id_db)])
 
     def __repr__(self):
         """
@@ -983,13 +986,16 @@ class GeneratorDing0:
         -------
         :obj:`str`
         """
-        if self.v_level in ['6', '7']:
-            return ('generator_' + str(self.type) + '_' + str(self.subtype) +
-                    '_mvgd' + str(self.mv_grid.grid_district.id_db) +
-                    '_lvgd' + str(self.lv_grid.id_db) + '_' + str(self.id_db))
+        if self.subtype != None:
+            type = self.subtype
         else:
-            return ('generator_' + str(self.type) + '_' + str(self.subtype) +
-                    '_mvgd' + str(self.mv_grid.id_db) + '_' + str(self.id_db))
+            type = self.type
+        if self.lv_grid != None:
+            return '_'.join(['Generator',
+                    'mvgd' + str(self.mv_grid.grid_district.id_db),
+                    'lvgd' + str(self.lv_grid.id_db), type+ str(self.id_db)])
+        else:
+            return '_'.join(['Generator', 'mvgd'+ str(self.mv_grid.id_db),type+ str(self.id_db)])
 
 
 class GeneratorFluctuatingDing0(GeneratorDing0):
@@ -1103,7 +1109,7 @@ class LoadDing0:
         return self.grid.network
 
     @property
-    def pypsa_id(self):
+    def pypsa_bus_id(self):
         """
         Creates a unique identification for the generator
         to export to pypsa using the id_db of the mv_grid
@@ -1113,8 +1119,8 @@ class LoadDing0:
         -------
         :obj:`str`
         """
-        return '_'.join(['bus', repr(self.grid),
-                         'loa', str(self.id_db)])
+        return '_'.join(['Bus', 'mvgd'+str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'lvgd' + str(self.grid.id_db), 'loa' + str(self.id_db)])
     
     def __repr__(self):
         """
@@ -1124,7 +1130,8 @@ class LoadDing0:
         -------
         :obj:`str`
         """
-        return '_'.join(['load', repr(self.grid), str(self.id_db)])
+        return '_'.join(['Load', 'mvgd'+str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'lvgd' + str(self.grid.id_db), str(self.id_db)])
 
 
 class CircuitBreakerDing0:
