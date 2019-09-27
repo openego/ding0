@@ -421,7 +421,7 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                 # generator representing generation capacity of aggregate LA
                 # analogously to load, generation is connected directly to
                 # HV-MV substation
-                # ToDo: Split generation into different types and subtypes
+                # ToDo: Split generation into different types and subtypes, see eDisGo
                 if (node.lv_load_area.peak_generation!=0):
                     generator = pd.Series({'name':('_'.join(['Generator'+ str(grid.id_db), 'lcg', str(node.id_db)])),
                                            'bus':node.grid.station().pypsa_bus_id, 'control':'PQ',

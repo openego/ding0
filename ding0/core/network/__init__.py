@@ -988,8 +988,10 @@ class GeneratorDing0:
         """
         if self.subtype != None:
             type = self.subtype
-        else:
+        elif self.type != None:
             type = self.type
+        else:
+            type = ''
         if self.lv_grid != None:
             return '_'.join(['Generator',
                     'mvgd' + str(self.mv_grid.grid_district.id_db),

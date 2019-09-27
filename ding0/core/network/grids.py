@@ -122,9 +122,13 @@ class MVGridDing0(GridDing0):
         if self._station is None:
             self._station = mv_station
             self.graph_add_node(mv_station)
+            if mv_station.grid is None:
+                mv_station.grid = self
         else:
             if force:
                 self._station = mv_station
+                if mv_station.grid is None:
+                    mv_station.grid = self
             else:
                 raise Exception('MV Station already set, use argument `force=True` to override.')
 
