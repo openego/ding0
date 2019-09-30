@@ -1750,7 +1750,9 @@ class NetworkDing0:
 
         if (dir == ''):
             dir = get_default_home_dir() # eventuell ändern
-
+        # open all switch connectors
+        self.control_circuit_breakers(mode='open')
+        # start filling component dataframes
         for grid_district in self.mv_grid_districts():
             # initialize dataframes
             network_df = pd.DataFrame(columns=cols['network_columns'])
