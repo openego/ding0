@@ -225,7 +225,7 @@ def extend_substation(grid, critical_stations, grid_level):
             for t in range(0, trafo_cnt):
                 lv_transformer = TransformerDing0(
                     grid=grid,
-                    id_db=id,
+                    id_db=t + 1,
                     v_level=v_nom,
                     s_max_longterm=trafo_type['S_nom'],
                     r_pu=trafo_type['r_pu'],
@@ -295,7 +295,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                 # build a new transformer
                 lv_transformer = TransformerDing0(
                     grid=grid,
-                    id_db=id,
+                    id_db=len(list(station.transformers())) + 1,
                     v_level=v_nom,
                     s_max_longterm=trafo_min_size['S_nom'],
                     r_pu=trafo_min_size['r_pu'],

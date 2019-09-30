@@ -315,7 +315,7 @@ class TestStationDing0(object):
         assert list(empty_stationding0.transformers()) == []
 
     def test_add_transformer(self, empty_stationding0):
-        transformer1 = TransformerDing0(id_db=0,
+        transformer1 = TransformerDing0(id_db=1,
                                         v_level=4,
                                         s_max_longterm=400.0,
                                         s_max_shortterm=600.0,
@@ -324,7 +324,7 @@ class TestStationDing0(object):
                                         tap_ratio=1.02,
                                         r_pu=0.02,
                                         x_pu=0.002)
-        transformer2 = TransformerDing0(id_db=1,
+        transformer2 = TransformerDing0(id_db=2,
                                         v_level=4,
                                         s_max_longterm=600.0,
                                         s_max_shortterm=900.0,
@@ -339,7 +339,7 @@ class TestStationDing0(object):
         assert len(transformer_list) == 2
         transformer1_in_empty_stationding0 = transformer_list[0]
         assert transformer1_in_empty_stationding0 == transformer1
-        assert transformer1_in_empty_stationding0.id_db == 0
+        assert transformer1_in_empty_stationding0.id_db == 1
         assert transformer1_in_empty_stationding0.v_level == 4
         assert transformer1_in_empty_stationding0.s_max_a == 400.0
         assert transformer1_in_empty_stationding0.s_max_b == 600.0
@@ -350,7 +350,7 @@ class TestStationDing0(object):
         assert transformer1_in_empty_stationding0.x_pu == 0.002
         transformer2_in_empty_stationding0 = transformer_list[1]
         assert transformer2_in_empty_stationding0 == transformer2
-        assert transformer2_in_empty_stationding0.id_db == 1
+        assert transformer2_in_empty_stationding0.id_db == 2
         assert transformer2_in_empty_stationding0.v_level == 4
         assert transformer2_in_empty_stationding0.s_max_a == 600.0
         assert transformer2_in_empty_stationding0.s_max_b == 900.0

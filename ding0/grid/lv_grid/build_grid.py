@@ -164,7 +164,7 @@ def transformer(grid):
     for t in range(0, transformer_cnt):
         lv_transformer = TransformerDing0(
             grid=grid,
-            id_db=id,
+            id_db=t + 1,
             v_level=v_nom,
             s_max_longterm=transformer['S_nom'],
             r_pu=transformer['r_pu'],

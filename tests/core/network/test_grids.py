@@ -422,12 +422,12 @@ class TestMVGridDing0(object):
 
         hvmv_transformers = [
             TransformerDing0(
-                id_db=0,
+                id_db=1,
                 s_max_longterm=63000.0,
                 v_level=20.0
             ),
             TransformerDing0(
-                id_db=1,
+                id_db=2,
                 s_max_longterm=63000.0,
                 v_level=20.0
             )
@@ -1270,7 +1270,7 @@ class TestMVGridDing0(object):
             v_level_operation=20.0
         )
         hvmv_transformer = TransformerDing0(
-                id_db=0,
+                id_db=1,
                 s_max_longterm=63000.0,
                 v_level=20.0)
 
