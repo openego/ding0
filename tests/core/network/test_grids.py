@@ -934,7 +934,7 @@ class TestMVGridDing0(object):
             mv_grid_district.add_lv_load_area(lv_load_area)
             lv_stations.append(lv_station)
 
-        lv_stations = sorted(lv_stations, key=lambda x: repr(x))
+        lv_stations = sorted(lv_stations, key=lambda x: x.id_db)
         mv_grid_district.add_peak_demand()
         mv_grid.set_voltage_level()
 
@@ -1008,22 +1008,22 @@ class TestMVGridDing0(object):
         expected_edges_list = [
             (mv_station, lv_stations[0]),
             (mv_station, lv_stations[1]),
-            (mv_station, lv_stations[5]),
-            (mv_station, lv_stations[8]),
-            (mv_station, lv_stations[9]),
-            (mv_station, lv_stations[10]),
             (mv_station, lv_stations[13]),
-            (mv_station, lv_stations[14]),
             (mv_station, lv_stations[16]),
-            (lv_stations[0], lv_stations[12]),
-            (lv_stations[1], lv_stations[11]),
-            (lv_stations[11], lv_stations[12]),
-            (lv_stations[13], lv_stations[17]),
-            (lv_stations[14], lv_stations[15]),
-            (lv_stations[15], lv_stations[16]),
-            (lv_stations[18], lv_stations[2]),
-            (lv_stations[3], lv_stations[7]),
+            (mv_station, lv_stations[17]),
+            (mv_station, lv_stations[18]),
+            (mv_station, lv_stations[4]),
+            (mv_station, lv_stations[5]),
+            (mv_station, lv_stations[7]),
+            (lv_stations[0], lv_stations[3]),
+            (lv_stations[1], lv_stations[2]),
+            (lv_stations[2], lv_stations[3]),
+            (lv_stations[4], lv_stations[8]),
+            (lv_stations[5], lv_stations[6]),
             (lv_stations[6], lv_stations[7]),
+            (lv_stations[9], lv_stations[10]),
+            (lv_stations[11], lv_stations[15]),
+            (lv_stations[14], lv_stations[15]),
         ]
 
 
@@ -1149,7 +1149,6 @@ class TestMVGridDing0(object):
         -Right type of cable for the circuit breakers"""
 
         network, mv_grid, lv_stations =minimal_unrouted_grid
-        lv_stations = sorted(lv_stations, key=lambda x: x.id_db)
 
         network.mv_routing(debug=True)
 
