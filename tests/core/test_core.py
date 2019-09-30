@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 import oedialect
 import pandas as pd
 import os
+from tests.core.network.test_grids import TestMVGridDing0
 
 from ding0.core import NetworkDing0
 
@@ -29,6 +30,14 @@ class TestNetworkDing0(object):
         print("closing session")
         session.close()
 
+    @pytest.fixture
+    def minimal_grid(self):
+        nd, mv_grid, lv_stations = TestMVGridDing0().minimal_unrouted_testgrid()
+        nd.mv_routing()
+        nd.connect_generators()
+        nd.control_circuit_breakers(mode='open')
+        return nd
+
     def test_empty_mv_grid_districts(self, emptyNetworkDing0):
         mv_grid_districts = list(emptyNetworkDing0.mv_grid_districts())
         empty_list = []
@@ -41,31 +50,28 @@ class TestNetworkDing0(object):
                 mv_grid_districts_no=['5']
             )
 
-    def test_to_csv(self, oedb_session):
-        #Todo: docstring and change grid to testgrid
-        #instantiate new ding0 network object
-        nd = NetworkDing0(name='network')
-
-        # choose MV Grid Districts to import
-        mv_grid_districts = [460]
-
-        # run DING0 on selected MV Grid District
-        nd.run_ding0(session=oedb_session,mv_grid_districts_no=mv_grid_districts)
+    def test_to_csv(self, minimal_grid):
+        """
+        Check if export to csv exports network in a way that all exported nodes and elements are connected to each other.
+        Checks if lines, transformers, laods and generators can be connected with buses.
+        Checks if all exported buses are connected to at least one branch element (lines, transformers).
+        """
+        nd = minimal_grid
 
         # export to pypsa csv format
         dir = os.getcwd()
         nd.to_csv(dir)
 
         # import exported dataset
-        buses = pd.DataFrame.from_csv(os.path.join(dir,'460','buses_460.csv'))
-        lines = pd.DataFrame.from_csv(os.path.join(dir,'460', 'lines_460.csv'))
-        loads = pd.DataFrame.from_csv(os.path.join(dir,'460', 'loads_460.csv'))
-        generators = pd.DataFrame.from_csv(os.path.join(dir,'460', 'generators_460.csv'))
-        transformers = pd.DataFrame.from_csv(os.path.join(dir,'460', 'transformers_460.csv'))
+        id_mvgd = str(nd._mv_grid_districts[0].mv_grid.grid_district.id_db)
+        buses = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd,'buses_{}.csv'.format(id_mvgd)))
+        lines = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'lines_{}.csv'.format(id_mvgd)))
+        loads = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'loads_{}.csv'.format(id_mvgd)))
+        generators = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'generators_{}.csv'.format(id_mvgd)))
+        transformers = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'transformers_{}.csv'.format(id_mvgd)))
 
         try:
             # check if buses of lines exist in buses
-            # Todo: get name of line
             for bus in lines['bus0']:
                 if bus in buses.T:
                     continue
@@ -78,7 +84,6 @@ class TestNetworkDing0(object):
                     raise Exception('bus1 {} of line not in buses dataframe.'.format(bus))
 
             # check if buses of transformers exist in buses
-            # Todo: get name of transformer
             for bus in transformers['bus0']:
                 if bus in buses.T:
                     continue
@@ -110,11 +115,13 @@ class TestNetworkDing0(object):
                     not bus in transformers['bus0'].values and not bus in transformers['bus1'].values:
                     raise Exception('Bus {} is not connected to any branch.'.format(bus))
         finally:
-            os.remove(os.path.join(dir,'460','buses_460.csv'))
-            os.remove(os.path.join(dir,'460','lines_460.csv'))
-            os.remove(os.path.join(dir,'460','loads_460.csv'))
-            os.remove(os.path.join(dir,'460', 'generators_460.csv'))
-            os.remove(os.path.join(dir, '460','transformers_460.csv'))
+            os.remove(os.path.join(dir,id_mvgd,'buses_{}.csv'.format(id_mvgd)))
+            os.remove(os.path.join(dir,id_mvgd,'lines_{}.csv'.format(id_mvgd)))
+            os.remove(os.path.join(dir,id_mvgd,'loads_{}.csv'.format(id_mvgd)))
+            os.remove(os.path.join(dir,id_mvgd, 'generators_{}.csv'.format(id_mvgd)))
+            os.remove(os.path.join(dir,id_mvgd,'transformers_{}.csv'.format(id_mvgd)))
+            os.remove(os.path.join(dir, id_mvgd, 'network_{}.csv'.format(id_mvgd)))
+            os.rmdir(os.path.join(dir, id_mvgd))
 
 
     # def test_run_ding0(self):

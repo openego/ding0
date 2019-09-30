@@ -390,8 +390,8 @@ class TestMVGridDing0(object):
         print("closing session")
         session.close()
 
-    @pytest.fixture
-    def minimal_unrouted_grid(self):
+
+    def minimal_unrouted_testgrid(self):
         """
         Returns an MVGridDing0 object with a few artificially
         generated information about a fictious set of load
@@ -475,7 +475,9 @@ class TestMVGridDing0(object):
                      reinforce_only=0)
             )
         )
-        # Add some MV Generators that are directly connected at the station
+
+        for hvmv_transfromer in hvmv_transformers:
+            hvmv_transfromer.grid = mv_grid
 
         mv_generators = [
             GeneratorDing0(
@@ -962,6 +964,10 @@ class TestMVGridDing0(object):
         mv_grid.network.build_lv_grids()
 
         return network, mv_grid, lv_stations
+
+    @pytest.fixture
+    def minimal_unrouted_grid(self):
+        return self.minimal_unrouted_testgrid()
 
     def test_local_routing(self, minimal_unrouted_grid):
         """

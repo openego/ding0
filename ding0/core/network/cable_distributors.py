@@ -45,7 +45,7 @@ class MVCableDistributorDing0(CableDistributorDing0):
                         str(self.id_db)])
 
     def __repr__(self):
-        return '_'.join(['MVCableDist', 'mvgd' + repr(self.grid), str(self.id_db)])
+        return '_'.join(['MVCableDist', 'mvgd' + str(self.grid.id_db), str(self.id_db)])
 
 
 class LVCableDistributorDing0(CableDistributorDing0):
