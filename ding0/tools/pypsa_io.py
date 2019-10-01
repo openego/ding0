@@ -370,12 +370,12 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
 
     srid = int(cfg_ding0.get('geo', 'srid'))
     for isl_node in grid.graph_isolated_nodes():
-        if isinstance(isl_node,LVStationDing0) and isl_node.lv_load_area.is_aggregated:
+        if isinstance(isl_node, CircuitBreakerDing0):
             continue
-        elif isinstance(isl_node, CircuitBreakerDing0):
+        elif isl_node.lv_load_area.is_aggregated:
             continue
         else:
-            print("{} is isolated node. Please check.".format(repr(isl_node))) #Todo: Umwandeln in Exception
+            raise Exception("{} is isolated node. Please check.".format(repr(isl_node)))
 
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
