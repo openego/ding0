@@ -404,10 +404,13 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                 buses_df = append_buses_df(buses_df, grid, node, srid)
                 
             elif isinstance(node, LoadDing0):
-                for sector in node.consumption:
-                    load = pd.Series({'name': repr(node), 'bus': node.pypsa_bus_id,
-                                      'peak_load': node.peak_load, 'sector': sector})
-                    loads_df = loads_df.append(load, ignore_index=True)
+                # choose sector with highest consumption and assign sector accordingly #Todo: replace when loads are seperated in a cleaner way (retail, industrial)
+                sorted_consumption = [(value, key) for key, value in node.consumption.items()]
+                sector = max(sorted_consumption)[1]
+                # add load
+                load = pd.Series({'name': repr(node), 'bus': node.pypsa_bus_id,
+                                  'peak_load': node.peak_load, 'sector': sector})
+                loads_df = loads_df.append(load, ignore_index=True)
                 buses_df = append_buses_df(buses_df,grid,node,srid)
 
             # aggregated load at hv/mv substation

@@ -70,6 +70,18 @@ class TestNetworkDing0(object):
         transformers = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'transformers_{}.csv'.format(id_mvgd)))
 
         try:
+            # check if all entries are unique
+            if not lines.index.is_unique:
+                raise Exception('Line names are not unique. Please check.')
+            if not transformers.index.is_unique:
+                raise Exception('Transformer names are not unique. Please check.')
+            if not loads.index.is_unique:
+                raise Exception('Load names are not unique. Please check.')
+            if not generators.index.is_unique:
+                raise Exception('Generator names are not unique. Please check.')
+            if not buses.index.is_unique:
+                raise Exception('Bus names are not unique. Please check.')
+
             # check if buses of lines exist in buses
             for bus in lines['bus0']:
                 if bus in buses.T:
