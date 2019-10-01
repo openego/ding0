@@ -287,8 +287,10 @@ class TestMVGridDing0(object):
         """
         ring, grid = ring_mvgridding0
         station = grid.station()
-        generators = list(grid.generators())
-        circuit_breakers = list(grid.circuit_breakers())
+        generators = sorted(list(grid.generators()),
+                          key=lambda x: repr(x))
+        circuit_breakers = sorted(list(grid.circuit_breakers()),
+                          key=lambda x: repr(x))
         branches = sorted(list(map(lambda x: x['branch'],
                                    grid.graph_edges())),
                           key=lambda x: repr(x))
