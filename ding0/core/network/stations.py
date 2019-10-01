@@ -157,7 +157,8 @@ class MVStationDing0(StationDing0):
             # add transformer on determined size with according parameters
             self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                      'v_level': self.grid.v_level,
-                                                     's_max_longterm': transformer['S_nom']}))
+                                                     's_max_longterm': transformer['S_nom'],
+                                                     'id_db': len(list(self.transformers())) + 1}))
             # calc residual load
             residual_apparent_power -= (load_factor_mv_trans *
                                         transformer['S_nom'])
@@ -169,13 +170,15 @@ class MVStationDing0(StationDing0):
             self.add_transformer(
                 TransformerDing0(grid=self.grid,
                                  v_level=self.grid.v_level,
-                                 s_max_longterm=transformer['S_nom']))
+                                 s_max_longterm=transformer['S_nom'],
+                                 id_db=1))
 
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))
         self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                  'v_level': self.grid.v_level,
-                                                 's_max_longterm': s_max_max}))
+                                                 's_max_longterm': s_max_max,
+                                                 'id_db': len(list(self.transformers())) + 1}))
 
     @property
     def pypsa_bus_id(self):
