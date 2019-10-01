@@ -304,7 +304,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
 
     return components, components_data
 
-def fill_component_dataframes(grid, buses_df, lines_df, transformer_df, generators_df, loads_df):
+def fill_component_dataframes(grid, buses_df, lines_df, transformer_df, generators_df, loads_df, only_export_mv = False):
     '''
     Parameters
     ----------
@@ -332,19 +332,18 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df, generato
             edge['adj_nodes'][0], LVLoadAreaCentreDing0))
              and (edge['adj_nodes'][1] in nodes and not isinstance(
             edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
-    trafo_count = 0
+
+
     for trafo in grid.station()._transformers:
         transformer_df = append_transformers_df(transformer_df, trafo)
-        trafo_count += 1
 
     node_components = nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df,
-                                                                 loads_df)
+                                                                 loads_df, transformer_df, only_export_mv)
     branch_components = edges_to_dict_of_dataframes_for_csv_export(edges, lines_df)
-    branch_components['Transformer'] = transformer_df.set_index('name')
     components = merge_two_dicts(branch_components, node_components)
     return components
 
-def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df, loads_df,only_export_mv = False):
+def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df, loads_df,transformer_df, only_export_mv = False):
     """
     Creates dictionary of dataframes containing grid
 
@@ -367,8 +366,6 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
         DataFrames contain components attributes. Dict is keyed by components
         type
     """
-
-
     # TODO: MVStationDing0 has a slack generator, Do we want this?
 
     srid = int(cfg_ding0.get('geo', 'srid'))
@@ -425,12 +422,15 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                 if isinstance(grid, ding0_nw.grids.MVGridDing0): #Todo: remove ding0_nw.grids when functions are thinned out
                     # Aggregated load representing load in LV grid, only needed when LV_grids are not exported
                     if only_export_mv:
-                        if (node.lv_load_area.peak_load != 0):
-                            loads_df, generators_df = append_load_areas_to_df(loads_df, generators_df, node)
-
+                        loads_df, generators_df = append_load_areas_to_df(loads_df, generators_df, node)
+                        for trafo in node.transformers():
+                            transformer_df = append_transformers_df(transformer_df,trafo)
+                        # bus at secondary MV-LV transformer side
+                        buses_df = append_buses_df(buses_df, grid, node, srid, node.pypsa_bus0_id)
                     # bus at primary MV-LV transformer side
                     buses_df = append_buses_df(buses_df, grid, node, srid)
                 elif isinstance(grid, ding0_nw.grids.LVGridDing0):
+                    # bus at secondary MV-LV transformer side
                     buses_df = append_buses_df(buses_df, grid, node, srid,node.pypsa_bus0_id)
                 else: 
                     raise TypeError('Something went wrong. Only LVGridDing0 or MVGridDing0 can be handled as grid.')
@@ -451,9 +451,9 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
             #Todo: Should these nodes not be exported?
 
     nodal_components = {'Bus': buses_df.set_index('name'),
-                  'Generator': generators_df.set_index('name'),
-                  'Load': loads_df.set_index('name')}
-
+                        'Generator': generators_df.set_index('name'),
+                        'Load': loads_df.set_index('name'),
+                        'Transformer': transformer_df.set_index('name')}
 
     return nodal_components
 
@@ -476,16 +476,24 @@ def append_load_areas_to_df(loads_df, generators_df, node):
     '''
 
 
-    name_load = repr(node)
+
+
+
     if isinstance(node,LVStationDing0):
         name_bus = node.pypsa_bus_id
+        grid_districts=[node.grid.grid_district]
+        node_name = '_'.join(['Generator', 'mvgd' + str(node.grid.grid_district.lv_load_area.mv_grid_district.id_db), 'lcg' + str(node.id_db)])
+        name_load = '_'.join(['Load','mvgd' + str(node.grid.grid_district.lv_load_area.mv_grid_district.id_db), 'lac' + str(node.id_db)])
     elif isinstance(node,LVLoadAreaCentreDing0):
         name_bus = node.grid.station().pypsa_bus_id
+        grid_districts = node.lv_load_area._lv_grid_districts
+        node_name = '_'.join(['Generator', 'mvgd' + str(node.grid.id_db), 'lcg' + str(node.id_db)])
+        name_load = '_'.join(['Load','mvgd' + str(node.grid.id_db), 'lac' + str(node.id_db)])
     else:
         raise TypeError("Only LVStationDing0 or LVLoadAreaCentreDing0 can be inserted into function append_load_areas_to_df.")
 
-    aggregated = determine_aggregated_nodes(node)
-    generators_df = append_aggregated_generators_df(aggregated, generators_df, node)
+    aggregated = determine_aggregated_nodes(node, grid_districts)
+    generators_df = append_aggregated_generators_df(aggregated, generators_df, node, node_name)
     if (node.lv_load_area.peak_load_agricultural != 0):
         load = pd.Series({'name': '_'.join([name_load,'agr']), 'bus': name_bus,
                           'peak_load': node.lv_load_area.peak_load_agricultural, 'sector': "agricultural"})
@@ -1025,19 +1033,14 @@ def create_powerflow_problem(timerange, components):
 
     return network, snapshots
 
-def determine_aggregated_nodes(la_center):
-    """Determine generation and load within load areas
+def determine_aggregated_nodes(node, grid_districts):
+    """Determine generation within load areas
 
     Parameters
     ----------
-    la_centers: list of LVLoadAreaCentre
+    node: LVLoadAreaCentre or LVStation
         Load Area Centers are Ding0 implementations for representating areas of
         high population density with high demand compared to DG potential.
-
-    Notes
-    -----
-    Currently, MV grid loads are not considered in this aggregation function as
-    Ding0 data does not come with loads in the MV grid level.
 
     Returns
     -------
@@ -1047,31 +1050,17 @@ def determine_aggregated_nodes(la_center):
 
         .. code:
 
-            {'generation': {
-                'v_level': {
-                    'subtype': {
-                        'ids': <ids of aggregated generator>,
-                        'capacity'}
-                    }
-                },
-            'load': {
-                'consumption':
-                    'residential': <value>,
-                    'retail': <value>,
-                    ...
-                }
-            'aggregates': {
-                'population': int,
-                'geom': `shapely.Polygon`
+            {'type': {
+                'subtype': {
+                    'ids': <ids of aggregated generator>,
+                    'capacity'}
                 }
             }
-    :obj:`list`
-        aggr_stations
-        List of LV stations its generation and load is aggregated
+
     """
 
     def aggregate_generators(gen, aggr):
-        """Aggregate generation capacity per voltage level
+        """Aggregate generation capacity
 
         Parameters
         ----------
@@ -1101,11 +1090,10 @@ def determine_aggregated_nodes(la_center):
         return aggr
 
 
-
     aggregated = {}
 
     # Determine aggregated generation in LV grid
-    for lvgd in la_center.lv_load_area._lv_grid_districts:
+    for lvgd in grid_districts:
         weather_cell_ids = {}
         for gen in lvgd.lv_grid.generators():
             aggregated = aggregate_generators(gen, aggregated)
@@ -1143,23 +1131,23 @@ def determine_aggregated_nodes(la_center):
 
     return aggregated
 
-def append_aggregated_generators_df(aggregated, generators_df, node):
+def append_aggregated_generators_df(aggregated, generators_df, node, node_name):
     """Add Generators and Loads to MV station representing aggregated generation
     capacity and load
 
     Parameters
     ----------
-    grid: MVGrid
-        MV grid object
     aggregated: dict
         Information about aggregated load and generation capacity. For
         information about the structure of the dict see ... .
-    ding0_grid: ding0.Network
-        Ding0 network container
+    generators_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of grid generators
+    node: object
+        Station or LoadAreaCentre
     Returns
     -------
-    MVGrid
-        Altered instance of MV grid including aggregated load and generation
+    generators_df: :pandas:`pandas.DataFrame<dataframe>`
+        Altered datafram eof grid generators
     """
 
 
@@ -1171,8 +1159,6 @@ def append_aggregated_generators_df(aggregated, generators_df, node):
             else:
                 weather_cell_id = np.NaN
 
-
-            node_name = '_'.join(['Generator', 'mvgd'+str(node.grid.id_db),'lcg' , subtype + str(node.id_db)])
             generator = pd.Series({'name': node_name,
                                    'bus': node.grid.station().pypsa_bus_id, 'control': 'PQ',
                                    'p_nom': val2['capacity'],

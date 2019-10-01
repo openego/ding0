@@ -1722,7 +1722,7 @@ class NetworkDing0:
 
         return nodes_df, edges_df
 
-    def to_csv(self, dir = ''):
+    def to_csv(self, dir = '', only_export_mv = False):
         '''
         Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
         Respectively saves files for network, buses, lines, transformers, loads and generators.
@@ -1760,14 +1760,15 @@ class NetworkDing0:
             ).set_index('name')
             # add mv grid components
             mv_grid = grid_district.mv_grid
-            mv_components = fill_component_dataframes(mv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df)
+            mv_components = fill_component_dataframes(mv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df, only_export_mv)
             components = mv_components
-            # add lv grid components
-            for lv_load_area in grid_district.lv_load_areas():
-                for lv_grid_district in lv_load_area.lv_grid_districts():
-                    lv_grid = lv_grid_district.lv_grid
-                    lv_components_tmp = fill_component_dataframes(lv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df)
-                    components = merge_two_component_dicts(components,lv_components_tmp)
+            if not only_export_mv:
+                # add lv grid components
+                for lv_load_area in grid_district.lv_load_areas():
+                    for lv_grid_district in lv_load_area.lv_grid_districts():
+                        lv_grid = lv_grid_district.lv_grid
+                        lv_components_tmp = fill_component_dataframes(lv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df)
+                        components = merge_two_component_dicts(components,lv_components_tmp)
             # save network and components to csv
             path = os.path.join(dir,str(grid_district.id_db))
             if not os.path.exists(path):
