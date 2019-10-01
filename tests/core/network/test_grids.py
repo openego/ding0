@@ -295,15 +295,15 @@ class TestMVGridDing0(object):
                                    grid.graph_edges())),
                           key=lambda x: repr(x))
         ring_expected = ring
-        # branches following the ring
-        branches_expected = [branches[0],
-                             branches[2],
-                             branches[3],
-                             branches[4]]
         rings_nodes_expected = [generators[0],
                                 circuit_breakers[0],
                                 generators[1],
                                 station]
+        branches_expected = []
+        for branch in branches:
+            nodes = grid.graph_nodes_from_branch(branch)
+            if nodes[0] in rings_nodes_expected and nodes[1] in rings_nodes_expected:
+                branches_expected.append(branch)
         (ring_out,
          branches_out,
          rings_nodes_out) = list(grid.rings_full_data())[0]

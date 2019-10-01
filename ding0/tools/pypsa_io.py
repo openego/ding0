@@ -1159,7 +1159,7 @@ def append_aggregated_generators_df(aggregated, generators_df, node, node_name):
             else:
                 weather_cell_id = np.NaN
 
-            generator = pd.Series({'name': node_name,
+            generator = pd.Series({'name': '_'.join([node_name, subtype]),
                                    'bus': node.grid.station().pypsa_bus_id, 'control': 'PQ',
                                    'p_nom': val2['capacity'],
                                    'type': type, 'subtype': subtype,

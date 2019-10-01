@@ -207,7 +207,7 @@ class MVStationDing0(StationDing0):
 
 
     def __repr__(self):
-        return '_'.join(['MVStation', 'mvgd' + str(self.grid.id_db), str(self.id_db)])
+        return '_'.join(['MVStation', 'mvgd' + str(self.grid.id_db)])
 
     
 
@@ -268,4 +268,4 @@ class LVStationDing0(StationDing0):
     def __repr__(self):
         return '_'.join(['LVStation', 'mvgd'+str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                id_db), 'lvgd'+str(self.grid.id_db), str(self.id_db)])
+                id_db), 'lvgd'+str(self.grid.id_db)])
