@@ -155,7 +155,7 @@ def routing_solution_to_ding0_graph(graph, solution):
             edges.append((r._nodes[-1], depot))
 
             # create MV Branch object for every edge in `edges`
-            mv_branches = [BranchDing0() for _ in edges]
+            mv_branches = [BranchDing0(grid=depot_node.grid) for _ in edges]
             edges_with_branches = list(zip(edges, mv_branches))
 
             # recalculate circuit breaker positions for final solution, create it and set associated branch.

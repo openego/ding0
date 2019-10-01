@@ -35,7 +35,7 @@ class TestNetworkDing0(object):
         nd, mv_grid, lv_stations = TestMVGridDing0().minimal_unrouted_testgrid()
         nd.mv_routing()
         nd.connect_generators()
-        nd.control_circuit_breakers(mode='open')
+        #nd.control_circuit_breakers(mode='open')
         return nd
 
     def test_empty_mv_grid_districts(self, emptyNetworkDing0):

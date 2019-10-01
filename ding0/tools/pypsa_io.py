@@ -480,7 +480,6 @@ def append_load_areas_to_load_df(grid, loads_df, node):
 
     Parameters
     ----------
-    grid: ding0.Network
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of loads with entries name,bus,peak_load,sector
     node: :obj: ding0 grid components object
@@ -640,10 +639,7 @@ def edges_to_dict_of_dataframes(grid, edges):
     # iterate over edges and add them one by one
     for edge in edges:
 
-        line_name = '_'.join(['MV',
-                              str(grid.id_db),
-                              'lin',
-                              str(edge['branch'].id_db)])
+        line_name = repr(edge['branch'])
 
         # TODO: find the real cause for being L, C, I_th_max type of Series
         if (isinstance(edge['branch'].type['L_per_km'], Series) or#warum wird hier c abgefragt?
@@ -959,23 +955,15 @@ def assign_line_results(grid, line_data):
     for edge in edges:
         s_res = [
             round(sqrt(
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'p0'][0]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'p1'][0])) ** 2 +
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'q0'][0]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][0])) ** 2),decimal_places),
+                max(abs(line_data.loc[repr(edge['branch']), 'p0'][0]),
+                    abs(line_data.loc[repr(edge['branch']), 'p1'][0])) ** 2 +
+                max(abs(line_data.loc[repr(edge['branch']), 'q0'][0]),
+                    abs(line_data.loc[repr(edge['branch']), 'q1'][0])) ** 2),decimal_places),
             round(sqrt(
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'p0'][1]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'p1'][1])) ** 2 +
-                max(abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                    'branch'].id_db), 'q0'][1]),
-                    abs(line_data.loc["MV_{0}_lin_{1}".format(grid.id_db, edge[
-                        'branch'].id_db), 'q1'][1])) ** 2),decimal_places)]
+                max(abs(line_data.loc[repr(edge['branch']), 'p0'][1]),
+                    abs(line_data.loc[repr(edge['branch']), 'p1'][1])) ** 2 +
+                max(abs(line_data.loc[repr(edge['branch']), 'q0'][1]),
+                    abs(line_data.loc[repr(edge['branch']), 'q1'][1])) ** 2),decimal_places)]
 
         edge['branch'].s_res = s_res
 

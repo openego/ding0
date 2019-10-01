@@ -411,6 +411,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch = BranchDing0(length=branch_length,
                                      circuit_breaker=circ_breaker,
                                      kind=branch_kind,
+                                     grid=mv_grid,
                                      type=branch_type,
                                      ring=branch_ring)
                 if circ_breaker is not None:
@@ -420,6 +421,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_length = calc_geo_dist_vincenty(adj_node2, node)
                 graph.add_edge(adj_node2, node, branch=BranchDing0(length=branch_length,
                                                                    kind=branch_kind,
+                                                                   grid=mv_grid,
                                                                    type=branch_type,
                                                                    ring=branch_ring))
 
@@ -458,6 +460,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch = BranchDing0(length=branch_length,
                                      circuit_breaker=circ_breaker,
                                      kind=branch_kind,
+                                     grid=mv_grid,
                                      type=branch_type,
                                      ring=branch_ring)
                 if circ_breaker is not None:
@@ -467,6 +470,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
                 graph.add_edge(adj_node2, cable_dist, branch=BranchDing0(length=branch_length,
                                                                          kind=branch_kind,
+                                                                         grid=mv_grid,
                                                                          type=branch_type,
                                                                          ring=branch_ring))
 
@@ -480,6 +484,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_length = calc_geo_dist_vincenty(node, cable_dist)
                 graph.add_edge(node, cable_dist, branch=BranchDing0(length=branch_length,
                                                                     kind=branch_kind,
+                                                                    grid=mv_grid,
                                                                     type=branch_type,
                                                                     ring=branch_ring))
                 target_obj_result = cable_dist
@@ -527,6 +532,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
             branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
             graph.add_edge(node, target_obj['obj'], branch=BranchDing0(length=branch_length,
                                                                        kind=branch_kind,
+                                                                       grid=mv_grid,
                                                                        type=branch_type,
                                                                        ring=branch_ring))
             target_obj_result = target_obj['obj']
@@ -573,6 +579,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
             branch_length = calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
             graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDing0(length=branch_length,
                                                                                     kind=branch_kind,
+                                                                                    grid=node.grid,
                                                                                     type=branch_type,
                                                                                     ring=branch_ring))
 
@@ -790,6 +797,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     branch = BranchDing0(length=branch_length,
                                          circuit_breaker=circ_breaker,
                                          kind=branch_kind,
+                                         grid=mv_grid_district.mv_grid,
                                          type=branch_type,
                                          ring=branch_ring)
                     if circ_breaker is not None:
@@ -872,6 +880,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     branch = BranchDing0(length=branch_length,
                                          circuit_breaker=circ_breaker,
                                          kind=branch_kind,
+                                         grid=mv_grid_district.mv_grid,
                                          type=branch_type,
                                          ring=branch_ring)
                     if circ_breaker is not None:
@@ -946,6 +955,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
 
             branch = BranchDing0(length=branch_length,
                                  kind=branch_kind,
+                                 grid=mv_grid_district.mv_grid,
                                  type=branch_type,
                                  ring=None)
             graph.add_edge(generator, mv_station, branch=branch)

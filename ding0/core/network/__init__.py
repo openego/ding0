@@ -544,8 +544,6 @@ class GridDing0:
 
         for generator in self.generators():
             generator.capacity_factor = capacity_factor
-            
-    
 
 
 class StationDing0:
@@ -765,6 +763,7 @@ class BranchDing0:
 
         self.id_db = kwargs.get('id_db', None)
         self.ring = kwargs.get('ring', None)
+        self.grid = kwargs.get('grid', None)
         self.length = kwargs.get('length', None)  # branch (line/cable) length in m
         self.kind = kwargs.get('kind', None)  # 'line' or 'cable'
         self.type = kwargs.get('type', None)  # DataFrame with attributes of line/cable
@@ -793,7 +792,8 @@ class BranchDing0:
         -------
         :obj:`str`
         """
-        return 'branch_' + str(self.id_db)
+        nodes = self.grid.graph_nodes_from_branch(self)
+        return '_'.join(['Branch', repr(nodes[0]), repr(nodes[1])])
 
 
 class TransformerDing0:
@@ -860,7 +860,8 @@ class TransformerDing0:
         return Z_tr
 
     def __repr__(self):
-        return 'Transformer' + str(self.id_db)
+        # Todo: Change in a way that grid is seperated to mv and lv
+        return '_'.join(['Transformer', repr(self.grid), str(self.id_db)])
 
 
 class GeneratorDing0:

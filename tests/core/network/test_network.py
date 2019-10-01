@@ -252,7 +252,8 @@ class TestGridDing0(object):
         grid.add_generator(generator)
         branch = BranchDing0(id_db=0,
                              length=2.0,
-                             kind='cable')
+                             kind='cable',
+                             grid=grid)
         grid._graph.add_edge(generator, station, branch=branch)
         return (grid, station, generator, branch)
 

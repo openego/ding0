@@ -336,27 +336,6 @@ class MVGridDing0(GridDing0):
 
         return list(nodes_subtree)
 
-    def set_branch_ids(self):
-        """ Generates and sets ids of branches for MV and underlying LV grids.
-        
-        While IDs of imported objects can be derived from dataset's ID, branches
-        are created within DING0 and need unique IDs (e.g. for PF calculation).
-        """
-
-        # MV grid:
-        ctr = 1
-        for branch in self.graph_edges():
-            branch['branch'].id_db = self.grid_district.id_db * 10**4 + ctr
-            ctr += 1
-
-        # LV grid:
-        for lv_load_area in self.grid_district.lv_load_areas():
-            for lv_grid_district in lv_load_area.lv_grid_districts():
-                ctr = 1
-                for branch in lv_grid_district.lv_grid.graph_edges():
-                    branch['branch'].id_db = lv_grid_district.id_db * 10**7 + ctr
-                    ctr += 1
-
     def routing(self, debug=False, anim=None):
         """ Performs routing on Load Area centres to build MV grid with ring topology.
 

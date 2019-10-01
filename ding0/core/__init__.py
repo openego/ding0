@@ -268,33 +268,28 @@ class NetworkDing0:
             Generators are connected to grids, used approach depends on voltage
             level.
 
-        * STEP 8: Set IDs for all branches in MV and LV grids
-
-            While IDs of imported objects can be derived from dataset's ID, branches
-            are created in steps 5+6 and need unique IDs (e.g. for PF calculation).
-
-        * STEP 9: Relocate switch disconnectors in MV grid
+        * STEP 8: Relocate switch disconnectors in MV grid
 
             Switch disconnectors are set during routing process (step 6) according
             to the load distribution within a ring. After further modifications of
             the grid within step 6+7 they have to be relocated (note: switch
             disconnectors are called circuit breakers in DING0 for historical reasons).
 
-        * STEP 10: Open all switch disconnectors in MV grid
+        * STEP 9: Open all switch disconnectors in MV grid
 
             Under normal conditions, rings are operated in open state (half-rings).
             Furthermore, this is required to allow powerflow for MV grid.
 
-        * STEP 11: Do power flow analysis of MV grid
+        * STEP 10: Do power flow analysis of MV grid
 
             The technically working MV grid created in step 6 was extended by satellite
             loads and generators. It is finally tested again using powerflow calculation.
 
-        * STEP 12: Reinforce MV grid
+        * STEP 11: Reinforce MV grid
 
             MV grid is eventually reinforced persuant to results from step 11.
 
-        STEP 13: Close all switch disconnectors in MV grid
+        * STEP 12: Close all switch disconnectors in MV grid
             The rings are finally closed to hold a complete graph (if the SDs are open,
             the edges adjacent to a SD will not be exported!)
         """
@@ -328,18 +323,15 @@ class NetworkDing0:
         if export_figures:
             plot_mv_topology(grid, subtitle='Generators connected', filename='2_generators_connected.png')
 
-        # STEP 8: Set IDs for all branches in MV and LV grids
-        self.set_branch_ids()
-
-        # STEP 9: Relocate switch disconnectors in MV grid
+        # STEP 8: Relocate switch disconnectors in MV grid
         self.set_circuit_breakers(debug=debug)
         if export_figures:
             plot_mv_topology(grid, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
 
-        # STEP 10: Open all switch disconnectors in MV grid
+        # STEP 9: Open all switch disconnectors in MV grid
         self.control_circuit_breakers(mode='open')
 
-        # STEP 11: Do power flow analysis of MV grid
+        # STEP 10: Do power flow analysis of MV grid
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
         if export_figures:
             plot_mv_topology(grid, subtitle='PF result (load case)',
@@ -349,10 +341,10 @@ class NetworkDing0:
                              filename='5_PF_result_feedin.png',
                              line_color='loading', node_color='voltage', testcase='feedin')
 
-        # STEP 12: Reinforce MV grid
+        # STEP 11: Reinforce MV grid
         self.reinforce_grid()
 
-        # STEP 13: Close all switch disconnectors in MV grid
+        # STEP 12: Close all switch disconnectors in MV grid
         self.control_circuit_breakers(mode='close')
 
         if export_figures:
@@ -1889,21 +1881,6 @@ class NetworkDing0:
             grid_district.mv_grid.parametrize_grid(debug=debug)
 
         logger.info('=====> MV Grids parametrized')
-
-    def set_branch_ids(self):
-        """
-        Performs generation and setting of ids
-        of branches for all MV and underlying LV grids.
-
-        See Also
-        --------
-        ding0.core.network.grids.MVGridDing0.set_branch_ids
-        """
-
-        for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.set_branch_ids()
-
-        logger.info('=====> Branch IDs set')
 
     def set_circuit_breakers(self, debug=False):
         """

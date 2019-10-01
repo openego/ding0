@@ -92,7 +92,7 @@ class TestMVGridDing0(object):
         """
         station = MVStationDing0(id_db=0, geo_data=Point(0.5, 0.5))
         grid = MVGridDing0(id_db=0, station=station)
-        branch = BranchDing0(id_db=0, length=2.0, kind='cable')
+        branch = BranchDing0(id_db=0, length=2.0, kind='cable', grid=grid)
         circuit_breaker = CircuitBreakerDing0(id_db=0,
                                               geo_data=Point(0, 0),
                                               branch=branch,
@@ -150,11 +150,11 @@ class TestMVGridDing0(object):
                                     mv_grid=grid)
         grid.add_generator(generator3)
         ring = RingDing0(grid=grid)
-        branch1 = BranchDing0(id_db='0', length=2.0, kind='cable', ring=ring)
-        branch1a = BranchDing0(id_db='0a', lenght=1.2, kind='cable', ring=ring)
-        branch2 = BranchDing0(id_db='1', lenght=3.0, kind='line', ring=ring)
-        branch2a = BranchDing0(id_db='1a', lenght=2.0, kind='line', ring=ring)
-        branch3 = BranchDing0(id_db='2', length=2.5, kind='line')
+        branch1 = BranchDing0(id_db='0', length=2.0, kind='cable', ring=ring, grid=grid)
+        branch1a = BranchDing0(id_db='0a', lenght=1.2, kind='cable', ring=ring, grid=grid)
+        branch2 = BranchDing0(id_db='1', lenght=3.0, kind='line', ring=ring, grid=grid)
+        branch2a = BranchDing0(id_db='1a', lenght=2.0, kind='line', ring=ring, grid=grid)
+        branch3 = BranchDing0(id_db='2', length=2.5, kind='line', grid=grid)
         circuit_breaker1 = CircuitBreakerDing0(id_db=0,
                                                geo_data=Point(0, 0),
                                                branch=branch1,
@@ -294,10 +294,10 @@ class TestMVGridDing0(object):
                           key=lambda x: repr(x))
         ring_expected = ring
         # branches following the ring
-        branches_expected = [branches[1],
-                             branches[0],
+        branches_expected = [branches[0],
+                             branches[2],
                              branches[3],
-                             branches[2]]
+                             branches[4]]
         rings_nodes_expected = [generators[0],
                                 circuit_breakers[0],
                                 generators[1],

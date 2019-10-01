@@ -86,6 +86,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
 
             branch = BranchDing0(length=branch_length,
                                  kind='cable',
+                                 grid = lv_grid_district.lv_grid,
                                  type=branch_type)
 
             graph.add_edge(generator, lv_station, branch=branch)
@@ -142,6 +143,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
             # connect to cable dist. of building
             branch = BranchDing0(length=1,
                                  kind='cable',
+                                 grid=lv_grid_district.lv_grid,
                                  type=branch_type)
 
             graph.add_edge(generator, lv_conn_target, branch=branch)

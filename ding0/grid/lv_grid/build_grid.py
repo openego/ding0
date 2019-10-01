@@ -416,6 +416,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 branch=BranchDing0(
                     length=val['load_distance'],
                     kind='cable',
+                    grid=lvgd.lv_grid,
                     type=cable_type,
                     id_db='branch_{sector}{branch}_{load}'.format(
                         branch=branch_no,
@@ -430,6 +431,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 branch=BranchDing0(
                     length=val['load_distance'],
                     kind='cable',
+                    grid=lvgd.lv_grid,
                     type=cable_type,
                     id_db='branch_{sector}{branch}_{load}'.format(
                         branch=branch_no,
@@ -446,6 +448,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     'assumptions',
                     'lv_ria_branch_connection_distance'),
                 kind='cable',
+                grid=lvgd.lv_grid,
                 type=cable_type_stub,
                 id_db='stub_{sector}{branch}_{load}'.format(
                     branch=branch_no,
@@ -459,6 +462,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
             branch=BranchDing0(
                 length=1,
                 kind='cable',
+                grid=lvgd.lv_grid,
                 type=cable_type_stub,
                 id_db='stub_{sector}{branch}_{load}'.format(
                     branch=branch_no,
@@ -697,6 +701,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                         branch=BranchDing0(
                             length=row['distance house branch'],
                             kind='cable',
+                            grid=lvgd.lv_grid,
                             type=cable_type,
                             id_db='branch_{sector}{branch}_{load}'.format(
                                 branch=hh_branch,
@@ -711,6 +716,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                         branch=BranchDing0(
                             length=row['distance house branch'],
                             kind='cable',
+                            grid=lvgd.lv_grid,
                             type=lvgd.lv_grid.network.static_data[
                                 'LV_cables'].loc[cable_name],
                             id_db='branch_{sector}{branch}_{load}'.format(
@@ -729,6 +735,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                         length=row['length house branch {}'.format(
                             variant)],
                         kind='cable',
+                        grid=lvgd.lv_grid,
                         type=lvgd.lv_grid.network.static_data['LV_cables']. \
                             loc[house_cable_name],
                         id_db='branch_{sector}{branch}_{load}'.format(
@@ -743,6 +750,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                     branch=BranchDing0(
                         length=1,
                         kind='cable',
+                        grid=lvgd.lv_grid,
                         type=lvgd.lv_grid.network.static_data['LV_cables']. \
                             loc[house_cable_name],
                         id_db='branch_{sector}{branch}_{load}'.format(
