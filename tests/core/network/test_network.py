@@ -8,6 +8,14 @@ from ding0.core.network import (GridDing0,
                                 GeneratorDing0, GeneratorFluctuatingDing0,
                                 LoadDing0)
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.tools.results import (calculate_lvgd_stats,
+                                 calculate_lvgd_voltage_current_stats,
+                                 calculate_mvgd_stats,
+                                 calculate_mvgd_voltage_current_stats)
+import pandas as pd
+import os
+import numpy as np
+from tests.tools.help_functions import compare_data_frames_by_tolerance
 
 
 class TestGridDing0(object):
@@ -295,6 +303,72 @@ class TestGridDing0(object):
         grid, station, generator, branch = simple_graph_grid
         isolates = grid.graph_isolated_nodes()
         assert isolates == []
+
+    def test_grid_stats(self, oedb_session):
+        """
+        Using grid district 460 to check if statistical data stay the same
+        :param oedb_session:
+        :return:
+        """
+        # instantiate new ding0 network object
+        path = os.path.dirname(os.path.abspath(__file__))
+
+        nd = NetworkDing0(name='network')
+
+        mv_grid_districts = [460]
+
+        nd.run_ding0(session=oedb_session,
+                     mv_grid_districts_no=mv_grid_districts)
+
+        # check mv grid statistics
+        mvgd_stats = calculate_mvgd_stats(nd)
+        mvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path, 'testdata/mvgd_stats.csv'))
+        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_stats, mvgd_stats_comparison)
+        if not is_equal:
+            raise Exception('mvgd_stats differ from original values, {} unequal entries.'.format(count_unequal))
+
+        # check mv grid statistics voltages and currents
+        mvgd_voltage_current_stats = calculate_mvgd_voltage_current_stats(nd)
+        mvgd_current_branches = mvgd_voltage_current_stats[1]
+        mvgd_voltage_nodes = mvgd_voltage_current_stats[0]
+        mvgd_current_branches_comparison = pd.DataFrame.from_csv(
+            os.path.join(path, 'testdata/mvgd_current_branches.csv'))
+        mvgd_current_branches = mvgd_current_branches.replace('NA', np.NaN)
+        mvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
+            os.path.join(path, 'testdata/mvgd_voltage_nodes.csv'))
+        mvgd_voltage_nodes = mvgd_voltage_nodes.replace('NA', np.NaN)
+        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_current_branches,
+                                                                   mvgd_current_branches_comparison)
+        if not is_equal:
+            raise Exception('mvgd_current_stats differ from original values, {} unequal entries.'.format(count_unequal))
+        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison)
+        if not is_equal:
+            raise Exception('mvgd_voltage_stats differ from original values, {} unequal entries.'.format(count_unequal))
+
+        # check lv grid statistics
+        lvgd_stats = calculate_lvgd_stats(nd)
+        lvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path,'testdata/lvgd_stats.csv'))
+        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_stats, lvgd_stats_comparison)
+        if not is_equal:
+            raise Exception('lvgd_stats differ from original values, {} unequal entries.'.format(count_unequal))
+
+        # check lv grid statistics voltages and currents
+        lvgd_voltage_current_stats = calculate_lvgd_voltage_current_stats(nd)
+        lvgd_current_branches = lvgd_voltage_current_stats[1]
+        lvgd_voltage_nodes = lvgd_voltage_current_stats[0]
+        lvgd_current_branches_comparison = pd.DataFrame.from_csv(
+            os.path.join(path, 'testdata/lvgd_current_branches.csv'))
+        lvgd_current_branches = lvgd_current_branches.replace('NA', np.NaN)
+        lvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
+            os.path.join(path, 'testdata/lvgd_voltage_nodes.csv'))
+        lvgd_voltage_nodes = lvgd_voltage_nodes.replace('NA', np.NaN)
+        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_current_branches,
+                                                                   lvgd_current_branches_comparison)
+        if not is_equal:
+            raise Exception('lvgd_current_stats differ from original values, {} unequal entries.'.format(count_unequal))
+        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_voltage_nodes, lvgd_voltage_nodes_comparison)
+        if not is_equal:
+            raise Exception('lvgd_voltage_stats differ from original values, {} unequal entries.'.format(count_unequal))
 
 
 class TestStationDing0(object):
