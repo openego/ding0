@@ -387,7 +387,7 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
             elif isinstance(node, MVStationDing0):
                 # add dummy generator
                 slack = pd.Series({'name':('_'.join(['MV', str(grid.id_db), 'slack'])),
-                                   'bus':node.pypsa_bus0_id, 'control':'Slack', 'p_nom':0, 'type': 'station',
+                                   'bus':node.pypsa_bus_id, 'control':'Slack', 'p_nom':0, 'type': 'station',
                                    'subtype':'mv_station'})
                 generators_df = generators_df.append(slack, ignore_index=True)
                 # add HV side bus
