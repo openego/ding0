@@ -727,7 +727,7 @@ class MVGridDing0(GridDing0):
 
     
 
-    def run_powerflow(self, session, export_pypsa_dir=None,  method='onthefly', debug=False):
+    def run_powerflow(self, session, export_pypsa_dir=None,  method='onthefly', debug=False, export_result_dir = None):
         """ Performs power flow calculation for all MV grids
 
         Args
@@ -765,7 +765,8 @@ class MVGridDing0(GridDing0):
                                             components_data,
                                             self,
                                             export_pypsa_dir=export_pypsa_dir,
-                                            debug=debug)
+                                            debug=debug,
+                                            export_result_dir=export_result_dir)
 
     def import_powerflow_results(self, session):
         """Assign results from power flow analysis to edges and nodes

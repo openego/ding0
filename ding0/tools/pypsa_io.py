@@ -747,7 +747,7 @@ def append_lines_df(edge, lines_df):
     return lines_df
 
 
-def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=None, debug=False):
+def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=None, debug=False, export_result_dir = None):
     """
     Run powerflow to test grid stability
 
@@ -826,7 +826,9 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
 
     # process results
     bus_data, line_data = process_pf_results(network)
-
+    if export_result_dir:
+        bus_data.to_csv(os.path.join(export_result_dir,'bus_data.csv'))
+        line_data.to_csv(os.path.join(export_result_dir, 'line_data.csv'))
     # assign results data to graph
     assign_bus_results(grid, bus_data)
     assign_line_results(grid, line_data)
