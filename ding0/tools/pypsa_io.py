@@ -20,7 +20,7 @@ from ding0.tools.tools import merge_two_dicts
 from ding0.core.network.stations import LVStationDing0, MVStationDing0
 from ding0.core.network import LoadDing0, CircuitBreakerDing0, GeneratorDing0, GeneratorFluctuatingDing0
 from ding0.core import MVCableDistributorDing0
-from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.core.structure.regions import LVLoadAreaCentreDing0, LVGridDistrictDing0, LVLoadAreaDing0
 from ding0.core.powerflow import q_sign
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core import network as ding0_nw
@@ -453,29 +453,36 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
 
 def append_load_areas_to_df(loads_df, generators_df, node):
     '''
-    Appends lv load area to dataframe of nodes. Each sector (agricultural, industrial, residential, retail)
-    is represented by own entry.
+    Appends lv load area (or single lv grid district) to dataframe of nodes. Each sector (agricultural, industrial, residential, retail)
+    is represented by own entry of load. Each generator in underlying grid districts is added as own entry.
+    Generators and load are connected to BusBar of the respective grid (LVGridDing0 for LVStationDing0 and MVGridDing0 for LVLoadAreaCentreDing0)
 
     Parameters
     ----------
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of loads with entries name,bus,peak_load,sector
+    generators_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of generators with entries name,bus,control,p_nom,type,weather_cell_id,subtype
     node: :obj: ding0 grid components object
-        Node of lv load area or lv station
+        Node, which is either LVStationDing0 or LVLoadAreaCentreDing0
 
     Returns:
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of loads with entries name,bus,peak_load,sector
+    generators_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of generators with entries name,bus,control,p_nom,type,weather_cell_id,subtype
     '''
-
+    # set name of bus, name of load and handles load area and grid districts
     if isinstance(node,LVStationDing0):
         name_bus = node.pypsa_bus_id
-        grid_districts=[node.grid.grid_district]
         name_load = '_'.join(['Load','mvgd' + str(node.grid.grid_district.lv_load_area.mv_grid_district.id_db), 'lac' + str(node.id_db)])
+        load_area = node.grid.grid_district
+        grid_districts = [load_area]
     elif isinstance(node,LVLoadAreaCentreDing0):
         name_bus = node.grid.station().pypsa_bus_id
-        grid_districts = node.lv_load_area._lv_grid_districts
         name_load = '_'.join(['Load','mvgd' + str(node.grid.id_db), 'lac' + str(node.id_db)])
+        load_area = node.lv_load_area
+        grid_districts = load_area.lv_grid_districts()
     else:
         raise TypeError("Only LVStationDing0 or LVLoadAreaCentreDing0 can be inserted into function append_load_areas_to_df.")
 
@@ -485,26 +492,48 @@ def append_load_areas_to_df(loads_df, generators_df, node):
             generators_df = append_generators_df(generators_df, gen, name_bus=name_bus)
 
     # Handling of loads
-    if (node.lv_load_area.peak_load_agricultural != 0):
-        load = pd.Series({'name': '_'.join([name_load,'agr']), 'bus': name_bus,
-                          'peak_load': node.lv_load_area.peak_load_agricultural, 'sector': "agricultural"})
-        loads_df = loads_df.append(load, ignore_index=True)
-    if (node.lv_load_area.peak_load_industrial != 0):
-        load = pd.Series({'name': '_'.join([name_load,'ind']), 'bus': name_bus,
-                          'peak_load': node.lv_load_area.peak_load_industrial,
-                          'sector': "industrial"})
-        loads_df = loads_df.append(load, ignore_index=True)
-    if (node.lv_load_area.peak_load_residential != 0):
-        load = pd.Series({'name': '_'.join([name_load,'res']), 'bus': name_bus,
-                          'peak_load': node.lv_load_area.peak_load_residential,
-                          'sector': "residential"})
-        loads_df = loads_df.append(load, ignore_index=True)
-    if (node.lv_load_area.peak_load_retail != 0):
-        load = pd.Series({'name': '_'.join([name_load,'ret']), 'bus': name_bus,
-                          'peak_load': node.lv_load_area.peak_load_retail,
-                          'sector': "retail"})
-        loads_df = loads_df.append(load, ignore_index=True)
+    sectors = ['agricultural', 'industrial', 'residential', 'retail']
+    for sector in sectors:
+        if (getattr(load_area, '_'.join(['peak_load', sector]))!= 0):
+            loads_df = append_load_area_to_load_df(sector, load_area, loads_df, name_bus, name_load)
     return loads_df, generators_df
+
+
+def append_load_area_to_load_df(sector, load_area, loads_df, name_bus, name_load):
+    '''
+    Appends LVLoadArea or LVGridDistrict to dataframe of loads in pypsa format.
+
+    Parameters
+    ----------
+    sector: str
+        load sector: 'agricultural', 'industrial', 'residential' or 'retail'
+    load_are: :obj: ding0 region
+        LVGridDistrictDing0 or LVLoadAreaDing0, load area of which load is to be aggregated and added
+    loads_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of loads with entries name, bus, peak_load, annual_consumption and sector
+    name_bus: str
+        name of bus to which load is connected
+    name_load: str
+        name of load
+
+    Returns:
+    loads_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of loads with entries name, bus, peak_load, annual_consumption and sector
+    '''
+    # get annual consumption
+    if isinstance(load_area, LVGridDistrictDing0):
+        consumption = getattr(load_area, '_'.join(['sector_consumption', sector]))
+    elif isinstance(load_area,LVLoadAreaDing0):
+        consumption = 0
+        for lv_grid_district in load_area.lv_grid_districts():
+            consumption += getattr(lv_grid_district, '_'.join(['sector_consumption', sector]))
+    # create and append load to df
+    load = pd.Series(
+        {'name': '_'.join([name_load, sector]), 'bus': name_bus,
+         'peak_load': getattr(load_area, '_'.join(['peak_load', sector])),
+         'annual_consumption': consumption, 'sector': sector})
+    loads_df = loads_df.append(load, ignore_index=True)
+    return loads_df
 
 
 def append_generators_df(generators_df, node, name_bus = None):

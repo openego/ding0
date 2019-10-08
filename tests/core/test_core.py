@@ -6,7 +6,7 @@ import oedialect
 import pandas as pd
 import os
 from tests.core.network.test_grids import TestMVGridDing0
-from pandas.util.testing import assert_frame_equal
+from pandas.util.testing import assert_frame_equal, assert_series_equal
 from ding0.tools.results import load_nd_from_pickle
 from ding0.core import NetworkDing0
 
@@ -136,24 +136,31 @@ class TestNetworkDing0(object):
             os.rmdir(os.path.join(dir, id_mvgd))
 
 
-    def test_run_powerflow(self):
-        engine = db.connection(readonly=True)
-        session = sessionmaker(bind=engine)()
-        # export to pypsa csv format
-        dir = os.getcwd()
-        #load network, Todo: change to run ding0
-        nd = load_nd_from_pickle(filename='ding0_grids_example.pkl',path= 'C:/Users/Anya.Heider/open_BEA/ding0/ding0/examples')
-        # save network and components to csv
-        path = os.path.join(dir, str(nd._mv_grid_districts[0].id_db))
-        if not os.path.exists(path):
-            os.makedirs(path)
-        nd.run_powerflow(session, export_result_dir=path)
-        lines = pd.DataFrame.from_csv(os.path.join(path,'line_data.csv'))
-        buses = pd.DataFrame.from_csv(os.path.join(path, 'bus_data.csv'))
-        compare_lines = pd.DataFrame.from_csv('C:/Users/Anya.Heider/.ding0/pf_results_before/line_data.csv')
-        compare_buses = pd.DataFrame.from_csv('C:/Users/Anya.Heider/.ding0/pf_results_before/bus_data.csv')
-
-        assert_frame_equal(lines,compare_lines)
-        assert_frame_equal(buses,compare_buses)
+    def debug_run_powerflow(self):
+        try:
+            engine = db.connection(readonly=True)
+            session = sessionmaker(bind=engine)()
+            # export to pypsa csv format
+            dir = os.getcwd()
+            #load network, Todo: change to run ding0
+            nd = load_nd_from_pickle(filename='ding0_grids_example.pkl',path= 'C:/Users/Anya.Heider/open_BEA/ding0/ding0/examples')
+            # save network and components to csv
+            path = os.path.join(dir, str(nd._mv_grid_districts[0].id_db))
+            if not os.path.exists(path):
+                os.makedirs(path)
+            nd.run_powerflow(session, export_result_dir=path)
+            lines = pd.DataFrame.from_csv(os.path.join(path,'line_data.csv'))
+            buses = pd.DataFrame.from_csv(os.path.join(path, 'bus_data.csv'))
+            compare_lines = pd.DataFrame.from_csv('C:/Users/Anya.Heider/.ding0/pf_results_before/line_data.csv') #Todo: move to project directory
+            compare_buses = pd.DataFrame.from_csv('C:/Users/Anya.Heider/.ding0/pf_results_before/bus_data.csv')
+            #compare results
+            for line_name, line_data in compare_lines.iterrows():
+                assert_series_equal(line_data,lines.loc[line_name])
+            for bus_name, bus_data in compare_buses.iterrows():
+                assert_series_equal(bus_data,buses.loc[bus_name])
+        finally:
+            os.remove(os.path.join(path,'line_data.csv'))
+            os.remove(os.path.join(path, 'bus_data.csv'))
+            os.rmdir(os.path.join(path))
     # def test_run_ding0(self):
     #     pass
