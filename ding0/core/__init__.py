@@ -22,12 +22,12 @@ from ding0.core.network.grids import *
 from ding0.core.network.stations import *
 from ding0.core.structure.regions import *
 from ding0.core.powerflow import *
-from ding0.tools.pypsa_io import fill_component_dataframes
+from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
 from ding0.tools.animation import AnimationDing0
 from ding0.tools.plots import plot_mv_topology
 from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
-from ding0.tools.tools import merge_two_component_dicts
+from ding0.tools.tools import merge_two_dicts_of_dataframes
 
 import os
 import logging
@@ -1604,8 +1604,9 @@ class NetworkDing0:
 
         logger.info('=====> MV Grids exported (NEW)')
 
-    def to_dataframe(self):
+    def to_dataframe_old(self):
         """
+        Todo: remove? or replace by part of to_csv()
         Export grid data to dataframes for statistical analysis.
 
         The export to dataframe is similar to db tables exported by `export_mv_grid_new`.
@@ -1731,59 +1732,63 @@ class NetworkDing0:
         ----------
         dir: :obj:`str`
             Directory to which network is saved.
+        only_export_mv: bool
+            When True only mv topology is exported with aggregated lv grid districts
         '''
-        srid = str(int(cfg_ding0.get('geo', 'srid')))
-        cols = {'network_columns': ['name', 'srid', 'mv_grid_district_geom', 'mv_grid_district_population'],
-                'buses_columns': ['name', 'geom', 'mv_grid_id', 'lv_grid_id', 'v_nom', 'in_building'],
-                'lines_columns': ['name','bus0', 'bus1', 'length', 'r', 'x', 's_nom', 'num_parallel', 'type'],
-                'transformer_columns': ['name', 'bus0', 'bus1', 's_nom', 'r', 'x', 'type'],
-                'generators_columns': ['name', 'bus', 'control', 'p_nom', 'type', 'weather_cell_id', 'subtype'],
-                'loads_columns': ['name', 'bus', 'peak_load', 'sector']}
 
+        buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
         if (dir == ''):
-            dir = get_default_home_dir() # eventuell ändern
+            dir = get_default_home_dir()  # eventuell ändern
         # open all switch connectors
         self.control_circuit_breakers(mode='open')
         # start filling component dataframes
         for grid_district in self.mv_grid_districts():
-            # initialize dataframes
-            network_df = pd.DataFrame(columns=cols['network_columns'])
-            buses_df = pd.DataFrame(columns=cols['buses_columns'])
-            lines_df = pd.DataFrame(columns=cols['lines_columns'])
-            transformer_df = pd.DataFrame(columns=cols['transformer_columns'])
-            generators_df = pd.DataFrame(columns=cols['generators_columns'])
-            loads_df = pd.DataFrame(columns=cols['loads_columns'])
-            # fill dataframes
-            network_df = network_df.append(
-                pd.Series({'name':grid_district.id_db, 'srid':srid, 'mv_grid_district_geom':grid_district.geo_data,
-                           'mv_grid_district_population':0}),ignore_index=True
-            ).set_index('name')
-            # add mv grid components
-            mv_grid = grid_district.mv_grid
-            mv_components = fill_component_dataframes(mv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df, only_export_mv)
-            components = mv_components
-            if not only_export_mv:
-                # add lv grid components
-                for lv_load_area in grid_district.lv_load_areas():
-                    for lv_grid_district in lv_load_area.lv_grid_districts():
-                        lv_grid = lv_grid_district.lv_grid
-                        lv_components_tmp = fill_component_dataframes(lv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df)
-                        components = merge_two_component_dicts(components,lv_components_tmp)
+            gd_components, network_df, _ = fill_mvgd_component_dataframes(grid_district, buses_df, generators_df,
+                                                                       lines_df, loads_df,transformer_df, only_export_mv)
             # save network and components to csv
-            path = os.path.join(dir,str(grid_district.id_db))
+            path = os.path.join(dir, str(grid_district.id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
-            network_df.to_csv(os.path.join(path,'network_{}.csv'.format(str(grid_district.id_db))))
-            components['Transformer'].to_csv(
-                os.path.join(path,'transformers_{}.csv'.format(str(grid_district.id_db))))
-            components['Bus'].to_csv(
+            network_df.to_csv(os.path.join(path, 'network_{}.csv'.format(str(grid_district.id_db))))
+            gd_components['Transformer'].to_csv(
+                os.path.join(path, 'transformers_{}.csv'.format(str(grid_district.id_db))))
+            gd_components['Bus'].to_csv(
                 os.path.join(path, 'buses_{}.csv'.format(str(grid_district.id_db))))
-            components['Line'].to_csv(
+            gd_components['Line'].to_csv(
                 os.path.join(path, 'lines_{}.csv'.format(str(grid_district.id_db))))
-            components['Load'].to_csv(
+            gd_components['Load'].to_csv(
                 os.path.join(path, 'loads_{}.csv'.format(str(grid_district.id_db))))
-            components['Generator'].to_csv(
+            gd_components['Generator'].to_csv(
                 os.path.join(path, 'generators_{}.csv'.format(str(grid_district.id_db))))
+
+    def to_dataframe(self,  only_export_mv = False):
+        '''
+        Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
+        Respectively saves files for network, buses, lines, transformers, loads and generators.
+
+        Parameters
+        ----------
+        only_export_mv: bool
+            When True only mv topology is exported with aggregated lv grid districts
+        '''
+        buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+        components = {}
+        networks = pd.DataFrame()
+        # open all switch connectors
+        self.control_circuit_breakers(mode='open')
+        # start filling component dataframes
+        for grid_district in self.mv_grid_districts():
+            gd_components, network_df, _ = fill_mvgd_component_dataframes(grid_district, buses_df, generators_df,
+                                                                            lines_df, loads_df, transformer_df, only_export_mv)
+            if len(components) == 0:
+                components = gd_components
+                networks = network_df
+            else:
+                components = merge_two_dicts_of_dataframes(components, gd_components)
+                networks = networks.append(network_df)
+
+        components['Network'] = network_df
+        return components
 
 
     def mv_routing(self, debug=False, animation=False):
@@ -1927,7 +1932,7 @@ class NetworkDing0:
         elif mode == 'close':
             logger.info('=====> MV Circuit Breakers closed')
 
-    def run_powerflow(self, session, method='onthefly', export_pypsa=False, debug=False, export_result_dir=None):
+    def run_powerflow(self, session = None, method='onthefly', only_calc_mv = True, export_pypsa=False, debug=False, export_result_dir=None):
         """
         Performs power flow calculation for all MV grids
 
@@ -1958,7 +1963,7 @@ class NetworkDing0:
                     export_pypsa_dir = repr(grid_district.mv_grid)
                 else:
                     export_pypsa_dir = None
-                grid_district.mv_grid.run_powerflow(session, method='db',
+                grid_district.mv_grid.run_powerflow(method='db',
                                                     export_pypsa_dir=export_pypsa_dir,
                                                     debug=debug,
                                                     export_result_dir=export_result_dir)
@@ -1969,8 +1974,8 @@ class NetworkDing0:
                     export_pypsa_dir = repr(grid_district.mv_grid)
                 else:
                     export_pypsa_dir = None
-                grid_district.mv_grid.run_powerflow(session,
-                                                    method='onthefly',
+                grid_district.mv_grid.run_powerflow(method='onthefly',
+                                                    only_calc_mv = only_calc_mv,
                                                     export_pypsa_dir=export_pypsa_dir,
                                                     debug=debug,
                                                     export_result_dir=export_result_dir)

@@ -26,6 +26,7 @@ from ding0.tools.geo import calc_geo_dist_vincenty
 from ding0.grid.mv_grid.tools import set_circuit_breakers
 from ding0.flexopt.reinforce_grid import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
 
 import os
 import networkx as nx
@@ -727,7 +728,7 @@ class MVGridDing0(GridDing0):
 
     
 
-    def run_powerflow(self, session, export_pypsa_dir=None,  method='onthefly', debug=False, export_result_dir = None):
+    def run_powerflow(self, method='onthefly', only_calc_mv = True,  export_pypsa_dir=None,   debug=False, export_result_dir = None):
         """ Performs power flow calculation for all MV grids
 
         Args
@@ -760,7 +761,10 @@ class MVGridDing0(GridDing0):
             raise NotImplementedError("Please use 'onthefly'.")
 
         elif method == 'onthefly':
-            components, components_data = self.export_to_pypsa(session, method)
+            buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+            components, _,  components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+                                                                         lines_df, loads_df, transformer_df,  only_export_mv=only_calc_mv,
+                                                                         return_time_varying_data=True)
             pypsa_io.run_powerflow_onthefly(components,
                                             components_data,
                                             self,

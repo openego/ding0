@@ -138,8 +138,23 @@ class TestNetworkDing0(object):
 
     def debug_run_powerflow(self):
         try:
-            engine = db.connection(readonly=True)
-            session = sessionmaker(bind=engine)()
+            def extract_tuple_values_from_string(string):
+                tuple = string.replace('[', '')
+                tuple = tuple.replace(']', '')
+                tuple = str.split(tuple, ',')
+                return float(tuple[0]), float(tuple[1])
+
+            def assert_by_absolute_tolerance(x, y, tol=0.0001, element_name = ''):
+                if (x - y > tol):
+                    raise Exception('Unequal values for element {}: val1 is {}, val2 is {}.'.format(element_name, x, y))
+
+            def assert_almost_equal(orig_df, comp_df, element_name, tol = 1e-4):
+                for key in orig_df.index:
+                    load_ref, gen_ref = extract_tuple_values_from_string(orig_df[key])
+                    load_comp, gen_comp = extract_tuple_values_from_string(comp_df.loc[element_name][key])
+                    assert_by_absolute_tolerance(load_ref, load_comp, tol, element_name)
+                    assert_by_absolute_tolerance(gen_ref, gen_comp, tol, element_name)
+
             # export to pypsa csv format
             dir = os.getcwd()
             #load network, Todo: change to run ding0
@@ -148,19 +163,20 @@ class TestNetworkDing0(object):
             path = os.path.join(dir, str(nd._mv_grid_districts[0].id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
-            nd.run_powerflow(session, export_result_dir=path)
+            nd.run_powerflow(export_result_dir=path)
             lines = pd.DataFrame.from_csv(os.path.join(path,'line_data.csv'))
             buses = pd.DataFrame.from_csv(os.path.join(path, 'bus_data.csv'))
             compare_lines = pd.DataFrame.from_csv('C:/Users/Anya.Heider/.ding0/pf_results_before/line_data.csv') #Todo: move to project directory
             compare_buses = pd.DataFrame.from_csv('C:/Users/Anya.Heider/.ding0/pf_results_before/bus_data.csv')
             #compare results
             for line_name, line_data in compare_lines.iterrows():
-                assert_series_equal(line_data,lines.loc[line_name])
+                assert_almost_equal(line_data, lines, line_name)
             for bus_name, bus_data in compare_buses.iterrows():
-                assert_series_equal(bus_data,buses.loc[bus_name])
+                assert_almost_equal(bus_data, buses, bus_name)
+
         finally:
             os.remove(os.path.join(path,'line_data.csv'))
             os.remove(os.path.join(path, 'bus_data.csv'))
-            os.rmdir(os.path.join(path))
+            # os.rmdir(os.path.join(path))
     # def test_run_ding0(self):
     #     pass
