@@ -372,10 +372,9 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df, generato
              and (edge['adj_nodes'][1] in nodes and not isinstance(
             edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
 
-
     for trafo in grid.station()._transformers:
-        trafo_type = str(int(trafo.s_max_a/1e3))+ ' MVA 110/20 kV'
-        transformer_df = append_transformers_df(transformer_df, trafo, trafo_type)
+        type = '{} MVA 110/10 kV'.format(int(trafo.s_max_a/1e3))
+        transformer_df = append_transformers_df(transformer_df, trafo, type)
 
     node_components, component_data = nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df,
                                                                  loads_df, transformer_df, only_export_mv, return_time_varying_data)
@@ -796,7 +795,7 @@ def append_transformers_df(transformers_df, trafo, type = np.NaN):
     '''
     trafo_tmp = pd.Series({'name': repr(trafo), 'bus0':trafo.grid.station().pypsa_bus0_id,
                            'bus1':trafo.grid.station().pypsa_bus_id, 'x':trafo.x_pu, 'r':trafo.r_pu,
-                           's_nom':trafo.s_max_a, 'type': type})
+                           's_nom':trafo.s_max_a/1e3, 'type': type})
     transformers_df = transformers_df.append(trafo_tmp,ignore_index=True)
     return transformers_df
 
