@@ -152,7 +152,7 @@ class TestNetworkDing0(object):
             os.rmdir(os.path.join(dir, id_mvgd))
 
 
-    def debug_run_powerflow(self):
+    def test_run_powerflow(self, minimal_grid):
         try:
             def extract_tuple_values_from_string(string):
                 tuple = string.replace('[', '')
@@ -173,8 +173,8 @@ class TestNetworkDing0(object):
 
             # export to pypsa csv format
             dir = os.getcwd()
-            #load network, Todo: change to run ding0
-            nd = load_nd_from_pickle(filename='ding0_grids_example.pkl',path= 'C:/Users/Anya.Heider/open_BEA/ding0/ding0/examples')
+            #load network
+            nd = minimal_grid
             # save network and components to csv
             path = os.path.join(dir, str(nd._mv_grid_districts[0].id_db))
             if not os.path.exists(path):
@@ -182,8 +182,8 @@ class TestNetworkDing0(object):
             nd.run_powerflow(export_result_dir=path)
             lines = pd.DataFrame.from_csv(os.path.join(path,'line_data.csv'))
             buses = pd.DataFrame.from_csv(os.path.join(path, 'bus_data.csv'))
-            compare_lines = pd.DataFrame.from_csv('C:/Users/Anya.Heider/.ding0/pf_results_before/line_data.csv') #Todo: move to project directory
-            compare_buses = pd.DataFrame.from_csv('C:/Users/Anya.Heider/.ding0/pf_results_before/bus_data.csv')
+            compare_lines = pd.DataFrame.from_csv(os.path.join(dir,'testdata/line_data.csv'))
+            compare_buses = pd.DataFrame.from_csv(os.path.join(dir,'testdata/bus_data.csv'))
             #compare results
             for line_name, line_data in compare_lines.iterrows():
                 assert_almost_equal(line_data, lines, line_name)
