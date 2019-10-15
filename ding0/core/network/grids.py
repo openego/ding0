@@ -656,7 +656,7 @@ class MVGridDing0(GridDing0):
         # add peak demand for all Load Areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
 
-    def export_to_pypsa(self, session, method='onthefly'):
+    def export_to_pypsa(self, session, method='onthefly', only_calc_mv = True):
         """Exports MVGridDing0 grid to PyPSA database tables
 
         Peculiarities of MV grids are implemented here. Derive general export
@@ -714,13 +714,11 @@ class MVGridDing0(GridDing0):
                                                   resolution=resolution,
                                                   start_time=start_time)
         elif method == 'onthefly':
-
-            nodes_dict, components_data = pypsa_io.nodes_to_dict_of_dataframes(
-                self,
-                nodes,
-                lv_transformer=False)
-            edges_dict = pypsa_io.edges_to_dict_of_dataframes(self, edges)
-            components = tools.merge_two_dicts(nodes_dict, edges_dict)
+            buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+            components, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+                                                                            lines_df, loads_df, transformer_df,
+                                                                            only_export_mv=only_calc_mv,
+                                                                            return_time_varying_data=True)
 
             return components, components_data
         else:
