@@ -69,6 +69,7 @@ class TestNetworkDing0(object):
         loads = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'loads_{}.csv'.format(id_mvgd)))
         generators = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'generators_{}.csv'.format(id_mvgd)))
         transformers = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'transformers_{}.csv'.format(id_mvgd)))
+        switches = pd.DataFrame.from_csv(os.path.join(dir,id_mvgd, 'switches_{}.csv'.format(id_mvgd)))
 
         try:
             # check if all entries are unique
@@ -82,7 +83,8 @@ class TestNetworkDing0(object):
                 raise Exception('Generator names are not unique. Please check.')
             if not buses.index.is_unique:
                 raise Exception('Bus names are not unique. Please check.')
-
+            if not switches.index.is_unique:
+                raise Exception('Switch names are not unique. Please check.')
             # check if buses of lines exist in buses
             for bus in lines['bus0']:
                 if bus in buses.T:
@@ -121,10 +123,23 @@ class TestNetworkDing0(object):
                 else:
                     raise Exception('bus {} of generator not in buses dataframe.'.format(bus))
 
+            # check if buses of switches exist in buses
+            for bus in switches['bus_open']:
+                if bus in buses.T:
+                    continue
+                else:
+                    raise Exception('bus {} of open switches not in buses dataframe.'.format(bus))
+            for bus in switches['bus_closed']:
+                if bus in buses.T:
+                    continue
+                else:
+                    raise Exception('bus {} of closed switches not in buses dataframe.'.format(bus))
+
             # check if all buses are connected to either line or transformer
             for bus in buses.T:
                 if not bus in lines['bus0'].values and not bus in lines['bus1'].values and \
-                    not bus in transformers['bus0'].values and not bus in transformers['bus1'].values:
+                    not bus in transformers['bus0'].values and not bus in transformers['bus1'].values\
+                        and bus not in switches['bus_open'].values:
                     raise Exception('Bus {} is not connected to any branch.'.format(bus))
         finally:
             os.remove(os.path.join(dir,id_mvgd,'buses_{}.csv'.format(id_mvgd)))
@@ -133,6 +148,7 @@ class TestNetworkDing0(object):
             os.remove(os.path.join(dir,id_mvgd, 'generators_{}.csv'.format(id_mvgd)))
             os.remove(os.path.join(dir,id_mvgd,'transformers_{}.csv'.format(id_mvgd)))
             os.remove(os.path.join(dir, id_mvgd, 'network_{}.csv'.format(id_mvgd)))
+            os.remove(os.path.join(dir, id_mvgd, 'switches_{}.csv'.format(id_mvgd)))
             os.rmdir(os.path.join(dir, id_mvgd))
 
 
