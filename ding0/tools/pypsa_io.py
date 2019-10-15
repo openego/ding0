@@ -316,8 +316,8 @@ def fill_mvgd_component_dataframes(grid_district, buses_df, generators_df, lines
     srid = str(int(cfg_ding0.get('geo', 'srid')))
     # fill dataframes
     network_df = pd.DataFrame(
-        {'name': grid_district.id_db, 'srid': srid, 'mv_grid_district_geom': grid_district.geo_data,
-         'mv_grid_district_population': 0}).set_index('name')
+        {'name': [grid_district.id_db], 'srid': [srid], 'mv_grid_district_geom': [grid_district.geo_data],
+         'mv_grid_district_population': [0]}).set_index('name')
     # add mv grid components
     mv_grid = grid_district.mv_grid
     mv_components, mv_component_data = fill_component_dataframes(mv_grid, buses_df, lines_df, transformer_df, generators_df, loads_df,
@@ -355,6 +355,15 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df, generato
     :obj:`dict`
         Dictionary of component Dataframes 'Bus', 'Generator', 'Line', 'Load', 'Transformer'
     '''
+
+    # fill list of open circuit breakers
+    open_circuit_breakers = []
+    if hasattr(grid, '_circuit_breakers'):
+        for circuit_breaker in grid.circuit_breakers():
+            if circuit_breaker.status == 'open':
+                open_circuit_breakers.append(repr(circuit_breaker))
+                circuit_breaker.close()
+
     nodes = grid._graph.nodes()
 
     edges = [edge for edge in list(grid.graph_edges())
@@ -363,15 +372,14 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df, generato
              and (edge['adj_nodes'][1] in nodes and not isinstance(
             edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
 
-
     for trafo in grid.station()._transformers:
-        trafo_type = str(int(trafo.s_max_a/1e3))+ ' MVA 110/10 kV'
-        transformer_df = append_transformers_df(transformer_df, trafo, trafo_type)
+        transformer_df = append_transformers_df(transformer_df, trafo)
 
     node_components, component_data = nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df,
                                                                  loads_df, transformer_df, only_export_mv, return_time_varying_data)
     branch_components = edges_to_dict_of_dataframes_for_csv_export(edges, lines_df)
     components = merge_two_dicts(node_components, branch_components)
+    components = circuit_breakers_to_df(grid, components, open_circuit_breakers)
     return components, component_data
 
 def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df, loads_df, transformer_df, only_export_mv = False,
@@ -410,7 +418,6 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
             raise Exception("{} is isolated node. Please check.".format(repr(isl_node)))
 
     # initialise DataFrames for time varying elements, load all necessary values
-    components_data = {}
     if return_time_varying_data:
         conf = {}
         conf['kw2mw'] = 1e-3
@@ -922,6 +929,30 @@ def append_lines_df(edge, lines_df):
     lines_df = lines_df.append(line, ignore_index=True)
     return lines_df
 
+def circuit_breakers_to_df(grid, components, open_circuit_breakers):
+    if hasattr(grid, '_circuit_breakers'):
+        # initialise dataframe for circuit breakers
+        circuit_breakers_df = pd.DataFrame(columns=['name', 'bus_closed', 'bus_open', 'type_info'])
+        for circuit_breaker in grid.circuit_breakers():
+            # get secondary bus of opened branch
+            name_bus_closed = components['Line'].T[repr(circuit_breaker.branch)].bus1
+            # create virtual bus and append to components['Bus']
+            name_bus_open = 'virtual_' + name_bus_closed
+            bus_open = components['Bus'].T[name_bus_closed]
+            bus_open.name = name_bus_open
+            components['Bus'] = components['Bus'].append(bus_open)
+            # if circuit breaker was open, change bus1 of branch to new virtual node
+            if repr(circuit_breaker) in open_circuit_breakers:
+                components['Line'].at[repr(circuit_breaker.branch), 'bus1'] = name_bus_open
+            # append circuit breaker to dataframe
+            circuit_breakers_df = circuit_breakers_df.append(pd.Series({'name': repr(circuit_breaker), 'bus_closed': name_bus_closed,
+                                                                        'bus_open': name_bus_open, 'type_info': 'Switch Disconnector'}),
+                                                             ignore_index=True)
+        # add switches to components
+        components['Switch'] = circuit_breakers_df.set_index('name')
+        return components
+    else:
+        return components
 
 def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=None, debug=False, export_result_dir = None):
     """
@@ -960,10 +991,6 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
                               start=start_time)
 
     # TODO: Instead of hard coding PF config, values from class PFConfigDing0 can be used here.
-    #Todo: REMOVE ONLY FOR DEBUGGING
-    components['Bus'] = components['Bus'].drop('Busbar_mvgd460_HV')
-    components_data['Bus'] = components_data['Bus'].drop('Busbar_mvgd460_HV')
-    components['Transformer'] = components['Transformer'].drop(['Transformer_mv_grid_460_1','Transformer_mv_grid_460_2'])
     # create PyPSA powerflow problem
     network, snapshots = create_powerflow_problem(timerange, components)
 

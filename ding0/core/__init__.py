@@ -1760,6 +1760,9 @@ class NetworkDing0:
                 os.path.join(path, 'loads_{}.csv'.format(str(grid_district.id_db))))
             gd_components['Generator'].to_csv(
                 os.path.join(path, 'generators_{}.csv'.format(str(grid_district.id_db))))
+            gd_components['Switch'].to_csv(
+                os.path.join(path, 'switches_{}.csv'.format(str(grid_district.id_db))))
+
 
     def to_dataframe(self,  only_export_mv = False):
         '''
