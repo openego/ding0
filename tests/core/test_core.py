@@ -143,7 +143,7 @@ class TestNetworkDing0(object):
                         and bus not in switches['bus_open'].values:
                     raise Exception('Bus {} is not connected to any branch.'.format(bus))
         finally:
-            shutil.rmtree(os.path.join(dir,id_mvgd), ignore_errors=True)
+            shutil.rmtree(dir, ignore_errors=True)
 
 
     def test_run_powerflow(self, minimal_grid):
