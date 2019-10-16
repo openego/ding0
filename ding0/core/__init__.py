@@ -40,6 +40,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 import subprocess
+import json
 import oedialect
 
 if not 'READTHEDOCS' in os.environ:
@@ -1762,6 +1763,21 @@ class NetworkDing0:
                 os.path.join(path, 'generators_{}.csv'.format(str(grid_district.id_db))))
             gd_components['Switch'].to_csv(
                 os.path.join(path, 'switches_{}.csv'.format(str(grid_district.id_db))))
+
+            # Merge metadata of multiple runs
+            if 'metadata' not in locals():
+                metadata = self.metadata
+
+            else:
+                if isinstance(grid_district, list):
+                    metadata['mv_grid_districts'].extend(grid_district)
+                else:
+                    metadata['mv_grid_districts'].append(grid_district)
+
+            # Save metadata to disk
+        with open(os.path.join(path, 'Ding0_{}.meta'.format(metadata['run_id'])),
+                  'w') as f:
+            json.dump(metadata, f)
 
 
     def to_dataframe(self,  only_export_mv = False):

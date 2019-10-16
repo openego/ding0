@@ -9,6 +9,7 @@ from tests.core.network.test_grids import TestMVGridDing0
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 from ding0.tools.results import load_nd_from_pickle
 from ding0.core import NetworkDing0
+import shutil
 
 
 class TestNetworkDing0(object):
@@ -53,13 +54,13 @@ class TestNetworkDing0(object):
     def test_to_csv(self, minimal_grid):
         """
         Check if export to csv exports network in a way that all exported nodes and elements are connected to each other.
-        Checks if lines, transformers, laods and generators can be connected with buses.
+        Checks if lines, transformers, loads and generators can be connected with buses.
         Checks if all exported buses are connected to at least one branch element (lines, transformers).
         """
         nd = minimal_grid
 
         # export to pypsa csv format
-        dir = os.getcwd()
+        dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),'test')
         nd.to_csv(dir)
 
         # import exported dataset
@@ -142,17 +143,14 @@ class TestNetworkDing0(object):
                         and bus not in switches['bus_open'].values:
                     raise Exception('Bus {} is not connected to any branch.'.format(bus))
         finally:
-            os.remove(os.path.join(dir,id_mvgd,'buses_{}.csv'.format(id_mvgd)))
-            os.remove(os.path.join(dir,id_mvgd,'lines_{}.csv'.format(id_mvgd)))
-            os.remove(os.path.join(dir,id_mvgd,'loads_{}.csv'.format(id_mvgd)))
-            os.remove(os.path.join(dir,id_mvgd, 'generators_{}.csv'.format(id_mvgd)))
-            os.remove(os.path.join(dir,id_mvgd,'transformers_{}.csv'.format(id_mvgd)))
-            os.remove(os.path.join(dir, id_mvgd, 'network_{}.csv'.format(id_mvgd)))
-            os.remove(os.path.join(dir, id_mvgd, 'switches_{}.csv'.format(id_mvgd)))
-            os.rmdir(os.path.join(dir, id_mvgd))
+            shutil.rmtree(os.path.join(dir,id_mvgd), ignore_errors=True)
 
 
     def test_run_powerflow(self, minimal_grid):
+        """
+        Checks if power flow on test grid provides the expected values. Both power flow on only mv grid and on combined
+        mv and lv grids are tested.
+        """
         try:
             def extract_tuple_values_from_string(string):
                 tuple = string.replace('[', '')
@@ -176,23 +174,35 @@ class TestNetworkDing0(object):
             #load network
             nd = minimal_grid
             # save network and components to csv
-            path = os.path.join(dir, str(nd._mv_grid_districts[0].id_db))
+            path = os.path.join(dir, 'test'+ str(nd._mv_grid_districts[0].id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
+
+            print('Starting power flow tests for MV grid only')
             nd.run_powerflow(export_result_dir=path)
             lines = pd.DataFrame.from_csv(os.path.join(path,'line_data.csv'))
             buses = pd.DataFrame.from_csv(os.path.join(path, 'bus_data.csv'))
             compare_lines = pd.DataFrame.from_csv(os.path.join(dir,'testdata','line_data.csv'))
             compare_buses = pd.DataFrame.from_csv(os.path.join(dir,'testdata','bus_data.csv'))
-            #compare results
+            # compare results
             for line_name, line_data in compare_lines.iterrows():
                 assert_almost_equal(line_data, lines, line_name)
             for bus_name, bus_data in compare_buses.iterrows():
                 assert_almost_equal(bus_data, buses, bus_name)
+            print('Finished testing MV grid only')
 
+            # run powerflow inclusive lv grids
+            print('Starting power flow test for MV and LV grids.')
+            nd.run_powerflow(export_result_dir=path, only_calc_mv=False)
+            lines = pd.DataFrame.from_csv(os.path.join(path, 'line_data.csv'))
+            buses = pd.DataFrame.from_csv(os.path.join(path, 'bus_data.csv'))
+            compare_lines = pd.DataFrame.from_csv(os.path.join(dir, 'testdata', 'line_data_lv.csv'))
+            compare_buses = pd.DataFrame.from_csv(os.path.join(dir, 'testdata', 'bus_data_lv.csv'))
+            # compare results
+            for line_name, line_data in compare_lines.iterrows():
+                assert_almost_equal(line_data, lines, line_name)
+            for bus_name, bus_data in compare_buses.iterrows():
+                assert_almost_equal(bus_data, buses, bus_name)
+            print('Finished testing MV and LV grids')
         finally:
-            os.remove(os.path.join(path,'line_data.csv'))
-            os.remove(os.path.join(path, 'bus_data.csv'))
-            # os.rmdir(os.path.join(path))
-    # def test_run_ding0(self):
-    #     pass
+            shutil.rmtree(path, ignore_errors=True)

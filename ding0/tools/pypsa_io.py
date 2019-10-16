@@ -39,6 +39,8 @@ import os
 import logging
 import pandas as pd
 import numpy as np
+from networkx import connected_components
+
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
@@ -97,7 +99,7 @@ def fill_mvgd_component_dataframes(grid_district, buses_df, generators_df, lines
             for lv_grid_district in lv_load_area.lv_grid_districts():
                 lv_grid = lv_grid_district.lv_grid
                 lv_components_tmp, lv_component_data = fill_component_dataframes(lv_grid, buses_df, lines_df, transformer_df,
-                                                              generators_df, loads_df, return_time_varying_data)
+                                                              generators_df, loads_df, only_export_mv, return_time_varying_data)
                 mv_components = merge_two_dicts_of_dataframes(mv_components, lv_components_tmp)
                 mv_component_data = merge_two_dicts_of_dataframes(mv_component_data,lv_component_data)
     return mv_components, network_df, mv_component_data
@@ -142,14 +144,17 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df, generato
             edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
 
     for trafo in grid.station()._transformers:
-        type = '{} MVA 110/10 kV'.format(int(trafo.s_max_a/1e3))
-        transformer_df = append_transformers_df(transformer_df, trafo, type)
+        if trafo.x_pu == None:
+            type = '{} MVA 110/10 kV'.format(int(trafo.s_max_a/1e3))
+            transformer_df = append_transformers_df(transformer_df, trafo, type)
+        else:
+            transformer_df = append_transformers_df(transformer_df, trafo)
 
     node_components, component_data = nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df,
                                                                  loads_df, transformer_df, only_export_mv, return_time_varying_data)
     branch_components = edges_to_dict_of_dataframes_for_csv_export(edges, lines_df)
     components = merge_two_dicts(node_components, branch_components)
-    components = circuit_breakers_to_df(grid, components, open_circuit_breakers)
+    components, component_data = circuit_breakers_to_df(grid, components, component_data, open_circuit_breakers, return_time_varying_data)
     return components, component_data
 
 def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators_df, loads_df, transformer_df, only_export_mv = False,
@@ -255,8 +260,8 @@ def nodes_to_dict_of_dataframes_for_csv_export(grid, nodes, buses_df, generators
                 sorted_consumption = [(value, key) for key, value in node.consumption.items()]
                 sector = max(sorted_consumption)[1]
                 # add load
-                load = pd.Series({'name': repr(node), 'bus': node.pypsa_bus_id,
-                                  'peak_load': node.peak_load, 'sector': sector})
+                load = pd.Series({'name': repr(node), 'bus': node.pypsa_bus_id,'peak_load': node.peak_load/1e3,
+                                  'annual_consumption':node.consumption[sector]/1e3, 'sector': sector})
                 loads_df = loads_df.append(load, ignore_index=True)
                 buses_df = append_buses_df(buses_df,grid,node,srid)
                 # add time varying elements
@@ -457,8 +462,8 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus, name_load
     peak_load = getattr(load_area, '_'.join(['peak_load', sector]))
     load = pd.Series(
         {'name': name_load, 'bus': name_bus,
-         'peak_load': peak_load,
-         'annual_consumption': consumption, 'sector': sector})
+         'peak_load': peak_load/1e3,
+         'annual_consumption': consumption/1e3, 'sector': sector})
     loads_df = loads_df.append(load, ignore_index=True)
     # handle time varying data
     if return_time_varying_data:
@@ -492,7 +497,7 @@ def append_generators_df(generators_df, node, name_bus = None):
     if name_bus is None:
         name_bus = node.pypsa_bus_id
     generator = pd.Series({'name':repr(node),
-                           'bus': name_bus, 'control':'PQ', 'p_nom':(node.capacity * node.capacity_factor),
+                           'bus': name_bus, 'control':'PQ', 'p_nom':(node.capacity * node.capacity_factor)/1e3,
                            'type':node.type, 'subtype':node.subtype, 'weather_cell_id':weather_cell_id})
     generators_df = generators_df.append(generator, ignore_index=True)
     return generators_df
@@ -532,13 +537,15 @@ def append_buses_df(buses_df, grid, node, srid, node_name =''):
     if isinstance(grid, ding0_nw.grids.MVGridDing0):
         mv_grid_id = grid.id_db
         lv_grid_id = np.NaN
+        v_nom = grid.v_level
     elif isinstance(grid, ding0_nw.grids.LVGridDing0):
         mv_grid_id = grid.grid_district.lv_load_area.mv_grid_district.mv_grid.id_db
         lv_grid_id = grid.id_db
+        v_nom = grid.v_level/1e3
     else:
         raise TypeError('Something went wrong, only MVGridDing0 and LVGridDing0 should be inserted as grid.')
     # create bus dataframe
-    bus = pd.Series({'name': node_name,'v_nom':grid.v_level, 'geom':geo,
+    bus = pd.Series({'name': node_name,'v_nom':v_nom, 'geom':geo,
                      'mv_grid_id':mv_grid_id,'lv_grid_id':lv_grid_id, 'in_building': in_building})
     buses_df = buses_df.append(bus, ignore_index=True)
     return buses_df
@@ -589,11 +596,6 @@ def edges_to_dict_of_dataframes_for_csv_export(edges, lines_df):
     for edge in edges:
         if not edge['branch'].connects_aggregated:
             lines_df = append_lines_df(edge, lines_df)
-        else:
-            node = edge['adj_nodes']
-
-        if isinstance(edge['adj_nodes'][0], LVLoadAreaCentreDing0) or isinstance(edge['adj_nodes'][1],LVLoadAreaCentreDing0):
-            print()
 
     return {'Line': lines_df.set_index('name')}
 
@@ -601,6 +603,13 @@ def edges_to_dict_of_dataframes_for_csv_export(edges, lines_df):
 def append_lines_df(edge, lines_df):
     freq = cfg_ding0.get('assumptions', 'frequency')
     omega = 2 * pi * freq
+    # set grid_ids
+    if isinstance(edge['branch'].grid, ding0_nw.grids.MVGridDing0):
+        unitconversion = 1e3
+    elif isinstance(edge['branch'].grid, ding0_nw.grids.LVGridDing0):
+        unitconversion = 1e6
+    else:
+        raise TypeError('Something went wrong, only MVGridDing0 and LVGridDing0 should be inserted as grid.')
     # TODO: find the real cause for being L, C, I_th_max type of Series
     if (isinstance(edge['branch'].type['L_per_km'], Series)):
         x_per_km = omega * edge['branch'].type['L_per_km'].values[0] * 1e-3
@@ -614,10 +623,10 @@ def append_lines_df(edge, lines_df):
     if (isinstance(edge['branch'].type['I_max_th'], Series) or
             isinstance(edge['branch'].type['U_n'], Series)):
         s_nom = sqrt(3) * edge['branch'].type['I_max_th'].values[0] * \
-                edge['branch'].type['U_n'].values[0]
+                edge['branch'].type['U_n'].values[0]/unitconversion
     else:
         s_nom = sqrt(3) * edge['branch'].type['I_max_th'] * \
-                edge['branch'].type['U_n']
+                edge['branch'].type['U_n']/unitconversion
     # get lengths of line
     length = edge['branch'].length / 1e3
     #Todo: change into same format
@@ -632,7 +641,7 @@ def append_lines_df(edge, lines_df):
     lines_df = lines_df.append(line, ignore_index=True)
     return lines_df
 
-def circuit_breakers_to_df(grid, components, open_circuit_breakers):
+def circuit_breakers_to_df(grid, components, component_data, open_circuit_breakers, return_time_varying_data=False):
     if hasattr(grid, '_circuit_breakers'):
         # initialise dataframe for circuit breakers
         circuit_breakers_df = pd.DataFrame(columns=['name', 'bus_closed', 'bus_open', 'type_info'])
@@ -647,15 +656,16 @@ def circuit_breakers_to_df(grid, components, open_circuit_breakers):
                 bus_open = components['Bus'].T[name_bus_closed]
                 bus_open.name = name_bus_open
                 components['Bus'] = components['Bus'].append(bus_open)
+                if return_time_varying_data:
+                    component_data['Bus'] = component_data['Bus'].append(pd.DataFrame({'name': [name_bus_open], 'temp_id': [1],
+                                                               'v_mag_pu_set': [[1, 1]]}).set_index('name'))
             # append circuit breaker to dataframe
             circuit_breakers_df = circuit_breakers_df.append(pd.Series({'name': repr(circuit_breaker), 'bus_closed': name_bus_closed,
                                                                         'bus_open': name_bus_open, 'type_info': 'Switch Disconnector'}),
                                                              ignore_index=True)
         # add switches to components
         components['Switch'] = circuit_breakers_df.set_index('name')
-        return components
-    else:
-        return components
+    return components, component_data
 
 def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=None, debug=False, export_result_dir = None):
     """
@@ -720,8 +730,8 @@ def run_powerflow_onthefly(components, components_data, grid, export_pypsa_dir=N
                                  'Bus',
                                  'v_mag_pu_set')
 
-    # add coordinates to network nodes and make ready for map plotting
-    # network = add_coordinates(network)
+    # check if network is created in a correct way
+    _check_integrity_of_pypsa(network)
 
     # start powerflow calculations
     network.pf(snapshots)
@@ -778,6 +788,128 @@ def data_integrity(components, components_data):
                                          no_comp=len(components[comp]),
                                          no_data=len(components_data[comp])))
             sys.exit(1)
+
+
+def _check_integrity_of_pypsa(pypsa_network):
+    """"""
+
+    # check for sub-networks
+    subgraphs = list(pypsa_network.graph().subgraph(c) for c in
+                     connected_components(pypsa_network.graph()))
+    pypsa_network.determine_network_topology()
+
+    if len(subgraphs) > 1 or len(pypsa_network.sub_networks) > 1:
+        raise ValueError("The graph has isolated nodes or edges")
+
+    # check consistency of topology and time series data
+    generators_ts_p_missing = pypsa_network.generators.loc[
+        ~pypsa_network.generators.index.isin(
+            pypsa_network.generators_t['p_set'].columns.tolist())]
+    generators_ts_q_missing = pypsa_network.generators.loc[
+        ~pypsa_network.generators.index.isin(
+            pypsa_network.generators_t['q_set'].columns.tolist())]
+    loads_ts_p_missing = pypsa_network.loads.loc[
+        ~pypsa_network.loads.index.isin(
+            pypsa_network.loads_t['p_set'].columns.tolist())]
+    loads_ts_q_missing = pypsa_network.loads.loc[
+        ~pypsa_network.loads.index.isin(
+            pypsa_network.loads_t['q_set'].columns.tolist())]
+    bus_v_set_missing = pypsa_network.buses.loc[
+        ~pypsa_network.buses.index.isin(
+            pypsa_network.buses_t['v_mag_pu_set'].columns.tolist())]
+
+    # Comparison of generators excludes slack generators (have no time series)
+    if (not generators_ts_p_missing.empty and not all(
+            generators_ts_p_missing['control'] == 'Slack')):
+        raise ValueError("Following generators have no `p_set` time series "
+                         "{generators}".format(
+            generators=generators_ts_p_missing))
+
+    if (not generators_ts_q_missing.empty and not all(
+            generators_ts_q_missing['control'] == 'Slack')):
+        raise ValueError("Following generators have no `q_set` time series "
+                         "{generators}".format(
+            generators=generators_ts_q_missing))
+
+    if not loads_ts_p_missing.empty:
+        raise ValueError("Following loads have no `p_set` time series "
+                         "{loads}".format(
+            loads=loads_ts_p_missing))
+
+    if not loads_ts_q_missing.empty:
+        raise ValueError("Following loads have no `q_set` time series "
+                         "{loads}".format(
+            loads=loads_ts_q_missing))
+
+    if not bus_v_set_missing.empty:
+        raise ValueError("Following loads have no `v_mag_pu_set` time series "
+                         "{buses}".format(
+            buses=bus_v_set_missing))
+
+    # check for duplicate labels (of components)
+    duplicated_labels = []
+    if any(pypsa_network.buses.index.duplicated()):
+        duplicated_labels.append(pypsa_network.buses.index[
+                                     pypsa_network.buses.index.duplicated()])
+    if any(pypsa_network.generators.index.duplicated()):
+        duplicated_labels.append(pypsa_network.generators.index[
+                                     pypsa_network.generators.index.duplicated()])
+    if any(pypsa_network.loads.index.duplicated()):
+        duplicated_labels.append(pypsa_network.loads.index[
+                                     pypsa_network.loads.index.duplicated()])
+    if any(pypsa_network.transformers.index.duplicated()):
+        duplicated_labels.append(pypsa_network.transformers.index[
+                                     pypsa_network.transformers.index.duplicated()])
+    if any(pypsa_network.lines.index.duplicated()):
+        duplicated_labels.append(pypsa_network.lines.index[
+                                     pypsa_network.lines.index.duplicated()])
+    if duplicated_labels:
+        raise ValueError("{labels} have duplicate entry in "
+                         "one of the components dataframes".format(
+            labels=duplicated_labels))
+
+    # duplicate p_sets and q_set
+    duplicate_p_sets = []
+    duplicate_q_sets = []
+    if any(pypsa_network.loads_t['p_set'].columns.duplicated()):
+        duplicate_p_sets.append(pypsa_network.loads_t['p_set'].columns[
+                                    pypsa_network.loads_t[
+                                        'p_set'].columns.duplicated()])
+    if any(pypsa_network.loads_t['q_set'].columns.duplicated()):
+        duplicate_q_sets.append(pypsa_network.loads_t['q_set'].columns[
+                                    pypsa_network.loads_t[
+                                        'q_set'].columns.duplicated()])
+
+    if any(pypsa_network.generators_t['p_set'].columns.duplicated()):
+        duplicate_p_sets.append(pypsa_network.generators_t['p_set'].columns[
+                                    pypsa_network.generators_t[
+                                        'p_set'].columns.duplicated()])
+    if any(pypsa_network.generators_t['q_set'].columns.duplicated()):
+        duplicate_q_sets.append(pypsa_network.generators_t['q_set'].columns[
+                                    pypsa_network.generators_t[
+                                        'q_set'].columns.duplicated()])
+
+    if duplicate_p_sets:
+        raise ValueError("{labels} have duplicate entry in "
+                         "generators_t['p_set']"
+                         " or loads_t['p_set']".format(
+            labels=duplicate_p_sets))
+    if duplicate_q_sets:
+        raise ValueError("{labels} have duplicate entry in "
+                         "generators_t['q_set']"
+                         " or loads_t['q_set']".format(
+            labels=duplicate_q_sets))
+
+    # find duplicate v_mag_set entries
+    duplicate_v_mag_set = []
+    if any(pypsa_network.buses_t['v_mag_pu_set'].columns.duplicated()):
+        duplicate_v_mag_set.append(pypsa_network.buses_t['v_mag_pu_set'].columns[
+                                       pypsa_network.buses_t[
+                                           'v_mag_pu_set'].columns.duplicated()])
+
+    if duplicate_v_mag_set:
+        raise ValueError("{labels} have duplicate entry in buses_t".format(
+            labels=duplicate_v_mag_set))
 
 def process_pf_results(network):
     """
