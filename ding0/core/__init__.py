@@ -1884,7 +1884,7 @@ class NetworkDing0:
         elif mode == 'close':
             logger.info('=====> MV Circuit Breakers closed')
 
-    def run_powerflow(self, session, method='onthefly', export_pypsa=False, debug=False):
+    def run_powerflow(self, session, method='onthefly', export_pypsa=False, debug=False,export_result_dir=None):
         """
         Performs power flow calculation for all MV grids
 
@@ -1928,7 +1928,8 @@ class NetworkDing0:
                 grid_district.mv_grid.run_powerflow(session,
                                                     method='onthefly',
                                                     export_pypsa_dir=export_pypsa_dir,
-                                                    debug=debug)
+                                                    debug=debug,
+                                                    export_result_dir=export_result_dir)
 
     def reinforce_grid(self):
         """
