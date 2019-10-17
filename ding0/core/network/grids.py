@@ -748,7 +748,6 @@ class MVGridDing0(GridDing0):
 
         Note
         -----
-        It has to be proven that this method works for LV grids as well!
 
             Ding0 treats two stationary case of powerflow:
             1) Full load: We assume no generation and loads to be set to peak load
