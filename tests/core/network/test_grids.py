@@ -1826,7 +1826,7 @@ class TestLVGridDing0(object):
 
         basic_lv_grid.build_grid()
         assert len(basic_lv_grid._loads) == 9
-        assert len(list(basic_lv_grid._graph.node)) == 28
+        assert len(list(basic_lv_grid._graph.nodes)) == 28
         assert (basic_lv_grid._loads[n].peak_load == 176 for n in range(0, 4))
         assert (basic_lv_grid._loads[n].peak_load == 56 for n in range(4, 9))
 
@@ -1845,7 +1845,7 @@ class TestLVGridDing0(object):
         basic_lv_grid.build_grid()
 
         assert len(basic_lv_grid._loads) == 29
-        assert len(basic_lv_grid._graph.node) == 29 + 2*29 + 1
+        assert len(basic_lv_grid._graph.nodes) == 29 + 2*29 + 1
         assert (round(basic_lv_grid._loads[n].peak_load) == 10.0
                 for n in range(0, 29))
 
