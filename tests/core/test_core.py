@@ -102,10 +102,10 @@ class TestNetworkDing0(object):
             compare_buses = pd.DataFrame.from_csv(
                 os.path.join(cur_dir,'testdata','bus_data.csv'))
             # compare results
-            for line_name, line_data in compare_lines.iterrows():
-                assert_almost_equal(line_data, lines, line_name)
             for bus_name, bus_data in compare_buses.iterrows():
                 assert_almost_equal(bus_data, buses, bus_name)
+            for line_name, line_data in compare_lines.iterrows():
+                assert_almost_equal(line_data, lines, line_name)
             print('Finished testing MV grid only')
 
         finally:
