@@ -341,7 +341,7 @@ class MVGridDing0(GridDing0):
 
         # MV grid:
         ctr = 1
-        for branch in self.graph_edges():
+        for branch in sorted(self.graph_edges(), key=lambda x: repr(x['adj_nodes'][0])):
             branch['branch'].id_db = self.grid_district.id_db * 10**4 + ctr
             ctr += 1
 
