@@ -217,6 +217,13 @@ class MVGridDing0(GridDing0):
             if not include_root_node:
                 ring.remove(self._station)
 
+            # make sure rings are always returned in same order, starting with
+            # node of which representative is smaller
+            start_node = repr(ring[0])
+            end_node = repr(ring[len(ring) - 1])
+            if start_node > end_node:
+                ring.reverse()
+
             if include_satellites:
                 ring_nodes = ring
                 satellites = []

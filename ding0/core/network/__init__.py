@@ -1182,6 +1182,7 @@ class CircuitBreakerDing0:
         self.branch = kwargs.get('branch', None)
         self.branch_nodes = kwargs.get('branch_nodes', (None, None))
         self.status = kwargs.get('status', 'closed')
+        self.switch_node = kwargs.get('switch_node', None)
 
         # get id from count of cable distributors in associated MV grid
         self.id_db = self.grid.circuit_breakers_count() + 1

@@ -1016,16 +1016,33 @@ def circuit_breakers_to_df(grid, components, component_data,
         circuit_breakers_df = pd.DataFrame(columns=['name', 'bus_closed', 
                                                     'bus_open', 'type_info'])
         for circuit_breaker in grid.circuit_breakers():
-            # get secondary bus of opened branch
-            name_bus_closed = \
-                components['Line'].T[repr(circuit_breaker.branch)].bus1
+            if circuit_breaker.switch_node is not None:
+                name_bus_closed = repr(circuit_breaker.switch_node)
+            else:
+                # get secondary bus of opened branch
+                name_bus_closed = \
+                    components['Line'].T[repr(circuit_breaker.branch)].bus1
             # create virtual bus and append to components['Bus']
             name_bus_open = 'virtual_' + name_bus_closed
             # if circuit breaker was open, change bus1 of branch to new 
             # virtual node
             if repr(circuit_breaker) in open_circuit_breakers:
-                components['Line'].at[repr(circuit_breaker.branch), 'bus1'] = \
-                    name_bus_open
+                if components['Line'].at[repr(circuit_breaker.branch),'bus1'] \
+                        == name_bus_closed:
+                    components['Line'].at[
+                        repr(circuit_breaker.branch), 'bus1'] = \
+                        name_bus_open
+                elif components['Line'].at[repr(circuit_breaker.branch),'bus0'] \
+                        == name_bus_closed:
+                    components['Line'].at[
+                        repr(circuit_breaker.branch), 'bus0'] = \
+                        name_bus_open
+                else:
+                    raise Exception('Branch connected to circuit breaker {}'
+                                    ' is not connected to node {}'. format(
+                        repr(circuit_breaker), name_bus_closed
+                    ))
+                
                 bus_open = components['Bus'].T[name_bus_closed]
                 bus_open.name = name_bus_open
                 components['Bus'] = components['Bus'].append(bus_open)
