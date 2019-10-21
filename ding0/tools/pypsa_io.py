@@ -1014,10 +1014,11 @@ def circuit_breakers_to_df(grid, components, component_data,
     if hasattr(grid, '_circuit_breakers'):
         # initialise dataframe for circuit breakers
         circuit_breakers_df = pd.DataFrame(columns=['name', 'bus_closed', 
-                                                    'bus_open', 'type_info'])
+                                                    'bus_open','branch', 
+                                                    'type_info'])
         for circuit_breaker in grid.circuit_breakers():
             if circuit_breaker.switch_node is not None:
-                name_bus_closed = repr(circuit_breaker.switch_node)
+                name_bus_closed = circuit_breaker.switch_node.pypsa_bus_id
             else:
                 # get secondary bus of opened branch
                 name_bus_closed = \
@@ -1058,7 +1059,8 @@ def circuit_breakers_to_df(grid, components, component_data,
                 circuit_breakers_df.append(
                     pd.Series({'name': repr(circuit_breaker), 
                                'bus_closed': name_bus_closed,
-                               'bus_open': name_bus_open, 
+                               'bus_open': name_bus_open,
+                               'branch': repr(circuit_breaker.branch), 
                                'type_info': 'Switch Disconnector'}),
                     ignore_index=True)
         # add switches to components
