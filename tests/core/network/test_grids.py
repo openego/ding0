@@ -386,7 +386,7 @@ class TestMVGridDing0(object):
         """
         Returns an ego.io oedb session and closes it on finishing the test
         """
-        engine = db.connection(section='oedb')
+        engine = db.connection(readonly=True)
         session = sessionmaker(bind=engine)()
         yield session
         print("closing session")
@@ -1168,7 +1168,7 @@ class TestMVGridDing0(object):
         b = [0,1,13,16,17,18,4,5,7]
         lv_stations_mvstat = [lv_stations[i] for i in b]
 
-        assert all(j in list(mv_grid.graph.adj[mv_grid._station])
+        assert all(j in list(mv_grid._graph.adj[mv_grid._station])
                    for j in lv_stations_mvstat) == True
 
         assert len(mv_grid._rings) == 6
@@ -1828,7 +1828,7 @@ class TestLVGridDing0(object):
 
         basic_lv_grid.build_grid()
         assert len(basic_lv_grid._loads) == 9
-        assert len(list(basic_lv_grid.graph.node)) == 28
+        assert len(list(basic_lv_grid.graph.nodes)) == 28
         assert (basic_lv_grid._loads[n].peak_load == 176 for n in range(0, 4))
         assert (basic_lv_grid._loads[n].peak_load == 56 for n in range(4, 9))
 
@@ -1847,7 +1847,7 @@ class TestLVGridDing0(object):
         basic_lv_grid.build_grid()
 
         assert len(basic_lv_grid._loads) == 29
-        assert len(basic_lv_grid.graph.node) == 29 + 2*29 + 1
+        assert len(basic_lv_grid.graph.nodes) == 29 + 2*29 + 1
         assert (round(basic_lv_grid._loads[n].peak_load) == 10.0
                 for n in range(0, 29))
 

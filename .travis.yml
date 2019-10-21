@@ -6,10 +6,6 @@ python:
   # - "3.7"
 # command to install dependencies
 install:
-  - EGOIOCONFIGDIR=`python -c "import os; print(os.path.join(os.path.expanduser(\"~\"), \".egoio\"))"`
-  - mkdir $EGOIOCONFIGDIR
-  - printf '%s\n' '[oedb]' 'dialect = oedialect' 'host = openenergy-platform.org' 'port = 443' 'database = oedb' 'username = Ding0_test_user' 'password = 659193bb5925d401943e4f77d4bac7479bcd9214'> $EGOIOCONFIGDIR/config.ini
-  - cat $EGOIOCONFIGDIR/config.ini
   - pip install -r requirements.txt
 # command to run tests
 script:
