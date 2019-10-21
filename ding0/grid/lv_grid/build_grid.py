@@ -410,7 +410,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
         # distributors
         if load_no == 1:
             # case a: cable dist <-> station
-            lvgd.lv_grid._graph.add_edge(
+            lvgd.lv_grid.graph.add_edge(
                 lvgd.lv_grid.station(),
                 lv_cable_dist,
                 branch=BranchDing0(
@@ -425,7 +425,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                 ))
         else:
             # case b: cable dist <-> cable dist
-            lvgd.lv_grid._graph.add_edge(
+            lvgd.lv_grid.graph.add_edge(
                 lvgd.lv_grid._cable_distributors[-4],
                 lv_cable_dist,
                 branch=BranchDing0(
@@ -440,7 +440,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
 
         # create branch stub that connects the load to the
         # lv_cable_dist located in the branch line
-        lvgd.lv_grid._graph.add_edge(
+        lvgd.lv_grid.graph.add_edge(
             lv_cable_dist,
             lv_cable_dist_building,
             branch=BranchDing0(
@@ -456,7 +456,7 @@ def build_lv_graph_ria(lvgd, grid_model_params):
                     sector=sector_short))
         )
 
-        lvgd.lv_grid._graph.add_edge(
+        lvgd.lv_grid.graph.add_edge(
             lv_cable_dist_building,
             lv_load,
             branch=BranchDing0(
@@ -644,7 +644,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
 
         # get overall count of branches to set unique branch_no
         branch_count_sum = len(list(
-            lvgd.lv_grid._graph.neighbors(lvgd.lv_grid.station())))
+            lvgd.lv_grid.graph.neighbors(lvgd.lv_grid.station())))
 
         # iterate over it's occurences
         for branch_no in range(1, int(row['occurence']) + 1):
@@ -695,7 +695,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                 # connect current lv_cable_dist to station
                 if house_branch == 1:
                     # edge connect first house branch in branch with the station
-                    lvgd.lv_grid._graph.add_edge(
+                    lvgd.lv_grid.graph.add_edge(
                         lvgd.lv_grid.station(),
                         lv_cable_dist,
                         branch=BranchDing0(
@@ -710,7 +710,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                         ))
                 # connect current lv_cable_dist to last one
                 else:
-                    lvgd.lv_grid._graph.add_edge(
+                    lvgd.lv_grid.graph.add_edge(
                         lvgd.lv_grid._cable_distributors[-4],
                         lv_cable_dist,
                         branch=BranchDing0(
@@ -728,7 +728,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                 house_cable_name = row['cable type {}'.format(variant)] + \
                                    ' 4x1x{}'.format(
                                        row['cable width {}'.format(variant)])
-                lvgd.lv_grid._graph.add_edge(
+                lvgd.lv_grid.graph.add_edge(
                     lv_cable_dist,
                     lv_cable_dist_building,
                     branch=BranchDing0(
@@ -744,7 +744,7 @@ def build_lv_graph_residential(lvgd, selected_string_df):
                             sector='HH'))
                 )
 
-                lvgd.lv_grid._graph.add_edge(
+                lvgd.lv_grid.graph.add_edge(
                     lv_cable_dist_building,
                     lv_load,
                     branch=BranchDing0(

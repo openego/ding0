@@ -29,7 +29,7 @@ def get_branches(grid):
 
     station = grid._station
 
-    tree = nx.dfs_tree(grid._graph, station)
+    tree = nx.dfs_tree(grid.graph, station)
 
     # TODO: idea
     # 1. build tree from lv_grid station as root -> diretions should point to
@@ -39,18 +39,18 @@ def get_branches(grid):
     # 3. Extract nodes belonging to main route of a branch by checking all
     # successors if these are LVCalbleDistributors
     # notes and hints:
-    # 1. associated edges can be accessed via grid._graph.in_edges(<node>)
-    # respectively grid._graph.out_edges(<node>)
+    # 1. associated edges can be accessed via grid.graph.in_edges(<node>)
+    # respectively grid.graph.out_edges(<node>)
     # 2. when using nx.descendants(tree, station) make sure the order of nodes
     # is maintained as this is important to properly assess voltage and over-
     # loading issues
 
-    # first_cbl_dists = [x for x in grid._graph.neighbors(station)
+    # first_cbl_dists = [x for x in grid.graph.neighbors(station)
     #                    if isinstance(x, LVCableDistributorDing0)]
 
 
     # if len(first_cbl_dists) > 0:
-    #     ancestors =  nx.ancestors(grid._graph, first_cbl_dists[0])
+    #     ancestors =  nx.ancestors(grid.graph, first_cbl_dists[0])
     # else:
     #     ancestors = None
     # return ancestors

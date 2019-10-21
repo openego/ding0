@@ -1344,7 +1344,7 @@ class NetworkDing0:
         for grid_district in self.mv_grid_districts():
 
             # there's only one node (MV station) => grid is empty
-            if len(grid_district.mv_grid._graph.nodes()) == 1:
+            if len(grid_district.mv_grid.graph.nodes()) == 1:
                 invalid_mv_grid_districts.append(grid_district)
                 msg_invalidity.append('MV Grid District {} seems to be empty ' \
                                       'and ' \
@@ -1407,7 +1407,7 @@ class NetworkDing0:
             lines = []
 
             # get nodes from grid's graph and append to corresponding array
-            for node in grid_district.mv_grid._graph.nodes():
+            for node in grid_district.mv_grid.graph.nodes():
                 if isinstance(node, LVLoadAreaCentreDing0):
                     lv_load_area_centres.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, MVCableDistributorDing0):
@@ -1522,7 +1522,7 @@ class NetworkDing0:
         for grid_district in self.mv_grid_districts():
 
             # get nodes from grid's graph and create datasets
-            for node in grid_district.mv_grid._graph.nodes():
+            for node in grid_district.mv_grid.graph.nodes():
                 if hasattr(node, 'voltage_res'):
                     node_name = '_'.join(['MV',
                                           str(grid_district.mv_grid.id_db),

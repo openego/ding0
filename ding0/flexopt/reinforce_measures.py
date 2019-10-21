@@ -271,7 +271,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     v_diff_max_fc = cfg_ding0.get('assumptions', 'lv_max_v_level_fc_diff_normal')
     v_diff_max_lc = cfg_ding0.get('assumptions', 'lv_max_v_level_lc_diff_normal')
 
-    tree = nx.dfs_tree(grid._graph, grid._station)
+    tree = nx.dfs_tree(grid.graph, grid._station)
 
     for station in crit_stations:
         v_delta = max(station['v_diff'])

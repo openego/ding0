@@ -162,6 +162,11 @@ class GridDing0:
             self._generators.append(generator)
             self.graph_add_node(generator)
 
+    @property
+    def graph(self):
+        """Provide access to the graph"""
+        return self._graph
+
     def graph_add_node(self, node_object):
         """
         Adds a station or cable distributor object
@@ -182,13 +187,13 @@ class GridDing0:
             :class:`~.ding0.core.network.CableDistributorDing0`
 
         """
-        if ((node_object not in self._graph.nodes()) and
+        if ((node_object not in self.graph.nodes()) and
             (isinstance(node_object, (StationDing0,
                                       CableDistributorDing0,
                                       LVLoadAreaCentreDing0,
                                       CircuitBreakerDing0,
                                       GeneratorDing0)))):
-            self._graph.add_node(node_object)
+            self.graph.add_node(node_object)
 
     def graph_draw(self, mode):
         """
@@ -213,7 +218,7 @@ class GridDing0:
         performed, the drawn graph representation is falsified!
         """
 
-        g = self._graph
+        g = self.graph
 
         if mode == 'MV':
             # get draw params from nodes and edges (coordinates, colors, demands, etc.)
@@ -303,7 +308,7 @@ class GridDing0:
             List of |ding0_node_object_types|
 
         """
-        return sorted(self._graph.nodes(), key=lambda _: repr(_))
+        return sorted(self.graph.nodes(), key=lambda _: repr(_))
 
     def graph_nodes_from_branch(self, branch):
         """
@@ -322,7 +327,7 @@ class GridDing0:
             2-tuple of Ding0 node objects i.e.
             |ding0_node_object_types|
         """
-        edges = nx.get_edge_attributes(self._graph, 'branch')
+        edges = nx.get_edge_attributes(self.graph, 'branch')
         nodes = list(edges.keys())[list(edges.values()).index(branch)]
         return nodes
 
@@ -349,7 +354,7 @@ class GridDing0:
         # TODO: This method can be replaced and speed up by using NetworkX' neighbors()
 
         branches = []
-        branches_dict = self._graph.adj[node]
+        branches_dict = self.graph.adj[node]
         for branch in branches_dict.items():
             branches.append(branch)
         return sorted(branches, key=lambda _: repr(_))
@@ -399,7 +404,7 @@ class GridDing0:
         """
 
         # get edges with attributes
-        edges = nx.get_edge_attributes(self._graph, 'branch').items()
+        edges = nx.get_edge_attributes(self.graph, 'branch').items()
 
         # sort them according to connected nodes
         edges_sorted = sorted(list(edges), key=lambda _: (''.join(sorted([repr(_[0][0]),repr(_[0][1])]))))
@@ -449,14 +454,14 @@ class GridDing0:
         See networkx' function shortest_path()
         function for details on how the path is calculated.
         """
-        if (node_source in self._graph.nodes()) and (node_target in self._graph.nodes()):
-            path = nx.shortest_path(self._graph, node_source, node_target)
+        if (node_source in self.graph.nodes()) and (node_target in self.graph.nodes()):
+            path = nx.shortest_path(self.graph, node_source, node_target)
         else:
             raise Exception('At least one of the nodes is not a member of graph.')
         if type == 'nodes':
             return path
         elif type == 'edges':
-            return [_ for _ in self._graph.edges(nbunch=path, data=True)
+            return [_ for _ in self.graph.edges(nbunch=path, data=True)
                     if (_[0] in path and _[1] in path)]
         else:
             raise ValueError('Please specify type as nodes or edges')
@@ -488,7 +493,7 @@ class GridDing0:
             path = self.find_path(node_source, node_target)
             node_pairs = list(zip(path[0:len(path) - 1], path[1:len(path)]))
             for n1, n2 in node_pairs:
-                branches.add(self._graph.adj[n1][n2]['branch'])
+                branches.add(self.graph.adj[n1][n2]['branch'])
 
         return list(branches)
 
@@ -515,7 +520,7 @@ class GridDing0:
         node_pairs = list(zip(path[0:len(path)-1], path[1:len(path)]))
 
         for n1, n2 in node_pairs:
-            length += self._graph.adj[n1][n2]['branch'].length
+            length += self.graph.adj[n1][n2]['branch'].length
 
         return length
 
@@ -529,7 +534,7 @@ class GridDing0:
             List of ding0 node objects i.e.
             |ding0_node_object_types|
         """
-        return sorted(nx.isolates(self._graph), key=lambda x: repr(x))
+        return sorted(nx.isolates(self.graph), key=lambda x: repr(x))
 
     def control_generators(self, capacity_factor):
         """ Sets capacity factor of all generators of a grid.
@@ -707,7 +712,7 @@ class RingDing0:
             List generator of :class:`~.ding0.core.structure.regions.LVLoadAreaDing0`
             objects
         """
-        for lv_load_area in self._grid._graph.nodes():
+        for lv_load_area in self._grid.graph.nodes():
             if isinstance(lv_load_area, LVLoadAreaDing0):
                 if lv_load_area.ring == self:
                     yield lv_load_area
@@ -1201,14 +1206,14 @@ class CircuitBreakerDing0:
         Open a Circuit Breaker
         """
         self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)
-        self.grid._graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])
+        self.grid.graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])
         self.status = 'open'
 
     def close(self):
         """
         Close a Circuit Breaker
         """
-        self.grid._graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
+        self.grid.graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
         self.status = 'closed'
 
     def __repr__(self):

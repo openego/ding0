@@ -255,7 +255,7 @@ def get_critical_line_loading(grid):
     # based on this tree, descendants of each node are accessible
     station = grid._station
 
-    tree = nx.dfs_tree(grid._graph, station)
+    tree = nx.dfs_tree(grid.graph, station)
 
     for node in tree.nodes():
 
@@ -413,7 +413,7 @@ def get_critical_voltage_at_nodes(grid):
     crit_nodes = []
 
     # get list of nodes of main branch in right order
-    tree = nx.dfs_tree(grid._graph, grid._station)
+    tree = nx.dfs_tree(grid.graph, grid._station)
 
     # list for nodes of main branch
     main_branch = []

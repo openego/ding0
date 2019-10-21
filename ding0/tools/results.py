@@ -80,7 +80,7 @@ def lv_grid_generators_bus_bar(nd):
 
     for la in nd._mv_grid_districts[0].lv_load_areas():
         for lvgd in la.lv_grid_districts():
-            station_neighbors = list(lvgd.lv_grid._graph[
+            station_neighbors = list(lvgd.lv_grid.graph[
                                          lvgd.lv_grid._station].keys())
 
             # check if nodes of a statio are members of list generators
@@ -532,7 +532,7 @@ def calculate_mvgd_stats(nw):
 
         n_outgoing_MV = 0
 
-        G = district.mv_grid._graph
+        G = district.mv_grid.graph
 
         for node in G.nodes():
             if isinstance(node, MVStationDing0):
@@ -576,7 +576,7 @@ def calculate_mvgd_stats(nw):
                         for lv_LA in district.lv_load_areas():
                             for lv_dist in lv_LA.lv_grid_districts():
                                 if lv_dist.lv_grid._station == node:
-                                    G_lv = lv_dist.lv_grid._graph
+                                    G_lv = lv_dist.lv_grid.graph
                                     # loop over all LV terminal nodes belonging to LV station
                                     for lv_node in G_lv.nodes():
                                         if isinstance(lv_node, GeneratorDing0) or isinstance(lv_node, LVLoadDing0):
@@ -685,7 +685,7 @@ def calculate_mvgd_stats(nw):
         lv_trafo_count = 0
         lv_trafo_cap = 0
 
-        for node in district.mv_grid._graph.nodes():
+        for node in district.mv_grid.graph.nodes():
             mv_path_length = 0
             mvlv_path_length = 0
 
@@ -722,7 +722,7 @@ def calculate_mvgd_stats(nw):
                     for lv_LA in district.lv_load_areas():
                         for lv_dist in lv_LA.lv_grid_districts():
                             if lv_dist.lv_grid._station == node:
-                                for lv_node in lv_dist.lv_grid._graph.nodes():
+                                for lv_node in lv_dist.lv_grid.graph.nodes():
                                     lv_path_length = lv_dist.lv_grid.graph_path_length(
                                         node_source=node,
                                         node_target=lv_node)

@@ -241,7 +241,7 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
                 open_circuit_breakers.append(repr(circuit_breaker))
                 circuit_breaker.close()
     # get all grid nodes
-    nodes = grid._graph.nodes()
+    nodes = grid.graph.nodes()
     # get all grid edges
     edges = [edge for edge in list(grid.graph_edges())
              if (edge['adj_nodes'][0] in nodes and not isinstance(
@@ -1348,7 +1348,7 @@ def assign_bus_results(grid, bus_data):
     """
 
     # iterate of nodes and assign voltage obtained from power flow analysis
-    for node in grid._graph.nodes():
+    for node in grid.graph.nodes():
         # check if node is connected to graph
         if (node not in grid.graph_isolated_nodes()
             and not isinstance(node,
@@ -1380,9 +1380,9 @@ def assign_line_results(grid, line_data):
     package_path = ding0.__path__[0]
 
     edges = [edge for edge in grid.graph_edges()
-             if (edge['adj_nodes'][0] in grid._graph.nodes() and
+             if (edge['adj_nodes'][0] in grid.graph.nodes() and
                  not isinstance(edge['adj_nodes'][0], LVLoadAreaCentreDing0))
-             and (edge['adj_nodes'][1] in grid._graph.nodes() and
+             and (edge['adj_nodes'][1] in grid.graph.nodes() and
                   not isinstance(edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
 
     decimal_places = 6

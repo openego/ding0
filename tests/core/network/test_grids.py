@@ -98,7 +98,7 @@ class TestMVGridDing0(object):
                                               branch=branch,
                                               grid=grid)
         grid.add_circuit_breaker(circuit_breaker)
-        grid._graph.add_edge(circuit_breaker, station,
+        grid.graph.add_edge(circuit_breaker, station,
                              branch=branch)
         return grid
 
@@ -160,15 +160,15 @@ class TestMVGridDing0(object):
                                                branch=branch1,
                                                grid=grid)
         grid.add_circuit_breaker(circuit_breaker1)
-        grid._graph.add_edge(generator1, station,
+        grid.graph.add_edge(generator1, station,
                              branch=branch1)
-        grid._graph.add_edge(circuit_breaker1, generator1,
+        grid.graph.add_edge(circuit_breaker1, generator1,
                              branch=branch1a)
-        grid._graph.add_edge(generator2, station,
+        grid.graph.add_edge(generator2, station,
                              branch=branch2)
-        grid._graph.add_edge(circuit_breaker1, generator2,
+        grid.graph.add_edge(circuit_breaker1, generator2,
                              branch=branch2a)
-        grid._graph.add_edge(generator3, generator2, branch=branch3)
+        grid.graph.add_edge(generator3, generator2, branch=branch3)
         grid.add_ring(ring)
         return (ring, grid)
 
@@ -977,7 +977,7 @@ class TestMVGridDing0(object):
         """
         nd, mv_grid, lv_stations = minimal_unrouted_grid
 
-        graph = mv_grid._graph
+        graph = mv_grid.graph
 
         # pre-routing asserts
         # check the grid_district
@@ -1101,7 +1101,7 @@ class TestMVGridDing0(object):
         # STEP 5: Build LV grids
         nd.build_lv_grids()
 
-        graph = nd._mv_grid_districts[0].mv_grid._graph
+        graph = nd._mv_grid_districts[0].mv_grid.graph
 
         assert len(list(graph.nodes())) == 256
         assert len(list(graph.edges())) == 0
@@ -1161,14 +1161,14 @@ class TestMVGridDing0(object):
         network.mv_routing(debug=True)
 
         #Check mv_stations connections (generators should not be connected)
-        assert len(list(mv_grid._graph.adj[mv_grid._station])) == 12
-        assert any(j in list(mv_grid._graph.adj[mv_grid._station])
+        assert len(list(mv_grid.graph.adj[mv_grid._station])) == 12
+        assert any(j in list(mv_grid.graph.adj[mv_grid._station])
                    for j in mv_grid._generators[0:4]) == False
 
         b = [0,1,13,16,17,18,4,5,7]
         lv_stations_mvstat = [lv_stations[i] for i in b]
 
-        assert all(j in list(mv_grid._graph.adj[mv_grid._station])
+        assert all(j in list(mv_grid.graph.adj[mv_grid._station])
                    for j in lv_stations_mvstat) == True
 
         assert len(mv_grid._rings) == 6
@@ -1177,34 +1177,34 @@ class TestMVGridDing0(object):
         (Single Connections)"""
 
         assert len(mv_grid._cable_distributors) == 5
-        assert any(y in mv_grid._graph.adj[lv_stations[8]]
+        assert any(y in mv_grid.graph.adj[lv_stations[8]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[9]]
+        assert any(y in mv_grid.graph.adj[lv_stations[9]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[12]]
+        assert any(y in mv_grid.graph.adj[lv_stations[12]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[13]]
+        assert any(y in mv_grid.graph.adj[lv_stations[13]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[16]]
+        assert any(y in mv_grid.graph.adj[lv_stations[16]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[17]]
+        assert any(y in mv_grid.graph.adj[lv_stations[17]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[18]]
+        assert any(y in mv_grid.graph.adj[lv_stations[18]]
                    for y in mv_grid._cable_distributors)
 
         """Check cable Distributors have right connections
         (Double Connections disregarding order)
         """
-        mv_stat_cdt = list(y in mv_grid._graph.adj[mv_grid._station]
+        mv_stat_cdt = list(y in mv_grid.graph.adj[mv_grid._station]
                            for y in mv_grid._cable_distributors)
 
-        lv_15_cdt = list(y in mv_grid._graph.adj[lv_stations[15]]
+        lv_15_cdt = list(y in mv_grid.graph.adj[lv_stations[15]]
                          for y in mv_grid._cable_distributors)
 
         assert len(list(filter(lambda x: x == True, mv_stat_cdt))) == 3
@@ -1754,7 +1754,7 @@ class TestLVGridDing0(object):
                                 lv_grid=lv_grid,
                                 lv_load_area=lv_load_area)
 
-        graph = lv_grid._graph
+        graph = lv_grid.graph
         n = nx.number_of_nodes(graph)
         lv_grid.add_station(new_lv)
         m = nx.number_of_nodes(graph)
@@ -1828,7 +1828,7 @@ class TestLVGridDing0(object):
 
         basic_lv_grid.build_grid()
         assert len(basic_lv_grid._loads) == 9
-        assert len(list(basic_lv_grid._graph.node)) == 28
+        assert len(list(basic_lv_grid.graph.node)) == 28
         assert (basic_lv_grid._loads[n].peak_load == 176 for n in range(0, 4))
         assert (basic_lv_grid._loads[n].peak_load == 56 for n in range(4, 9))
 
@@ -1847,12 +1847,12 @@ class TestLVGridDing0(object):
         basic_lv_grid.build_grid()
 
         assert len(basic_lv_grid._loads) == 29
-        assert len(basic_lv_grid._graph.node) == 29 + 2*29 + 1
+        assert len(basic_lv_grid.graph.node) == 29 + 2*29 + 1
         assert (round(basic_lv_grid._loads[n].peak_load) == 10.0
                 for n in range(0, 29))
 
         #2 Branches from LV_station
-        assert len(np.nonzero(nx.adjacency_matrix(basic_lv_grid._graph)[0, :]
+        assert len(np.nonzero(nx.adjacency_matrix(basic_lv_grid.graph)[0, :]
                               .toarray())) == 2
 
     def test_connect_generators(self, basic_lv_grid):
@@ -1877,21 +1877,21 @@ class TestLVGridDing0(object):
 
         #from ding0.flexopt.check_tech_constraints import get_critical_line_loading
 
-        # Verify the LV_Grid._graph gets constructed correctly and that it only has one
+        # Verify the LV_Grid.graph gets constructed correctly and that it only has one
         #Transformer
-        assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station)))\
+        assert len(list(basic_lv_grid.graph.edges(basic_lv_grid._station)))\
                == 1
 
         assert len(basic_lv_grid._station._transformers) == 1
 
         # Branches HH_1,HH_2,HH_3 should have as default the corresponding cable
-        assert basic_lv_grid._graph._adj[basic_lv_grid._station]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._station]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
 
-        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[2]]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._cable_distributors[2]]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
 
-        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[4]]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._cable_distributors[4]]\
                    [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x150"
 
         basic_lv_grid.reinforce_grid()
@@ -1899,19 +1899,19 @@ class TestLVGridDing0(object):
 
 
         # Verify that the station is reinforced with another transformer
-        assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station))) \
+        assert len(list(basic_lv_grid.graph.edges(basic_lv_grid._station))) \
                == 2
 
         assert len(basic_lv_grid._station._transformers) == 2
 
         #Verify that the critical branches get the cables changed with the correct ones
-        assert basic_lv_grid._graph._adj[basic_lv_grid._station] \
+        assert basic_lv_grid.graph._adj[basic_lv_grid._station] \
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
 
-        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[2]]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._cable_distributors[2]]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x240"
 
-        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[4]]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._cable_distributors[4]]\
                    [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x240"
 
 

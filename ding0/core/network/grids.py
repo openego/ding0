@@ -166,8 +166,8 @@ class MVGridDing0(GridDing0):
                                                                   MVCableDistributorDing0):
             # remove from array and graph
             self._cable_distributors.remove(cable_dist)
-            if self._graph.has_node(cable_dist):
-                self._graph.remove_node(cable_dist)
+            if self.graph.has_node(cable_dist):
+                self.graph.remove_node(cable_dist)
 
     def add_ring(self, ring):
         """Adds a ring to _rings if not already existing"""
@@ -212,7 +212,8 @@ class MVGridDing0(GridDing0):
                 logger.info('Circuit breakers were closed in order to find MV '
                             'rings')
 
-        for ring in nx.cycle_basis(self._graph, root=self._station):
+        for ring in nx.cycle_basis(self.graph, root=self._station):
+            
             if not include_root_node:
                 ring.remove(self._station)
 
@@ -249,7 +250,7 @@ class MVGridDing0(GridDing0):
                 logger.info('Circuit breakers were closed in order to find MV '
                             'rings')
         #find True rings (cycles from station through breaker and back to station)
-        for ring_nodes in nx.cycle_basis(self._graph, root=self._station):
+        for ring_nodes in nx.cycle_basis(self.graph, root=self._station):
             edges_ring = []
             for node in ring_nodes:
                 for edge in self.graph_branches_from_node(node):
@@ -311,7 +312,7 @@ class MVGridDing0(GridDing0):
         :obj:`list` of :obj:`GridDing0`
             List of nodes (Ding0 objects)
         """
-        if node_source in self._graph.nodes():
+        if node_source in self.graph.nodes():
 
             # get all nodes that are member of a ring
             node_ring = []
@@ -325,7 +326,7 @@ class MVGridDing0(GridDing0):
 
             # get nodes from subtree
             if node_source in node_ring:
-                for path in nx.shortest_path(self._graph, node_source).values():
+                for path in nx.shortest_path(self.graph, node_source).values():
                     if len(path)>1:
                         if (path[1] not in node_ring) and (path[1] is not self.station()):
                             nodes_subtree.update(path[1:len(path)])
@@ -349,28 +350,28 @@ class MVGridDing0(GridDing0):
         """
 
         # do the routing
-        self._graph = mv_routing.solve(graph=self._graph,
+        self._graph = mv_routing.solve(graph=self.graph,
                                        debug=debug,
                                        anim=anim)
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
         # connect satellites (step 1, with restrictions like max. string length, max peak load per string)
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
-                                                       graph=self._graph,
+                                                       graph=self.graph,
                                                        mode='normal',
                                                        debug=debug)
         logger.info('==> MV Sat1 for {} done'.format(repr(self)))
 
         # connect satellites to closest line/station on a MV ring that have not been connected in step 1
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
-                                                       graph=self._graph,
+                                                       graph=self.graph,
                                                        mode='isolated',
                                                        debug=debug)
         logger.info('==> MV Sat2 for {} done'.format(repr(self)))
 
         # connect stations
         self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
-                                                     graph=self._graph,
+                                                     graph=self.graph,
                                                      debug=debug)
         logger.info('==> MV Stations for {} done'.format(repr(self)))
 
@@ -383,7 +384,7 @@ class MVGridDing0(GridDing0):
             If True, information is printed during process
         """
 
-        self._graph = mv_connect.mv_connect_generators(self.grid_district, self._graph, debug)
+        self._graph = mv_connect.mv_connect_generators(self.grid_district, self.graph, debug)
 
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment:
@@ -688,7 +689,7 @@ class MVGridDing0(GridDing0):
         start_time = datetime(1970, 1, 1, 00, 00, 0)
         resolution = 'H'
 
-        nodes = self._graph.nodes()
+        nodes = self.graph.nodes()
 
         edges = [edge for edge in list(self.graph_edges())
                  if (edge['adj_nodes'][0] in nodes and not isinstance(
@@ -924,7 +925,7 @@ class LVGridDing0(GridDing0):
              If True, information is printed during process
         """
 
-        self._graph = lv_connect.lv_connect_generators(self.grid_district, self._graph, debug)
+        self._graph = lv_connect.lv_connect_generators(self.grid_district, self.graph, debug)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid.

@@ -123,9 +123,9 @@ def calc_geo_dist_vincenty(node_source, node_target):
     Parameters
     ----------
     node_source: LVStationDing0, GeneratorDing0, or CableDistributorDing0
-        source node, member of GridDing0._graph
+        source node, member of GridDing0.graph
     node_target: LVStationDing0, GeneratorDing0, or CableDistributorDing0
-        target node, member of GridDing0._graph
+        target node, member of GridDing0.graph
 
     Returns
     -------
@@ -210,9 +210,9 @@ def calc_geo_centre_point(node_source, node_target):
     Parameters
     ----------
     node_source: LVStationDing0, GeneratorDing0, or CableDistributorDing0
-        source node, member of GridDing0._graph
+        source node, member of GridDing0.graph
     node_target: LVStationDing0, GeneratorDing0, or CableDistributorDing0
-        target node, member of GridDing0._graph
+        target node, member of GridDing0.graph
 
     Returns
     -------
