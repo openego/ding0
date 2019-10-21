@@ -24,13 +24,13 @@ logger = logging.getLogger('ding0')
 
 
 def set_circuit_breakers(mv_grid, mode='load', debug=False):
-    """ Calculates the optimal position of a circuit breaker on all routes of mv_grid, adds and connects them to graph.
-    #Todo: Update docstrings
+    """ Calculates the optimal position of a circuit breaker at lv stations (if existing)
+    on all routes of mv_grid, adds and connects them to graph.
     
     Args
     ----
     mv_grid: MVGridDing0
-       Description#TODO
+       MV grid instance
     debug: bool, defaults to False
        If True, information is printed during process
     
@@ -42,6 +42,10 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
     Assuming a ring (route which is connected to the root node at either sides), the optimal position of a circuit
     breaker is defined as the position (virtual cable) between two nodes where the conveyed current is minimal on
     the route. Instead of the peak current, the peak load is used here (assuming a constant voltage).
+    
+    The circuit breaker will be installed to a LV station, unless none
+    exists in a ring. In this case, a node of arbitrary type is chosen for the
+    location of the switch disconnecter.
     
     If a ring is dominated by loads (peak load > peak capacity of generators), only loads are used for determining
     the location of circuit breaker. If generators are prevailing (peak load < peak capacity of generators),
