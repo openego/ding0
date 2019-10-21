@@ -63,6 +63,37 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
 
     """
 
+    def relocate_circuit_breaker(circ_breaker, mv_grid, position, ring):
+        """
+        Moves circuit breaker to different position in ring.
+        
+        Parameters
+        ----------
+        circ_breaker: :class:`~.ding0.core.network.CircuitBreakerDing0`
+            circuit breaker to be relocated
+        mv_grid: :class:`~.ding0.core.network.grids.MVGridDing0`
+            grid in which ring and circuit breaker are located
+        position: :obj:`int`
+            position of new location of circuit breaker (index of node in ring)
+        ring: :obj:`list` of nodes
+            ring to which circuit breaker is relocated
+            
+        Note
+        -----
+        Branch of circuit breaker should be set to None in advance. 
+        So far only useful to relocate all circuit breakers in a grid as the 
+        position of the inserted circuit breaker is not checked beforehand. If
+        used for single circuit breakers make sure to insert matching ring and
+        circuit breaker.
+        """
+        node_cb = ring[position]
+        node2 = ring[position + 1]
+        circ_breaker.branch = mv_grid.graph.adj[node_cb][node2]['branch']
+        circ_breaker.branch_nodes = (node_cb, node2)
+        circ_breaker.switch_node = node_cb
+        circ_breaker.branch.circuit_breaker = circ_breaker
+        circ_breaker.geo_data = calc_geo_centre_point(node_cb, node2)
+
 
     # get power factor for loads and generators
     cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
@@ -73,7 +104,8 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         cb.branch.circuit_breaker = None
 
     # iterate over all rings and circuit breakers
-    for ring, circ_breaker in zip(mv_grid.rings_nodes(include_root_node=False), mv_grid.circuit_breakers()):
+    for ring, circ_breaker in zip(mv_grid.rings_nodes(include_root_node=False), 
+                                  mv_grid.circuit_breakers()):
 
         nodes_peak_load = []
         nodes_peak_generation = []
@@ -171,11 +203,4 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             logger.debug('Peak loads: {}'.format(nodes_peak_load))
 
 
-def relocate_circuit_breaker(circ_breaker, mv_grid, position, ring):
-    node_cb = ring[position]
-    node2 = ring[position + 1]
-    circ_breaker.branch = mv_grid.graph.adj[node_cb][node2]['branch']
-    circ_breaker.branch_nodes = (node_cb, node2)
-    circ_breaker.switch_node = node_cb
-    circ_breaker.branch.circuit_breaker = circ_breaker
-    circ_breaker.geo_data = calc_geo_centre_point(node_cb, node2)
+
