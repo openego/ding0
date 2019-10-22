@@ -938,8 +938,10 @@ def append_lines_df(edge, lines_df):
     # set grid_ids
     if isinstance(edge['branch'].grid, ding0_nw.grids.MVGridDing0):
         unitconversion = 1e3
+        is_mv = True
     elif isinstance(edge['branch'].grid, ding0_nw.grids.LVGridDing0):
         unitconversion = 1e6
+        is_mv = False
     else:
         raise TypeError('Something went wrong, only MVGridDing0 and '
                         'LVGridDing0 should be inserted as grid.')
@@ -967,10 +969,21 @@ def append_lines_df(edge, lines_df):
         type = edge['branch'].type['name']
     else:
         type = edge['branch'].type.name
-
+    
+    # make sure right side of station is appended
+    if isinstance(edge['adj_nodes'][0], LVStationDing0) and is_mv:
+        name_bus0 = edge['adj_nodes'][0].pypsa_bus0_id
+    else:
+        name_bus0 = edge['adj_nodes'][0].pypsa_bus_id
+    if isinstance(edge['adj_nodes'][1], LVStationDing0) and is_mv:
+        name_bus1 = edge['adj_nodes'][1].pypsa_bus0_id
+    else:
+        name_bus1 = edge['adj_nodes'][1].pypsa_bus_id
+    
+    # create new line
     line = pd.Series({'name':repr(edge['branch']),
-                      'bus0':edge['adj_nodes'][0].pypsa_bus_id,
-                      'bus1':edge['adj_nodes'][1].pypsa_bus_id,
+                      'bus0': name_bus0,
+                      'bus1': name_bus1,
                       'x':x_per_km * length, 'r':r_per_km * length,
                       's_nom':s_nom, 'length':length,
                       'num_parallel':1, 'type_info':type})
@@ -1018,7 +1031,10 @@ def circuit_breakers_to_df(grid, components, component_data,
                                                     'type_info'])
         for circuit_breaker in grid.circuit_breakers():
             if circuit_breaker.switch_node is not None:
-                name_bus_closed = circuit_breaker.switch_node.pypsa_bus_id
+                if isinstance(circuit_breaker.switch_node, LVStationDing0):
+                    name_bus_closed = circuit_breaker.switch_node.pypsa_bus0_id
+                else:
+                    name_bus_closed = circuit_breaker.switch_node.pypsa_bus_id
             else:
                 # get secondary bus of opened branch
                 name_bus_closed = \
