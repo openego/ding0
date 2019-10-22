@@ -797,7 +797,8 @@ class BranchDing0:
         -------
         :obj:`str`
         """
-        nodes = self.grid.graph_nodes_from_branch(self)
+        nodes = sorted(self.grid.graph_nodes_from_branch(self), 
+                       key=lambda _:repr(_))
         return '_'.join(['Branch', repr(nodes[0]), repr(nodes[1])])
 
 
