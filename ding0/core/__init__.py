@@ -1750,19 +1750,19 @@ class NetworkDing0:
             path = os.path.join(dir, str(grid_district.id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
-            network_df.to_csv(os.path.join(path, 'network_{}.csv'.format(str(grid_district.id_db))))
+            network_df.to_csv(os.path.join(path, 'network.csv'))
             gd_components['Transformer'].to_csv(
-                os.path.join(path, 'transformers_{}.csv'.format(str(grid_district.id_db))))
+                os.path.join(path, 'transformers.csv'))
             gd_components['Bus'].to_csv(
-                os.path.join(path, 'buses_{}.csv'.format(str(grid_district.id_db))))
+                os.path.join(path, 'buses.csv'))
             gd_components['Line'].to_csv(
-                os.path.join(path, 'lines_{}.csv'.format(str(grid_district.id_db))))
+                os.path.join(path, 'lines.csv'))
             gd_components['Load'].to_csv(
-                os.path.join(path, 'loads_{}.csv'.format(str(grid_district.id_db))))
+                os.path.join(path, 'loads.csv'))
             gd_components['Generator'].to_csv(
-                os.path.join(path, 'generators_{}.csv'.format(str(grid_district.id_db))))
+                os.path.join(path, 'generators.csv'))
             gd_components['Switch'].to_csv(
-                os.path.join(path, 'switches_{}.csv'.format(str(grid_district.id_db))))
+                os.path.join(path, 'switches.csv'))
 
             # Merge metadata of multiple runs
             if 'metadata' not in locals():

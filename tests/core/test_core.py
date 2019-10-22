@@ -70,17 +70,17 @@ class TestNetworkDing0(object):
         # import exported dataset
         id_mvgd = str(nd._mv_grid_districts[0].mv_grid.grid_district.id_db)
         buses = pd.DataFrame.from_csv(
-            os.path.join(path, id_mvgd, 'buses_{}.csv'.format(id_mvgd)))
+            os.path.join(path, id_mvgd, 'buses.csv'))
         lines = pd.DataFrame.from_csv(
-            os.path.join(path, id_mvgd, 'lines_{}.csv'.format(id_mvgd)))
+            os.path.join(path, id_mvgd, 'lines.csv'))
         loads = pd.DataFrame.from_csv(
-            os.path.join(path, id_mvgd, 'loads_{}.csv'.format(id_mvgd)))
+            os.path.join(path, id_mvgd, 'loads.csv'))
         generators = pd.DataFrame.from_csv(
-            os.path.join(path,id_mvgd, 'generators_{}.csv'.format(id_mvgd)))
+            os.path.join(path,id_mvgd, 'generators.csv'))
         transformers = pd.DataFrame.from_csv(
-            os.path.join(path,id_mvgd, 'transformers_{}.csv'.format(id_mvgd)))
+            os.path.join(path,id_mvgd, 'transformers.csv'))
         switches = pd.DataFrame.from_csv(
-            os.path.join(path,id_mvgd, 'switches_{}.csv'.format(id_mvgd)))
+            os.path.join(path,id_mvgd, 'switches.csv'))
 
         try:
             # check if all entries are unique
