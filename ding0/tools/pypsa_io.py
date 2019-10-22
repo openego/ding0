@@ -463,7 +463,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                 load_pq_set_df=load_pq_set_df,
                                 generator_pq_set_df=generator_pq_set_df)
                             bus_v_mag_set_df = append_bus_v_mag_set_df(
-                                bus_v_mag_set_df,node, node.pypsa_bus0_id)
+                                bus_v_mag_set_df,node)
                         else:
                             loads_df, generators_df = \
                                 append_load_areas_to_df(loads_df,
@@ -472,13 +472,14 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                             transformer_df = \
                                 append_transformers_df(transformer_df,trafo)
                         # bus at secondary MV-LV transformer side
-                        buses_df = append_buses_df(buses_df, grid, node, srid,
-                                                   node.pypsa_bus0_id)
+                        buses_df = append_buses_df(buses_df, grid, node, srid)
                     # bus at primary MV-LV transformer side
-                    buses_df = append_buses_df(buses_df, grid, node, srid)
+                    buses_df = append_buses_df(buses_df, grid, node, srid,
+                                                   node.pypsa_bus0_id)
                     if return_time_varying_data:
                         bus_v_mag_set_df = \
-                            append_bus_v_mag_set_df(bus_v_mag_set_df,node)
+                            append_bus_v_mag_set_df(bus_v_mag_set_df,node,
+                                                   node.pypsa_bus0_id)
                 elif isinstance(grid, ding0_nw.grids.LVGridDing0):
                     # bus at secondary MV-LV transformer side
                     buses_df = append_buses_df(buses_df, grid, node,
