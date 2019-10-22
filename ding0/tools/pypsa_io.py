@@ -482,12 +482,10 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                                    node.pypsa_bus0_id)
                 elif isinstance(grid, ding0_nw.grids.LVGridDing0):
                     # bus at secondary MV-LV transformer side
-                    buses_df = append_buses_df(buses_df, grid, node,
-                                               srid,node.pypsa_bus0_id)
+                    buses_df = append_buses_df(buses_df, grid, node, srid)
                     if return_time_varying_data:
                         bus_v_mag_set_df = \
-                            append_bus_v_mag_set_df(bus_v_mag_set_df,node,
-                                                    node.pypsa_bus0_id)
+                            append_bus_v_mag_set_df(bus_v_mag_set_df,node)
                 else: 
                     raise TypeError('Something went wrong. '
                                     'Only LVGridDing0 or MVGridDing0 can '
