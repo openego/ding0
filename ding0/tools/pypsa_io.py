@@ -659,7 +659,7 @@ def append_load_areas_to_df(loads_df, generators_df, node,
         name_load = '_'.join(['Load','mvgd' +
                               str(node.grid.grid_district.lv_load_area.
                                   mv_grid_district.id_db),
-                              'lac' + str(node.id_db)])
+                              'lvgd' + str(node.id_db)])
         load_area = node.grid.grid_district
         grid_districts = [load_area]
     elif isinstance(node,LVLoadAreaCentreDing0):
