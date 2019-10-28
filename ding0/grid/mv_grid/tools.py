@@ -91,7 +91,7 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         circuit breaker.
         """
         node_cb = ring[position]
-        node2 = ring[position + 1]
+        node2 = ring[position - 1]
         circ_breaker.branch = mv_grid.graph.adj[node_cb][node2]['branch']
         circ_breaker.branch_nodes = (node_cb, node2)
         circ_breaker.switch_node = node_cb
