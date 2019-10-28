@@ -97,7 +97,7 @@ def initialize_component_dataframes():
             'lines_columns': ['name', 'bus0', 'bus1', 'length', 'r', 'x',
                               's_nom', 'num_parallel', 'type_info'],
             'transformer_columns': ['name', 'bus0', 'bus1', 's_nom', 'r',
-                                    'x', 'type'],
+                                    'x', 'type', 'type_info'],
             'generators_columns': ['name', 'bus', 'control', 'p_nom', 'type',
                                    'weather_cell_id', 'subtype'],
             'loads_columns': ['name', 'bus', 'peak_load',
@@ -251,7 +251,7 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
     # add station transformers to respective dataframe
     for trafo in grid.station()._transformers:
         if trafo.x_pu == None:
-            type = '{} MVA 110/10 kV'.format(int(trafo.s_max_a/1e3))
+            type = '{} MVA 110/{} kV'.format(int(trafo.s_max_a/1e3), grid.v_level)
             transformer_df = append_transformers_df(transformer_df,
                                                     trafo, type)
         else:
@@ -880,11 +880,24 @@ def append_transformers_df(transformers_df, trafo, type = np.NaN):
     transformers_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of trafos with entries name, bus0, bus1, x, r, s_nom, type
     '''
+    if isinstance(type, str):
+        type_info = type
+    else:
+        if isinstance(trafo.grid, ding0_nw.grids.MVGridDing0):
+            voltage_upper = 110
+            voltage_lower = trafo.grid.v_level
+        elif isinstance(trafo.grid, ding0_nw.grids.LVGridDing0):
+            voltage_upper = trafo.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.v_level
+            voltage_lower = trafo.grid.v_level/1e3
+        type_info = '{} MVA {}/{} kV'.format(trafo.s_max_a/1e3,
+                                             voltage_upper, voltage_lower)
+
     trafo_tmp = pd.Series({'name': repr(trafo),
                            'bus0':trafo.grid.station().pypsa_bus0_id,
                            'bus1':trafo.grid.station().pypsa_bus_id,
                            'x':trafo.x_pu, 'r':trafo.r_pu,
-                           's_nom':trafo.s_max_a/1e3, 'type': type})
+                           's_nom':trafo.s_max_a/1e3, 'type': type,
+                           'type_info':type_info})
     transformers_df = transformers_df.append(trafo_tmp,ignore_index=True)
     return transformers_df
 
