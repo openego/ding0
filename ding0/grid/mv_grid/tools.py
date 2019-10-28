@@ -67,20 +67,10 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
 
     """
 
-    def relocate_circuit_breaker(circ_breaker, mv_grid, position, ring):
+    def relocate_circuit_breaker():
         """
         Moves circuit breaker to different position in ring.
-        
-        Parameters
-        ----------
-        circ_breaker: :class:`~.ding0.core.network.CircuitBreakerDing0`
-            circuit breaker to be relocated
-        mv_grid: :class:`~.ding0.core.network.grids.MVGridDing0`
-            grid in which ring and circuit breaker are located
-        position: :obj:`int`
-            position of new location of circuit breaker (index of node in ring)
-        ring: :obj:`list` of nodes
-            ring to which circuit breaker is relocated
+
             
         Note
         -----
@@ -91,7 +81,19 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         circuit breaker.
         """
         node_cb = ring[position]
-        node2 = ring[position - 1]
+        # check if node is last node of ring
+        if position < len(ring):
+            # check which branch to disconnect by determining load difference
+            # of neighboring nodes
+            diff2 = abs(sum(node_peak_data[0:position+1]) -
+                        sum(node_peak_data[position+1:len(node_peak_data)]))
+            if diff2 < diff_min:
+                node2 = ring[position+1]
+            else:
+                node2 = ring[position-1]
+        else:
+            node2 = ring[position-1]
+
         circ_breaker.branch = mv_grid.graph.adj[node_cb][node2]['branch']
         circ_breaker.branch_nodes = (node_cb, node2)
         circ_breaker.switch_node = node_cb
@@ -195,7 +197,7 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
                     break
 
         # relocate circuit breaker
-        relocate_circuit_breaker(circ_breaker, mv_grid, position, ring)
+        relocate_circuit_breaker()
 
         if debug:
             logger.debug('Ring: {}'.format(ring))
