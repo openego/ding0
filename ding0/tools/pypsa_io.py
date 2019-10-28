@@ -92,7 +92,7 @@ def initialize_component_dataframes():
         Dataframe of loads with entries name, bus, peak_load,
         annual_consumption, sector
     """
-    cols = {'buses_columns': ['name', 'geom', 'mv_grid_id',
+    cols = {'buses_columns': ['name', 'x', 'y', 'mv_grid_id',
                               'lv_grid_id', 'v_nom', 'in_building'],
             'lines_columns': ['name', 'bus0', 'bus1', 'length', 'r', 'x',
                               's_nom', 'num_parallel', 'type_info'],
@@ -374,8 +374,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 generators_df = generators_df.append(slack, ignore_index=True)
                 # add HV side bus
                 bus_HV = pd.Series({'name':node.pypsa_bus0_id, 'v_nom':110,
-                                    'geom':
-                                        from_shape(node.geo_data, srid=srid),
+                                    'x':node.geo_data.x, 'y': node.geo_data.y,
                                     'mv_grid_id': grid.id_db,
                                     'in_building': False})
                 buses_df = buses_df.append(bus_HV,ignore_index=True)
@@ -472,7 +471,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                             transformer_df = \
                                 append_transformers_df(transformer_df,trafo)
                         # bus at secondary MV-LV transformer side
-                        buses_df = append_buses_df(buses_df, grid, node, srid)
+                        buses_df = append_buses_df(buses_df, node.grid,
+                                                   node, srid)
                     # bus at primary MV-LV transformer side
                     buses_df = append_buses_df(buses_df, grid, node, srid,
                                                    node.pypsa_bus0_id)
@@ -839,9 +839,9 @@ def append_buses_df(buses_df, grid, node, srid, node_name =''):
     else:
         in_building = False
     # set geodata, if existing
-    geo = np.NaN
+    [x,y] = [np.NaN, np.NaN]
     if isinstance(node.geo_data,Point):
-        geo = from_shape(node.geo_data, srid=srid)
+        [x,y] = [node.geo_data.x, node.geo_data.y]
     #set grid_ids
     if isinstance(grid, ding0_nw.grids.MVGridDing0):
         mv_grid_id = grid.id_db
@@ -856,7 +856,7 @@ def append_buses_df(buses_df, grid, node, srid, node_name =''):
         raise TypeError('Something went wrong, only MVGridDing0 and '
                         'LVGridDing0 should be inserted as grid.')
     # create bus dataframe
-    bus = pd.Series({'name': node_name,'v_nom':v_nom, 'geom':geo,
+    bus = pd.Series({'name': node_name,'v_nom':v_nom, 'x':x, 'y':y,
                      'mv_grid_id':mv_grid_id,'lv_grid_id':lv_grid_id,
                      'in_building': in_building})
     buses_df = buses_df.append(bus, ignore_index=True)
