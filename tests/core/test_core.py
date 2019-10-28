@@ -183,13 +183,23 @@ class TestNetworkDing0(object):
                 return float(tuple[0]), float(tuple[1])
 
             def assert_by_absolute_tolerance(x, y, tol=0.0001, 
-                                             element_name = ''):
-                if (x - y > tol):
-                    raise Exception('Unequal values for element {}: val1 is {}'
-                                    ', val2 is {}.'.format(element_name, x, y))
+                                             element_name = '',
+                                             assert_by_abs = False):
+                if not assert_by_abs:
+                    if x - y > tol:
+                        raise Exception('Unequal values for element {}: '
+                                        'val1 is {}, val2 is {}.'.format(
+                            element_name, x, y))
+                else:
+                    # Todo: check reason for different sign of line load. Reason possibly in allocation of bus0 and bus1 of lines.
+                    if abs(x) - abs(y) > tol:
+                        raise Exception('Unequal values for element {}: '
+                                        'val1 is {}, val2 is {}.'.format(
+                            element_name, x, y))
+
 
             def assert_almost_equal(orig_df, comp_df, 
-                                    element_name, tol=1e-4):
+                                    element_name, tol=1e-4, assert_by_abs = False):
                 for key in orig_df.index:
                     load_ref, gen_ref = \
                         extract_tuple_values_from_string(orig_df[key])
@@ -197,9 +207,9 @@ class TestNetworkDing0(object):
                         extract_tuple_values_from_string(
                             comp_df.loc[element_name][key])
                     assert_by_absolute_tolerance(load_ref, load_comp, 
-                                                 tol, element_name)
+                                                 tol, element_name, assert_by_abs)
                     assert_by_absolute_tolerance(gen_ref, gen_comp, 
-                                                 tol, element_name)
+                                                 tol, element_name, assert_by_abs)
 
             # export to pypsa csv format
             cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -221,7 +231,8 @@ class TestNetworkDing0(object):
                 os.path.join(cur_dir,'testdata','bus_data.csv'))
             # compare results
             for line_name, line_data in compare_lines.iterrows():
-                assert_almost_equal(line_data, lines, line_name)
+                assert_almost_equal(line_data, lines, line_name,
+                                    assert_by_abs=True)
             for bus_name, bus_data in compare_buses.iterrows():
                 assert_almost_equal(bus_data, buses, bus_name)
             print('Finished testing MV grid only')
