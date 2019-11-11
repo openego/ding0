@@ -572,33 +572,31 @@ def calculate_mvgd_stats(nw):
                             lvstation_impedance = 1. / lvstation_impedance
                         else:
                             lvstation_impedance = 0.
+
                         # identify LV nodes belonging to LV station
-                        for lv_LA in district.lv_load_areas():
-                            for lv_dist in lv_LA.lv_grid_districts():
-                                if lv_dist.lv_grid._station == node:
-                                    G_lv = lv_dist.lv_grid._graph
-                                    # loop over all LV terminal nodes belonging to LV station
-                                    for lv_node in G_lv.nodes():
-                                        if isinstance(lv_node, GeneratorDing0) or isinstance(lv_node, LVLoadDing0):
-                                            path = nx.shortest_path(G_lv, node, lv_node)
-                                            lv_impedance = lvstation_impedance
-                                            lv_path_length = 0.
-                                            for i in range(len(path)-1):
-                                                lv_impedance += (G_lv.adj[path[i]][path[i+1]]['branch'].type['L_per_km'] * 1e-3 * omega * \
-                                                                 G_lv.adj[path[i]][path[i+1]]['branch'].length) *1j + \
-                                                                (G_lv.adj[path[i]][path[i+1]]['branch'].type['R_per_km'] * \
-                                                                 G_lv.adj[path[i]][path[i+1]]['branch'].length)
-                                                lv_path_length += G_lv.adj[path[i]][path[i+1]]['branch'].length
-                                            lv_thermal_limit = G_lv.adj[path[0]][path[1]]['branch'].type['I_max_th']
+                        G_lv = node.grid._graph
+                        # loop over all LV terminal nodes belonging to LV station
+                        for lv_node in G_lv.nodes():
+                            if isinstance(lv_node, GeneratorDing0) or isinstance(lv_node, LVLoadDing0):
+                                lv_path = nx.shortest_path(G_lv, node, lv_node)
+                                lv_impedance = lvstation_impedance
+                                lv_path_length = 0.
+                                for i in range(len(lv_path)-1):
+                                    lv_impedance += (G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].type['L_per_km'] * 1e-3 * omega * \
+                                                     G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].length) *1j + \
+                                                    (G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].type['R_per_km'] * \
+                                                     G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].length)
+                                    lv_path_length += G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].length
+                                lv_thermal_limit = G_lv.adj[lv_path[0]][lv_path[1]]['branch'].type['I_max_th']
 
-                                            mvlv_impedances[lv_node] = abs( mv_impedance + lv_impedance )
-                                            mvlv_path_lengths[lv_node] = mv_path_length + lv_path_length
-                                            lv_thermal_limits[lv_node] = lv_thermal_limit
-                                            mvlv_thermal_limits[lv_node] = mv_thermal_limit
+                                mvlv_impedances[lv_node] = abs( mv_impedance + lv_impedance )
+                                mvlv_path_lengths[lv_node] = mv_path_length + lv_path_length
+                                lv_thermal_limits[lv_node] = lv_thermal_limit
+                                mvlv_thermal_limits[lv_node] = mv_thermal_limit
 
-                                        elif isinstance(lv_node, LVStationDing0):
-                                            n_outgoing_LV += len(list(G_lv.neighbors(lv_node)))
-                                            n_stations_LV += 1
+                            elif isinstance(lv_node, LVStationDing0):
+                                n_outgoing_LV += len(list(G_lv.neighbors(lv_node)))
+                                n_stations_LV += 1
 
         # compute mean values by looping over terminal nodes
         sum_impedances = 0.
