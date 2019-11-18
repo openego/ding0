@@ -95,7 +95,7 @@ def initialize_component_dataframes():
     cols = {'buses_columns': ['name', 'x', 'y', 'mv_grid_id',
                               'lv_grid_id', 'v_nom', 'in_building'],
             'lines_columns': ['name', 'bus0', 'bus1', 'length', 'r', 'x',
-                              's_nom', 'num_parallel', 'type_info'],
+                              's_nom', 'num_parallel', 'kind', 'type_info'],
             'transformer_columns': ['name', 'bus0', 'bus1', 's_nom', 'r',
                                     'x', 'type', 'type_info'],
             'generators_columns': ['name', 'bus', 'control', 'p_nom', 'type',
@@ -993,12 +993,13 @@ def append_lines_df(edge, lines_df):
         name_bus1 = edge['adj_nodes'][1].pypsa_bus_id
     
     # create new line
-    line = pd.Series({'name':repr(edge['branch']),
+    line = pd.Series({'name': repr(edge['branch']),
                       'bus0': name_bus0,
                       'bus1': name_bus1,
-                      'x':x_per_km * length, 'r':r_per_km * length,
-                      's_nom':s_nom, 'length':length,
-                      'num_parallel':1, 'type_info':type})
+                      'x': x_per_km * length, 'r':r_per_km * length,
+                      's_nom': s_nom, 'length': length,
+                      'num_parallel': 1, 'kind': edge['branch'].kind,
+                      'type_info': type})
     lines_df = lines_df.append(line, ignore_index=True)
     return lines_df
 
