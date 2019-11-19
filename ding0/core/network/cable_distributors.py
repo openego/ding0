@@ -41,11 +41,11 @@ class MVCableDistributorDing0(CableDistributorDing0):
         :obj:`str`: 
             Representative of pypsa bus
         """
-        return '_'.join(['BranchTee', 'mvgd' + str(self.grid.id_db),
+        return '_'.join(['BranchTee', 'mvgd', str(self.grid.id_db),
                         str(self.id_db)])
 
     def __repr__(self):
-        return '_'.join(['MVCableDist', 'mvgd' + str(self.grid.id_db), str(self.id_db)])
+        return '_'.join(['MVCableDist', 'mvgd', str(self.grid.id_db), str(self.id_db)])
 
 
 class LVCableDistributorDing0(CableDistributorDing0):
@@ -83,9 +83,11 @@ class LVCableDistributorDing0(CableDistributorDing0):
         :obj:`str`: 
             Representative of pypsa bus
         """
-        return '_'.join(['BranchTee', 'mvgd'+ str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.id_db),
-                         'lvgd'+ str(self.grid.id_db), str(self.id_db)])
+        return '_'.join(['BranchTee', 'mvgd', str(self.grid.grid_district.
+                              lv_load_area.mv_grid_district.mv_grid.id_db),
+                         'lvgd', str(self.grid.id_db), str(self.id_db)])
 
     def __repr__(self):
-        return '_'.join(['LVCableDist', 'mvgd'+ str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.id_db),
-                         'lvgd'+ str(self.grid.id_db), str(self.id_db)])
+        return '_'.join(['LVCableDist', 'mvgd', str(self.grid.grid_district.
+                                lv_load_area.mv_grid_district.mv_grid.id_db),
+                         'lvgd', str(self.grid.id_db), str(self.id_db)])
