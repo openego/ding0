@@ -169,6 +169,12 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
         fill_component_dataframes(mv_grid, buses_df, lines_df, transformer_df,
                                   generators_df, loads_df, only_export_mv,
                                   return_time_varying_data)
+    # move hvmv transformer to own entry to handle differently and ignore in 
+    # power flow
+    hvmv_transformers = mv_components['Transformer'].loc[
+        ~mv_components['Transformer'].bus0.isin(mv_components['Bus'].index)]
+    mv_components['HVMV_Transformer'] = hvmv_transformers
+    mv_components['Transformer'].drop(hvmv_transformers.index, inplace=True)
     logger.info('MV grid {} exported to pypsa format.'.format(
         str(mv_grid_district.id_db)))
     if not only_export_mv:
@@ -372,12 +378,6 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                    'p_nom':0, 'type': 'station',
                                    'subtype':'mv_station'})
                 generators_df = generators_df.append(slack, ignore_index=True)
-                # add HV side bus
-                bus_HV = pd.Series({'name':node.pypsa_bus0_id, 'v_nom':110,
-                                    'x':node.geo_data.x, 'y': node.geo_data.y,
-                                    'mv_grid_id': grid.id_db,
-                                    'in_building': False})
-                buses_df = buses_df.append(bus_HV,ignore_index=True)
                 # add MV side bus
                 buses_df = append_buses_df(buses_df, grid, node, srid)
                 # add time varying elements
@@ -1514,7 +1514,7 @@ def create_powerflow_problem(timerange, components):
 
     # add components to network
     for component in components.keys():
-        if component == 'Switch':
+        if component in ['Switch', 'HVMV_Transformer']:
             continue
         network.import_components_from_dataframe(components[component],
                                                  component)

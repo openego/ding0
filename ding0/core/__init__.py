@@ -1751,6 +1751,8 @@ class NetworkDing0:
             if not os.path.exists(path):
                 os.makedirs(path)
             network_df.to_csv(os.path.join(path, 'network.csv'))
+            gd_components['HVMV_Transformer'].to_csv(
+                os.path.join(path, 'transformers_hvmv.csv'))
             gd_components['Transformer'].to_csv(
                 os.path.join(path, 'transformers.csv'))
             gd_components['Bus'].to_csv(
