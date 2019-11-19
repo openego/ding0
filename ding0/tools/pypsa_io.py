@@ -664,8 +664,8 @@ def append_load_areas_to_df(loads_df, generators_df, node,
         grid_districts = [load_area]
     elif isinstance(node,LVLoadAreaCentreDing0):
         name_bus = node.grid.station().pypsa_bus_id
-        name_load = '_'.join(['Load','mvgd' + str(node.grid.id_db),
-                              'lac' + str(node.id_db)])
+        name_load = '_'.join(['Load', 'mvgd',  str(node.grid.id_db),
+                              'lac',  str(node.id_db)])
         load_area = node.lv_load_area
         grid_districts = load_area.lv_grid_districts()
     else:

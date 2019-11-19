@@ -979,11 +979,11 @@ class GeneratorDing0:
         :obj:`str`
         """
         if self.lv_grid != None:
-            return '_'.join(['Bus', 'mvgd'+ str(self.mv_grid.id_db),
-                             'lvgd'+str(self.lv_grid.id_db),'gen' + str(self.id_db)])
+            return '_'.join(['Bus', 'mvgd', str(self.mv_grid.id_db),
+                             'lvgd', str(self.lv_grid.id_db),'gen', str(self.id_db)])
         else:
-            return '_'.join(['Bus', 'mvgd'+str(self.mv_grid.id_db),
-                                  'gen'+ str(self.id_db)])
+            return '_'.join(['Bus', 'mvgd',str(self.mv_grid.id_db),
+                                  'gen', str(self.id_db)])
 
     def __repr__(self):
         """
@@ -1001,10 +1001,10 @@ class GeneratorDing0:
             type = ''
         if self.lv_grid != None:
             return '_'.join(['Generator',
-                    'mvgd' + str(self.mv_grid.grid_district.id_db),
-                    'lvgd' + str(self.lv_grid.id_db), type+ str(self.id_db)])
+                    'mvgd', str(self.mv_grid.grid_district.id_db),
+                    'lvgd', str(self.lv_grid.id_db), type, str(self.id_db)])
         else:
-            return '_'.join(['Generator', 'mvgd'+ str(self.mv_grid.id_db),type+ str(self.id_db)])
+            return '_'.join(['Generator', 'mvgd', str(self.mv_grid.id_db),type, str(self.id_db)])
 
 
 class GeneratorFluctuatingDing0(GeneratorDing0):
@@ -1128,8 +1128,8 @@ class LoadDing0:
         -------
         :obj:`str`
         """
-        return '_'.join(['Bus', 'mvgd'+str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                id_db), 'lvgd' + str(self.grid.id_db), 'loa' + str(self.id_db)])
+        return '_'.join(['Bus', 'mvgd', str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'lvgd', str(self.grid.id_db), 'loa', str(self.id_db)])
     
     def __repr__(self):
         """
@@ -1139,8 +1139,8 @@ class LoadDing0:
         -------
         :obj:`str`
         """
-        return '_'.join(['Load', 'mvgd'+str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                id_db), 'lvgd' + str(self.grid.id_db), str(self.id_db)])
+        return '_'.join(['Load', 'mvgd', str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'lvgd', str(self.grid.id_db), str(self.id_db)])
 
 
 class CircuitBreakerDing0:

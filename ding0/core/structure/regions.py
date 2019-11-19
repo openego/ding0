@@ -310,10 +310,10 @@ class LVLoadAreaCentreDing0:
         :obj:`str`:
             Representative of pypsa bus
         """
-        return '_'.join(['Bus','mvgd'+str(self.grid.id_db), 'lac'+str(self.id_db)])
+        return '_'.join(['Bus','mvgd', str(self.grid.id_db), 'lac', str(self.id_db)])
 
     def __repr__(self):
-        return '_'.join(['LVLoadAreaCentre',  'mvgd'+str(
+        return '_'.join(['LVLoadAreaCentre',  'mvgd', str(
                 self.grid.id_db), str(self.id_db)])
 
 class LVGridDistrictDing0(RegionDing0):

@@ -190,7 +190,7 @@ class MVStationDing0(StationDing0):
         :obj:`str`: 
             Representative of pypsa bus
         """
-        return '_'.join(['Busbar', 'mvgd'+str(self.grid.id_db), 'MV'])
+        return '_'.join(['Busbar', 'mvgd', str(self.grid.id_db), 'MV'])
 
     @property
     def pypsa_bus0_id(self):
@@ -203,11 +203,11 @@ class MVStationDing0(StationDing0):
         :obj:`str`:
             Representative of pypsa bus
         """
-        return '_'.join(['Busbar', 'mvgd' + str(self.grid.id_db), 'HV'])
+        return '_'.join(['Busbar', 'mvgd',  str(self.grid.id_db), 'HV'])
 
 
     def __repr__(self):
-        return '_'.join(['MVStation', 'mvgd' + str(self.grid.id_db)])
+        return '_'.join(['MVStation', 'mvgd',  str(self.grid.id_db)])
 
     
 
@@ -246,9 +246,9 @@ class LVStationDing0(StationDing0):
         :obj:`str`: 
             Representative of pypsa bus
         """
-        return '_'.join(['BusBar', 'mvgd'+str(
+        return '_'.join(['BusBar', 'mvgd', str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                id_db), 'lvgd'+str(self.grid.id_db), 'LV'])
+                id_db), 'lvgd', str(self.grid.id_db), 'LV'])
 
     @property
     def pypsa_bus0_id(self):
@@ -261,11 +261,11 @@ class LVStationDing0(StationDing0):
         :obj:`str`:
             Representative of pypsa bus
         """
-        return '_'.join(['BusBar', 'mvgd' + str(
+        return '_'.join(['BusBar', 'mvgd',  str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid. \
-                id_db), 'lvgd' + str(self.grid.id_db), 'MV'])
+                id_db), 'lvgd',  str(self.grid.id_db), 'MV'])
 
     def __repr__(self):
-        return '_'.join(['LVStation', 'mvgd'+str(
+        return '_'.join(['LVStation', 'mvgd', str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                id_db), 'lvgd'+str(self.grid.id_db)])
+                id_db), 'lvgd', str(self.grid.id_db)])
