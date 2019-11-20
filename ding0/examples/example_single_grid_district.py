@@ -47,5 +47,5 @@ mv_grid_districts = [460]
 nd.run_ding0(session=session,
              mv_grid_districts_no=mv_grid_districts)
 
-# export grid to file (pickle)
-save_nd_to_pickle(nd, filename='ding0_grids_example.pkl')
+# export grid to csv-files
+nd.to_csv()
