@@ -486,7 +486,7 @@ def calculate_mvgd_stats(nw):
     omega = 2 * pi * freq
 
     # close circuit breakers
-    nw.control_circuit_breakers(mode='close')
+    nw.control_circuit_breakers(mode='open')
     ##############################
     # Collect info from nw into dataframes
     # define dictionaries for collection
