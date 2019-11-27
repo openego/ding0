@@ -548,13 +548,13 @@ def calculate_mvgd_stats(nw):
                     path = nx.shortest_path(G, root, node)
                     for i in range(len(path) - 1):
                         mv_impedance += (G.adj[path[i]][path[i + 1]]['branch'].type[
-                                 'L_per_km'] * 1e-3 * omega * \
-                             G.adj[path[i]][path[i + 1]][
-                                 'branch'].length) *1j  + \
-                            (G.adj[path[i]][path[i + 1]]['branch'].type[
-                                 'R_per_km'] * \
-                             G.adj[path[i]][path[i + 1]][
-                                 'branch'].length)
+                                             'L_per_km'] * 1e-3 * omega * \
+                                         G.adj[path[i]][path[i + 1]][
+                                             'branch'].length) *1j  + \
+                                        (G.adj[path[i]][path[i + 1]]['branch'].type[
+                                             'R_per_km'] * \
+                                         G.adj[path[i]][path[i + 1]][
+                                             'branch'].length)
                         mv_path_length += G.adj[path[i]][path[i + 1]][
                             'branch'].length
 
@@ -584,10 +584,10 @@ def calculate_mvgd_stats(nw):
                                             lv_impedance = lvstation_impedance
                                             lv_path_length = 0.
                                             for i in range(len(path)-1):
-                                                lv_impedance += (G_lv.adj[path[i]][path[i+1]]['branch'].type['L_l'] * 1e-3 * omega * \
-                                                                          G_lv.adj[path[i]][path[i+1]]['branch'].length) *1j + \
-                                                                         (G_lv.adj[path[i]][path[i+1]]['branch'].type['R_l'] * \
-                                                                          G_lv.adj[path[i]][path[i+1]]['branch'].length)
+                                                lv_impedance += (G_lv.adj[path[i]][path[i+1]]['branch'].type['L_per_km'] * 1e-3 * omega * \
+                                                                 G_lv.adj[path[i]][path[i+1]]['branch'].length) *1j + \
+                                                                (G_lv.adj[path[i]][path[i+1]]['branch'].type['R_per_km'] * \
+                                                                 G_lv.adj[path[i]][path[i+1]]['branch'].length)
                                                 lv_path_length += G_lv.adj[path[i]][path[i+1]]['branch'].length
                                             lv_thermal_limit = G_lv.adj[path[0]][path[1]]['branch'].type['I_max_th']
 
@@ -613,7 +613,6 @@ def calculate_mvgd_stats(nw):
                 sum_thermal_limits += mv_thermal_limits[terminal_node]
                 sum_path_lengths += mv_path_lengths[terminal_node]
                 n_terminal_nodes_MV += 1
-
         sum_thermal_limits_LV = 0.
         n_terminal_nodes_LV = 0
 
