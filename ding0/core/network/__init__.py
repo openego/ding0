@@ -1130,17 +1130,6 @@ class LoadDing0:
         """
         return '_'.join(['Bus', 'mvgd', str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
                 id_db), 'lvgd', str(self.grid.id_db), 'loa', str(self.id_db)])
-    
-    def __repr__(self):
-        """
-        The Representative of the :class:`~.ding0.core.network.CircuitBreakerDing0` object.
-
-        Returns
-        -------
-        :obj:`str`
-        """
-        return '_'.join(['Load', 'mvgd', str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                id_db), 'lvgd', str(self.grid.id_db), str(self.id_db)])
 
 
 class CircuitBreakerDing0:
