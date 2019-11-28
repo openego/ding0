@@ -44,7 +44,7 @@ BASEPATH = os.path.join(os.path.expanduser('~'), '.ding0')
 
 ########################################################
 def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
-                 base_path=None):
+                 base_path=None, save_as = 'csv'):
     '''Organize parallel runs of ding0.
 
     The function take all districts in a list and divide them into
@@ -102,7 +102,8 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
         mv_districts = th
         processes.append(mp.Process(target=process_runs,
                                     args=(mv_districts, n_of_districts,
-                                          output_info, run_id, base_path)))
+                                          output_info, run_id, base_path,
+                                          save_as)))
     #######################################################################
     # Run processes
     for p in processes:
@@ -121,7 +122,8 @@ def parallel_run(districts_list, n_of_processes, n_of_districts, run_id,
     return output
 
 ########################################################
-def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
+def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path,
+                 save_as):
     '''Runs a process organized by parallel_run()
 
     The function take all districts mv_districts and divide them into clusters
@@ -145,6 +147,8 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
         windows systems).
         Specify your own but keep in mind that it a required a particular
         structure of subdirectories.
+    save_as: str
+        Type of file as which network should be exported, can be 'csv' or 'pkl'
 
     See Also
     --------
@@ -176,7 +180,16 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path):
             else:
                 msg = ''
                 status = 'OK'
-                results.save_nd_to_pickle(nw, os.path.join(base_path, run_id))
+                if save_as == 'csv':
+                    try:
+                        nw.to_csv(os.path.join(base_path, run_id))
+                    except:
+                        results.save_nd_to_pickle(nw, os.path.join(base_path,
+                                                                   run_id))
+                elif save_as == 'pkl':
+                    results.save_nd_to_pickle(nw, os.path.join(base_path, run_id))
+                else:
+                    msg = 'save_as not correct, network not saved.'
             output_clusters.append((nw_name,status,msg, nw.metadata))
         except Exception as e:
             output_clusters.append((nw_name,  'corrupt dist', e, nw.metadata))
@@ -230,7 +243,7 @@ if __name__ == '__main__':
     n_of_districts = 1 #n° of districts in each serial cluster
 
     out = parallel_run(mv_grid_districts, n_of_processes, n_of_districts,
-                       run_id, base_path=base_path)
+                       run_id, base_path=base_path, save_as='csv')
 
     # report on unsuccessful runs
     corrupt_out = [_[0:3] for _ in out if not _[1]=='OK']
