@@ -325,6 +325,10 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             continue
         elif isl_node.lv_load_area.is_aggregated:
             continue
+        elif isinstance(isl_node, LVStationDing0) \
+                and isl_node.peak_load == 0 \
+                and isl_node.peak_generation == 0:
+            continue
         else:
             raise Exception("{} is isolated node. Please check.".
                             format(repr(isl_node)))

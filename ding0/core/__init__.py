@@ -1744,8 +1744,9 @@ class NetworkDing0:
         self.control_circuit_breakers(mode='open')
         # start filling component dataframes
         for grid_district in self.mv_grid_districts():
-            gd_components, network_df, _ = fill_mvgd_component_dataframes(grid_district, buses_df, generators_df,
-                                                                       lines_df, loads_df,transformer_df, only_export_mv)
+            gd_components, network_df, _ = fill_mvgd_component_dataframes(
+                grid_district, buses_df, generators_df,
+                lines_df, loads_df,transformer_df, only_export_mv)
             # save network and components to csv
             path = os.path.join(dir, str(grid_district.id_db))
             if not os.path.exists(path):
