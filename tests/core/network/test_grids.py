@@ -390,8 +390,7 @@ class TestMVGridDing0(object):
         print("closing session")
         session.close()
 
-    @pytest.fixture
-    def minimal_unrouted_grid(self):
+    def minimal_unrouted_testgrid(self):
         """
         Returns an MVGridDing0 object with a few artificially
         generated information about a fictious set of load
@@ -543,7 +542,7 @@ class TestMVGridDing0(object):
         # Create the LV Grid Districts
         lv_grid_districts_data = pd.DataFrame(
             dict(
-                la_id=list(range(19)),
+                la_id=list(range(1000, 1019)),
                 population=[
                     223, 333, 399, 342,
                     429, 493, 431, 459,
@@ -871,7 +870,7 @@ class TestMVGridDing0(object):
             lv_load_area.geo_area = row['geom']
             lv_load_area.geo_centre = row['geom'].centroid
             lv_grid_district = LVGridDistrictDing0(
-                id_db=id,
+                id_db=row["la_id"],
                 lv_load_area=lv_load_area,
                 geo_data=row['geom'],
                 population=(0
@@ -906,13 +905,13 @@ class TestMVGridDing0(object):
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDing0(network=network,
                                   grid_district=lv_grid_district,
-                                  id_db=id_db,
+                                  id_db=row["la_id"],
                                   geo_data=row['geom'],
                                   v_level=lv_nominal_voltage)
 
             # create LV station
             lv_station = LVStationDing0(
-                id_db=id_db,
+                id_db=row["la_id"],
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=row['geom'].centroid,
@@ -962,6 +961,10 @@ class TestMVGridDing0(object):
         mv_grid.network.build_lv_grids()
 
         return network, mv_grid, lv_stations
+
+    @pytest.fixture
+    def minimal_unrouted_grid(self):
+        return self.minimal_unrouted_testgrid()
 
     def test_local_routing(self, minimal_unrouted_grid):
         """
@@ -1148,7 +1151,7 @@ class TestMVGridDing0(object):
         -Right connections for the cable distr.
         -Right type of cable for the circuit breakers"""
 
-        network, mv_grid, lv_stations =minimal_unrouted_grid
+        network, mv_grid, lv_stations = minimal_unrouted_grid
         lv_stations = sorted(lv_stations, key=lambda x: x.id_db)
 
         network.mv_routing(debug=True)
@@ -1429,7 +1432,6 @@ class TestMVGridDing0(object):
         mv_grid_district.add_lv_load_area(lv_load_area)
 
         return lv_grid
-
 
 
 class TestLVGridDing0(object):
