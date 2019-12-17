@@ -22,6 +22,8 @@ def read(fname):
 
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
+with open('dev_requirements.txt') as f:
+    dev_requirements = f.read().splitlines()
 
 setup(name='ding0',
       version='v0.1.13dev',
@@ -71,6 +73,8 @@ setup(name='ding0',
                            '*.vrp'),
 
           ]},
+      extras_require={
+        'dev': dev_requirements},
       classifiers=[
         "Development Status :: 3 - Alpha",
         "Environment :: Console",
