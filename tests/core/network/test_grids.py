@@ -379,17 +379,6 @@ class TestMVGridDing0(object):
         with pytest.raises(ValueError):
             nodes_out = grid.graph_nodes_from_subtree(generators[2])
 
-    @pytest.fixture
-    def oedb_session(self):
-        """
-        Returns an ego.io oedb session and closes it on finishing the test
-        """
-        engine = db.connection(readonly=True)
-        session = sessionmaker(bind=engine)()
-        yield session
-        print("closing session")
-        session.close()
-
     def minimal_unrouted_testgrid(self):
         """
         Returns an MVGridDing0 object with a few artificially

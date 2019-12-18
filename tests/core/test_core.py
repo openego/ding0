@@ -16,17 +16,6 @@ class TestNetworkDing0(object):
         """
         return NetworkDing0()
 
-    @pytest.fixture
-    def oedb_session(self):
-        """
-        Returns an ego.io oedb session and closes it on finishing the test
-        """
-        engine = db.connection(readonly=True)
-        session = sessionmaker(bind=engine)()
-        yield session
-        print("closing session")
-        session.close()
-
     def test_empty_mv_grid_districts(self, emptyNetworkDing0):
         mv_grid_districts = list(emptyNetworkDing0.mv_grid_districts())
         empty_list = []
