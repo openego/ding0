@@ -46,56 +46,80 @@ class TestCalculateStats(object):
 
     @pytest.mark.dependency()
     def test_calculate_stats_connect_generators(self, connect_generators):
-        mvgd_stats = calculate_mvgd_stats(connect_generators).reset_index()
+        mvgd_stats = calculate_mvgd_stats(connect_generators)
         mvgd_stats_expected = pd.read_csv(os.path.join(
             TEST_DATA_PATH,
-            "mvgd_stats_testgrid_after_connect_generators_expected.csv"))
-        assert_frame_equal(mvgd_stats, mvgd_stats_expected, check_dtype=False)
+            "mvgd_stats_testgrid_after_connect_generators_expected.csv"),
+            index_col=0)
+        assert_frame_equal(
+            mvgd_stats, mvgd_stats_expected,
+            check_dtype=False,
+            check_index_type=False)
 
     @pytest.mark.dependency(depends=[
         "TestCalculateStats::test_calculate_stats_connect_generators"])
     def test_calculate_stats_set_branch_ids(self, set_branch_ids):
-        mvgd_stats = calculate_mvgd_stats(set_branch_ids).reset_index()
+        mvgd_stats = calculate_mvgd_stats(set_branch_ids)
         mvgd_stats_expected = pd.read_csv(os.path.join(
             TEST_DATA_PATH,
-            "mvgd_stats_testgrid_after_set_branch_id_expected.csv"))
-        assert_frame_equal(mvgd_stats, mvgd_stats_expected, check_dtype=False)
+            "mvgd_stats_testgrid_after_set_branch_id_expected.csv"),
+            index_col=0)
+        assert_frame_equal(
+            mvgd_stats, mvgd_stats_expected,
+            check_dtype=False,
+            check_index_type=False)
 
     @pytest.mark.dependency(depends=[
         "TestCalculateStats::test_calculate_stats_set_branch_ids"])
     def test_calculate_stats_set_circuit_breakers(self, set_circuit_breakers):
-        mvgd_stats = calculate_mvgd_stats(set_circuit_breakers).reset_index()
+        mvgd_stats = calculate_mvgd_stats(set_circuit_breakers)
         mvgd_stats_expected = pd.read_csv(os.path.join(
             TEST_DATA_PATH,
-            "mvgd_stats_testgrid_after_set_circuit_breakers_expected.csv"))
-        assert_frame_equal(mvgd_stats, mvgd_stats_expected, check_dtype=False)
+            "mvgd_stats_testgrid_after_set_circuit_breakers_expected.csv"),
+            index_col=0)
+        assert_frame_equal(
+            mvgd_stats, mvgd_stats_expected,
+            check_dtype=False,
+            check_index_type=False)
 
     @pytest.mark.dependency(depends=[
         "TestCalculateStats::test_calculate_stats_set_circuit_breakers"])
     def test_calculate_stats_run_powerflow(self, run_powerflow):
-        mvgd_stats = calculate_mvgd_stats(run_powerflow).reset_index()
+        mvgd_stats = calculate_mvgd_stats(run_powerflow)
         mvgd_stats_expected = pd.read_csv(os.path.join(
             TEST_DATA_PATH,
-            "mvgd_stats_testgrid_after_run_powerflow_expected.csv"))
-        assert_frame_equal(mvgd_stats, mvgd_stats_expected, check_dtype=False)
+            "mvgd_stats_testgrid_after_run_powerflow_expected.csv"),
+            index_col=0)
+        assert_frame_equal(
+            mvgd_stats, mvgd_stats_expected,
+            check_dtype=False,
+            check_index_type=False)
 
     @pytest.mark.dependency(depends=[
         "TestCalculateStats::test_calculate_stats_run_powerflow"])
     def test_calculate_stats_reinforce_grid(self, reinforce_grid):
-        mvgd_stats = calculate_mvgd_stats(reinforce_grid).reset_index()
+        mvgd_stats = calculate_mvgd_stats(reinforce_grid)
         mvgd_stats_expected = pd.read_csv(os.path.join(
             TEST_DATA_PATH,
-            "mvgd_stats_testgrid_after_reinforce_grid_expected.csv"))
-        assert_frame_equal(mvgd_stats, mvgd_stats_expected, check_dtype=False)
+            "mvgd_stats_testgrid_after_reinforce_grid_expected.csv"),
+            index_col=0)
+        assert_frame_equal(
+            mvgd_stats, mvgd_stats_expected,
+            check_dtype=False,
+            check_index_type=False)
 
     @pytest.mark.dependency(depends=[
         "TestCalculateStats::test_calculate_stats_reinforce_grid"])
     def test_calculate_stats_control_circuit_breakers(self, control_circuit_breakers):
-        mvgd_stats = calculate_mvgd_stats(control_circuit_breakers).reset_index()
+        mvgd_stats = calculate_mvgd_stats(control_circuit_breakers)
         mvgd_stats_expected = pd.read_csv(os.path.join(
             TEST_DATA_PATH,
-            "mvgd_stats_testgrid_after_control_circuit_breakers-close_expected.csv"))
-        assert_frame_equal(mvgd_stats, mvgd_stats_expected, check_dtype=False)
+            "mvgd_stats_testgrid_after_control_circuit_breakers-close_expected.csv"),
+            index_col=0)
+        assert_frame_equal(
+            mvgd_stats, mvgd_stats_expected,
+            check_dtype=False,
+            check_index_type=False)
 
 
 def create_test_expected_files(savepath=None):
