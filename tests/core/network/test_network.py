@@ -13,6 +13,7 @@ from ding0.tools.results import (calculate_lvgd_stats,
                                  calculate_mvgd_stats,
                                  calculate_mvgd_voltage_current_stats)
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 import os
 import numpy as np
 from tests.tools.help_functions import compare_data_frames_by_tolerance
@@ -322,53 +323,48 @@ class TestGridDing0(object):
 
         # check mv grid statistics
         mvgd_stats = calculate_mvgd_stats(nd)
-        mvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path, 'testdata/mvgd_stats.csv'))
-        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_stats, mvgd_stats_comparison)
-        if not is_equal:
-            raise Exception('mvgd_stats differ from original values, {} unequal entries.'.format(count_unequal))
+        mvgd_stats_comparison = pd.read_csv(
+            os.path.abspath(os.path.join(path, "..", "..", 'test_data/mvgd_stats_460.csv')), index_col="grid_id")
+        mvgd_stats_comparison.index.name = None
+        assert_frame_equal(mvgd_stats, mvgd_stats_comparison, check_dtype=False, check_index_type=False)
 
         # check mv grid statistics voltages and currents
         mvgd_voltage_current_stats = calculate_mvgd_voltage_current_stats(nd)
         mvgd_current_branches = mvgd_voltage_current_stats[1]
         mvgd_voltage_nodes = mvgd_voltage_current_stats[0]
-        mvgd_current_branches_comparison = pd.DataFrame.from_csv(
-            os.path.join(path, 'testdata/mvgd_current_branches.csv'))
+        mvgd_current_branches_comparison = pd.read_csv(
+            os.path.abspath(os.path.join(path, "..", "..", 'test_data/mvgd_stats_current_460.csv')),
+            index_col="branch id")
         mvgd_current_branches = mvgd_current_branches.replace('NA', np.NaN)
-        mvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
-            os.path.join(path, 'testdata/mvgd_voltage_nodes.csv'))
+        mvgd_voltage_nodes_comparison = pd.read_csv(
+            os.path.abspath(os.path.join(path, "..", "..", 'test_data/mvgd_stats_voltage_460.csv')),
+            index_col="node id")
         mvgd_voltage_nodes = mvgd_voltage_nodes.replace('NA', np.NaN)
-        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_current_branches,
-                                                                   mvgd_current_branches_comparison)
-        if not is_equal:
-            raise Exception('mvgd_current_stats differ from original values, {} unequal entries.'.format(count_unequal))
-        is_equal, count_unequal = compare_data_frames_by_tolerance(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison)
-        if not is_equal:
-            raise Exception('mvgd_voltage_stats differ from original values, {} unequal entries.'.format(count_unequal))
+        assert_frame_equal(mvgd_current_branches, mvgd_current_branches_comparison, check_dtype=False)
+        assert_frame_equal(mvgd_voltage_nodes, mvgd_voltage_nodes_comparison, check_dtype=False)
 
         # check lv grid statistics
         lvgd_stats = calculate_lvgd_stats(nd)
-        lvgd_stats_comparison = pd.DataFrame.from_csv(os.path.join(path,'testdata/lvgd_stats.csv'))
-        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_stats, lvgd_stats_comparison)
-        if not is_equal:
-            raise Exception('lvgd_stats differ from original values, {} unequal entries.'.format(count_unequal))
+        lvgd_stats_comparison = pd.read_csv(
+            os.path.abspath(os.path.join(path, "..", "..", 'test_data/lvgd_stats_460.csv')),
+            index_col="LV_grid_id")
+        assert_frame_equal(lvgd_stats, lvgd_stats_comparison, check_dtype=False)
 
         # check lv grid statistics voltages and currents
         lvgd_voltage_current_stats = calculate_lvgd_voltage_current_stats(nd)
         lvgd_current_branches = lvgd_voltage_current_stats[1]
         lvgd_voltage_nodes = lvgd_voltage_current_stats[0]
-        lvgd_current_branches_comparison = pd.DataFrame.from_csv(
-            os.path.join(path, 'testdata/lvgd_current_branches.csv'))
+        lvgd_current_branches_comparison = pd.read_csv(
+            os.path.abspath(os.path.join(path, "..", "..", 'test_data/lvgd_stats_current_460.csv')),
+            index_col="branch id")
         lvgd_current_branches = lvgd_current_branches.replace('NA', np.NaN)
-        lvgd_voltage_nodes_comparison = pd.DataFrame.from_csv(
-            os.path.join(path, 'testdata/lvgd_voltage_nodes.csv'))
+        lvgd_voltage_nodes_comparison = pd.read_csv(
+            os.path.abspath(os.path.join(path, "..", "..", 'test_data/lvgd_stats_voltage_460.csv')),
+            index_col="node id")
         lvgd_voltage_nodes = lvgd_voltage_nodes.replace('NA', np.NaN)
-        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_current_branches,
-                                                                   lvgd_current_branches_comparison)
-        if not is_equal:
-            raise Exception('lvgd_current_stats differ from original values, {} unequal entries.'.format(count_unequal))
-        is_equal, count_unequal = compare_data_frames_by_tolerance(lvgd_voltage_nodes, lvgd_voltage_nodes_comparison)
-        if not is_equal:
-            raise Exception('lvgd_voltage_stats differ from original values, {} unequal entries.'.format(count_unequal))
+
+        assert_frame_equal(lvgd_current_branches, lvgd_current_branches_comparison, check_dtype=False)
+        assert_frame_equal(lvgd_voltage_nodes, lvgd_voltage_nodes_comparison, check_dtype=False)
 
 
 class TestStationDing0(object):
@@ -437,3 +433,4 @@ class TestStationDing0(object):
 
 if __name__ == "__main__":
     pass
+
