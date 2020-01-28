@@ -622,8 +622,6 @@ def calculate_mvgd_stats(nw):
             sum_path_lengths += mvlv_path_lengths[terminal_node]
             n_terminal_nodes_LV += 1
 
-        print(n_terminal_nodes_LV)
-        print(n_terminal_nodes_MV)
         n_terminal_nodes = n_terminal_nodes_MV + n_terminal_nodes_LV
 
         if n_terminal_nodes < 1:
