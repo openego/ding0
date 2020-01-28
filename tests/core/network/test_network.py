@@ -325,7 +325,6 @@ class TestGridDing0(object):
         mvgd_stats = calculate_mvgd_stats(nd)
         mvgd_stats_comparison = pd.read_csv(
             os.path.abspath(os.path.join(path, "..", "..", 'test_data/mvgd_stats_460.csv')), index_col="grid_id")
-        mvgd_stats_comparison.index.name = None
         assert_frame_equal(mvgd_stats, mvgd_stats_comparison, check_dtype=False, check_index_type=False)
 
         # check mv grid statistics voltages and currents
