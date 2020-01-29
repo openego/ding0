@@ -994,50 +994,42 @@ class TestMVGridDing0(object):
         nd.mv_routing()
 
         # post-routing asserts
-        # check that the connections are between the expected
-        # load areas
-        mv_station = mv_grid.station()
         expected_edges_list = [
-            (mv_station, lv_stations[0]),
-            (mv_station, lv_stations[1]),
-            (mv_station, lv_stations[5]),
-            (mv_station, lv_stations[8]),
-            (mv_station, lv_stations[9]),
-            (mv_station, lv_stations[10]),
-            (mv_station, lv_stations[13]),
-            (mv_station, lv_stations[14]),
-            (mv_station, lv_stations[16]),
-            (lv_stations[0], lv_stations[12]),
-            (lv_stations[1], lv_stations[11]),
-            (lv_stations[11], lv_stations[12]),
-            (lv_stations[13], lv_stations[17]),
-            (lv_stations[14], lv_stations[15]),
-            (lv_stations[15], lv_stations[16]),
-            (lv_stations[18], lv_stations[2]),
-            (lv_stations[3], lv_stations[7]),
-            (lv_stations[6], lv_stations[7]),
+            ('mv_cable_dist_mv_grid_0_1', 'mv_station_0'),
+            ('mv_cable_dist_mv_grid_0_2', 'mv_station_0'),
+            ('mv_cable_dist_mv_grid_0_3', 'mv_station_0'),
+            ('lv_station_1000', 'mv_station_0'),
+            ('lv_station_1001', 'mv_station_0'),
+            ('lv_station_1013', 'mv_station_0'),
+            ('lv_station_1016', 'mv_station_0'),
+            ('lv_station_1017', 'mv_station_0'),
+            ('lv_station_1018', 'mv_station_0'),
+            ('lv_station_1004', 'mv_station_0'),
+            ('lv_station_1005', 'mv_station_0'),
+            ('lv_station_1007', 'mv_station_0'),
+            ('lv_station_1000', 'lv_station_1003'),
+            ('lv_station_1001', 'lv_station_1002'),
+            ('lv_station_1002', 'lv_station_1003'),
+            ('lv_station_1004', 'lv_station_1008'),
+            ('lv_station_1005', 'lv_station_1006'),
+            ('lv_station_1006', 'lv_station_1007'),
+            ('lv_station_1008', 'mv_cable_dist_mv_grid_0_4'),
+            ('lv_station_1009', 'lv_station_1010'),
+            ('lv_station_1009', 'mv_cable_dist_mv_grid_0_4'),
+            ('lv_station_1011', 'lv_station_1015'),
+            ('lv_station_1012', 'mv_cable_dist_mv_grid_0_5'),
+            ('lv_station_1013', 'mv_cable_dist_mv_grid_0_5'),
+            ('lv_station_1014', 'lv_station_1015'),
+            ('lv_station_1015', 'mv_cable_dist_mv_grid_0_4'),
+            ('lv_station_1015', 'mv_cable_dist_mv_grid_0_5'),
+            ('lv_station_1016', 'mv_cable_dist_mv_grid_0_1'),
+            ('lv_station_1017', 'mv_cable_dist_mv_grid_0_2'),
+            ('lv_station_1018', 'mv_cable_dist_mv_grid_0_3')
         ]
 
-
-        #real edges sorted
-        real_edges_sort = []
-        for i in range(0,len(list(graph.edges()))):
-            real_edges_sort.append(
-                tuple(sorted(list(graph.edges())[i], key=lambda x: repr(x))))
-
-        #sort the tuples and compare them
-        correct_edges = []
-        for i in range(0, len(expected_edges_list)):
-            if tuple(sorted(expected_edges_list[i], key=lambda x:repr(x))) in\
-                    real_edges_sort:
-                correct_edges.append(True)
-            else:
-                correct_edges.append((False))
-                print('Tuple', expected_edges_list[i], 'not in set')
-
-
-        #check if every tuple of the expected edges is in the list, disregarding order
-        assert len(list(filter(lambda x: x == True, correct_edges))) == 18
+        for edge_real, edge_expected in zip(graph.edges(), expected_edges_list):
+            assert ((repr(edge_real[0]), repr(edge_real[1])) == edge_expected or
+                    (repr(edge_real[1]), repr(edge_real[0])) == edge_expected)
 
         # check graph attributes
         assert len(list(graph.nodes())) == 35
