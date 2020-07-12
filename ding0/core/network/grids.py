@@ -26,6 +26,7 @@ from ding0.tools.geo import calc_geo_dist_vincenty
 from ding0.grid.mv_grid.tools import set_circuit_breakers
 from ding0.flexopt.reinforce_grid import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from Urban import osm_lu_import,plot_gdf
 
 import os
 import networkx as nx
@@ -352,6 +353,43 @@ class MVGridDing0(GridDing0):
                 for branch in lv_grid_district.lv_grid.graph_edges():
                     branch['branch'].id_db = lv_grid_district.id_db * 10**7 + ctr
                     ctr += 1
+
+    def routing_urban(self, debug=False, anim=None):
+        """ Performs routing on Load Area centres to build MV grid with ring topology.
+
+        Args
+        ----
+        debug: bool, defaults to False
+            If True, information is printed while routing
+        anim: type, defaults to None
+            Descr #TODO
+        """
+
+        # do the routing
+        self._graph = mv_routing.solve(graph=self._graph,
+                                       debug=debug,
+                                       anim=anim)
+        logger.info('==> MV Routing for {} done'.format(repr(self)))
+
+        # connect satellites (step 1, with restrictions like max. string length, max peak load per string)
+        self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
+                                                       graph=self._graph,
+                                                       mode='normal',
+                                                       debug=debug)
+        logger.info('==> MV Sat1 for {} done'.format(repr(self)))
+
+        # connect satellites to closest line/station on a MV ring that have not been connected in step 1
+        self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
+                                                       graph=self._graph,
+                                                       mode='isolated',
+                                                       debug=debug)
+        logger.info('==> MV Sat2 for {} done'.format(repr(self)))
+
+        # connect stations
+        self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
+                                                     graph=self._graph,
+                                                     debug=debug)
+        logger.info('==> MV Stations for {} done'.format(repr(self)))
 
     def routing(self, debug=False, anim=None):
         """ Performs routing on Load Area centres to build MV grid with ring topology.

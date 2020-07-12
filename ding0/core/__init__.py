@@ -315,11 +315,18 @@ class NetworkDing0:
         # STEP 5: Build LV grids
         self.build_lv_grids()
 
-        # STEP 6: Build MV grids
+        # STEP 6a: Build MV urban grids
+        self.mv_routing_urban(debug=False)
+        if export_figures:
+            grid = self._mv_grid_districts[0].mv_grid
+            plot_mv_topology(grid, subtitle='Urban routing completed', filename='urban_routing_completed.png')
+
+        # STEP 6b: Build MV grids
         self.mv_routing(debug=False)
         if export_figures:
             grid = self._mv_grid_districts[0].mv_grid
             plot_mv_topology(grid, subtitle='Routing completed', filename='1_routing_completed.png')
+
 
         # STEP 7: Connect MV and LV generators
         self.connect_generators(debug=False)
@@ -1727,6 +1734,37 @@ class NetworkDing0:
                         's_res1': branch['branch'].s_res[1]}), ignore_index=True)
 
         return nodes_df, edges_df
+
+
+    def mv_routing_urban(self, debug=False, animation=False):
+        """
+        Performs routing on all MV grids.
+
+        Parameters
+        ----------
+        debug: :obj:`bool`, default to False
+            If True, information is printed while routing
+        animation: :obj:`bool`, default to False
+            If True, images of route modification
+            steps are exported during routing process.
+            A new animation object is created.
+
+        See Also
+        --------
+        ding0.core.network.grids.MVGridDing0.routing : for details on MVGridDing0 objects routing
+        ding0.tools.animation.AnimationDing0 : for details on animation function.
+        """
+
+        if animation:
+            anim = AnimationDing0()
+        else:
+            anim = None
+
+        for grid_district in self.mv_grid_districts():
+            grid_district.mv_grid.routing_urban(debug=debug, anim=anim)
+
+        logger.info('=====> MV Routing (Routing, Connection of Satellites & '
+                    'Stations) performed')
 
     def mv_routing(self, debug=False, animation=False):
         """

@@ -266,6 +266,7 @@ def osm_lu_import(mv_grid_ding0, save_all=False):
 
         geom_data_gdf = gpd.GeoDataFrame(geom_data_df, geometry= geom_data_df['geom'])
         geom_data_gdf.crs = "EPSG:3035"
+        return geom_data_gdf
 
 
 
