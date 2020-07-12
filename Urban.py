@@ -45,6 +45,67 @@ import matplotlib as mpl
 
 #crs = 'EPSG:3035' #Statistical mapping at all scales and other purposes where true area representation is required
 
+
+def main():
+#-1) Importing the data
+    """
+    #deutschland_mvgds = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/MVGD.geojson")[['subst_id','geometry']]
+    berlin_mvgds = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/MVGD_in_Berlin.geojson")[['subst_id','geometry']]
+    #test = berlin_mvgds.iloc[0:3]
+    gdf_project_to(berlin_mvgds,4326)
+    #count_street_types(berlin_mvgds)
+    #df_ber_street_data = street_details_mvgd(test.iloc[1].geometry)
+
+    berlin_mvgds.geometry = berlin_mvgds.geometry.buffer(0e-16)
+    polygon = berlin_mvgds.geometry.unary_union
+    big_berlin = gpd.GeoDataFrame(geometry=[polygon], crs=berlin_mvgds.crs)
+
+
+    gdf = import_footprints_area(place)
+    gdf = gdf.filter(['type','geometry'])
+    gdf['buildings'] = gdf.geometry #Used to store the Polygons. Needed after sjoin with
+    gdf_project_to(gdf,3035)
+    gdf.to_csv('./berlin_footprints_test1')
+    nx.read_gpickle('./street_graph_test1')
+    """
+
+    #0) Compute sector_table (Computationally expensive)
+    berlin_mvgds = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/MVGD_in_Berlin.geojson")[['subst_id','geometry']]
+    """
+    osm_lu = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/osm_landuse.geojson")
+    berlin_mvgds.geometry = berlin_mvgds.geometry.buffer(-0.5) #Tidy the polygon to avoid contact to other polygons on the borders
+    sector_table = sjoin(berlin_mvgds, osm_lu, how='inner', op='intersects')
+    sector_table.to_file("./sector_table_berlin.shp")
+    hv_mv_stations = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/hv_mv_stations.geojson")
+    gdf_project_to(hv_mv_stations,3035)
+    hv_mv_berlin = sjoin(hv_mv_stations, berlin_mvgds, op='within')
+    hv_mv_berlin = hv_mv_berlin.rename(columns={'subst_id_left':'subst_id'}).drop(['index_right','subst_id_right'],axis=1)
+    hv_mv_berlin.to_file('./hv_mv_stations_berlin.shp') #crs 3035
+    """
+
+    #1) Import Geometries
+    hv_mv_berlin = gpd.read_file('./hv_mv_stations_berlin.shp')
+    local_lu= gpd.read_file("./sector_table_berlin.shp")
+    berlin_mvgds.geometry = berlin_mvgds.geometry.buffer(0e-16)
+    gdf_project_to(berlin_mvgds,4326)
+    place = berlin_mvgds.iloc[1,:].geometry.buffer(0)
+    gdf = import_footprints_area(place) #Works only with crs 4236 and previous buffer (Buildin Footprints)
+
+    gdf_sector_table = clean_data(gdf)
+
+    mv_station_gdf = filter_hv_mv_station(place,hv_mv_berlin)
+    gdf_project_to(mv_station_gdf,4326)
+
+    trafo_geodata = trafo_pos_and_load(gdf_sector_table)
+
+    street_graph_trafos,trafo_conn_gdf = append_trafos(place,trafo_geodata,mv_station_gdf)
+
+    #Reduce the Graph, Include hv_mv_station, Route the Rings
+    street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf,street_graph_trafos,radius_inc=1e-6)
+    reduced_graph = reduce_street_graph(street_graph_station, rf = 2, plot=False)
+    reduced_graph2 = remove_stubs(reduced_graph) #Removes stubs (Smaller Trafos that aren'nt included in the ring)
+    hola ='hello'
+
 def import_footprints_area(polygon, to_crs = None, plot = False, save = False, shp_name = 'NoName'):
     """
     Downloads building footprints from OSM and Projects it according its UMT
@@ -952,14 +1013,12 @@ def clean_data(gdf):
 
     return gdf_sector_table
 
-
 #Load and area distributions. Search for outliers
 def load_area_stats(gdf_sector_table):
 
     plot_area_distr(gdf_sector_table,ctx_plot=False)
     gdf_sector_table, gdf_outl = remove_area_outliers(gdf_sector_table)
     plot_area_distr(gdf_sector_table)
-
 
 #Filter the correct hv_mv station out
 def filter_hv_mv_station(place,hv_mv_berlin):
@@ -986,7 +1045,6 @@ def trafo_pos_and_load(gdf_sector_table):
 
     return trafo_geodata
 
-
 #Append trafos to street graph
 def append_trafos(place,trafo_geodata, mv_station):
 
@@ -1001,68 +1059,6 @@ def append_trafos(place,trafo_geodata, mv_station):
     street_graph_trafos, trafo_conn_gdf= find_trafo_connection(trafo_geodata,street_graph) #Finds positions of trafos. Returns nx and gdf
 
     return street_graph_trafos,trafo_conn_gdf
-
-def main():
-#-1) Importing the data
-    """
-    #deutschland_mvgds = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/MVGD.geojson")[['subst_id','geometry']]
-    berlin_mvgds = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/MVGD_in_Berlin.geojson")[['subst_id','geometry']]
-    #test = berlin_mvgds.iloc[0:3]
-    gdf_project_to(berlin_mvgds,4326)
-    #count_street_types(berlin_mvgds)
-    #df_ber_street_data = street_details_mvgd(test.iloc[1].geometry)
-
-    berlin_mvgds.geometry = berlin_mvgds.geometry.buffer(0e-16)
-    polygon = berlin_mvgds.geometry.unary_union
-    big_berlin = gpd.GeoDataFrame(geometry=[polygon], crs=berlin_mvgds.crs)
-
-
-    gdf = import_footprints_area(place)
-    gdf = gdf.filter(['type','geometry'])
-    gdf['buildings'] = gdf.geometry #Used to store the Polygons. Needed after sjoin with
-    gdf_project_to(gdf,3035)
-    gdf.to_csv('./berlin_footprints_test1')
-    nx.read_gpickle('./street_graph_test1')
-    """
-
-    #0) Compute sector_table (Computationally expensive)
-    berlin_mvgds = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/MVGD_in_Berlin.geojson")[['subst_id','geometry']]
-    """
-    osm_lu = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/osm_landuse.geojson")
-    berlin_mvgds.geometry = berlin_mvgds.geometry.buffer(-0.5) #Tidy the polygon to avoid contact to other polygons on the borders
-    sector_table = sjoin(berlin_mvgds, osm_lu, how='inner', op='intersects')
-    sector_table.to_file("./sector_table_berlin.shp")
-    hv_mv_stations = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/hv_mv_stations.geojson")
-    gdf_project_to(hv_mv_stations,3035)
-    hv_mv_berlin = sjoin(hv_mv_stations, berlin_mvgds, op='within')
-    hv_mv_berlin = hv_mv_berlin.rename(columns={'subst_id_left':'subst_id'}).drop(['index_right','subst_id_right'],axis=1)
-    hv_mv_berlin.to_file('./hv_mv_stations_berlin.shp') #crs 3035
-    """
-
-    #1) Import Geometries
-    hv_mv_berlin = gpd.read_file('./hv_mv_stations_berlin.shp')
-    local_lu= gpd.read_file("./sector_table_berlin.shp")
-    berlin_mvgds.geometry = berlin_mvgds.geometry.buffer(0e-16)
-    gdf_project_to(berlin_mvgds,4326)
-    place = berlin_mvgds.iloc[1,:].geometry.buffer(0)
-    gdf = import_footprints_area(place) #Works only with crs 4236 and previous buffer (Buildin Footprints)
-
-    gdf_sector_table = clean_data(gdf)
-
-    mv_station_gdf = filter_hv_mv_station(place,hv_mv_berlin)
-    gdf_project_to(mv_station_gdf,4326)
-
-    trafo_geodata = trafo_pos_and_load(gdf_sector_table)
-
-    street_graph_trafos,trafo_conn_gdf = append_trafos(place,trafo_geodata,mv_station_gdf)
-
-    #Reduce the Graph, Include hv_mv_station, Route the Rings
-    street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf,street_graph_trafos,radius_inc=1e-6)
-    reduced_graph = reduce_street_graph(street_graph_station, rf = 2, plot=False)
-    reduced_graph2 = remove_stubs(reduced_graph) #Removes stubs (Smaller Trafos that aren'nt included in the ring)
-    hola ='hello'
-
-
 
 ##############Trash
 # build SQL query
