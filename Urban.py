@@ -1,16 +1,12 @@
 #TODO: Download all Berlin @ once. Saveit as shapefile
 #TODO: Integrate colors to trafos in graph
 
-#crs = 'EPSG:3035' #Statistical mapping at all scales and other purposes where true area representation is required
 import sys
-import matplotlib.pyplot as plt
 import networkx as nx
-import numpy as np
 from shapely.ops import transform
-import osmnx as ox
-import pandas as pd
+import osmnx as ox #Needs Rtree conda install -c conda-forge rtree
 import geopandas as gpd
-from osmnx.save_load import graph_to_gdfs,gdfs_to_graph
+from osmnx import graph_to_gdfs,graph_from_gdfs
 from shapely.geometry import Point,LineString,Polygon,MultiPolygon
 from shapely.ops import nearest_points
 from sklearn.cluster import KMeans
@@ -22,8 +18,11 @@ from sklearn.preprocessing import StandardScaler
 from scipy import spatial
 from egoio.db_tables import openstreetmap
 from egoio.db_tables import grid
+from egoio.db_tables.grid import EgoDpMvGriddistrict
 from egoio.tools import db
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
+
 import shapely
 from shapely.wkb import dumps, loads
 import matplotlib.pyplot as plt
@@ -44,6 +43,7 @@ from matplotlib.ticker import StrMethodFormatter
 import seaborn as sns
 import matplotlib as mpl
 
+#crs = 'EPSG:3035' #Statistical mapping at all scales and other purposes where true area representation is required
 
 def import_footprints_area(polygon, to_crs = None, plot = False, save = False, shp_name = 'NoName'):
     """
@@ -51,7 +51,7 @@ def import_footprints_area(polygon, to_crs = None, plot = False, save = False, s
     :return: Projected GeoPandas DataFrame
     """
     #Import and project footprint area
-    if isinstance(place, (Polygon,MultiPolygon)):
+    if isinstance(polygon, (Polygon,MultiPolygon)):
         gdf = ox.footprints_from_polygon(polygon)
     else:
         gdf = ox.footprints_from_place(polygon)
@@ -158,7 +158,7 @@ def find_mv_clusters_kmeans(gdf_build, plot=False, k =5):
 
     return trafo_geo, gdf_build
 
-def osm_lu_import():
+def osm_lu_import(mv_grid_ding0, save_all=False):
     """
     Sectors
     1: Residential
@@ -166,22 +166,66 @@ def osm_lu_import():
     3: Industrial
     4: Agricultural
     """
-    engine = db.connection(readonly=True)
-    session = sessionmaker(bind=engine)()
-    table = openstreetmap.OsmDeuPolygonUrban
-    query = session.query(table.gid, table.sector, table.geom,)
-    #TODO: Properly import table.geom (Multipolygons in wkb)
-    geom_data = pd.read_sql_query(query.statement, query.session.bind)
-    #geom_data = geom_data[0:500]
-    #This operation takes too long
-    for i, rows in geom_data.iterrows():
-        geom_data['geom'][i] = shapely.wkb.loads(str(geom_data['geom'][i]), hex=True)
+    self = mv_grid_ding0
+    if save_all == True:
+        engine = db.connection(readonly=True)
+        session = sessionmaker(bind=engine)()
+        table = openstreetmap.OsmDeuPolygonUrban
+        query = session.query(table.gid, table.sector, table.geom,)
+        geom_data = pd.read_sql_query(query.statement, query.session.bind)
+        #geom_data = geom_data[0:500]
+        #This operation takes too long
+        for i, rows in geom_data.iterrows():
+            geom_data['geom'][i] = shapely.wkb.loads(str(geom_data['geom'][i]), hex=True)
+
+        geom_data = gpd.GeoDataFrame(geom_data, geometry= geom_data['geom'])
+        geom_data_test = geom_data.drop(columns='geom')
+        geom_data_test.to_file("osm_landuse.geojson", driver='GeoJSON')
+        return geom_data
+
+    else:
+        engine = db.connection(readonly=True)
+        session = sessionmaker(bind=engine)()
+        table = openstreetmap.OsmDeuPolygonUrban
+
+        mv_grid_district_id = self.id_db
+
+        mv_grid_district = session.query(EgoDpMvGriddistrict.subst_id,
+                                         EgoDpMvGriddistrict.geom.label("selected_geom")).filter(
+            EgoDpMvGriddistrict.subst_id == mv_grid_district_id).filter(
+            EgoDpMvGriddistrict.version == "v0.4.5").subquery() #Subquery creates a table-like object to apply for other queries
+
+        query = session.query(table.gid, table.sector, table.geom).filter(
+            func.ST_Overlaps(table.geom, mv_grid_district.c.selected_geom))
+
+        geom_data_df = pd.read_sql_query(query.statement, session.bind)
+
+        for i, rows in geom_data_df.iterrows():
+            geom_data_df['geom'][i] = shapely.wkb.loads(str(geom_data_df['geom'][i]), hex=True)
+
+        geom_data_gdf = gpd.GeoDataFrame(geom_data_df, geometry= geom_data_df['geom'])
+        geom_data_gdf.crs = "EPSG:3035"
 
 
-    geom_data = gpd.GeoDataFrame(geom_data, geometry= geom_data['geom'])
-    geom_data_test = geom_data.drop(columns='geom')
-    geom_data_test.to_file("osm_landuse.geojson", driver='GeoJSON')
-    return geom_data
+
+    #MVGridDing0.grid_district.geo_data.crs = "EPSG:4326"
+    #
+
+    """
+    grid_districts = session.query(self.orm['orm_mv_grid_districts'].subst_id,
+                               func.ST_AsText(func.ST_Transform(
+                                   self.orm['orm_mv_grid_districts'].geom, srid)). \
+                               label('poly_geom'),
+                               func.ST_AsText(func.ST_Transform(
+                                   self.orm['orm_mv_stations'].point, srid)). \
+                               label('subs_geom')). \
+    join(self.orm['orm_mv_stations'], self.orm['orm_mv_grid_districts'].subst_id ==
+         self.orm['orm_mv_stations'].subst_id). \
+    filter(self.orm['orm_mv_grid_districts'].subst_id.in_(mv_grid_districts_no)). \
+    filter(self.orm['version_condition_mvgd']). \
+    filter(self.orm['version_condition_mv_stations']). \
+    distinct()
+"""
 
 def find_building_sector(gdf, osm_lu):
     """
@@ -561,7 +605,7 @@ def plot(poly,c=False,fig=1):
     Tool for plottin shapely polygons and Multipolygons
     c: str: color for plotting
     """
-    if type(poly) == Polygon:
+    if isinstance(poly,shapely.geometry.polygon):
         x, y = poly.exterior.xy
         if c == True:
             ax = plt.gca()
@@ -717,8 +761,10 @@ def street_details_mvgd(boundaries):
     filtered = full_df.filter(items=['name', 'highway', 'geometry', 'lenght', 'osmid'])
     return filtered
 
-def plot_gdf(df, trafos = False, color ='blue', ax=None):
-    df2 = df.to_crs(epsg=3857)
+def plot_gdf(gdf, trafos = False, color ='blue', ax=None):
+    if isinstance(gdf,pd.DataFrame):
+        gdf = gpd.GeoDataFrame(gdf,geometry='geom')
+    df2 = gdf.to_crs(epsg=3857)
     ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color=color,ax=ax)
     ctx.add_basemap(ax)
     if trafos == True:
@@ -1017,6 +1063,22 @@ hola ='hello'
 
 
 ##############Trash
+# build SQL query
+
+grid_districts = session.query(self.orm['orm_mv_grid_districts'].subst_id,
+                               func.ST_AsText(func.ST_Transform(
+                                   self.orm['orm_mv_grid_districts'].geom, srid)). \
+                               label('poly_geom'),
+                               func.ST_AsText(func.ST_Transform(
+                                   self.orm['orm_mv_stations'].point, srid)). \
+                               label('subs_geom')). \
+    join(self.orm['orm_mv_stations'], self.orm['orm_mv_grid_districts'].subst_id ==
+         self.orm['orm_mv_stations'].subst_id). \
+    filter(self.orm['orm_mv_grid_districts'].subst_id.in_(mv_grid_districts_no)). \
+    filter(self.orm['version_condition_mvgd']). \
+    filter(self.orm['version_condition_mv_stations']). \
+    distinct()
+
 place = 'Tempelhof, Berlin, Germany'
 #import_footprints_area(place)
 
