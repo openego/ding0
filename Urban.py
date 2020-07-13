@@ -42,6 +42,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 import seaborn as sns
 import matplotlib as mpl
+import requests
+from shapely.wkb import loads as wkb_loads
 
 #crs = 'EPSG:3035' #Statistical mapping at all scales and other purposes where true area representation is required
 
@@ -74,8 +76,10 @@ def main():
     """
     osm_lu = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/osm_landuse.geojson")
     berlin_mvgds.geometry = berlin_mvgds.geometry.buffer(-0.5) #Tidy the polygon to avoid contact to other polygons on the borders
+    
     sector_table = sjoin(berlin_mvgds, osm_lu, how='inner', op='intersects')
     sector_table.to_file("./sector_table_berlin.shp")
+    
     hv_mv_stations = gpd.read_file("/home/local/RL-INSTITUT/santiago.infantino/Desktop/BA Bachelorarbeit/BA_git_repo/hv_mv_stations.geojson")
     gdf_project_to(hv_mv_stations,3035)
     hv_mv_berlin = sjoin(hv_mv_stations, berlin_mvgds, op='within')
@@ -112,17 +116,13 @@ def import_footprints_area(polygon, to_crs = None, plot = False, save = False, s
     :return: Projected GeoPandas DataFrame
     """
     #Import and project footprint area
-    if isinstance(polygon, (Polygon,MultiPolygon)):
-        gdf = ox.footprints_from_polygon(polygon)
-    else:
-        gdf = ox.footprints_from_place(polygon)
+    gdf = ox.footprints_from_polygon(polygon)
+    gdf = gdf.drop(labels='nodes', axis=1)
+    gdf = gdf[['building','geometry','landuse','type']]
+    gdf.geometry = gdf['geometry']
 
-    #gdf_proj = ox.project_gdf(gdf,to_crs=to_crs)
-    if plot == True:
-        fig, ax = ox.plot_shape(gdf_proj)
 
     if save == True:
-        gdf_save = gdf.drop(labels='nodes', axis=1)
         ox.save_gdf_shapefile(gdf_save, shp_name+ '.shp')
 
     return gdf
@@ -243,7 +243,6 @@ def osm_lu_import(mv_grid_ding0, save_all=False):
         geom_data_test = geom_data.drop(columns='geom')
         geom_data_test.to_file("osm_landuse.geojson", driver='GeoJSON')
         return geom_data
-
     else:
         engine = db.connection(readonly=True)
         session = sessionmaker(bind=engine)()
@@ -289,7 +288,46 @@ def osm_lu_import(mv_grid_ding0, save_all=False):
     distinct()
 """
 
-def find_building_sector(gdf, osm_lu):
+def import_mvgd_berlin():
+    oep_url = 'http://oep.iks.cs.ovgu.de/'
+
+    schema = 'grid'
+    table = 'ego_dp_mv_griddistrict'
+    where = 'version=v0.4.5'
+
+    # Get ags_0 codes for Berlin
+    vg250_table = "bkg_vg250_6_gem"
+    vg250_schema = "boundaries"
+
+    vg250_gem = requests.get(oep_url + '/api/v0/schema/' + vg250_schema + '/tables/' + vg250_table + '/rows/', )
+    vg250_df = pd.DataFrame(vg250_gem.json())
+
+    vg250_select = vg250_df[vg250_df["ags_0"].str.startswith("11")]
+    ags_0_berlin = vg250_select["ags_0"]
+
+    where_ags_berlin = "&where=ags_0={}".format(int(ags_0_berlin))
+    where_ags_berlin_payload = {"where": {"version": "v0.4.5", "ags_0": int(ags_0_berlin)}}
+
+    # Get subst_id for MV grid districts inside Berlin
+    hvmv_substation = requests.get(
+        oep_url + '/api/v0/schema/grid/tables/ego_dp_hvmv_substation/rows/?where=' +
+        where + where_ags_berlin + "&column=subst_id", ).json()
+
+    hvmv_substation_df = pd.DataFrame(hvmv_substation)
+    hvmv_substation_list = hvmv_substation_df["subst_id"].to_list()
+
+    # Filter MV grid districts by list of subst_ids inside Berlin
+    mvgd = requests.get(oep_url + '/api/v0/schema/' + schema + '/tables/' + table + '/rows/?where=' + where, )
+    mvgd_df = pd.DataFrame(mvgd.json())
+    mvgd_df["geom"] = mvgd_df["geom"].apply(lambda x: wkb_loads(x, hex=True))
+    mvgd_selected = mvgd_df.loc[mvgd_df["subst_id"].isin(hvmv_substation_list)]
+
+    table_gdf = gpd.GeoDataFrame(mvgd_selected,
+                                 geometry="geom",
+                                 crs=3035)
+    return table_gdf
+
+def find_building_sector(buildings, osm_lu):
     """
     returns a GPD df with the centroids as geometries and the sector they belong to
     """
@@ -991,14 +1029,14 @@ def remove_stubs (reduced_graph):
     return graph_no_st
 
 #Clean the data
-def clean_data(gdf):
+def clean_data(gdf, local_lu):
     """
     Cleaning procedures of Data
     :param gdf: GeopandasDataframe containing builing footprints
     :return gdf_sector_table: Cleaned gdf containing builing footprints + sector labels
     """
     gdf = gdf.reset_index().rename(columns={'index': 'osmidx'})
-    gdf = gdf[~(gdf.geometry.isna())]  # Remove nan
+    gdf = gdf[~(gdf.geometry.isnan())]  # Remove nan
     gdf.geometry = [list(x)[0] if isinstance(x, MultiPolygon) else x for x in
                     gdf.geometry]  # Extract first layer of Multipolygons
     # Remove uns_validsuported layers for Multipolygons
