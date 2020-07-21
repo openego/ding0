@@ -118,7 +118,7 @@ def import_footprints_area(polygon, to_crs = None, plot = False, save = False, s
     #Import and project footprint area
     gdf = ox.footprints_from_polygon(polygon)
     gdf = gdf.drop(labels='nodes', axis=1)
-    gdf = gdf[['building','geometry','landuse','type']]
+    gdf = gdf[['building','geometry','type']]
     gdf.geometry = gdf['geometry']
 
 

@@ -41,7 +41,7 @@ session = sessionmaker(bind=engine)()
 nd = NetworkDing0(name='network')
 
 # choose MV Grid Districts to import
-mv_grid_districts = [460]
+mv_grid_districts = [760]
 
 # run DING0 on selected MV Grid District
 nd.run_ding0(session=session,
