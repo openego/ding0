@@ -102,7 +102,7 @@ def main():
 
     trafo_geodata = trafo_pos_and_load(gdf_sector_table)
 
-    street_graph_trafos,trafo_conn_gdf = append_trafos(place,trafo_geodata,mv_station_gdf)
+    street_graph_trafos,trafo_conn_gdf = append_trafos(place,trafo_geodata)
 
     #Reduce the Graph, Include hv_mv_station, Route the Rings
     street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf,street_graph_trafos,radius_inc=1e-6)
@@ -872,6 +872,8 @@ def street_details_mvgd(boundaries):
     return filtered
 
 def plot_gdf(gdf, trafos = False, color ='blue', ax=None):
+    if gdf.crs == "EPSG:3035":
+        gdf_project_to(gdf,4326)
     df2 = gdf.to_crs(epsg=3857)
     ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color=color,ax=ax)
     ctx.add_basemap(ax)
@@ -1093,13 +1095,19 @@ def trafo_pos_and_load(gdf_sector_table):
     return trafo_geodata
 
 #Append trafos to street graph
-def append_trafos(place,trafo_geodata, mv_station):
+def append_trafos(place,trafo_geodata):
+    '''
 
+    :param place: Shapely polygon
+    :param trafo_geodata: GDF with transformers position
+    :param mv_station: Gdf containing hv/mv station
+    :return:
+    '''
     #map_plot_graph(street_graph)
     street_graph = get_street_graph(polygon=place.buffer(0e-16)) #Import nx graph
     street_gdf = ox.graph_to_gdfs(street_graph)[1][ox.graph_to_gdfs(street_graph)[1]['highway'] != 'footway'] #Filter away footways
     crossings_gdf = ox.graph_to_gdfs(street_graph)[0] #Convert crossings to Gdf for further manipulation
-    street_graph = ox.gdfs_to_graph(crossings_gdf,street_gdf) #Recreate filtered Nx Graph
+    street_graph = ox.graph_from_gdfs(crossings_gdf,street_gdf) #Recreate filtered Nx Graph
 
     street_graph.remove_nodes_from(list(nx.isolates(street_graph))) #Remove isolated nodes (i.e. crossings of pathways)
     nx.set_node_attributes(street_graph, False, 'trafo')
