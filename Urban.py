@@ -120,6 +120,7 @@ def import_footprints_area(polygon, to_crs = None, plot = False, save = False, s
     gdf = gdf.drop(labels='nodes', axis=1)
     gdf = gdf[['building','geometry','type']]
     gdf.geometry = gdf['geometry']
+    gdf.crs = "EPSG:4326"
 
 
     if save == True:
@@ -257,6 +258,15 @@ def osm_lu_import(mv_grid_ding0, save_all=False):
 
         query = session.query(table.gid, table.sector, table.geom).filter(
             func.ST_Overlaps(table.geom, func.ST_Transform(mv_grid_district.c.selected_geom,3035)))
+
+        query2 = session.query(table.gid, table.sector, table.geom).filter(
+            func.ST_Contains(func.ST_Transform(mv_grid_district.c.selected_geom,3035),table.geom))
+
+        query3 = session.query(table.gid, table.sector, table.geom).filter(
+            func.ST_Overlaps(func.ST_Transform(mv_grid_district.c.selected_geom,3035)),table.geom)
+
+        query4 = session.query(table.gid, table.sector, table.geom).filter(
+            func.ST_Contains(table.geom,func.ST_Transform(mv_grid_district.c.selected_geom,3035)))
 
         geom_data_df = pd.read_sql_query(query.statement, session.bind)
 
@@ -862,8 +872,6 @@ def street_details_mvgd(boundaries):
     return filtered
 
 def plot_gdf(gdf, trafos = False, color ='blue', ax=None):
-    if isinstance(gdf,pd.DataFrame):
-        gdf = gpd.GeoDataFrame(gdf,geometry='geom')
     df2 = gdf.to_crs(epsg=3857)
     ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color=color,ax=ax)
     ctx.add_basemap(ax)
