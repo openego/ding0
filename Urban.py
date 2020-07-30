@@ -6,7 +6,7 @@ import networkx as nx
 from shapely.ops import transform
 import osmnx as ox #Needs Rtree conda install -c conda-forge rtree
 import geopandas as gpd
-from osmnx import graph_to_gdfs,graph_from_gdfs
+from osmnx import graph_to_gdfs,gdfs_to_graph #graph_from_gdfs
 from shapely.geometry import Point,LineString,Polygon,MultiPolygon
 from shapely.ops import nearest_points
 from sklearn.cluster import KMeans
@@ -95,7 +95,7 @@ def main():
     place = berlin_mvgds.iloc[1,:].geometry.buffer(0)
     gdf = import_footprints_area(place) #Works only with crs 4236 and previous buffer (Buildin Footprints)
 
-    gdf_sector_table = clean_data(gdf)
+    gdf_sector_table = clean_data(gdf,local_lu)
 
     mv_station_gdf = filter_hv_mv_station(place,hv_mv_berlin)
     gdf_project_to(mv_station_gdf,4326)
@@ -120,7 +120,7 @@ def import_footprints_area(polygon, to_crs = None, plot = False, save = False, s
     gdf = gdf.drop(labels='nodes', axis=1)
     gdf = gdf[['building','geometry','type']]
     gdf.geometry = gdf['geometry']
-    gdf.crs = "EPSG:4326"
+    gdf.crs = {'init' :'epsg:4326'}
 
 
     if save == True:
