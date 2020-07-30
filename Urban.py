@@ -872,7 +872,7 @@ def street_details_mvgd(boundaries):
     return filtered
 
 def plot_gdf(gdf, trafos = False, color ='blue', ax=None):
-    if gdf.crs == "EPSG:3035":
+    if gdf.crs == {'init':'epsg:3035'}
         gdf_project_to(gdf,4326)
     df2 = gdf.to_crs(epsg=3857)
     ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color=color,ax=ax)
