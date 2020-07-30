@@ -872,7 +872,7 @@ def street_details_mvgd(boundaries):
     return filtered
 
 def plot_gdf(gdf, trafos = False, color ='blue', ax=None):
-    if gdf.crs == {'init':'epsg:3035'}
+    if gdf.crs == {'init':'epsg:3035'}:
         gdf_project_to(gdf,4326)
     df2 = gdf.to_crs(epsg=3857)
     ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color=color,ax=ax)
@@ -1046,7 +1046,7 @@ def clean_data(gdf, local_lu):
     :return gdf_sector_table: Cleaned gdf containing builing footprints + sector labels
     """
     gdf = gdf.reset_index().rename(columns={'index': 'osmidx'})
-    gdf = gdf[~(gdf.geometry.isnan())]  # Remove nan
+    gdf = gdf[~(gdf.geometry.isna())]  # Remove nan
     gdf.geometry = [list(x)[0] if isinstance(x, MultiPolygon) else x for x in
                     gdf.geometry]  # Extract first layer of Multipolygons
     # Remove uns_validsuported layers for Multipolygons

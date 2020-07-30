@@ -26,7 +26,9 @@ from ding0.tools.geo import calc_geo_dist_vincenty
 from ding0.grid.mv_grid.tools import set_circuit_breakers
 from ding0.flexopt.reinforce_grid import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+
 from Urban import *
+import geopandas as gpd
 
 import os
 import networkx as nx
@@ -368,14 +370,13 @@ class MVGridDing0(GridDing0):
         sector_data = osm_lu_import(self.grid_district)
         gdf_footprints = import_footprints_area(self.grid_district.geo_data)
 
-        plot_gdf(gdf_footprints)
+        #plot_gdf(gdf_footprints)
+
+        gdf_sector_table = clean_data(gdf_footprints, sector_data)
+
+        mv_station_gdf = gpd.GeoDataFrame(geometry=[self._station.geo_data], crs = {'init':'epsg:4326'}) #HV/MV station (4326)
 
         """
-        gdf_sector_table = clean_data(gdf, local_lu)
-
-        mv_station_gdf = filter_hv_mv_station(place, hv_mv_berlin)
-        gdf_project_to(mv_station_gdf, 4326)
-
         trafo_geodata = trafo_pos_and_load(gdf_sector_table)
 
         street_graph_trafos, trafo_conn_gdf = append_trafos(place, trafo_geodata)
