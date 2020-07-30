@@ -367,27 +367,36 @@ class MVGridDing0(GridDing0):
             Descr #TODO
         """
 
+        #Import sector table for the MVGD
         sector_data = osm_lu_import(self.grid_district)
-        gdf_footprints = import_footprints_area(self.grid_district.geo_data)
 
+        #Import building footprints inside MVGD
+        gdf_footprints = import_footprints_area(self.grid_district.geo_data)
         #plot_gdf(gdf_footprints)
 
+        #Combine and clean the data of the sector table and the building
         gdf_sector_table = clean_data(gdf_footprints, sector_data)
 
+        #Extract HV/MV Station
         mv_station_gdf = gpd.GeoDataFrame(geometry=[self._station.geo_data], crs = {'init':'epsg:4326'}) #HV/MV station (4326)
 
-        """
+        #Calculate number of trafos, apply k-means and return their position
         trafo_geodata = trafo_pos_and_load(gdf_sector_table)
 
-        street_graph_trafos, trafo_conn_gdf = append_trafos(place, trafo_geodata)
+        #Combine the street graph of the area and the transformers from trafo_geodata
+        street_graph_trafos, trafo_conn_gdf = append_trafos(self.grid_district.geo_data, trafo_geodata)
 
-        # Reduce the Graph, Include hv_mv_station, Route the Rings
+        # Connect the HV/MV Station to the graph
         street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf, street_graph_trafos,
                                                                       radius_inc=1e-6)
+
+        #Apply Dijsktra shortest path to every pair of transformers to reduce the street graph
         reduced_graph = reduce_street_graph(street_graph_station, rf=2, plot=False)
+
+        #Remove transformers that aren'nt connected to the ring structure
         reduced_graph2 = remove_stubs(reduced_graph)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)
         hola = 'hello'
-        """
+
 
         # do the routing
         self._graph = mv_routing.solve(graph=self._graph,

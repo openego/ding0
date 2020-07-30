@@ -1107,7 +1107,7 @@ def append_trafos(place,trafo_geodata):
     street_graph = get_street_graph(polygon=place.buffer(0e-16)) #Import nx graph
     street_gdf = ox.graph_to_gdfs(street_graph)[1][ox.graph_to_gdfs(street_graph)[1]['highway'] != 'footway'] #Filter away footways
     crossings_gdf = ox.graph_to_gdfs(street_graph)[0] #Convert crossings to Gdf for further manipulation
-    street_graph = ox.graph_from_gdfs(crossings_gdf,street_gdf) #Recreate filtered Nx Graph
+    street_graph = ox.gdfs_to_graph(crossings_gdf,street_gdf) #Recreate filtered Nx Graph
 
     street_graph.remove_nodes_from(list(nx.isolates(street_graph))) #Remove isolated nodes (i.e. crossings of pathways)
     nx.set_node_attributes(street_graph, False, 'trafo')
