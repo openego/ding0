@@ -370,6 +370,24 @@ class MVGridDing0(GridDing0):
 
         plot_gdf(gdf_footprints)
 
+        """
+        gdf_sector_table = clean_data(gdf, local_lu)
+
+        mv_station_gdf = filter_hv_mv_station(place, hv_mv_berlin)
+        gdf_project_to(mv_station_gdf, 4326)
+
+        trafo_geodata = trafo_pos_and_load(gdf_sector_table)
+
+        street_graph_trafos, trafo_conn_gdf = append_trafos(place, trafo_geodata)
+
+        # Reduce the Graph, Include hv_mv_station, Route the Rings
+        street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf, street_graph_trafos,
+                                                                      radius_inc=1e-6)
+        reduced_graph = reduce_street_graph(street_graph_station, rf=2, plot=False)
+        reduced_graph2 = remove_stubs(reduced_graph)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)
+        hola = 'hello'
+        """
+
         # do the routing
         self._graph = mv_routing.solve(graph=self._graph,
                                        debug=debug,
