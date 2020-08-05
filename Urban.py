@@ -446,19 +446,31 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
     trafo_geodata_new = []
     i = 0  # Id for new trafos
 
+
     for trafo in trafo_geodata.geometry:
+        """
         radius = radius_init
         branches = []
         while not branches:
             branches = tree.query(trafo.buffer(radius))
             radius += radius_inc
         trafo, trafo_conn = nearest_points(trafo, branches[0])
+        """
 
+        #Find nearest Linestring
+        streets['Dist'] = streets.apply(lambda row: trafo.distance(row.geometry), axis=1)
+        geoseries = streets.iloc[streets['Dist'].argmin()]
+        trafo_street = geoseries["geometry"]
+
+        #Interpolate from point to linestring
+        trafo_conn = trafo_street.interpolate(trafo_street.project(trafo))
         c = LineString([trafo, trafo_conn])
         proj_line = shapely.affinity.scale(c, xfact=5.0, yfact=5.0)
+
         result = split(branches[0], proj_line)
         conn_1 = nearest_points(trafo_conn,result[0])[1]
         conn_2 = nearest_points(trafo_conn,result[1])[1]
+        print(trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0])
 
 
         trafo_geodata_new.append(trafo_conn)
