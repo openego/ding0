@@ -328,7 +328,14 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
         elif isinstance(isl_node, LVStationDing0) \
                 and isl_node.peak_load == 0 \
                 and isl_node.peak_generation == 0:
-            continue
+            # Todo: This is only a workaround for empty grids (see
+            #  build_grid.py line 800). Aim should be to solve the issue
+            #  there and remove this exception here afterwards
+            if not only_export_mv:
+                buses_df = append_buses_df(buses_df, isl_node.grid,
+                                           isl_node, srid)
+            else:
+                continue
         else:
             raise Exception("{} is isolated node. Please check.".
                             format(repr(isl_node)))
