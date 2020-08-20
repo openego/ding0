@@ -902,16 +902,16 @@ def plot_gdf(gdf, trafos = False, color ='blue', ax=None):
         ax2 = df2.plot(ax=ax, color='red')
     return ax
 
-def plot_graph(nx_graph,color ='blue',edgecolor = 'k', ax=None):
+def plot_graph(nx_graph,color ='lightsalmon',edgecolor = 'k', ax=None):
     crossings, streets = ox.graph_to_gdfs(nx_graph)
     df = streets.append(crossings)
     df2 = df.to_crs(epsg=3857)
     df2['trafo'] = df2['trafo'].fillna(False)
-    ax = df2.plot(figsize=(9, 9), alpha=0.5, color=color ,edgecolor= edgecolor,ax=ax,column=df2['trafo'])
+    ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='midnightblue',color='lightblue' ,ax=ax,column=df2['trafo'])
     ctx.add_basemap(ax)
     return ax
 
-def plot_gdf_trafos(nx_graph, trafos_gdf, color ='blue', ax=None):
+def plot_gdf_trafos(nx_graph, trafos_gdf, color ='lightgray', ax=None):
     """
 
     :param nx_street: street nx-graph
@@ -924,11 +924,11 @@ def plot_gdf_trafos(nx_graph, trafos_gdf, color ='blue', ax=None):
     crossings, streets = ox.graph_to_gdfs(nx_graph)
     df = streets.append(crossings)
     df2 = df.to_crs(epsg=3857)
-    ax1 = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color=color,ax=ax)
+    ax1 = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='midnightblue',color='lightblue',ax=ax)
     ctx.add_basemap(ax1)
     #Trafos
     df3 = trafos_gdf.to_crs(epsg=3857)
-    ax = df3.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color='red',ax=ax1)
+    ax = df3.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color='orangered',ax=ax1)
     return ax
 
 def load_per_sector(sector_table):
