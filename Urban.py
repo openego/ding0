@@ -447,6 +447,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
     i = 0  # Id for new trafos
 
 
+
     for trafo in trafo_geodata.geometry:
         """
         radius = radius_init
@@ -459,8 +460,9 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
 
         #Find nearest Linestring
         streets['Dist'] = streets.apply(lambda row: trafo.distance(row.geometry), axis=1)
-        geoseries = streets.iloc[streets['Dist'].argmin()]
+        geoseries = streets.iloc[streets['Dist'].idxmin()]
         trafo_street = geoseries["geometry"]
+        branches = [trafo_street] #List with nearest linestring
 
         #Interpolate from point to linestring
         trafo_conn = trafo_street.interpolate(trafo_street.project(trafo))
@@ -468,10 +470,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
         proj_line = shapely.affinity.scale(c, xfact=5.0, yfact=5.0)
 
         result = split(branches[0], proj_line)
-        conn_1 = nearest_points(trafo_conn,result[0])[1]
-        conn_2 = nearest_points(trafo_conn,result[1])[1]
         print(trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0])
-
 
         trafo_geodata_new.append(trafo_conn)
         #Get the 2 boundary nodes from overlapping Linestring.
@@ -484,22 +483,27 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
 
 
         #Instert highway data into trafo_conn node
-        trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[0]['highway'] #0 is default
+        i = list(street_graph.get_edge_data(node_a, node_b).keys())[0] #OSM creates categories. Not so clear. Most of the time is 0
+        trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[i]['highway'] #0 is default
         n_conn = street_graph.number_of_edges(node_a, node_b) #Can be useful
 
         #Add Node to Graph, create trafo identifier in every node
         street_graph.add_node(i, **{'y': trafo_conn.y, 'x': trafo_conn.x, 'osmid': i,
                                         'street_type': trafo_conn_street_type, 'trafo':True, 'mv_station':False})
+
         # Connect nodes with trafo_conn (Directed Graph)
-        street_graph.add_edge(i, node_a,
-                              **{'length':coord_na.distance(trafo_conn),'geometry':result[0], 'highway':trafo_conn_street_type})
-        street_graph.add_edge(node_a, i,
-                              **{'length':coord_na.distance(trafo_conn),'geometry':result[0], 'highway':trafo_conn_street_type})
-        street_graph.add_edge(i, node_b,
-                              **{'length':coord_nb.distance(trafo_conn),'geometry':result[1], 'highway':trafo_conn_street_type})
-        street_graph.add_edge(node_b, i,
-                              **{'length':coord_nb.distance(trafo_conn),'geometry':result[1], 'highway':trafo_conn_street_type})
-        """"""
+        if len(result) >= 2:
+            street_graph.add_edge(i, node_a,
+                                  **{'length':coord_na.distance(trafo_conn),'geometry':result[0], 'highway':trafo_conn_street_type})
+            street_graph.add_edge(node_a, i,
+                                  **{'length':coord_na.distance(trafo_conn),'geometry':result[0], 'highway':trafo_conn_street_type})
+            street_graph.add_edge(i, node_b,
+                                  **{'length':coord_nb.distance(trafo_conn),'geometry':result[1], 'highway':trafo_conn_street_type})
+            street_graph.add_edge(node_b, i,
+                                  **{'length':coord_nb.distance(trafo_conn),'geometry':result[1], 'highway':trafo_conn_street_type})
+        else:
+            print(f'Error at Trafo {trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0]}')
+
         #Erase old edges
         while street_graph.has_edge(node_a,node_b):
             street_graph.remove_edges_from([(node_a,node_b)])
@@ -522,66 +526,68 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
 
     return street_graph, trafo_geodata_new
 
-def find_stat_connection(station_geodata, street_graph,radius_init=0, radius_inc=1e-6, plot=False):
+def find_stat_connection(mv_station_gdf, street_graph,radius_init=0, radius_inc=1e-6, plot=False):
     """
-    :param GDF trafo_geo_data: HV/MV Station geodata
+    :param mv_station_gdf: HV/MV Station geodata
     :param Nx-Graph street_graph:
 
     :return: street graph with added trafos
     """
 
     crossings, streets = ox.graph_to_gdfs(street_graph)
-    tree = STRtree(list(streets.geometry))
     nodes = []
     node_connections = []
     street_types = nx.get_edge_attributes(street_graph, 'highway')
+
     i = mv_station_gdf['subst_id'].iloc[0]
+
+
+    # Find nearest Linestring
+    streets['Dist'] = streets.apply(lambda row: mv_station_gdf.geometry.iloc[0].distance(row.geometry), axis=1)
+    geoseries = streets.iloc[streets['Dist'].idxmin()]
+    station_street = geoseries["geometry"]
+    branches = [station_street]  # List with nearest linestri
+
+    # Interpolate from point to linestring
+    station_conn = station_street.interpolate(station_street.project(mv_station_gdf.geometry.iloc[0]))
+    c = LineString([mv_station_gdf.geometry.iloc[0], station_conn])
+    proj_line = shapely.affinity.scale(c, xfact=5.0, yfact=5.0)
+    result = split(branches[0], proj_line)
+
     station_geodata_new = []
+    station_geodata_new.append(station_conn)
+    #Get the 2 boundary nodes from overlapping Linestring.
+    node_a = [n for n, data in street_graph.nodes(data=True) if
+              data['x'] == branches[0].boundary[0].x and data['y'] == branches[0].boundary[0].y][0]
+    coord_na = street_graph.nodes[node_a]['geometry']
+    node_b = [n for n, data in street_graph.nodes(data=True) if
+              data['x'] == branches[0].boundary[1].x and data['y'] == branches[0].boundary[1].y][0]
+    coord_nb = street_graph.nodes[node_b]['geometry']
 
 
-    for trafo in station_geodata.geometry:
-        radius = radius_init
-        branches = []
-        while not branches:
-            branches = tree.query(trafo.buffer(radius))
-            radius += radius_inc
-        trafo, trafo_conn = nearest_points(trafo, branches[0])
-        station_geodata_new.append(trafo_conn)
+    #Instert highway data into station_conn node
+    station_conn_street_type = street_graph.get_edge_data(node_a, node_b)[0]['highway'] #0 is default
+    n_conn = street_graph.number_of_edges(node_a, node_b) #Can be useful
 
-        #Get the 2 boundary nodes from overlapping Linestring.
-        node_a = [n for n, data in street_graph.nodes(data=True) if
-                  data['x'] == branches[0].boundary[0].x and data['y'] == branches[0].boundary[0].y][0]
-        coord_na = street_graph.nodes[node_a]['geometry']
-        node_b = [n for n, data in street_graph.nodes(data=True) if
-                  data['x'] == branches[0].boundary[1].x and data['y'] == branches[0].boundary[1].y][0]
-        coord_nb = street_graph.nodes[node_b]['geometry']
+    #Add Node to Graph, create trafo identifier in every node
+    street_graph.add_node(i, **{'y':station_conn.y,'x':station_conn.x,'osmid':i,
+                                'street_type':station_conn_street_type, 'trafo':True, 'mv_station':True})
 
+    # Connect nodes with station_conn (Directed Graph)
+    street_graph.add_edge(i, node_a,
+                          **{'length':coord_na.distance(station_conn),'geometry':LineString([station_conn,coord_na]), 'highway':station_conn_street_type})
+    street_graph.add_edge(node_a, i,
+                          **{'length':coord_na.distance(station_conn),'geometry':LineString([station_conn,coord_na]), 'highway':station_conn_street_type})
+    street_graph.add_edge(i, node_b,
+                          **{'length':coord_nb.distance(station_conn),'geometry':LineString([station_conn,coord_nb]), 'highway':station_conn_street_type})
+    street_graph.add_edge(node_b, i,
+                          **{'length':coord_nb.distance(station_conn),'geometry':LineString([station_conn,coord_nb]), 'highway':station_conn_street_type})
 
-        #Instert highway data into trafo_conn node
-        trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[0]['highway'] #0 is default
-        n_conn = street_graph.number_of_edges(node_a, node_b) #Can be useful
-
-        #Add Node to Graph, create trafo identifier in every node
-        street_graph.add_node(i, **{'y':trafo_conn.y,'x':trafo_conn.x,'osmid':i,
-                                    'street_type':trafo_conn_street_type, 'trafo':True, 'mv_station':True})
-
-        # Connect nodes with trafo_conn (Directed Graph)
-        street_graph.add_edge(i, node_a,
-                              **{'length':coord_na.distance(trafo_conn),'geometry':LineString([trafo_conn,coord_na]), 'highway':trafo_conn_street_type})
-        street_graph.add_edge(node_a, i,
-                              **{'length':coord_na.distance(trafo_conn),'geometry':LineString([trafo_conn,coord_na]), 'highway':trafo_conn_street_type})
-        street_graph.add_edge(i, node_b,
-                              **{'length':coord_nb.distance(trafo_conn),'geometry':LineString([trafo_conn,coord_nb]), 'highway':trafo_conn_street_type})
-        street_graph.add_edge(node_b, i,
-                              **{'length':coord_nb.distance(trafo_conn),'geometry':LineString([trafo_conn,coord_nb]), 'highway':trafo_conn_street_type})
-        """"""
-        #Erase old edges
-        while street_graph.has_edge(node_a,node_b):
-            street_graph.remove_edges_from([(node_a,node_b)])
-        while street_graph.has_edge(node_b,node_a):
-            street_graph.remove_edges_from(([(node_b,node_a)]))
-
-        i += 1
+    #Erase old edges
+    while street_graph.has_edge(node_a,node_b):
+        street_graph.remove_edges_from([(node_a,node_b)])
+    while street_graph.has_edge(node_b,node_a):
+        street_graph.remove_edges_from(([(node_b,node_a)]))
 
     station_geodata_new = gpd.GeoDataFrame(geometry=station_geodata_new)
     station_geodata_new.crs = crossings.crs
@@ -617,11 +623,14 @@ def reduce_street_graph(street_graph, rf = 1, plot=False):
     #street_graph_un.remove_edges_from(list(nx.selfloop_edges(street_graph_un)))
     edges_weight = [(u, v, e['length']) for u, v, e in list(street_graph_un.edges(data=True))]
 
+
     # weight_tuples = [(u, v, d['weight']) for (u, v, d) in street_graph_un.edges(data=True) if d['weight'] > 0]
     # Apparently this does'nt work on MultiGraphs
-
+    '''
     for elem in edges_weight:
         street_graph_un[elem[0]][elem[1]][0]["weight"] = elem[2]  # Insert Weights in the Basis-graph (Multigraph)
+    '''
+
 
     pos_tuples = dict([(n[0], (n[1]['x'], n[1]['y'])) for n in street_graph_un.nodes(data=True)]) #Node nr: lat, long
     #street_graph_un.add_weighted_edges_from(edges_weight)
@@ -646,7 +655,7 @@ def reduce_street_graph(street_graph, rf = 1, plot=False):
         length = []
         for tuple in list(itertools.combinations(trafo_list, 2)): #Combinations of Trafo-pairs
             trafo_pairs.append(tuple)
-            paths.append(nx.dijkstra_path(street_graph_un,tuple[0],tuple[1]))
+            paths.append(nx.dijkstra_path(street_graph_un,tuple[0],tuple[1],weight='lenght'))
             length.append(nx.dijkstra_path_length(street_graph_un,tuple[0],tuple[1]))
 
 
@@ -893,12 +902,12 @@ def plot_gdf(gdf, trafos = False, color ='blue', ax=None):
         ax2 = df2.plot(ax=ax, color='red')
     return ax
 
-def plot_graph(nx_graph,color ='blue', ax=None):
+def plot_graph(nx_graph,color ='blue',edgecolor = 'k', ax=None):
     crossings, streets = ox.graph_to_gdfs(nx_graph)
     df = streets.append(crossings)
     df2 = df.to_crs(epsg=3857)
     df2['trafo'] = df2['trafo'].fillna(False)
-    ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',ax=ax,column=df2['trafo'])
+    ax = df2.plot(figsize=(9, 9), alpha=0.5, color=color ,edgecolor= edgecolor,ax=ax,column=df2['trafo'])
     ctx.add_basemap(ax)
     return ax
 
@@ -1099,7 +1108,7 @@ def filter_hv_mv_station(place,hv_mv_berlin):
 def trafo_pos_and_load(gdf_sector_table):
 
     n_trafos = find_n_trafos(gdf_sector_table) #Too many/Too few trafos. Why?
-    trafo_pos, building_loads = find_mv_clusters_kmeans(gdf_sector_table,plot=False,k=10) #The Pd_dt gets column Trafo
+    trafo_pos, building_loads = find_mv_clusters_kmeans(gdf_sector_table,plot=False,k=n_trafos) #The Pd_dt gets column Trafo
     trafo_leistung = peak_load_per_trafo(building_loads,20)
     trafo_geodata = gpd.GeoDataFrame(geometry=trafo_pos)
     gdf_project_to(trafo_geodata,4326)

@@ -379,6 +379,7 @@ class MVGridDing0(GridDing0):
 
         #Extract HV/MV Station
         mv_station_gdf = gpd.GeoDataFrame(geometry=[self._station.geo_data], crs = {'init':'epsg:4326'}) #HV/MV station (4326)
+        mv_station_gdf['subst_id'] = self.id_db
 
         #Calculate number of trafos, apply k-means and return their position
         trafo_geodata = trafo_pos_and_load(gdf_sector_table)
