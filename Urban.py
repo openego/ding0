@@ -482,7 +482,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
         coord_nb = street_graph.nodes[node_b]['geometry']
 
 
-        #Instert highway data into trafo_conn node
+        #Insert highway data into trafo_conn node
         i = list(street_graph.get_edge_data(node_a, node_b).keys())[0] #OSM creates categories. Not so clear. Most of the time is 0
         trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[i]['highway'] #0 is default
         n_conn = street_graph.number_of_edges(node_a, node_b) #Can be useful
@@ -1067,10 +1067,12 @@ def clean_data(gdf, local_lu):
     :return gdf_sector_table: Cleaned gdf containing builing footprints + sector labels
     """
     gdf = gdf.reset_index().rename(columns={'index': 'osmidx'})
-    gdf = gdf[~(gdf.geometry.isna())]  # Remove nan
-    gdf.geometry = [list(x)[0] if isinstance(x, MultiPolygon) else x for x in
-                    gdf.geometry]  # Extract first layer of Multipolygons
+ # Remove nan
+    gdf.geometry = [x[0] if (isinstance(x, MultiPolygon) and x.area != 0.0)
+                    else x
+                    for x in gdf.geometry]  # Extract first layer of Multipolygons
     # Remove uns_validsuported layers for Multipolygons
+    gdf = gdf[~(gdf.geometry.isna())]
     gdf_project_to(gdf, 3035)
     # gdf_sector_table contains buildings footprints + the corresponding sectors
     gdf_sector_table = sjoin(gdf, local_lu, how='inner', op='intersects') \
