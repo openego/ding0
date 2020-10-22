@@ -392,7 +392,7 @@ class MVGridDing0(GridDing0):
                                                                       radius_inc=1e-6)
 
         #Apply Dijsktra shortest path to every pair of transformers to reduce the street graph
-        reduced_graph = reduce_street_graph(street_graph_station, rf=2, plot=False)
+        reduced_graph = reduce_street_graph(street_graph_trafos, rf=2, plot=False)
 
         #Remove transformers that aren'nt connected to the ring structure
         reduced_graph2 = remove_stubs(reduced_graph)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)

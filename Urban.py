@@ -445,9 +445,6 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
     street_types = nx.get_edge_attributes(street_graph, 'highway')
     trafo_geodata_new = []
     i = 0  # Id for new trafos
-
-
-
     for trafo in trafo_geodata.geometry:
         """
         radius = radius_init
@@ -470,7 +467,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
         proj_line = shapely.affinity.scale(c, xfact=5.0, yfact=5.0)
 
         result = split(branches[0], proj_line)
-        print(trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0])
+        print("Transformer ", trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0], " created")
 
         trafo_geodata_new.append(trafo_conn)
         #Get the 2 boundary nodes from overlapping Linestring.
@@ -483,13 +480,14 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
 
 
         #Insert highway data into trafo_conn node
-        i = list(street_graph.get_edge_data(node_a, node_b).keys())[0] #OSM creates categories. Not so clear. Most of the time is 0
-        trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[i]['highway'] #0 is default
+        osm_cat = list(street_graph.get_edge_data(node_a, node_b).keys())[0] #OSM creates categories. Not so clear. Most of the time is 0
+        trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[osm_cat]['highway'] #0 is default
         n_conn = street_graph.number_of_edges(node_a, node_b) #Can be useful
 
         #Add Node to Graph, create trafo identifier in every node
         street_graph.add_node(i, **{'y': trafo_conn.y, 'x': trafo_conn.x, 'osmid': i,
                                         'street_type': trafo_conn_street_type, 'trafo':True, 'mv_station':False})
+        print("Transformer ", i, " connected to the graph")
 
         # Connect nodes with trafo_conn (Directed Graph)
         if len(result) >= 2:
@@ -522,7 +520,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
 
     if plot == True: #Plots trafos in red over old network
         ax = plot_gdf(full_map_gdf_bef)
-        plot_gdf(trafo_geodata_new, color='red',ax=plt.gca())
+        plot_gdf(trafo_geodata_new, color='lightred',ax=plt.gca())
 
     return street_graph, trafo_geodata_new
 
@@ -603,7 +601,7 @@ def find_stat_connection(mv_station_gdf, street_graph,radius_init=0, radius_inc=
 
     return street_graph,station_geodata_new
 
-def reduce_street_graph(street_graph, rf = 1, plot=False):
+def reduce_street_graph(street_graph, rf = 2, plot=False):
     """
     Converts graph to undirected weighted graph
 
@@ -892,14 +890,14 @@ def street_details_mvgd(boundaries):
     filtered = full_df.filter(items=['name', 'highway', 'geometry', 'lenght', 'osmid'])
     return filtered
 
-def plot_gdf(gdf, trafos = False, color ='blue', ax=None):
+def plot_gdf(gdf, trafos = True, color ='lightsalmon', ax=None):
     if gdf.crs == {'init':'epsg:3035'}:
         gdf_project_to(gdf,4326)
     df2 = gdf.to_crs(epsg=3857)
     ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='k',color=color,ax=ax)
     ctx.add_basemap(ax)
     if trafos == True:
-        ax2 = df2.plot(ax=ax, color='red')
+        ax2 = df2.plot(ax=ax, color='darkblue')
     return ax
 
 def plot_graph(nx_graph,color ='lightsalmon',edgecolor = 'k', ax=None):
@@ -1134,7 +1132,7 @@ def append_trafos(place,trafo_geodata):
 
     street_graph.remove_nodes_from(list(nx.isolates(street_graph))) #Remove isolated nodes (i.e. crossings of pathways)
     nx.set_node_attributes(street_graph, False, 'trafo')
-    street_graph_trafos, trafo_conn_gdf= find_trafo_connection(trafo_geodata,street_graph) #Finds positions of trafos. Returns nx and gdf
+    street_graph_trafos, trafo_conn_gdf= find_trafo_connection(trafo_geodata,street_graph,plot=True) #Finds positions of trafos. Returns nx and gdf
 
     return street_graph_trafos,trafo_conn_gdf
 
