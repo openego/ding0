@@ -467,7 +467,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
         proj_line = shapely.affinity.scale(c, xfact=5.0, yfact=5.0)
 
         result = split(branches[0], proj_line)
-        print("Transformer ", trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0], " created")
+        #print("Transformer ", trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0], " created")
 
         trafo_geodata_new.append(trafo_conn)
         #Get the 2 boundary nodes from overlapping Linestring.
@@ -520,7 +520,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
 
     if plot == True: #Plots trafos in red over old network
         ax = plot_gdf(full_map_gdf_bef)
-        plot_gdf(trafo_geodata_new, color='lightred',ax=plt.gca())
+        plot_gdf(trafo_geodata_new, color='lightsalmon',ax=plt.gca())
 
     return street_graph, trafo_geodata_new
 
@@ -902,12 +902,14 @@ def plot_gdf(gdf, trafos = True, color ='lightsalmon', ax=None):
         ax2 = df2.plot(ax=ax, color='darkblue')
     return ax
 
-def plot_graph(nx_graph,color ='lightsalmon',edgecolor = 'k', ax=None):
+def plot_graph(nx_graph,color ='lightsalmon', edgecolor = 'k', ax=None):
     crossings, streets = ox.graph_to_gdfs(nx_graph)
     df = streets.append(crossings)
     df2 = df.to_crs(epsg=3857)
     df2['trafo'] = df2['trafo'].fillna(False)
-    ax = df2.plot(figsize=(9, 9), alpha=0.5, edgecolor='midnightblue',color='lightblue' ,ax=ax,column=df2['trafo'])
+    df2['trafo'] = df2['trafo'].astype(int)
+    ax = df2.plot(column='trafo', edgecolor='silver',
+                  cmap='Accent')
     ctx.add_basemap(ax)
     return ax
 
