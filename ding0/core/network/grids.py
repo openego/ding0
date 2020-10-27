@@ -406,23 +406,6 @@ class MVGridDing0(GridDing0):
         reduced_graph2 = remove_stubs(street_graph_station)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)
         #print("Number of transformers after first reduction is ", len([att for node, att in reduced_graph2.nodes(data=True) if att['trafo'] == True]))
 
-        #Add new position of the MV_station to the ding0_network
-        mv_station_data = [data for x, data in street_graph_station.nodes(data=True) if x == self._station.id_db]
-        self._station.geo_data = Point(mv_station_data[0]['x'],mv_station_data[0]['y'])
-
-        #Add LV Centres to ding0_network
-        lv_stations_data = [(id,data) for id,data in street_graph_station.nodes(data=True) if data['trafo']==True]
-        for station in lv_stations_data:
-            station = LVStationDing0()
-            self.id_db = id
-            self.grid = self
-            self.geo_data = Point(lv_stations_data[id]['x'],lv_stations_data[id]['y'])
-            self.lv_load_area = self.grid_district._lv_load_areas
-
-        self._graph = street_graph_station
-
-
-
         # do the routing
         self._graph = mv_routing.solve(graph=self._graph,
                                        debug=debug,
