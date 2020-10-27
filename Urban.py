@@ -654,7 +654,7 @@ def reduce_street_graph(street_graph, rf = 2, plot=False):
         for tuple in list(itertools.combinations(trafo_list, 2)): #Combinations of Trafo-pairs
             trafo_pairs.append(tuple)
             try: #In case there is no path
-                paths.append(nx.dijkstra_path(street_graph_un,tuple[0],tuple[1],weight='lenght'))
+                paths.append(nx.dijkstra_path(street_graph_un,tuple[0],tuple[1], weight='lenght'))
                 length.append(nx.dijkstra_path_length(street_graph_un,tuple[0],tuple[1]))
             except:
                 print("There is no path between ", tuple[0], " and ", tuple[1])
