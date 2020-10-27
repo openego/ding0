@@ -391,6 +391,12 @@ class MVGridDing0(GridDing0):
         street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf, street_graph_trafos,
                                                                       radius_inc=1e-6)
 
+        #Find largest subgraph
+        street_graph_station = street_graph_station.to_undirected()
+        B = street_graph_station
+        A = (B.subgraph(c) for c in nx.connected_components(B))
+        biggest_subgraph = list(A)[0]
+
         #Apply Dijsktra shortest path to every pair of transformers to reduce the street graph
 
         reduced_graph = reduce_street_graph(street_graph_trafos, rf=2, plot=False)
