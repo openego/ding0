@@ -487,6 +487,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
         #Add Node to Graph, create trafo identifier in every node
         street_graph.add_node(i, **{'y': trafo_conn.y, 'x': trafo_conn.x, 'osmid': i,
                                         'street_type': trafo_conn_street_type, 'trafo':True, 'mv_station':False})
+
         print("Transformer ", i, " connected to the graph")
 
         # Connect nodes with trafo_conn (Directed Graph)

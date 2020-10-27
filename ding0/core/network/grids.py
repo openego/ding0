@@ -398,14 +398,17 @@ class MVGridDing0(GridDing0):
 
         #Apply Dijsktra shortest path to every pair of transformers to reduce the street graph
         reduced_graph = reduce_street_graph(street_graph_station, rf=2, plot=False)
-        print("Number of transformers after first reduction is ", len([att for node, att in reduced_graph.nodes(data=True) if att['trafo'] == True]))
+        print("Number of transformers after Dijsktra reduction is ", len([att for node, att in reduced_graph.nodes(data=True) if att['trafo'] == True]))
 
         #Remove transformers that aren'nt connected to the ring structure
         reduced_graph2 = remove_stubs(reduced_graph)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)
-        print("Number of transformers after first reduction is ", len([att for node, att in reduced_graph2.nodes(data=True) if att['trafo'] == True]))
+        print("Number of transformers after removing stubs is ", len([att for node, att in reduced_graph2.nodes(data=True) if att['trafo'] == True]))
+
+        #Prepare data for routing
 
 
         # do the routing
+        self._graph = reduced_graph2
         self._graph = mv_routing.solve(graph=self._graph,
                                        debug=debug,
                                        anim=anim,
