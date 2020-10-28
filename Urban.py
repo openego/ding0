@@ -690,7 +690,9 @@ def peak_load_per_trafo(building_loads,k):
             trafo = building_loads['trafo'] == i
             trafo_loads = building_loads[trafo]
             trafo_leistung[str(i)] = trafo_loads['load'].sum(axis=0)
-            print('Transformer '+str(i)+ ' has ' + '{:.2e}'.format(trafo_leistung[i]) + 'kVA of power')
+
+            print('Transformer '+str(i)+ ' has ' + '{:.2e}'.format(trafo_leistung[str(i)]) + 'kVA of power')
+
         except:
             trafo = building_loads['trafo'] == i
             trafo_loads = building_loads[trafo]
@@ -1118,7 +1120,7 @@ def trafo_pos_and_load(gdf_sector_table):
     trafo_geodata = gpd.GeoDataFrame(geometry=trafo_pos)
     gdf_project_to(trafo_geodata,4326)
 
-    return trafo_geodata
+    return trafo_geodata,trafo_leistung
 
 #Append trafos to street graph
 def append_trafos(place,trafo_geodata):
