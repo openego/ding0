@@ -1137,6 +1137,7 @@ def append_trafos(place,trafo_geodata):
 
     street_graph.remove_nodes_from(list(nx.isolates(street_graph))) #Remove isolated nodes (i.e. crossings of pathways)
     nx.set_node_attributes(street_graph, False, 'trafo')
+    nx.set_node_attributes(street_graph, False, 'mv_station')
     street_graph_trafos, trafo_conn_gdf= find_trafo_connection(trafo_geodata,street_graph,plot=True) #Finds positions of trafos. Returns nx and gdf
 
     return street_graph_trafos,trafo_conn_gdf
