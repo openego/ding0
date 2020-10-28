@@ -437,7 +437,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
 
     :return: street graph with added trafos
     """
-
+    trafo_geodata = trafo_geodata[0]
     crossings, streets = ox.graph_to_gdfs(street_graph)
     tree = STRtree(list(streets.geometry))
     nodes = []
