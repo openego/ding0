@@ -684,12 +684,12 @@ def peak_load_per_trafo(building_loads,k):
            k: int: Number of trafos/Clusters
     :return: list of sum of loads per trafo
     """
-    trafo_leistung = []
+    trafo_leistung = {}
     for i in range(0,k):
         try:
             trafo = building_loads['trafo'] == i
             trafo_loads = building_loads[trafo]
-            trafo_leistung.append(trafo_loads['load'].sum(axis=0))
+            trafo_leistung[str(i)] = trafo_loads['load'].sum(axis=0)
             print('Transformer '+str(i)+ ' has ' + '{:.2e}'.format(trafo_leistung[i]) + 'kVA of power')
         except:
             trafo = building_loads['trafo'] == i
