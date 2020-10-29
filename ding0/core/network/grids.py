@@ -382,10 +382,15 @@ class MVGridDing0(GridDing0):
         mv_station_gdf['subst_id'] = self.id_db
 
         #Calculate number of trafos, apply k-means and return their position
-        trafo_geodata = trafo_pos_and_load(gdf_sector_table)
+        trafo_geodata = trafo_pos_and_load(gdf_sector_table) #Tuple with loads and position respectively
 
         #Combine the street graph of the area and the transformers from trafo_geodata
         street_graph_trafos, trafo_conn_gdf = append_trafos(self.grid_district.geo_data, trafo_geodata)
+
+        for station in trafo_geodata[1]:
+            street_graph_trafos.nodes[int(station)]['load'] = trafo_geodata[1][station]
+
+        street_graph_trafos
 
         # Connect the HV/MV Station to the graph
         street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf, street_graph_trafos,
@@ -395,6 +400,9 @@ class MVGridDing0(GridDing0):
         B = street_graph_station.to_undirected()
         A = (B.subgraph(c) for c in nx.connected_components(B))
         street_graph_station = list(A)[0]
+
+        # Street_graph_station will be the main graph
+        print('Is the graph connected? ', nx.is_connected(street_graph_station))
 
         #Apply Dijsktra shortest path to every pair of transformers to reduce the street graph
         reduced_graph = reduce_street_graph(street_graph_station, rf=2, plot=False)
