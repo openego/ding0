@@ -232,7 +232,7 @@ def routing_solution_to_ding0_graph(graph, solution):
     return graph
 
 
-def solve(graph, debug=False, anim=None, urban =False):
+def solve(graph, debug=False, anim=None):
     # TODO: check docstring
     """ Do MV routing for given nodes in `graph`.
     
