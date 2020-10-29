@@ -422,7 +422,7 @@ class MVGridDing0(GridDing0):
         lv_stations = [(x, data) for x, data in street_graph_station.nodes(data=True) if data['trafo'] == True and data['mv_station'] == False]
         stations = mv_stations.extend(lv_stations)
 
-        specs['DEPOT'] = str(self._station)
+        specs['DEPOT'] = mv_stations[0][0]
         specs['BRANCH_KIND'] = self.default_branch_kind
         specs['BRANCH_TYPE'] = self.default_branch_type
         specs['V_LEVEL'] = self.v_level
@@ -440,9 +440,10 @@ class MVGridDing0(GridDing0):
             specs['IS_AGGREGATED'][lv_stations[i][0]] = False
 
         specs['MATRIX'] = {mv_stations[0][0] : {mv_stations[0][0] : 0 }}
-        [mv_stations[0][0]] = {lv_stations[i][0] : nx.shortest_paths.generic.shortest_path_length
+        specs['MATRIX'][mv_stations[0][0]] = {lv_stations[i][0] : nx.shortest_paths.generic.shortest_path_length
         (street_graph_station, mv_stations[0][0], lv_stations[i][0], weight='lenght')
                                for i in range(0,len(lv_stations))}
+        specs['MATRIX'][mv_stations[0][0]].update({mv_stations[0][0]: 0})
 
         for i in range(0, len(lv_stations)):
             source = lv_stations[i][0] #source node
@@ -456,7 +457,7 @@ class MVGridDing0(GridDing0):
         self._graph = mv_routing.solve(graph=self._graph,
                                        debug=debug,
                                        anim=anim,
-                                       urban=False)
+                                       specs = specs)
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
