@@ -405,22 +405,58 @@ class MVGridDing0(GridDing0):
         print('Is the graph connected? ', nx.is_connected(street_graph_station))
 
         #Apply Dijsktra shortest path to every pair of transformers to reduce the street graph
-        reduced_graph = reduce_street_graph(street_graph_station, rf=2, plot=False)
-        print("Number of transformers after Dijsktra reduction is ", len([att for node, att in reduced_graph.nodes(data=True) if att['trafo'] == True]))
+        #reduced_graph = reduce_street_graph(street_graph_station, rf=2, plot=False)
+        #print("Number of transformers after Dijsktra reduction is ", len([att for node, att in reduced_graph.nodes(data=True) if att['trafo'] == True]))
 
         #Remove transformers that aren'nt connected to the ring structure
-        reduced_graph2 = remove_stubs(reduced_graph)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)
-        print("Number of transformers after removing stubs is ", len([att for node, att in reduced_graph2.nodes(data=True) if att['trafo'] == True]))
+        #reduced_graph2 = remove_stubs(reduced_graph)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)
+        #print("Number of transformers after removing stubs is ", len([att for node, att in reduced_graph2.nodes(data=True) if att['trafo'] == True]))
 
         #Prepare data for routing
+        specs = {}
+        nodes_demands = {}
+        nodes_pos = {}
+        nodes_agg = {}
 
+        mv_stations = [(x, data) for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True]
+        lv_stations = [(x, data) for x, data in street_graph_station.nodes(data=True) if data['trafo'] == True and data['mv_station'] == False]
+        stations = mv_stations.extend(lv_stations)
+
+        specs['DEPOT'] = str(self._station)
+        specs['BRANCH_KIND'] = self.default_branch_kind
+        specs['BRANCH_TYPE'] = self.default_branch_type
+        specs['V_LEVEL'] = self.v_level
+
+        specs['NODE_COORD_SECTION'] = {mv_stations[0][0]: (mv_stations[0][1]['x'], mv_stations[0][1]['y'])}
+        for i in range(0,len(lv_stations)):
+            specs['NODE_COORD_SECTION'][lv_stations[i][0]] = (lv_stations[i][1]['x'], lv_stations[i][1]['y'])
+
+        specs['DEMAND'] = {mv_stations[0][0] : 0}
+        for i in range(0,len(lv_stations)):
+            specs['DEMAND'][lv_stations[i][0]] = lv_stations[i][1]['load']
+
+        specs['IS_AGGREGATED'] = {}
+        for i in range(0,len(lv_stations)):
+            specs['IS_AGGREGATED'][lv_stations[i][0]] = False
+
+        specs['MATRIX'] = {mv_stations[0][0] : {mv_stations[0][0] : 0 }}
+        [mv_stations[0][0]] = {lv_stations[i][0] : nx.shortest_paths.generic.shortest_path_length
+        (street_graph_station, mv_stations[0][0], lv_stations[i][0], weight='lenght')
+                               for i in range(0,len(lv_stations))}
+
+        for i in range(0, len(lv_stations)):
+            source = lv_stations[i][0] #source node
+            specs['MATRIX'][source] = {lv_stations[j][0]: nx.shortest_paths.generic.shortest_path_length(
+                                        street_graph_station, source, lv_stations[j][0], weight='lenght')
+                                        for j in range(0, len(lv_stations))}
+            print(source, " is in specs")
 
         # do the routing
-        self._graph = reduced_graph2
+        #self._graph = reduced_graph2
         self._graph = mv_routing.solve(graph=self._graph,
                                        debug=debug,
                                        anim=anim,
-                                       urban=True)
+                                       urban=False)
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
