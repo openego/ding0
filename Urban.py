@@ -174,7 +174,7 @@ def merge_maps(gdf_build,graph_streets,tr_x,tr_y):
     ox.plot_shape(res_gdf)
     return res_gdf
 
-def find_mv_clusters_kmeans(gdf_build, plot=False, k =5):
+def find_mv_clusters_kmeans(gdf_build,k, plot=False):
     """
     Applys k-means clustering to the dataset containing
     the repr. points of each building
@@ -1116,7 +1116,7 @@ def trafo_pos_and_load(gdf_sector_table):
 
     n_trafos = find_n_trafos(gdf_sector_table) #Too many/Too few trafos. Why?
     trafo_pos, building_loads = find_mv_clusters_kmeans(gdf_sector_table,plot=False,k=n_trafos) #The Pd_dt gets column Trafo
-    trafo_leistung = peak_load_per_trafo(building_loads,20)
+    trafo_leistung = peak_load_per_trafo(building_loads, n_trafos)
     trafo_geodata = gpd.GeoDataFrame(geometry=trafo_pos)
     gdf_project_to(trafo_geodata,4326)
 
