@@ -232,7 +232,7 @@ def routing_solution_to_ding0_graph(graph, solution):
     return graph
 
 
-def solve(graph, debug=False, anim=None):
+def solve(graph, specs, debug=False, anim=None):
     # TODO: check docstring
     """ Do MV routing for given nodes in `graph`.
     
@@ -258,9 +258,6 @@ def solve(graph, debug=False, anim=None):
     """
 
     # TODO: Implement debug mode (pass to solver) to get more information while routing (print routes, draw network, ..)
-
-    # translate DING0 graph to routing specs
-    specs = ding0_graph_to_routing_specs(graph)
 
     # create routing graph using specs
     RoutingGraph = Graph(specs)

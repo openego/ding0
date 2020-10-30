@@ -1144,6 +1144,53 @@ def append_trafos(place,trafo_geodata):
 
     return street_graph_trafos,trafo_conn_gdf
 
+def convert_graph_to_specs(MVGridDing0,nx_graph):
+
+    self = MVGridDing0
+    street_graph_station = nx_graph
+    specs = {}
+    nodes_demands = {}
+    nodes_pos = {}
+    nodes_agg = {}
+
+    # The graph stores the nodes' names as int but specs needs them to be strings!
+    stations = [(str(x), data) for x, data in street_graph_station.nodes(data=True) if data['trafo'] == True]
+    mv_stations = [(str(x), data) for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True]
+
+    specs['DEPOT'] = [str(x) for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True][0]
+    specs['BRANCH_KIND'] = self.default_branch_kind
+    specs['BRANCH_TYPE'] = self.default_branch_type
+    specs['V_LEVEL'] = self.v_level
+
+    specs['NODE_COORD_SECTION'] = {mv_stations[0][0]: (mv_stations[0][1]['x'], mv_stations[0][1]['y'])}
+    for i in range(0, len(stations)):
+        specs['NODE_COORD_SECTION'][stations[i][0]] = (stations[i][1]['x'], stations[i][1]['y'])
+
+    specs['DEMAND'] = {mv_stations[0][0]: 0}
+    for i in range(0, len(stations)):
+        specs['DEMAND'][stations[i][0]] = stations[i][1]['load']
+
+    specs['IS_AGGREGATED'] = {}
+    for i in range(0, len(stations)):
+        specs['IS_AGGREGATED'][stations[i][0]] = False
+
+    specs['MATRIX'] = {mv_stations[0][0]: {mv_stations[0][0]: 0}}
+
+    specs['MATRIX'][mv_stations[0][0]] = {stations[i][0]: nx.shortest_paths.generic.shortest_path_length
+    (street_graph_station, int(mv_stations[0][0]), int(stations[i][0]), weight='lenght')
+                                          for i in range(0, len(stations))}
+
+    specs['MATRIX'][mv_stations[0][0]].update({mv_stations[0][0]: 0})
+
+    for i in range(0, len(stations)):
+        source = stations[i][0]  # source node
+        specs['MATRIX'][source] = {stations[j][0]: nx.shortest_paths.generic.shortest_path_length(
+            street_graph_station, int(source), int(stations[j][0]), weight='lenght')
+            for j in range(0, len(stations))}
+        print(source, " is in specs")
+
+    return specs
+
 ##############Trash
 # build SQL query
 """
