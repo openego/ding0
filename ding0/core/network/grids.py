@@ -390,11 +390,14 @@ class MVGridDing0(GridDing0):
         for station in trafo_geodata[1]:
             street_graph_trafos.nodes[int(station)]['load'] = trafo_geodata[1][station]
 
+
         street_graph_trafos
 
         # Connect the HV/MV Station to the graph
         street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf, street_graph_trafos,
                                                                       radius_inc=1e-6)
+
+        street_graph_station.nodes[[x for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True][0]]['load'] = 0
 
         #Find largest subgraph
         B = street_graph_station.to_undirected()
