@@ -420,7 +420,7 @@ class MVGridDing0(GridDing0):
 
         # do the routing
         #self._graph = reduced_graph2
-        self._graph = mv_routing.solve(graph=self._graph,
+        self._graph = mv_routing.solve(graph=street_graph_station,
                                        debug=debug,
                                        anim=anim,
                                        specs = specs)
