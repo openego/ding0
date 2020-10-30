@@ -98,7 +98,7 @@ def ding0_graph_to_routing_specs(graph):
 
     return specs
 
-def routing_solution_to_ding0_graph(graph, solution):
+def routing_solution_to_ding0_graph(graph, solution, grid, urban = False):
     """ Insert `solution` from routing into `graph`
 
     Parameters
@@ -119,6 +119,12 @@ def routing_solution_to_ding0_graph(graph, solution):
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}
 
+    if urban == True:
+        import shapely
+        graph.nodes(data=True)
+        node_list = {str(n[0]): n for n in graph.nodes(data=True)}
+        A = shapely.geometry.Point(node_list['760'][1]['x'], node_list['760'][1]['y'])
+
     # add edges from solution to graph
     try:
         depot = solution._nodes[solution._problem._depot.name()]
@@ -131,6 +137,7 @@ def routing_solution_to_ding0_graph(graph, solution):
             # at nodes' position (resulting route: HV/MV_subst --- node --- cable_dist --- HV/MV_subst.
             if len(r._nodes) == 1:
                 if not solution._problem._is_aggregated[r._nodes[0]._name]:
+
                     # create new cable dist
                     cable_dist = MVCableDistributorDing0(geo_data=node_list[r._nodes[0]._name].geo_data,
                                                          grid=depot_node.grid)
@@ -232,7 +239,7 @@ def routing_solution_to_ding0_graph(graph, solution):
     return graph
 
 
-def solve(graph, specs, debug=False, anim=None):
+def solve(graph, specs, grid, urban, debug=False, anim=None):
     # TODO: check docstring
     """ Do MV routing for given nodes in `graph`.
     
@@ -294,4 +301,4 @@ def solve(graph, specs, debug=False, anim=None):
         logger.debug('Elapsed time (seconds): {}'.format(time.time() - start))
         #local_search_solution.draw_network()
 
-    return routing_solution_to_ding0_graph(graph, local_search_solution)
+    return routing_solution_to_ding0_graph(graph, local_search_solution, grid, urban)

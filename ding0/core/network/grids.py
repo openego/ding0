@@ -418,12 +418,15 @@ class MVGridDing0(GridDing0):
         #Prepare data for routing
         specs = convert_graph_to_specs(self,street_graph_station)
 
+
         # do the routing
         #self._graph = reduced_graph2
         self._graph = mv_routing.solve(graph=street_graph_station,
                                        debug=debug,
                                        anim=anim,
-                                       specs = specs)
+                                       specs = specs,
+                                       grid = self._station.grid,
+                                       urban=True)
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
