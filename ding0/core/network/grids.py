@@ -418,6 +418,11 @@ class MVGridDing0(GridDing0):
         #Prepare data for routing
         specs = convert_graph_to_specs(self,street_graph_station)
 
+        """ 
+        for i in node.list():
+            LV_station[i] = LVStationDing0(geo_data=node.data,
+                                           grid = self.grid)
+        """
 
         # do the routing
         #self._graph = reduced_graph2
@@ -448,6 +453,7 @@ class MVGridDing0(GridDing0):
         self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
                                                      graph=self._graph,
                                                      debug=debug)
+
         logger.info('==> MV Stations for {} done'.format(repr(self)))
 
     def routing(self, debug=False, anim=None):
