@@ -397,6 +397,7 @@ class MVGridDing0(GridDing0):
         street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf, street_graph_trafos,
                                                                       radius_inc=1e-6)
 
+        #Set load of MVstation to 0
         street_graph_station.nodes[[x for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True][0]]['load'] = 0
 
         #Find largest subgraph
@@ -418,11 +419,24 @@ class MVGridDing0(GridDing0):
         #Prepare data for routing
         specs = convert_graph_to_specs(self,street_graph_station)
 
-        """ 
-        for i in node.list():
-            LV_station[i] = LVStationDing0(geo_data=node.data,
-                                           grid = self.grid)
-        """
+        #Convert/Insert data to Ding0Objects
+        mv_station_tuple = [(x,data) for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True][0] #(node_nmbr, Dict containing information from mv_station)
+        lv_station_tuple = [(x,data) for x, data in street_graph_station.nodes(data=True) if data['trafo'] == True
+                            and data['mv_station'] == False] #List of (node_nmbr,dict) with lv_station data
+
+        #Create LVStations
+        test = lv_station_tuple[0][0]
+        test_lv_station = LVStationDing0(geo_data=Point, id_db=test['osmid'], grid=self, peak_load=test['load'],
+                                         network=self.network,v_level_operation=self.v_level) #self.v_level correct?
+
+        mapping = {}
+        mapping[mv_station_tuple[0]] = self._station
+        for tuple in lv_station_tuple:
+            mapping[tuple[0]] = LVStationDing0(geo_data=Point(tuple[1]['x'], tuple[1]['y']), id_db=tuple[1]['osmid'],
+                                               grid=self, peak_load=tuple[1]['load'], network=self.network,
+                                               v_level_operation=self.v_level)
+
+        G = nx.relabel_nodes(street_graph_station, mapping)
 
         # do the routing
         #self._graph = reduced_graph2
