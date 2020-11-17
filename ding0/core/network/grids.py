@@ -413,10 +413,6 @@ class MVGridDing0(GridDing0):
         #reduced_graph2 = remove_stubs(reduced_graph)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)
         #print("Number of transformers after removing stubs is ", len([att for node, att in reduced_graph2.nodes(data=True) if att['trafo'] == True]))
 
-        #Prepare data for routing.
-        specs = convert_graph_to_specs(self,street_graph_station)
-
-
         #Extract station data
         mv_station_tuple = [(x,data) for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True][0] #(node_nmbr, Dict containing information from mv_station)
         lv_station_tuple = [(x,data) for x, data in street_graph_station.nodes(data=True) if data['trafo'] == True
@@ -430,19 +426,20 @@ class MVGridDing0(GridDing0):
         for tuple in lv_station_tuple:
             mapping[tuple[0]] = LVStationDing0(geo_data=Point(tuple[1]['x'], tuple[1]['y']), id_db=tuple[1]['osmid'],
                                                grid=self, peak_load=tuple[1]['load'], network=self.network,
-                                               v_level_operation=self.v_level) #V_LEVEL CORRECT?
+                                               v_level_operation=self.v_level) #TODO: Add LVLoadArea, V_LEVEL CORRECT?
 
         street_graph_station = nx.relabel_nodes(street_graph_station, mapping)
+        street_graph_stations = street_graph_station.subgraph(mapping.values()) #Create a graph with only mv stations
         print('MV and LVStations added to graph')
+
+        #Prepare data for routing.
+        specs = convert_graph_to_specs(self,street_graph_station)
 
         # do the routing
         #self._graph = reduced_graph2
-        self._graph = mv_routing.solve(graph=self._graph,
+        self._graph = mv_routing.solve_urban(graph=street_graph_stations,
                                        debug=debug,
-                                       anim=anim,
-                                       specs = specs,
-                                       grid = self._station.grid,
-                                       urban=True)
+                                       anim=anim,specs = specs)
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
