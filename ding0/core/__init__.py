@@ -316,10 +316,10 @@ class NetworkDing0:
         self.build_lv_grids()
 
         # STEP 6a: Build MV urban grids
-        self.mv_routing_urban(debug=False)
+        """self.mv_routing_urban(debug=False)
         if export_figures:
             grid = self._mv_grid_districts[0].mv_grid
-            plot_mv_topology(grid, subtitle='Urban routing completed', filename='urban_routing_completed.png')
+            plot_mv_topology(grid, subtitle='Urban routing completed', filename='urban_routing_completed.png')"""
 
         # STEP 6b: Build MV grids
         self.mv_routing(debug=False)

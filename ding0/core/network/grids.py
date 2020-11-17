@@ -390,9 +390,6 @@ class MVGridDing0(GridDing0):
         for station in trafo_geodata[1]:
             street_graph_trafos.nodes[int(station)]['load'] = trafo_geodata[1][station]
 
-
-        street_graph_trafos
-
         # Connect the HV/MV Station to the graph
         street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf, street_graph_trafos,
                                                                       radius_inc=1e-6)
@@ -416,31 +413,31 @@ class MVGridDing0(GridDing0):
         #reduced_graph2 = remove_stubs(reduced_graph)  # Removes stubs (Smaller Trafos that aren'nt included in the ring)
         #print("Number of transformers after removing stubs is ", len([att for node, att in reduced_graph2.nodes(data=True) if att['trafo'] == True]))
 
-        #Prepare data for routing
+        #Prepare data for routing.
         specs = convert_graph_to_specs(self,street_graph_station)
 
-        #Convert/Insert data to Ding0Objects
+
+        #Extract station data
         mv_station_tuple = [(x,data) for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True][0] #(node_nmbr, Dict containing information from mv_station)
         lv_station_tuple = [(x,data) for x, data in street_graph_station.nodes(data=True) if data['trafo'] == True
                             and data['mv_station'] == False] #List of (node_nmbr,dict) with lv_station data
 
-        #Create LVStations
-        test = lv_station_tuple[0][0]
-        test_lv_station = LVStationDing0(geo_data=Point, id_db=test['osmid'], grid=self, peak_load=test['load'],
-                                         network=self.network,v_level_operation=self.v_level) #self.v_level correct?
-
+        #Create a mapping to replace station nodes with Ding0 Objects
         mapping = {}
         mapping[mv_station_tuple[0]] = self._station
+
+        #Create LVStations
         for tuple in lv_station_tuple:
             mapping[tuple[0]] = LVStationDing0(geo_data=Point(tuple[1]['x'], tuple[1]['y']), id_db=tuple[1]['osmid'],
                                                grid=self, peak_load=tuple[1]['load'], network=self.network,
-                                               v_level_operation=self.v_level)
+                                               v_level_operation=self.v_level) #V_LEVEL CORRECT?
 
-        G = nx.relabel_nodes(street_graph_station, mapping)
+        street_graph_station = nx.relabel_nodes(street_graph_station, mapping)
+        print('MV and LVStations added to graph')
 
         # do the routing
         #self._graph = reduced_graph2
-        self._graph = mv_routing.solve(graph=street_graph_station,
+        self._graph = mv_routing.solve(graph=self._graph,
                                        debug=debug,
                                        anim=anim,
                                        specs = specs,

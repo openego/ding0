@@ -25,6 +25,7 @@ from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.core.network import RingDing0, BranchDing0, CircuitBreakerDing0
 from ding0.core.network.cable_distributors import MVCableDistributorDing0
 import logging
+import networkx as nx
 
 
 logger = logging.getLogger('ding0')
@@ -98,7 +99,7 @@ def ding0_graph_to_routing_specs(graph):
 
     return specs
 
-def routing_solution_to_ding0_graph(graph, solution, grid, urban = False):
+def routing_solution_to_ding0_graph(graph, solution):
     """ Insert `solution` from routing into `graph`
 
     Parameters
@@ -110,7 +111,7 @@ def routing_solution_to_ding0_graph(graph, solution, grid, urban = False):
 
     Returns
     -------
-    :networkx:`NetworkX Graph Obj< >` 
+    :networkx:`NetworkX Graph Obj< >`
         NetworkX graph object with nodes and edges
     """
     # TODO: Bisherige Herangehensweise (diese Funktion): Branches werden nach Routing erstellt um die Funktionsfähigkeit
@@ -118,12 +119,6 @@ def routing_solution_to_ding0_graph(graph, solution, grid, urban = False):
 
     # build node dict (name: obj) from graph nodes to map node names on node objects
     node_list = {str(n): n for n in graph.nodes()}
-
-    if urban == True:
-        import shapely
-        graph.nodes(data=True)
-        node_list = {str(n[0]): n for n in graph.nodes(data=True)}
-        A = shapely.geometry.Point(node_list['760'][1]['x'], node_list['760'][1]['y'])
 
     # add edges from solution to graph
     try:
@@ -239,7 +234,7 @@ def routing_solution_to_ding0_graph(graph, solution, grid, urban = False):
     return graph
 
 
-def solve(graph, specs, grid, urban, debug=False, anim=None):
+def solve_urban(graph, specs, grid, urban, debug=False, anim=None):
     # TODO: check docstring
     """ Do MV routing for given nodes in `graph`.
     
@@ -301,4 +296,70 @@ def solve(graph, specs, grid, urban, debug=False, anim=None):
         logger.debug('Elapsed time (seconds): {}'.format(time.time() - start))
         #local_search_solution.draw_network()
 
-    return routing_solution_to_ding0_graph(graph, local_search_solution, grid, urban)
+    return routing_solution_to_ding0_graph(graph, local_search_solution)
+
+
+def solve(graph,debug=False, anim=None):
+    # TODO: check docstring
+    """ Do MV routing for given nodes in `graph`.
+
+    Translate data from node objects to appropriate format before.
+
+    Parameters
+    ----------
+    graph: :networkx:`NetworkX Graph Obj< >`
+        NetworkX graph object with nodes
+    debug: bool, defaults to False
+        If True, information is printed while routing
+    anim: AnimationDing0
+        AnimationDing0 object
+
+    Returns
+    -------
+    :networkx:`NetworkX Graph Obj< >`
+        NetworkX graph object with nodes and edges
+
+    See Also
+    --------
+    ding0.tools.animation.AnimationDing0 : for a more detailed description on anim parameter.
+    """
+
+    # TODO: Implement debug mode (pass to solver) to get more information while routing (print routes, draw network, ..)
+    specs = ding0_graph_to_routing_specs(graph)
+
+    # create routing graph using specs
+    RoutingGraph = Graph(specs)
+
+    timeout = 30000
+
+    # create solver objects
+    savings_solver = savings.ClarkeWrightSolver()
+    local_search_solver = local_search.LocalSearchSolver()
+
+    start = time.time()
+
+    # create initial solution using Clarke and Wright Savings methods
+    savings_solution = savings_solver.solve(RoutingGraph, timeout, debug, anim)
+
+    # OLD, MAY BE USED LATER - Guido, please don't declare a variable later=now() :) :
+    # if not savings_solution.is_complete():
+    #    print('=== Solution is not a complete solution! ===')
+
+    if debug:
+        logger.debug('ClarkeWrightSolver solution:')
+        util.print_solution(savings_solution)
+        logger.debug('Elapsed time (seconds): {}'.format(time.time() - start))
+        # savings_solution.draw_network()
+
+    # improve initial solution using local search
+    local_search_solution = local_search_solver.solve(RoutingGraph, savings_solution, timeout, debug, anim)
+    # this line is for debug plotting purposes:
+    # local_search_solution = savings_solution
+
+    if debug:
+        logger.debug('Local Search solution:')
+        util.print_solution(local_search_solution)
+        logger.debug('Elapsed time (seconds): {}'.format(time.time() - start))
+        # local_search_solution.draw_network()
+
+    return routing_solution_to_ding0_graph(graph, local_search_solution)
