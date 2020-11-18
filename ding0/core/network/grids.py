@@ -428,16 +428,17 @@ class MVGridDing0(GridDing0):
                                                grid=self, peak_load=tuple[1]['load'], network=self.network,
                                                v_level_operation=self.v_level) #TODO: Add LVLoadArea, V_LEVEL CORRECT?
 
-        street_graph_station = nx.relabel_nodes(street_graph_station, mapping)
-        street_graph_stations = street_graph_station.subgraph(mapping.values()) #Create a graph with only mv stations
+
+        street_graph_stations_full = nx.relabel_nodes(street_graph_station, mapping)
+        street_graph_stations_only = street_graph_stations_full.subgraph(mapping.values()) #Create a graph with only mv stations
         print('MV and LVStations added to graph')
 
         #Prepare data for routing.
-        specs = convert_graph_to_specs(self,street_graph_station)
+        specs = convert_graph_to_specs(self,street_graph_stations_only, street_graph_stations_full, mapping )
 
         # do the routing
         #self._graph = reduced_graph2
-        self._graph = mv_routing.solve_urban(graph=street_graph_stations,
+        self._graph = mv_routing.solve_urban(graph=street_graph_stations_full,
                                        debug=debug,
                                        anim=anim,specs = specs)
 

@@ -1144,8 +1144,14 @@ def append_trafos(place,trafo_geodata):
 
     return street_graph_trafos,trafo_conn_gdf
 
-def convert_graph_to_specs(MVGridDing0,nx_graph):
-
+def convert_graph_to_specs(MVGridDing0, nx_graph, nx_graph_full, mapping):
+    """
+    Takes street_graph_stations_only and full graph to create specs
+    :param MVGridDing0:
+    :param nx_graph:
+    :param nx_graph_full:
+    :return:
+    """
     self = MVGridDing0
     street_graph_station = nx_graph
     specs = {}
@@ -1157,29 +1163,34 @@ def convert_graph_to_specs(MVGridDing0,nx_graph):
     stations = [(str(x), data) for x, data in street_graph_station.nodes(data=True) if data['trafo'] == True]
     mv_stations = [(str(x), data) for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True]
 
-    specs['DEPOT'] = [str(x) for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True][0]
+    specs['DEPOT'] = [x for x, data in street_graph_station.nodes(data=True) if data['mv_station'] == True][0]
     specs['BRANCH_KIND'] = self.default_branch_kind
     specs['BRANCH_TYPE'] = self.default_branch_type
     specs['V_LEVEL'] = self.v_level
     self._station.geo_data = Point(mv_stations[0][1]['x'], mv_stations[0][1]['y'])
 
-    specs['NODE_COORD_SECTION'] = {mv_stations[0][0]: (mv_stations[0][1]['x'], mv_stations[0][1]['y'])}
-    for i in range(0, len(stations)):
-        specs['NODE_COORD_SECTION'][stations[i][0]] = (stations[i][1]['x'], stations[i][1]['y'])
+    specs['NODE_COORD_SECTION'] = {}
+    for station in list(street_graph_station.nodes(data=True)):
+        specs['NODE_COORD_SECTION'][station[0]] = (station[1]['x'], station[1]['y'])
 
-    specs['DEMAND'] = {mv_stations[0][0]: 0}
-    for i in range(0, len(stations)):
-        specs['DEMAND'][stations[i][0]] = stations[i][1]['load']
+    specs['DEMAND'] = {}
+    for station in list(street_graph_station.nodes(data=True)):
+        specs['DEMAND'][station[0]] = station[1]['load']
 
     specs['IS_AGGREGATED'] = {}
-    for i in range(0, len(stations)):
-        specs['IS_AGGREGATED'][stations[i][0]] = False
+    for station in list(street_graph_station.nodes(data=True)):
+        specs['IS_AGGREGATED'][station[0]] = False
 
-    specs['MATRIX'] = {mv_stations[0][0]: {mv_stations[0][0]: 0}}
+    specs['MATRIX'] = {}
+    for i in list(street_graph_station.nodes):
+        specs['MATRIX'][i] = {j: nx.shortest_paths.generic.shortest_path_length(
+            nx_graph_full, i, j, weight='lenght')
+            for j in list(street_graph_station.nodes)}
 
+    """
     specs['MATRIX'][mv_stations[0][0]] = {stations[i][0]: nx.shortest_paths.generic.shortest_path_length
-    (street_graph_station, int(mv_stations[0][0]), int(stations[i][0]), weight='lenght')
-                                          for i in range(0, len(stations))}
+    (nx_graph_full, mv_stations[0][0], stations[i][0], weight='lenght')
+                                          for i in list(street_graph_station.nodes)}
 
     specs['MATRIX'][mv_stations[0][0]].update({mv_stations[0][0]: 0})
 
@@ -1189,7 +1200,9 @@ def convert_graph_to_specs(MVGridDing0,nx_graph):
             street_graph_station, int(source), int(stations[j][0]), weight='lenght')
             for j in range(0, len(stations))}
         print(source, " is in specs")
+    """
 
+    print("specs was created")
     return specs
 
 ##############Trash
