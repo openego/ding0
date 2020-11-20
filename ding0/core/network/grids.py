@@ -438,9 +438,9 @@ class MVGridDing0(GridDing0):
 
         # do the routing
         #self._graph = reduced_graph2
-        self._graph = mv_routing.solve_urban(graph=street_graph_stations_full,
+        self._graph = mv_routing.solve_urban(graph=street_graph_stations_only,
                                        debug=debug,
-                                       anim=anim,specs = specs)
+                                       anim=anim, specs = specs) #TODO:Integrate full networkx graph
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
