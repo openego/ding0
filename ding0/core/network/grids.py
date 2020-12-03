@@ -457,35 +457,12 @@ class MVGridDing0(GridDing0):
                                         specs = specs,
                                         city_graph = street_graph_stations_full) #TODO: return graph: Display correct lenght between cable distributors and stations
 
-        list_of_branches = [dict['branch'] for dict in [tuple[2] for tuple in list(self._graph.edges(data=True))]]
-        edges_in_mvgrid = []
+        #Filter
+        ring_network_geodata = filter_edges_in_rings(self,street_graph_stations_full)
 
-        for branch in list_of_branches:
-            edges_in_mvgrid.append(branch.node_path)
-
-        flatten(edges_in_mvgrid)
-
-        list(flatten(edges_in_mvgrid))
-
-        filtered = street_graph_stations_full.subgraph(edges_in_mvgrid)
-
-        plot_graph(filtered)
+        plot_graph(ring_network_geodata)
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
-
-        # connect satellites (step 1, with restrictions like max. string length, max peak load per string)
-        self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
-                                                       graph=self._graph,
-                                                       mode='normal',
-                                                       debug=debug)
-        logger.info('==> MV Sat1 for {} done'.format(repr(self)))
-
-        # connect satellites to closest line/station on a MV ring that have not been connected in step 1
-        self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
-                                                       graph=self._graph,
-                                                       mode='isolated',
-                                                       debug=debug)
-        logger.info('==> MV Sat2 for {} done'.format(repr(self)))
 
         # connect stations
         self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
