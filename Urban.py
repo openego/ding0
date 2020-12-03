@@ -1216,6 +1216,20 @@ def flatten(list):
         for j in i:
             yield j
 
+def filter_edges_in_rings(self,street_graph_stations_full):
+    """
+    Takes a MVGridDisctrict and a street
+    """
+    list_of_branches = [dict['branch'] for dict in [tuple[2] for tuple in list(self._graph.edges(data=True))]]
+    edges_in_mvgrid = []
+
+    for branch in list_of_branches:
+        edges_in_mvgrid.append(branch.node_path)
+
+    filtered = street_graph_stations_full.subgraph(list(flatten(edges_in_mvgrid)))
+
+    return filtered
+
 ##############Trash
 # build SQL query
 """
