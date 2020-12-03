@@ -905,14 +905,14 @@ def plot_gdf(gdf, trafos = True, color ='lightsalmon', ax=None):
         ax2 = df2.plot(ax=ax, color='darkblue')
     return ax
 
-def plot_graph(nx_graph,color ='lightsalmon', edgecolor = 'k', ax=None):
+def plot_graph(nx_graph, color ='lightsalmon', edgecolor = 'k', ax=None):
     crossings, streets = ox.graph_to_gdfs(nx_graph)
     df = streets.append(crossings)
     df2 = df.to_crs(epsg=3857)
     df2['trafo'] = df2['trafo'].fillna(False)
     df2['trafo'] = df2['trafo'].astype(int)
     ax = df2.plot(column='trafo', edgecolor='silver',
-                  cmap='Set1_r')
+                  cmap='tab10_r')
     ctx.add_basemap(ax)
     return ax
 
