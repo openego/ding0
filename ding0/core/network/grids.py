@@ -428,19 +428,31 @@ class MVGridDing0(GridDing0):
                                                grid=self, peak_load=tuple[1]['load'], network=self.network,
                                                v_level_operation=self.v_level) #TODO: Add LVLoadArea, V_LEVEL CORRECT?
 
+        #Add lv_load_area to newly created LVStations
+        #TODO: Point in Polygon abfrage. lv_station.lv_load_area zuweisen
+        mvgd_lv_load_areas = self.grid_district._lv_load_areas #List of LVLoadAreas contained in MVGridDisctrict
+
+        for station in list(mapping.values()):
+            if type(station) == LVStationDing0:
+                # Go through every LVLoadAreaDing0 in List and check if contains stations location
+                station.lv_load_area = [x for x in mvgd_lv_load_areas if x.geo_area.contains(station.geo_data)][0]
+
 
         street_graph_stations_full = nx.relabel_nodes(street_graph_station, mapping)
         street_graph_stations_only = street_graph_stations_full.subgraph(mapping.values()) #Create a graph with only mv stations
         print('MV and LVStations added to graph')
 
         #Prepare data for routing.
-        specs = convert_graph_to_specs(self,street_graph_stations_only, street_graph_stations_full, mapping )
+        specs = convert_graph_to_specs(self,street_graph_stations_only, street_graph_stations_full, mapping)
+
+
+
 
         # do the routing
         #self._graph = reduced_graph2
         self._graph = mv_routing.solve_urban(graph=street_graph_stations_only,
                                        debug=debug,
-                                       anim=anim, specs = specs) #TODO:Integrate full networkx graph
+                                       anim=anim, specs = specs) #TODO: return graph: Display correct lenght between cable distributors and stations
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
