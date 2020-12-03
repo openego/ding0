@@ -426,11 +426,11 @@ class MVGridDing0(GridDing0):
         for tuple in lv_station_tuple:
             mapping[tuple[0]] = LVStationDing0(geo_data=Point(tuple[1]['x'], tuple[1]['y']), id_db=tuple[1]['osmid'],
                                                grid=self, peak_load=tuple[1]['load'], network=self.network,
-                                               v_level_operation=self.v_level) #TODO: Add LVLoadArea, V_LEVEL CORRECT?
+                                               v_level_operation=self.v_level)
 
         #Add lv_load_area to newly created LVStations
-        #TODO: Point in Polygon abfrage. lv_station.lv_load_area zuweisen
         mvgd_lv_load_areas = self.grid_district._lv_load_areas #List of LVLoadAreas contained in MVGridDisctrict
+        #TODO:Maybe Plot(?)
 
         for station in list(mapping.values()):
             if type(station) == LVStationDing0:
@@ -445,14 +445,31 @@ class MVGridDing0(GridDing0):
         #Prepare data for routing.
         specs = convert_graph_to_specs(self,street_graph_stations_only, street_graph_stations_full, mapping)
 
-
-
+        #Check if graph is frozen. Itc create a unfreezed copy
+        if nx.is_frozen(street_graph_stations_only):
+            street_graph_stations_only = nx.Graph(street_graph_stations_only)
 
         # do the routing
         #self._graph = reduced_graph2
         self._graph = mv_routing.solve_urban(graph=street_graph_stations_only,
-                                       debug=debug,
-                                       anim=anim, specs = specs) #TODO: return graph: Display correct lenght between cable distributors and stations
+                                        debug=debug,
+                                        anim=anim,
+                                        specs = specs,
+                                        city_graph = street_graph_stations_full) #TODO: return graph: Display correct lenght between cable distributors and stations
+
+        list_of_branches = [dict['branch'] for dict in [tuple[2] for tuple in list(self._graph.edges(data=True))]]
+        edges_in_mvgrid = []
+
+        for branch in list_of_branches:
+            edges_in_mvgrid.append(branch.node_path)
+
+        flatten(edges_in_mvgrid)
+
+        list(flatten(edges_in_mvgrid))
+
+        filtered = street_graph_stations_full.subgraph(edges_in_mvgrid)
+
+        plot_graph(filtered)
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 

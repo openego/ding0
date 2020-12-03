@@ -1187,6 +1187,11 @@ def convert_graph_to_specs(MVGridDing0, nx_graph, nx_graph_full, mapping):
             nx_graph_full, i, j, weight='lenght')
             for j in list(street_graph_station.nodes)}
 
+    specs['PATHS'] = {}
+    for i in list(street_graph_station.nodes):
+        specs['PATHS'][str(i)] = {str(j): nx.dijkstra_path(
+            nx_graph_full, i, j, weight='lenght')
+            for j in list(street_graph_station.nodes)}
     """
     specs['MATRIX'][mv_stations[0][0]] = {stations[i][0]: nx.shortest_paths.generic.shortest_path_length
     (nx_graph_full, mv_stations[0][0], stations[i][0], weight='lenght')
@@ -1204,6 +1209,12 @@ def convert_graph_to_specs(MVGridDing0, nx_graph, nx_graph_full, mapping):
 
     print("specs was created")
     return specs
+
+
+def flatten(list):
+    for i in list:
+        for j in i:
+            yield j
 
 ##############Trash
 # build SQL query

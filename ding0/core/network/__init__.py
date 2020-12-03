@@ -767,6 +767,7 @@ class BranchDing0:
         self.type = kwargs.get('type', None)  # DataFrame with attributes of line/cable
         self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.circuit_breaker = kwargs.get('circuit_breaker', None)
+        self.node_path = None
 
         self.critical = False
 
