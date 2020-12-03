@@ -912,7 +912,7 @@ def plot_graph(nx_graph,color ='lightsalmon', edgecolor = 'k', ax=None):
     df2['trafo'] = df2['trafo'].fillna(False)
     df2['trafo'] = df2['trafo'].astype(int)
     ax = df2.plot(column='trafo', edgecolor='silver',
-                  cmap='Accent')
+                  cmap='Set1_r')
     ctx.add_basemap(ax)
     return ax
 
