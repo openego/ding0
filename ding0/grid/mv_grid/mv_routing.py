@@ -26,6 +26,7 @@ from ding0.core.network import RingDing0, BranchDing0, CircuitBreakerDing0
 from ding0.core.network.cable_distributors import MVCableDistributorDing0
 import logging
 import networkx as nx
+import shapely
 
 
 logger = logging.getLogger('ding0')
@@ -233,7 +234,7 @@ def routing_solution_to_ding0_graph(graph, solution):
 
     return graph
 
-def routing_solution_to_ding0_graph_urban(graph, solution):
+def routing_solution_to_ding0_graph_urban(graph, solution, specs):
     """ Insert `solution` from routing into `graph`
 
     Parameters
@@ -269,7 +270,9 @@ def routing_solution_to_ding0_graph_urban(graph, solution):
 
                     # create new cable dist
                     cable_dist = MVCableDistributorDing0(geo_data=node_list[r._nodes[0]._name].geo_data,
-                                                         grid=depot_node.grid)
+                                                         grid=depot_node.grid) #Geodata
+
+
                     depot_node.grid.add_cable_distributor(cable_dist)
 
                     # create new node (as dummy) an allocate to route r
@@ -289,10 +292,6 @@ def routing_solution_to_ding0_graph_urban(graph, solution):
             edges.append((depot, r._nodes[0]))
             edges.append((r._nodes[-1], depot))
 
-            # create MV Branch object for every edge in `edges`
-            mv_branches = [BranchDing0() for _ in edges]
-            edges_with_branches = list(zip(edges, mv_branches))
-
             # recalculate circuit breaker positions for final solution, create it and set associated branch.
             # if circ. breaker position is not set manually (routes with more than one load area, see above)
             if not circ_breaker_pos:
@@ -300,6 +299,10 @@ def routing_solution_to_ding0_graph_urban(graph, solution):
 
             node1 = node_list[edges[circ_breaker_pos - 1][0].name()]
             node2 = node_list[edges[circ_breaker_pos - 1][1].name()]
+
+            # create MV Branch object for every edge in `edges`
+            mv_branches = [BranchDing0() for _ in edges]
+            edges_with_branches = list(zip(edges, mv_branches))
 
             # ALTERNATIVE TO METHOD ABOVE: DO NOT CREATE 2 BRANCHES (NO RING) -> LA IS CONNECTED AS SATELLITE
             # IF THIS IS COMMENTED-IN, THE IF-BLOCK IN LINE 87 HAS TO BE COMMENTED-OUT
@@ -335,11 +338,33 @@ def routing_solution_to_ding0_graph_urban(graph, solution):
                 # set branch's ring attribute
                 b.ring = ring
                 # set LVLA's ring attribute
-                if isinstance(node1, LVLoadAreaCentreDing0):
+                if isinstance(node1, LVLoadAreaCentreDing0): #What is this ring attreibute
                     node1.lv_load_area.ring = ring
 
-                # set branch length
-                b.length = calc_geo_dist_vincenty(node1, node2)
+                # set branch length (0 bei Rings with 1 station)
+
+                # Cable Dists location
+                cable_dist_loc = node_list[r._nodes[0]._name]  # MV/LVStationDing0 where the CableDistr. is located
+
+                #Calculate distance between CableDistr. and stations.
+                if isinstance(node1, MVCableDistributorDing0):
+                    b.length = specs['MATRIX'][str(cable_dist_loc)][str(node2)]
+
+                elif isinstance(node2, MVCableDistributorDing0):
+                    b.length = specs['MATRIX'][str(cable_dist_loc)][str(node1)]
+
+                else:
+                    b.length = specs['MATRIX'][str(node1)][str(node2)]
+
+                #Save geodata for future ploting
+                if isinstance(node1, MVCableDistributorDing0):
+                    b.node_path = specs['PATHS'][str(cable_dist_loc)][str(node2)]
+
+                elif isinstance(node2, MVCableDistributorDing0):
+                    b.node_path = specs['PATHS'][str(cable_dist_loc)][str(node1)]
+
+                else:
+                    b.node_path = specs['PATHS'][str(node1)][str(node2)]
 
                 # set branch kind and type
                 # 1) default
@@ -365,12 +390,16 @@ def routing_solution_to_ding0_graph_urban(graph, solution):
         logger.exception(
             'unexpected error while converting routing solution to DING0 graph (NetworkX).')
 
+    #Func
+
     return graph
 
-def solve_urban(graph, specs, debug=False, anim=None):
-    # TODO: check docstring
+def solve_urban(graph, specs, city_graph, debug=False, anim=None):
+
     """ Do MV routing for given nodes in `graph`.
-    
+    use city_graph as reference to create routes that pass along streets
+
+
     Translate data from node objects to appropriate format before.
 
     Parameters
@@ -402,7 +431,7 @@ def solve_urban(graph, specs, debug=False, anim=None):
     timeout = 30000
 
     # create solver objects
-    savings_solver = savings.ClarkeWrightSolver()
+    savings_solver = savings.ClarkeWrightSolver() #TODO:Fix try except
     local_search_solver = local_search.LocalSearchSolver()
 
     start = time.time()
@@ -431,8 +460,13 @@ def solve_urban(graph, specs, debug=False, anim=None):
         logger.debug('Elapsed time (seconds): {}'.format(time.time() - start))
         #local_search_solution.draw_network()
 
-    return routing_solution_to_ding0_graph_urban(graph, local_search_solution)
+    graph_routes = routing_solution_to_ding0_graph_urban(graph, local_search_solution, specs)
 
+
+    #Route graph_routes withing city_graph
+
+
+    return graph_routes
 
 def solve(graph,debug=False, anim=None):
     # TODO: check docstring
