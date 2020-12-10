@@ -962,13 +962,17 @@ def remove_area_outliers(gdf):
     gdf_outl = gdf[gdf['area'] > q]
     return gdf, gdf_outl
 
-def plot_area_distr(gdf, ctx_plot=False): #ctx. Map with contextility (slow)
+def plot_area_distr(gdf, ctx_plot=False, full = True): #ctx. Map with contextility (slow)
     fig, axs  = plt.subplots(2, 2)
     axs[0,0].set_xlim(gdf['area'].min(axis=0),gdf['area'].max(axis=0))
     axs[0,0].set_title('Area [m²]')
     axs[0,1].set_xlim(gdf['load'].min(axis=0), gdf['load'].max(axis=0))
     axs[0,1].set_title('Load [kW]')
-    fig.suptitle('Area and load distributions')
+    if full == True:
+        fig.suptitle('Area and load distributions (Full Dataset)')
+    else:
+        fig.suptitle('Area and load distributions (Removed Outliers)')
+
     axs[0,0].hist(gdf['area'],bins=10)
     axs[0,1].hist(gdf['load'],bins=10)
     sns.boxplot(gdf['area'], ax=axs[1, 0])
@@ -1087,15 +1091,16 @@ def clean_data(gdf, local_lu):
     gdf_sector_table['area'] = gdf_sector_table.apply(lambda x: x.geometry.area, axis=1)
     gdf_sector_table['load'] = gdf_sector_table.apply(lambda x: calculate_load_per_building(x['sector'], x['area']),
                                                       axis=1) / 1000  # Umstelle auf kW
+    print("Average load per building")
 
     return gdf_sector_table
 
 #Load and area distributions. Search for outliers
 def load_area_stats(gdf_sector_table):
 
-    plot_area_distr(gdf_sector_table,ctx_plot=False)
+    plot_area_distr(gdf_sector_table,ctx_plot=False, full=True)
     gdf_sector_table, gdf_outl = remove_area_outliers(gdf_sector_table)
-    plot_area_distr(gdf_sector_table)
+    plot_area_distr(gdf_sector_table, full=False)
 
 #Filter the correct hv_mv station out
 def filter_hv_mv_station(place,hv_mv_berlin):
