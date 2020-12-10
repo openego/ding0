@@ -691,7 +691,7 @@ def peak_load_per_trafo(building_loads,k):
             trafo_loads = building_loads[trafo]
             trafo_leistung[str(i)] = trafo_loads['load'].sum(axis=0)
 
-            print('Transformer '+str(i)+ ' has ' + '{:.2e}'.format(trafo_leistung[str(i)]) + 'kVA of power')
+            print('Transformer '+str(i)+ ' has ' + '{0:.3f}'.format(trafo_leistung[str(i)]) + ' kVA of power')
 
         except:
             trafo = building_loads['trafo'] == i
@@ -912,7 +912,7 @@ def plot_graph(nx_graph, color ='lightsalmon', edgecolor = 'k', ax=None):
     df2['trafo'] = df2['trafo'].fillna(False)
     df2['trafo'] = df2['trafo'].astype(int)
     ax = df2.plot(column='trafo', edgecolor='silver',
-                  cmap='tab10_r')
+                  cmap='RdYlBu_r')
     ctx.add_basemap(ax)
     return ax
 
