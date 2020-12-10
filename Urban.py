@@ -967,7 +967,7 @@ def plot_area_distr(gdf, ctx_plot=False, full = True): #ctx. Map with contextili
     axs[0,0].set_xlim(gdf['area'].min(axis=0),gdf['area'].max(axis=0))
     axs[0,0].set_title('Area [m²]')
     axs[0,1].set_xlim(gdf['load'].min(axis=0), gdf['load'].max(axis=0))
-    axs[0,1].set_title('Load [kW]')
+    axs[0,1].set_title('Load [Watt]')
     if full == True:
         fig.suptitle('Area and load distributions (Full Dataset)')
     else:
@@ -1091,7 +1091,9 @@ def clean_data(gdf, local_lu):
     gdf_sector_table['area'] = gdf_sector_table.apply(lambda x: x.geometry.area, axis=1)
     gdf_sector_table['load'] = gdf_sector_table.apply(lambda x: calculate_load_per_building(x['sector'], x['area']),
                                                       axis=1) / 1000  # Umstelle auf kW
-    print("Average load per building")
+
+    print("Average area per building: ", gdf_sector_table['area'].mean())
+    print("Average load per building: ", gdf_sector_table['load'].mean())
 
     return gdf_sector_table
 
