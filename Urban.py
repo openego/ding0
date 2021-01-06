@@ -371,10 +371,8 @@ def calculate_load_per_building(sector,area):
 
     """
 
-    #fixme: Last zu hoch
-
     if sector == 1:
-      return 120 * area # 120W/m² x Area
+      return 120 * area # 120kW/m² x Area
     elif sector == 2:
         return 125 * area
     elif sector == 3:
@@ -488,7 +486,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
         street_graph.add_node(i, **{'y': trafo_conn.y, 'x': trafo_conn.x, 'osmid': i,
                                         'street_type': trafo_conn_street_type, 'trafo':True, 'mv_station':False})
 
-        print("Transformer ", i, " connected to the graph")
+        print("Station ", i, " connected to the graph")
 
         # Connect nodes with trafo_conn (Directed Graph)
         if len(result) >= 2:
@@ -691,7 +689,7 @@ def peak_load_per_trafo(building_loads,k):
             trafo_loads = building_loads[trafo]
             trafo_leistung[str(i)] = trafo_loads['load'].sum(axis=0)
 
-            print('Transformer '+str(i)+ ' has ' + '{0:.3f}'.format(trafo_leistung[str(i)]) + ' kVA of power')
+            print('Station '+str(i)+ ' has ' + '{0:.3f}'.format(trafo_leistung[str(i)]) + ' kVA of power')
 
         except:
             trafo = building_loads['trafo'] == i
@@ -711,8 +709,8 @@ def find_n_trafos(gdf):
     :return: int: Number of stations for that MVGD
     """
     # ~10 Trafos
-    total_load = gdf['load'].sum(axis=0)
-    n_trafos = math.ceil(total_load/1000) #1000kVA per Trafo
+    total_load = gdf['load'].sum(axis=0) # kW
+    n_trafos = math.ceil(total_load/1000) #1000 kVA = 1MVA per Trafo-station
     return n_trafos
 
 def test_street_completeness():
@@ -911,8 +909,10 @@ def plot_graph(nx_graph, color ='lightsalmon', edgecolor = 'k', ax=None):
     df2 = df.to_crs(epsg=3857)
     df2['trafo'] = df2['trafo'].fillna(False)
     df2['trafo'] = df2['trafo'].astype(int)
+    df3 = df2[df2['mv_station'] == True]
     ax = df2.plot(column='trafo', edgecolor='silver',
-                  cmap='RdYlBu_r')
+                  cmap='RdYlBu_r', zorder=1)
+    df3.plot(column='mv_station', ax=ax, color="g", edgecolor='white', zorder=2)
     ctx.add_basemap(ax)
     return ax
 
@@ -963,11 +963,12 @@ def remove_area_outliers(gdf):
     return gdf, gdf_outl
 
 def plot_area_distr(gdf, ctx_plot=False, full = True): #ctx. Map with contextility (slow)
+    plt.rc('grid', linestyle="dotted", color='black')
     fig, axs  = plt.subplots(2, 2)
     axs[0,0].set_xlim(gdf['area'].min(axis=0),gdf['area'].max(axis=0))
     axs[0,0].set_title('Area [m²]')
     axs[0,1].set_xlim(gdf['load'].min(axis=0), gdf['load'].max(axis=0))
-    axs[0,1].set_title('Load [Watt]')
+    axs[0,1].set_title('Peak load [kW]')
     if full == True:
         fig.suptitle('Area and load distributions (Full Dataset)')
     else:
@@ -975,11 +976,16 @@ def plot_area_distr(gdf, ctx_plot=False, full = True): #ctx. Map with contextili
 
     axs[0,0].hist(gdf['area'],bins=10)
     axs[0,1].hist(gdf['load'],bins=10)
+    axs[0,0].grid()
+    axs[0,1].grid()
+    axs[1,0].grid()
+    axs[1,1].grid()
     sns.boxplot(gdf['area'], ax=axs[1, 0])
     sns.boxplot(gdf['load'], ax=axs[1, 1])
     if ctx_plot == True:
         df2 = gdf.to_crs(epsg=3857)
         ax = df2.plot(gdf['area'],legend=True)
+        ax.set_title('Peak load [W] with respect to building area')
         ctx.add_basemap(ax)
 
 def averages(berlin_mvgds,local_lu):
@@ -1090,17 +1096,17 @@ def clean_data(gdf, local_lu):
     gdf_sector_table['centroids'] = gdf_sector_table.apply(lambda x: x.geometry.centroid, axis=1)
     gdf_sector_table['area'] = gdf_sector_table.apply(lambda x: x.geometry.area, axis=1)
     gdf_sector_table['load'] = gdf_sector_table.apply(lambda x: calculate_load_per_building(x['sector'], x['area']),
-                                                      axis=1) / 1000  # Umstelle auf kW
+                                                      axis=1)/ 1000  # kWatt
 
-    print("Average area per building: ", gdf_sector_table['area'].mean())
-    print("Average load per building: ", gdf_sector_table['load'].mean())
+    print("Average area per building: ", gdf_sector_table['area'].mean(), " m².")
+    print("Average load per building: ", gdf_sector_table['load'].mean(), " kW ")
 
     return gdf_sector_table
 
 #Load and area distributions. Search for outliers
 def load_area_stats(gdf_sector_table):
 
-    plot_area_distr(gdf_sector_table,ctx_plot=False, full=True)
+    plot_area_distr(gdf_sector_table,ctx_plot=True, full=True)
     gdf_sector_table, gdf_outl = remove_area_outliers(gdf_sector_table)
     plot_area_distr(gdf_sector_table, full=False)
 
