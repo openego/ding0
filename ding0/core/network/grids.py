@@ -536,7 +536,7 @@ class MVGridDing0(GridDing0):
         #Filter routed edges from full graph for plotting
         ring_network_geodata = filter_edges_in_rings(self,street_graph_stations_full)
 
-        #plot_graph(ring_network_geodata)
+        plot_graph(ring_network_geodata)
 
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
