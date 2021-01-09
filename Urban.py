@@ -1254,6 +1254,17 @@ def plot_station_power_dist(dict_stations_power):
     plt.grid(True, linestyle='--')
     plt.show()
 
+def plot_distance_trafos(trafo_conn_gdf):
+    trafo_conn_gdf.to_crs(epsg=3857, inplace=True)
+    dist = []
+    for trafo in trafo_conn_gdf.geometry.iteritems():
+        dist.append(list(trafo_conn_gdf.distance(trafo[1])))
+    dist = list(flatten(dist))
+    plt.title('Distance distribution between transformer stations')
+    plt.xlabel('Distance [m]')
+    plt.ylabel('Frecuency')
+    plt.grid(True, linestyle='--')
+    plt.show()
 
 ##############Trash
 # build SQL query

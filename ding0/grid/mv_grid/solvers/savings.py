@@ -173,12 +173,12 @@ class ClarkeWrightSolver(BaseSolver):
         A saving list is a matrix containing the saving amount S between i and j
 
         S is calculated by S = d(0,i) + d(0,j) - d(i,j) (CLARKE; WRIGHT, 1964)
-        
+
         Parameters
         ----------
         graph: :networkx:`NetworkX Graph Obj< >`
             A NetworkX graaph is used.
-        
+
         Returns
         -------
         :obj:`list` of `Node`
@@ -209,7 +209,7 @@ class ClarkeWrightSolver(BaseSolver):
         Parameters
         ----------
         graph: :networkx:`NetworkX Graph Obj< >`
-            A NetworkX graaph is used.
+            A NetworkX graph is used.
         timeout: :obj:`int`
             max processing time in seconds
         debug: bool, defaults to False
@@ -228,20 +228,23 @@ class ClarkeWrightSolver(BaseSolver):
 
         start = time.time()
 
-        for i, j in savings_list[:]:
-            if solution.is_complete():
-                break
+        try:
+            for i, j in savings_list[:]:
+                if solution.is_complete():
+                    break
 
-            if solution.can_process((i, j)):
-                solution, inserted = solution.process((i, j))
+                if solution.can_process((i, j)):
+                    solution, inserted = solution.process((i, j))
 
-                if inserted:
-                    savings_list.remove((i, j))
+                    if inserted:
+                        savings_list.remove((i, j))
 
-                    if anim:
-                        solution.draw_network(anim)
+                        if anim:
+                            solution.draw_network(anim)
 
-            if time.time() - start > timeout:
-                break
+                if time.time() - start > timeout:
+                    break
+        except:
+            return solution
 
         return solution

@@ -387,12 +387,16 @@ class MVGridDing0(GridDing0):
         trafo_geodata = trafo_pos_and_load(gdf_sector_table) #Tuple with position, load of trafos and a gdf with building-trafo relations
         gdf_buildings_trafos = trafo_geodata[2] #Used later for creating the lv_grid_disctrict boundaries
 
+        #plot_station_power_dist(trafo_geodata[1]) #fixme
+
         #Combine the street graph of the area and the transformers from trafo_geodata
         street_graph_trafos, trafo_conn_gdf = append_trafos(self.grid_district.geo_data, trafo_geodata)
 
         for station in trafo_geodata[1]:
             street_graph_trafos.nodes[int(station)]['load'] = trafo_geodata[1][station]
 
+        #Calculate distance between trafos
+        #plot_distance_trafos(trafo_conn_gdf) #fixme
 
         # Connect the HV/MV Station to the graph
         street_graph_station, station_conn_gdf = find_stat_connection(mv_station_gdf, street_graph_trafos,
@@ -428,7 +432,7 @@ class MVGridDing0(GridDing0):
 
         mvgd_lv_load_areas = self.grid_district._lv_load_areas #List of LVLoadAreas contained in MVGridDisctrict
 
-        #Create LVGD,LVGrid and LVStation for every node. Template below.
+
         """
         # Associate lv_grid_district to load_area
         for id, row in lv_grid_districts.iterrows():
@@ -465,6 +469,7 @@ class MVGridDing0(GridDing0):
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)"""
 
+        #Create LVGD,LVGrid and LVStation for every node. Template above.
         for tuple in lv_station_tuple:
 
             #Extract relevant data from tuple
@@ -500,7 +505,7 @@ class MVGridDing0(GridDing0):
                                                id_db=id_db,
                                                peak_load=stations_load,
                                                network=self.network,
-                                               lv_grid = lv_grid,
+                                               grid = lv_grid,
                                                lv_grid_district = lv_grid_district,
                                                lv_load_area = lv_load_area,
                                                v_level_operation=lv_grid.v_level) #fixme: is this true?
@@ -508,20 +513,6 @@ class MVGridDing0(GridDing0):
             lv_grid.add_station(mapping[tuple[0]]) #Add station to lv_grid
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
-
-
-        """
-        for station in list(mapping.values()):
-            if type(station) == LVStationDing0:
-                # Go through every LVLoadAreaDing0 in List and check if contains stations location
-                station.lv_load_area = [x for x in mvgd_lv_load_areas if x.geo_area.contains(station.geo_data)][0]
-                #Set peak loads and area centres to None
-                station.lv_load_area.lv_load_area_centre = None
-                station.lv_load_area.peak_load_agricultural = None
-                station.lv_load_area.peak_load_industrial = None
-                station.lv_load_area.peak_load_residential = None
-                station.lv_load_area.peak_load_retail = None
-        """
 
         street_graph_stations_full = nx.relabel_nodes(street_graph_station, mapping)
         street_graph_stations_only = street_graph_stations_full.subgraph(mapping.values()) #Create a graph with only mv stations
@@ -542,7 +533,7 @@ class MVGridDing0(GridDing0):
                                         specs = specs,
                                         city_graph = street_graph_stations_full) #TODO: return graph: Display correct lenght between cable distributors and stations
 
-        #Filter
+        #Filter routed edges from full graph for plotting
         ring_network_geodata = filter_edges_in_rings(self,street_graph_stations_full)
 
         #plot_graph(ring_network_geodata)
