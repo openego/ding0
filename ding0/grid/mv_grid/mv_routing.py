@@ -337,8 +337,9 @@ def routing_solution_to_ding0_graph_urban(graph, solution, specs):
 
                 # set branch's ring attribute
                 b.ring = ring
+
                 # set LVLA's ring attribute
-                if isinstance(node1, LVLoadAreaCentreDing0): #What is this ring attreibute
+                if isinstance(node1,LVLoadAreaCentreDing0):
                     node1.lv_load_area.ring = ring
 
                 # set branch length (0 bei Rings with 1 station)

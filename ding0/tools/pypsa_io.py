@@ -225,7 +225,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, lv_transformer=True):
                 # Aggregated load representing load in LV grid
                 load['load_id'].append(
                     '_'.join(['MV', str(grid.id_db), 'loa', str(node.id_db)]))
-                load['bus'].append(node.pypsa_id)
+                load['bus'].append(node.pypsa_id) #Changed pypsa_id to take the id from the mv_grid_disctrit
                 load['grid_id'].append(grid.id_db)
 
                 load_pq_set['load_id'].append(

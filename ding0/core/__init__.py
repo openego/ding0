@@ -322,7 +322,7 @@ class NetworkDing0:
             plot_mv_topology(grid, subtitle='Urban routing completed', filename='urban_routing_completed.png')
 
         # STEP 6b: Build MV grids
-        self.mv_routing(debug=False)
+        #self.mv_routing(debug=False)
         if export_figures:
             grid = self._mv_grid_districts[0].mv_grid
             plot_mv_topology(grid, subtitle='Routing completed', filename='1_routing_completed.png')
