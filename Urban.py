@@ -914,6 +914,8 @@ def plot_graph(nx_graph, color ='lightsalmon', edgecolor = 'k', ax=None):
                   cmap='RdYlBu_r', zorder=1)
     df3.plot(column='mv_station', ax=ax, color="g", edgecolor='white', zorder=2)
     ctx.add_basemap(ax)
+    fig = plt.gcf()
+    fig.set_size_inches(1,1)
     return ax
 
 def plot_gdf_trafos(nx_graph, trafos_gdf, color ='lightgray', ax=None):
@@ -1128,12 +1130,13 @@ def filter_hv_mv_station(place,hv_mv_berlin):
 def trafo_pos_and_load(gdf_sector_table):
 
     n_trafos = find_n_trafos(gdf_sector_table) #Too many/Too few trafos. Why?
-    trafo_pos, building_loads = find_mv_clusters_kmeans(gdf_sector_table,plot=False,k=n_trafos) #The Pd_dt gets column Trafo
-    trafo_leistung = peak_load_per_trafo(building_loads, n_trafos)
+    trafo_pos, gdf_building_trafos = find_mv_clusters_kmeans(gdf_sector_table,plot=False,k=n_trafos) #The Pd_dt gets column Trafo
+    #gdf_building_trafos links every building with their corresponding station
+    trafo_leistung = peak_load_per_trafo(gdf_building_trafos, n_trafos)
     trafo_geodata = gpd.GeoDataFrame(geometry=trafo_pos)
     gdf_project_to(trafo_geodata,4326)
 
-    return trafo_geodata,trafo_leistung
+    return trafo_geodata,trafo_leistung,gdf_building_trafos
 
 #Append trafos to street graph
 def append_trafos(place,trafo_geodata):
@@ -1153,7 +1156,7 @@ def append_trafos(place,trafo_geodata):
     street_graph.remove_nodes_from(list(nx.isolates(street_graph))) #Remove isolated nodes (i.e. crossings of pathways)
     nx.set_node_attributes(street_graph, False, 'trafo')
     nx.set_node_attributes(street_graph, False, 'mv_station')
-    street_graph_trafos, trafo_conn_gdf= find_trafo_connection(trafo_geodata,street_graph,plot=True) #Finds positions of trafos. Returns nx and gdf
+    street_graph_trafos, trafo_conn_gdf= find_trafo_connection(trafo_geodata,street_graph,plot=False) #Finds positions of trafos. Returns nx and gdf
 
     return street_graph_trafos,trafo_conn_gdf
 
@@ -1242,6 +1245,15 @@ def filter_edges_in_rings(self,street_graph_stations_full):
     filtered = street_graph_stations_full.subgraph(list(flatten(edges_in_mvgrid)))
 
     return filtered
+
+def plot_station_power_dist(dict_stations_power):
+    n, bins, patches = plt.hist(list(dict_stations_power.values()))
+    plt.title('Load distribution in transformer stations')
+    plt.xlabel('Trasformers Load [W]')
+    plt.ylabel('Frecuency')
+    plt.grid(True, linestyle='--')
+    plt.show()
+
 
 ##############Trash
 # build SQL query
