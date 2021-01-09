@@ -538,6 +538,8 @@ class MVGridDing0(GridDing0):
 
         plot_graph(ring_network_geodata)
 
+        path_lengths = [elem[2]['length'] for elem in list(ring_network_geodata.edges(data=True))] #lenghts of all paths in the rings
+
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
 
