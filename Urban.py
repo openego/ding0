@@ -477,10 +477,13 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
         coord_nb = street_graph.nodes[node_b]['geometry']
 
 
-        #Insert highway data into trafo_conn node
-        osm_cat = list(street_graph.get_edge_data(node_a, node_b).keys())[0] #OSM creates categories. Not so clear. Most of the time is 0
-        trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[osm_cat]['highway'] #0 is default
-        n_conn = street_graph.number_of_edges(node_a, node_b) #Can be useful
+        #Insert highway data into trafo_conn node.
+        try:
+            osm_cat = list(street_graph.get_edge_data(node_a, node_b).keys())[0] #OSM creates categories. Not so clear. Most of the time is 0
+            trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[osm_cat]['highway'] #0 is default
+        except Exception as e:
+            print(e)
+            trafo_conn_street_type = 'Default'
 
         #Add Node to Graph, create trafo identifier in every node
         street_graph.add_node(i, **{'y': trafo_conn.y, 'x': trafo_conn.x, 'osmid': i,
