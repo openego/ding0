@@ -498,8 +498,17 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
                                   **{'length':coord_nb.distance(trafo_conn),'geometry':result[1], 'highway':trafo_conn_street_type})
             street_graph.add_edge(node_b, i,
                                   **{'length':coord_nb.distance(trafo_conn),'geometry':result[1], 'highway':trafo_conn_street_type})
+        elif len(result) == 1:
+            street_graph.add_edge(i, node_a,
+                                  **{'length':coord_na.distance(trafo_conn),'geometry':result[0], 'highway':trafo_conn_street_type})
+            street_graph.add_edge(node_a, i,
+                                  **{'length':coord_na.distance(trafo_conn),'geometry':result[0], 'highway':trafo_conn_street_type})
+
+            print(f'Station {trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0]} has only one connection')
         else:
-            print(f'Error at Trafo {trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0]}')
+            print(f'Station {trafo_geodata.geometry[trafo_geodata.geometry == trafo].index[0]} has a problem, Houston')
+
+
 
         #Erase old edges
         while street_graph.has_edge(node_a,node_b):
