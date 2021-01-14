@@ -1101,7 +1101,7 @@ def clean_data(gdf, local_lu):
                                                       axis=1)/ 1000  # kWatt
 
     print("Average area per building: ", gdf_sector_table['area'].mean(), " m².")
-    print("Average load per building: ", gdf_sector_table['load'].mean(), " kW ")
+    print("Average peak load per building: ", gdf_sector_table['load'].mean(), " kW ")
 
     return gdf_sector_table
 
