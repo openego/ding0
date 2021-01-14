@@ -220,13 +220,9 @@ class LVStationDing0(StationDing0):
         self._grid = LVGridDing0
 
         """
-        try:
-            return '_'.join(['MV', str(
-                self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                    id_db), 'tru', str(self.id_db)])
-        except:
-            return '_'.join(['MV', str(
-                self.grid.grid_district.id_db), 'tru', str(self.id_db)])
+        return '_'.join(['MV', str(
+            self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'tru', str(self.id_db)])
 
     def __repr__(self):
         return 'lv_station_' + str(self.id_db)
