@@ -521,8 +521,7 @@ class MVGridDing0(GridDing0):
             lv_grid = LVGridDing0(network=self.network,
                                   grid_district=lv_grid_district,
                                   id_db=id_db,
-                                  geo_data=lv_grid_district.geo_data,
-                                  v_level=v_nom) #fixme: 400v?
+                                  v_level=v_nom)
 
             mapping[tuple[0]] = LVStationDing0(geo_data=stations_position,
                                                id_db=id_db,
@@ -530,12 +529,17 @@ class MVGridDing0(GridDing0):
                                                network=self.network,
                                                grid = lv_grid,
                                                lv_grid_district = lv_grid_district,
-                                               lv_load_area = lv_load_area,
-                                               v_level_operation=lv_grid.v_level) #fixme: is this true?
+                                               lv_load_area = lv_load_area) #v_level_operation=lv_grid.v_level
+
+
 
             lv_grid.add_station(mapping[tuple[0]]) #Adds station to lv_grid
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
+
+            #Create and add new transformers for every LVstation
+            build_grid.transformer(lv_grid)
+
 
         #Replace old node objects with Ding0Objects inside the graph. This graph contains all ways and stations
         street_graph_stations_full = nx.relabel_nodes(street_graph_station, mapping)
