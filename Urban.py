@@ -1183,7 +1183,7 @@ def convert_graph_to_specs(MVGridDing0, nx_graph, nx_graph_full, mapping):
     specs['BRANCH_KIND'] = self.default_branch_kind
     specs['BRANCH_TYPE'] = self.default_branch_type
     specs['V_LEVEL'] = self.v_level
-    self._station.geo_data = Point(mv_stations[0][1]['x'], mv_stations[0][1]['y']) #???
+    self._station.geo_data = Point(mv_stations[0][1]['x'], mv_stations[0][1]['y'])
 
     specs['NODE_COORD_SECTION'] = {}
     for station in list(street_graph_station.nodes(data=True)):
