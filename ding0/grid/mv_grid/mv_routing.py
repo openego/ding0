@@ -432,7 +432,7 @@ def solve_urban(graph, specs, city_graph, debug=False, anim=None):
     timeout = 30000
 
     # create solver objects
-    savings_solver = savings.ClarkeWrightSolver() #TODO:Fix try except
+    savings_solver = savings.ClarkeWrightSolver()
     local_search_solver = local_search.LocalSearchSolver()
 
     start = time.time()
