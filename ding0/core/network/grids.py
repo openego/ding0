@@ -37,6 +37,7 @@ import pyproj
 from functools import partial
 import logging
 
+
 if not 'READTHEDOCS' in os.environ:
     from shapely.ops import transform
 
@@ -474,6 +475,23 @@ class MVGridDing0(GridDing0):
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)"""
 
+        #Reset old lv_load_area values.
+        for lv_load_area in self.grid_district._lv_load_areas:
+
+            #Reset LVGDs to None
+            lv_load_area._lv_grid_districts = []
+
+            #Reset LVLoadAreaCentre to None
+            lv_load_area.lv_load_area_centre = None
+
+            # Set old peak_loads to 0
+            lv_load_area.peak_load = None
+
+            lv_load_area.peak_load_residential = None
+            lv_load_area.peak_load_retail = None
+            lv_load_area.peak_load_industrial = None
+            lv_load_area.peak_load_agricultural = None
+
         #Create LVGD,LVGrid and LVStation for every node. Template above
         for tuple in lv_station_tuple:
 
@@ -482,7 +500,7 @@ class MVGridDing0(GridDing0):
             stations_position = Point(tuple[1]['x'], tuple[1]['y'])
             stations_load = tuple[1]['load']
             lv_load_area = [x for x in mvgd_lv_load_areas if x.geo_area.contains(stations_position)][0]
-            lv_load_area.lv_load_area_centre = None #fixme: Modify directly on self?
+            lv_load_area.lv_load_area_centre = None
             v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3
 
             #Create a convex hull of every building belonging to that trafo station
