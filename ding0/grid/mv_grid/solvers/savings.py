@@ -244,7 +244,8 @@ class ClarkeWrightSolver(BaseSolver):
 
                 if time.time() - start > timeout:
                     break
-        except:
+        except Exception as e:
+            print(e)
             return solution
 
         return solution
