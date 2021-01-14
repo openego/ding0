@@ -438,43 +438,6 @@ class MVGridDing0(GridDing0):
 
         mvgd_lv_load_areas = self.grid_district._lv_load_areas #List of LVLoadAreas contained in MVGridDisctrict
 
-
-        """ Template for creating LVGridDisctricts, LVGrids and LVStations
-        # Associate lv_grid_district to load_area
-        for id, row in lv_grid_districts.iterrows():
-            lv_grid_district = LVGridDistrictDing0(
-                id_db=id, #LVStation id
-                lv_load_area=lv_load_area,
-                peak_load= (row['peak_load_residential'] +
-                               row['peak_load_retail'] +
-                               row['peak_load_industrial'] +
-                               row['peak_load_agricultural']), #LVPeakLoad
-
-
-            # be aware, lv_grid takes grid district's geom!
-            lv_grid = LVGridDing0(network=self,
-                                  grid_district=lv_grid_district,
-                                  id_db=id,
-                                  geo_data=wkt_loads(row['geom']),
-                                  v_level=lv_nominal_voltage)
-
-            # create LV station
-            lv_station = LVStationDing0(
-                id_db=id,
-                grid=lv_grid,
-                lv_load_area=lv_load_area,
-                geo_data=wkt_loads(lv_stations.loc[id, 'geom'])
-                            if id in lv_stations.index.values
-                            else lv_load_area.geo_centre,
-                peak_load=lv_grid_district.peak_load)
-
-            # assign created objects
-            # note: creation of LV grid is done separately,
-            # see NetworkDing0.build_lv_grids()
-            lv_grid.add_station(lv_station)
-            lv_grid_district.lv_grid = lv_grid
-            lv_load_area.add_lv_grid_district(lv_grid_district)"""
-
         #Reset old lv_load_area values.
         for lv_load_area in self.grid_district._lv_load_areas:
 
