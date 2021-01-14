@@ -477,7 +477,7 @@ class MVGridDing0(GridDing0):
             stations_position = Point(tuple[1]['x'], tuple[1]['y'])
             stations_load = tuple[1]['load']
             lv_load_area = [x for x in mvgd_lv_load_areas if x.geo_area.contains(stations_position)][0]
-            lv_load_area.lv_load_area_centre = None
+            lv_load_area.lv_load_area_centre = None #fixme: Modify directly on self?
             v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3
 
             #Create a convex hull of every building belonging to that trafo station
@@ -510,7 +510,7 @@ class MVGridDing0(GridDing0):
                                                lv_load_area = lv_load_area,
                                                v_level_operation=lv_grid.v_level) #fixme: is this true?
 
-            lv_grid.add_station(mapping[tuple[0]]) #Add station to lv_grid
+            lv_grid.add_station(mapping[tuple[0]]) #Adds station to lv_grid
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
