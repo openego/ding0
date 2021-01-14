@@ -540,6 +540,7 @@ class MVGridDing0(GridDing0):
             #Create and add new transformers for every LVstation
             build_grid.transformer(lv_grid)
 
+        logger.info('=====> Urban/aggregated LVGrids created')
 
         #Replace old node objects with Ding0Objects inside the graph. This graph contains all ways and stations
         street_graph_stations_full = nx.relabel_nodes(street_graph_station, mapping)
