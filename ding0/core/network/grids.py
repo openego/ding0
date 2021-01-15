@@ -462,6 +462,7 @@ class MVGridDing0(GridDing0):
             id_db = tuple[1]['osmid']
             stations_position = Point(tuple[1]['x'], tuple[1]['y'])
             stations_load = tuple[1]['load']
+            # fixme: Apparently some LVstations don't lie in any lv_load_area. How is it possible?
             lv_load_area = [x for x in mvgd_lv_load_areas if x.geo_area.contains(stations_position)][0]
             lv_load_area.lv_load_area_centre = None
             v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3
