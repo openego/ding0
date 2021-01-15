@@ -437,22 +437,9 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
     """
     trafo_geodata = trafo_geodata[0]
     crossings, streets = ox.graph_to_gdfs(street_graph)
-    tree = STRtree(list(streets.geometry))
-    nodes = []
-    node_connections = []
-    street_types = nx.get_edge_attributes(street_graph, 'highway')
     trafo_geodata_new = []
     i = 0  # Id for new trafos
     for trafo in trafo_geodata.geometry:
-        """
-        radius = radius_init
-        branches = []
-        while not branches:
-            branches = tree.query(trafo.buffer(radius))
-            radius += radius_inc
-        trafo, trafo_conn = nearest_points(trafo, branches[0])
-        """
-
         #Find nearest Linestring
         streets['Dist'] = streets.apply(lambda row: trafo.distance(row.geometry), axis=1)
         geoseries = streets.iloc[streets['Dist'].idxmin()]
@@ -483,6 +470,7 @@ def find_trafo_connection(trafo_geodata, street_graph, radius_init=0, radius_inc
             trafo_conn_street_type = street_graph.get_edge_data(node_a, node_b)[osm_cat]['highway'] #0 is default
         except Exception as e:
             print(e)
+            print("Error at station ", trafo)
             trafo_conn_street_type = 'Default'
 
         #Add Node to Graph, create trafo identifier in every node
@@ -1165,9 +1153,23 @@ def append_trafos(place,trafo_geodata):
     crossings_gdf = ox.graph_to_gdfs(street_graph)[0] #Convert crossings to Gdf for further manipulation
     street_graph = ox.gdfs_to_graph(crossings_gdf,street_gdf) #Recreate filtered Nx Graph
 
-    street_graph.remove_nodes_from(list(nx.isolates(street_graph))) #Remove isolated nodes (i.e. crossings of pathways)
+    # Remove isolated nodes (i.e. crossings of pathways)
+    street_graph.remove_nodes_from(list(nx.isolates(street_graph)))
+
     nx.set_node_attributes(street_graph, False, 'trafo')
     nx.set_node_attributes(street_graph, False, 'mv_station')
+
+    # Extract largest connected component in street_graph
+    B = street_graph.to_undirected()
+    street_graph = B.subgraph(list(nx.connected_components(B))[0])
+
+    # Check if graph is frozen. In that case create a unfreezed copy
+    if nx.is_frozen(street_graph):
+        street_graph = nx.Graph(street_graph)
+
+    if not isinstance(street_graph, nx.MultiDiGraph):
+        street_graph = nx.MultiDiGraph(street_graph)
+
     street_graph_trafos, trafo_conn_gdf= find_trafo_connection(trafo_geodata,street_graph,plot=False) #Finds positions of trafos. Returns nx and gdf
 
     return street_graph_trafos,trafo_conn_gdf
