@@ -436,7 +436,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             # aggregated load at hv/mv substation
             elif isinstance(node, LVLoadAreaCentreDing0):
                 # Todo: change to list of generators and loads?
-                if (node.lv_load_area.peak_load!=0):
+                if node.lv_load_area.peak_load != 0:
                     node_name = 'BusBar_lac_' + str(node.lv_load_area.id_db)
                     buses_df = append_buses_df(buses_df, node.lv_load_area, 
                                                node, node_name)
