@@ -1,10 +1,10 @@
 networkx == 2.4
 geopy >= 1.11.0, <= 1.11.0
 pandas >= 0.20.3, <= 0.23.0
-pyproj == 1.9.6
+pyproj == 2.2.0
 sqlalchemy >= 1.0.11, <= 1.2.0
 geoalchemy2 >= 0.2.6, <= 0.4.1
-matplotlib  >= 1.5.3, <= 2.0.2
+matplotlib  >= 1.5.3, <= 2.1.2
 egoio @ git+https://github.com/openego/ego.io.git@ab327e3c8bdb53b5205af84b41b02700f6d3fb20#egg=egoio
 shapely >= 1.5.12, <= 1.7
 pypsa >= 0.11.0, <= 0.11.0
