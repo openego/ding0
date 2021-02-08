@@ -445,7 +445,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                             append_bus_v_mag_set_df(bus_v_mag_set_df, node,
                                                     node_name)
                     transformer_df = \
-                        select_and_append_laod_area_trafos(node.lv_load_area,
+                        select_and_append_load_area_trafos(node.lv_load_area,
                                                            node_name,
                                                            transformer_df)
                     if return_time_varying_data:
@@ -531,7 +531,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
     return nodal_components, components_data
 
 
-def select_and_append_laod_area_trafos(aggregated_load_area, node_name,
+def select_and_append_load_area_trafos(aggregated_load_area, node_name,
                                        transformer_df):
     """
     Selects the right trafos for aggregrated load areas and appends them to
