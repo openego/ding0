@@ -50,6 +50,8 @@ if not 'READTHEDOCS' in os.environ:
 
 logger = logging.getLogger('ding0')
 
+# TODO: maybe LVLoadAreaCentreDing0 needs to be replace by LVStationDing0 here as well. This has to be checked in detail
+
 
 def export_to_dir(network, export_dir):
     """

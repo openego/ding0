@@ -686,6 +686,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     for node in nodes:
 
         # node is Load Area centre
+        # TODO: for sake of consistency, LVLoadAreaCentreDing0 should be replaced by LVStationDing0 here as well
         if isinstance(node, LVLoadAreaCentreDing0):
 
             # satellites only

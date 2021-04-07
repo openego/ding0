@@ -67,6 +67,7 @@ def ding0_graph_to_routing_specs(graph):
 
     for node in graph.nodes():
         # station is LV station
+        # TODO: replace LVLoadAreaCentreDing0 by LVStationDing0
         if isinstance(node, LVLoadAreaCentreDing0):
             # only major stations are connected via MV ring
             # (satellites in case of there're only satellites in grid district)
@@ -200,6 +201,8 @@ def routing_solution_to_ding0_graph(graph, solution):
                 # set branch's ring attribute
                 b.ring = ring
                 # set LVLA's ring attribute
+                # TODO: maybe the attribute node1.ring is needed later. If so, LVLoadAreaCentreDing0 must be replaced
+                #  by LVStationDing0. Not sure if attribute ring is defined fpr this class
                 if isinstance(node1, LVLoadAreaCentreDing0):
                     node1.lv_load_area.ring = ring
 

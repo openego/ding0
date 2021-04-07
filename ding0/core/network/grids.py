@@ -377,6 +377,8 @@ class MVGridDing0(GridDing0):
         logger.info('==> MV Sat2 for {} done'.format(repr(self)))
 
         # connect stations
+        # TODO: this should be obsolete now, since routing takes place using LVStationDing0 directly
+        # TODO: in a second step it should checked if the code that updates the Branch data is still needed
         self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
                                                      graph=self.graph,
                                                      debug=debug)
