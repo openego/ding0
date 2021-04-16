@@ -1851,13 +1851,8 @@ class NetworkDing0:
 
         for mv_grid_district in self.mv_grid_districts():
             for load_area in mv_grid_district.lv_load_areas():
-                if not load_area.is_aggregated:
-                    for lv_grid_district in load_area.lv_grid_districts():
-
-                        lv_grid_district.lv_grid.build_grid()
-                else:
-                    logger.info(
-                        '{} is of type aggregated. No grid is created.'.format(repr(load_area)))
+                for lv_grid_district in load_area.lv_grid_districts():
+                    lv_grid_district.lv_grid.build_grid()
 
         logger.info('=====> LV model grids created')
 
@@ -1879,15 +1874,11 @@ class NetworkDing0:
             random.seed(a=seed)
 
             for load_area in mv_grid_district.lv_load_areas():
-                if not load_area.is_aggregated:
-                    for lv_grid_district in load_area.lv_grid_districts():
+                for lv_grid_district in load_area.lv_grid_districts():
 
-                        lv_grid_district.lv_grid.connect_generators(debug=debug)
-                        if debug:
-                            lv_grid_district.lv_grid.graph_draw(mode='LV')
-                else:
-                    logger.info(
-                        '{} is of type aggregated. LV generators are not connected to LV grids.'.format(repr(load_area)))
+                    lv_grid_district.lv_grid.connect_generators(debug=debug)
+                    if debug:
+                        lv_grid_district.lv_grid.graph_draw(mode='LV')
 
         logger.info('=====> Generators connected')
 

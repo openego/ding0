@@ -66,9 +66,10 @@ def ding0_graph_to_routing_specs(graph):
                 satellites_only = False
 
     for node in graph.nodes():
-        # station is LV station
-        # TODO: replace LVLoadAreaCentreDing0 by LVStationDing0
-        if isinstance(node, LVLoadAreaCentreDing0):
+        # only load area centers of non-aggregated load areas are included in
+        # MV routing
+        if isinstance(node, LVLoadAreaCentreDing0) and \
+                not node.lv_load_area.is_aggregated:
             # only major stations are connected via MV ring
             # (satellites in case of there're only satellites in grid district)
             if not node.lv_load_area.is_satellite or satellites_only:
@@ -78,10 +79,18 @@ def ding0_graph_to_routing_specs(graph):
                 nodes_demands[str(node)] = int(node.lv_load_area.peak_load / cos_phi_load)
                 nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
                 # get aggregation flag
-                if node.lv_load_area.is_aggregated:
-                    nodes_agg[str(node)] = True
-                else:
-                    nodes_agg[str(node)] = False
+                nodes_agg[str(node)] = False
+
+        # LV stations in aggregated load areas are included in MV routing
+        if isinstance(node, LVStationDing0) and \
+                node.lv_load_area.is_aggregated:
+            # get demand and position of node
+            # convert node's demand to int for performance purposes and to avoid that node
+            # allocation with subsequent deallocation results in demand<0 due to rounding errors.
+            nodes_demands[str(node)] = int(node.peak_load / cos_phi_load)
+            nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
+            # get aggregation flag
+            nodes_agg[str(node)] = False
 
         # station is MV station
         elif isinstance(node, MVStationDing0):
@@ -202,7 +211,8 @@ def routing_solution_to_ding0_graph(graph, solution):
                 b.ring = ring
                 # set LVLA's ring attribute
                 # TODO: maybe the attribute node1.ring is needed later. If so, LVLoadAreaCentreDing0 must be replaced
-                #  by LVStationDing0. Not sure if attribute ring is defined fpr this class
+                #  by LVStationDing0. Not sure if attribute ring is defined for this class - wird glaube ich nur für mv_connect_stations verwendet
+                #  da stations in aggr. Gebieten aber schon angeschlossen sind, wird es für diese nicht benötigt
                 if isinstance(node1, LVLoadAreaCentreDing0):
                     node1.lv_load_area.ring = ring
 

@@ -513,7 +513,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
         # if target is Load Area centre or LV station, check if it belongs to a load area of type aggregated
         # (=> connection not allowed)
-        if isinstance(target_obj['obj'], (LVLoadAreaCentreDing0, LVStationDing0)):
+        if isinstance(target_obj['obj'], (LVLoadAreaCentreDing0)):
             target_is_aggregated = target_obj['obj'].lv_load_area.is_aggregated
         else:
             target_is_aggregated = False
@@ -686,7 +686,7 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     for node in nodes:
 
         # node is Load Area centre
-        # TODO: for sake of consistency, LVLoadAreaCentreDing0 should be replaced by LVStationDing0 here as well
+        # TODO: for sake of consistency, LVLoadAreaCentreDing0 should be replaced by LVStationDing0 here as well - ich glaube nicht, da es nur satellites betrifft
         if isinstance(node, LVLoadAreaCentreDing0):
 
             # satellites only
