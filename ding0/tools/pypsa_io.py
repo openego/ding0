@@ -335,7 +335,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             #  there and remove this exception here afterwards
             if not only_export_mv:
                 buses_df = append_buses_df(buses_df, isl_node.grid,
-                                           isl_node, srid)
+                                           isl_node)
             else:
                 continue
         else:
@@ -376,7 +376,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             # buses only
             if isinstance(node, MVCableDistributorDing0) or \
                     isinstance(node, LVCableDistributorDing0):
-                buses_df = append_buses_df(buses_df, grid, node, srid)
+                buses_df = append_buses_df(buses_df, grid, node)
                 # add time varying elements
                 if return_time_varying_data:
                     bus_v_mag_set_df = \
@@ -428,7 +428,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 else:
                     # append generator and new bus
                     generators_df = append_generators_df(generators_df, node)
-                    buses_df = append_buses_df(buses_df, grid, node, srid)
+                    buses_df = append_buses_df(buses_df, grid, node)
                     # add time varying elements
                     if return_time_varying_data:
                         bus_v_mag_set_df = \
@@ -457,7 +457,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 else:
                     # add new bus to connect load to
                     bus_name = node.pypsa_bus_id
-                    buses_df = append_buses_df(buses_df, grid, node, srid)
+                    buses_df = append_buses_df(buses_df, grid, node)
                     if return_time_varying_data:
                         bus_v_mag_set_df = \
                             append_bus_v_mag_set_df(bus_v_mag_set_df, node)
@@ -535,7 +535,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                         buses_df = append_buses_df(buses_df, node.grid, node)
                     # bus at primary MV-LV transformer side
                     buses_df = append_buses_df(buses_df, grid, node,
-                                                   node.pypsa_bus0_id)
+                                               node.pypsa_bus0_id)
                     if return_time_varying_data:
                         bus_v_mag_set_df = \
                             append_bus_v_mag_set_df(bus_v_mag_set_df, node,
