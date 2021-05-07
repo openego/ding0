@@ -974,7 +974,7 @@ class NetworkDing0:
                     generator = GeneratorFluctuatingDing0(
                         id_db=id_db,
                         mv_grid=mv_grid,
-                        capacity=row['electrical_capacity'],
+                        capacity=float(row['electrical_capacity']),
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
                         v_level=int(row['voltage_level']),
@@ -983,7 +983,7 @@ class NetworkDing0:
                     generator = GeneratorDing0(
                         id_db=id_db,
                         mv_grid=mv_grid,
-                        capacity=row['electrical_capacity'],
+                        capacity=float(row['electrical_capacity']),
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
                         v_level=int(row['voltage_level']))

@@ -2,12 +2,12 @@ import pytest
 
 from egoio.tools import db
 from sqlalchemy.orm import sessionmaker
-import oedialect
+# import oedialect
 import pandas as pd
 import os
 from tests.core.network.test_grids import TestMVGridDing0
-from pandas.util.testing import assert_frame_equal, assert_series_equal
-from ding0.tools.results import load_nd_from_pickle
+# from pandas.util.testing import assert_frame_equal, assert_series_equal
+# from ding0.tools.results import load_nd_from_pickle
 from ding0.core import NetworkDing0
 import shutil
 
@@ -64,23 +64,23 @@ class TestNetworkDing0(object):
         nd = minimal_grid
 
         # export to pypsa csv format
-        path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'test')
+        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test')
         nd.to_csv(path)
 
         # import exported dataset
         id_mvgd = str(nd._mv_grid_districts[0].mv_grid.grid_district.id_db)
-        buses = pd.DataFrame.from_csv(
-            os.path.join(path, id_mvgd, 'buses.csv'))
-        lines = pd.DataFrame.from_csv(
-            os.path.join(path, id_mvgd, 'lines.csv'))
-        loads = pd.DataFrame.from_csv(
-            os.path.join(path, id_mvgd, 'loads.csv'))
-        generators = pd.DataFrame.from_csv(
-            os.path.join(path,id_mvgd, 'generators.csv'))
-        transformers = pd.DataFrame.from_csv(
-            os.path.join(path,id_mvgd, 'transformers.csv'))
-        switches = pd.DataFrame.from_csv(
-            os.path.join(path,id_mvgd, 'switches.csv'))
+        buses = pd.read_csv(
+            os.path.join(path, id_mvgd, 'buses.csv'), index_col=0)
+        lines = pd.read_csv(
+            os.path.join(path, id_mvgd, 'lines.csv'), index_col=0)
+        loads = pd.read_csv(
+            os.path.join(path, id_mvgd, 'loads.csv'), index_col=0)
+        generators = pd.read_csv(
+            os.path.join(path, id_mvgd, 'generators.csv'), index_col=0)
+        transformers = pd.read_csv(
+            os.path.join(path, id_mvgd, 'transformers.csv'), index_col=0)
+        switches = pd.read_csv(
+            os.path.join(path, id_mvgd, 'switches.csv'), index_col=0)
 
         try:
             # check if all entries are unique
@@ -168,7 +168,6 @@ class TestNetworkDing0(object):
         finally:
             shutil.rmtree(path, ignore_errors=True)
 
-
     def test_run_powerflow(self, minimal_grid):
         """
         Checks if power flow on test grid provides the expected values. 
@@ -182,53 +181,52 @@ class TestNetworkDing0(object):
                 tuple = str.split(tuple, ',')
                 return float(tuple[0]), float(tuple[1])
 
-            def assert_by_absolute_tolerance(x, y, tol=0.0001, 
-                                             element_name = '',
-                                             assert_by_abs = False):
+            def assert_by_absolute_tolerance(x, y, tol=0.0001,
+                                             element_name='',
+                                             assert_by_abs=False):
                 if not assert_by_abs:
                     if x - y > tol:
                         raise Exception('Unequal values for element {}: '
                                         'val1 is {}, val2 is {}.'.format(
                             element_name, x, y))
                 else:
-                    # Todo: check reason for different sign of line load. Reason possibly in allocation of bus0 and bus1 of lines.
+                    # Todo: check reason for different sign of line load.
+                    # Todo: Reason possibly in allocation of bus0 and bus1 of lines.
                     if abs(x) - abs(y) > tol:
                         raise Exception('Unequal values for element {}: '
-                                        'val1 is {}, val2 is {}.'.format(
-                            element_name, x, y))
+                                        'val1 is {}, val2 is {}.'.format(element_name, x, y))
 
-
-            def assert_almost_equal(orig_df, comp_df, 
-                                    element_name, tol=1e-4, assert_by_abs = False):
+            def assert_almost_equal(orig_df, comp_df,
+                                    element_name, tol=1e-4, assert_by_abs=False):
                 for key in orig_df.index:
                     load_ref, gen_ref = \
                         extract_tuple_values_from_string(orig_df[key])
                     load_comp, gen_comp = \
                         extract_tuple_values_from_string(
                             comp_df.loc[element_name][key])
-                    assert_by_absolute_tolerance(load_ref, load_comp, 
+                    assert_by_absolute_tolerance(load_ref, load_comp,
                                                  tol, element_name, assert_by_abs)
-                    assert_by_absolute_tolerance(gen_ref, gen_comp, 
+                    assert_by_absolute_tolerance(gen_ref, gen_comp,
                                                  tol, element_name, assert_by_abs)
 
             # export to pypsa csv format
             cur_dir = os.path.dirname(os.path.realpath(__file__))
-            #load network
+            # load network
             nd = minimal_grid
             # save network and components to csv
-            path = os.path.join(cur_dir, 
-                                'test'+ str(nd._mv_grid_districts[0].id_db))
+            path = os.path.join(cur_dir,
+                                'test' + str(nd._mv_grid_districts[0].id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
 
             print('Starting power flow tests for MV grid only')
             nd.run_powerflow(export_result_dir=path)
-            lines = pd.DataFrame.from_csv(os.path.join(path,'line_data.csv'))
-            buses = pd.DataFrame.from_csv(os.path.join(path, 'bus_data.csv'))
-            compare_lines = pd.DataFrame.from_csv(
-                os.path.join(cur_dir,'testdata','line_data.csv'))
-            compare_buses = pd.DataFrame.from_csv(
-                os.path.join(cur_dir,'testdata','bus_data.csv'))
+            lines = pd.read_csv(os.path.join(path, 'line_data.csv'), index_col=0)
+            buses = pd.read_csv(os.path.join(path, 'bus_data.csv'), index_col=0)
+            compare_lines = pd.read_csv(
+                os.path.join(cur_dir, 'testdata', 'line_data.csv'), index_col=0)
+            compare_buses = pd.read_csv(
+                os.path.join(cur_dir, 'testdata', 'bus_data.csv'), index_col=0)
             # compare results
             for line_name, line_data in compare_lines.iterrows():
                 assert_almost_equal(line_data, lines, line_name,
@@ -240,12 +238,12 @@ class TestNetworkDing0(object):
             # run powerflow inclusive lv grids
             print('Starting power flow test for MV and LV grids.')
             nd.run_powerflow(export_result_dir=path, only_calc_mv=False)
-            lines = pd.DataFrame.from_csv(os.path.join(path, 'line_data.csv'))
-            buses = pd.DataFrame.from_csv(os.path.join(path, 'bus_data.csv'))
-            compare_lines = pd.DataFrame.from_csv(
-                os.path.join(cur_dir, 'testdata', 'line_data_lv.csv'))
-            compare_buses = pd.DataFrame.from_csv(
-                os.path.join(cur_dir, 'testdata', 'bus_data_lv.csv'))
+            lines = pd.read_csv(os.path.join(path, 'line_data.csv'), index_col=0)
+            buses = pd.read_csv(os.path.join(path, 'bus_data.csv'), index_col=0)
+            compare_lines = pd.read_csv(
+                os.path.join(cur_dir, 'testdata', 'line_data_lv.csv'), index_col=0)
+            compare_buses = pd.read_csv(
+                os.path.join(cur_dir, 'testdata', 'bus_data_lv.csv'), index_col=0)
             # compare results
             for line_name, line_data in compare_lines.iterrows():
                 assert_almost_equal(line_data, lines, line_name)
