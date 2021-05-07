@@ -1078,7 +1078,7 @@ class TestMVGridDing0(object):
             nx.betweenness_centrality(graph)
         ).mean(axis=0) == pytest.approx(0.033613445, abs=0.00001)
         assert pd.Series(
-            nx.edge_betweenness_centrality(graph)
+            {_: v for _, (k, v) in enumerate(nx.edge_betweenness_centrality(graph).items())}
         ).mean(axis=0) == pytest.approx(0.05378151, abs=0.00001)
 
     def test_routing(self, oedb_session):
@@ -1144,7 +1144,7 @@ class TestMVGridDing0(object):
             nx.betweenness_centrality(graph)
             ).mean(axis=0) == pytest.approx(0.0354629, abs=0.00001)
         assert pd.Series(
-            nx.edge_betweenness_centrality(graph)
+            {_: v for _, (k, v) in enumerate(nx.edge_betweenness_centrality(graph).items())}
             ).mean(axis=0) == pytest.approx(0.04636150, abs=0.00001)
 
     def test_construct(self, minimal_unrouted_grid):
