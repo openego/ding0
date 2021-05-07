@@ -182,8 +182,8 @@ class TestNetworkDing0(object):
                 return float(tuple[0]), float(tuple[1])
 
             def assert_by_absolute_tolerance(x, y, tol=0.0001, 
-                                             element_name = '',
-                                             assert_by_abs = False):
+                                             element_name='',
+                                             assert_by_abs=False):
                 if not assert_by_abs:
                     if x - y > tol:
                         raise Exception('Unequal values for element {}: '
@@ -197,7 +197,7 @@ class TestNetworkDing0(object):
                             element_name, x, y))
 
             def assert_almost_equal(orig_df, comp_df, 
-                                    element_name, tol=1e-4, assert_by_abs = False):
+                                    element_name, tol=1e-4, assert_by_abs=False):
                 for key in orig_df.index:
                     load_ref, gen_ref = \
                         extract_tuple_values_from_string(orig_df[key])
