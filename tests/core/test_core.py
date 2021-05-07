@@ -168,7 +168,6 @@ class TestNetworkDing0(object):
         finally:
             shutil.rmtree(path, ignore_errors=True)
 
-
     def test_run_powerflow(self, minimal_grid):
         """
         Checks if power flow on test grid provides the expected values. 
@@ -196,7 +195,6 @@ class TestNetworkDing0(object):
                         raise Exception('Unequal values for element {}: '
                                         'val1 is {}, val2 is {}.'.format(
                             element_name, x, y))
-
 
             def assert_almost_equal(orig_df, comp_df, 
                                     element_name, tol=1e-4, assert_by_abs = False):
