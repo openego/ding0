@@ -69,18 +69,18 @@ class TestNetworkDing0(object):
 
         # import exported dataset
         id_mvgd = str(nd._mv_grid_districts[0].mv_grid.grid_district.id_db)
-        buses = pd.DataFrame.read_csv(
-            os.path.join(path, id_mvgd, 'buses.csv'))
-        lines = pd.DataFrame.read_csv(
-            os.path.join(path, id_mvgd, 'lines.csv'))
-        loads = pd.DataFrame.read_csv(
-            os.path.join(path, id_mvgd, 'loads.csv'))
-        generators = pd.DataFrame.read_csv(
-            os.path.join(path, id_mvgd, 'generators.csv'))
-        transformers = pd.DataFrame.read_csv(
-            os.path.join(path, id_mvgd, 'transformers.csv'))
-        switches = pd.DataFrame.read_csv(
-            os.path.join(path, id_mvgd, 'switches.csv'))
+        buses = pd.read_csv(
+            os.path.join(path, id_mvgd, 'buses.csv'), index_col=0)
+        lines = pd.read_csv(
+            os.path.join(path, id_mvgd, 'lines.csv'), index_col=0)
+        loads = pd.read_csv(
+            os.path.join(path, id_mvgd, 'loads.csv'), index_col=0)
+        generators = pd.read_csv(
+            os.path.join(path, id_mvgd, 'generators.csv'), index_col=0)
+        transformers = pd.read_csv(
+            os.path.join(path, id_mvgd, 'transformers.csv'), index_col=0)
+        switches = pd.read_csv(
+            os.path.join(path, id_mvgd, 'switches.csv'), index_col=0)
 
         try:
             # check if all entries are unique
@@ -221,12 +221,12 @@ class TestNetworkDing0(object):
 
             print('Starting power flow tests for MV grid only')
             nd.run_powerflow(export_result_dir=path)
-            lines = pd.DataFrame.read_csv(os.path.join(path, 'line_data.csv'))
-            buses = pd.DataFrame.read_csv(os.path.join(path, 'bus_data.csv'))
-            compare_lines = pd.DataFrame.read_csv(
-                os.path.join(cur_dir, 'testdata', 'line_data.csv'))
-            compare_buses = pd.DataFrame.read_csv(
-                os.path.join(cur_dir, 'testdata', 'bus_data.csv'))
+            lines = pd.read_csv(os.path.join(path, 'line_data.csv'), index_col=0)
+            buses = pd.read_csv(os.path.join(path, 'bus_data.csv'), index_col=0)
+            compare_lines = pd.read_csv(
+                os.path.join(cur_dir, 'testdata', 'line_data.csv'), index_col=0)
+            compare_buses = pd.read_csv(
+                os.path.join(cur_dir, 'testdata', 'bus_data.csv'), index_col=0)
             # compare results
             for line_name, line_data in compare_lines.iterrows():
                 assert_almost_equal(line_data, lines, line_name,
@@ -238,12 +238,12 @@ class TestNetworkDing0(object):
             # run powerflow inclusive lv grids
             print('Starting power flow test for MV and LV grids.')
             nd.run_powerflow(export_result_dir=path, only_calc_mv=False)
-            lines = pd.DataFrame.read_csv(os.path.join(path, 'line_data.csv'))
-            buses = pd.DataFrame.read_csv(os.path.join(path, 'bus_data.csv'))
-            compare_lines = pd.DataFrame.read_csv(
-                os.path.join(cur_dir, 'testdata', 'line_data_lv.csv'))
-            compare_buses = pd.DataFrame.read_csv(
-                os.path.join(cur_dir, 'testdata', 'bus_data_lv.csv'))
+            lines = pd.read_csv(os.path.join(path, 'line_data.csv'), index_col=0)
+            buses = pd.read_csv(os.path.join(path, 'bus_data.csv'), index_col=0)
+            compare_lines = pd.read_csv(
+                os.path.join(cur_dir, 'testdata', 'line_data_lv.csv'), index_col=0)
+            compare_buses = pd.read_csv(
+                os.path.join(cur_dir, 'testdata', 'bus_data_lv.csv'), index_col=0)
             # compare results
             for line_name, line_data in compare_lines.iterrows():
                 assert_almost_equal(line_data, lines, line_name)
