@@ -202,7 +202,7 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
 def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
                               generators_df, loads_df, only_export_mv=False,
                               return_time_varying_data=False):
-    '''
+    """
     Returns component and if necessary time varying data for power flow
     or csv export of inserted mv or lv grid
 
@@ -238,7 +238,7 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
     component_data: :obj:`dict`
         Dictionary of component Dataframes 'Bus', 'Generator', 'Load',
         needed for power flow calculations
-    '''
+    """
 
     # fill list of open circuit breakers
     open_circuit_breakers = []
