@@ -978,6 +978,7 @@ def append_buses_df(buses_df, grid, node, node_name =''):
     buses_df = buses_df.append(bus, ignore_index=True)
     return buses_df
 
+
 def append_transformers_df(transformers_df, trafo, type = np.NaN,
                            bus0=None, bus1=None):
     """
