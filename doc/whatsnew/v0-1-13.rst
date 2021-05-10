@@ -3,3 +3,8 @@ Release v0.1.13 month day, year
 
 Changes
 -------
+
+* In the CSV export, (in-building) household loads and generators are no more
+  contained as extra nodes but directly connected to the house's grid
+  connection point to reduce the number of nodes.
+  `#322 <https://github.com/openego/ding0/issues/322>`_
