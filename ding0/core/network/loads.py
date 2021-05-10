@@ -50,4 +50,12 @@ class LVLoadDing0(LoadDing0):
         self.load_no = kwargs.get('load_no', None)
 
     def __repr__(self):
-        return 'lv_load_' + str(self.id_db)
+        """
+        The Representative of the :class:`~.ding0.core.network.LoadDing0` object.
+
+        Returns
+        -------
+        :obj:`str`
+        """
+        return '_'.join(['Load', 'mvgd' + str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.
+                                              id_db), 'lvgd' + str(self.grid.id_db), str(self.id_db)])

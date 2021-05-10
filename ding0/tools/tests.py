@@ -8,8 +8,14 @@ from ding0.tools.results import load_nd_from_pickle
 
 from geoalchemy2.shape import to_shape
 from sqlalchemy.orm import sessionmaker
+from ding0.tools.results import (calculate_lvgd_stats,
+                                 calculate_lvgd_voltage_current_stats,
+                                 calculate_mvgd_stats,
+                                 calculate_mvgd_voltage_current_stats)
 
 import logging
+import os
+
 
 logger = setup_logger(loglevel=logging.CRITICAL)
 
@@ -280,6 +286,50 @@ def manual_ding0_test(mv_grid_districts=[3545],
     print('  Testing equality...')
     passed, msg = dataframe_equal(nw_1, nw_2)
     print('    ...' + msg)
+
+
+def update_stats_test_data(path, pkl_file=None, pkl_path = ''):
+    '''
+    If changes in electrical data have been made, run this function to update the saved test data in folder.
+    Test are run on mv_grid_district 460.
+    :param path: directory where testdata ist stored. Normally: ...ding0/tests/core/network/testdata
+    :param pkl_file: string of pkl-file of network; optionally, if None new Network is initiated.
+    :return:
+    '''
+
+    if pkl_file is not None:
+        nd = load_nd_from_pickle(pkl_file,pkl_path)
+    else:
+        # database connection/ session
+        engine = db.connection(section='oedb')
+        session = sessionmaker(bind=engine)()
+
+        # instantiate new ding0 network object
+        nd = NetworkDing0(name='network')
+
+        # choose MV Grid Districts to import
+        mv_grid_districts = [460]
+
+        # run DING0 on selected MV Grid District
+        nd.run_ding0(session=session,
+                     mv_grid_districts_no=mv_grid_districts)
+
+    mvgd_stats = calculate_mvgd_stats(nd)
+    mvgd_voltage_current_stats = calculate_mvgd_voltage_current_stats(nd)
+    mvgd_voltage_nodes = mvgd_voltage_current_stats[0]
+    mvgd_current_branches = mvgd_voltage_current_stats[1]
+    mvgd_stats.to_csv(os.path.join(path,'mvgd_stats.csv'))
+    mvgd_voltage_nodes.to_csv(os.path.join(path, 'mvgd_voltage_nodes.csv'))
+    mvgd_current_branches.to_csv(os.path.join(path, 'mvgd_current_branches.csv'))
+
+    lvgd_stats = calculate_lvgd_stats(nd)
+    lvgd_voltage_current_stats = calculate_lvgd_voltage_current_stats(nd)
+    lvgd_voltage_nodes = lvgd_voltage_current_stats[0]
+    lvgd_current_branches = lvgd_voltage_current_stats[1]
+    lvgd_stats.to_csv(os.path.join(path, 'lvgd_stats.csv'))
+    lvgd_voltage_nodes.to_csv(os.path.join(path, 'lvgd_voltage_nodes.csv'))
+    lvgd_current_branches.to_csv(os.path.join(path, 'lvgd_current_branches.csv'))
+
 
 if __name__ == "__main__":
     #To run default tests, decomment following line
