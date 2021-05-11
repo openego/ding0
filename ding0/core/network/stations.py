@@ -205,7 +205,6 @@ class MVStationDing0(StationDing0):
         """
         return '_'.join(['Busbar', 'mvgd',  str(self.grid.id_db), 'HV'])
 
-
     def __repr__(self):
         return '_'.join(['MVStation', 'mvgd',  str(self.grid.id_db)])
 
