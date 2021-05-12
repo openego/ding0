@@ -40,6 +40,6 @@ def test_mv_connect_generators():
     expected_graph = read_graphml(os.path.join(
         expected_file_path,
         "grid_mv_connect_generators_expected.graphml"))
-    attr_names = list(edge_attrs.keys())
+    attr_names = [_ for _ in edge_attrs.keys() if _ != 'grid']
     em = categorical_edge_match(attr_names, [0] * len(attr_names))
     assert nx.is_isomorphic(graph, expected_graph, edge_match=em)
