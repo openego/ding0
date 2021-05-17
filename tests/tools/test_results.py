@@ -19,14 +19,9 @@ class TestCalculateStats(object):
         return network
 
     @pytest.fixture
-    def set_branch_ids(self, connect_generators):
-        connect_generators.set_branch_ids()
+    def set_circuit_breakers(self, connect_generators):
+        connect_generators.set_circuit_breakers(debug=False)
         return connect_generators
-
-    @pytest.fixture
-    def set_circuit_breakers(self, set_branch_ids):
-        set_branch_ids.set_circuit_breakers(debug=False)
-        return set_branch_ids
 
     @pytest.fixture
     def run_powerflow(self, set_circuit_breakers):
@@ -58,8 +53,8 @@ class TestCalculateStats(object):
 
     @pytest.mark.dependency(depends=[
         "TestCalculateStats::test_calculate_stats_connect_generators"])
-    def test_calculate_stats_set_branch_ids(self, set_branch_ids):
-        mvgd_stats = calculate_mvgd_stats(set_branch_ids)
+    def test_calculate_stats_set_branch_ids(self, connect_generators):
+        mvgd_stats = calculate_mvgd_stats(connect_generators)
         mvgd_stats_expected = pd.read_csv(os.path.join(
             TEST_DATA_PATH,
             "mvgd_stats_testgrid_after_set_branch_id_expected.csv"),
@@ -132,7 +127,6 @@ def create_test_expected_files(savepath=None):
         savepath,
         "mvgd_stats_testgrid_after_connect_generators_expected.csv"))
 
-    nd.set_branch_ids()
     mvgd_stats = calculate_mvgd_stats(nd)
     mvgd_stats.to_csv(os.path.join(
         savepath,
