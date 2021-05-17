@@ -25,7 +25,7 @@ from ding0.core import MVCableDistributorDing0
 from ding0.core.structure.groups import LoadAreaGroupDing0
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.tools import config as cfg_ding0
-from ding0.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist_vincenty,\
+from ding0.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist,\
                             calc_geo_centre_point, calc_geo_branches_in_polygon
 
 if not 'READTHEDOCS' in os.environ:
@@ -407,7 +407,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 # along node)
                 graph.remove_edge(adj_node1, adj_node2)
 
-                branch_length = calc_geo_dist_vincenty(adj_node1, node)
+                branch_length = calc_geo_dist(adj_node1, node)
                 branch = BranchDing0(length=branch_length,
                                      circuit_breaker=circ_breaker,
                                      kind=branch_kind,
@@ -418,7 +418,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                     circ_breaker.branch = branch
                 graph.add_edge(adj_node1, node, branch=branch)
 
-                branch_length = calc_geo_dist_vincenty(adj_node2, node)
+                branch_length = calc_geo_dist(adj_node2, node)
                 graph.add_edge(adj_node2, node, branch=BranchDing0(length=branch_length,
                                                                    kind=branch_kind,
                                                                    grid=mv_grid,
@@ -456,7 +456,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
 
                 graph.remove_edge(adj_node1, adj_node2)
 
-                branch_length = calc_geo_dist_vincenty(adj_node1, cable_dist)
+                branch_length = calc_geo_dist(adj_node1, cable_dist)
                 branch = BranchDing0(length=branch_length,
                                      circuit_breaker=circ_breaker,
                                      kind=branch_kind,
@@ -467,7 +467,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                     circ_breaker.branch = branch
                 graph.add_edge(adj_node1, cable_dist, branch=branch)
 
-                branch_length = calc_geo_dist_vincenty(adj_node2, cable_dist)
+                branch_length = calc_geo_dist(adj_node2, cable_dist)
                 graph.add_edge(adj_node2, cable_dist, branch=BranchDing0(length=branch_length,
                                                                          kind=branch_kind,
                                                                          grid=mv_grid,
@@ -481,7 +481,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
                 branch_kind = mv_grid.default_branch_kind
                 branch_type = mv_grid.default_branch_type
 
-                branch_length = calc_geo_dist_vincenty(node, cable_dist)
+                branch_length = calc_geo_dist(node, cable_dist)
                 graph.add_edge(node, cable_dist, branch=BranchDing0(length=branch_length,
                                                                     kind=branch_kind,
                                                                     grid=mv_grid,
@@ -529,7 +529,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
             branch_ring = mv_grid.get_ring_from_node(target_obj['obj'])
 
             # add new branch for satellite (station to station)
-            branch_length = calc_geo_dist_vincenty(node, target_obj['obj'])
+            branch_length = calc_geo_dist(node, target_obj['obj'])
             graph.add_edge(node, target_obj['obj'], branch=BranchDing0(length=branch_length,
                                                                        kind=branch_kind,
                                                                        grid=mv_grid,
@@ -576,7 +576,7 @@ def disconnect_node(node, target_obj_result, graph, debug):
         if len(neighbor_nodes) == 2:
             node.grid.remove_cable_distributor(target_obj_result)
 
-            branch_length = calc_geo_dist_vincenty(neighbor_nodes[0], neighbor_nodes[1])
+            branch_length = calc_geo_dist(neighbor_nodes[0], neighbor_nodes[1])
             graph.add_edge(neighbor_nodes[0], neighbor_nodes[1], branch=BranchDing0(length=branch_length,
                                                                                     kind=branch_kind,
                                                                                     grid=node.grid,
@@ -793,7 +793,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     # delete old branch to Load Area centre and create a new one to LV station
                     graph.remove_edge(lv_load_area_centre, node)
 
-                    branch_length = calc_geo_dist_vincenty(lv_station, node)
+                    branch_length = calc_geo_dist(lv_station, node)
                     branch = BranchDing0(length=branch_length,
                                          circuit_breaker=circ_breaker,
                                          kind=branch_kind,
@@ -876,7 +876,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     # delete old branch to Load Area centre and create a new one to LV station
                     graph.remove_edge(lv_load_area_centre, node)
 
-                    branch_length = calc_geo_dist_vincenty(cable_dist, node)
+                    branch_length = calc_geo_dist(cable_dist, node)
                     branch = BranchDing0(length=branch_length,
                                          circuit_breaker=circ_breaker,
                                          kind=branch_kind,
@@ -947,7 +947,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
         if generator.v_level == 4:
             mv_station = mv_grid_district.mv_grid.station()
 
-            branch_length = calc_geo_dist_vincenty(generator, mv_station)
+            branch_length = calc_geo_dist(generator, mv_station)
 
             # TODO: set branch type to something reasonable (to be calculated)
             branch_kind = mv_grid_district.mv_grid.default_branch_kind

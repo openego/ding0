@@ -22,7 +22,7 @@ from ding0.core.network.cable_distributors import MVCableDistributorDing0, LVCab
 from ding0.grid.mv_grid import mv_routing, mv_connect
 from ding0.grid.lv_grid import build_grid, lv_connect
 from ding0.tools import config as cfg_ding0, pypsa_io, tools
-from ding0.tools.geo import calc_geo_dist_vincenty
+from ding0.tools.geo import calc_geo_dist
 from ding0.grid.mv_grid.tools import set_circuit_breakers
 from ding0.flexopt.reinforce_grid import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
@@ -501,7 +501,7 @@ class MVGridDing0(GridDing0):
             for node in self.graph_nodes_sorted():
                 if isinstance(node, LVLoadAreaCentreDing0):
                     # calc distance from MV-LV station to LA centre
-                    dist_node = calc_geo_dist_vincenty(self.station(), node) / 1e3
+                    dist_node = calc_geo_dist(self.station(), node) / 1e3
                     if dist_node > dist_max:
                         dist_max = dist_node
 
