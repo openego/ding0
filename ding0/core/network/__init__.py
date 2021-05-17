@@ -1192,16 +1192,18 @@ class CircuitBreakerDing0:
         """
         Open a Circuit Breaker
         """
-        self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)
-        self.grid.graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])
-        self.status = 'open'
+        if self.status == 'closed':
+            self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)
+            self.grid.graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])
+            self.status = 'open'
 
     def close(self):
         """
         Close a Circuit Breaker
         """
-        self.grid.graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
-        self.status = 'closed'
+        if self.status == 'open':
+            self.grid.graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
+            self.status = 'closed'
 
     def __repr__(self):
         """
