@@ -169,20 +169,20 @@ class TestGridDing0(object):
     def test_graph_add_node_station(self, empty_grid):
         station1 = StationDing0()
         empty_grid.graph_add_node(station1)
-        assert station1 in empty_grid._graph.nodes()
-        assert len(list(empty_grid._graph.nodes())) == 1
+        assert station1 in empty_grid.graph.nodes()
+        assert len(list(empty_grid.graph.nodes())) == 1
 
     def test_graph_add_node_cable_distributor(self, empty_grid):
         cable_distributor1 = CableDistributorDing0()
         empty_grid.graph_add_node(cable_distributor1)
-        assert cable_distributor1 in empty_grid._graph.nodes()
-        assert len(list(empty_grid._graph.nodes())) == 1
+        assert cable_distributor1 in empty_grid.graph.nodes()
+        assert len(list(empty_grid.graph.nodes())) == 1
 
     def test_graph_add_node_lv_load_area_centre(self, empty_grid):
         lv_load_area_centre1 = LVLoadAreaCentreDing0()
         empty_grid.graph_add_node(lv_load_area_centre1)
-        assert lv_load_area_centre1 in empty_grid._graph.nodes()
-        assert len(list(empty_grid._graph.nodes())) == 1
+        assert lv_load_area_centre1 in empty_grid.graph.nodes()
+        assert len(list(empty_grid.graph.nodes())) == 1
 
     def test_graph_add_node_generator(self, empty_grid):
         # an add_node is called within add_generator
@@ -190,8 +190,8 @@ class TestGridDing0(object):
         generator1 = GeneratorDing0(id_db=0,
                                     geo_data=geo_data1)
         empty_grid.graph_add_node(generator1)
-        assert generator1 in empty_grid._graph.nodes()
-        assert len(list(empty_grid._graph.nodes())) == 1
+        assert generator1 in empty_grid.graph.nodes()
+        assert len(list(empty_grid.graph.nodes())) == 1
 
     def test_graph_add_node_add_generator(self, empty_grid):
         # an add_node is called within add_generator
@@ -199,12 +199,12 @@ class TestGridDing0(object):
         generator1 = GeneratorDing0(id_db=0,
                                     geo_data=geo_data1)
         empty_grid.add_generator(generator1)
-        assert generator1 in empty_grid._graph.nodes()
+        assert generator1 in empty_grid.graph.nodes()
         # make sure that another call of add_nodes
         # does nothing
-        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        len_nodes_before = len(list(empty_grid.graph.nodes()))
         empty_grid.graph_add_node(generator1)
-        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        len_nodes_after = len(list(empty_grid.graph.nodes()))
         assert len_nodes_before == len_nodes_after
 
     def test_graph_add_node_generator_fluctuating(self, empty_grid):
@@ -213,12 +213,12 @@ class TestGridDing0(object):
         generator1 = GeneratorFluctuatingDing0(id_db=0,
                                                geo_data=geo_data1)
         empty_grid.add_generator(generator1)
-        assert generator1 in empty_grid._graph.nodes()
+        assert generator1 in empty_grid.graph.nodes()
         # make sure that another call of add_nodes
         # does nothing
-        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        len_nodes_before = len(list(empty_grid.graph.nodes()))
         empty_grid.graph_add_node(generator1)
-        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        len_nodes_after = len(list(empty_grid.graph.nodes()))
         assert len_nodes_before == len_nodes_after
 
     # negative tests for graph_add_node
@@ -227,27 +227,27 @@ class TestGridDing0(object):
         empty_grid._loads = [load1]
         # make sure that call of add_nodes
         # does nothing
-        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        len_nodes_before = len(list(empty_grid.graph.nodes()))
         empty_grid.graph_add_node(load1)
-        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        len_nodes_after = len(list(empty_grid.graph.nodes()))
         assert len_nodes_before == len_nodes_after
 
     def test_graph_add_node_branch(self, empty_grid):
         branch1 = BranchDing0()
         # make sure that call of add_nodes
         # does nothing
-        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        len_nodes_before = len(list(empty_grid.graph.nodes()))
         empty_grid.graph_add_node(branch1)
-        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        len_nodes_after = len(list(empty_grid.graph.nodes()))
         assert len_nodes_before == len_nodes_after
 
     def test_graph_add_node_grid(self, empty_grid):
         grid1 = GridDing0()
         # make sure that call of add_nodes
         # does nothing
-        len_nodes_before = len(list(empty_grid._graph.nodes()))
+        len_nodes_before = len(list(empty_grid.graph.nodes()))
         empty_grid.graph_add_node(grid1)
-        len_nodes_after = len(list(empty_grid._graph.nodes()))
+        len_nodes_after = len(list(empty_grid.graph.nodes()))
         assert len_nodes_before == len_nodes_after
 
     @pytest.fixture
@@ -261,8 +261,9 @@ class TestGridDing0(object):
         grid.add_generator(generator)
         branch = BranchDing0(id_db=0,
                              length=2.0,
-                             kind='cable')
-        grid._graph.add_edge(generator, station, branch=branch)
+                             kind='cable',
+                             grid=grid)
+        grid.graph.add_edge(generator, station, branch=branch)
         return (grid, station, generator, branch)
 
     def test_graph_nodes_from_branch(self, simple_graph_grid):
@@ -384,7 +385,7 @@ class TestStationDing0(object):
         assert list(empty_stationding0.transformers()) == []
 
     def test_add_transformer(self, empty_stationding0):
-        transformer1 = TransformerDing0(id_db=0,
+        transformer1 = TransformerDing0(id_db=1,
                                         v_level=4,
                                         s_max_longterm=400.0,
                                         s_max_shortterm=600.0,
@@ -393,7 +394,7 @@ class TestStationDing0(object):
                                         tap_ratio=1.02,
                                         r_pu=0.02,
                                         x_pu=0.002)
-        transformer2 = TransformerDing0(id_db=1,
+        transformer2 = TransformerDing0(id_db=2,
                                         v_level=4,
                                         s_max_longterm=600.0,
                                         s_max_shortterm=900.0,
@@ -408,7 +409,7 @@ class TestStationDing0(object):
         assert len(transformer_list) == 2
         transformer1_in_empty_stationding0 = transformer_list[0]
         assert transformer1_in_empty_stationding0 == transformer1
-        assert transformer1_in_empty_stationding0.id_db == 0
+        assert transformer1_in_empty_stationding0.id_db == 1
         assert transformer1_in_empty_stationding0.v_level == 4
         assert transformer1_in_empty_stationding0.s_max_a == 400.0
         assert transformer1_in_empty_stationding0.s_max_b == 600.0
@@ -419,7 +420,7 @@ class TestStationDing0(object):
         assert transformer1_in_empty_stationding0.x_pu == 0.002
         transformer2_in_empty_stationding0 = transformer_list[1]
         assert transformer2_in_empty_stationding0 == transformer2
-        assert transformer2_in_empty_stationding0.id_db == 1
+        assert transformer2_in_empty_stationding0.id_db == 2
         assert transformer2_in_empty_stationding0.v_level == 4
         assert transformer2_in_empty_stationding0.s_max_a == 600.0
         assert transformer2_in_empty_stationding0.s_max_b == 900.0

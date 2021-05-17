@@ -66,7 +66,7 @@ def reinforce_grid(grid, mode):
 
         # if branches or stations have been reinforced: run PF again to check for voltage issues
         if crit_branches or crit_stations:
-            grid.network.run_powerflow(conn=None, method='onthefly')
+            grid.network.run_powerflow(method='onthefly')
 
         crit_nodes = check_voltage(grid, mode)
         crit_nodes_count_prev_step = len(crit_nodes)

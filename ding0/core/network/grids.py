@@ -26,6 +26,7 @@ from ding0.tools.geo import calc_geo_dist_vincenty
 from ding0.grid.mv_grid.tools import set_circuit_breakers
 from ding0.flexopt.reinforce_grid import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
+from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
 
 import os
 import networkx as nx
@@ -122,9 +123,13 @@ class MVGridDing0(GridDing0):
         if self._station is None:
             self._station = mv_station
             self.graph_add_node(mv_station)
+            if mv_station.grid is None:
+                mv_station.grid = self
         else:
             if force:
                 self._station = mv_station
+                if mv_station.grid is None:
+                    mv_station.grid = self
             else:
                 raise Exception('MV Station already set, use argument `force=True` to override.')
 
@@ -161,8 +166,8 @@ class MVGridDing0(GridDing0):
                                                                   MVCableDistributorDing0):
             # remove from array and graph
             self._cable_distributors.remove(cable_dist)
-            if self._graph.has_node(cable_dist):
-                self._graph.remove_node(cable_dist)
+            if self.graph.has_node(cable_dist):
+                self.graph.remove_node(cable_dist)
 
     def add_ring(self, ring):
         """Adds a ring to _rings if not already existing"""
@@ -207,9 +212,17 @@ class MVGridDing0(GridDing0):
                 logger.info('Circuit breakers were closed in order to find MV '
                             'rings')
 
-        for ring in nx.cycle_basis(self._graph, root=self._station):
+        for ring in nx.cycle_basis(self.graph, root=self._station):
+            
             if not include_root_node:
                 ring.remove(self._station)
+
+            # make sure rings are always returned in same order, starting with
+            # node of which representative is smaller
+            start_node = repr(ring[0])
+            end_node = repr(ring[len(ring) - 1])
+            if start_node > end_node:
+                ring.reverse()
 
             if include_satellites:
                 ring_nodes = ring
@@ -244,7 +257,7 @@ class MVGridDing0(GridDing0):
                 logger.info('Circuit breakers were closed in order to find MV '
                             'rings')
         #find True rings (cycles from station through breaker and back to station)
-        for ring_nodes in nx.cycle_basis(self._graph, root=self._station):
+        for ring_nodes in nx.cycle_basis(self.graph, root=self._station):
             edges_ring = []
             for node in ring_nodes:
                 for edge in self.graph_branches_from_node(node):
@@ -306,7 +319,7 @@ class MVGridDing0(GridDing0):
         :obj:`list` of :obj:`GridDing0`
             List of nodes (Ding0 objects)
         """
-        if node_source in self._graph.nodes():
+        if node_source in self.graph.nodes():
 
             # get all nodes that are member of a ring
             node_ring = []
@@ -320,7 +333,7 @@ class MVGridDing0(GridDing0):
 
             # get nodes from subtree
             if node_source in node_ring:
-                for path in nx.shortest_path(self._graph, node_source).values():
+                for path in nx.shortest_path(self.graph, node_source).values():
                     if len(path)>1:
                         if (path[1] not in node_ring) and (path[1] is not self.station()):
                             nodes_subtree.update(path[1:len(path)])
@@ -331,27 +344,6 @@ class MVGridDing0(GridDing0):
             raise ValueError(node_source, 'is not member of graph.')
 
         return list(nodes_subtree)
-
-    def set_branch_ids(self):
-        """ Generates and sets ids of branches for MV and underlying LV grids.
-        
-        While IDs of imported objects can be derived from dataset's ID, branches
-        are created within DING0 and need unique IDs (e.g. for PF calculation).
-        """
-
-        # MV grid:
-        ctr = 1
-        for branch in self.graph_edges():
-            branch['branch'].id_db = self.grid_district.id_db * 10**4 + ctr
-            ctr += 1
-
-        # LV grid:
-        for lv_load_area in self.grid_district.lv_load_areas():
-            for lv_grid_district in lv_load_area.lv_grid_districts():
-                ctr = 1
-                for branch in lv_grid_district.lv_grid.graph_edges():
-                    branch['branch'].id_db = lv_grid_district.id_db * 10**7 + ctr
-                    ctr += 1
 
     def routing(self, debug=False, anim=None):
         """ Performs routing on Load Area centres to build MV grid with ring topology.
@@ -365,28 +357,28 @@ class MVGridDing0(GridDing0):
         """
 
         # do the routing
-        self._graph = mv_routing.solve(graph=self._graph,
+        self._graph = mv_routing.solve(graph=self.graph,
                                        debug=debug,
                                        anim=anim)
         logger.info('==> MV Routing for {} done'.format(repr(self)))
 
         # connect satellites (step 1, with restrictions like max. string length, max peak load per string)
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
-                                                       graph=self._graph,
+                                                       graph=self.graph,
                                                        mode='normal',
                                                        debug=debug)
         logger.info('==> MV Sat1 for {} done'.format(repr(self)))
 
         # connect satellites to closest line/station on a MV ring that have not been connected in step 1
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
-                                                       graph=self._graph,
+                                                       graph=self.graph,
                                                        mode='isolated',
                                                        debug=debug)
         logger.info('==> MV Sat2 for {} done'.format(repr(self)))
 
         # connect stations
         self._graph = mv_connect.mv_connect_stations(mv_grid_district=self.grid_district,
-                                                     graph=self._graph,
+                                                     graph=self.graph,
                                                      debug=debug)
         logger.info('==> MV Stations for {} done'.format(repr(self)))
 
@@ -399,7 +391,7 @@ class MVGridDing0(GridDing0):
             If True, information is printed during process
         """
 
-        self._graph = mv_connect.mv_connect_generators(self.grid_district, self._graph, debug)
+        self._graph = mv_connect.mv_connect_generators(self.grid_district, self.graph, debug)
 
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment:
@@ -672,7 +664,7 @@ class MVGridDing0(GridDing0):
         # add peak demand for all Load Areas of aggregation type
         self.grid_district.add_aggregated_peak_demand()
 
-    def export_to_pypsa(self, session, method='onthefly'):
+    def export_to_pypsa(self, session, method='onthefly', only_calc_mv = True):
         """Exports MVGridDing0 grid to PyPSA database tables
 
         Peculiarities of MV grids are implemented here. Derive general export
@@ -704,7 +696,7 @@ class MVGridDing0(GridDing0):
         start_time = datetime(1970, 1, 1, 00, 00, 0)
         resolution = 'H'
 
-        nodes = self._graph.nodes()
+        nodes = self.graph.nodes()
 
         edges = [edge for edge in list(self.graph_edges())
                  if (edge['adj_nodes'][0] in nodes and not isinstance(
@@ -730,19 +722,19 @@ class MVGridDing0(GridDing0):
                                                   resolution=resolution,
                                                   start_time=start_time)
         elif method == 'onthefly':
-
-            nodes_dict, components_data = pypsa_io.nodes_to_dict_of_dataframes(
-                self,
-                nodes,
-                lv_transformer=False)
-            edges_dict = pypsa_io.edges_to_dict_of_dataframes(self, edges)
-            components = tools.merge_two_dicts(nodes_dict, edges_dict)
+            buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+            components, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+                                                                            lines_df, loads_df, transformer_df,
+                                                                            only_export_mv=only_calc_mv,
+                                                                            return_time_varying_data=True)
 
             return components, components_data
         else:
             raise ValueError('Sorry, this export method does not exist!')
 
-    def run_powerflow(self, session, export_pypsa_dir=None,  method='onthefly', debug=False):
+    
+
+    def run_powerflow(self, method='onthefly', only_calc_mv = True,  export_pypsa_dir=None,   debug=False, export_result_dir = None):
         """ Performs power flow calculation for all MV grids
 
         Args
@@ -764,7 +756,6 @@ class MVGridDing0(GridDing0):
 
         Note
         -----
-        It has to be proven that this method works for LV grids as well!
 
             Ding0 treats two stationary case of powerflow:
             1) Full load: We assume no generation and loads to be set to peak load
@@ -775,12 +766,16 @@ class MVGridDing0(GridDing0):
             raise NotImplementedError("Please use 'onthefly'.")
 
         elif method == 'onthefly':
-            components, components_data = self.export_to_pypsa(session, method)
+            buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+            components, _,  components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+                                                                         lines_df, loads_df, transformer_df,  only_export_mv=only_calc_mv,
+                                                                         return_time_varying_data=True)
             pypsa_io.run_powerflow_onthefly(components,
                                             components_data,
                                             self,
                                             export_pypsa_dir=export_pypsa_dir,
-                                            debug=debug)
+                                            debug=debug,
+                                            export_result_dir=export_result_dir)
 
     def import_powerflow_results(self, session):
         """Assign results from power flow analysis to edges and nodes
@@ -937,7 +932,7 @@ class LVGridDing0(GridDing0):
              If True, information is printed during process
         """
 
-        self._graph = lv_connect.lv_connect_generators(self.grid_district, self._graph, debug)
+        self._graph = lv_connect.lv_connect_generators(self.grid_district, self.graph, debug)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid.
@@ -945,6 +940,7 @@ class LVGridDing0(GridDing0):
         # TODO: Finalize docstring
 
         reinforce_grid(self, mode='LV')
+      
 
     def __repr__(self):
         return 'lv_grid_' + str(self.id_db)

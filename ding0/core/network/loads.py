@@ -30,7 +30,16 @@ class MVLoadDing0(LoadDing0):
         super().__init__(**kwargs)
 
     def __repr__(self):
-        return 'mv_load_' + str(self.id_db)
+        """
+        The Representative of the
+        :class:`~.ding0.core.network.CircuitBreakerDing0` object.
+
+        Returns
+        -------
+        :obj:`str`
+        """
+        return '_'.join(['Load', 'mvgd', str(self.grid.id_db),
+                         str(self.id_db)])
 
 
 class LVLoadDing0(LoadDing0):
@@ -51,11 +60,13 @@ class LVLoadDing0(LoadDing0):
 
     def __repr__(self):
         """
-        The Representative of the :class:`~.ding0.core.network.LoadDing0` object.
+        The Representative of the
+        :class:`~.ding0.core.network.CircuitBreakerDing0` object.
 
         Returns
         -------
         :obj:`str`
         """
-        return '_'.join(['Load', 'mvgd' + str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.
-                                              id_db), 'lvgd' + str(self.grid.id_db), str(self.id_db)])
+        return '_'.join(['Load', 'mvgd', str(
+            self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+            id_db), 'lvgd', str(self.grid.id_db), str(self.id_db)])

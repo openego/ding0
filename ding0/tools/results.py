@@ -80,7 +80,7 @@ def lv_grid_generators_bus_bar(nd):
 
     for la in nd._mv_grid_districts[0].lv_load_areas():
         for lvgd in la.lv_grid_districts():
-            station_neighbors = list(lvgd.lv_grid._graph[
+            station_neighbors = list(lvgd.lv_grid.graph[
                                          lvgd.lv_grid._station].keys())
 
             # check if nodes of a statio are members of list generators
@@ -486,7 +486,7 @@ def calculate_mvgd_stats(nw):
     omega = 2 * pi * freq
 
     # close circuit breakers
-    nw.control_circuit_breakers(mode='open')
+    nw.control_circuit_breakers(mode='close')
     ##############################
     # Collect info from nw into dataframes
     # define dictionaries for collection
@@ -532,7 +532,7 @@ def calculate_mvgd_stats(nw):
 
         n_outgoing_MV = 0
 
-        G = district.mv_grid._graph
+        G = district.mv_grid.graph
 
         for node in G.nodes():
             if isinstance(node, MVStationDing0):
@@ -548,13 +548,13 @@ def calculate_mvgd_stats(nw):
                     path = nx.shortest_path(G, root, node)
                     for i in range(len(path) - 1):
                         mv_impedance += (G.adj[path[i]][path[i + 1]]['branch'].type[
-                                             'L_per_km'] * 1e-3 * omega * \
-                                         G.adj[path[i]][path[i + 1]][
-                                             'branch'].length) *1j  + \
-                                        (G.adj[path[i]][path[i + 1]]['branch'].type[
-                                             'R_per_km'] * \
-                                         G.adj[path[i]][path[i + 1]][
-                                             'branch'].length)
+                                 'L_per_km'] * 1e-3 * omega * \
+                             G.adj[path[i]][path[i + 1]][
+                                 'branch'].length) *1j  + \
+                            (G.adj[path[i]][path[i + 1]]['branch'].type[
+                                 'R_per_km'] * \
+                             G.adj[path[i]][path[i + 1]][
+                                 'branch'].length)
                         mv_path_length += G.adj[path[i]][path[i + 1]][
                             'branch'].length
 
@@ -611,6 +611,7 @@ def calculate_mvgd_stats(nw):
                 sum_thermal_limits += mv_thermal_limits[terminal_node]
                 sum_path_lengths += mv_path_lengths[terminal_node]
                 n_terminal_nodes_MV += 1
+
         sum_thermal_limits_LV = 0.
         n_terminal_nodes_LV = 0
 
@@ -682,7 +683,7 @@ def calculate_mvgd_stats(nw):
         lv_trafo_count = 0
         lv_trafo_cap = 0
 
-        for node in district.mv_grid._graph.nodes():
+        for node in district.mv_grid.graph.nodes():
             mv_path_length = 0
             mvlv_path_length = 0
 
@@ -719,7 +720,7 @@ def calculate_mvgd_stats(nw):
                     for lv_LA in district.lv_load_areas():
                         for lv_dist in lv_LA.lv_grid_districts():
                             if lv_dist.lv_grid._station == node:
-                                for lv_node in lv_dist.lv_grid._graph.nodes():
+                                for lv_node in lv_dist.lv_grid.graph.nodes():
                                     lv_path_length = lv_dist.lv_grid.graph_path_length(
                                         node_source=node,
                                         node_target=lv_node)

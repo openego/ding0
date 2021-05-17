@@ -35,11 +35,19 @@ def test_mv_connect_generators():
         d.pop("branch", None)
     nx.set_edge_attributes(graph, edges)
 
+    # Snippet to export new comparison graph:
+    # graph_new = nx.Graph()
+    # graph_new.add_nodes_from([repr(n) for n in graph.nodes()])
+    # for n1, n2, a in graph.edges(data=True):
+    #     a['grid'] = repr(a['grid'])
+    #     graph_new.add_edge(repr(n1), repr(n2), **a)
+    # nx.write_graphml(graph_new, os.path.join(expected_file_path, "grid_mv_connect_generators_expected.graphml")
+
     # Get comparison data (expected) and compare all attributes
     expected_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "test_data"))
     expected_graph = read_graphml(os.path.join(
         expected_file_path,
         "grid_mv_connect_generators_expected.graphml"))
-    attr_names = list(edge_attrs.keys())
+    attr_names = [_ for _ in edge_attrs.keys() if _ != 'grid']
     em = categorical_edge_match(attr_names, [0] * len(attr_names))
     assert nx.is_isomorphic(graph, expected_graph, edge_match=em)

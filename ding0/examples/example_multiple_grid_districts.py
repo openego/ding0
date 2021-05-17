@@ -58,7 +58,7 @@ def create_results_dirs(base_path):
 
 
 def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
-                                base_path=None):
+                                base_path=None, save_as = 'csv'):
     """
     Perform ding0 run on given grid districts
 
@@ -79,6 +79,8 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         windows systems).
         Specify your own but keep in mind that it a required a particular
         structure of subdirectories.
+    save_as: str
+        Type of file as which network should be exported, can be 'csv' or 'pkl'
 
     Returns
     -------
@@ -118,7 +120,13 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                                mv_grid_districts_no=[mvgd])
 
             # save results
-            results.save_nd_to_pickle(nd, os.path.join(base_path, "grids"))
+            if save_as == 'csv':
+                nd.to_csv(os.path.join(base_path, "grids"))
+            elif save_as == 'pkl':
+                results.save_nd_to_pickle(nd, os.path.join(base_path, "grids"))
+            else:
+                msg.append("save_as not correct, network not saved.")
+                
         else:
             # try to perform ding0 run on grid district
             try:
@@ -132,8 +140,14 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                         ignore_index=True)
                 # if successful, save results
                 else:
-                    results.save_nd_to_pickle(nd, os.path.join(base_path,
-                                                               "grids"))
+                    # save results
+                    if save_as == 'csv':
+                        nd.to_csv(os.path.join(base_path, "grids"))
+                    elif save_as == 'pkl':
+                        results.save_nd_to_pickle(nd, os.path.join(base_path,
+                                                                   "grids"))
+                    else:
+                        msg.append("save_as not correct, network not saved.")
             except Exception as e:
                 corrupt_grid_districts = corrupt_grid_districts.append(
                     pd.Series({'id': mvgd,
@@ -188,4 +202,5 @@ if __name__ == '__main__':
     run_multiple_grid_districts(mv_grid_districts,
                                 run_id,
                                 failsafe=True,
-                                base_path=base_path)
+                                base_path=base_path,
+                                save_as='csv')

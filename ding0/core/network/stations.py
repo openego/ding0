@@ -157,7 +157,8 @@ class MVStationDing0(StationDing0):
             # add transformer on determined size with according parameters
             self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                      'v_level': self.grid.v_level,
-                                                     's_max_longterm': transformer['S_nom']}))
+                                                     's_max_longterm': transformer['S_nom'],
+                                                     'id_db': len(list(self.transformers())) + 1}))
             # calc residual load
             residual_apparent_power -= (load_factor_mv_trans *
                                         transformer['S_nom'])
@@ -169,23 +170,45 @@ class MVStationDing0(StationDing0):
             self.add_transformer(
                 TransformerDing0(grid=self.grid,
                                  v_level=self.grid.v_level,
-                                 s_max_longterm=transformer['S_nom']))
+                                 s_max_longterm=transformer['S_nom'],
+                                 id_db=1))
 
         # add redundant transformer of the size of the largest transformer
         s_max_max = max((o.s_max_a for o in self._transformers))
         self.add_transformer(TransformerDing0(**{'grid': self.grid,
                                                  'v_level': self.grid.v_level,
-                                                 's_max_longterm': s_max_max}))
+                                                 's_max_longterm': s_max_max,
+                                                 'id_db': len(list(self.transformers())) + 1}))
 
     @property
-    def pypsa_id(self):
-        #TODO: docstring
-        """ Description    
+    def pypsa_bus_id(self):
+        """ 
+        Returns specific ID for representing bus in pypsa network.
+        
+        Returns
+        -------
+        :obj:`str`: 
+            Representative of pypsa bus
         """
-        return '_'.join(['HV', str(self.grid.id_db), 'trd'])
+        return '_'.join(['Busbar', 'mvgd', str(self.grid.id_db), 'MV'])
+
+    @property
+    def pypsa_bus0_id(self):
+        """
+        Returns specific ID for representing bus in pypsa network. Representative node at high voltage side (also used
+        for transformer)
+
+        Returns
+        -------
+        :obj:`str`:
+            Representative of pypsa bus
+        """
+        return '_'.join(['Busbar', 'mvgd',  str(self.grid.id_db), 'HV'])
 
     def __repr__(self):
-        return 'mv_station_' + str(self.id_db)
+        return '_'.join(['MVStation', 'mvgd',  str(self.grid.id_db)])
+
+    
 
 
 class LVStationDing0(StationDing0):
@@ -213,13 +236,35 @@ class LVStationDing0(StationDing0):
         return sum([_.capacity for _ in self.grid.generators()])
 
     @property
-    def pypsa_id(self):
-        #TODO: docstring
-        """ Description    
+    def pypsa_bus_id(self):
+        """ 
+        Returns specific ID for representing bus in pypsa network.
+        
+        Returns
+        -------
+        :obj:`str`: 
+            Representative of pypsa bus
         """
-        return '_'.join(['MV', str(
+        return '_'.join(['BusBar', 'mvgd', str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                id_db), 'tru', str(self.id_db)])
+                id_db), 'lvgd', str(self.grid.id_db), 'LV'])
+
+    @property
+    def pypsa_bus0_id(self):
+        """
+        Returns specific ID for representing bus in pypsa network. Representative node at medium voltage side (also used
+        for transformer)
+
+        Returns
+        -------
+        :obj:`str`:
+            Representative of pypsa bus
+        """
+        return '_'.join(['BusBar', 'mvgd',  str(
+            self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid. \
+                id_db), 'lvgd',  str(self.grid.id_db), 'MV'])
 
     def __repr__(self):
-        return 'lv_station_' + str(self.id_db)
+        return '_'.join(['LVStation', 'mvgd', str(
+            self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'lvgd', str(self.grid.id_db)])
