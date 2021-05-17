@@ -51,19 +51,6 @@ class TestCalculateStats(object):
             check_dtype=False,
             check_index_type=False)
 
-    # @pytest.mark.dependency(depends=[
-    #     "TestCalculateStats::test_calculate_stats_connect_generators"])
-    # def test_calculate_stats_set_branch_ids(self, connect_generators):
-    #     mvgd_stats = calculate_mvgd_stats(connect_generators)
-    #     mvgd_stats_expected = pd.read_csv(os.path.join(
-    #         TEST_DATA_PATH,
-    #         "mvgd_stats_testgrid_after_set_branch_id_expected.csv"),
-    #         index_col=0)
-    #     assert_frame_equal(
-    #         mvgd_stats, mvgd_stats_expected,
-    #         check_dtype=False,
-    #         check_index_type=False)
-
     @pytest.mark.dependency(depends=[
         "TestCalculateStats::test_calculate_stats_connect_generators"])
     def test_calculate_stats_set_circuit_breakers(self, connect_generators):
