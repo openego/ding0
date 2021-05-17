@@ -758,10 +758,6 @@ class BranchDing0:
     Note
     -----
     Important: id_db is not set until whole grid is finished (setting at the end).
-        
-    See Also
-    --------
-    :meth:`~.ding0.core.network.grids.MVGridDing0.set_branch_ids`
     """
 
     def __init__(self, **kwargs):
