@@ -1037,6 +1037,7 @@ def calculate_mvgd_stats(nw):
     ###################################
     mvgd_stats = mvgd_stats.fillna(0)
     mvgd_stats = mvgd_stats[sorted(mvgd_stats.columns.tolist())]
+    mvgd_stats.index.name = 'grid_id'
     return mvgd_stats
 
 
