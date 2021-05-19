@@ -29,11 +29,10 @@ from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
 
 import os
+import logging
 import networkx as nx
 from datetime import datetime
-import pyproj
-from functools import partial
-import logging
+from pyproj import Transformer
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.ops import transform
@@ -469,10 +468,7 @@ class MVGridDing0(GridDing0):
 
             # transform MVGD's area to epsg 3035
             # to achieve correct area calculation
-            projection = partial(
-                pyproj.transform,
-                pyproj.Proj(init='epsg:4326'),  # source coordinate system
-                pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+            projection = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
 
             # calculate load density
             kw2mw = 1e-3
