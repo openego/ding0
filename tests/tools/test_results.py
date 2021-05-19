@@ -2,7 +2,7 @@ import pytest
 from tests.core.network.test_grids import TestMVGridDing0
 from ding0.tools.results import calculate_mvgd_stats
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import os
 
 

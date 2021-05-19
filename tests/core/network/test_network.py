@@ -13,7 +13,7 @@ from ding0.tools.results import (calculate_lvgd_stats,
                                  calculate_mvgd_stats,
                                  calculate_mvgd_voltage_current_stats)
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import os
 import numpy as np
 from tests.tools.help_functions import compare_data_frames_by_tolerance
