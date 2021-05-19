@@ -14,10 +14,9 @@ __author__     = "nesnoj, gplssm"
 
 
 import os
-import pyproj
-from functools import partial
 import time
 import logging
+from pyproj import Transformer
 
 from ding0.core.network.stations import *
 from ding0.core.network import BranchDing0, GeneratorDing0
@@ -663,16 +662,9 @@ def mv_connect_satellites(mv_grid, graph, mode='normal', debug=False):
     start = time.time()
 
     # WGS84 (conformal) to ETRS (equidistant) projection
-    proj1 = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
+    proj1 = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
     # ETRS (equidistant) to WGS84 (conformal) projection
-    proj2 = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:3035'),  # source coordinate system
-            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+    proj2 = Transformer.from_crs("epsg:3035", "epsg:4326", always_xy=True).transform
 
     # check all nodes
     if mode == 'normal':
@@ -748,16 +740,9 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
     """
 
     # WGS84 (conformal) to ETRS (equidistant) projection
-    proj1 = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
+    proj1 = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
     # ETRS (equidistant) to WGS84 (conformal) projection
-    proj2 = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:3035'),  # source coordinate system
-            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+    proj2 = Transformer.from_crs("epsg:3035", "epsg:4326", always_xy=True).transform
 
     conn_dist_weight = cfg_ding0.get('mv_connect', 'load_area_sat_conn_dist_weight')
     conn_dist_ring_mod = cfg_ding0.get('mv_connect', 'load_area_stat_conn_dist_ring_mod')
@@ -930,16 +915,9 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
     generator_buffer_radius_inc = cfg_ding0.get('mv_connect', 'generator_buffer_radius_inc')
 
     # WGS84 (conformal) to ETRS (equidistant) projection
-    proj1 = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
+    proj1 = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
     # ETRS (equidistant) to WGS84 (conformal) projection
-    proj2 = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:3035'),  # source coordinate system
-            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+    proj2 = Transformer.from_crs("epsg:3035", "epsg:4326", always_xy=True).transform
 
     for generator in sorted(mv_grid_district.mv_grid.generators(), key=lambda x: repr(x)):
 

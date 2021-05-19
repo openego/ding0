@@ -15,8 +15,7 @@ __author__     = "nesnoj, gplssm"
 
 import os
 from geopy.distance import geodesic
-import pyproj
-from functools import partial
+from pyproj import Transformer
 
 from ding0.tools import config as cfg_ding0
 import logging
@@ -219,16 +218,10 @@ def calc_geo_centre_point(node_source, node_target):
         Distance in m.
     """
 
-    proj_source = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
+    # WGS84 (conformal) to ETRS (equidistant) projection
+    proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
     # ETRS (equidistant) to WGS84 (conformal) projection
-    proj_target = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:3035'),  # source coordinate system
-            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+    proj_target = Transformer.from_crs("epsg:3035", "epsg:4326", always_xy=True).transform
 
     branch_shp = transform(proj_source, LineString([node_source.geo_data, node_target.geo_data]))
 
