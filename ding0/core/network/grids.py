@@ -206,7 +206,7 @@ class MVGridDing0(GridDing0):
             Circuit breakers must be closed to find rings, this is done automatically.
         """
         for circ_breaker in self.circuit_breakers():
-            if circ_breaker.status is 'open':
+            if circ_breaker.status == 'open':
                 circ_breaker.close()
                 logger.info('Circuit breakers were closed in order to find MV '
                             'rings')
