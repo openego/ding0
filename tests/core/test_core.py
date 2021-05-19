@@ -6,8 +6,6 @@ from sqlalchemy.orm import sessionmaker
 import pandas as pd
 import os
 from tests.core.network.test_grids import TestMVGridDing0
-# from pandas.util.testing import assert_frame_equal, assert_series_equal
-# from ding0.tools.results import load_nd_from_pickle
 from ding0.core import NetworkDing0
 import shutil
 
