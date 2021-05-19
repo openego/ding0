@@ -16,7 +16,6 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 import os
 import numpy as np
-from tests.tools.help_functions import compare_data_frames_by_tolerance
 
 
 class TestGridDing0(object):
