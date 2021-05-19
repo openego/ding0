@@ -980,16 +980,15 @@ def calculate_mvgd_stats(nw):
 
         mvgd_stats = pd.concat([mvgd_stats, LA_data], axis=1)
 
-        LA_data = LA_df.groupby(['grid_id'])['population',
-                                             'residential_peak_load',
-                                             'retail_peak_load',
-                                             'industrial_peak_load',
-                                             'agricultural_peak_load',
-                                             'total_peak_load',
-                                             'lv_generation',
-                                             'lv_gens_lvl_6',
-                                             'lv_gens_lvl_7'
-        ].sum()
+        LA_data = LA_df.groupby(['grid_id'])[['population',
+                                              'residential_peak_load',
+                                              'retail_peak_load',
+                                              'industrial_peak_load',
+                                              'agricultural_peak_load',
+                                              'total_peak_load',
+                                              'lv_generation',
+                                              'lv_gens_lvl_6',
+                                              'lv_gens_lvl_7']].sum()
         LA_data.columns = ['LA Total Population',
                            'LA Total LV Peak Load Residential',
                            'LA Total LV Peak Load Retail',
@@ -1015,9 +1014,9 @@ def calculate_mvgd_stats(nw):
         sat_LA_data.columns = ['Number of Load Areas - Satellite']
         mvgd_stats = pd.concat([mvgd_stats, sat_LA_data], axis=1)
 
-        agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])['population',
-                                                                  'lv_generation',
-                                                                  'total_peak_load'].sum()
+        agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])[['population',
+                                                                   'lv_generation',
+                                                                   'total_peak_load']].sum()
         agg_LA_data.columns = ['LA Aggregated Population',
                                'LA Aggregated LV Gen. Cap.', 'LA Aggregated LV Peak Load total'
                                ]
