@@ -3,8 +3,8 @@ Getting started
 
 .. _installation:
 
-Installation
-============
+Installation on Linux
+=====================
 
 .. note::
     Installation is only tested on (Debian-like) Linux OS.
@@ -67,12 +67,11 @@ and installing manually via pip:
 
     mkdir ~/repos/
     cd ~/repos/
-    git clone git@github.com:openego/ding0.git
+    git clone https://github.com/openego/ding0.git # for SSH use: git clone git@github.com:openego/ding0.git
     pip install -e ~/repos/ding0/
-    
 
-Installation under Windows
---------------------------
+Installation on Windows
+-----------------------
 To install Ding0 in windows, it is currently recommended to use
 `Anaconda <https://www.anaconda.com/distribution/>`_ or
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
@@ -123,20 +122,16 @@ Either install it from the local repository with the commands:
 
 .. code-block:: bash
 
-    conda activate ding0_env
     pip install -U -e \path\to\ding0\
 
 Or install it from the pypi repository with the command:
 
 .. code-block:: bash
 
-    conda activate ding0_env
     pip install ding0
 
-
-
 after this, it is possible to install ding0 directly from pip within the
-conda enviornment
+conda environment.
 
 .. code-block:: bash
 
