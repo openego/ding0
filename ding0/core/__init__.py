@@ -22,10 +22,12 @@ from ding0.core.network.grids import *
 from ding0.core.network.stations import *
 from ding0.core.structure.regions import *
 from ding0.core.powerflow import *
-from ding0.tools import pypsa_io
+from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
 from ding0.tools.animation import AnimationDing0
 from ding0.tools.plots import plot_mv_topology
 from ding0.flexopt.reinforce_grid import *
+from ding0.tools.logger import get_default_home_dir
+from ding0.tools.tools import merge_two_dicts_of_dataframes
 
 import os
 import logging
@@ -38,6 +40,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 import subprocess
+import json
 import oedialect
 
 if not 'READTHEDOCS' in os.environ:
@@ -266,33 +269,28 @@ class NetworkDing0:
             Generators are connected to grids, used approach depends on voltage
             level.
 
-        * STEP 8: Set IDs for all branches in MV and LV grids
-
-            While IDs of imported objects can be derived from dataset's ID, branches
-            are created in steps 5+6 and need unique IDs (e.g. for PF calculation).
-
-        * STEP 9: Relocate switch disconnectors in MV grid
+        * STEP 8: Relocate switch disconnectors in MV grid
 
             Switch disconnectors are set during routing process (step 6) according
             to the load distribution within a ring. After further modifications of
             the grid within step 6+7 they have to be relocated (note: switch
             disconnectors are called circuit breakers in DING0 for historical reasons).
 
-        * STEP 10: Open all switch disconnectors in MV grid
+        * STEP 9: Open all switch disconnectors in MV grid
 
             Under normal conditions, rings are operated in open state (half-rings).
             Furthermore, this is required to allow powerflow for MV grid.
 
-        * STEP 11: Do power flow analysis of MV grid
+        * STEP 10: Do power flow analysis of MV grid
 
             The technically working MV grid created in step 6 was extended by satellite
             loads and generators. It is finally tested again using powerflow calculation.
 
-        * STEP 12: Reinforce MV grid
+        * STEP 11: Reinforce MV grid
 
             MV grid is eventually reinforced persuant to results from step 11.
 
-        STEP 13: Close all switch disconnectors in MV grid
+        * STEP 12: Close all switch disconnectors in MV grid
             The rings are finally closed to hold a complete graph (if the SDs are open,
             the edges adjacent to a SD will not be exported!)
         """
@@ -326,18 +324,15 @@ class NetworkDing0:
         if export_figures:
             plot_mv_topology(grid, subtitle='Generators connected', filename='2_generators_connected.png')
 
-        # STEP 8: Set IDs for all branches in MV and LV grids
-        self.set_branch_ids()
-
-        # STEP 9: Relocate switch disconnectors in MV grid
+        # STEP 8: Relocate switch disconnectors in MV grid
         self.set_circuit_breakers(debug=debug)
         if export_figures:
             plot_mv_topology(grid, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
 
-        # STEP 10: Open all switch disconnectors in MV grid
+        # STEP 9: Open all switch disconnectors in MV grid
         self.control_circuit_breakers(mode='open')
 
-        # STEP 11: Do power flow analysis of MV grid
+        # STEP 10: Do power flow analysis of MV grid
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
         if export_figures:
             plot_mv_topology(grid, subtitle='PF result (load case)',
@@ -347,10 +342,10 @@ class NetworkDing0:
                              filename='5_PF_result_feedin.png',
                              line_color='loading', node_color='voltage', testcase='feedin')
 
-        # STEP 12: Reinforce MV grid
+        # STEP 11: Reinforce MV grid
         self.reinforce_grid()
 
-        # STEP 13: Close all switch disconnectors in MV grid
+        # STEP 12: Close all switch disconnectors in MV grid
         self.control_circuit_breakers(mode='close')
 
         if export_figures:
@@ -979,7 +974,7 @@ class NetworkDing0:
                     generator = GeneratorFluctuatingDing0(
                         id_db=id_db,
                         mv_grid=mv_grid,
-                        capacity=row['electrical_capacity'],
+                        capacity=float(row['electrical_capacity']),
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
                         v_level=int(row['voltage_level']),
@@ -988,7 +983,7 @@ class NetworkDing0:
                     generator = GeneratorDing0(
                         id_db=id_db,
                         mv_grid=mv_grid,
-                        capacity=row['electrical_capacity'],
+                        capacity=float(row['electrical_capacity']),
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
                         v_level=int(row['voltage_level']))
@@ -1349,7 +1344,7 @@ class NetworkDing0:
         for grid_district in self.mv_grid_districts():
 
             # there's only one node (MV station) => grid is empty
-            if len(grid_district.mv_grid._graph.nodes()) == 1:
+            if len(grid_district.mv_grid.graph.nodes()) == 1:
                 invalid_mv_grid_districts.append(grid_district)
                 msg_invalidity.append('MV Grid District {} seems to be empty ' \
                                       'and ' \
@@ -1412,7 +1407,7 @@ class NetworkDing0:
             lines = []
 
             # get nodes from grid's graph and append to corresponding array
-            for node in grid_district.mv_grid._graph.nodes():
+            for node in grid_district.mv_grid.graph.nodes():
                 if isinstance(node, LVLoadAreaCentreDing0):
                     lv_load_area_centres.append((node.geo_data.x, node.geo_data.y))
                 elif isinstance(node, MVCableDistributorDing0):
@@ -1527,7 +1522,7 @@ class NetworkDing0:
         for grid_district in self.mv_grid_districts():
 
             # get nodes from grid's graph and create datasets
-            for node in grid_district.mv_grid._graph.nodes():
+            for node in grid_district.mv_grid.graph.nodes():
                 if hasattr(node, 'voltage_res'):
                     node_name = '_'.join(['MV',
                                           str(grid_district.mv_grid.id_db),
@@ -1610,8 +1605,9 @@ class NetworkDing0:
 
         logger.info('=====> MV Grids exported (NEW)')
 
-    def to_dataframe(self):
+    def to_dataframe_old(self):
         """
+        Todo: remove? or replace by part of to_csv()
         Export grid data to dataframes for statistical analysis.
 
         The export to dataframe is similar to db tables exported by `export_mv_grid_new`.
@@ -1728,6 +1724,95 @@ class NetworkDing0:
 
         return nodes_df, edges_df
 
+    def to_csv(self, dir = '', only_export_mv = False):
+        '''
+        Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
+        Respectively saves files for network, buses, lines, transformers, loads and generators.
+
+        Parameters
+        ----------
+        dir: :obj:`str`
+            Directory to which network is saved.
+        only_export_mv: bool
+            When True only mv topology is exported with aggregated lv grid districts
+        '''
+
+        buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+        if (dir == ''):
+            dir = get_default_home_dir()  # eventuell ändern
+        # open all switch connectors
+        self.control_circuit_breakers(mode='open')
+        # start filling component dataframes
+        for grid_district in self.mv_grid_districts():
+            gd_components, network_df, _ = fill_mvgd_component_dataframes(
+                grid_district, buses_df, generators_df,
+                lines_df, loads_df,transformer_df, only_export_mv)
+            # save network and components to csv
+            path = os.path.join(dir, str(grid_district.id_db))
+            if not os.path.exists(path):
+                os.makedirs(path)
+            network_df.to_csv(os.path.join(path, 'network.csv'))
+            gd_components['HVMV_Transformer'].to_csv(
+                os.path.join(path, 'transformers_hvmv.csv'))
+            gd_components['Transformer'].to_csv(
+                os.path.join(path, 'transformers.csv'))
+            gd_components['Bus'].to_csv(
+                os.path.join(path, 'buses.csv'))
+            gd_components['Line'].to_csv(
+                os.path.join(path, 'lines.csv'))
+            gd_components['Load'].to_csv(
+                os.path.join(path, 'loads.csv'))
+            gd_components['Generator'].to_csv(
+                os.path.join(path, 'generators.csv'))
+            gd_components['Switch'].to_csv(
+                os.path.join(path, 'switches.csv'))
+
+            # Merge metadata of multiple runs
+            if 'metadata' not in locals():
+                metadata = self.metadata
+
+            else:
+                if isinstance(grid_district, list):
+                    metadata['mv_grid_districts'].extend(grid_district)
+                else:
+                    metadata['mv_grid_districts'].append(grid_district)
+
+            # Save metadata to disk
+        with open(os.path.join(path, 'Ding0_{}.meta'.format(metadata['run_id'])),
+                  'w') as f:
+            json.dump(metadata, f)
+
+
+    def to_dataframe(self,  only_export_mv = False):
+        '''
+        Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
+        Respectively saves files for network, buses, lines, transformers, loads and generators.
+
+        Parameters
+        ----------
+        only_export_mv: bool
+            When True only mv topology is exported with aggregated lv grid districts
+        '''
+        buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+        components = {}
+        networks = pd.DataFrame()
+        # open all switch connectors
+        self.control_circuit_breakers(mode='open')
+        # start filling component dataframes
+        for grid_district in self.mv_grid_districts():
+            gd_components, network_df, _ = fill_mvgd_component_dataframes(grid_district, buses_df, generators_df,
+                                                                            lines_df, loads_df, transformer_df, only_export_mv)
+            if len(components) == 0:
+                components = gd_components
+                networks = network_df
+            else:
+                components = merge_two_dicts_of_dataframes(components, gd_components)
+                networks = networks.append(network_df)
+
+        components['Network'] = network_df
+        return components
+
+
     def mv_routing(self, debug=False, animation=False):
         """
         Performs routing on all MV grids.
@@ -1825,21 +1910,6 @@ class NetworkDing0:
 
         logger.info('=====> MV Grids parametrized')
 
-    def set_branch_ids(self):
-        """
-        Performs generation and setting of ids
-        of branches for all MV and underlying LV grids.
-
-        See Also
-        --------
-        ding0.core.network.grids.MVGridDing0.set_branch_ids
-        """
-
-        for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.set_branch_ids()
-
-        logger.info('=====> Branch IDs set')
-
     def set_circuit_breakers(self, debug=False):
         """
         Calculates the optimal position of the existing circuit breakers
@@ -1884,7 +1954,7 @@ class NetworkDing0:
         elif mode == 'close':
             logger.info('=====> MV Circuit Breakers closed')
 
-    def run_powerflow(self, session, method='onthefly', export_pypsa=False, debug=False):
+    def run_powerflow(self, session = None, method='onthefly', only_calc_mv = True, export_pypsa=False, debug=False, export_result_dir=None):
         """
         Performs power flow calculation for all MV grids
 
@@ -1915,9 +1985,10 @@ class NetworkDing0:
                     export_pypsa_dir = repr(grid_district.mv_grid)
                 else:
                     export_pypsa_dir = None
-                grid_district.mv_grid.run_powerflow(session, method='db',
+                grid_district.mv_grid.run_powerflow(method='db',
                                                     export_pypsa_dir=export_pypsa_dir,
-                                                    debug=debug)
+                                                    debug=debug,
+                                                    export_result_dir=export_result_dir)
 
         elif method == 'onthefly':
             for grid_district in self.mv_grid_districts():
@@ -1925,10 +1996,11 @@ class NetworkDing0:
                     export_pypsa_dir = repr(grid_district.mv_grid)
                 else:
                     export_pypsa_dir = None
-                grid_district.mv_grid.run_powerflow(session,
-                                                    method='onthefly',
+                grid_district.mv_grid.run_powerflow(method='onthefly',
+                                                    only_calc_mv = only_calc_mv,
                                                     export_pypsa_dir=export_pypsa_dir,
-                                                    debug=debug)
+                                                    debug=debug,
+                                                    export_result_dir=export_result_dir)
 
     def reinforce_grid(self):
         """

@@ -201,7 +201,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                        'instance of MVGridDing0. Plotting is skipped.')
         return
 
-    g = grid._graph
+    g = grid.graph
     model_proj = grid.network.config['geo']['srid']
 
     if testcase == 'feedin':

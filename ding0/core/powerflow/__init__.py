@@ -14,7 +14,7 @@ __author__     = "nesnoj, gplssm"
 
 
 from datetime import datetime
-from pandas import DatetimeIndex
+from pandas import DatetimeIndex, date_range
 
 
 class PFConfigDing0:
@@ -74,9 +74,9 @@ class PFConfigDing0:
                 # create pandas DatetimeIndex object for given values
                 self._timeranges = []
                 for _ in enumerate(self._scenarios):
-                    self._timeranges.append(DatetimeIndex(freq=self._resolution,
-                                                          periods=timesteps_count,
-                                                          start=timestep_start))
+                    self._timeranges.append(date_range(freq=self._resolution,
+                                                       periods=timesteps_count,
+                                                       start=timestep_start))
 
         elif len(self._scenarios) != len(self._timeranges):
             raise ValueError('PF config: Count of scenarios has to equal count of timeranges.')

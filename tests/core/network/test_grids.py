@@ -92,13 +92,13 @@ class TestMVGridDing0(object):
         """
         station = MVStationDing0(id_db=0, geo_data=Point(0.5, 0.5))
         grid = MVGridDing0(id_db=0, station=station)
-        branch = BranchDing0(id_db=0, length=2.0, kind='cable')
+        branch = BranchDing0(id_db=0, length=2.0, kind='cable', grid=grid)
         circuit_breaker = CircuitBreakerDing0(id_db=0,
                                               geo_data=Point(0, 0),
                                               branch=branch,
                                               grid=grid)
         grid.add_circuit_breaker(circuit_breaker)
-        grid._graph.add_edge(circuit_breaker, station,
+        grid.graph.add_edge(circuit_breaker, station,
                              branch=branch)
         return grid
 
@@ -150,25 +150,25 @@ class TestMVGridDing0(object):
                                     mv_grid=grid)
         grid.add_generator(generator3)
         ring = RingDing0(grid=grid)
-        branch1 = BranchDing0(id_db='0', length=2.0, kind='cable', ring=ring)
-        branch1a = BranchDing0(id_db='0a', lenght=1.2, kind='cable', ring=ring)
-        branch2 = BranchDing0(id_db='1', lenght=3.0, kind='line', ring=ring)
-        branch2a = BranchDing0(id_db='1a', lenght=2.0, kind='line', ring=ring)
-        branch3 = BranchDing0(id_db='2', length=2.5, kind='line')
+        branch1 = BranchDing0(id_db='0', length=2.0, kind='cable', ring=ring, grid=grid)
+        branch1a = BranchDing0(id_db='0a', lenght=1.2, kind='cable', ring=ring, grid=grid)
+        branch2 = BranchDing0(id_db='1', lenght=3.0, kind='line', ring=ring, grid=grid)
+        branch2a = BranchDing0(id_db='1a', lenght=2.0, kind='line', ring=ring, grid=grid)
+        branch3 = BranchDing0(id_db='2', length=2.5, kind='line', grid=grid)
         circuit_breaker1 = CircuitBreakerDing0(id_db=0,
                                                geo_data=Point(0, 0),
                                                branch=branch1,
                                                grid=grid)
         grid.add_circuit_breaker(circuit_breaker1)
-        grid._graph.add_edge(generator1, station,
+        grid.graph.add_edge(generator1, station,
                              branch=branch1)
-        grid._graph.add_edge(circuit_breaker1, generator1,
+        grid.graph.add_edge(circuit_breaker1, generator1,
                              branch=branch1a)
-        grid._graph.add_edge(generator2, station,
+        grid.graph.add_edge(generator2, station,
                              branch=branch2)
-        grid._graph.add_edge(circuit_breaker1, generator2,
+        grid.graph.add_edge(circuit_breaker1, generator2,
                              branch=branch2a)
-        grid._graph.add_edge(generator3, generator2, branch=branch3)
+        grid.graph.add_edge(generator3, generator2, branch=branch3)
         grid.add_ring(ring)
         return (ring, grid)
 
@@ -287,21 +287,23 @@ class TestMVGridDing0(object):
         """
         ring, grid = ring_mvgridding0
         station = grid.station()
-        generators = list(grid.generators())
-        circuit_breakers = list(grid.circuit_breakers())
+        generators = sorted(list(grid.generators()),
+                          key=lambda x: repr(x))
+        circuit_breakers = sorted(list(grid.circuit_breakers()),
+                          key=lambda x: repr(x))
         branches = sorted(list(map(lambda x: x['branch'],
                                    grid.graph_edges())),
                           key=lambda x: repr(x))
         ring_expected = ring
-        # branches following the ring
-        branches_expected = [branches[1],
-                             branches[0],
-                             branches[3],
-                             branches[2]]
         rings_nodes_expected = [generators[0],
                                 circuit_breakers[0],
                                 generators[1],
                                 station]
+        branches_expected = []
+        for branch in branches:
+            nodes = grid.graph_nodes_from_branch(branch)
+            if nodes[0] in rings_nodes_expected and nodes[1] in rings_nodes_expected:
+                branches_expected.append(branch)
         (ring_out,
          branches_out,
          rings_nodes_out) = list(grid.rings_full_data())[0]
@@ -390,8 +392,8 @@ class TestMVGridDing0(object):
         print("closing session")
         session.close()
 
-    @pytest.fixture
-    def minimal_unrouted_grid(self):
+
+    def minimal_unrouted_testgrid(self):
         """
         Returns an MVGridDing0 object with a few artificially
         generated information about a fictious set of load
@@ -422,12 +424,12 @@ class TestMVGridDing0(object):
 
         hvmv_transformers = [
             TransformerDing0(
-                id_db=0,
+                id_db=1,
                 s_max_longterm=63000.0,
                 v_level=20.0
             ),
             TransformerDing0(
-                id_db=1,
+                id_db=2,
                 s_max_longterm=63000.0,
                 v_level=20.0
             )
@@ -435,8 +437,8 @@ class TestMVGridDing0(object):
 
         # Add the transformers to the station
 
-        for hvmv_transfromer in hvmv_transformers:
-            mv_station.add_transformer(hvmv_transfromer)
+        for hvmv_transformer in hvmv_transformers:
+            mv_station.add_transformer(hvmv_transformer)
 
         # Create the MV Grid
         mv_grid = MVGridDing0(
@@ -475,7 +477,9 @@ class TestMVGridDing0(object):
                      reinforce_only=0)
             )
         )
-        # Add some MV Generators that are directly connected at the station
+
+        for hvmv_transformer in hvmv_transformers:
+            hvmv_transformer.grid = mv_grid
 
         mv_generators = [
             GeneratorDing0(
@@ -543,7 +547,7 @@ class TestMVGridDing0(object):
         # Create the LV Grid Districts
         lv_grid_districts_data = pd.DataFrame(
             dict(
-                la_id=list(range(19)),
+                la_id=list(range(1000, 1019)),
                 population=[
                     223, 333, 399, 342,
                     429, 493, 431, 459,
@@ -871,7 +875,7 @@ class TestMVGridDing0(object):
             lv_load_area.geo_area = row['geom']
             lv_load_area.geo_centre = row['geom'].centroid
             lv_grid_district = LVGridDistrictDing0(
-                id_db=id,
+                id_db=row["la_id"],
                 lv_load_area=lv_load_area,
                 geo_data=row['geom'],
                 population=(0
@@ -906,13 +910,13 @@ class TestMVGridDing0(object):
             # be aware, lv_grid takes grid district's geom!
             lv_grid = LVGridDing0(network=network,
                                   grid_district=lv_grid_district,
-                                  id_db=id_db,
+                                  id_db=row["la_id"],
                                   geo_data=row['geom'],
                                   v_level=lv_nominal_voltage)
 
             # create LV station
             lv_station = LVStationDing0(
-                id_db=id_db,
+                id_db=row["la_id"],
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=row['geom'].centroid,
@@ -934,7 +938,7 @@ class TestMVGridDing0(object):
             mv_grid_district.add_lv_load_area(lv_load_area)
             lv_stations.append(lv_station)
 
-        lv_stations = sorted(lv_stations, key=lambda x: repr(x))
+        lv_stations = sorted(lv_stations, key=lambda x: x.id_db)
         mv_grid_district.add_peak_demand()
         mv_grid.set_voltage_level()
 
@@ -963,13 +967,17 @@ class TestMVGridDing0(object):
 
         return network, mv_grid, lv_stations
 
+    @pytest.fixture
+    def minimal_unrouted_grid(self):
+        return self.minimal_unrouted_testgrid()
+
     def test_local_routing(self, minimal_unrouted_grid):
         """
         Rigorous test to the function :meth:`~.core.network.grids.MVGridDing0.routing`
         """
         nd, mv_grid, lv_stations = minimal_unrouted_grid
 
-        graph = mv_grid._graph
+        graph = mv_grid.graph
 
         # pre-routing asserts
         # check the grid_district
@@ -1002,50 +1010,42 @@ class TestMVGridDing0(object):
         nd.mv_routing()
 
         # post-routing asserts
-        # check that the connections are between the expected
-        # load areas
-        mv_station = mv_grid.station()
         expected_edges_list = [
-            (mv_station, lv_stations[0]),
-            (mv_station, lv_stations[1]),
-            (mv_station, lv_stations[5]),
-            (mv_station, lv_stations[8]),
-            (mv_station, lv_stations[9]),
-            (mv_station, lv_stations[10]),
-            (mv_station, lv_stations[13]),
-            (mv_station, lv_stations[14]),
-            (mv_station, lv_stations[16]),
-            (lv_stations[0], lv_stations[12]),
-            (lv_stations[1], lv_stations[11]),
-            (lv_stations[11], lv_stations[12]),
-            (lv_stations[13], lv_stations[17]),
-            (lv_stations[14], lv_stations[15]),
-            (lv_stations[15], lv_stations[16]),
-            (lv_stations[18], lv_stations[2]),
-            (lv_stations[3], lv_stations[7]),
-            (lv_stations[6], lv_stations[7]),
+            ('MVCableDist_mvgd_0_1', 'MVStation_mvgd_0'),
+            ('MVCableDist_mvgd_0_2', 'MVStation_mvgd_0'),
+            ('MVCableDist_mvgd_0_3', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1000', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1001', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1013', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1016', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1017', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1018', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1004', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1005', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1007', 'MVStation_mvgd_0'),
+            ('LVStation_mvgd_0_lvgd_1000', 'LVStation_mvgd_0_lvgd_1003'),
+            ('LVStation_mvgd_0_lvgd_1001', 'LVStation_mvgd_0_lvgd_1002'),
+            ('LVStation_mvgd_0_lvgd_1002', 'LVStation_mvgd_0_lvgd_1003'),
+            ('LVStation_mvgd_0_lvgd_1004', 'LVStation_mvgd_0_lvgd_1008'),
+            ('LVStation_mvgd_0_lvgd_1005', 'LVStation_mvgd_0_lvgd_1006'),
+            ('LVStation_mvgd_0_lvgd_1006', 'LVStation_mvgd_0_lvgd_1007'),
+            ('LVStation_mvgd_0_lvgd_1008', 'MVCableDist_mvgd_0_4'),
+            ('LVStation_mvgd_0_lvgd_1009', 'LVStation_mvgd_0_lvgd_1010'),
+            ('LVStation_mvgd_0_lvgd_1009', 'MVCableDist_mvgd_0_4'),
+            ('LVStation_mvgd_0_lvgd_1011', 'LVStation_mvgd_0_lvgd_1015'),
+            ('LVStation_mvgd_0_lvgd_1012', 'MVCableDist_mvgd_0_5'),
+            ('LVStation_mvgd_0_lvgd_1013', 'MVCableDist_mvgd_0_5'),
+            ('LVStation_mvgd_0_lvgd_1014', 'LVStation_mvgd_0_lvgd_1015'),
+            ('LVStation_mvgd_0_lvgd_1015', 'MVCableDist_mvgd_0_4'),
+            ('LVStation_mvgd_0_lvgd_1015', 'MVCableDist_mvgd_0_5'),
+            ('LVStation_mvgd_0_lvgd_1016', 'MVCableDist_mvgd_0_1'),
+            ('LVStation_mvgd_0_lvgd_1017', 'MVCableDist_mvgd_0_2'),
+            ('LVStation_mvgd_0_lvgd_1018', 'MVCableDist_mvgd_0_3')
         ]
 
-
-        #real edges sorted
-        real_edges_sort = []
-        for i in range(0,len(list(graph.edges()))):
-            real_edges_sort.append(
-                tuple(sorted(list(graph.edges())[i], key=lambda x: repr(x))))
-
-        #sort the tuples and compare them
-        correct_edges = []
-        for i in range(0, len(expected_edges_list)):
-            if tuple(sorted(expected_edges_list[i], key=lambda x:repr(x))) in\
-                    real_edges_sort:
-                correct_edges.append(True)
-            else:
-                correct_edges.append((False))
-                print('Tuple', expected_edges_list[i], 'not in set')
-
-
-        #check if every tuple of the expected edges is in the list, disregarding order
-        assert len(list(filter(lambda x: x == True, correct_edges))) == 18
+        for edge_real, edge_expected in zip(graph.edges(), expected_edges_list):
+            assert ((repr(edge_real[0]), repr(edge_real[1])) == edge_expected or
+                    (repr(edge_real[1]), repr(edge_real[0])) == edge_expected)
 
         # check graph attributes
         assert len(list(graph.nodes())) == 35
@@ -1070,7 +1070,7 @@ class TestMVGridDing0(object):
             nx.betweenness_centrality(graph)
         ).mean(axis=0) == pytest.approx(0.033613445, abs=0.00001)
         assert pd.Series(
-            nx.edge_betweenness_centrality(graph)
+            {_: v for _, (k, v) in enumerate(nx.edge_betweenness_centrality(graph).items())}
         ).mean(axis=0) == pytest.approx(0.05378151, abs=0.00001)
 
     def test_routing(self, oedb_session):
@@ -1093,7 +1093,7 @@ class TestMVGridDing0(object):
         # STEP 5: Build LV grids
         nd.build_lv_grids()
 
-        graph = nd._mv_grid_districts[0].mv_grid._graph
+        graph = nd._mv_grid_districts[0].mv_grid.graph
 
         assert len(list(graph.nodes())) == 256
         assert len(list(graph.edges())) == 0
@@ -1136,7 +1136,7 @@ class TestMVGridDing0(object):
             nx.betweenness_centrality(graph)
             ).mean(axis=0) == pytest.approx(0.0354629, abs=0.00001)
         assert pd.Series(
-            nx.edge_betweenness_centrality(graph)
+            {_: v for _, (k, v) in enumerate(nx.edge_betweenness_centrality(graph).items())}
             ).mean(axis=0) == pytest.approx(0.04636150, abs=0.00001)
 
     def test_construct(self, minimal_unrouted_grid):
@@ -1148,14 +1148,14 @@ class TestMVGridDing0(object):
         -Right connections for the cable distr.
         -Right type of cable for the circuit breakers"""
 
-        network, mv_grid, lv_stations =minimal_unrouted_grid
+        network, mv_grid, lv_stations = minimal_unrouted_grid
         lv_stations = sorted(lv_stations, key=lambda x: x.id_db)
 
         network.mv_routing(debug=True)
 
         #Check mv_stations connections (generators should not be connected)
-        assert len(list(mv_grid._graph.adj[mv_grid._station])) == 12
-        assert any(j in list(mv_grid._graph.adj[mv_grid._station])
+        assert len(list(mv_grid.graph.adj[mv_grid._station])) == 12
+        assert any(j in list(mv_grid.graph.adj[mv_grid._station])
                    for j in mv_grid._generators[0:4]) == False
 
         b = [0,1,13,16,17,18,4,5,7]
@@ -1170,34 +1170,34 @@ class TestMVGridDing0(object):
         (Single Connections)"""
 
         assert len(mv_grid._cable_distributors) == 5
-        assert any(y in mv_grid._graph.adj[lv_stations[8]]
+        assert any(y in mv_grid.graph.adj[lv_stations[8]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[9]]
+        assert any(y in mv_grid.graph.adj[lv_stations[9]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[12]]
+        assert any(y in mv_grid.graph.adj[lv_stations[12]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[13]]
+        assert any(y in mv_grid.graph.adj[lv_stations[13]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[16]]
+        assert any(y in mv_grid.graph.adj[lv_stations[16]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[17]]
+        assert any(y in mv_grid.graph.adj[lv_stations[17]]
                    for y in mv_grid._cable_distributors)
 
-        assert any(y in mv_grid._graph.adj[lv_stations[18]]
+        assert any(y in mv_grid.graph.adj[lv_stations[18]]
                    for y in mv_grid._cable_distributors)
 
         """Check cable Distributors have right connections
         (Double Connections disregarding order)
         """
-        mv_stat_cdt = list(y in mv_grid._graph.adj[mv_grid._station]
+        mv_stat_cdt = list(y in mv_grid.graph.adj[mv_grid._station]
                            for y in mv_grid._cable_distributors)
 
-        lv_15_cdt = list(y in mv_grid._graph.adj[lv_stations[15]]
+        lv_15_cdt = list(y in mv_grid.graph.adj[lv_stations[15]]
                          for y in mv_grid._cable_distributors)
 
         assert len(list(filter(lambda x: x == True, mv_stat_cdt))) == 3
@@ -1265,7 +1265,7 @@ class TestMVGridDing0(object):
             v_level_operation=20.0
         )
         hvmv_transformer = TransformerDing0(
-                id_db=0,
+                id_db=1,
                 s_max_longterm=63000.0,
                 v_level=20.0)
 
@@ -1429,7 +1429,6 @@ class TestMVGridDing0(object):
         mv_grid_district.add_lv_load_area(lv_load_area)
 
         return lv_grid
-
 
 
 class TestLVGridDing0(object):
@@ -1747,7 +1746,7 @@ class TestLVGridDing0(object):
                                 lv_grid=lv_grid,
                                 lv_load_area=lv_load_area)
 
-        graph = lv_grid._graph
+        graph = lv_grid.graph
         n = nx.number_of_nodes(graph)
         lv_grid.add_station(new_lv)
         m = nx.number_of_nodes(graph)
@@ -1821,7 +1820,7 @@ class TestLVGridDing0(object):
 
         basic_lv_grid.build_grid()
         assert len(basic_lv_grid._loads) == 9
-        assert len(list(basic_lv_grid._graph.node)) == 28
+        assert len(list(basic_lv_grid.graph.nodes)) == 28
         assert (basic_lv_grid._loads[n].peak_load == 176 for n in range(0, 4))
         assert (basic_lv_grid._loads[n].peak_load == 56 for n in range(4, 9))
 
@@ -1840,12 +1839,12 @@ class TestLVGridDing0(object):
         basic_lv_grid.build_grid()
 
         assert len(basic_lv_grid._loads) == 29
-        assert len(basic_lv_grid._graph.node) == 29 + 2*29 + 1
+        assert len(basic_lv_grid.graph.nodes) == 29 + 2*29 + 1
         assert (round(basic_lv_grid._loads[n].peak_load) == 10.0
                 for n in range(0, 29))
 
         #2 Branches from LV_station
-        assert len(np.nonzero(nx.adjacency_matrix(basic_lv_grid._graph)[0, :]
+        assert len(np.nonzero(nx.adjacency_matrix(basic_lv_grid.graph)[0, :]
                               .toarray())) == 2
 
     def test_connect_generators(self, basic_lv_grid):
@@ -1870,21 +1869,21 @@ class TestLVGridDing0(object):
 
         #from ding0.flexopt.check_tech_constraints import get_critical_line_loading
 
-        # Verify the LV_Grid._graph gets constructed correctly and that it only has one
+        # Verify the LV_Grid.graph gets constructed correctly and that it only has one
         #Transformer
-        assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station)))\
+        assert len(list(basic_lv_grid.graph.edges(basic_lv_grid._station)))\
                == 1
 
         assert len(basic_lv_grid._station._transformers) == 1
 
         # Branches HH_1,HH_2,HH_3 should have as default the corresponding cable
-        assert basic_lv_grid._graph._adj[basic_lv_grid._station]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._station]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
 
-        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[2]]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._cable_distributors[2]]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x150"
 
-        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[4]]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._cable_distributors[4]]\
                    [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x150"
 
         basic_lv_grid.reinforce_grid()
@@ -1892,19 +1891,19 @@ class TestLVGridDing0(object):
 
 
         # Verify that the station is reinforced with another transformer
-        assert len(list(basic_lv_grid._graph.edges(basic_lv_grid._station))) \
+        assert len(list(basic_lv_grid.graph.edges(basic_lv_grid._station))) \
                == 2
 
         assert len(basic_lv_grid._station._transformers) == 2
 
         #Verify that the critical branches get the cables changed with the correct ones
-        assert basic_lv_grid._graph._adj[basic_lv_grid._station] \
+        assert basic_lv_grid.graph._adj[basic_lv_grid._station] \
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x300"
 
-        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[2]]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._cable_distributors[2]]\
                    [basic_lv_grid._cable_distributors[0]]['branch'].type.name == "NAYY 4x1x240"
 
-        assert basic_lv_grid._graph._adj[basic_lv_grid._cable_distributors[4]]\
+        assert basic_lv_grid.graph._adj[basic_lv_grid._cable_distributors[4]]\
                    [basic_lv_grid._cable_distributors[2]]['branch'].type.name == "NAYY 4x1x240"
 
 

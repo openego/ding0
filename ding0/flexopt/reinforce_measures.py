@@ -225,7 +225,7 @@ def extend_substation(grid, critical_stations, grid_level):
             for t in range(0, trafo_cnt):
                 lv_transformer = TransformerDing0(
                     grid=grid,
-                    id_db=id,
+                    id_db=t + 1,
                     v_level=v_nom,
                     s_max_longterm=trafo_type['S_nom'],
                     r_pu=trafo_type['r_pu'],
@@ -271,7 +271,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
     v_diff_max_fc = cfg_ding0.get('assumptions', 'lv_max_v_level_fc_diff_normal')
     v_diff_max_lc = cfg_ding0.get('assumptions', 'lv_max_v_level_lc_diff_normal')
 
-    tree = nx.dfs_tree(grid._graph, grid._station)
+    tree = nx.dfs_tree(grid.graph, grid._station)
 
     for station in crit_stations:
         v_delta = max(station['v_diff'])
@@ -295,7 +295,7 @@ def extend_substation_voltage(crit_stations, grid_level='LV'):
                 # build a new transformer
                 lv_transformer = TransformerDing0(
                     grid=grid,
-                    id_db=id,
+                    id_db=len(list(station.transformers())) + 1,
                     v_level=v_nom,
                     s_max_longterm=trafo_min_size['S_nom'],
                     r_pu=trafo_min_size['r_pu'],

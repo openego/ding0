@@ -116,7 +116,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'ding0'
-copyright = u'2015-2019, open_eGo-Team'
+copyright = u'2015-2021, open_eGo-Team'
 author = u'open_eGo-Team'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -124,7 +124,7 @@ author = u'open_eGo-Team'
 # built documents.
 #
 # The short X.Y version.
-version = '0.1.10'
+version = '0.2.0'
 # The full version, including alpha/beta/rc tags.
 #release = '0.1.10'
 

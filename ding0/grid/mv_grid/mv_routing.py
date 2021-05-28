@@ -18,7 +18,7 @@ import time
 from ding0.grid.mv_grid.models.models import Graph, Node
 from ding0.grid.mv_grid.util import util, data_input
 from ding0.grid.mv_grid.solvers import savings, local_search
-from ding0.tools.geo import calc_geo_dist_vincenty, calc_geo_dist_matrix_vincenty, calc_geo_centre_point
+from ding0.tools.geo import calc_geo_dist, calc_geo_dist_matrix, calc_geo_centre_point
 from ding0.tools import config as cfg_ding0
 from ding0.core.network.stations import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
@@ -93,7 +93,7 @@ def ding0_graph_to_routing_specs(graph):
 
     specs['NODE_COORD_SECTION'] = nodes_pos
     specs['DEMAND'] = nodes_demands
-    specs['MATRIX'] = calc_geo_dist_matrix_vincenty(nodes_pos)
+    specs['MATRIX'] = calc_geo_dist_matrix(nodes_pos)
     specs['IS_AGGREGATED'] = nodes_agg
 
     return specs
@@ -155,7 +155,7 @@ def routing_solution_to_ding0_graph(graph, solution):
             edges.append((r._nodes[-1], depot))
 
             # create MV Branch object for every edge in `edges`
-            mv_branches = [BranchDing0() for _ in edges]
+            mv_branches = [BranchDing0(grid=depot_node.grid) for _ in edges]
             edges_with_branches = list(zip(edges, mv_branches))
 
             # recalculate circuit breaker positions for final solution, create it and set associated branch.
@@ -204,7 +204,7 @@ def routing_solution_to_ding0_graph(graph, solution):
                     node1.lv_load_area.ring = ring
 
                 # set branch length
-                b.length = calc_geo_dist_vincenty(node1, node2)
+                b.length = calc_geo_dist(node1, node2)
 
                 # set branch kind and type
                 # 1) default

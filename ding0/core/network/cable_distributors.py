@@ -32,14 +32,20 @@ class MVCableDistributorDing0(CableDistributorDing0):
         self.id_db = self.grid.cable_distributors_count() + 1
 
     @property
-    def pypsa_id(self):
-        """ :obj:`str`: Returns ...#TODO        
+    def pypsa_bus_id(self):
+        """ 
+        Returns specific ID for representing bus in pypsa network.
+        
+        Returns
+        -------
+        :obj:`str`: 
+            Representative of pypsa bus
         """
-        return '_'.join(['MV', str(self.grid.id_db),
-                                  'cld', str(self.id_db)])
+        return '_'.join(['BranchTee', 'mvgd', str(self.grid.id_db),
+                        str(self.id_db)])
 
     def __repr__(self):
-        return 'mv_cable_dist_' + repr(self.grid) + '_' + str(self.id_db)
+        return '_'.join(['MVCableDist', 'mvgd', str(self.grid.id_db), str(self.id_db)])
 
 
 class LVCableDistributorDing0(CableDistributorDing0):
@@ -67,5 +73,21 @@ class LVCableDistributorDing0(CableDistributorDing0):
         self.id_db = self.grid.cable_distributors_count() + 1
         self.in_building = kwargs.get('in_building', False)
 
+    @property
+    def pypsa_bus_id(self):
+        """ 
+        Returns specific ID for representing bus in pypsa network.
+        
+        Returns
+        -------
+        :obj:`str`: 
+            Representative of pypsa bus
+        """
+        return '_'.join(['BranchTee', 'mvgd', str(self.grid.grid_district.
+                              lv_load_area.mv_grid_district.mv_grid.id_db),
+                         'lvgd', str(self.grid.id_db), str(self.id_db)])
+
     def __repr__(self):
-        return 'lv_cable_dist_' + repr(self.grid) + '_' + str(self.id_db)
+        return '_'.join(['LVCableDist', 'mvgd', str(self.grid.grid_district.
+                                lv_load_area.mv_grid_district.mv_grid.id_db),
+                         'lvgd', str(self.grid.id_db), str(self.id_db)])

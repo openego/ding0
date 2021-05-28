@@ -301,12 +301,20 @@ class LVLoadAreaCentreDing0:
         return self.lv_load_area.network
 
     @property
-    def pypsa_id(self):
-        return '_'.join(['MV', str(self.grid.id_db), 'lac', str(self.id_db)])
+    def pypsa_bus_id(self):
+        """Todo: Remove
+        Returns specific ID for representing bus in pypsa network.
+
+        Returns
+        -------
+        :obj:`str`:
+            Representative of pypsa bus
+        """
+        return '_'.join(['Bus','mvgd', str(self.grid.id_db), 'lac', str(self.id_db)])
 
     def __repr__(self):
-        return 'lv_load_area_centre_' + str(self.id_db)
-
+        return '_'.join(['LVLoadAreaCentre',  'mvgd', str(
+                self.grid.id_db), str(self.id_db)])
 
 class LVGridDistrictDing0(RegionDing0):
     # TODO: check docstring
