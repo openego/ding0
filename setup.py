@@ -26,7 +26,7 @@ with open('dev_requirements.txt') as f:
     dev_requirements = f.read().splitlines()
 
 setup(name='ding0',
-      version='v0.1.13dev',
+      version='v0.2.0',
       author='Reiner Lemoine Institut, openego development group',
       author_email='jonathan.amme@rl-institut.de',
       description='DIstribution Network GeneratOr',
@@ -82,6 +82,6 @@ setup(name='ding0',
         "License :: OSI Approved :: GNU Affero General Public License v3",
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering"],
       )

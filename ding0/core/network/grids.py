@@ -22,18 +22,17 @@ from ding0.core.network.cable_distributors import MVCableDistributorDing0, LVCab
 from ding0.grid.mv_grid import mv_routing, mv_connect
 from ding0.grid.lv_grid import build_grid, lv_connect
 from ding0.tools import config as cfg_ding0, pypsa_io, tools
-from ding0.tools.geo import calc_geo_dist_vincenty
+from ding0.tools.geo import calc_geo_dist
 from ding0.grid.mv_grid.tools import set_circuit_breakers
 from ding0.flexopt.reinforce_grid import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
 
 import os
+import logging
 import networkx as nx
 from datetime import datetime
-import pyproj
-from functools import partial
-import logging
+from pyproj import Transformer
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.ops import transform
@@ -207,7 +206,7 @@ class MVGridDing0(GridDing0):
             Circuit breakers must be closed to find rings, this is done automatically.
         """
         for circ_breaker in self.circuit_breakers():
-            if circ_breaker.status is 'open':
+            if circ_breaker.status == 'open':
                 circ_breaker.close()
                 logger.info('Circuit breakers were closed in order to find MV '
                             'rings')
@@ -469,10 +468,7 @@ class MVGridDing0(GridDing0):
 
             # transform MVGD's area to epsg 3035
             # to achieve correct area calculation
-            projection = partial(
-                pyproj.transform,
-                pyproj.Proj(init='epsg:4326'),  # source coordinate system
-                pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+            projection = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
 
             # calculate load density
             kw2mw = 1e-3
@@ -501,7 +497,7 @@ class MVGridDing0(GridDing0):
             for node in self.graph_nodes_sorted():
                 if isinstance(node, LVLoadAreaCentreDing0):
                     # calc distance from MV-LV station to LA centre
-                    dist_node = calc_geo_dist_vincenty(self.station(), node) / 1e3
+                    dist_node = calc_geo_dist(self.station(), node) / 1e3
                     if dist_node > dist_max:
                         dist_max = dist_node
 

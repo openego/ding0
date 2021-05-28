@@ -31,7 +31,7 @@ from ding0.grid.lv_grid.build_grid import select_transformers
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
-from pandas import Series, DataFrame, DatetimeIndex
+from pandas import Series, DataFrame, date_range
 from pypsa.io import import_series_from_dataframe
 from pypsa import Network
 from shapely.geometry import Point
@@ -1317,9 +1317,9 @@ def run_powerflow_onthefly(components, components_data, grid,
         data_integrity(components, components_data)
 
     # define investigated time range
-    timerange = DatetimeIndex(freq=resolution,
-                              periods=timesteps,
-                              start=start_time)
+    timerange = date_range(freq=resolution,
+                           periods=timesteps,
+                           start=start_time)
 
     # TODO: Instead of hard coding PF config, values from class PFConfigDing0 
     #  can be used here.

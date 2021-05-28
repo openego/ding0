@@ -7,7 +7,7 @@ Installation
 ============
 
 .. note::
-    Installation is only tested on (debian like) linux OS.
+    Installation is only tested on (Debian-like) Linux OS.
 
 Ding0 is provided through PyPi package management and, thus, installable from
 sources of pip3.

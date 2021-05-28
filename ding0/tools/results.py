@@ -32,8 +32,7 @@ from ding0.core import CircuitBreakerDing0
 from ding0.core.network.loads import LVLoadDing0
 from ding0.core import LVLoadAreaCentreDing0
 
-import pyproj
-from functools import partial
+from pyproj import Transformer
 
 from geoalchemy2.shape import from_shape
 from sqlalchemy.orm import sessionmaker
@@ -294,12 +293,7 @@ def calculate_lvgd_stats(nw):
     """
     ##############################
     #  ETRS (equidistant) to WGS84 (conformal) projection
-    proj = partial(
-        pyproj.transform,
-        # pyproj.Proj(init='epsg:3035'),  # source coordinate system
-        #  pyproj.Proj(init='epsg:4326'))  # destination coordinate system
-        pyproj.Proj(init='epsg:4326'),  # source coordinate system
-        pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+    proj = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
     ##############################
     # close circuit breakers
     nw.control_circuit_breakers(mode='close')
@@ -815,12 +809,7 @@ def calculate_mvgd_stats(nw):
 
         # geographic
         #  ETRS (equidistant) to WGS84 (conformal) projection
-        proj = partial(
-            pyproj.transform,
-            # pyproj.Proj(init='epsg:3035'),  # source coordinate system
-            # pyproj.Proj(init='epsg:4326'))  # destination coordinate system
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+        proj = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
         district_geo = transform(proj, district.geo_data)
         other_nodes_dict[district.mv_grid.id_db].update({'Dist_area': district_geo.area})
 
@@ -991,16 +980,15 @@ def calculate_mvgd_stats(nw):
 
         mvgd_stats = pd.concat([mvgd_stats, LA_data], axis=1)
 
-        LA_data = LA_df.groupby(['grid_id'])['population',
-                                             'residential_peak_load',
-                                             'retail_peak_load',
-                                             'industrial_peak_load',
-                                             'agricultural_peak_load',
-                                             'total_peak_load',
-                                             'lv_generation',
-                                             'lv_gens_lvl_6',
-                                             'lv_gens_lvl_7'
-        ].sum()
+        LA_data = LA_df.groupby(['grid_id'])[['population',
+                                              'residential_peak_load',
+                                              'retail_peak_load',
+                                              'industrial_peak_load',
+                                              'agricultural_peak_load',
+                                              'total_peak_load',
+                                              'lv_generation',
+                                              'lv_gens_lvl_6',
+                                              'lv_gens_lvl_7']].sum()
         LA_data.columns = ['LA Total Population',
                            'LA Total LV Peak Load Residential',
                            'LA Total LV Peak Load Retail',
@@ -1026,9 +1014,9 @@ def calculate_mvgd_stats(nw):
         sat_LA_data.columns = ['Number of Load Areas - Satellite']
         mvgd_stats = pd.concat([mvgd_stats, sat_LA_data], axis=1)
 
-        agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])['population',
-                                                                  'lv_generation',
-                                                                  'total_peak_load'].sum()
+        agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])[['population',
+                                                                   'lv_generation',
+                                                                   'total_peak_load']].sum()
         agg_LA_data.columns = ['LA Aggregated Population',
                                'LA Aggregated LV Gen. Cap.', 'LA Aggregated LV Peak Load total'
                                ]
@@ -1037,6 +1025,7 @@ def calculate_mvgd_stats(nw):
     ###################################
     mvgd_stats = mvgd_stats.fillna(0)
     mvgd_stats = mvgd_stats[sorted(mvgd_stats.columns.tolist())]
+    mvgd_stats.index.name = 'grid_id'
     return mvgd_stats
 
 
