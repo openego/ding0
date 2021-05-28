@@ -67,9 +67,8 @@ and installing manually via pip:
 
     mkdir ~/repos/
     cd ~/repos/
-    git clone git@github.com:openego/ding0.git
+    git clone https://github.com/openego/ding0.git # for SSH use: git clone git@github.com:openego/ding0.git
     pip install -e ~/repos/ding0/
-    
 
 Installation on Windows
 -----------------------
