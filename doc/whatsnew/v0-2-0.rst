@@ -16,3 +16,4 @@ Changes
   connection point to reduce the number of nodes.
   `#322 <https://github.com/openego/ding0/issues/322>`_
 * Fix sum capacity of grid generators `#326 <https://github.com/openego/ding0/issues/326>`_
+* Fix PyPI description `#311 <https://github.com/openego/ding0/issues/311>`_
