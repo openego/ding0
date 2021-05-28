@@ -20,18 +20,22 @@ import os
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 with open('dev_requirements.txt') as f:
     dev_requirements = f.read().splitlines()
+
+with open('README.md', encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(name='ding0',
       version='v0.2.0',
       author='Reiner Lemoine Institut, openego development group',
       author_email='jonathan.amme@rl-institut.de',
       description='DIstribution Network GeneratOr',
-      long_description=read('README.md'),
-      long_description_content_type='text/x-rst',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       url='https://github.com/openego/ding0',
       license='GNU GPLv3',
       packages=find_packages(),
