@@ -86,6 +86,7 @@ setup(name='ding0',
         "License :: OSI Approved :: GNU Affero General Public License v3",
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
+        "Operating System :: Microsoft :: Windows",
         "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering"],
       )
