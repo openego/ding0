@@ -36,6 +36,22 @@ directory of ding0 repository. Then it
 installs currently checked out version. The installation process can be observed
 in the terminal.
 
+Run unit and integration tests
+==============================
+
+ding0 comes with a bunch of unit and integration tests on most features. You'll
+need additional packages listed in `dev_requirements.txt`. To install, use
+
+.. code-block:: bash
+
+    pip install -r /path/to/ding0/dev_requirements.txt
+
+To run tests with e.g. 4 workers (you may omit this argument), use
+
+.. code-block:: bash
+
+    cd /path/to/ding0/
+    pytest --workers 4 -vv
 
 Test ding0 runs
 ===============
