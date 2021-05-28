@@ -10,7 +10,7 @@ Changes
 * CSV export in PyPSA format `#307 <https://github.com/openego/ding0/issues/307>`_ ,
   this required further changes and fixing of tests, cf. `#312 <https://github.com/openego/ding0/pull/312>`_
 * Switched from pyproj1 to pyproj2 for CRS transformations `#343 <https://github.com/openego/ding0/issues/343>`_
-* Reproducible by fixing `#315 <https://github.com/openego/ding0/issues/315>`_, for details see
+* Reproducible stats by fixing `#315 <https://github.com/openego/ding0/issues/315>`_, for details see
   `#324 <https://github.com/openego/ding0/pull/324>`_
 * In the CSV export, (in-building) household loads and generators are no more
   contained as extra nodes but directly connected to the house's grid
