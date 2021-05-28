@@ -1,10 +1,12 @@
-Release v0.2.0 (May 20, 2021)
+Release v0.2.0 (May 28, 2021)
 +++++++++++++++++++++++++++++
 
 Changes
 -------
 
 * Added Python 3.8 support `#325 <https://github.com/openego/ding0/issues/325>`_
+* Fix installation with Conda `#339 <https://github.com/openego/ding0/issues/339>`_
+
 * CSV export in PyPSA format `#307 <https://github.com/openego/ding0/issues/307>`_ ,
   this required further changes and fixing of tests, cf. `#312 <https://github.com/openego/ding0/pull/312>`_
 * Switched from pyproj1 to pyproj2 for CRS transformations `#343 <https://github.com/openego/ding0/issues/343>`_
