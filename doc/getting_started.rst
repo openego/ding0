@@ -42,28 +42,33 @@ Create a new one for Ding0 by
 .. code-block:: bash
 
     # Adjust path to your specific needs
-    virtualenv -p python3 ~/.virtualenvs/ding0
+    virtualenv -p python3.8 ~/virtualenvs/ding0
 
 Jump into (aka. activate) this python distribution by
 
 .. code-block:: bash
 
     # Adjust path to your specific needs
-    source ~/.virtualenvs/ding0/bin/activate
+    source ~/virtualenvs/ding0/bin/activate
 
-From that, the latest release of Ding0 is installed by
+From that, the latest release of ding0 is installed by
 
-.. code-block:: python
+.. code-block:: bash
 
-    pip3 install ding0
+    pip install ding0
 
 
 Pip allows to install a developer version of a package that uses currently
-checked out code. A developer mode installation is achieved by
+checked out code. A developer mode installation is achieved by cloning the
+repository to an arbitrary path (e.g. `~/repos/` in the following example)
+and installing manually via pip:
 
-.. code-block:: python
+.. code-block:: bash
 
-    pip3 install -e path/to/cloned/ding0/repository
+    mkdir ~/repos/
+    cd ~/repos/
+    git clone git@github.com:openego/ding0.git
+    pip install -e ~/repos/ding0/
     
 
 Installation under Windows

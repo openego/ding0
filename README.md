@@ -7,7 +7,8 @@
 DING0
 =====
 DIstribution Network GeneratOr -- A tool to generate synthetic medium and low
-voltage power distribution grids based on open (or at least accessible) data.
+voltage power distribution grids based on open (or at least publicly available)
+data.
 
 Installation and usage
 ----------------------
@@ -15,7 +16,7 @@ Installation and usage
 Ding0 is provided through the package management tool *pip*. Install it by
 
 ```
-pip3 install ding0
+pip install ding0
 ```
 
 Further details regarding the installation including dependencies are provided
@@ -24,12 +25,13 @@ in the [documentation](https://dingo.readthedocs.io)
 A [set of examples](https://dingo.readthedocs.io/en/dev/usage_details.html#examples)
 is provided to show how to use Ding0.
 
-An overview on versions of data already generated [can be found in the wiki](https://github.com/openego/ding0/wiki/Ding0-datasets).
+An overview on versions of data already generated
+[can be found in the wiki](https://github.com/openego/ding0/wiki/Ding0-datasets).
 
 LICENSE
 -------
 
-Copyright (C) 2017-2020 openego project group
+Copyright (C) 2017-2021 openego project group
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free
