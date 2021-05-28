@@ -3,8 +3,8 @@ Getting started
 
 .. _installation:
 
-Installation
-============
+Installation on Linux
+=====================
 
 .. note::
     Installation is only tested on (Debian-like) Linux OS.
@@ -71,8 +71,8 @@ and installing manually via pip:
     pip install -e ~/repos/ding0/
     
 
-Installation under Windows
---------------------------
+Installation on Windows
+-----------------------
 To install Ding0 in windows, it is currently recommended to use
 `Anaconda <https://www.anaconda.com/distribution/>`_ or
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
