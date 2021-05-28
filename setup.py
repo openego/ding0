@@ -30,7 +30,7 @@ with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='ding0',
-      version='v0.2.0',
+      version='v0.2.1',
       author='Reiner Lemoine Institut',
       author_email='jonathan.amme@rl-institut.de',
       description='DIstribution Network GeneratOr',
