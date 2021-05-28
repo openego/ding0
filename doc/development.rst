@@ -8,12 +8,18 @@ PR, contact us, or just create an issue if something seems odd.
 Test the package installation
 =============================
 
+.. warning::
+
+    The scripts for testing the installation might be outdated and will be
+    revised in v0.2.1.
+
 We use `Docker <https://www.docker.com/>`_ to test the build of
 ding0 on a fresh Ubuntu OS. In order to run such a test make sure docker is
-installed
+installed.
 
 .. code-block:: bash
 
+    cd ./test_installation/
     chmod +x install_docker.sh
     ./install_docker.sh
 
