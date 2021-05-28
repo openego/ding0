@@ -95,8 +95,14 @@ and create an environment with the ding0_env.yml file provided.
     This may eventually get fixed later on but for now,
     we would recommend using only the standard cmd.exe on windows.
 
-To create a ding0 environment using the yaml file in conda,
-use the command:
+If you're using Git Bash on Windows, you might have to add conda to paths to
+have the `conda` command available (adjust path to your Conda installation):
+
+.. code-block:: bash
+
+    . /c/ProgramData/Anaconda3/etc/profile.d/conda.sh
+
+To create a ding0 environment using the yaml file in conda, use the command:
 
 .. code-block:: bash
 
@@ -118,24 +124,17 @@ use the command:
     conda activate ding0_env
 
 Once the environment is activated, you have two options to install ding0.
-Either install it from the local repository with the commands:
+Either install it from the local repository with the command:
 
 .. code-block:: bash
 
-    pip install -U -e \path\to\ding0\
+    pip install -e \path\to\ding0\
 
 Or install it from the pypi repository with the command:
 
 .. code-block:: bash
 
     pip install ding0
-
-after this, it is possible to install ding0 directly from pip within the
-conda environment.
-
-.. code-block:: bash
-
-    conda activate ding0_env
 
 Use Ding0
 =========
