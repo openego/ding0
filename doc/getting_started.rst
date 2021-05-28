@@ -122,20 +122,16 @@ Either install it from the local repository with the commands:
 
 .. code-block:: bash
 
-    conda activate ding0_env
     pip install -U -e \path\to\ding0\
 
 Or install it from the pypi repository with the command:
 
 .. code-block:: bash
 
-    conda activate ding0_env
     pip install ding0
 
-
-
 after this, it is possible to install ding0 directly from pip within the
-conda enviornment
+conda environment.
 
 .. code-block:: bash
 
