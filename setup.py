@@ -31,13 +31,13 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(name='ding0',
       version='v0.2.0',
-      author='Reiner Lemoine Institut, openego development group',
+      author='Reiner Lemoine Institut',
       author_email='jonathan.amme@rl-institut.de',
       description='DIstribution Network GeneratOr',
       long_description=long_description,
       long_description_content_type='text/markdown',
       url='https://github.com/openego/ding0',
-      license='GNU GPLv3',
+      license='GNU AGPLv3',
       packages=find_packages(),
       install_requires=requirements,
       package_data={
