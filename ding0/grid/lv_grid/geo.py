@@ -2,6 +2,17 @@ from geoalchemy2.shape import to_shape
 from shapely.geometry import MultiPoint, Point, shape
 
 
+
+def get_Point_from_x_y(x, y):
+    
+    """ get point for given x,y
+    """
+    
+    return Point(x,y)
+
+
+
+
 def get_points_in_load_area(buildings_df):
     
     """ 
@@ -33,3 +44,6 @@ def get_convex_hull_from_points(points):
     mpt = MultiPoint([shape(point) for point in points])
     
     return mpt.convex_hull
+
+
+

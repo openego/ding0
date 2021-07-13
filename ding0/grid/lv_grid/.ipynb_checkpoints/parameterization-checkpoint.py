@@ -42,7 +42,7 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
     # will be replaced by oop when ding0 contains building-data
     # sqlalchemy does not allow: for building in buildings: building.capacity = new_Value 
 
-    df_buildings_w_loads = pd.DataFrame(columns=['osm_id', 'category', 'capacity', 'number_households', 'x', 'y'])
+    df_buildings_w_loads = pd.DataFrame(columns=['osm_id', 'sub_category', 'category', 'capacity', 'number_households', 'x', 'y'])
     df_buildings_w_loads.index = df_buildings_w_loads['osm_id']
     del df_buildings_w_loads['osm_id']
 
@@ -63,6 +63,8 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
         p = to_shape(amenity.geometry)
 
         peak_load = get_peak_load(amenity.amenity)
+        
+        category = 'ria'
 
         # if type does not exist in load profiles, set capacity=0 
         if peak_load is None:
@@ -73,12 +75,12 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
 
         if amenity.amenity == 'charging_station':
 
-            df_buildings_w_loads.loc[amenity.osm_id] = [amenity.amenity, peak_load, 0, p.x, p.y]
+            df_buildings_w_loads.loc[amenity.osm_id] = [amenity.amenity, category, peak_load, 0, p.x, p.y]
 
 
         else:
 
-            df_buildings_w_loads.loc[amenity.osm_id] = [amenity.amenity, peak_load * avg_mxm, 0, p.x, p.y]
+            df_buildings_w_loads.loc[amenity.osm_id] = [amenity.amenity, category, peak_load * avg_mxm, 0, p.x, p.y]
 
 
 
@@ -91,6 +93,8 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
             p = to_shape(building.geometry)
 
             peak_load = get_peak_load(building.building)
+        
+            category = 'ria'
 
             # if type does not exist in load profiles, set capacity=0 
             if peak_load is None:
@@ -105,6 +109,8 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
             # set peak load by load profile. will be updated when number of all households per feeder are known.
             if building.building in load_profile_categories['residential']:
                 
+                category = 'res'
+                
                 if building.building == 'yes':
                 
                     building.building = 'residential'
@@ -113,7 +119,7 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
 
                     number_households += 1
 
-                df_buildings_w_loads.loc[building.osm_id] = [building.building, peak_load * avg_mxm * number_households * 1e-3, number_households, p.x, p.y]
+                df_buildings_w_loads.loc[building.osm_id] = [building.building, category, peak_load * avg_mxm * number_households * 1e-3, number_households, p.x, p.y]
 
 
 
@@ -121,7 +127,7 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
             else:
 
                 # peak_load = peak_load_per_square_meter * square_meter * 1e-3.        
-                df_buildings_w_loads.loc[building.osm_id] = [building.building, peak_load * building.area * 1e-3, number_households, p.x, p.y]
+                df_buildings_w_loads.loc[building.osm_id] = [building.building, category, peak_load * building.area * 1e-3, number_households, p.x, p.y]
 
 
 
@@ -132,6 +138,8 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
             p = to_shape(building.geometry)
 
             peak_load = get_peak_load(building.building)
+                
+            category = 'ria'
 
             # if type does not exist in load profiles, set capacity=0 
             if peak_load is None:
@@ -146,6 +154,8 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
             # set peak load 0. will be updated when number of all households per feeder are known.
             if building.building in load_profile_categories['residential']:
                 
+                category = 'res'
+                
                 if building.building == 'yes':
                 
                     building.building = 'residential'
@@ -154,7 +164,7 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
 
                     number_households += 1
 
-                df_buildings_w_loads.loc[building.osm_id] = [building.building, peak_load * avg_mxm * number_households * 1e-3, number_households, p.x, p.y]
+                df_buildings_w_loads.loc[building.osm_id] = [building.building, category, peak_load * avg_mxm * number_households * 1e-3, number_households, p.x, p.y]
 
 
 
@@ -171,7 +181,7 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
 
                     peak_load = 0
 
-                df_buildings_w_loads.loc[building.osm_id] = [building.building, peak_load * building.area / building.n_amenities_inside * 1e-3, number_households, p.x, p.y]
+                df_buildings_w_loads.loc[building.osm_id] = [building.building, category, peak_load * building.area / building.n_amenities_inside * 1e-3, number_households, p.x, p.y]
 
 
                 

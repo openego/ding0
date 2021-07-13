@@ -45,6 +45,33 @@ def get_charging_station_columns():
 
 
 
+def get_categories_retail():
+    
+    retail = ['']
+    
+    
+    return retail
+
+
+
+def get_categories_industry():
+    
+    industry = ['']
+    
+    
+    return retail
+
+
+
+def get_categories_aggriculture():
+    
+    aggriculture = ['']
+    
+    
+    return retail
+
+
+
 def get_peak_loads():
     
     """ get dictionary containing categories and peak loads """

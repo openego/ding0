@@ -161,3 +161,51 @@ def nearest_nodes(G, X, Y):
         dist = dist[0]
 
     return nn, dist
+
+
+
+
+def get_location_substation_at_pi(graph_lv_grid, nodes):
+    ''' calculate power distance pi
+        pi=dist*capacity
+        param  nodes
+        return node id with min(pi)
+    '''
+    
+    # init power_distance
+    power_distance = 99999999
+    update_power_distance=True # check if there is a need to update, init with True
+    nodes_to_check = nodes.nn.astype('int64').tolist()
+    
+    # init with first node
+    # in case there is only 1 node in nodes_to_check, its dipower_distance_localst would be 0.
+    power_distance_location = nodes_to_check[0]
+
+
+    for node_to_check in nodes_to_check: # check all node to every other node and calc its distance
+
+        # calc dist and power distance to all other nodes
+        # power distance: pi=dist*capacity     
+        for checking_node_id, checking_node in nodes.iterrows():
+            
+            
+            dist = nx.shortest_path_length(graph_lv_grid, checking_node.nn, node_to_check, weight='length')
+            power_distance_local = dist * checking_node.capacity
+
+            if power_distance_local > 0:
+
+                if power_distance > power_distance_local:
+                    
+                    update_power_distance=False
+
+                    power_distance = power_distance_local
+                    power_distance_location = node_to_check
+                    
+                 
+    # get x,y of pi
+    xy = nodes.loc[nodes['nn'] == power_distance_location][['x','y']].iloc[0]
+    
+    x = xy.x
+    y = xy.y
+    
+    return x,y 
