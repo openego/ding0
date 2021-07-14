@@ -86,10 +86,83 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
 
 
     for building in buildings_wo_a:  
+        
+        p = to_shape(building.geo_center)
+        poly = to_shape(building.geometry)
+
+        peak_load = get_peak_load(building.building)
+
+        # if type does not exist in load profiles, set capacity=0 
+        if peak_load is None:
+
+            peak_load = 0
 
 
-            p = to_shape(building.geo_center)
-            poly = to_shape(building.geometry)
+        number_households = building.n_apartments 
+
+
+        # check if building is residential and add 1 household if no other number of households is known.
+        # set peak load by load profile. will be updated when number of all households per feeder are known.
+        if building.building in load_profile_categories['residential']:
+
+            if building.building == 'yes':
+
+                building.building = 'residential'
+
+            if number_households == 0:
+
+                number_households += 1
+
+            df_buildings_w_loads.loc[building.osm_id] = [building.building, peak_load * avg_mxm * number_households * 1e-3, number_households, p.x, p.y, poly]
+
+
+
+        # parameterize all categories but residentials
+        else:
+
+            # peak_load = peak_load_per_square_meter * square_meter * 1e-3.        
+            df_buildings_w_loads.loc[building.osm_id] = [building.building, peak_load * building.area * 1e-3, number_households, p.x, p.y, poly]
+
+
+
+
+    for building in buildings_w_a:
+        
+        p = to_shape(building.geo_center)
+        poly = to_shape(building.geometry_building)
+
+        peak_load = get_peak_load(building.building)
+
+        # if type does not exist in load profiles, set capacity=0 
+        if peak_load is None:
+
+            peak_load = 0
+
+
+        number_households = building.n_apartments
+
+
+        # check if building is residential and add 1 household if no other number of households is known.
+        # set peak load 0. will be updated when number of all households per feeder are known.
+        if building.building in load_profile_categories['residential']:
+
+            if building.building == 'yes':
+
+                building.building = 'residential'
+
+            if number_households == 0:
+
+                number_households += 1
+
+            df_buildings_w_loads.loc[building.osm_id_amenity] = [building.building, peak_load * avg_mxm * number_households * 1e-3, number_households, p.x, p.y, poly]
+
+
+
+        # parameterize all categories but residentials
+        else:
+
+            # peak_load in kW. if building contains multiple amenities, area is shared unifromly.
+            # peak_load = peak_load_per_square_meter * square_meter / n_amenities_inside * 1e-3.        
 
             peak_load = get_peak_load(building.building)
 
@@ -98,82 +171,7 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
 
                 peak_load = 0
 
-
-            number_households = building.n_apartments 
-
-
-            # check if building is residential and add 1 household if no other number of households is known.
-            # set peak load by load profile. will be updated when number of all households per feeder are known.
-            if building.building in load_profile_categories['residential']:
-                
-                if building.building == 'yes':
-                
-                    building.building = 'residential'
-
-                if number_households == 0:
-
-                    number_households += 1
-
-                df_buildings_w_loads.loc[building.osm_id] = [building.building, peak_load * avg_mxm * number_households * 1e-3, number_households, p.x, p.y, poly]
-
-
-
-            # parameterize all categories but residentials
-            else:
-
-                # peak_load = peak_load_per_square_meter * square_meter * 1e-3.        
-                df_buildings_w_loads.loc[building.osm_id] = [building.building, peak_load * building.area * 1e-3, number_households, p.x, p.y, poly]
-
-
-
-
-    for building in buildings_w_a: 
-
-
-            p = to_shape(building.geo_center)
-            poly = to_shape(building.geometry_building)
-
-            peak_load = get_peak_load(building.building)
-
-            # if type does not exist in load profiles, set capacity=0 
-            if peak_load is None:
-
-                peak_load = 0
-
-
-            number_households = building.n_apartments
-
-
-            # check if building is residential and add 1 household if no other number of households is known.
-            # set peak load 0. will be updated when number of all households per feeder are known.
-            if building.building in load_profile_categories['residential']:
-                
-                if building.building == 'yes':
-                
-                    building.building = 'residential'
-
-                if number_households == 0:
-
-                    number_households += 1
-
-                df_buildings_w_loads.loc[building.osm_id_amenity] = [building.building, peak_load * avg_mxm * number_households * 1e-3, number_households, p.x, p.y, poly]
-
-
-
-            # parameterize all categories but residentials
-            else:
-
-                # peak_load in kW. if building contains multiple amenities, area is shared unifromly.
-                # peak_load = peak_load_per_square_meter * square_meter / n_amenities_inside * 1e-3.        
-
-                peak_load = get_peak_load(building.building)
-
-                # if type does not exist in load profiles, set capacity=0 
-                if peak_load is None:
-
-                    peak_load = 0
-
-                df_buildings_w_loads.loc[building.osm_id_amenity] = [building.building, peak_load * building.area / building.n_amenities_inside * 1e-3, number_households, p.x, p.y, poly]
+            df_buildings_w_loads.loc[building.osm_id_amenity] = [building.building, peak_load * building.area / building.n_amenities_inside * 1e-3, number_households, p.x, p.y, poly]
 
 
                 
