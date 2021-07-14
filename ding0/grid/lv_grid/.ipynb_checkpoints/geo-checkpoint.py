@@ -13,7 +13,7 @@ def get_Point_from_x_y(x, y):
 
 
 
-def get_points_in_load_area(buildings_df):
+def get_points_in_load_area(geometry):
     
     """ 
     get all points in a load area
@@ -22,17 +22,24 @@ def get_points_in_load_area(buildings_df):
         buildings_without_amenities
         amenities_not_in_buildings
     
-    TODO: add points from generators
+    TODO: add points from generators?
     """
 
-    points = []
+    point_lists = []
+    for geo in geometry:
 
-    for i, row in buildings_df.iterrows():
-        
-        points.append(Point(row.x, row.y))
+        if geo.geom_type == 'Polygon':
+            point_lists += [Point(point) for point in geo.exterior.coords[:-1]]
+
+        elif geo.geom_type == 'Point':
+            point_lists.append(geo)
+
+        else:
+
+            raise IOError('Shape is not a polygon neither a point.')
     
     
-    return points
+    return point_lists
 
 
 
