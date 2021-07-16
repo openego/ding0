@@ -294,12 +294,15 @@ class NetworkDing0:
             The rings are finally closed to hold a complete graph (if the SDs are open,
             the edges adjacent to a SD will not be exported!)
         """
+        
+        # TODO run ding0 needs to consider new features
+        
+        
         if debug:
             start = time.time()
 
         # STEP 1: Import MV Grid Districts and subjacent objects
-        self.import_mv_grid_districts(session,
-                                      mv_grid_districts_no=mv_grid_districts_no)
+        self.import_mv_grid_districts(session, mv_grid_districts_no=mv_grid_districts_no)
 
         # STEP 2: Import generators
         self.import_generators(session, debug=debug)
@@ -578,7 +581,7 @@ class NetworkDing0:
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-    def import_mv_grid_districts(self, session, mv_grid_districts_no=None):
+    def import_mv_grid_districts(self, session, ding0_default=True, mv_grid_districts_no=None, need_parameterization=False):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
         and MV-LV stations, instantiates and initiates objects.
@@ -590,6 +593,11 @@ class NetworkDing0:
         mv_grid_districts : :obj:`list` of :obj:`int`
             List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
+            
+        ding0_default: if True ding0 run
+                        else: build new lv_districts...
+                        
+        need_parameterization: robert parameterize his osm buildings 
 
         See Also
         --------
@@ -642,31 +650,284 @@ class NetworkDing0:
             #     pyproj.Proj(init='epsg:3035'))  # destination coordinate system
             #
             # region_geo_data = transform(projection, region_geo_data)
+            
+            
+            #### TODO: check ding0_default
+            if ding0_default:
 
-            mv_grid_district = self.build_mv_grid_district(poly_id,
-                                             subst_id,
-                                             region_geo_data,
-                                             station_geo_data)
+                mv_grid_district = self.build_mv_grid_district(poly_id,
+                                                 subst_id,
+                                                 region_geo_data,
+                                                 station_geo_data)
 
-            # import all lv_stations within mv_grid_district
-            lv_stations = self.import_lv_stations(session)
+                # import all lv_stations within mv_grid_district
+                lv_stations = self.import_lv_stations(session)
 
-            # import all lv_grid_districts within mv_grid_district
-            lv_grid_districts = self.import_lv_grid_districts(session, lv_stations)
+                # import all lv_grid_districts within mv_grid_district
+                lv_grid_districts = self.import_lv_grid_districts(session, lv_stations)
+                
+                # import load areas
+                lv_load_areas = self.import_lv_load_areas(session,
+                                          mv_grid_district,
+                                          lv_grid_districts,
+                                          lv_stations)
+                
+                
+            else: # build new lv_grid_districts 
+                
+                self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, need_parameterization)
+                
 
-            # import load areas
-            self.import_lv_load_areas(session,
-                                      mv_grid_district,
-                                      lv_grid_districts,
-                                      lv_stations)
+            
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
             mv_grid_district.add_peak_demand()
+            
+            return lv_load_areas
+        
 
         logger.info('=====> MV Grid Districts imported')
+        
+    def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district, need_parameterization):
+        """
+        Imports load_areas (load areas) from database for a single MV grid_district
+        And compute new lv_districts
 
-    def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts,
-                             lv_stations):
+        Parameters
+        ----------
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Database session
+        mv_grid_district : MV grid_district/station (instance of MVGridDistrictDing0 class) for
+            which the import of load areas is performed
+        """
+
+        # get ding0s' standard CRS (SRID)
+        srid = str(int(cfg_ding0.get('geo', 'srid')))
+        # SET SRID 3035 to achieve correct area calculation of lv_grid_district
+        #srid = '3035'
+
+        # threshold: load area peak load, if peak load < threshold => disregard
+        # load area
+        lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
+
+        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+
+        # build SQL query
+        lv_load_areas_sqla = session.query(
+            self.orm['orm_lv_load_areas'].id.label('id_db'),
+            self.orm['orm_lv_load_areas'].zensus_sum,
+            self.orm['orm_lv_load_areas'].zensus_count.label('zensus_cnt'),
+            self.orm['orm_lv_load_areas'].ioer_sum,
+            self.orm['orm_lv_load_areas'].ioer_count.label('ioer_cnt'),
+            self.orm['orm_lv_load_areas'].area_ha.label('area'),
+            self.orm['orm_lv_load_areas'].sector_area_residential,
+            self.orm['orm_lv_load_areas'].sector_area_retail,
+            self.orm['orm_lv_load_areas'].sector_area_industrial,
+            self.orm['orm_lv_load_areas'].sector_area_agricultural,
+            self.orm['orm_lv_load_areas'].sector_share_residential,
+            self.orm['orm_lv_load_areas'].sector_share_retail,
+            self.orm['orm_lv_load_areas'].sector_share_industrial,
+            self.orm['orm_lv_load_areas'].sector_share_agricultural,
+            self.orm['orm_lv_load_areas'].sector_count_residential,
+            self.orm['orm_lv_load_areas'].sector_count_retail,
+            self.orm['orm_lv_load_areas'].sector_count_industrial,
+            self.orm['orm_lv_load_areas'].sector_count_agricultural,
+            self.orm['orm_lv_load_areas'].nuts.label('nuts_code'),
+            func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom, srid)).\
+                label('geo_area'),
+            func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom_centre, srid)).\
+                label('geo_centre'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_residential * gw2kw).\
+                label('peak_load_residential'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_retail * gw2kw).\
+                label('peak_load_retail'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * gw2kw).\
+                label('peak_load_industrial'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * gw2kw).\
+                label('peak_load_agricultural'),
+            ((self.orm['orm_lv_load_areas'].sector_peakload_residential
+              + self.orm['orm_lv_load_areas'].sector_peakload_retail
+              + self.orm['orm_lv_load_areas'].sector_peakload_industrial
+              + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
+             * gw2kw).label('peak_load')). \
+            filter(self.orm['orm_lv_load_areas'].subst_id == mv_grid_district. \
+                   mv_grid._station.id_db).\
+            filter(((self.orm['orm_lv_load_areas'].sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
+                     + self.orm['orm_lv_load_areas'].sector_peakload_retail
+                     + self.orm['orm_lv_load_areas'].sector_peakload_industrial
+                     + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
+                       * gw2kw) > lv_loads_threshold). \
+            filter(self.orm['version_condition_la'])
+
+        # read data from db
+        lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
+                                          session.bind,
+                                          index_col='id_db')
+        
+
+        # create load_area objects from rows and add them to graph
+        for id_db, row in lv_load_areas.iterrows():
+            
+            
+            ### ROBERT: calculate peak load of load area
+            ### CLUSTERING HERE:
+            
+            
+            
+            #### STEP 1.A. LOAD WAYS AND BUILD GRAPH
+            
+            # load ways
+            ### Load bays
+            #ways = session_osm.query(Way).filter(func.st_intersects(func.ST_GeomFromText(lv_load_areas.geo_area.wkt, get_config_osm('srid')), Way.geometry)) 
+
+            # node_coords_dict just for plotting 
+            graph, node_coords_dict = build_graph_from_ways(ways)
+            #nx.draw(graph, node_coords_dict)
+            
+            
+            
+            #### STEP 1.B 
+            ### ggfs. weitere knoten dem graphen zuführen
+            
+            
+            
+            
+            #### STEP 2.A. NUR ROBERT PARAMETRIERUNG DURCH OSM BUILDINGS AND AMENITIES
+            if need_parameterization:
+                
+                print('parameterization robert')
+                
+                ### Load buildings_w_a
+                #buildings_w_a = session_osm.query(Buildings_with_Amenities).filter(func.st_intersects(func.ST_GeomFromText(lv_load_areas.wkt, get_config_osm('srid')), Buildings_with_Amenities.geometry_amenity)) 
+
+                ### Load buildings_wo_a
+                #buildings_wo_a = session_osm.query(Building_wo_Amenity).filter(func.st_intersects(func.ST_GeomFromText(lv_load_areas.wkt, get_config_osm('srid')), Building_wo_Amenity.geometry)) 
+
+                ### Load amenities_ni_Buildings
+                #amenities_ni_Buildings = session_osm.query(Amenities_ni_Buildings).filter(func.st_intersects(func.ST_GeomFromText(lv_load_areas.wkt, get_config_osm('srid')), Amenities_ni_Buildings.geometry)) 
+                
+                
+                #buildings_w_loads_df = parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Buildings)
+                
+            else:
+                
+                print('pauls parametrierung durch din0 bekannt lasten zu gebäuden')
+
+                
+                
+            ##### STEP 3. nearest nodes für gebäude ud graphen zuordnen
+                
+            X = buildings_w_loads_df['x'].tolist()
+            Y = buildings_w_loads_df['y'].tolist()
+
+            buildings_w_loads_df['nn'], buildings_w_loads_df['nn_dist'] = nearest_nodes(graph, X, Y)
+
+            
+            
+            
+            #### STEP 4. knoten reduzieren, die bei 1.B. hinzugefügt wurden
+            
+            
+            
+            
+            #### STEP 5. clustering
+            
+            
+            
+            #### step 6.1. je cluster der aktuellen loar area (stations und districts erstellen):
+            
+            
+                # STATION
+                # mvlv_subst_id = id_db_cluster_id
+                # la_id = id_db
+                # geom = berechnen wir durch bestimmung des lastschwerpunkts
+                # erstellen der station(mvlv_subst_id, la_id, geom)
+
+
+                # DISTRICT 
+                # la_id
+                # population
+                # peak_load_residential
+                # peak_load_retail
+                # peak_load_industrial
+                # peak_load_agricultural
+                # peak_load
+                # geom
+                # sector_count_residential
+                # sector_count_retail
+                # sector_count_industrial
+                # sector_count_agricultural
+                # sector_consumption_residential
+                # sector_consumption_retail
+                # sector_consumption_industrial
+                # sector_consumption_agricultural
+                
+                ####            a: platzierung der ons und diese erstellen 
+                ####            b: routing der gebäude zurn ons
+                ####  optional  c: update peak load, counts, ....
+                
+                
+            #### 6.2. alle districts und stations in eine liste 
+            # lv_grid_districts_per_load_area = [jedes district aus 6.1]
+            # lv_stations_per_load_area = [jede lv_station aus 6.1]
+            
+            
+            #### 7. self.build_lv_grid_district
+            #self.build_lv_grid_district(lv_load_area,
+            #                            lv_grid_districts_per_load_area, [liste aus 6.2]
+            #                            lv_stations_per_load_area)       [liste aus 6.2]
+            
+            
+            
+            
+            #### step 7. alle unnötigen knoten entfernen
+            # die unwichtig sind.
+            # wichtig für robert: nearest nodes der gebäude. 
+            # abhänging vom ansatz der bypass branches
+            # straßenkreuzungen wegen parallelleitungen. sind die weoterhin notwendig?
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            # create LV load_area object
+            lv_load_area = LVLoadAreaDing0(id_db=id_db,
+                                           db_data=row,
+                                           mv_grid_district=mv_grid_district,
+                                           peak_load=row['peak_load'])
+
+            # sub-selection of lv_grid_districts/lv_stations within one
+            # specific load area
+            lv_grid_districts_per_load_area = lv_grid_districts.\
+                loc[lv_grid_districts['la_id'] == id_db]
+            lv_stations_per_load_area = lv_stations.\
+                loc[lv_stations['la_id'] == id_db]
+
+            self.build_lv_grid_district(lv_load_area,
+                                        lv_grid_districts_per_load_area,
+                                        lv_stations_per_load_area)
+
+            # create new centre object for Load Area
+            lv_load_area_centre = LVLoadAreaCentreDing0(id_db=id_db,
+                                                        geo_data=wkt_loads(row['geo_centre']),
+                                                        lv_load_area=lv_load_area,
+                                                        grid=mv_grid_district.mv_grid)
+            # links the centre object to Load Area
+            lv_load_area.lv_load_area_centre = lv_load_area_centre
+
+            # add Load Area to MV grid district (and add centre object to MV gris district's graph)
+            mv_grid_district.add_lv_load_area(lv_load_area)
+            
+
+    def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts, lv_stations):
         """
         Imports load_areas (load areas) from database for a single MV grid_district
 
@@ -747,6 +1008,7 @@ class NetworkDing0:
 
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
+            
 
             # create LV load_area object
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
