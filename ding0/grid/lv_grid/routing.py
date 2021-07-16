@@ -37,11 +37,6 @@ def build_graph_from_ways(ways):
     """
     
     srid = get_config_osm('srid')
-    
-    
-    # New graph for ways
-    routed_graph = nx.MultiGraph()
-    routed_graph.graph["crs"] = srid
 
     # keep coords for each node
     node_coords_dict = {}
