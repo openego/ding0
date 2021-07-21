@@ -8,12 +8,18 @@ PR, contact us, or just create an issue if something seems odd.
 Test the package installation
 =============================
 
+.. warning::
+
+    The scripts for testing the installation might be outdated and will be
+    revised in v0.2.1.
+
 We use `Docker <https://www.docker.com/>`_ to test the build of
 ding0 on a fresh Ubuntu OS. In order to run such a test make sure docker is
-installed
+installed.
 
 .. code-block:: bash
 
+    cd ./test_installation/
     chmod +x install_docker.sh
     ./install_docker.sh
 
@@ -30,6 +36,22 @@ directory of ding0 repository. Then it
 installs currently checked out version. The installation process can be observed
 in the terminal.
 
+Run unit and integration tests
+==============================
+
+ding0 comes with a bunch of unit and integration tests on most features. You'll
+need additional packages listed in `dev_requirements.txt`. To install, use
+
+.. code-block:: bash
+
+    pip install -r /path/to/ding0/dev_requirements.txt
+
+To run tests with e.g. 4 workers (you may omit this argument), use
+
+.. code-block:: bash
+
+    cd /path/to/ding0/
+    pytest --workers 4 -vv
 
 Test ding0 runs
 ===============

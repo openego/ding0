@@ -3,11 +3,11 @@ Getting started
 
 .. _installation:
 
-Installation
-============
+Installation on Linux
+=====================
 
 .. note::
-    Installation is only tested on (debian like) linux OS.
+    Installation is only tested on (Debian-like) Linux OS.
 
 Ding0 is provided through PyPi package management and, thus, installable from
 sources of pip3.
@@ -42,32 +42,36 @@ Create a new one for Ding0 by
 .. code-block:: bash
 
     # Adjust path to your specific needs
-    virtualenv -p python3 ~/.virtualenvs/ding0
+    virtualenv -p python3.8 ~/virtualenvs/ding0
 
 Jump into (aka. activate) this python distribution by
 
 .. code-block:: bash
 
     # Adjust path to your specific needs
-    source ~/.virtualenvs/ding0/bin/activate
+    source ~/virtualenvs/ding0/bin/activate
 
-From that, the latest release of Ding0 is installed by
+From that, the latest release of ding0 is installed by
 
-.. code-block:: python
+.. code-block:: bash
 
-    pip3 install ding0
+    pip install ding0
 
 
 Pip allows to install a developer version of a package that uses currently
-checked out code. A developer mode installation is achieved by
+checked out code. A developer mode installation is achieved by cloning the
+repository to an arbitrary path (e.g. `~/repos/` in the following example)
+and installing manually via pip:
 
-.. code-block:: python
+.. code-block:: bash
 
-    pip3 install -e path/to/cloned/ding0/repository
-    
+    mkdir ~/repos/
+    cd ~/repos/
+    git clone https://github.com/openego/ding0.git # for SSH use: git clone git@github.com:openego/ding0.git
+    pip install -e ~/repos/ding0/
 
-Installation under Windows
---------------------------
+Installation on Windows
+-----------------------
 To install Ding0 in windows, it is currently recommended to use
 `Anaconda <https://www.anaconda.com/distribution/>`_ or
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
@@ -91,8 +95,14 @@ and create an environment with the ding0_env.yml file provided.
     This may eventually get fixed later on but for now,
     we would recommend using only the standard cmd.exe on windows.
 
-To create a ding0 environment using the yaml file in conda,
-use the command:
+If you're using Git Bash on Windows, you might have to add conda to paths to
+have the `conda` command available (adjust path to your Conda installation):
+
+.. code-block:: bash
+
+    . /c/ProgramData/Anaconda3/etc/profile.d/conda.sh
+
+To create a ding0 environment using the yaml file in conda, use the command:
 
 .. code-block:: bash
 
@@ -114,28 +124,17 @@ use the command:
     conda activate ding0_env
 
 Once the environment is activated, you have two options to install ding0.
-Either install it from the local repository with the commands:
+Either install it from the local repository with the command:
 
 .. code-block:: bash
 
-    conda activate ding0_env
-    pip install -U -e \path\to\ding0\
+    pip install -e \path\to\ding0\
 
 Or install it from the pypi repository with the command:
 
 .. code-block:: bash
 
-    conda activate ding0_env
     pip install ding0
-
-
-
-after this, it is possible to install ding0 directly from pip within the
-conda enviornment
-
-.. code-block:: bash
-
-    conda activate ding0_env
 
 Use Ding0
 =========

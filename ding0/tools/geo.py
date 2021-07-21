@@ -14,9 +14,8 @@ __author__     = "nesnoj, gplssm"
 
 
 import os
-from geopy.distance import vincenty
-import pyproj
-from functools import partial
+from geopy.distance import geodesic
+from pyproj import Transformer
 
 from ding0.tools import config as cfg_ding0
 import logging
@@ -116,7 +115,7 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
     return branches
 
 
-def calc_geo_dist_vincenty(node_source, node_target):
+def calc_geo_dist(node_source, node_target):
     """ Calculates the geodesic distance between `node_source` and `node_target`
     incorporating the detour factor specified in :file:`ding0/ding0/config/config_calc.cfg`.
 
@@ -135,8 +134,8 @@ def calc_geo_dist_vincenty(node_source, node_target):
 
     branch_detour_factor = cfg_ding0.get('assumptions', 'branch_detour_factor')
 
-    # notice: vincenty takes (lat,lon)
-    branch_length = branch_detour_factor * vincenty((node_source.geo_data.y, node_source.geo_data.x),
+    # notice: geodesic takes (lat,lon)
+    branch_length = branch_detour_factor * geodesic((node_source.geo_data.y, node_source.geo_data.x),
                                                     (node_target.geo_data.y, node_target.geo_data.x)).m
 
     # ========= BUG: LINE LENGTH=0 WHEN CONNECTING GENERATORS ===========
@@ -152,14 +151,13 @@ def calc_geo_dist_vincenty(node_source, node_target):
     return branch_length
 
 
-def calc_geo_dist_matrix_vincenty(nodes_pos):
+def calc_geo_dist_matrix(nodes_pos):
     """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor in config_calc.cfg.
         
-    For every two points/coord it uses geopy's vincenty function (formula devised by Thaddeus Vincenty, 
-    with an accurate ellipsoidal model of the earth). As default ellipsoidal model of the earth WGS-84 is used.
+    For every two points/coord it uses geopy's geodesic function. As default ellipsoidal model of the earth WGS-84 is used.
     For more options see
     
-    https://geopy.readthedocs.org/en/1.10.0/index.html?highlight=vincenty#geopy.distance.vincenty
+    https://geopy.readthedocs.io/en/stable/index.html?highlight=geodesic#geopy.distance.geodesic
 
     Parameters
     ----------
@@ -196,8 +194,8 @@ def calc_geo_dist_matrix_vincenty(nodes_pos):
 
         for j in nodes_pos:
             pos_dest = tuple(nodes_pos[j])
-            # notice: vincenty takes (lat,lon), thus the (x,y)/(lon,lat) tuple is reversed
-            distance = branch_detour_factor * vincenty(tuple(reversed(pos_origin)), tuple(reversed(pos_dest))).km
+            # notice: geodesic takes (lat,lon), thus the (x,y)/(lon,lat) tuple is reversed
+            distance = branch_detour_factor * geodesic(tuple(reversed(pos_origin)), tuple(reversed(pos_dest))).km
             matrix[i][j] = distance
 
     return matrix
@@ -220,20 +218,14 @@ def calc_geo_centre_point(node_source, node_target):
         Distance in m.
     """
 
-    proj_source = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-
+    # WGS84 (conformal) to ETRS (equidistant) projection
+    proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
     # ETRS (equidistant) to WGS84 (conformal) projection
-    proj_target = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:3035'),  # source coordinate system
-            pyproj.Proj(init='epsg:4326'))  # destination coordinate system
+    proj_target = Transformer.from_crs("epsg:3035", "epsg:4326", always_xy=True).transform
 
     branch_shp = transform(proj_source, LineString([node_source.geo_data, node_target.geo_data]))
 
-    distance = vincenty((node_source.geo_data.y, node_source.geo_data.x),
+    distance = geodesic((node_source.geo_data.y, node_source.geo_data.x),
                         (node_target.geo_data.y, node_target.geo_data.x)).m
 
     centre_point_shp = transform(proj_target, branch_shp.interpolate(distance/2))

@@ -176,7 +176,7 @@ Lines
    "length","float","length of line","km"
    "U_n","float","nominal voltage","kV"
    "R","float","","Ohm/km"
-   "C","float","inductive resistance at 50Hz","uF/km"
+   "C","float","","uF/km"
    "L","float","","mH/km"
    "I_max_th","float","","A"
    "run_id", "int", "time and date of table generation", "yyyyMMddhhmmss"

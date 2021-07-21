@@ -1,6 +1,6 @@
 #!/bin/bash
 
-### Script require sudo (root) priviledges ###
+### Script require sudo (root) privileges ###
 
 # This scripts install docker to test installation of ding0 on a fresh OS
 # It is adapted to needs of SolydX 8 respectively Debian 8 (Jessie). Level of adaptation is unknown ;-)

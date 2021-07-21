@@ -31,7 +31,7 @@ from ding0.grid.lv_grid.build_grid import select_transformers
 
 from geoalchemy2.shape import from_shape
 from math import tan, acos, pi, sqrt
-from pandas import Series, DataFrame, DatetimeIndex
+from pandas import Series, DataFrame, date_range
 from pypsa.io import import_series_from_dataframe
 from pypsa import Network
 from shapely.geometry import Point
@@ -204,7 +204,7 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
 def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
                               generators_df, loads_df, only_export_mv=False,
                               return_time_varying_data=False):
-    '''
+    """
     Returns component and if necessary time varying data for power flow
     or csv export of inserted mv or lv grid
 
@@ -240,7 +240,7 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
     component_data: :obj:`dict`
         Dictionary of component Dataframes 'Bus', 'Generator', 'Load',
         needed for power flow calculations
-    '''
+    """
 
     # fill list of open circuit breakers
     open_circuit_breakers = []
@@ -271,7 +271,8 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
                                     loads_df, transformer_df, only_export_mv,
                                     return_time_varying_data)
     # handle all edges and append to respective dataframe
-    branch_components = edges_to_dict_of_dataframes(edges, lines_df)
+    branch_components = edges_to_dict_of_dataframes(edges, lines_df,
+                                                    node_components['Bus'])
     # merge node and edges
     components = merge_two_dicts(node_components, branch_components)
     components, component_data = \
@@ -336,7 +337,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             #  there and remove this exception here afterwards
             if not only_export_mv:
                 buses_df = append_buses_df(buses_df, isl_node.grid,
-                                           isl_node, srid)
+                                           isl_node)
             else:
                 continue
         else:
@@ -409,15 +410,35 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
 
             # other generators
             elif isinstance(node, GeneratorDing0):
-                generators_df = append_generators_df(generators_df, node)
-                buses_df = append_buses_df(buses_df, grid, node)
-                # add time varying elements
-                if return_time_varying_data:
-                    bus_v_mag_set_df = \
-                        append_bus_v_mag_set_df(bus_v_mag_set_df, node)
-                    generator_pq_set_df = \
-                        append_generator_pq_set_df(conf, generator_pq_set_df,
-                                                   node)
+                if node.lv_grid is not None:
+                    branches = node.lv_grid.graph_branches_from_node(node)
+                else:
+                    branches = node.mv_grid.graph_branches_from_node(node)
+                # check if generator is in building generator
+                if len(branches) == 1 and hasattr(branches[0][0],
+                                                  'in_building') \
+                        and branches[0][0].in_building \
+                        and branches[0][1]['branch'].length == 1:
+                    # append generator to preceding bus
+                    generators_df = append_generators_df(
+                        generators_df, node,
+                        name_bus=branches[0][0].pypsa_bus_id)
+                    if return_time_varying_data:
+                        generator_pq_set_df = \
+                            append_generator_pq_set_df(
+                                conf, generator_pq_set_df, node)
+                else:
+                    # append generator and new bus
+                    generators_df = append_generators_df(generators_df, node)
+                    buses_df = append_buses_df(buses_df, grid, node)
+                    # add time varying elements
+                    if return_time_varying_data:
+                        bus_v_mag_set_df = \
+                            append_bus_v_mag_set_df(bus_v_mag_set_df, node)
+                        generator_pq_set_df = \
+                            append_generator_pq_set_df(conf,
+                                                       generator_pq_set_df,
+                                                       node)
 
             elif isinstance(node, LoadDing0):
                 # choose sector with highest consumption and assign sector
@@ -427,8 +448,23 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 sorted_consumption = [(value, key) for key, value in
                                       node.consumption.items()]
                 sector = max(sorted_consumption)[1]
+                # check whether load is in building
+                branches = node.grid.graph_branches_from_node(node)
+                if len(branches) == 1 and hasattr(branches[0][0],
+                                                  'in_building') \
+                        and branches[0][0].in_building \
+                        and branches[0][1]['branch'].length == 1:
+                    # connect load to preceding bus if is in building
+                    bus_name = branches[0][0].pypsa_bus_id
+                else:
+                    # add new bus to connect load to
+                    bus_name = node.pypsa_bus_id
+                    buses_df = append_buses_df(buses_df, grid, node)
+                    if return_time_varying_data:
+                        bus_v_mag_set_df = \
+                            append_bus_v_mag_set_df(bus_v_mag_set_df, node)
                 # add load
-                load = pd.Series({'name': repr(node), 'bus': node.pypsa_bus_id,
+                load = pd.Series({'name': repr(node), 'bus': bus_name,
                                   'peak_load': node.peak_load/1e3,
                                   'annual_consumption':
                                       node.consumption[sector]/1e3,
@@ -501,7 +537,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                         buses_df = append_buses_df(buses_df, node.grid, node)
                     # bus at primary MV-LV transformer side
                     buses_df = append_buses_df(buses_df, grid, node,
-                                                   node.pypsa_bus0_id)
+                                               node.pypsa_bus0_id)
                     if return_time_varying_data:
                         bus_v_mag_set_df = \
                             append_bus_v_mag_set_df(bus_v_mag_set_df, node,
@@ -890,7 +926,7 @@ def append_buses_df(buses_df, grid, node, node_name =''):
     buses_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of buses with entries name, v_nom, geom, mv_grid_id,
         lv_grid_id, in_building
-    grid: ding0.Network
+    grid: :class:`~.ding0.core.network.GridDing0`
     node: :obj: ding0 grid components object
     node_name: :obj:`str`
         name of node, per default is set to node.pypsa_bus_id
@@ -943,6 +979,7 @@ def append_buses_df(buses_df, grid, node, node_name =''):
                      'in_building': in_building})
     buses_df = buses_df.append(bus, ignore_index=True)
     return buses_df
+
 
 def append_transformers_df(transformers_df, trafo, type = np.NaN,
                            bus0=None, bus1=None):
@@ -999,7 +1036,7 @@ def append_transformers_df(transformers_df, trafo, type = np.NaN,
     return transformers_df
 
 
-def edges_to_dict_of_dataframes(edges, lines_df):
+def edges_to_dict_of_dataframes(edges, lines_df, buses_df):
     """
     Export edges to DataFrame
 
@@ -1010,6 +1047,9 @@ def edges_to_dict_of_dataframes(edges, lines_df):
     lines_df: :pandas:`pandas.DataFrame<dataframe>`
             Dataframe of lines with entries name, bus0, bus1, length, x, r,
             s_nom, num_parallel, type
+    buses_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of buses with entries name, v_nom, geom, mv_grid_id,
+        lv_grid_id, in_building
 
     Returns
     -------
@@ -1019,12 +1059,12 @@ def edges_to_dict_of_dataframes(edges, lines_df):
     # iterate over edges and add them one by one
     for edge in edges:
         if not edge['branch'].connects_aggregated:
-            lines_df = append_lines_df(edge, lines_df)
+            lines_df = append_lines_df(edge, lines_df, buses_df)
 
     return {'Line': lines_df.set_index('name')}
 
 
-def append_lines_df(edge, lines_df):
+def append_lines_df(edge, lines_df, buses_df):
     """
     Append edge to lines_df
 
@@ -1035,6 +1075,9 @@ def append_lines_df(edge, lines_df):
     lines_df: :pandas:`pandas.DataFrame<dataframe>`
             Dataframe of lines with entries name, bus0, bus1, length, x, r,
             s_nom, num_parallel, type
+    buses_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of buses with entries name, v_nom, geom, mv_grid_id,
+        lv_grid_id, in_building
 
     Returns
     -------
@@ -1088,17 +1131,65 @@ def append_lines_df(edge, lines_df):
         name_bus1 = edge['adj_nodes'][1].pypsa_bus0_id
     else:
         name_bus1 = edge['adj_nodes'][1].pypsa_bus_id
-    
+
+    # check if line is to be added to lines_df
+    add_line = _check_branch_for_in_building_buses(buses_df, edge,
+                                                   name_bus0, name_bus1)
+
     # create new line
-    line = pd.Series({'name': repr(edge['branch']),
-                      'bus0': name_bus0,
-                      'bus1': name_bus1,
-                      'x': x_per_km * length, 'r':r_per_km * length,
-                      's_nom': s_nom, 'length': length,
-                      'num_parallel': 1, 'kind': edge['branch'].kind,
-                      'type_info': type})
-    lines_df = lines_df.append(line, ignore_index=True)
+    if add_line:
+        line = pd.Series({'name': repr(edge['branch']),
+                          'bus0': name_bus0,
+                          'bus1': name_bus1,
+                          'x': x_per_km * length, 'r':r_per_km * length,
+                          's_nom': s_nom, 'length': length,
+                          'num_parallel': 1, 'kind': edge['branch'].kind,
+                          'type_info': type})
+        lines_df = lines_df.append(line, ignore_index=True)
     return lines_df
+
+
+def _check_branch_for_in_building_buses(buses_df, edge, name_bus0, name_bus1):
+    """
+    Checks if line is to be added to line_df. If line is artificial line that
+    connects in building loads or generators to preceding branch tee, False is
+    returned.
+
+    Parameters
+    ----------
+    buses_df: :pandas:`pandas.DataFrame<dataframe>`
+        Dataframe of buses with entries name, v_nom, geom, mv_grid_id,
+        lv_grid_id, in_building
+    edge:
+        Edge of Ding0.Network graph
+    name_bus0: str
+    name_bus1: str
+
+    Returns
+    -------
+    bool
+        Indicator whether line should be added to lines_df or not
+    """
+    # check if neighboring buses are in buses_df
+    if name_bus0 not in buses_df.index:
+        if (isinstance(edge['adj_nodes'][0], GeneratorDing0)
+            or isinstance(edge['adj_nodes'][0], LoadDing0)) and \
+                buses_df.loc[name_bus1, 'in_building'] and \
+                edge['branch'].length == 1:
+            return False
+        else:
+            raise ValueError('Bus0 of line {} not in buses_df.'.format(
+                repr(edge['branch'])))
+    if name_bus1 not in buses_df.index:
+        if (isinstance(edge['adj_nodes'][1], GeneratorDing0)
+            or isinstance(edge['adj_nodes'][1], LoadDing0)) and \
+                buses_df.loc[name_bus0, 'in_building'] and \
+                edge['branch'].length == 1:
+            return False
+        else:
+            raise ValueError('Bus1 of line {} not in buses_df.'.format(
+                repr(edge['branch'])))
+    return True
 
 
 def circuit_breakers_to_df(grid, components, component_data,
@@ -1193,6 +1284,7 @@ def circuit_breakers_to_df(grid, components, component_data,
         components['Switch'] = circuit_breakers_df.set_index('name')
     return components, component_data
 
+
 def run_powerflow_onthefly(components, components_data, grid, 
                            export_pypsa_dir=None, debug=False, 
                            export_result_dir=None):
@@ -1227,9 +1319,9 @@ def run_powerflow_onthefly(components, components_data, grid,
         data_integrity(components, components_data)
 
     # define investigated time range
-    timerange = DatetimeIndex(freq=resolution,
-                              periods=timesteps,
-                              start=start_time)
+    timerange = date_range(freq=resolution,
+                           periods=timesteps,
+                           start=start_time)
 
     # TODO: Instead of hard coding PF config, values from class PFConfigDing0 
     #  can be used here.
@@ -1487,7 +1579,7 @@ def assign_bus_results(grid, bus_data):
 
     Parameters
     ----------
-    grid: ding0.network
+    grid: :class:`~.ding0.core.network.GridDing0`
     bus_data: :pandas:`pandas.DataFrame<dataframe>`
         DataFrame containing voltage levels obtained from PF analysis
     """
@@ -1517,7 +1609,7 @@ def assign_line_results(grid, line_data):
 
     Parameters
     -----------
-    grid: ding0.network
+    grid: :class:`~.ding0.core.network.GridDing0`
     line_data: :pandas:`pandas.DataFrame<dataframe>`
         DataFrame containing active/reactive at nodes obtained from PF analysis
     """

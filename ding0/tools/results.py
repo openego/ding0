@@ -32,8 +32,7 @@ from ding0.core import CircuitBreakerDing0
 from ding0.core.network.loads import LVLoadDing0
 from ding0.core import LVLoadAreaCentreDing0
 
-import pyproj
-from functools import partial
+from pyproj import Transformer
 
 from geoalchemy2.shape import from_shape
 from sqlalchemy.orm import sessionmaker
@@ -294,12 +293,7 @@ def calculate_lvgd_stats(nw):
     """
     ##############################
     #  ETRS (equidistant) to WGS84 (conformal) projection
-    proj = partial(
-        pyproj.transform,
-        # pyproj.Proj(init='epsg:3035'),  # source coordinate system
-        #  pyproj.Proj(init='epsg:4326'))  # destination coordinate system
-        pyproj.Proj(init='epsg:4326'),  # source coordinate system
-        pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+    proj = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
     ##############################
     # close circuit breakers
     nw.control_circuit_breakers(mode='close')
@@ -572,33 +566,31 @@ def calculate_mvgd_stats(nw):
                             lvstation_impedance = 1. / lvstation_impedance
                         else:
                             lvstation_impedance = 0.
+
                         # identify LV nodes belonging to LV station
-                        for lv_LA in district.lv_load_areas():
-                            for lv_dist in lv_LA.lv_grid_districts():
-                                if lv_dist.lv_grid._station == node:
-                                    G_lv = lv_dist.lv_grid.graph
-                                    # loop over all LV terminal nodes belonging to LV station
-                                    for lv_node in G_lv.nodes():
-                                        if isinstance(lv_node, GeneratorDing0) or isinstance(lv_node, LVLoadDing0):
-                                            path = nx.shortest_path(G_lv, node, lv_node)
-                                            lv_impedance = lvstation_impedance
-                                            lv_path_length = 0.
-                                            for i in range(len(path)-1):
-                                                lv_impedance += (G_lv.adj[path[i]][path[i+1]]['branch'].type['L_l'] * 1e-3 * omega * \
-                                                                          G_lv.adj[path[i]][path[i+1]]['branch'].length) *1j + \
-                                                                         (G_lv.adj[path[i]][path[i+1]]['branch'].type['R_l'] * \
-                                                                          G_lv.adj[path[i]][path[i+1]]['branch'].length)
-                                                lv_path_length += G_lv.adj[path[i]][path[i+1]]['branch'].length
-                                            lv_thermal_limit = G_lv.adj[path[0]][path[1]]['branch'].type['I_max_th']
+                        G_lv = node.grid._graph
+                        # loop over all LV terminal nodes belonging to LV station
+                        for lv_node in G_lv.nodes():
+                            if isinstance(lv_node, GeneratorDing0) or isinstance(lv_node, LVLoadDing0):
+                                lv_path = nx.shortest_path(G_lv, node, lv_node)
+                                lv_impedance = lvstation_impedance
+                                lv_path_length = 0.
+                                for i in range(len(lv_path)-1):
+                                    lv_impedance += (G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].type['L_per_km'] * 1e-3 * omega * \
+                                                     G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].length) *1j + \
+                                                    (G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].type['R_per_km'] * \
+                                                     G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].length)
+                                    lv_path_length += G_lv.adj[lv_path[i]][lv_path[i+1]]['branch'].length
+                                lv_thermal_limit = G_lv.adj[lv_path[0]][lv_path[1]]['branch'].type['I_max_th']
 
-                                            mvlv_impedances[lv_node] = abs( mv_impedance + lv_impedance )
-                                            mvlv_path_lengths[lv_node] = mv_path_length + lv_path_length
-                                            lv_thermal_limits[lv_node] = lv_thermal_limit
-                                            mvlv_thermal_limits[lv_node] = mv_thermal_limit
+                                mvlv_impedances[lv_node] = abs( mv_impedance + lv_impedance )
+                                mvlv_path_lengths[lv_node] = mv_path_length + lv_path_length
+                                lv_thermal_limits[lv_node] = lv_thermal_limit
+                                mvlv_thermal_limits[lv_node] = mv_thermal_limit
 
-                                        elif isinstance(lv_node, LVStationDing0):
-                                            n_outgoing_LV += len(list(G_lv.neighbors(lv_node)))
-                                            n_stations_LV += 1
+                            elif isinstance(lv_node, LVStationDing0):
+                                n_outgoing_LV += len(list(G_lv.neighbors(lv_node)))
+                                n_stations_LV += 1
 
         # compute mean values by looping over terminal nodes
         sum_impedances = 0.
@@ -817,12 +809,7 @@ def calculate_mvgd_stats(nw):
 
         # geographic
         #  ETRS (equidistant) to WGS84 (conformal) projection
-        proj = partial(
-            pyproj.transform,
-            # pyproj.Proj(init='epsg:3035'),  # source coordinate system
-            # pyproj.Proj(init='epsg:4326'))  # destination coordinate system
-            pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            pyproj.Proj(init='epsg:3035'))  # destination coordinate system
+        proj = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
         district_geo = transform(proj, district.geo_data)
         other_nodes_dict[district.mv_grid.id_db].update({'Dist_area': district_geo.area})
 
@@ -993,16 +980,15 @@ def calculate_mvgd_stats(nw):
 
         mvgd_stats = pd.concat([mvgd_stats, LA_data], axis=1)
 
-        LA_data = LA_df.groupby(['grid_id'])['population',
-                                             'residential_peak_load',
-                                             'retail_peak_load',
-                                             'industrial_peak_load',
-                                             'agricultural_peak_load',
-                                             'total_peak_load',
-                                             'lv_generation',
-                                             'lv_gens_lvl_6',
-                                             'lv_gens_lvl_7'
-        ].sum()
+        LA_data = LA_df.groupby(['grid_id'])[['population',
+                                              'residential_peak_load',
+                                              'retail_peak_load',
+                                              'industrial_peak_load',
+                                              'agricultural_peak_load',
+                                              'total_peak_load',
+                                              'lv_generation',
+                                              'lv_gens_lvl_6',
+                                              'lv_gens_lvl_7']].sum()
         LA_data.columns = ['LA Total Population',
                            'LA Total LV Peak Load Residential',
                            'LA Total LV Peak Load Retail',
@@ -1028,9 +1014,9 @@ def calculate_mvgd_stats(nw):
         sat_LA_data.columns = ['Number of Load Areas - Satellite']
         mvgd_stats = pd.concat([mvgd_stats, sat_LA_data], axis=1)
 
-        agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])['population',
-                                                                  'lv_generation',
-                                                                  'total_peak_load'].sum()
+        agg_LA_data = LA_df[LA_df['is_agg']].groupby(['grid_id'])[['population',
+                                                                   'lv_generation',
+                                                                   'total_peak_load']].sum()
         agg_LA_data.columns = ['LA Aggregated Population',
                                'LA Aggregated LV Gen. Cap.', 'LA Aggregated LV Peak Load total'
                                ]
@@ -1039,6 +1025,7 @@ def calculate_mvgd_stats(nw):
     ###################################
     mvgd_stats = mvgd_stats.fillna(0)
     mvgd_stats = mvgd_stats[sorted(mvgd_stats.columns.tolist())]
+    mvgd_stats.index.name = 'grid_id'
     return mvgd_stats
 
 
@@ -1075,8 +1062,8 @@ def calculate_mvgd_voltage_current_stats(nw):
                 Vres0 = node.voltage_res[0]
                 Vres1 = node.voltage_res[1]
             else:
-                Vres0 = 'Not available'
-                Vres1 = 'Not available'
+                Vres0 = np.NaN
+                Vres1 = np.NaN
             nodes_dict[nodes_idx] = {'MV_grid_id': district.mv_grid.id_db,
                                      'node id': node.__repr__(),
                                      'V_res_0': Vres0,
@@ -1089,8 +1076,8 @@ def calculate_mvgd_voltage_current_stats(nw):
                 s_res0 = branch['branch'].s_res[0]
                 s_res1 = branch['branch'].s_res[1]
             else:
-                s_res0 = 'Not available'
-                s_res1 = 'Not available'
+                s_res0 = np.NaN
+                s_res1 = np.NaN
 
             branches_dict[branches_idx] = {
                 'MV_grid_id': district.mv_grid.id_db,

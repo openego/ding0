@@ -758,10 +758,6 @@ class BranchDing0:
     Note
     -----
     Important: id_db is not set until whole grid is finished (setting at the end).
-        
-    See Also
-    --------
-    :meth:`~.ding0.core.network.grids.MVGridDing0.set_branch_ids`
     """
 
     def __init__(self, **kwargs):
@@ -1196,16 +1192,18 @@ class CircuitBreakerDing0:
         """
         Open a Circuit Breaker
         """
-        self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)
-        self.grid.graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])
-        self.status = 'open'
+        if self.status == 'closed':
+            self.branch_nodes = self.grid.graph_nodes_from_branch(self.branch)
+            self.grid.graph.remove_edge(self.branch_nodes[0], self.branch_nodes[1])
+            self.status = 'open'
 
     def close(self):
         """
         Close a Circuit Breaker
         """
-        self.grid.graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
-        self.status = 'closed'
+        if self.status == 'open':
+            self.grid.graph.add_edge(self.branch_nodes[0], self.branch_nodes[1], branch=self.branch)
+            self.status = 'closed'
 
     def __repr__(self):
         """
