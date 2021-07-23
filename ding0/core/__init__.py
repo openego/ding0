@@ -54,6 +54,22 @@ logger = logging.getLogger('ding0')
 package_path = ding0.__path__[0]
 
 
+
+
+
+
+############ NEW
+
+from ding0.config.db_conn_local import create_session_osm
+
+from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways
+
+
+
+
+############ NEW END
+
+
 class NetworkDing0:
     """
     Defines the DING0 Network - not a real grid but a container for the
@@ -652,13 +668,15 @@ class NetworkDing0:
             # region_geo_data = transform(projection, region_geo_data)
             
             
+
+            mv_grid_district = self.build_mv_grid_district(poly_id,
+                                             subst_id,
+                                             region_geo_data,
+                                             station_geo_data)
+            
+            
             #### TODO: check ding0_default
             if ding0_default:
-
-                mv_grid_district = self.build_mv_grid_district(poly_id,
-                                                 subst_id,
-                                                 region_geo_data,
-                                                 station_geo_data)
 
                 # import all lv_stations within mv_grid_district
                 lv_stations = self.import_lv_stations(session)
@@ -675,7 +693,9 @@ class NetworkDing0:
                 
             else: # build new lv_grid_districts 
                 
-                self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, need_parameterization)
+                
+                # todo: del return. trying to get ways
+                return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, need_parameterization)
                 
 
             
@@ -764,21 +784,35 @@ class NetworkDing0:
                                           session.bind,
                                           index_col='id_db')
         
+        
+        id_count=-1
 
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
+            
+            id_count+=1
+            
+            if id_count < 73:
+                
+                continue
             
             
             ### ROBERT: calculate peak load of load area
             ### CLUSTERING HERE:
             
             
+            # STEAP 1.A1. create session to load from (local) DB OSM data 
+            session_osm = create_session_osm()
             
-            #### STEP 1.A. LOAD WAYS AND BUILD GRAPH
+            
+            #### STEP 1.A2. LOAD WAYS AND BUILD GRAPH
             
             # load ways
             ### Load bays
-            #ways = session_osm.query(Way).filter(func.st_intersects(func.ST_GeomFromText(lv_load_areas.geo_area.wkt, get_config_osm('srid')), Way.geometry)) 
+            #print(row.geo_area)
+            ways = get_osm_ways(row.geo_area, session_osm)
+            
+            return ways
 
             # node_coords_dict just for plotting 
             graph, node_coords_dict = build_graph_from_ways(ways)
