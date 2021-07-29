@@ -28,7 +28,8 @@ def get_config_osm(key):
         'EARTH_RADIUS_M' : 6_371_009,
         'mv_lv_threshold_capacity' : 200,
         'avg_cluster_capacity' : 500,
-        'additional_trafo_capacity' : 1.5
+        'additional_trafo_capacity' : 1.5,
+        'avg_square_meters' : 100,
         
     }
         
@@ -45,36 +46,16 @@ def get_charging_station_columns():
 
 
 
-def get_categories_retail():
-    
-    retail = ['']
-    
-    
-    return retail
-
-
-
-def get_categories_industry():
-    
-    industry = ['']
-    
-    
-    return retail
-
-
-
-def get_categories_aggriculture():
-    
-    aggriculture = ['']
-    
-    
-    return retail
-
-
-
 def get_peak_loads():
     
-    """ get dictionary containing categories and peak loads """
+    """ 
+    get dictionary containing categories and peak loads 
+    due to each amenity as average square meters of 100
+    but for charging_stations we use 22 kW, divide by
+    average square meters.
+    """
+    
+    
     
     load_profiles = {
 
@@ -93,7 +74,7 @@ def get_peak_loads():
         'sport'        :  72.72,
         'technical'    :  13.25,
         'public'       :  115.8,
-        'charging_station' : 22.0,
+        'charging_station' : 22.0 / get_config_osm('avg_square_meters'), 
         'residential' :   17.0847,
         'leftover'         :  0.1
 
@@ -102,157 +83,154 @@ def get_peak_loads():
     return load_profiles
     
 
-    
+
+
 def get_load_profile_categories():
-    
+
     """ get dictionary containing categorie types assigned to categories """
-    
+
     load_profile_categories = {
-        
-        'lodging'      : ["lodging"],
-    
-        'education'    : ["education",
-                           "language_school",
-                           "kindergarten",
-                           "school",
-                           "art_school",
-                           "university",
-                           "college",
-                           "driving_school",
-                           "music_school"],
-
-        'office'       : ["office",
-                           "money_transfer",
-                           "bank",
-                           "prep_school",
-                           "internet_cafe",
-                           "courthouse",
-                           "post_depot",
-                           "post_office",
-                           "studio",
-                           "reception_desk",
-                           "coworking_space",
-                           "conference_centre",
-                           "exhibition_centre",
-                           "customs",
-                           "supermarket",
-                           "car_rental",
-                           "car_wash",
-                           "commercial",
-                           "warehouse",
-                           "police"],
-
-        'retail'       : ["retail"],
-
-        'fire_brigade' : ["fire_station"],
-
-        'research'     : ["research"],
-
-        'health_care'  : ["health_care",
-                          "hospital",
-                          "clinic",
-                          "dentist",
-                          "doctors",
-                          "hospital",
-                          "pharmacy",
-                          "social_facility",
-                          "veterinary"],
-
-        'industry'     : ["industrial", 
-                          "manufacture", 
-                          "industry"],
-
-        'hotel'        : ["hotel"],
-
-        'aggriculture' : ["aggriculture",
-                          "agricultural",
-                          "barn",
-                          "conservatory",
-                          "cowshed",
-                          "farm_auxiliary",
-                          "greenhouse",
-                          "stable"],
-
-        'restaurant'   : ["restaurant",
-                          "bar",
-                          "biergarten",
-                          "cafe",
-                          "fast_food",
-                          "ice_cream",
-                          "pub",
-                          "canteen"],
-
-        'swimming'     : ["swimming_bath", 
-                          "swimming_pool", 
-                          "public_bath"],
-
-        'sport'        : ["sport_building",
-                          "sports_centre",
-                          "grandstand",
-                          "pavilion",
-                          "riding_hall",
-                          "sports_hall",
-                          "stadium"],
-
-        'technical'    : ["technique_building",
-                          "digester",
-                          "service",
-                          "transformer_tower",
-                          "water_tower",
-                          "vehicle_inspection"],
-
-        'residential'  : ["residential",
-                          "retirement_home",
-                          "apartments",
-                          "house",
-                          "brothel",
-                          "bungalow",
-                          "detached",
-                          "semidetached_house",
-                          "semi",
-                          "dormitory",
-                          "farm",
-                          "semidetached_house",
-                          "terrace",
-                          "yes"],
-
-        'charging_station' : ["charging_station"],
-
-        'public'       : ["public",
-                          "public_building",
-                          "arts_centre",
-                          "civic",
-                          "bakehouse",
-                          "community_centre",
-                          "library",
-                          "toy_library",
-                          "social_centre",
-                          "parking",
-                          "townhall",
-                          "government",
-                          "train_station",
-                          "transportation",
-                          "theatre",
-                          "arts_centre",
-                          "casino",
-                          "cinema",
-                          "nightclub",
-                          "prison",
-                          "cathedral",
-                          "church",
-                          "monastery",
-                          "mosque",
-                          "religious",
-                          "synagogue",
-                          "temple",
-                          "place_of_worship",
-                          "fuel"],
-        
-        
-        'leftover'      : ["chapel, toilets"],
-
-    }
+        "lodging": "lodging",
+        "education": "education",
+        "language_school": "education",
+        "kindergarten": "education",
+        "school": "education",
+        "art_school": "education",
+        "university": "education",
+        "college": "education",
+        "driving_school": "education",
+        "music_school": "education",
+        "office": "office",
+        "money_transfer": "office",
+        "bank": "office",
+        "prep_school": "office",
+        "internet_cafe": "office",
+        "courthouse": "office",
+        "post_depot": "office",
+        "post_office": "office",
+        "studio": "office",
+        "reception_desk": "office",
+        "coworking_space": "office",
+        "conference_centre": "office",
+        "exhibition_centre": "office",
+        "customs": "office",
+        "supermarket": "office",
+        "car_rental": "office",
+        "car_wash": "office",
+        "commercial": "office",
+        "warehouse": "office",
+        "police": "office",
+        "retail": "retail",
+        "fire_station": "fire_brigade",
+        "research": "research",
+        "health_care": "health_care",
+        "hospital": "health_care",
+        "clinic": "health_care",
+        "dentist": "health_care",
+        "doctors": "health_care",
+        "hospital": "health_care",
+        "pharmacy": "health_care",
+        "social_facility": "health_care",
+        "veterinary": "health_care",
+        "industrial": "industry",
+        "manufacture": "industry",
+        "industry": "industry",
+        "hotel": "hotel",
+        "aggriculture": "aggriculture",
+        "agricultural": "aggriculture",
+        "barn": "aggriculture",
+        "conservatory": "aggriculture",
+        "cowshed": "aggriculture",
+        "farm_auxiliary": "aggriculture",
+        "greenhouse": "aggriculture",
+        "stable": "aggriculture",
+        "restaurant": "restaurant",
+        "bar": "restaurant",
+        "biergarten": "restaurant",
+        "cafe": "restaurant",
+        "fast_food": "restaurant",
+        "ice_cream": "restaurant",
+        "pub": "restaurant",
+        "canteen": "restaurant",
+        "swimming_bath": "swimming",
+        "swimming_pool": "swimming",
+        "public_bath": "swimming",
+        "sport_building": "sport",
+        "sports_centre": "sport",
+        "grandstand": "sport",
+        "pavilion": "sport",
+        "riding_hall": "sport",
+        "sports_hall": "sport",
+        "stadium": "sport",
+        "technique_building": "technical",
+        "digester": "technical",
+        "service": "technical",
+        "transformer_tower": "technical",
+        "water_tower": "technical",
+        "vehicle_inspection": "technical",
+        "residential": "residential",
+        "retirement_home": "residential",
+        "apartments": "residential",
+        "house": "residential",
+        "brothel": "residential",
+        "bungalow": "residential",
+        "detached": "residential",
+        "semidetached_house": "residential",
+        "semi": "residential",
+        "dormitory": "residential",
+        "farm": "residential",
+        "semidetached_house": "residential",
+        "terrace": "residential",
+        "yes": "residential",
+        "charging_station": "charging_station",
+        "public": "public",
+        "public_building": "public",
+        "arts_centre": "public",
+        "civic": "public",
+        "bakehouse": "public",
+        "community_centre": "public",
+        "library": "public",
+        "toy_library": "public",
+        "social_centre": "public",
+        "parking": "public",
+        "townhall": "public",
+        "government": "public",
+        "train_station": "public",
+        "transportation": "public",
+        "theatre": "public",
+        "arts_centre": "public",
+        "casino": "public",
+        "cinema": "public",
+        "nightclub": "public",
+        "prison": "public",
+        "cathedral": "public",
+        "church": "public",
+        "monastery": "public",
+        "mosque": "public",
+        "religious": "public",
+        "synagogue": "public",
+        "temple": "public",
+        "fuel": "public",
+        "chapel": "leftover",
+        "place_of_worship": "leftover",
+        "toilets": "leftover",
+        "residentials_list": [
+            "residential",
+            "retirement_home",
+            "apartments",
+            "house",
+            "brothel",
+            "bungalow",
+            "detached",
+            "semidetached_house",
+            "semi",
+            "dormitory",
+            "farm",
+            "semidetached_house",
+            "terrace",
+            "yes",
+        ],
+    } 
     
     return load_profile_categories
-
-
+    

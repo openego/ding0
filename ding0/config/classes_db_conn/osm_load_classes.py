@@ -81,8 +81,8 @@ class Buildings_with_Amenities(Base):
     name              = Column(String(50))
     building_tags     = Column(String(50))
     amenity_tags      = Column(String(50))
-    n_apartments = Column(Float)
     n_amenities_inside = Column(Float)
+    n_apartments = Column(Float)
 
         
 
