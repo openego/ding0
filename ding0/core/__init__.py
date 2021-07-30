@@ -64,7 +64,7 @@ from ding0.config.db_conn_local import create_session_osm
 
 from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways
 
-
+from ding0.grid.lv_grid.routing import build_graph_from_ways
 
 
 ############ NEW END
@@ -812,7 +812,9 @@ class NetworkDing0:
             #print(row.geo_area)
             ways = get_osm_ways(row.geo_area, session_osm)
             
-            return ways
+            graph, node_coords_dict = build_graph_from_ways(ways)
+            
+            return [graph, node_coords_dict, row.geo_area]
 
             # node_coords_dict just for plotting 
             graph, node_coords_dict = build_graph_from_ways(ways)

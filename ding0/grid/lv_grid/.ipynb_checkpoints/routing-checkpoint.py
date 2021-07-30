@@ -37,11 +37,6 @@ def build_graph_from_ways(ways):
     """
     
     srid = get_config_osm('srid')
-    
-    
-    # New graph for ways
-    routed_graph = nx.MultiGraph()
-    routed_graph.graph["crs"] = srid
 
     # keep coords for each node
     node_coords_dict = {}
@@ -49,7 +44,9 @@ def build_graph_from_ways(ways):
     
     # init a graph and set srid.
     routed_graph = nx.MultiGraph()
-    routed_graph.graph["crs"] = srid
+    #routed_graph.graph["crs"] = srid # momentan 'graph': {'crs': 4326},
+    #routed_graph.graph["crs"] = srid # wunsch             'crs': 'epsg:4326'
+    routed_graph.graph["crs"] = 'epsg:'+str(srid) 
 
     
     for w in ways:
@@ -61,8 +58,13 @@ def build_graph_from_ways(ways):
         # add edges
         ix = 0
         for node in w.nodes[:-1]:
+            
+            
 
-            routed_graph.add_edge(w.nodes[ix], w.nodes[ix+1], length=w.length_segments[ix])
+            #TODO: CHECK IF GEOMETRY 
+            # add_edge(u,v,geometry=line,length=leng,highway=highway,osmid=osmid)
+            routed_graph.add_edge(w.nodes[ix], w.nodes[ix+1], length=w.length_segments[ix], 
+                                  osmid=w.osm_id, highway=w.highway)
 
             ix += 1
             
@@ -74,8 +76,8 @@ def build_graph_from_ways(ways):
         for node in w.nodes:
 
             node_coords_dict[node] = coords_list[ix]
-            routed_graph.nodes[node]['X'] = coords_list[ix][0]
-            routed_graph.nodes[node]['Y'] = coords_list[ix][1]
+            routed_graph.nodes[node]['x'] = coords_list[ix][0]
+            routed_graph.nodes[node]['y'] = coords_list[ix][1]
 
             ix += 1
         
@@ -147,7 +149,7 @@ def nearest_nodes(G, X, Y):
         if BallTree is None:  # pragma: no cover
             raise ImportError("scikit-learn must be installed to search an unprojected graph")
         # haversine requires lat, lng coords in radians
-        nodes_rad = np.deg2rad(nodes[["Y", "X"]])
+        nodes_rad = np.deg2rad(nodes[["y", "x"]])
         points_rad = np.deg2rad(np.array([Y, X]).T)
         dist, pos = BallTree(nodes_rad, metric="haversine").query(points_rad, k=1)
         dist = dist[:, 0] * EARTH_RADIUS_M  # convert radians -> meters
