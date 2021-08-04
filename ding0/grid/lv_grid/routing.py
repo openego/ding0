@@ -11,6 +11,11 @@ import geopandas as gpd
 
 import numpy as np
 
+import osmnx as ox
+
+from shapely.geometry import LineString
+
+
 # scipy is optional dependency for projected nearest-neighbor search
 try:
     from scipy.spatial import cKDTree
@@ -211,3 +216,89 @@ def get_location_substation_at_pi(graph_lv_grid, nodes):
     y = xy.y
     
     return x,y 
+
+
+
+
+def subdivide_graph_edges(graph):
+    
+    """
+    subdivide_graph_edges
+    TODO: keep information about edge name
+          ensure edge name does not exist when adding
+    """
+    graph_subdiv = graph.copy()
+    edges = graph.edges()
+    
+    #nodes, edges_from_gdf = ox.graph_to_gdfs(graph)
+
+    edge_data = []
+    node_data = []
+    #edge_id = 100100 # 100000 ... edge from OSMNX function; 100X00 ... X is edge no; 100X0Y ... Y is segment no
+
+    for u,v in edges:
+
+        linestring = LineString([(graph.nodes[u]['x'],graph.nodes[u]['y']), 
+                                 (graph.nodes[v]['x'],graph.nodes[v]['y'])])
+        
+        # TODO: ADD meter_sergments to config to be able to set 20m individually. divide edge into 20m segments ###
+        dist_edge_segments = 20
+        vertices_gen = ox.utils_geo.interpolate_points(linestring, dist_edge_segments) 
+        vertices = list(vertices_gen) 
+        highway = graph.edges[u,v,0]['highway']
+        osmid = graph.edges[u,v,0]['osmid']
+        fromid = graph.edges[u,v,0]['from']
+        toid = graph.edges[u,v,0]['to']
+        edge_id = fromid + toid
+        vertex_node_id = []
+
+
+        for num,node in enumerate(list(vertices)[1:-1], start=1):
+            x,y = node[0],node[1] ###
+            
+            # ensure synthetic node id does not exist in graph.
+            # increment name by 1 if exist and check again
+            skip_num_by=0
+            while True:
+
+                # first name edge_id + 0 + 1(=num) + 0(=skip_num_by)
+                name = int(str(edge_id) + concat_0 + str(num+skip_num_by))
+                if name in graph.nodes():
+
+                    print('TAKE CARE! THIS SYNTHETIC NODE ALREADY EXISTS IN GRAPH. NODE_ID', name)
+                    skip_num_by +=1
+
+                else:
+
+                    break
+            
+            
+            
+            node_data.append([name,x,y,(u,v)])
+            vertex_node_id.append(name)
+
+        if vertices[0] == (graph.nodes[v]['x'],graph.nodes[v]['y']): ###
+            vertex_node_id.insert(0, v)
+            vertex_node_id.append(u)
+        else:
+            vertex_node_id.insert(0, u)
+            vertex_node_id.append(v)
+
+        for i,j in zip(range(len(list(vertices))-1), range(len(vertex_node_id)-1)):
+            line = LineString([vertices[i], vertices[i+1]])
+            edge_data.append([vertex_node_id[j], vertex_node_id[j+1], line, line.length, highway, osmid])
+
+        #edge_id += 100
+
+    #build new graph    
+
+    graph_subdiv.remove_edges_from(edges)
+
+    for u,v,line,leng,highway,osmid in edge_data:
+        graph_subdiv.add_edge(u,v,geometry=line,length=leng,highway=highway,osmid=osmid)
+
+    for name,x,y,pos in node_data:
+        graph_subdiv.add_node(name,x=x,y=y)
+        
+        
+    return graph_subdiv
