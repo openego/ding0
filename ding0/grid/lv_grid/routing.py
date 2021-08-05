@@ -13,7 +13,10 @@ import numpy as np
 
 import osmnx as ox
 
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point
+
+
+
 
 
 # scipy is optional dependency for projected nearest-neighbor search
@@ -34,7 +37,7 @@ from config.config_lv_grids_osm import get_config_osm
 
 
 
-def build_graph_from_ways(ways):
+def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
 
     """ 
     Build graph based on osm ways
@@ -44,31 +47,24 @@ def build_graph_from_ways(ways):
     srid = get_config_osm('srid')
 
     # keep coords for each node
-    node_coords_dict = {}
+    # TODO: CHECK IF STILL NECESSARY. WAS USED FOR nx.draw(graph, node_coords_dict)
+    #       MAY BE DEPRECATED DUE TO ORIGIN GRAOH IS NOT USED ANYMORE
+    #node_coords_dict = {}
 
     
     # init a graph and set srid.
-    routed_graph = nx.MultiGraph()
-    #routed_graph.graph["crs"] = srid # momentan 'graph': {'crs': 4326},
-    #routed_graph.graph["crs"] = srid # wunsch             'crs': 'epsg:4326'
-    routed_graph.graph["crs"] = 'epsg:'+str(srid) 
+    graph = nx.MultiGraph()
+    graph.graph["crs"] = 'epsg:'+str(srid) 
 
     
     for w in ways:
-
-
-        # add nodes. will happen automatically when adding edges.
-        # routed_graph_tmp.add_nodes_from(w.nodes)
 
         # add edges
         ix = 0
         for node in w.nodes[:-1]:
             
-            
-
-            #TODO: CHECK IF GEOMETRY 
             # add_edge(u,v,geometry=line,length=leng,highway=highway,osmid=osmid)
-            routed_graph.add_edge(w.nodes[ix], w.nodes[ix+1], length=w.length_segments[ix], 
+            graph.add_edge(w.nodes[ix], w.nodes[ix+1], length=w.length_segments[ix], 
                                   osmid=w.osm_id, highway=w.highway)
 
             ix += 1
@@ -80,21 +76,63 @@ def build_graph_from_ways(ways):
         
         for node in w.nodes:
 
-            node_coords_dict[node] = coords_list[ix]
-            routed_graph.nodes[node]['x'] = coords_list[ix][0]
-            routed_graph.nodes[node]['y'] = coords_list[ix][1]
+            #node_coords_dict[node] = coords_list[ix]
+            graph.nodes[node]['x'] = coords_list[ix][0]
+            graph.nodes[node]['y'] = coords_list[ix][1]
+            graph.nodes[node]['node_type'] = 'non_synthetic'
 
             ix += 1
         
         
         
-    return routed_graph, node_coords_dict
+        
+    # convert undirected graph to digraph
+    graph = graph.to_directed()  
+    
+    # truncate by edge for digraph
+    #if truncate_by_edge:
+    graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, retain_all=retain_all, truncate_by_edge=truncate_by_edge)
+        
+        
+        
+    return graph
+
+
+
+
+def get_sub_graph_list(graph):
+    
+    """
+    get a list containging subgrpaphs for given graph as param.
+    """
+    
+    
+    # TODO: IT IS MANDATORY TO HAVE ONE CONNECTED GRAPH
+    #       ENSURE IT IS. IF NOT NEED TO BE IMPLEMENTED
+    if not nx.is_weakly_connected(graph):
+
+        # TODO NEED AN IMPLEMENTATION FOR MULTIPLE SUBGRAPHS IF NOT CONNECTED
+        print('problem ding0 poly doesnt cover connection(ways) of multiple subgraphs to solve. what can we do?')
+        
+    
+    graph_node_generator = nx.weakly_connected_components(graph)
+        
+    graph_node_list = list(graph_node_generator)
+
+    sub_graph_list = [] 
+
+    for nodes in graph_node_list:
+        
+        sub_graph_list.append(graph.subgraph(nodes))
+        
+    
+    return sub_graph_list
 
 
 
 
 
-def nearest_nodes(G, X, Y):
+def DEPRECATED_nearest_nodes(G, X, Y):
     """
     SRC: https://github.com/gboeing/osmnx/blob/main/osmnx/distance.py#L146    
     
@@ -219,6 +257,24 @@ def get_location_substation_at_pi(graph_lv_grid, nodes):
 
 
 
+# TODO: CHECK AND DECIDE IF WE WANNA WORK WITH LISTS CONTAINING CUBGRAPHS
+def apply_subdivide_graph_edges_for_each_subgraph(sub_graph_list):
+    
+    """
+    for each subgfraoh in list subdivide graph
+    """
+    
+    sub_graph_list_subdivided = []
+    
+    for graph in sub_graph_list:
+        
+        sub_graph_list_subdivided.append(subdivide_graph_edges(graph))
+        
+        
+    return sub_graph_list_subdivided
+
+
+
 
 def subdivide_graph_edges(graph):
     
@@ -226,23 +282,31 @@ def subdivide_graph_edges(graph):
     subdivide_graph_edges
     TODO: keep information about edge name
           ensure edge name does not exist when adding
-    """
+    """    
+    
+    graph = ox.get_undirected(graph)
+    
+        
+        
+    # TODO: ADD meter_sergments to config to be able to set 20m individually. divide edge into 20m segments ###
+    #       ADD to_crs='epsg:3035' to cfg
+    dist_edge_segments = 20
+    concat_0 = "0" # concat edge_id with 0 before inrcrementing synthetic ids to concat
+
+
+    graph = ox.project_graph(graph, to_crs='epsg:3035')
+    
+
     graph_subdiv = graph.copy()
     edges = graph.edges()
-    
-    #nodes, edges_from_gdf = ox.graph_to_gdfs(graph)
 
     edge_data = []
     node_data = []
-    #edge_id = 100100 # 100000 ... edge from OSMNX function; 100X00 ... X is edge no; 100X0Y ... Y is segment no
 
     for u,v in edges:
 
         linestring = LineString([(graph.nodes[u]['x'],graph.nodes[u]['y']), 
                                  (graph.nodes[v]['x'],graph.nodes[v]['y'])])
-        
-        # TODO: ADD meter_sergments to config to be able to set 20m individually. divide edge into 20m segments ###
-        dist_edge_segments = 20
         vertices_gen = ox.utils_geo.interpolate_points(linestring, dist_edge_segments) 
         vertices = list(vertices_gen) 
         highway = graph.edges[u,v,0]['highway']
@@ -287,8 +351,7 @@ def subdivide_graph_edges(graph):
         for i,j in zip(range(len(list(vertices))-1), range(len(vertex_node_id)-1)):
             line = LineString([vertices[i], vertices[i+1]])
             edge_data.append([vertex_node_id[j], vertex_node_id[j+1], line, line.length, highway, osmid])
-
-        #edge_id += 100
+            
 
     #build new graph    
 
@@ -298,7 +361,28 @@ def subdivide_graph_edges(graph):
         graph_subdiv.add_edge(u,v,geometry=line,length=leng,highway=highway,osmid=osmid)
 
     for name,x,y,pos in node_data:
-        graph_subdiv.add_node(name,x=x,y=y)
+        graph_subdiv.add_node(name,x=x,y=y,node_type='synthetic')
         
         
     return graph_subdiv
+
+
+def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
+    
+    """
+    assign nearest nodes of graph to buildings
+    """
+    
+    # TODO: PROJECT TO GET DIST. WHAT ELSE CAN BE DONE?
+    graph_subdiv_4326 = ox.project_graph(graph_subdiv, to_crs='epsg:4326')
+
+    X = buildings_w_loads_df['x'].tolist()
+    Y = buildings_w_loads_df['y'].tolist()
+
+    buildings_w_loads_df['nn'], buildings_w_loads_df['nn_dist'] = ox.nearest_nodes(
+        graph_subdiv_4326, X, Y, return_dist=True)
+    buildings_w_loads_df['nn_coords'] = buildings_w_loads_df['nn'].apply(
+        lambda row : Point(graph_subdiv_4326.nodes[row]['x'], graph_subdiv_4326.nodes[row]['y']))
+
+    
+    return buildings_w_loads_df

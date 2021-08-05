@@ -58,13 +58,22 @@ package_path = ding0.__path__[0]
 
 
 
+
 ############ NEW
+
+if 'READTHEDOCS' in os.environ:
+    
+    from shapely.wkt import loads as wkt_loads
 
 from ding0.config.db_conn_local import create_session_osm
 
-from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways
+from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways, \
+get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
 
-from ding0.grid.lv_grid.routing import build_graph_from_ways
+from ding0.grid.lv_grid.routing import build_graph_from_ways, get_sub_graph_list, \
+subdivide_graph_edges, assign_nearest_nodes_to_buildings
+
+from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
 
 ############ NEW END
@@ -708,7 +717,11 @@ class NetworkDing0:
 
         logger.info('=====> MV Grid Districts imported')
         
-    def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district, need_parameterization):
+    def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district, 
+                                                        need_parameterization, retain_all=True, truncate_by_edge=True):
+        
+        # TODO: CHECK IF retain_all=True, truncate_by_edge=True may be False. Need to set in config or as param.        
+        
         """
         Imports load_areas (load areas) from database for a single MV grid_district
         And compute new lv_districts
@@ -807,23 +820,53 @@ class NetworkDing0:
             
             #### STEP 1.A2. LOAD WAYS AND BUILD GRAPH
             
-            # load ways
-            ### Load bays
-            #print(row.geo_area)
+            # load ways from db
             ways = get_osm_ways(row.geo_area, session_osm)
             
-            graph, node_coords_dict = build_graph_from_ways(ways)
             
-            return [graph, node_coords_dict, row.geo_area]
+            # transform geo_load_area from str to poly
+            geo_load_area = wkt_loads(row.geo_area)
+            
+            # build graoh based i ways
+            graph = build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge)
+            
+            
+            # build subgraphs for graph if graoh is not weakly connected
+            sub_graph_list = get_sub_graph_list(graph)
+            
+            
+            # implementation for only one connected graph. 
+            # TODO: check if implementation for lists is needed
+            working_w_lists=False
+            if working_w_lists:
+                
+                # NOT IMPORTED YET
+                graph_subdiv_list = apply_subdivide_graph_edges_for_each_subgraph(sub_graph_list)
+                
+            else:
+                
+                # subdivide_graph_edges for only graph in list
+                graph_subdiv = subdivide_graph_edges(sub_graph_list[0])
+                
+                
+            # load buildings and amenities
+            ### Load buildings_w_a, wo_a, a
+            
+            buildings_w_a  = get_osm_buildings_w_a(row.geo_area, session_osm)
+            buildings_wo_a = get_osm_buildings_wo_a(row.geo_area, session_osm)
+            amenities_ni_Buildings = get_osm_amenities_ni_Buildings(row.geo_area, session_osm)
+            
+            # parameterization and merge to buildings_df
+            buildings_w_loads_df = parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Buildings)
 
-            # node_coords_dict just for plotting 
-            graph, node_coords_dict = build_graph_from_ways(ways)
-            #nx.draw(graph, node_coords_dict)
+            
+            # assign nearest nodes
+            buildings_w_loads_df = assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df)
             
             
-            
-            #### STEP 1.B 
-            ### ggfs. weitere knoten dem graphen zuführen
+            return [graph_subdiv, geo_load_area, buildings_w_loads_df]
+
+                
             
             
             
@@ -833,30 +876,9 @@ class NetworkDing0:
                 
                 print('parameterization robert')
                 
-                ### Load buildings_w_a
-                #buildings_w_a = session_osm.query(Buildings_with_Amenities).filter(func.st_intersects(func.ST_GeomFromText(lv_load_areas.wkt, get_config_osm('srid')), Buildings_with_Amenities.geometry_amenity)) 
-
-                ### Load buildings_wo_a
-                #buildings_wo_a = session_osm.query(Building_wo_Amenity).filter(func.st_intersects(func.ST_GeomFromText(lv_load_areas.wkt, get_config_osm('srid')), Building_wo_Amenity.geometry)) 
-
-                ### Load amenities_ni_Buildings
-                #amenities_ni_Buildings = session_osm.query(Amenities_ni_Buildings).filter(func.st_intersects(func.ST_GeomFromText(lv_load_areas.wkt, get_config_osm('srid')), Amenities_ni_Buildings.geometry)) 
-                
-                
-                #buildings_w_loads_df = parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Buildings)
-                
             else:
                 
                 print('pauls parametrierung durch din0 bekannt lasten zu gebäuden')
-
-                
-                
-            ##### STEP 3. nearest nodes für gebäude ud graphen zuordnen
-                
-            X = buildings_w_loads_df['x'].tolist()
-            Y = buildings_w_loads_df['y'].tolist()
-
-            buildings_w_loads_df['nn'], buildings_w_loads_df['nn_dist'] = nearest_nodes(graph, X, Y)
 
             
             
