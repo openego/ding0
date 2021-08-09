@@ -27,8 +27,8 @@ def get_config_osm(key):
         'srid' : 4326,
         'EARTH_RADIUS_M' : 6_371_009,
         'mv_lv_threshold_capacity' : 200,
-        'avg_cluster_capacity' : 500,
         'additional_trafo_capacity' : 1.5,
+        'avg_trafo_size' : 500,
         'avg_square_meters' : 100,
         
     }

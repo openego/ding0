@@ -37,6 +37,9 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
     load_profile_categories = get_load_profile_categories()
     load_profiles = get_peak_loads()
     
+    # set avg square meter from config
+    avg_mxm = get_config_osm('avg_square_meters')
+    
     # TODO: CHECK IF TEMPORARY df needed    
     # assign nearest nodes more efficient thru dataframe instead calling iterative for each building
     # temporary: init empty df for buildings w. loads
@@ -47,10 +50,6 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
                                                  'x', 'y', 'geometry', 'raccordement_building'])
     df_buildings_w_loads.index = df_buildings_w_loads['osm_id']
     del df_buildings_w_loads['osm_id']
-
-
-    # set avg square meter from config
-    avg_mxm = get_config_osm('avg_square_meters')
     
     
 

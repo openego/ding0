@@ -2,7 +2,9 @@
 Routing based on ways from OSM.
 """
 
+import osmnx as ox
 import networkx as nx
+
 from geoalchemy2.shape import to_shape
 
 from pyproj import CRS
@@ -10,8 +12,6 @@ from pyproj import CRS
 import geopandas as gpd
 
 import numpy as np
-
-import osmnx as ox
 
 from shapely.geometry import LineString, Point
 
@@ -90,8 +90,8 @@ def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
     graph = graph.to_directed()  
     
     # truncate by edge for digraph
-    #if truncate_by_edge:
-    graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, retain_all=retain_all, truncate_by_edge=truncate_by_edge)
+    if truncate_by_edge:
+        graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, retain_all=retain_all, truncate_by_edge=truncate_by_edge)
         
         
         
@@ -103,12 +103,11 @@ def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
 def get_sub_graph_list(graph):
     
     """
-    get a list containging subgrpaphs for given graph as param.
+    get a list containging connected subgrpaphs for given directed graph as param.
     """
     
-    
-    # TODO: IT IS MANDATORY TO HAVE ONE CONNECTED GRAPH
-    #       ENSURE IT IS. IF NOT NEED TO BE IMPLEMENTED
+    # TODO  I: IT IS MANDATORY TO HAVE ONE CONNECTED GRAPH
+    #          ENSURE IT IS. IF NOT NEED TO BE IMPLEMENTED
     if not nx.is_weakly_connected(graph):
 
         # TODO NEED AN IMPLEMENTATION FOR MULTIPLE SUBGRAPHS IF NOT CONNECTED
@@ -386,3 +385,187 @@ def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
 
     
     return buildings_w_loads_df
+
+
+
+
+def identify_nodes_to_keep(buildings_w_loads_df, graph):
+    """
+    identify_nodes_to_keep
+    """
+    
+    # keep only street_load_nodes and endpoints
+    street_loads = buildings_w_loads_df.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
+    street_load_nodes = street_loads.index.tolist()
+
+    digraph = nx.MultiGraph(graph)
+    digraph = digraph.to_directed()
+
+
+    endpoints = [n for n in digraph.nodes if ox.simplification._is_endpoint(digraph, n, strict=True)]
+    nodes_to_keep = list(set(endpoints + street_load_nodes))
+    
+    return nodes_to_keep, street_loads
+
+
+
+# modified osmnx function (extended by nodes_to_keep)
+# feststellen welche knoten behalten und welche weg. build paths.
+def _get_paths_to_simplify(G, nodes_to_keep, strict=True):
+    """
+    Generate all the paths to be simplified between endpoint nodes.
+    The path is ordered from the first endpoint, through the interstitial nodes,
+    to the second endpoint.
+    Parameters
+    ----------
+    G : networkx.MultiDiGraph
+        input graph
+    strict : bool
+        if False, allow nodes to be end points even if they fail all other rules
+        but have edges with different OSM IDs
+    Yields
+    ------
+    path_to_simplify : list
+    """
+    
+    
+    # for each endpoint node, look at each of its successor nodes
+    for endpoint in nodes_to_keep:
+        for successor in G.successors(endpoint):
+            if successor not in nodes_to_keep:
+                # if endpoint node's successor is not an endpoint, build path
+                # from the endpoint node, through the successor, and on to the
+                # next endpoint node
+                yield ox.simplification._build_path(G, endpoint, successor, nodes_to_keep)
+                
+                
+                
+# modified osmnx function (extended by nodes_to_keep)
+# del paths from above and build new graph
+def simplify_graph(G, nodes_to_keep, strict=True, remove_rings=True):
+    """
+    Simplify a graph's topology by removing interstitial nodes.
+    Simplifies graph topology by removing all nodes that are not intersections
+    or dead-ends. Create an edge directly between the end points that
+    encapsulate them, but retain the geometry of the original edges, saved as
+    a new `geometry` attribute on the new edge. Note that only simplified
+    edges receive a `geometry` attribute. Some of the resulting consolidated
+    edges may comprise multiple OSM ways, and if so, their multiple attribute
+    values are stored as a list.
+    Parameters
+    ----------
+    G : networkx.MultiDiGraph
+        input graph
+    strict : bool
+        if False, allow nodes to be end points even if they fail all other
+        rules but have incident edges with different OSM IDs. Lets you keep
+        nodes at elbow two-way intersections, but sometimes individual blocks
+        have multiple OSM IDs within them too.
+    remove_rings : bool
+        if True, remove isolated self-contained rings that have no endpoints
+    Returns
+    -------
+    G : networkx.MultiDiGraph
+        topologically simplified graph, with a new `geometry` attribute on
+        each simplified edge
+    """
+    if "simplified" in G.graph and G.graph["simplified"]:  # pragma: no cover
+        raise Exception("This graph has already been simplified, cannot simplify it again.")
+
+    #utils.log("Begin topologically simplifying the graph...")
+    print("Begin topologically simplifying the graph...")
+
+    # define edge segment attributes to sum upon edge simplification
+    attrs_to_sum = {"length", "travel_time"}
+
+    # make a copy to not mutate original graph object caller passed in
+    G = G.copy()
+    initial_node_count = len(G)
+    initial_edge_count = len(G.edges)
+    all_nodes_to_remove = []
+    all_edges_to_add = []
+
+    # generate each path that needs to be simplified
+    for path in _get_paths_to_simplify(G, nodes_to_keep, strict=strict):
+
+        # add the interstitial edges we're removing to a list so we can retain
+        # their spatial geometry
+        path_attributes = dict()
+        for u, v in zip(path[:-1], path[1:]):
+
+            # there should rarely be multiple edges between inter_get_paths_to_simplify(G, nodes_to_keep, strict=True):stitial nodes
+            # usually happens if OSM has duplicate ways digitized for just one
+            # street... we will keep only one of the edges (see below)
+            edge_count = G.number_of_edges(u, v)
+            if edge_count != 1:
+                #utils.log(f"Found {edge_count} edges between {u} and {v} when simplifying")
+                print(f"Found {edge_count} edges between {u} and {v} when simplifying")
+
+            # get edge between these nodes: if multiple edges exist between
+            # them (see above), we retain only one in the simplified graph
+            edge_data = G.edges[u, v, 0]
+            
+            edge_data.pop('geometry', None) ### NECESSARY FOR THIS PARTIC. CASE (PAUL: if geometry in attributes)
+            
+            for attr in edge_data:
+                if attr in path_attributes:
+                    # if this key already exists in the dict, append it to the
+                    # value list
+                    path_attributes[attr].append(edge_data[attr])
+                else:
+                    # if this key doesn't already exist, set the value to a list
+                    # containing the one value
+                    path_attributes[attr] = [edge_data[attr]]
+
+        # consolidate the path's edge segments' attribute values
+        for attr in path_attributes:
+            if attr in attrs_to_sum:
+                # if this attribute must be summed, sum it now
+                path_attributes[attr] = sum(path_attributes[attr])
+            elif len(set(path_attributes[attr])) == 1:
+                # if there's only 1 unique value in this attribute list,
+                # consolidate it to the single value (the zero-th):
+                path_attributes[attr] = path_attributes[attr][0]
+            else:
+                # otherwise, if there are multiple values, keep one of each
+                path_attributes[attr] = list(set(path_attributes[attr]))
+
+        # construct the new consolidated edge's geometry for this path
+        path_attributes["geometry"] = LineString(
+            [Point((G.nodes[node]["x"], G.nodes[node]["y"])) for node in path]
+        )
+
+        # add the nodes and edge to their lists for processing at the end
+        all_nodes_to_remove.extend(path[1:-1])
+        all_edges_to_add.append(
+            {"origin": path[0], "destination": path[-1], "attr_dict": path_attributes}
+        )
+
+    # for each edge to add in the list we assembled, create a new edge between
+    # the origin and destination
+    for edge in all_edges_to_add:
+        G.add_edge(edge["origin"], edge["destination"], **edge["attr_dict"])
+
+    # finally remove all the interstitial nodes between the new edges
+    G.remove_nodes_from(set(all_nodes_to_remove))
+
+    if remove_rings:
+        # remove any connected components that form a self-contained ring
+        # without any endpoints
+        wccs = nx.weakly_connected_components(G)
+        nodes_in_rings = set()
+        for wcc in wccs:
+            if not any(ox.simplification._is_endpoint(G, n) for n in wcc):
+                nodes_in_rings.update(wcc)
+        G.remove_nodes_from(nodes_in_rings)
+
+    # mark graph as having been simplified
+    G.graph["simplified"] = True
+
+    msg = (
+        f"Simplified graph: {initial_node_count} to {len(G)} nodes, "
+        f"{initial_edge_count} to {len(G.edges)} edges"
+    )
+    #utils.log(msg)
+    print(msg)
+    return G

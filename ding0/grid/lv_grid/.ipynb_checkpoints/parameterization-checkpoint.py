@@ -161,11 +161,11 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
 
     
 
-    # update to_shape(geometry), to_shape(raccordement)
+    # update to_shape(geometry), to_shape(raccordement_building)
     df_buildings_w_loads['geometry'] = df_buildings_w_loads.apply(
         lambda amenity: to_shape(amenity.geometry), axis=1)
-    df_buildings_w_loads['raccordement'] = df_buildings_w_loads.apply(
-        lambda building: to_shape(building.raccordement), axis=1)
+    df_buildings_w_loads['raccordement_building'] = df_buildings_w_loads.apply(
+        lambda building: to_shape(building.raccordement_building), axis=1)
 
 
     # for amenities update x and y
@@ -179,10 +179,10 @@ def parameterize_by_load_profiles(buildings_w_a, buildings_wo_a, amenities_ni_Bu
     # for amenities update x and y
     df_buildings_w_loads.loc[df_buildings_w_loads.y == 'p.y', 'x'] = \
     df_buildings_w_loads.loc[df_buildings_w_loads.y == 'p.y'].apply(
-        lambda amenity: amenity.raccordement.x, axis=1)
+        lambda amenity: amenity.raccordement_building.x, axis=1)
     df_buildings_w_loads.loc[df_buildings_w_loads.y == 'p.y', 'y'] = \
     df_buildings_w_loads.loc[df_buildings_w_loads.y == 'p.y'].apply(
-        lambda amenity: amenity.raccordement.y, axis=1)
+        lambda amenity: amenity.raccordement_building.y, axis=1)
 
     
     return df_buildings_w_loads

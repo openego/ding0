@@ -71,7 +71,8 @@ from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways, \
 get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
 
 from ding0.grid.lv_grid.routing import build_graph_from_ways, get_sub_graph_list, \
-subdivide_graph_edges, assign_nearest_nodes_to_buildings
+subdivide_graph_edges, assign_nearest_nodes_to_buildings, identify_nodes_to_keep, \
+simplify_graph
 
 from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
@@ -718,7 +719,7 @@ class NetworkDing0:
         logger.info('=====> MV Grid Districts imported')
         
     def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district, 
-                                                        need_parameterization, retain_all=True, truncate_by_edge=True):
+                                                        need_parameterization, retain_all=False, truncate_by_edge=True):
         
         # TODO: CHECK IF retain_all=True, truncate_by_edge=True may be False. Need to set in config or as param.        
         
@@ -820,6 +821,8 @@ class NetworkDing0:
             
             #### STEP 1.A2. LOAD WAYS AND BUILD GRAPH
             
+            row.geo_area = 'POLYGON ((9.444757321553571 47.6640820372137, 9.44469147049122 47.6642370363376, 9.442746638836271 47.6675223477341, 9.44273323863089 47.6675486765942, 9.44272335456083 47.6675846924473, 9.44272337322715 47.6675856076278, 9.44272365679015 47.667586502615, 9.442724194246059 47.6675873426787, 9.442724964738851 47.6675880952201, 9.442725938369239 47.6675887310364, 9.442771524985689 47.6676085195463, 9.442809078141879 47.6676199425426, 9.443599054706221 47.6678292167847, 9.44364298889086 47.6678391758214, 9.44369319196211 47.6678454078942, 9.443694609235431 47.6678454056071, 9.44369600193242 47.6678452280573, 9.443697323077419 47.6678448812336, 9.443698528108349 47.6678443768344, 9.443744598701199 47.6678160313241, 9.443795360184319 47.6677784822092, 9.443991191770809 47.6676599114601, 9.44421793991903 47.667570002951, 9.44446657647225 47.667512336406, 9.44472720190474 47.6674892078198, 9.444989439424219 47.6675015380556, 9.445052589744799 47.6675088406224, 9.445117064489731 47.6675174206873, 9.445183601261711 47.6675274468952, 9.44523747329856 47.6675300193568, 9.445238809309229 47.6675299032106, 9.4452400852424 47.6675296113077, 9.445241251079061 47.667529155091, 9.445242261116221 47.6675285524453, 9.445243075758549 47.6675278269953, 9.44524366307046 47.6675270071801, 9.445257172339209 47.6674916444378, 9.44526138400154 47.6674643786881, 9.44526635876986 47.6674027181877, 9.44527842375639 47.6673216144847, 9.44528702520314 47.6672820624034, 9.445343690252869 47.6671237851091, 9.44544200701166 47.6669751340207, 9.445578690330031 47.6668410756375, 9.445606929899901 47.666818179473, 9.445637520256669 47.6667867600046, 9.445694232828229 47.6667392820943, 9.445718033000571 47.6667110812337, 9.445816550854619 47.6665782840333, 9.445885789521761 47.6664961432372, 9.44592142419992 47.6664586450851, 9.44609642847751 47.6663115101204, 9.446313359526091 47.6661926345661, 9.44656247099808 47.6661073591621, 9.4468325709589 47.6660595150674, 9.447111524661491 47.6660512517601, 9.44717730910928 47.6660540322315, 9.447316189895529 47.6660649297759, 9.44753610831893 47.6660902456686, 9.44758112940486 47.6660938580278, 9.44767071891042 47.6660918313842, 9.447684852061499 47.6660900296329, 9.44774691292624 47.6660795923001, 9.4479881800759 47.6660547725018, 9.448232085468209 47.6660604809193, 9.448470258112661 47.6660965216365, 9.448560914386359 47.6661163562617, 9.44857404167368 47.6661182063231, 9.448691583060739 47.6661430580836, 9.44873711713312 47.6661476818212, 9.44936429835351 47.6661892570172, 9.44940607834077 47.66619064719, 9.44946122599818 47.6661870380657, 9.449463401923399 47.6661858503929, 9.449498075077059 47.6661578721339, 9.449520006942709 47.6661337837734, 9.45042894326825 47.6650175089795, 9.45044714891934 47.6649921250378, 9.450463499380801 47.6649559172176, 9.450463614247271 47.6649550512483, 9.450463463599689 47.664954187754, 9.450463053866351 47.6649533635807, 9.45046240253088 47.6649526138965, 9.450461537386341 47.6649519706911, 9.450460495349169 47.6649514614106, 9.45040935260457 47.6649360626301, 9.45036907619812 47.664928709451, 9.447377834868041 47.6644933952575, 9.447343269935271 47.6644880343118, 9.44730847614896 47.6644823034133, 9.44727413690042 47.6644763151236, 9.444928887305879 47.6640444576946, 9.444886220360861 47.6640381906818, 9.444829205115131 47.6640359557828, 9.4448279422305 47.6640360849357, 9.44482674602855 47.6640363876611, 9.44482566804831 47.6640368509158, 9.444757321553571 47.6640820372137))'
+            
             # load ways from db
             ways = get_osm_ways(row.geo_area, session_osm)
             
@@ -842,16 +845,21 @@ class NetworkDing0:
                 
                 # NOT IMPORTED YET
                 graph_subdiv_list = apply_subdivide_graph_edges_for_each_subgraph(sub_graph_list)
+                # TODO: each subgraph has to be directed. check else case.
                 
             else:
                 
                 # subdivide_graph_edges for only graph in list
                 graph_subdiv = subdivide_graph_edges(sub_graph_list[0])
                 
+                # transform grah to directed
+                digraph = nx.MultiGraph(graph_subdiv)
+                digraph = digraph.to_directed()
+            
+            
                 
             # load buildings and amenities
             ### Load buildings_w_a, wo_a, a
-            
             buildings_w_a  = get_osm_buildings_w_a(row.geo_area, session_osm)
             buildings_wo_a = get_osm_buildings_wo_a(row.geo_area, session_osm)
             amenities_ni_Buildings = get_osm_amenities_ni_Buildings(row.geo_area, session_osm)
@@ -864,7 +872,18 @@ class NetworkDing0:
             buildings_w_loads_df = assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df)
             
             
-            return [graph_subdiv, geo_load_area, buildings_w_loads_df]
+            
+            
+            
+            # get nodes to keep and street_loads for graph. 
+            # street_loads contains nearest nodes and cum(load) per node
+            nodes_to_keep, street_loads = identify_nodes_to_keep(buildings_w_loads_df, digraph)
+            simp_graph = simplify_graph(digraph, nodes_to_keep)
+            # TODO: stay with one graph instead new ones
+            # simp_graph to keep overview
+            #graph_subdiv = simplify_graph(graph_subdiv, nodes_to_keep) 
+            
+            return [simp_graph, geo_load_area, buildings_w_loads_df, street_loads]
 
                 
             
