@@ -394,8 +394,12 @@ def identify_nodes_to_keep(buildings_w_loads_df, graph):
     identify_nodes_to_keep
     """
     
+    mv_lv_level_threshold = get_config_osm('mv_lv_threshold_capacity')
+    mv_lv_level_threshold = 40 # TODO: del it. it is used for testing reasons to be able to check filtering. 
+    
     # keep only street_load_nodes and endpoints
-    street_loads = buildings_w_loads_df.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
+    street_loads = buildings_w_loads_df.loc[buildings_w_loads_df.capacity < mv_lv_level_threshold].groupby(
+        ['nn']).capacity.sum().reset_index().set_index('nn')
     street_load_nodes = street_loads.index.tolist()
 
     digraph = nx.MultiGraph(graph)
