@@ -10,20 +10,22 @@ from config.config_lv_grids_osm import get_peak_loads, get_load_profile_categori
 #charging_station_columns = get_charging_station_columns()
 
 
-def get_peak_load(category, load_profile_categories, load_profiles, area, n_amenities_inside, number_households):
+def get_peak_load(category, load_profile_categories, load_profiles, area, n_amenities_inside):
     
-    """ Get peak load by given category of load profiles."""
+    """ 
+    Get peak load by given category of load profiles. 
+    Multiply by 1e-3 to transform to kW.
+    """
     
-    # TODO UPDATE FCT.
+    # TODO UPDATE FCT.           
+    # if building.n_apartments == 0: building.n_apartments = 1
     
-    if category in load_profile_categories:
-    
-        return load_profiles[load_profile_categories[category]]
-    
-    else: 
+    if category not in load_profile_categories:
         
-        print(category)
-        return load_profiles[load_profile_categories['leftover']]
+        print(category, 'is not matched in config and will be categorized as leftover')
+        category = 'leftover'
+        
+    return load_profiles[load_profile_categories[category]] * area / n_amenities_inside * 1e-3
 
 
 
@@ -61,12 +63,11 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
         amenities_ni_Buildings_sql_df = amenities_ni_Buildings_sql_df.rename(
             {'amenity': 'category'}, axis=1)
         amenities_ni_Buildings_sql_df['area'] = avg_mxm
+        amenities_ni_Buildings_sql_df['n_amenities_inside'] = 1
         amenities_ni_Buildings_sql_df['capacity'] = amenities_ni_Buildings_sql_df.apply(
-            lambda row: get_peak_load(get_peak_load(row.category, load_profile_categories, 
-                                                    load_profiles, row.area,
-                                                    row.n_amenities_inside), axis=1)
+            lambda row: get_peak_load(row.category, load_profile_categories, 
+                                      load_profiles, row.area, row.n_amenities_inside), axis=1)
         amenities_ni_Buildings_sql_df['x'], amenities_ni_Buildings_sql_df['y'] = 'p.x', 'p.y'
-        amenities_ni_Buildings_sql_df['number_households'] = 0
         amenities_ni_Buildings_sql_df['raccordement_building'] = amenities_ni_Buildings_sql_df['geometry']
         concat_a = True
     else: concat_a=False
@@ -145,12 +146,16 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
 
                 if ix < 1:
 
+                    # todo dff rename but not dupl_df = dupl_df[] du to reameining with 1 entry
                     dupl_dff = dupl_df[(dupl_df.index==dupl_id) & (dupl_df.area!=dupl_df.loc[dupl_df.index==dupl_id].area.max())]
 
                 else:
 
                     tempf_df = dupl_df[(dupl_df.index==dupl_id) & (dupl_df.area!=dupl_df.loc[dupl_df.index==dupl_id].area.max())]
                     dupl_dff = pd.concat([dupl_dff, tempf_df])
+                    
+                    
+            print(dupl_dff.index)
 
             buildings_w_loads_df = buildings_w_loads_df[~buildings_w_loads_df.index.isin(dupl_ids)]
 
@@ -224,8 +229,8 @@ def parameterize_by_load_profiles_IT_DEPRECATED(buildings_w_a, buildings_wo_a, a
     # check capacity
     for amenity in amenities_ni_Buildings:  
 
-        peak_load = get_peak_load(row.category, load_profile_categories, load_profiles,
-                                  row.area, row.n_amenities_inside)
+        peak_load = get_peak_load(amenity.amenity, load_profile_categories, 
+                                  load_profiles, 100, 1) #  100 as avg square meter. 1 as n_amenities_inside
 
         # if type does not exist in load profiles, set capacity=0 
         if peak_load is None:
@@ -240,17 +245,14 @@ def parameterize_by_load_profiles_IT_DEPRECATED(buildings_w_a, buildings_wo_a, a
 
 
     for building in buildings_w_a:
-
-        peak_load = get_peak_load(row.category, load_profile_categories, load_profiles,
-                                  row.area, row.n_amenities_inside)
+        
+        number_households = building.n_apartments 
+        peak_load = get_peak_load(building.building, load_profile_categories, load_profiles, building.area, building.n_amenities_inside)
 
         # if type does not exist in load profiles, set capacity=0 
         if peak_load is None:
 
             peak_load = 0
-
-
-        number_households = building.n_apartments
 
 
         # check if building is residential and add 1 household if no other number of households is known.
@@ -275,8 +277,6 @@ def parameterize_by_load_profiles_IT_DEPRECATED(buildings_w_a, buildings_wo_a, a
         else:
 
             # peak_load in kW. if building contains multiple amenities, area is shared unifromly.
-            # peak_load = peak_load_per_square_meter * square_meter / n_amenities_inside * 1e-3.
-
             df_buildings_w_loads.loc[building.osm_id_amenity] = [building.building, peak_load, building.area,
                                                                  number_households, building.geo_center, 'p.y', 
                                                                  building.geometry_building, building.geo_center]
@@ -288,7 +288,8 @@ def parameterize_by_load_profiles_IT_DEPRECATED(buildings_w_a, buildings_wo_a, a
 
     for building in buildings_wo_a:  
 
-        peak_load = get_peak_load(building.building, load_profile_categories, load_profiles)
+        # 1 as n_amenities_inside
+        peak_load = get_peak_load(building.building, load_profile_categories, load_profiles, building.area, 1)
 
         # if type does not exist in load profiles, set capacity=0 
         if peak_load is None:
