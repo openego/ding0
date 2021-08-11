@@ -10,15 +10,18 @@ from config.config_lv_grids_osm import get_peak_loads, get_load_profile_categori
 #charging_station_columns = get_charging_station_columns()
 
 
-def get_peak_load(category, load_profile_categories, load_profiles, area, n_amenities_inside):
+def get_peak_load(category, load_profile_categories, load_profiles, area, n_amenities_inside, number_households):
     
     """ 
     Get peak load by given category of load profiles. 
     Multiply by 1e-3 to transform to kW.
     """
     
-    # TODO UPDATE FCT.           
-    # if building.n_apartments == 0: building.n_apartments = 1
+    if category in load_profile_categories['residentials_list']:
+    
+        # capacity for residentials will be updated after clustering
+        # due to number of residentials per feeder are mandatory
+        return load_profiles[load_profile_categories[category]] * 100 * number_households * 1e-3
     
     if category not in load_profile_categories:
         
@@ -60,13 +63,15 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
         amenities_ni_Buildings_sql_df.index = amenities_ni_Buildings_sql_df['osm_id']
         del amenities_ni_Buildings_sql_df['osm_id']
         del amenities_ni_Buildings_sql_df['tags']
+        amenities_ni_Buildings_sql_df['number_households'] = 0
         amenities_ni_Buildings_sql_df = amenities_ni_Buildings_sql_df.rename(
             {'amenity': 'category'}, axis=1)
         amenities_ni_Buildings_sql_df['area'] = avg_mxm
         amenities_ni_Buildings_sql_df['n_amenities_inside'] = 1
         amenities_ni_Buildings_sql_df['capacity'] = amenities_ni_Buildings_sql_df.apply(
             lambda row: get_peak_load(row.category, load_profile_categories, 
-                                      load_profiles, row.area, row.n_amenities_inside), axis=1)
+                                      load_profiles, row.area, row.n_amenities_inside,
+                                      row.number_households), axis=1)
         amenities_ni_Buildings_sql_df['x'], amenities_ni_Buildings_sql_df['y'] = 'p.x', 'p.y'
         amenities_ni_Buildings_sql_df['raccordement_building'] = amenities_ni_Buildings_sql_df['geometry']
         concat_a = True
@@ -118,7 +123,8 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
                                                                       load_profile_categories, 
                                                                       load_profiles,
                                                                       row.area,
-                                                                      row.n_amenities_inside),
+                                                                      row.n_amenities_inside,
+                                                                      row.number_households),
                                                         axis=1)
         
         
@@ -167,6 +173,8 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
             lambda amenity: to_shape(amenity.geometry), axis=1)
         buildings_w_loads_df['raccordement_building'] = buildings_w_loads_df.apply(
             lambda building: to_shape(building.raccordement_building), axis=1)
+        #buildings_w_loads_df['geometry_amenity'] = buildings_w_loads_df.apply(
+        #    lambda building: to_shape(building.geometry_amenity), axis=1)
 
 
         # for amenities update x and y
@@ -184,6 +192,9 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
         buildings_w_loads_df.loc[buildings_w_loads_df.y == 'p.y', 'y'] = \
         buildings_w_loads_df.loc[buildings_w_loads_df.y == 'p.y'].apply(
             lambda amenity: amenity.raccordement_building.y, axis=1)
+        
+        # replace yes to residentials
+        buildings_w_loads_df['category'].replace('yes','residential', inplace=True)
     
         return buildings_w_loads_df
     

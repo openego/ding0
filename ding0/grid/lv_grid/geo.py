@@ -1,11 +1,11 @@
-from geoalchemy2.shape import to_shape
 from shapely.geometry import MultiPoint, Point, shape
 
 
 
 def get_Point_from_x_y(x, y):
     
-    """ get point for given x,y
+    """ 
+    get point for given x,y
     """
     
     return Point(x,y)

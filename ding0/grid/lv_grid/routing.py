@@ -15,6 +15,8 @@ import numpy as np
 
 from shapely.geometry import LineString, Point
 
+import pandas as pd
+
 
 
 
@@ -392,6 +394,8 @@ def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
 def identify_nodes_to_keep(buildings_w_loads_df, graph):
     """
     identify_nodes_to_keep
+    street_loads are grouped for lv level only.
+    capacity of loads of mv level are not included. 
     """
     
     mv_lv_level_threshold = get_config_osm('mv_lv_threshold_capacity')
@@ -573,3 +577,89 @@ def simplify_graph(G, nodes_to_keep, strict=True, remove_rings=True):
     #utils.log(msg)
     print(msg)
     return G
+
+
+
+def get_cluster_graph_and_nodes(simp_graph, labels):
+    
+    """
+    get_cluster_graph_and_nodes
+    """
+
+    # assign cluster number to nodes
+    nodes, edges = ox.graph_to_gdfs(simp_graph, nodes=True, edges=True)
+    nodes['cluster'] = labels
+    cluster_graph = ox.graph_from_gdfs(nodes, edges)
+    
+    return cluster_graph, nodes
+
+
+
+
+def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, labels, n_cluster):
+    
+    """
+    get list of location of mvlv substations for load areal
+    only for lv level: building loads < 200 kW (threshold)
+    n_cluster: number of cluster
+    """
+
+    #nc = ox.plot.get_node_colors_by_attr(cluster_graph, attr='cluster')
+    #fig, ax = ox.plot_graph(cluster_graph, node_color=nc, node_size=50, edge_color='w', edge_linewidth=1, show=False, close=False)
+
+    mvlv_subst_list = []
+
+    for i in range(n_cluster):
+        df_cluster = nodes[nodes['cluster'] == i]
+        cluster_nodes = list(df_cluster.index)
+
+        # map cluster_loads with capacity of street_loads
+        cluster_loads = pd.Series(cluster_nodes).map(street_loads.capacity).fillna(0).tolist()
+
+        # create distance matrix for cluster
+        cluster_subgraph = cluster_graph.subgraph(cluster_nodes)
+        dm_cluster = nx.floyd_warshall_numpy(cluster_graph, nodelist=cluster_nodes, weight='length')
+
+        # compute location of substation based on load center
+        load_vector = np.array(cluster_loads) #weighted
+        unweighted_nodes = dm_cluster.dot(load_vector)
+        
+        #mvlv_subst_loc = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]
+        #mvlv_subst_loc = cluster_graph.nodes[mvlv_subst_loc]
+        
+        osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]
+        mvlv_subst_loc = cluster_graph.nodes[osmid]
+        mvlv_subst_loc['osmid'] = osmid
+        mvlv_subst_loc['load_level'] = 'lv'
+
+        mvlv_subst_list.append(mvlv_subst_loc)
+    
+        #ax.scatter(mvlv_subst_loc['x'],mvlv_subst_loc['y'],s=70,c='red')
+        
+    return mvlv_subst_list
+
+
+
+def add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w_labels):
+    
+    """
+    add_mv_load_station_to_mvlv_subst_list
+    """
+
+    # add mv loads to list of mvlv_subst_list
+    for osm_id, row in loads_mv_df.iterrows():
+
+        # add mv loads to mvlv_subst_dict 
+        mvlv_subst_list.append({
+            'x': np.nan,
+            'y': np.nan,
+            'node_type': nodes_w_labels.loc[nodes_w_labels.index==row.nn].node_type.values[0],
+            'lon': row.nn_coords.x,
+            'lat': row.nn_coords.y,
+            'cluster': row.cluster,
+            'osmid': row.nn,
+            'load_level': 'mv'
+        })
+        
+    return mvlv_subst_list
+

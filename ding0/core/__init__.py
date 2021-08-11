@@ -694,6 +694,8 @@ class NetworkDing0:
                 # import all lv_grid_districts within mv_grid_district
                 lv_grid_districts = self.import_lv_grid_districts(session, lv_stations)
                 
+                return [lv_stations, lv_grid_districts]
+                
                 # import load areas
                 lv_load_areas = self.import_lv_load_areas(session,
                                           mv_grid_district,
