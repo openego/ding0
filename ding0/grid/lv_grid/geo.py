@@ -1,4 +1,19 @@
 from shapely.geometry import MultiPoint, Point, shape
+import pyproj
+import pandas as pd
+
+
+
+def convertCoords(coordx, coordy, from_proj, to_proj):
+    
+    """pyproj.transform from_proj, to_proj"""
+    
+    from_proj = pyproj.Proj(init='epsg:'+str(from_proj))
+    to_proj   = pyproj.Proj(init='epsg:'+str(to_proj))
+    
+    x2,y2 = pyproj.transform(from_proj, to_proj, coordx, coordy)
+    return pd.Series([x2, y2])
+
 
 
 

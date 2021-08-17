@@ -671,8 +671,8 @@ def add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w
 
         # add mv loads to mvlv_subst_dict 
         mvlv_subst_list.append({
-            'x': np.nan,
-            'y': np.nan,
+            'x': row.x,
+            'y': row.y,
             'node_type': nodes_w_labels.loc[nodes_w_labels.index==row.nn].node_type.values[0],
             'lon': row.nn_coords.x,
             'lat': row.nn_coords.y,

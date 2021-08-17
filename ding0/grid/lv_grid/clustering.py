@@ -22,10 +22,12 @@ def get_cluster_numbers(la_peak_loads):
 
 
 
-def apply_AgglomerativeClustering(simp_graph, k):
+def apply_AgglomerativeClustering(simp_graph, k, round_decimals=True):
     
     """
     for graph: simp_graph apply_AgglomerativeClustering for k cluster
+    round_decimals: True makes it reproducible due to coordinates
+    may be rounded in different ways, depending on ram/ hardware.
     return labels
     """
 
@@ -40,8 +42,14 @@ def apply_AgglomerativeClustering(simp_graph, k):
     # ensure number of clusters <= number of buildings 
     if k > len(X):
         k=len(X)
+    
+    
+    if round_decimals:
+        
+        X = np.round_(X, decimals=4, out=None)
 
     clustering = AgglomerativeClustering(n_clusters=k, linkage='ward', connectivity=adj_mat_sparse).fit(X)
+    
 
 
     return clustering.labels_
