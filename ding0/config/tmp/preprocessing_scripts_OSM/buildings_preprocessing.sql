@@ -5,7 +5,7 @@ DROP TABLE if exists amenities_filtered
 
 -- create table containing filtered amenities
 CREATE TABLE amenities_filtered as
-    select pop.osm_id, pop.amenity, pop."name", st_transform(ST_SetSRID(pop.way, 3857), 4326) as geometry, pop.tags
+    select pop.osm_id, pop.amenity, pop."name", st_transform(ST_SetSRID(pop.way, 3857), 3035) as geometry, pop.tags
     FROM public.planet_osm_point pop
     where pop.amenity like 'bar'
     or pop.amenity like 'biergarten'
@@ -86,7 +86,7 @@ DROP TABLE if exists buildings_filtered
 
 -- create table containing filtered buildings
 CREATE TABLE buildings_filtered as
-    select pop.osm_id, pop.amenity, pop.building, pop."name", st_transform(ST_SetSRID(pop.way, 3857), 4326) as geometry, pop.way_area as "area", pop.tags
+    select pop.osm_id, pop.amenity, pop.building, pop."name", st_transform(ST_SetSRID(pop.way, 3857), 3035) as geometry, pop.way_area as "area", pop.tags
     from public.planet_osm_polygon pop
     where pop.building like 'yes'
     or pop.building like 'apartments'
@@ -252,8 +252,8 @@ create table buildings_with_res_temp as
 
 -- create index
 CREATE INDEX ON buildings_with_res_temp USING gist (geometry);
-    
-    
+
+
 
 
 
@@ -266,38 +266,38 @@ CREATE TABLE amenities_in_buildings_tmp as
     from amenity, buildings_with_res_temp bf
     where st_intersects(bf.geometry, amenity.geometry)
 
-    
+
 
 
 drop table if exists buildings_with_amenities
 
 CREATE TABLE buildings_with_amenities as
-	select bwa.osm_id_amenity, bwa.osm_id_building, bwa.building, bwa.area, bwa.geometry_building, bwa.geometry_amenity, 
-	CASE 
+    select bwa.osm_id_amenity, bwa.osm_id_building, bwa.building, bwa.area, bwa.geometry_building, bwa.geometry_amenity,
+    CASE
        WHEN (ST_Contains(bwa.geometry_building, ST_Centroid(bwa.geometry_building))) IS TRUE
        THEN ST_Centroid(bwa.geometry_building)
        ELSE ST_PointOnSurface(bwa.geometry_building)
     END AS geo_center,
-    bwa."name", bwa.building_tags, bwa.amenity_tags, bwa.n_amenities_inside, 
-    case 
-    	when n_apartments>0 
-    	then bwa.n_apartments / bwa.n_apartments_in_n_buildings 
-    	else 0 
+    bwa."name", bwa.building_tags, bwa.amenity_tags, bwa.n_amenities_inside,
+    case
+        when n_apartments>0
+        then bwa.n_apartments / bwa.n_apartments_in_n_buildings
+        else 0
     end as n_apartments
-	from (
-		select bwa.osm_id_amenity, bwa.osm_id_building, bwa.building, bwa.area, bwa.geometry_building, bwa.geometry_amenity, bwa."name", bwa.building_tags, bwa.amenity_tags, bwa.n_amenities_inside, SUM(bwa.n_apartments) as n_apartments, SUM(bwa.n_apartments_in_n_buildings) as n_apartments_in_n_buildings
-		from (
-		    select b.osm_id_amenity, b.osm_id_building, coalesce(b.amenity, b.building) as building, b.area, b.geometry_building, b.geometry_amenity, b.name, b.building_tags, b.amenity_tags, coalesce(b.n_apartments, 0) as n_apartments, coalesce(b.n_apartments_in_n_buildings, 0) as n_apartments_in_n_buildings, ainb.n_amenities_inside
-		    from amenities_in_buildings_tmp b
-		    left join (
-		        select ainb.osm_id_building, count(*) as n_amenities_inside from amenities_in_buildings_tmp ainb
-		        group by ainb.osm_id_building ) ainb
-		    on b.osm_id_building = ainb.osm_id_building
-	    ) bwa
-	    group by bwa.osm_id_amenity, bwa.osm_id_building, bwa.building, bwa.area, bwa.geometry_building, bwa.geometry_amenity, bwa."name", bwa.building_tags, bwa.amenity_tags, bwa.n_amenities_inside
-	) bwa
-	
-	    
+    from (
+        select bwa.osm_id_amenity, bwa.osm_id_building, bwa.building, bwa.area, bwa.geometry_building, bwa.geometry_amenity, bwa."name", bwa.building_tags, bwa.amenity_tags, bwa.n_amenities_inside, SUM(bwa.n_apartments) as n_apartments, SUM(bwa.n_apartments_in_n_buildings) as n_apartments_in_n_buildings
+        from (
+            select b.osm_id_amenity, b.osm_id_building, coalesce(b.amenity, b.building) as building, b.area, b.geometry_building, b.geometry_amenity, b.name, b.building_tags, b.amenity_tags, coalesce(b.n_apartments, 0) as n_apartments, coalesce(b.n_apartments_in_n_buildings, 0) as n_apartments_in_n_buildings, ainb.n_amenities_inside
+            from amenities_in_buildings_tmp b
+            left join (
+                select ainb.osm_id_building, count(*) as n_amenities_inside from amenities_in_buildings_tmp ainb
+                group by ainb.osm_id_building ) ainb
+            on b.osm_id_building = ainb.osm_id_building
+        ) bwa
+        group by bwa.osm_id_amenity, bwa.osm_id_building, bwa.building, bwa.area, bwa.geometry_building, bwa.geometry_amenity, bwa."name", bwa.building_tags, bwa.amenity_tags, bwa.n_amenities_inside
+    ) bwa
+
+
 
 CREATE INDEX ON buildings_with_amenities USING gist (geometry_building);
 
@@ -307,22 +307,22 @@ drop table if exists buildings_without_amenities
 
 -- get all buildings containing no amenities
 CREATE TABLE buildings_without_amenities as
-	select bwa.osm_id, bwa.building, bwa.area, bwa.geometry, 
-	CASE 
+    select bwa.osm_id, bwa.building, bwa.area, bwa.geometry,
+    CASE
        WHEN (ST_Contains(bwa.geometry, ST_Centroid(bwa.geometry))) IS TRUE
        THEN ST_Centroid(bwa.geometry)
        ELSE ST_PointOnSurface(bwa.geometry)
     END AS geo_center,
-	bwa."name", bwa.tags, case when n_apartments>0 then bwa.n_apartments / bwa.n_apartments_in_n_buildings else 0 end as n_apartments
-	from (
-		select bwa.osm_id, bwa.building, bwa.area, bwa.geometry, bwa."name", bwa.tags, SUM(bwa.n_apartments) as n_apartments, SUM(bwa.n_apartments_in_n_buildings) as n_apartments_in_n_buildings
-		from (
-		    select bf.osm_id, coalesce(bf.amenity, bf.building) as building, bf.name, bf.area, bf.geometry, bf.tags, coalesce(bf.n_apartments, 0) as n_apartments, coalesce(bf.n_apartments_in_n_buildings, 0) as n_apartments_in_n_buildings
-		    from buildings_with_res_temp bf
-		    where bf.osm_id not in (select aib.osm_id_building from amenities_in_buildings_tmp aib)
-		) bwa
-	    group by bwa.osm_id, bwa.building, bwa.area, bwa.geometry, bwa."name", bwa.tags
-	) bwa
+    bwa."name", bwa.tags, case when n_apartments>0 then bwa.n_apartments / bwa.n_apartments_in_n_buildings else 0 end as n_apartments
+    from (
+        select bwa.osm_id, bwa.building, bwa.area, bwa.geometry, bwa."name", bwa.tags, SUM(bwa.n_apartments) as n_apartments, SUM(bwa.n_apartments_in_n_buildings) as n_apartments_in_n_buildings
+        from (
+            select bf.osm_id, coalesce(bf.amenity, bf.building) as building, bf.name, bf.area, bf.geometry, bf.tags, coalesce(bf.n_apartments, 0) as n_apartments, coalesce(bf.n_apartments_in_n_buildings, 0) as n_apartments_in_n_buildings
+            from buildings_with_res_temp bf
+            where bf.osm_id not in (select aib.osm_id_building from amenities_in_buildings_tmp aib)
+        ) bwa
+        group by bwa.osm_id, bwa.building, bwa.area, bwa.geometry, bwa."name", bwa.tags
+    ) bwa
 
 
 CREATE INDEX ON buildings_without_amenities USING gist (geometry);

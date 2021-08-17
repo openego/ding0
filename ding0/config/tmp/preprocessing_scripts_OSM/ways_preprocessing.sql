@@ -40,31 +40,34 @@ CREATE INDEX ON ways_preprocessed USING gist (geometry);
 
 drop table if exists ways_with_segments
 
+
+
 /*
  * 1st ST_DumpPoints to separate linestring into points
  * 2nd ST_MakeLine to make lines from linestring segments
  * 3rd group by osm_id and aggregate w. array_agg()
- * 
+ *
  * with linestring segments:
- * 
+ *
  * SELECT way_w_segments.osm_id, way_w_segments.highway, way_w_segments.nodes, way_w_segments.geometry, array_agg(way_w_segments.linestring_segment) as linestring_segments, array_agg(ST_Length(way_w_segments.linestring_segment::geography)) as length_segments
 
- * 
+ *
  */
-CREATE TABLE ways_with_segments as
-	select ways.* 
+CREATE TABLE ways_with_segments_3035 as
+	select ways.osm_id, ways.nodes, ways.highway, st_transform(ways.geometry, 3035) as geometry, ways.length_segments
 	from (
 		with way as (
-			SELECT wp.osm_id, wp.highway, wp.nodes, wp.geometry, ST_DumpPoints(wp.geometry) as geo_dump FROM ways_preprocessed wp) 
+			SELECT wp.osm_id, wp.highway, wp.nodes, wp.geometry, ST_DumpPoints(wp.geometry) as geo_dump FROM ways_preprocessed wp)
 		SELECT way_w_segments.osm_id, way_w_segments.nodes, way_w_segments.highway, way_w_segments.geometry, array_agg(ST_Length(way_w_segments.linestring_segment::geography)) as length_segments
 		FROM (
-			SELECT way.osm_id, way.highway, way.nodes, way.geometry, ST_AsText(ST_MakeLine(lag((geo_dump).geom, 1, NULL) OVER (PARTITION BY way.osm_id ORDER BY way.osm_id, (geo_dump).path), (geo_dump).geom)) AS linestring_segment from way) way_w_segments 
+			SELECT way.osm_id, way.highway, way.nodes, way.geometry, ST_AsText(ST_MakeLine(lag((geo_dump).geom, 1, NULL) OVER (PARTITION BY way.osm_id ORDER BY way.osm_id, (geo_dump).path), (geo_dump).geom)) AS linestring_segment from way) way_w_segments
 		WHERE way_w_segments.linestring_segment IS NOT null
 		GROUP BY way_w_segments.osm_id, way_w_segments.highway, way_w_segments.nodes, way_w_segments.geometry
 	) ways
 	where ways.nodes is not null
-	
 
-CREATE INDEX ON ways_with_segments USING gist (geometry);
+
+
+CREATE INDEX ON ways_with_segments_3035 USING gist (geometry);
 
 

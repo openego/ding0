@@ -24,7 +24,7 @@ def get_config_osm(key):
 
     config_osm = {
         
-        'srid' : 4326,
+        'srid' : 3035,
         'EARTH_RADIUS_M' : 6_371_009,
         'mv_lv_threshold_capacity' : 200,
         'additional_trafo_capacity' : 1.5,

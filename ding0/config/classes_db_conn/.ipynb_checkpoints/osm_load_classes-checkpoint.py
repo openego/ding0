@@ -15,8 +15,8 @@ from sqlalchemy import create_engine
 
 
 
-# hard coded due to will be deprecated after ding0 intergration
-srid = 4326
+# todo: read from config
+srid = 3035
 
  # sqlachemy local osm data
 DB = 'postgresql'
@@ -110,7 +110,7 @@ class Buildings_with_Amenities(Base):
 class Way(Base):
     """Way Model"""
 
-    __tablename__ = "ways_with_segments"
+    __tablename__ = "ways_with_segments_3035"
 
     osm_id   = Column(Integer, primary_key=True)
     nodes    = Column(postgresql.ARRAY(Integer))

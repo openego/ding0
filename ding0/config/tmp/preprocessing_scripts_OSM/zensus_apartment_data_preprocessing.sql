@@ -20,15 +20,17 @@ with (FORMAT csv, DELIMITER ',', header)
 
 
 -- crate table with geometry
-DROP TABLE if exists zensus_apartment_data
+DROP TABLE if exists zensus_apartment_data_3035
 
 -- create table containing merged mandatory ways
-CREATE TABLE zensus_apartment_data as 
-	select zad.i as idx, ST_SetSRID(ST_MakePoint(zad.lon, zad.lat), 4326) as geometry, zad.apartments as n_apartments
-	from zensus_apartment_data_tmp zad
+CREATE TABLE zensus_apartment_data_3035 as
+    select zad.i as idx, st_transform(ST_SetSRID(ST_MakePoint(zad.lon, zad.lat), 4326), 3035) as geometry, zad.apartments as n_apartments
+    from zensus_apartment_data_tmp zad
 
-	
+
 -- create index
-CREATE INDEX ON zensus_apartment_data USING gist (geometry);
+CREATE INDEX ON zensus_apartment_data_3035 USING gist (geometry);
 
-	
+
+
+
