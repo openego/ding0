@@ -26,6 +26,25 @@ DB_Name = 'sandbox_bw'
 engine_osm = create_engine(DB + '://' + DB_USER + ': ' + DB_PW + '@localhost:5432/' + DB_Name, echo=False)
 
 
+'''
+host = 'localhost' # input('host (default 127.0.0.1): ')
+port = '5432' # input('port (default 5432): ')
+database = 'bawu_rob_upd' #'sonnja_db' # input("database name (default 'sonnja_db'): ")
+user = 'RL-INSTITUT\paul.dubielzig' # input('user (default sonnja): ')
+password = 'labor'
+    # password = input('password: ')
+    # password = getpass.getpass(prompt='password: ',
+    #                               stream=sys.stderr)
+engine_osm = create_engine(
+            'postgresql://' + '%s:%s@%s:%s/%s' % (user,
+                                                  password,
+                                                  host,
+                                                  port,
+                                                  database)).connect()
+'''
+
+
+
 
 Base = declarative_base()
 

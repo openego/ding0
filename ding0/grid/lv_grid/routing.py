@@ -296,15 +296,25 @@ def subdivide_graph_edges(graph):
 
 
     graph = ox.project_graph(graph, to_crs='epsg:3035')
+
     
 
     graph_subdiv = graph.copy()
     edges = graph.edges()
+    
+    
+    # TODO:
+    #graph = ox.utils_graph.get_undirected(graph)
+    #nodes, edges = ox.graph_to_gdfs(graph)
+    #graph.edges[59975167,329334540,0]['geometry']
 
     edge_data = []
     node_data = []
 
     for u,v in edges:
+
+        # linestring not working. we need a geometry
+        # linestring = graph.edges[u,v,0]['geometry']
 
         linestring = LineString([(graph.nodes[u]['x'],graph.nodes[u]['y']), 
                                  (graph.nodes[v]['x'],graph.nodes[v]['y'])])
@@ -362,6 +372,7 @@ def subdivide_graph_edges(graph):
         graph_subdiv.add_edge(u,v,geometry=line,length=leng,highway=highway,osmid=osmid)
 
     for name,x,y,pos in node_data:
+        # TODO: add lon lat
         graph_subdiv.add_node(name,x=x,y=y,node_type='synthetic')
         
         
@@ -574,6 +585,10 @@ def simplify_graph(G, nodes_to_keep, strict=True, remove_rings=True):
         f"Simplified graph: {initial_node_count} to {len(G)} nodes, "
         f"{initial_edge_count} to {len(G.edges)} edges"
     )
+    
+    
+    
+    
     #utils.log(msg)
     print(msg)
     return G
@@ -590,6 +605,9 @@ def get_cluster_graph_and_nodes(simp_graph, labels):
     nodes, edges = ox.graph_to_gdfs(simp_graph, nodes=True, edges=True)
     nodes['cluster'] = labels
     cluster_graph = ox.graph_from_gdfs(nodes, edges)
+    
+    # mark graph as having been simplified
+    cluster_graph.graph["simplified"] = True
     
     return cluster_graph, nodes
 
@@ -617,8 +635,10 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, labels, n_cluste
         cluster_loads = pd.Series(cluster_nodes).map(street_loads.capacity).fillna(0).tolist()
 
         # create distance matrix for cluster
+        # todo: check graph for floyd warshall
         cluster_subgraph = cluster_graph.subgraph(cluster_nodes)
-        dm_cluster = nx.floyd_warshall_numpy(cluster_graph, nodelist=cluster_nodes, weight='length')
+        dm_cluster = nx.floyd_warshall_numpy(cluster_subgraph, nodelist=cluster_nodes, weight='length')
+        #dm_cluster = nx.floyd_warshall_numpy(cluster_graph, nodelist=cluster_nodes, weight='length')
 
         # compute location of substation based on load center
         load_vector = np.array(cluster_loads) #weighted

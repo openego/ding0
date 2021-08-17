@@ -29,3 +29,32 @@ def create_session_osm():
     
     return Session()
 
+
+'''
+def create_session_osm():
+    """SQLAlchemy session object with valid connection to sonnja database"""
+    
+    # print('Please provide connection parameters to database:\n' +
+    #          'Hit [Enter] to take defaults')
+    host = 'localhost' # input('host (default 127.0.0.1): ')
+    port = '5432' # input('port (default 5432): ')
+    database = 'bawu_rob_upd' #'sonnja_db' # input("database name (default 'sonnja_db'): ")
+    user = 'RL-INSTITUT\paul.dubielzig' # input('user (default sonnja): ')
+    password = 'labor'
+    # password = input('password: ')
+    # password = getpass.getpass(prompt='password: ',
+    #                               stream=sys.stderr)
+    engine_osm = create_engine(
+            'postgresql://' + '%s:%s@%s:%s/%s' % (user,
+                                                  password,
+                                                  host,
+                                                  port,
+                                                  database)).connect()
+    print('Password correct! Database connection established.')
+    
+    Session = sessionmaker(bind=engine_osm)
+    
+    return Session()
+
+
+'''
