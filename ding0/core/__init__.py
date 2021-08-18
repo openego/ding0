@@ -693,9 +693,7 @@ class NetworkDing0:
 
                 # import all lv_grid_districts within mv_grid_district
                 lv_grid_districts = self.import_lv_grid_districts(session, lv_stations)
-                
-                return [lv_stations, lv_grid_districts]
-                
+                                
                 # import load areas
                 lv_load_areas = self.import_lv_load_areas(session,
                                           mv_grid_district,
@@ -738,9 +736,10 @@ class NetworkDing0:
         """
 
         # get ding0s' standard CRS (SRID)
-        srid = str(int(cfg_ding0.get('geo', 'srid')))
+        #srid = str(int(cfg_ding0.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
-        #srid = '3035'
+        # TODO: DEL transfom to crs
+        srid = '3035'
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
@@ -847,14 +846,24 @@ class NetworkDing0:
                 graph_subdiv_list = apply_subdivide_graph_edges_for_each_subgraph(sub_graph_list)
                 # TODO: each subgraph has to be directed. check else case.
                 
+                # todo ensure what is going to happen in else case !
+                # transform graph to directed
+                # this step is mandatory to obtain right number of nodes !
+                # mandatory for simplify and endpoints in assign_nearest_nodes_to_buildings
+                graph_subdiv_directed = nx.MultiGraph(graph_subdiv_undirected)
+                graph_subdiv_directed = graph_subdiv_directed.to_directed()
+                
             else:
                 
                 # subdivide_graph_edges for only graph in list
-                graph_subdiv = subdivide_graph_edges(sub_graph_list[0])
+                graph_subdiv_undirected = subdivide_graph_edges(sub_graph_list[0])
                 
-                # transform grah to directed
-                digraph = nx.MultiGraph(graph_subdiv)
-                digraph = digraph.to_directed()
+                
+                # transform graph to directed
+                # this step is mandatory to obtain right number of nodes !
+                # mandatory for simplify and endpoints in assign_nearest_nodes_to_buildings
+                graph_subdiv_directed = nx.MultiGraph(graph_subdiv_undirected)
+                graph_subdiv_directed = graph_subdiv_directed.to_directed()
             
             
                 
@@ -869,16 +878,15 @@ class NetworkDing0:
             
             
             # assign nearest nodes
-            buildings_w_loads_df = assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df)
-            
-            
+            buildings_w_loads_df = assign_nearest_nodes_to_buildings(graph_subdiv_directed, buildings_w_loads_df)
             
             
             
             # get nodes to keep and street_loads for graph. 
             # street_loads contains nearest nodes and cum(load) per node
-            nodes_to_keep, street_loads = identify_nodes_to_keep(buildings_w_loads_df, digraph)
-            simp_graph = simplify_graph(digraph, nodes_to_keep)
+            nodes_to_keep, street_loads = identify_nodes_to_keep(buildings_w_loads_df, graph_subdiv_directed)
+            
+            simp_graph = simplify_graph(graph_subdiv_directed, nodes_to_keep)
             # TODO: stay with one graph instead new ones
             # simp_graph to keep overview
             #graph_subdiv = simplify_graph(graph_subdiv, nodes_to_keep) 

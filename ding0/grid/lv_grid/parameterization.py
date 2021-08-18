@@ -173,8 +173,10 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
             lambda amenity: to_shape(amenity.geometry), axis=1)
         buildings_w_loads_df['raccordement_building'] = buildings_w_loads_df.apply(
             lambda building: to_shape(building.raccordement_building), axis=1)
-        #buildings_w_loads_df['geometry_amenity'] = buildings_w_loads_df.apply(
-        #    lambda building: to_shape(building.geometry_amenity), axis=1)
+        # to_shape only working if not nan
+        buildings_w_loads_df.loc[buildings_w_loads_df.geometry_amenity.notnull(), 'geometry_amenity'] = \
+        buildings_w_loads_df.loc[buildings_w_loads_df.geometry_amenity.notnull()].apply(
+            lambda building: to_shape(building.geometry_amenity), axis=1)
 
 
         # for amenities update x and y
@@ -344,6 +346,8 @@ def parameterize_by_load_profiles_IT_DEPRECATED(buildings_w_a, buildings_wo_a, a
         lambda amenity: to_shape(amenity.geometry), axis=1)
     df_buildings_w_loads['raccordement_building'] = df_buildings_w_loads.apply(
         lambda building: to_shape(building.raccordement_building), axis=1)
+    df_buildings_w_loads['geometry_amenity'] = df_buildings_w_loads.apply(
+        lambda building: to_shape(building.geometry_amenity), axis=1)
 
 
     # for amenities update x and y

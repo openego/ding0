@@ -45,8 +45,6 @@ def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
     Build graph based on osm ways
     Based on this graph, the routing will be implemented.
     """
-    
-    srid = get_config_osm('srid')
 
     # keep coords for each node
     # TODO: CHECK IF STILL NECESSARY. WAS USED FOR nx.draw(graph, node_coords_dict)
@@ -56,7 +54,7 @@ def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
     
     # init a graph and set srid.
     graph = nx.MultiGraph()
-    graph.graph["crs"] = 'epsg:'+str(srid) 
+    graph.graph["crs"] = 'epsg:'+str(get_config_osm('srid')) 
 
     
     for w in ways:
@@ -88,12 +86,20 @@ def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
         
         
         
-    # convert undirected graph to digraph
+    # convert undirected graph to digraph due to truncate_graph_polygon
     graph = graph.to_directed()  
     
     # truncate by edge for digraph
     if truncate_by_edge:
-        graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, retain_all=retain_all, truncate_by_edge=truncate_by_edge)
+        
+        # todo qcheck if 1000 from config is best solution or calc e.g. with EARTH_RADIUS_M
+        graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, 
+                                                   retain_all=False, 
+                                                   truncate_by_edge=True, 
+                                                   quadrat_width=get_config_osm('quadrat_width'))
+        
+        # default with lon lat. deprecated due to srid 3035
+        #graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, retain_all=retain_all, truncate_by_edge=truncate_by_edge)
         
         
         
@@ -164,7 +170,7 @@ def DEPRECATED_nearest_nodes(G, X, Y):
     """
     
     
-    EARTH_RADIUS_M = srid = get_config_osm('EARTH_RADIUS_M')
+    EARTH_RADIUS_M = get_config_osm('EARTH_RADIUS_M')
 
 
     is_scalar = False
@@ -285,40 +291,22 @@ def subdivide_graph_edges(graph):
           ensure edge name does not exist when adding
     """    
     
-    graph = ox.get_undirected(graph)
     
-        
-        
-    # TODO: ADD meter_sergments to config to be able to set 20m individually. divide edge into 20m segments ###
-    #       ADD to_crs='epsg:3035' to cfg
-    dist_edge_segments = 20
-    concat_0 = "0" # concat edge_id with 0 before inrcrementing synthetic ids to concat
-
-
-    graph = ox.project_graph(graph, to_crs='epsg:3035')
-
+    # to avoid duplicates in subdividing process
+    graph = ox.get_undirected(graph)
     
 
     graph_subdiv = graph.copy()
     edges = graph.edges()
-    
-    
-    # TODO:
-    #graph = ox.utils_graph.get_undirected(graph)
-    #nodes, edges = ox.graph_to_gdfs(graph)
-    #graph.edges[59975167,329334540,0]['geometry']
 
     edge_data = []
     node_data = []
 
     for u,v in edges:
 
-        # linestring not working. we need a geometry
-        # linestring = graph.edges[u,v,0]['geometry']
-
         linestring = LineString([(graph.nodes[u]['x'],graph.nodes[u]['y']), 
                                  (graph.nodes[v]['x'],graph.nodes[v]['y'])])
-        vertices_gen = ox.utils_geo.interpolate_points(linestring, dist_edge_segments) 
+        vertices_gen = ox.utils_geo.interpolate_points(linestring, get_config_osm('dist_edge_segments')) 
         vertices = list(vertices_gen) 
         highway = graph.edges[u,v,0]['highway']
         osmid = graph.edges[u,v,0]['osmid']
@@ -337,7 +325,8 @@ def subdivide_graph_edges(graph):
             while True:
 
                 # first name edge_id + 0 + 1(=num) + 0(=skip_num_by)
-                name = int(str(edge_id) + concat_0 + str(num+skip_num_by))
+                concat_0 = 0 # todo: check concat_0 is to change. check if node name needs to be str
+                name = int(str(edge_id) + str(concat_0) + str(num+skip_num_by))
                 if name in graph.nodes():
 
                     print('TAKE CARE! THIS SYNTHETIC NODE ALREADY EXISTS IN GRAPH. NODE_ID', name)
@@ -386,15 +375,15 @@ def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
     """
     
     # TODO: PROJECT TO GET DIST. WHAT ELSE CAN BE DONE?
-    graph_subdiv_4326 = ox.project_graph(graph_subdiv, to_crs='epsg:4326')
+    #graph_subdiv_4326 = ox.project_graph(graph_subdiv, to_crs='epsg:4326')
 
     X = buildings_w_loads_df['x'].tolist()
     Y = buildings_w_loads_df['y'].tolist()
 
     buildings_w_loads_df['nn'], buildings_w_loads_df['nn_dist'] = ox.nearest_nodes(
-        graph_subdiv_4326, X, Y, return_dist=True)
+        graph_subdiv, X, Y, return_dist=True)
     buildings_w_loads_df['nn_coords'] = buildings_w_loads_df['nn'].apply(
-        lambda row : Point(graph_subdiv_4326.nodes[row]['x'], graph_subdiv_4326.nodes[row]['y']))
+        lambda row : Point(graph_subdiv.nodes[row]['x'], graph_subdiv.nodes[row]['y']))
 
     
     return buildings_w_loads_df
@@ -417,11 +406,7 @@ def identify_nodes_to_keep(buildings_w_loads_df, graph):
         ['nn']).capacity.sum().reset_index().set_index('nn')
     street_load_nodes = street_loads.index.tolist()
 
-    digraph = nx.MultiGraph(graph)
-    digraph = digraph.to_directed()
-
-
-    endpoints = [n for n in digraph.nodes if ox.simplification._is_endpoint(digraph, n, strict=True)]
+    endpoints = [n for n in graph.nodes if ox.simplification._is_endpoint(graph, n, strict=True)]
     nodes_to_keep = list(set(endpoints + street_load_nodes))
     
     return nodes_to_keep, street_loads
@@ -585,9 +570,6 @@ def simplify_graph(G, nodes_to_keep, strict=True, remove_rings=True):
         f"Simplified graph: {initial_node_count} to {len(G)} nodes, "
         f"{initial_edge_count} to {len(G.edges)} edges"
     )
-    
-    
-    
     
     #utils.log(msg)
     print(msg)
