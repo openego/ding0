@@ -350,6 +350,9 @@ class LVGridDistrictDing0(RegionDing0):
        Descr
     sector_count_agricultural: :obj:`int`
        Descr
+       
+       
+    TODO UPDATE DESCR FOR GRAPH AND BUILDINGS
     """
 
     def __init__(self, **kwargs):
@@ -385,6 +388,17 @@ class LVGridDistrictDing0(RegionDing0):
         self.sector_consumption_agricultural = kwargs.get(
             'sector_consumption_agricultural',
             None)
+        
+        # todo do doc
+        
+        self.mvlv_subst_id = kwargs.get('mvlv_subst_id', None)
+        
+        self.graph_district = kwargs.get('graph_district', None)
+        
+        self.buildings = kwargs.get('buildings_district', None)
+        
+        self.load_level = kwargs.get('load_level', None)
+        
 
     @property
     def network(self):

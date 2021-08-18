@@ -608,7 +608,9 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, labels, n_cluste
     #fig, ax = ox.plot_graph(cluster_graph, node_color=nc, node_size=50, edge_color='w', edge_linewidth=1, show=False, close=False)
 
     mvlv_subst_list = []
-
+    
+    valid_cluster_distance = True
+    
     for i in range(n_cluster):
         df_cluster = nodes[nodes['cluster'] == i]
         cluster_nodes = list(df_cluster.index)
@@ -620,23 +622,44 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, labels, n_cluste
         # todo: check graph for floyd warshall
         cluster_subgraph = cluster_graph.subgraph(cluster_nodes)
         dm_cluster = nx.floyd_warshall_numpy(cluster_subgraph, nodelist=cluster_nodes, weight='length')
-        #dm_cluster = nx.floyd_warshall_numpy(cluster_graph, nodelist=cluster_nodes, weight='length')
 
         # compute location of substation based on load center
         load_vector = np.array(cluster_loads) #weighted
         unweighted_nodes = dm_cluster.dot(load_vector)
         
-        #mvlv_subst_loc = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]
-        #mvlv_subst_loc = cluster_graph.nodes[mvlv_subst_loc]
-        
         osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]
+        
+        
+        # todo organize functions
+        def loads_in_ons_dist_threshold(osmid):
+            
+            """
+            return False if loads_ not in_ons_dist_threshold
+            """
+            
+            ons_dist_threshold = get_config_osm('ons_dist_threshold')
+            
+            ons_max_branch_dist = dm_cluster[cluster_nodes.index(osmid)].max()
+            
+            if ons_max_branch_dist > ons_dist_threshold:
+            
+                return False
+            
+            else: return True
+            
+        
+        if not loads_in_ons_dist_threshold(osmid):
+            
+            # return empty list and False for cluster validity
+            # due to distance threshold to ons is trespassed
+            return []
+        
+        
         mvlv_subst_loc = cluster_graph.nodes[osmid]
         mvlv_subst_loc['osmid'] = osmid
         mvlv_subst_loc['load_level'] = 'lv'
-
+        mvlv_subst_loc['graph_district'] = cluster_subgraph
         mvlv_subst_list.append(mvlv_subst_loc)
-    
-        #ax.scatter(mvlv_subst_loc['x'],mvlv_subst_loc['y'],s=70,c='red')
         
     return mvlv_subst_list
 
@@ -653,14 +676,13 @@ def add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w
 
         # add mv loads to mvlv_subst_dict 
         mvlv_subst_list.append({
-            'x': row.x,
-            'y': row.y,
+            'x': row.nn_coords.x,
+            'y': row.nn_coords.y,
             'node_type': nodes_w_labels.loc[nodes_w_labels.index==row.nn].node_type.values[0],
-            'lon': row.nn_coords.x,
-            'lat': row.nn_coords.y,
             'cluster': row.cluster,
             'osmid': row.nn,
-            'load_level': 'mv'
+            'load_level': 'mv',
+            'graph_district': None
         })
         
     return mvlv_subst_list
