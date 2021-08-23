@@ -39,19 +39,22 @@ def get_points_in_load_area(geometry):
     
     TODO: add points from generators?
     """
-
+        
     point_lists = []
-    for geo in geometry:
 
-        if geo.geom_type == 'Polygon':
-            point_lists += [Point(point) for point in geo.exterior.coords[:-1]]
+    if geometry.geom_type == 'Polygon':
+        point_lists += [Point(point) for point in geometry.exterior.coords[:-1]]
+        
+    elif geometry.geom_type == 'Point':
+        
+        for point in geometry:
 
-        elif geo.geom_type == 'Point':
-            point_lists.append(geo)
+            if geo.geom_type == 'Point':
+                point_lists.append(geo)
 
-        else:
+    else:
 
-            raise IOError('Shape is not a polygon neither a point.')
+        raise IOError('Shape is not a polygon neither a point.')
     
     
     return point_lists
@@ -66,6 +69,3 @@ def get_convex_hull_from_points(points):
     mpt = MultiPoint([shape(point) for point in points])
     
     return mpt.convex_hull
-
-
-
