@@ -39,7 +39,7 @@ from config.config_lv_grids_osm import get_config_osm
 
 
 
-def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
+def build_graph_from_ways(ways, geo_load_area, retain_all=False, truncate_by_edge=True):
 
     """ 
     Build graph based on osm ways
@@ -399,11 +399,20 @@ def identify_nodes_to_keep(buildings_w_loads_df, graph):
     """
     
     mv_lv_level_threshold = get_config_osm('mv_lv_threshold_capacity')
-    mv_lv_level_threshold = 40 # TODO: del it. it is used for testing reasons to be able to check filtering. 
+    
+    # todo. set threshold somewhere else
+    mv_lv_level_threshold = 400000000000
+    #mv_lv_level_threshold = 40 # TODO: del it. it is used for testing reasons to be able to check filtering. 
     
     # keep only street_load_nodes and endpoints
-    street_loads = buildings_w_loads_df.loc[buildings_w_loads_df.capacity < mv_lv_level_threshold].groupby(
-        ['nn']).capacity.sum().reset_index().set_index('nn')
+    # todo: check imf working.
+    # new
+    street_loads = buildings_w_loads_df.copy()
+    street_loads['capacity'] = street_loads.apply(lambda street_load: 0 if street_load.capacity > mv_lv_level_threshold)
+    street_loads = street_loads.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
+    # before
+    #street_loads = buildings_w_loads_df.loc[buildings_w_loads_df.capacity < mv_lv_level_threshold].groupby(
+    #    ['nn']).capacity.sum().reset_index().set_index('nn')
     street_load_nodes = street_loads.index.tolist()
 
     endpoints = [n for n in graph.nodes if ox.simplification._is_endpoint(graph, n, strict=True)]
