@@ -408,7 +408,8 @@ def identify_nodes_to_keep(buildings_w_loads_df, graph):
     # todo: check imf working.
     # new
     street_loads = buildings_w_loads_df.copy()
-    street_loads['capacity'] = street_loads.apply(lambda street_load: 0 if street_load.capacity > mv_lv_level_threshold)
+    street_loads.loc[street_loads.capacity > mv_lv_level_threshold, 'capacity'] = 0
+    #street_loads['capacity'] = street_loads.apply(lambda street_load: 0 if street_load.capacity > mv_lv_level_threshold)
     street_loads = street_loads.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
     # before
     #street_loads = buildings_w_loads_df.loc[buildings_w_loads_df.capacity < mv_lv_level_threshold].groupby(

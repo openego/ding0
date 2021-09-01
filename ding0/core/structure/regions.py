@@ -395,9 +395,9 @@ class LVGridDistrictDing0(RegionDing0):
         
         self.graph_district = kwargs.get('graph_district', None)
         
-        self.buildings = kwargs.get('buildings_district', None)
-        
         self.load_level = kwargs.get('load_level', None)
+                
+        self.buildings = kwargs.get('buildings_district', None)
         
 
     @property

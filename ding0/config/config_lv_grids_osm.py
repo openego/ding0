@@ -16,7 +16,7 @@ def get_config_osm(key):
     avg_cluster_capacity    : n_cluster = sum(peak_load) / avg_cluster_capacity
                               Clusters are NOT homogenous
                               
-    additional_trafo_capacity: 1.5; so, transformers have max load factor of 70%.
+    additional_trafo_capacity: e.g. 1.5; so, transformers have max load factor of 70%.
                                capacity_to_cover = capacity_of_area * 1.5
                                
                               
@@ -27,11 +27,13 @@ def get_config_osm(key):
         'srid' : 3035,
         'EARTH_RADIUS_M' : 6_371_009,
         'mv_lv_threshold_capacity' : 200,
+        'hv_mv_threshold_capacity' : 5500,
         'additional_trafo_capacity' : 1.0,
         'avg_trafo_size' : 500,
         'avg_square_meters' : 100,
         'quadrat_width' : 1000,
         'dist_edge_segments' : 20,
+        'ons_dist_threshold' : 1500,
         
     }
         

@@ -229,8 +229,8 @@ CREATE TABLE buildings_with_res_tmp as
     select * from (
         select buildings.osm_id, buildings.amenity, buildings.building, buildings.name, buildings.geometry, buildings.area, buildings.tags, zensus_apartments.n_apartments, zensus_apartments.idx as id_of_n_apartments
         from buildings_filtered buildings
-        left join zensus_apartment_data zensus_apartments
-        on ST_DWithin(zensus_apartments.geometry, buildings.geometry, 0.0007) -- radius is around 77.7 meters
+        left join zensus_apartment_data_3035 zensus_apartments
+        on ST_DWithin(zensus_apartments.geometry, buildings.geometry, 77.7) -- radius is around 77.7 meters
     ) buildings_with_apartments
     where buildings_with_apartments.osm_id is not null
 

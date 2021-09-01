@@ -28,7 +28,7 @@ def get_Point_from_x_y(x, y):
 
 
 
-def get_points_in_load_area(geometry):
+def get_points_in_load_area(geos_list):
     
     """ 
     get all points in a load area
@@ -41,20 +41,19 @@ def get_points_in_load_area(geometry):
     """
         
     point_lists = []
+    
+    for geometry in geos_list:
 
-    if geometry.geom_type == 'Polygon':
-        point_lists += [Point(point) for point in geometry.exterior.coords[:-1]]
-        
-    elif geometry.geom_type == 'Point':
-        
-        for point in geometry:
+        if geometry.geom_type == 'Polygon':
+            point_lists += [Point(point) for point in geometry.exterior.coords[:-1]]
 
-            if geo.geom_type == 'Point':
-                point_lists.append(geo)
+        elif geometry.geom_type == 'Point':
+            
+            point_lists.append(geometry)
 
-    else:
+        else:
 
-        raise IOError('Shape is not a polygon neither a point.')
+            raise IOError('Shape is not a polygon neither a point.')
     
     
     return point_lists
