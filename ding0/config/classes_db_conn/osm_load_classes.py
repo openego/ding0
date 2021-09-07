@@ -110,7 +110,7 @@ class Buildings_with_Amenities(Base):
 class Way(Base):
     """Way Model"""
 
-    __tablename__ = "ways_with_segments_3035"
+    __tablename__ = "ways_with_segments"
 
     osm_id   = Column(Integer, primary_key=True)
     nodes    = Column(postgresql.ARRAY(Integer))

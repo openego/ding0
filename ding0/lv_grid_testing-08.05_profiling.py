@@ -16,8 +16,8 @@ cell [1-6]
 #e.g.:
 #cd C:\Users\Robert\anaconda3\envs\ox\Lib\site-packages\ding0
 #activate ox
-#python -m cProfile -o lv_grid_testing-08.05_profiling.prof lv_grid_testing-08.05_profiling.py
-#snakeviz C:\Users\Robert\anaconda3\envs\ox\Lib\site-packages\ding0\lv_grid_testing-08.05_profiling.prof
+#python -m cProfile -o lv_grid_testing-09.06_profiling.prof lv_grid_testing-09.06_profiling.py
+#snakeviz C:\Users\Robert\anaconda3\envs\ox\Lib\site-packages\ding0\lv_grid_testing-09.06_profiling.prof
 
 
 from ding0.core import NetworkDing0

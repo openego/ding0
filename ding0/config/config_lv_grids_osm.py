@@ -192,6 +192,7 @@ def get_load_profile_categories():
         "public": "public",
         "archive": "public",
         "public_building": "public",
+        "events_venue": "public",
         "arts_centre": "public",
         "civic": "public",
         "bakehouse": "public",
