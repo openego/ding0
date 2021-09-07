@@ -160,9 +160,7 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
                     tempf_df = dupl_df[(dupl_df.index==dupl_id) & (dupl_df.area!=dupl_df.loc[dupl_df.index==dupl_id].area.max())]
                     dupl_dff = pd.concat([dupl_dff, tempf_df])
                     
-                    
-            print(dupl_dff.index)
-
+            
             buildings_w_loads_df = buildings_w_loads_df[~buildings_w_loads_df.index.isin(dupl_ids)]
 
             buildings_w_loads_df = pd.concat([buildings_w_loads_df, dupl_dff])

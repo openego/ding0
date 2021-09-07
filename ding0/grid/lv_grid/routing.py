@@ -45,12 +45,6 @@ def build_graph_from_ways(ways, geo_load_area, retain_all=False, truncate_by_edg
     Build graph based on osm ways
     Based on this graph, the routing will be implemented.
     """
-
-    # keep coords for each node
-    # TODO: CHECK IF STILL NECESSARY. WAS USED FOR nx.draw(graph, node_coords_dict)
-    #       MAY BE DEPRECATED DUE TO ORIGIN GRAOH IS NOT USED ANYMORE
-    #node_coords_dict = {}
-
     
     # init a graph and set srid.
     graph = nx.MultiGraph()
@@ -264,7 +258,7 @@ def get_location_substation_at_pi(graph_lv_grid, nodes):
 
 
 
-# TODO: CHECK AND DECIDE IF WE WANNA WORK WITH LISTS CONTAINING CUBGRAPHS
+# TODO: CHECK AND DECIDE IF WE WANNA WORK WITH LISTS CONTAINING SUBGRAPHS
 def apply_subdivide_graph_edges_for_each_subgraph(sub_graph_list):
     
     """
@@ -295,6 +289,7 @@ def subdivide_graph_edges(graph):
     # to avoid duplicates in subdividing process
     graph = ox.get_undirected(graph)
     
+    unique_syn_node_names = []
 
     graph_subdiv = graph.copy()
     edges = graph.edges()
@@ -303,7 +298,7 @@ def subdivide_graph_edges(graph):
     node_data = []
 
     for u,v in edges:
-
+        
         linestring = LineString([(graph.nodes[u]['x'],graph.nodes[u]['y']), 
                                  (graph.nodes[v]['x'],graph.nodes[v]['y'])])
         vertices_gen = ox.utils_geo.interpolate_points(linestring, get_config_osm('dist_edge_segments')) 
@@ -327,18 +322,22 @@ def subdivide_graph_edges(graph):
                 # first name edge_id + 0 + 1(=num) + 0(=skip_num_by)
                 concat_0 = 0 # todo: check concat_0 is to change. check if node name needs to be str
                 name = int(str(edge_id) + str(concat_0) + str(num+skip_num_by))
-                if name in graph.nodes():
+                
+                
+                if name in unique_syn_node_names:
+                #if name in [node[0] for node in node_data]:
+                #if name in graph.nodes():
 
-                    print('TAKE CARE! THIS SYNTHETIC NODE ALREADY EXISTS IN GRAPH. NODE_ID', name)
+                    #print('TAKE CARE! THIS SYNTHETIC NODE ALREADY EXISTS IN GRAPH. NODE_ID', name)
                     skip_num_by +=1
 
                 else:
 
-                    break
-            
-            
+                    
+                    break            
             
             node_data.append([name,x,y,(u,v)])
+            unique_syn_node_names.append(name)
             vertex_node_id.append(name)
 
         if vertices[0] == (graph.nodes[v]['x'],graph.nodes[v]['y']): ###
@@ -361,7 +360,7 @@ def subdivide_graph_edges(graph):
         graph_subdiv.add_edge(u,v,geometry=line,length=leng,highway=highway,osmid=osmid)
 
     for name,x,y,pos in node_data:
-        # TODO: add lon lat
+
         graph_subdiv.add_node(name,x=x,y=y,node_type='synthetic')
         
         
@@ -373,9 +372,6 @@ def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
     """
     assign nearest nodes of graph to buildings
     """
-    
-    # TODO: PROJECT TO GET DIST. WHAT ELSE CAN BE DONE?
-    #graph_subdiv_4326 = ox.project_graph(graph_subdiv, to_crs='epsg:4326')
 
     X = buildings_w_loads_df['x'].tolist()
     Y = buildings_w_loads_df['y'].tolist()
@@ -400,16 +396,9 @@ def identify_nodes_to_keep(buildings_w_loads_df, graph):
     
     mv_lv_level_threshold = get_config_osm('mv_lv_threshold_capacity')
     
-    # todo. set threshold somewhere else
-    mv_lv_level_threshold = 400000000000
-    #mv_lv_level_threshold = 40 # TODO: del it. it is used for testing reasons to be able to check filtering. 
-    
     # keep only street_load_nodes and endpoints
-    # todo: check imf working.
-    # new
     street_loads = buildings_w_loads_df.copy()
-    street_loads.loc[street_loads.capacity > mv_lv_level_threshold, 'capacity'] = 0
-    #street_loads['capacity'] = street_loads.apply(lambda street_load: 0 if street_load.capacity > mv_lv_level_threshold)
+    street_loads.loc[street_loads.capacity > mv_lv_level_threshold, 'capacity'] = 0 # todo: check if working
     street_loads = street_loads.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
     # before
     #street_loads = buildings_w_loads_df.loc[buildings_w_loads_df.capacity < mv_lv_level_threshold].groupby(
@@ -593,15 +582,12 @@ def get_cluster_graph_and_nodes(simp_graph, labels):
     get_cluster_graph_and_nodes
     """
 
-    # assign cluster number to nodes
-    nodes, edges = ox.graph_to_gdfs(simp_graph, nodes=True, edges=True)
-    nodes['cluster'] = labels
-    cluster_graph = ox.graph_from_gdfs(nodes, edges)
-    
-    # mark graph as having been simplified
-    cluster_graph.graph["simplified"] = True
-    
-    return cluster_graph, nodes
+    # assign cluster number to nodes V2
+    node_cluster_dict = dict(zip(list(simp_graph.nodes), labels))
+    nx.set_node_attributes(simp_graph, node_cluster_dict, name='cluster')   
+    nodes = ox.graph_to_gdfs(simp_graph, nodes=True, edges=False)
+
+    return simp_graph, nodes
 
 
 
@@ -629,7 +615,6 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, labels, n_cluste
         cluster_loads = pd.Series(cluster_nodes).map(street_loads.capacity).fillna(0).tolist()
 
         # create distance matrix for cluster
-        # todo: check graph for floyd warshall
         cluster_subgraph = cluster_graph.subgraph(cluster_nodes)
         dm_cluster = nx.floyd_warshall_numpy(cluster_subgraph, nodelist=cluster_nodes, weight='length')
 
@@ -680,20 +665,17 @@ def add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w
     """
     add_mv_load_station_to_mvlv_subst_list
     """
-
-    # add mv loads to list of mvlv_subst_list
-    for osm_id, row in loads_mv_df.iterrows():
-
-        # add mv loads to mvlv_subst_dict 
-        mvlv_subst_list.append({
-            'x': row.nn_coords.x,
-            'y': row.nn_coords.y,
-            'node_type': nodes_w_labels.loc[nodes_w_labels.index==row.nn].node_type.values[0],
-            'cluster': row.cluster,
-            'osmid': row.nn,
-            'load_level': 'mv',
-            'graph_district': None
-        })
+    
+    loads_mv_df['x'] = loads_mv_df.apply(lambda x: x.nn_coords.x, axis=1)
+    loads_mv_df['y'] = loads_mv_df.apply(lambda x: x.nn_coords.y, axis=1)
+    
+    loads_mv_df['node_type'] = loads_mv_df.index.map(nodes_w_labels.node_type)
+    
+    loads_mv_df['osmid'] = loads_mv_df['nn']
+    loads_mv_df['load_level'] = 'mv'
+    loads_mv_df['graph_district'] = None
+    
+    
+    mvlv_subst_list += loads_mv_df.to_dict(orient='records')
         
     return mvlv_subst_list
-
