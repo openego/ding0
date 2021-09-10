@@ -75,7 +75,8 @@ get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
 
 from ding0.grid.lv_grid.routing import build_graph_from_ways, get_sub_graph_list, \
 subdivide_graph_edges, assign_nearest_nodes_to_buildings, identify_nodes_to_keep, \
-simplify_graph, get_mvlv_subst_loc_list, get_cluster_graph_and_nodes, add_mv_load_station_to_mvlv_subst_list
+simplify_graph, get_mvlv_subst_loc_list, get_cluster_graph_and_nodes, \
+update_ways_geo_to_shape, add_mv_load_station_to_mvlv_subst_list, get_fully_conn_graph
 
 from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
@@ -817,7 +818,7 @@ class NetworkDing0:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
             
-            if id_db != 4488: # 4347, 4488, 5588
+            if id_db != 5588: # 4347, 4488, 5588
                 
                 continue
             
@@ -834,19 +835,29 @@ class NetworkDing0:
             
             
             # transform geo_load_area from str to poly
+            # buildings without buffer, ways with buffer
             geo_load_area = wkt_loads(row.geo_area)
+            #geo_load_area_buff = geo_load_area
+            geo_load_area_buff = geo_load_area.convex_hull.buffer(get_config_osm('buffer_distance'))
             
             # load ways from db
-            ways = get_osm_ways(geo_load_area.convex_hull.wkt, session_osm)
+            ways = get_osm_ways(geo_load_area_buff.wkt, session_osm)
             ways_sql_df = pd.read_sql(
                 ways.statement,
                 con=session_osm.bind 
                 #con=engine_osm both ways are working. select the easier/ more appropriate one
             )
-
-            graph = build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge)
             
-            return graph, geo_load_area, ways_sql_df
+            # call to_shape(ways.geometry)
+            ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
+
+            # todo: oraganize param
+            graph = build_graph_from_ways(ways, ways_sql_df, geo_load_area_buff)
+            
+            # while loop for finding connected graph
+            graph, geo_load_area_buff = get_fully_conn_graph(graph, geo_load_area_buff, session_osm)
+            
+            return graph, geo_load_area, geo_load_area_buff, ways, ways_sql_df
             
             
             # build subgraphs for graph if graoh is not weakly connected

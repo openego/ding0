@@ -9,15 +9,19 @@ from geoalchemy2.shape import to_shape
 
 from pyproj import CRS
 
+import pandas as pd
 import geopandas as gpd
 
 import numpy as np
 
 from shapely.geometry import LineString, Point
+from shapely.wkt import dumps as wkt_dumps
 
-import pandas as pd
+from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways
 
-
+# TODO: some logging e.g. break... info or warning?
+import logging
+logger = logging.getLogger('ding0')
 
 
 
@@ -39,7 +43,83 @@ from config.config_lv_grids_osm import get_config_osm
 
 
 
-def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
+def update_ways_geo_to_shape(ways_sql_df):
+    """
+    update_ways_geo_to_shape
+    after laoding from DB
+    """
+    
+    ways_sql_df['geometry'] = ways_sql_df.apply(lambda way: to_shape(way.geometry).coords, axis=1)
+    
+    return ways_sql_df
+
+
+
+def get_fully_conn_graph(graph, polygon, session_osm):
+    
+    """
+    TODO. write doc
+    """
+    
+    if nx.number_weakly_connected_components(graph) > 1:
+        
+        nodes_to_connect = graph.nodes()
+        conn_graph_nodes = ox.utils_graph.get_largest_component(graph).nodes()
+        
+        unconn_nodes_iter_list = []
+        get_fully_conn_graph_number_it=0
+        max_it = get_config_osm('get_fully_conn_graph_number_max_it')
+        unconn_nodes_ratio = get_config_osm('unconn_nodes_ratio')
+        
+        while not all(node in conn_graph_nodes for node in nodes_to_connect):
+            
+            buffer_poly = polygon.convex_hull.buffer(get_config_osm('buffer_distance'))
+            buffer_poly_dump = wkt_dumps(buffer_poly)
+
+            ways = get_osm_ways(buffer_poly_dump, session_osm)
+            ways_sql_df = pd.read_sql(
+                ways.statement,
+                con=session_osm.bind 
+                #con=engine_osm both ways are working. select the easier/ more appropriate one
+            )
+            
+            ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
+            buffer_graph = build_graph_from_ways(ways, ways_sql_df, buffer_poly)
+
+            conn_graph = ox.utils_graph.get_largest_component(buffer_graph) # wie schnell?
+            conn_graph_nodes = conn_graph.nodes()
+            polygon = buffer_poly
+            
+            unconn_nodes_iter = list(set(nodes_to_connect)-set(conn_graph_nodes))
+            
+            unconn_nodes_iter_list.append(unconn_nodes_iter)
+            
+            get_fully_conn_graph_number_it += 1
+                        
+            logger.warning(f'Finding connected graph, iteration {get_fully_conn_graph_number_it} of max. {max_it}.')
+            logger.warning(f'Finding connected graph, number of unconnected nodes is {len(unconn_nodes_iter_list[-1])}.')
+            
+            if len(unconn_nodes_iter_list) > 1:
+                if unconn_nodes_iter_list[-2] == unconn_nodes_iter_list[-1]:
+                    if len(unconn_nodes_iter_list[-1]) / len(nodes_to_connect) < unconn_nodes_ratio: 
+                        logger.warning(f'Finding connected graph, removed number of nodes {len(unconn_nodes_iter_list[-1])}. Break.')
+                        break
+                        
+                    elif get_fully_conn_graph_number_it > max_it:
+                        logger.warning(f'Finding connected graph, max. iterations {max_it} trespassed. Break.')
+                        break
+    else:
+        
+        logger.warning(f'Graph already fully connected.')
+        conn_graph, buffer_poly = graph, polygon
+        
+    return conn_graph, buffer_poly
+
+
+
+
+
+def build_graph_from_ways(ways, ways_sql_df, geo_load_area_buff):
 
     """ 
     Build graph based on osm ways
@@ -76,27 +156,54 @@ def build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge):
             graph.nodes[node]['node_type'] = 'non_synthetic'
 
             ix += 1
+            
+    
+    graph = truncate_graph(graph, ways_sql_df, geo_load_area_buff)
         
+    # todo REMOVE
+    # qcheck if 1000 from config is best solution or calc e.g. with EARTH_RADIUS_M
+    #graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, 
+    #                                           retain_all=False, 
+    #                                           truncate_by_edge=True, 
+    #                                           quadrat_width=get_config_osm('quadrat_width'))
+
+    # default with lon lat. deprecated due to srid 3035
+    #graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, retain_all=retain_all, truncate_by_edge=truncate_by_edge)
         
         
         
     # convert undirected graph to digraph due to truncate_graph_polygon
     graph = graph.to_directed()  
     
-    # truncate by edge for digraph
-    if truncate_by_edge:
-        
-        # todo qcheck if 1000 from config is best solution or calc e.g. with EARTH_RADIUS_M
-        graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, 
-                                                   retain_all=False, 
-                                                   truncate_by_edge=True, 
-                                                   quadrat_width=get_config_osm('quadrat_width'))
-        
-        # default with lon lat. deprecated due to srid 3035
-        #graph = ox.truncate.truncate_graph_polygon(graph, geo_load_area, retain_all=retain_all, truncate_by_edge=truncate_by_edge)
-        
-        
-        
+    return graph
+
+
+
+def truncate_graph(graph, ways_sql_df, geo_load_area_buff):
+    
+    """
+    src: https://www.matecdev.com/posts/point-in-polygon.html
+    """
+
+    flatten = lambda *n: (e for a in n for e in (flatten(*a) if isinstance(a, (tuple, list)) else (a,)))
+
+    nodes = flatten(ways_sql_df.nodes.tolist())
+    points = flatten(ways_sql_df.geometry.tolist())
+
+    nodes_list = list(nodes)
+    points_list = [list(p) for p in list(points)]
+    points_list = [Point(item) for sublist in points_list for item in sublist]
+
+    nodes = pd.DataFrame(points_list, index=nodes_list, columns=['geometry'])
+    nodes_gdf = gpd.GeoDataFrame(nodes, geometry='geometry', crs=graph.graph["crs"])
+
+    polys_df = pd.DataFrame({'geometry':geo_load_area_buff}, index=[0])
+    polys_gdf = gpd.GeoDataFrame(polys_df, geometry='geometry', crs=graph.graph["crs"])
+
+    PointsInPolys = gpd.tools.sjoin(nodes_gdf, polys_gdf, op="within", how='left')
+
+    graph.remove_nodes_from(PointsInPolys.loc[PointsInPolys.index_right.isnull()].index.tolist())
+    
     return graph
 
 
