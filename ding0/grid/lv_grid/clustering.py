@@ -1,7 +1,6 @@
 from sklearn.cluster import AgglomerativeClustering
 import numpy as np
 import networkx as nx
-import pandas as pd
 
 from config.config_lv_grids_osm import get_config_osm 
 

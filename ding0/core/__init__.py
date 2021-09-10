@@ -75,14 +75,11 @@ get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
 
 from ding0.grid.lv_grid.routing import build_graph_from_ways, get_sub_graph_list, \
 subdivide_graph_edges, assign_nearest_nodes_to_buildings, identify_nodes_to_keep, \
-simplify_graph
+simplify_graph, get_mvlv_subst_loc_list, get_cluster_graph_and_nodes, add_mv_load_station_to_mvlv_subst_list
 
 from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
 from grid.lv_grid.clustering import get_cluster_numbers, apply_AgglomerativeClustering
-
-from grid.lv_grid.routing import get_mvlv_subst_loc_list, get_cluster_graph_and_nodes, \
-add_mv_load_station_to_mvlv_subst_list
 
 from grid.lv_grid.geo import get_Point_from_x_y, get_points_in_load_area, get_convex_hull_from_points
 
@@ -616,7 +613,9 @@ class NetworkDing0:
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-    def import_mv_grid_districts(self, session, ding0_default=True, mv_grid_districts_no=None, need_parameterization=False):
+    def import_mv_grid_districts(self, session, ding0_default=True, mv_grid_districts_no=None, 
+                                 need_parameterization=False, retain_all=False, 
+                                 truncate_by_edge=True):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
         and MV-LV stations, instantiates and initiates objects.
@@ -715,7 +714,9 @@ class NetworkDing0:
                 
                 # todo: del return. 
                 # import lv areas and create new lv_grid_districts 
-                return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, need_parameterization)
+                return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
+                                                                            need_parameterization, retain_all, 
+                                                                            truncate_by_edge)
                 
 
             
@@ -729,8 +730,8 @@ class NetworkDing0:
         logger.info('=====> MV Grid Districts imported')
         
     def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district, 
-                                                        need_parameterization, retain_all=False, 
-                                                        truncate_by_edge=True):
+                                                        need_parameterization, retain_all, 
+                                                        truncate_by_edge):
         
         # TODO: CHECK IF retain_all=True, truncate_by_edge=True may be False. Need to set in config or as param.        
         
@@ -816,7 +817,7 @@ class NetworkDing0:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
             
-            if id_db != 4488:
+            if id_db != 4488: # 4347, 4488, 5588
                 
                 continue
             
@@ -832,15 +833,20 @@ class NetworkDing0:
             session_osm = create_session_osm()
             
             
-            # load ways from db
-            ways = get_osm_ways(row.geo_area, session_osm)
-            
-            
             # transform geo_load_area from str to poly
             geo_load_area = wkt_loads(row.geo_area)
             
-            # build graoh based i ways
+            # load ways from db
+            ways = get_osm_ways(geo_load_area.convex_hull.wkt, session_osm)
+            ways_sql_df = pd.read_sql(
+                ways.statement,
+                con=session_osm.bind 
+                #con=engine_osm both ways are working. select the easier/ more appropriate one
+            )
+
             graph = build_graph_from_ways(ways, geo_load_area, retain_all, truncate_by_edge)
+            
+            return graph, geo_load_area, ways_sql_df
             
             
             # build subgraphs for graph if graoh is not weakly connected
@@ -848,32 +854,33 @@ class NetworkDing0:
             
             
             # implementation for only one connected graph. 
-            # TODO: check if implementation for lists is needed
+            # TODO: check if implementation for lists is needed. may be fixed with increasing polygon
+            # TODO: list should not exists anymore
+            # TODO: to_directed is replaced and should not be necessary anymore, remove it 
             working_w_lists=False
             if working_w_lists:
                 
                 # NOT IMPORTED YET
-                graph_subdiv_list = apply_subdivide_graph_edges_for_each_subgraph(sub_graph_list)
+                graph_subdiv_directed = apply_subdivide_graph_edges_for_each_subgraph(sub_graph_list)
                 # TODO: each subgraph has to be directed. check else case.
                 
                 # todo ensure what is going to happen in else case !
                 # transform graph to directed
                 # this step is mandatory to obtain right number of nodes !
                 # mandatory for simplify and endpoints in assign_nearest_nodes_to_buildings
-                graph_subdiv_directed = nx.MultiGraph(graph_subdiv_undirected)
-                graph_subdiv_directed = graph_subdiv_directed.to_directed()
+                #graph_subdiv_directed = nx.MultiGraph(graph_subdiv_undirected)
+                #graph_subdiv_directed = graph_subdiv_directed.to_directed()
                 
             else:
                 
                 # subdivide_graph_edges for only graph in list
-                graph_subdiv_undirected = subdivide_graph_edges(sub_graph_list[0])
-                
+                graph_subdiv_directed = subdivide_graph_edges(sub_graph_list[0])
                 
                 # transform graph to directed
                 # this step is mandatory to obtain right number of nodes !
                 # mandatory for simplify and endpoints in assign_nearest_nodes_to_buildings
-                graph_subdiv_directed = nx.MultiGraph(graph_subdiv_undirected)
-                graph_subdiv_directed = graph_subdiv_directed.to_directed()
+                #graph_subdiv_directed = nx.MultiGraph(graph_subdiv_undirected)
+                #graph_subdiv_directed = graph_subdiv_directed.to_directed()
             
             
             
@@ -912,6 +919,9 @@ class NetworkDing0:
             # TODO: write fct in clustering to return:
             #       cluster_graph, nodes_w_labels, ...
             n_cluster = get_cluster_numbers(buildings_w_loads_df)
+            
+            nodes_tocheck = []
+            altenodes_tocheck = []
 
             clustering_successfully=False
             for i in range(len(simp_graph.nodes)):
@@ -920,8 +930,9 @@ class NetworkDing0:
                 labels = apply_AgglomerativeClustering(simp_graph, n_cluster)
 
                 cluster_graph, nodes_w_labels = get_cluster_graph_and_nodes(simp_graph, labels)
+                
                 mvlv_subst_list = get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, street_loads, labels, n_cluster)
-
+                
                 if len(mvlv_subst_list) > 0:
 
                     print('all clusters are in range')
@@ -938,8 +949,7 @@ class NetworkDing0:
 
             if not clustering_successfully:
 
-                return 'clustering cannot ensure dist from substation to each node <= threshold'
-            
+                return 'clustering cannot ensure dist from substation to each node <= threshold'            
             
             
             # get loadds on mv level
@@ -958,10 +968,11 @@ class NetworkDing0:
 
             # concat lv and mv level after assignment of cluster ids
             buildings_w_loads_df = pd.concat([buildings_w_loads_df, loads_mv_df])
-
+            
+            
             # get list of location of substations
             mvlv_subst_list = add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w_labels)
-                
+
                 
             # todo: obtain right index for sustaion/ district
             if len(lv_load_area._lv_grid_districts) < 1:
@@ -1025,7 +1036,7 @@ class NetworkDing0:
                     id_db=id_db,
                     grid=lv_grid,
                     lv_load_area=lv_load_area,
-                    geo_data=Point(mvlv_subst_list[0].get('x'), mvlv_subst_list[0].get('y')),
+                    geo_data=Point(mvlv_subst_loc.get('x'), mvlv_subst_loc.get('y')),
                     peak_load=lv_grid_district.peak_load)
                                 
                 
@@ -1048,7 +1059,8 @@ class NetworkDing0:
         # add Load Area to MV grid district (and add centre object to MV gris district's graph)
         mv_grid_district.add_lv_load_area(lv_load_area)
         
-        return lv_load_area
+        return lv_load_area, graph_subdiv_directed
+
             
 
     def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts, lv_stations):
