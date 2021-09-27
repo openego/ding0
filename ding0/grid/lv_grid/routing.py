@@ -16,6 +16,7 @@ import geopandas as gpd
 import numpy as np
 
 from shapely.geometry import LineString, Point
+from shapely.ops import linemerge
 from shapely.wkt import dumps as wkt_dumps
 
 from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways
@@ -155,6 +156,18 @@ def truncate_graph_nodes(graph, nested_node_list, poly_idx):
 
 
 
+def compose_graph(conn_graph, graph_subdiv_directed):
+    
+    """
+    composed_graph has all nodes & edges of both graphs, including attributes
+    Where the attributes conflict, it uses the attributes of graph_subdiv_directed.
+    compose conn_graph with graph_subdiv_directed to have subdivides edges of
+    graph_subdiv_directed in conn_graph
+    """
+    return nx.compose(conn_graph, graph_subdiv_directed)
+
+
+
 def get_fully_conn_graph(graph, nested_node_list):
     
     """
@@ -257,7 +270,7 @@ def remove_unloaded_loops(G, nodes_of_interest):
 
 
 
-def subdivide_graph_edges(graph):
+def subdivide_graph_edges(graph, inner_node_list):
     
     """
     subdivide_graph_edges
@@ -265,8 +278,8 @@ def subdivide_graph_edges(graph):
           ensure edge name does not exist when adding
     """    
     
-    graph_subdiv = graph.copy()
-    edges = graph.edges()
+    graph_subdiv = graph.subgraph(inner_node_list).copy()
+    edges = graph.subgraph(inner_node_list).edges()
 
     edge_data = []
     node_data = []
@@ -342,7 +355,7 @@ def subdivide_graph_edges(graph):
         graph_subdiv.add_node(name,x=x,y=y,node_type='synthetic')
         
         
-    return graph_subdiv
+    return graph_subdiv, edges
 
 
 
@@ -702,23 +715,22 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
 
 
 
-def get_cluster_graph_and_nodes(simp_graph, labels):
+def get_cluster_graph_and_nodes(simp_graph, node_cluster_dict):
     
     """
     get_cluster_graph_and_nodes
     """
 
     # assign cluster number to nodes V2
-    node_cluster_dict = dict(zip(list(simp_graph.nodes), labels))
     nx.set_node_attributes(simp_graph, node_cluster_dict, name='cluster')   
-    nodes = ox.graph_to_gdfs(simp_graph, nodes=True, edges=False)
+    nodes_w_labels = ox.graph_to_gdfs(simp_graph, nodes=True, edges=False)
 
-    return simp_graph, nodes
-
-
+    return simp_graph, nodes_w_labels
 
 
-def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, labels, n_cluster):
+
+
+def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, n_cluster):
     
     """
     get list of location of mvlv substations for load areal
@@ -733,21 +745,42 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, labels, n_cluste
     
     valid_cluster_distance = True
     
+    no_cluster_nodes_list = nodes[nodes['cluster'] == -1].index.tolist()
+    
     for i in range(n_cluster):
+                
         df_cluster = nodes[nodes['cluster'] == i]
         cluster_nodes = list(df_cluster.index)
 
-        # map cluster_loads with capacity of street_loads
-        cluster_loads = pd.Series(cluster_nodes).map(street_loads.capacity).fillna(0).tolist()
-
         # create distance matrix for cluster
-        cluster_subgraph = cluster_graph.subgraph(cluster_nodes)
-        dm_cluster = nx.floyd_warshall_numpy(cluster_subgraph, nodelist=cluster_nodes, weight='length')
+        cluster_subgraph = cluster_graph.subgraph(cluster_nodes + no_cluster_nodes_list)
+        #cluster_subgraph = ox.utils_graph.get_largest_component(cluster_subgraph)
+        
+        # connected_components for each subgraph
+        connected_components_gen=nx.weakly_connected_components(cluster_subgraph)
+        connected_components_list = list(connected_components_gen)
+        connected_components_list.sort(reverse=True)
+        
+        for cc in connected_components_list:
+            
+            if cluster_nodes[0] in cc:
+                
+                largest_cc = cc
+                break
+            
+            
+        cluster_subgraph = nx.MultiDiGraph(cluster_subgraph.subgraph(largest_cc))
+        
+
+        # map cluster_loads with capacity of street_loads
+        cluster_loads = pd.Series(list(cluster_subgraph.nodes)).map(street_loads.capacity).fillna(0).tolist()
+
+        dm_cluster = nx.floyd_warshall_numpy(cluster_subgraph, nodelist=cluster_subgraph.nodes, weight='length')
 
         # compute location of substation based on load center
         load_vector = np.array(cluster_loads) #weighted
         unweighted_nodes = dm_cluster.dot(load_vector)
-        
+
         osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]
         
         

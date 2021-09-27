@@ -77,7 +77,8 @@ from ding0.grid.lv_grid.routing import build_graph_from_ways, \
 subdivide_graph_edges, assign_nearest_nodes_to_buildings, identify_street_loads, \
 simplify_graph_adv, get_mvlv_subst_loc_list, get_cluster_graph_and_nodes, \
 update_ways_geo_to_shape, add_mv_load_station_to_mvlv_subst_list, get_fully_conn_graph, \
-create_buffer_polygons, graph_nodes_outside_buffer_polys, remove_unloaded_deadends
+create_buffer_polygons, graph_nodes_outside_buffer_polys, remove_unloaded_deadends, \
+compose_graph
 
 from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
@@ -815,7 +816,7 @@ class NetworkDing0:
             c+=1
             #print(9987654321, c, row.name)
                         
-            if id_db != 4488: # 2128, 4347, 4488, 5588. no vuildings: 2625
+            if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625
                 
                 continue
             
@@ -827,8 +828,6 @@ class NetworkDing0:
             # transform geo_load_area from str to poly
             # buildings without buffer, ways with buffer
             geo_load_area = wkt_loads(row.geo_area)
-                
-            #print(geo_load_area)
             
             
             # get buffer_poly_list
@@ -855,6 +854,10 @@ class NetworkDing0:
             # nodes to remove per buffer polygon
             nodes_to_remove_nested_list = graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list)
             
+            # inner_node_list define nodes without buffer
+            inner_node_list = list(set(graph.nodes()) - set(nodes_to_remove_nested_list[0]))
+        
+            
             # get connected graph
             conn_graph = get_fully_conn_graph(graph, nodes_to_remove_nested_list)
             
@@ -862,8 +865,17 @@ class NetworkDing0:
             
             # TODO: to_directed is replaced and should not be necessary anymore, remove it 
             # subdivide_graph_edges for only graph in list
-            graph_subdiv_directed = subdivide_graph_edges(conn_graph)
+            # edges_to_remove are edges which are subdivided into 20m segments
+            graph_subdiv_directed, edges_to_remove = subdivide_graph_edges(conn_graph, inner_node_list)
+                        
             
+            # to keep only subdivided edges
+            # remove edges_to_remove from conn_graph 
+            conn_graph.remove_edges_from(list(edges_to_remove))
+            
+            
+            composed_graph = compose_graph(conn_graph, graph_subdiv_directed)
+            #composed_graph.graph['simplified'] = False
             
             
             if need_parameterization:
@@ -883,33 +895,41 @@ class NetworkDing0:
             
             
             # assign nearest nodes
-            buildings_w_loads_df = assign_nearest_nodes_to_buildings(graph_subdiv_directed, buildings_w_loads_df)
+            buildings_w_loads_df = assign_nearest_nodes_to_buildings(composed_graph, buildings_w_loads_df)
             
             
             # get nodes to keep and street_loads_df for graph. 
             # street_loads_df contains nearest nodes and cum(load) per node
-            street_loads_df = identify_street_loads(buildings_w_loads_df, graph_subdiv_directed)
+            street_loads_df = identify_street_loads(buildings_w_loads_df, composed_graph)
             
             # simp_graph to keep overview
-            #simp_graph = simplify_graph(graph_subdiv_directed, street_loads_df.index.tolist())
-            simp_graph = simplify_graph_adv(graph_subdiv_directed, street_loads_df.index.tolist())
-            simp_graph = remove_unloaded_deadends(simp_graph, street_loads_df.index.tolist())
-
+            #simp_graph = simplify_graph(composed_graph, street_loads_df.index.tolist())
+            simp_graph = simplify_graph_adv(composed_graph, street_loads_df.index.tolist())
+            
+                        
+            
+            ### todo: check if working, seems like no improvement
+            simp_graph = remove_unloaded_deadends(simp_graph, street_loads_df.index.tolist()) 
+            
             
             # CLUSTERING
             # TODO: write fct in clustering to return:
             #       cluster_graph, nodes_w_labels, ...
-            n_cluster = get_cluster_numbers(buildings_w_loads_df)
+            n_cluster = get_cluster_numbers(buildings_w_loads_df)            
+            
+            # todo: besser bennen
+            nodes_simp_graph_graph_subdiv_directed = list(set(simp_graph.nodes) & set(graph_subdiv_directed.nodes))
+            
             
             clustering_successfully=False
             for i in range(len(simp_graph.nodes)):
 
                 # increment n_cluster. n_cluster += 1
-                labels = apply_AgglomerativeClustering(simp_graph, n_cluster)
+                labels = apply_AgglomerativeClustering(simp_graph, nodes_simp_graph_graph_subdiv_directed, n_cluster)
 
                 cluster_graph, nodes_w_labels = get_cluster_graph_and_nodes(simp_graph, labels)
-                
-                mvlv_subst_list = get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, street_loads_df, labels, n_cluster)
+                                                
+                mvlv_subst_list = get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, street_loads_df, n_cluster)
                 
                 if len(mvlv_subst_list) > 0:
 
@@ -923,11 +943,16 @@ class NetworkDing0:
                     n_cluster += 1
                     logger.warning('at least one node trespasses dist to substation. \
                                    cluster again with n_clusters+=1')
-                    logger.warning('after increment; n_cluster:', n_cluster)
+                    logger.warning(f'after increment; n_cluster {n_cluster}')
 
             if not clustering_successfully:
 
-                return 'clustering cannot ensure dist from substation to each node <= threshold'            
+                return 'clustering cannot ensure dist from substation to each node <= threshold'
+            
+            
+            return mvlv_subst_list, cluster_graph, nodes_w_labels
+            
+             
             
             
             # get loadds on mv level
