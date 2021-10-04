@@ -45,7 +45,7 @@ import oedialect
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
-    from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+    from shapely.geometry import Point, MultiPoint, MultiLineString, LineString, Polygon #PAUL NEW
     from shapely.geometry import shape, mapping
     from shapely.wkt import dumps as wkt_dumps
 
@@ -78,7 +78,7 @@ subdivide_graph_edges, assign_nearest_nodes_to_buildings, identify_street_loads,
 simplify_graph_adv, get_mvlv_subst_loc_list, get_cluster_graph_and_nodes, \
 update_ways_geo_to_shape, add_mv_load_station_to_mvlv_subst_list, get_fully_conn_graph, \
 create_buffer_polygons, graph_nodes_outside_buffer_polys, remove_unloaded_deadends, \
-compose_graph
+compose_graph, split_conn_graph, get_outer_conn_graph, flatten_graph_components_to_lines
 
 from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
@@ -616,9 +616,9 @@ class NetworkDing0:
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-    def import_mv_grid_districts(self, session, ding0_default=True, mv_grid_districts_no=None, 
-                                 need_parameterization=False, retain_all=False, 
-                                 truncate_by_edge=True):
+    def import_mv_grid_districts(self, session, ding0_default=True,
+                                 mv_grid_districts_no=None, 
+                                 need_parameterization=False):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
         and MV-LV stations, instantiates and initiates objects.
@@ -716,8 +716,7 @@ class NetworkDing0:
                 # todo: del return. 
                 # import lv areas and create new lv_grid_districts 
                 return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
-                                                                            need_parameterization, retain_all, 
-                                                                            truncate_by_edge)
+                                                                            need_parameterization)
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
             mv_grid_district.add_peak_demand()        
@@ -726,11 +725,8 @@ class NetworkDing0:
         
         
     def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district, 
-                                                        need_parameterization, retain_all, 
-                                                        truncate_by_edge):
-        
-        # TODO: CHECK IF retain_all=True, truncate_by_edge=True may be False. Need to set in config or as param.        
-        
+                                                        need_parameterization):
+                
         """
         Imports load_areas (load areas) from database for a single MV grid_district
         And compute new lv_districts
@@ -810,15 +806,19 @@ class NetworkDing0:
         
         
         # create load_area objects from rows and add them to graph
-        c=0
+        countrrrr = 0
         for id_db, row in lv_load_areas.iterrows():
             
-            c+=1
-            #print(9987654321, c, row.name)
-                        
-            if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625
-                
+            countrrrr += 1
+            
+            if countrrrr < 39: #  TODO: outer graph is len(G) == 0
+                # TODO: composed_graph = compose_graph(outer_graph, graph_subdiv)
                 continue
+                
+            print(countrrrr)
+                                    
+            #if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625
+            #continue
             
             
             # create session to load from (local) DB OSM data 
@@ -842,12 +842,17 @@ class NetworkDing0:
                 #con=engine_osm both ways are working. select the easier/ more appropriate one
             )
             
+            
+            if ways_sql_df.empty: # TODO: was wenn keine ways need to implement 
+                logger.warning(f'ways_sql_df.empty. No ways found in MV {mv_grid_district}, LA {id_db}')
+                continue
+        
+        
             # call to_shape(ways.geometry) to transform WKBElement to  
             ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
             
             # build graph
             graph = build_graph_from_ways(ways)
-            
             
             # get nodes to remove from graph
             # is a list of lists containing 
@@ -857,80 +862,86 @@ class NetworkDing0:
             # inner_node_list define nodes without buffer
             inner_node_list = list(set(graph.nodes()) - set(nodes_to_remove_nested_list[0]))
         
-            
             # get connected graph
             conn_graph = get_fully_conn_graph(graph, nodes_to_remove_nested_list)
             
-            
-            
+            #split fully conn graph in inner and outer part
+            inner_graph, outer_graph = split_conn_graph(conn_graph, inner_node_list)
+
             # TODO: to_directed is replaced and should not be necessary anymore, remove it 
             # subdivide_graph_edges for only graph in list
             # edges_to_remove are edges which are subdivided into 20m segments
-            graph_subdiv_directed, edges_to_remove = subdivide_graph_edges(conn_graph, inner_node_list)
-                        
+            #process inner graph
+            graph_subdiv = subdivide_graph_edges(inner_graph)
             
-            # to keep only subdivided edges
-            # remove edges_to_remove from conn_graph 
-            conn_graph.remove_edges_from(list(edges_to_remove))
+            #process outer graph
+            outer_graph = get_outer_conn_graph(outer_graph, inner_node_list)
+            outer_graph = flatten_graph_components_to_lines(outer_graph, inner_node_list)
+            ####
+            edges = [(u,v,k,d['length'], LineString(d['geometry'].boundary).length) for u,v,k,d in outer_graph.edges(keys=True, data=True) if d['length']>=1500]
+            for u,v,k,path_dist,euc_dist in edges:
+                if path_dist > 3*euc_dist:
+                    outer_graph.remove_edge(u,v,k)
             
             
-            composed_graph = compose_graph(conn_graph, graph_subdiv_directed)
-            #composed_graph.graph['simplified'] = False
+            #compose graph
+            composed_graph = compose_graph(outer_graph, graph_subdiv) # PAUL NEW changed position order
             
-            
+            #building_loads
             if need_parameterization:
                 # load buildings and amenities
                 ### Load buildings_w_a, wo_a, a
                 buildings_w_a  = get_osm_buildings_w_a(row.geo_area, session_osm)
                 buildings_wo_a = get_osm_buildings_wo_a(row.geo_area, session_osm)
                 amenities_ni_Buildings = get_osm_amenities_ni_Buildings(row.geo_area, session_osm)
+                
+                if (len(buildings_w_a) + len(buildings_wo_a) + len(amenities_ni_Buildings)) < 1:
+                    logger.warning(f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
+                    continue
 
                 # parameterization and merge to buildings_df
                 buildings_w_loads_df = parameterize_by_load_profiles(amenities_ni_Buildings, buildings_w_a, buildings_wo_a)
-                
+                                
             else:
                 
                 # todo: load ding0 default loads
                 return 'Not implemented yet. Need to load ding0 default parameterization.'
-            
-            
+                            
+            #elif buildings_w_loads_df == None:
+            #    logger.warning(f'buildings_w_loads_df == None. No buildings found in MV {mv_grid_district}, LA {id_db}')
+            #    print(type(buildings_w_loads_df))
+            #    continue
+                
             # assign nearest nodes
-            buildings_w_loads_df = assign_nearest_nodes_to_buildings(composed_graph, buildings_w_loads_df)
-            
+            buildings_w_loads_df = assign_nearest_nodes_to_buildings(composed_graph, buildings_w_loads_df) #PAUL NEW changed graph
+
             
             # get nodes to keep and street_loads_df for graph. 
             # street_loads_df contains nearest nodes and cum(load) per node
-            street_loads_df = identify_street_loads(buildings_w_loads_df, composed_graph)
+            street_loads_df = identify_street_loads(buildings_w_loads_df, composed_graph) #composed_graph) #PAUL NEW
+            
             
             # simp_graph to keep overview
             #simp_graph = simplify_graph(composed_graph, street_loads_df.index.tolist())
             simp_graph = simplify_graph_adv(composed_graph, street_loads_df.index.tolist())
-            
-                        
-            
-            ### todo: check if working, seems like no improvement
-            simp_graph = remove_unloaded_deadends(simp_graph, street_loads_df.index.tolist()) 
+            simp_graph = remove_unloaded_deadends(simp_graph, street_loads_df.index.tolist())
             
             
             # CLUSTERING
             # TODO: write fct in clustering to return:
             #       cluster_graph, nodes_w_labels, ...
-            n_cluster = get_cluster_numbers(buildings_w_loads_df)            
-            
-            # todo: besser bennen
-            nodes_simp_graph_graph_subdiv_directed = list(set(simp_graph.nodes) & set(graph_subdiv_directed.nodes))
-            
-            
-            clustering_successfully=False
+            n_cluster = get_cluster_numbers(buildings_w_loads_df)
+            cluster_increment_counter = 0
+                       
+            clustering_successfully = False
             for i in range(len(simp_graph.nodes)):
 
                 # increment n_cluster. n_cluster += 1
-                labels = apply_AgglomerativeClustering(simp_graph, nodes_simp_graph_graph_subdiv_directed, n_cluster)
+                labels = apply_AgglomerativeClustering(simp_graph, n_cluster)
 
                 cluster_graph, nodes_w_labels = get_cluster_graph_and_nodes(simp_graph, labels)
                                                 
-                mvlv_subst_list = get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, street_loads_df, n_cluster)
-                
+                mvlv_subst_list = get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, street_loads_df, labels, n_cluster)
                 if len(mvlv_subst_list) > 0:
 
                     logger.warning('all clusters are in range')
@@ -939,21 +950,30 @@ class NetworkDing0:
                     break
 
                 else:
-
-                    n_cluster += 1
-                    logger.warning('at least one node trespasses dist to substation. \
-                                   cluster again with n_clusters+=1')
-                    logger.warning(f'after increment; n_cluster {n_cluster}')
+                    
+                    if cluster_increment_counter > 10: # todo: write 10 to config 
+                        
+                        logger.warning('cluster_increment_counter > 10. \
+                        break increment n_cluster. 1500 m distance is not ensured. \
+                        check export: no_1500m_distance_ensured.txt')
+                
+                        # wirte mv and la id to file
+                        f = open("no_1500m_distance_ensured.txt", "a")
+                        f.write(f"MV {mv_grid_district}, LA {id_db}\n does not ensure"
+                                " max dist of 1500m between station and loads \n")
+                        f.close()
+                        
+                    else:
+                        
+                        cluster_increment_counter += 1
+                        n_cluster += 1
+                        logger.warning('at least one node trespasses dist to substation. \
+                                       cluster again with n_clusters+=1')
+                        logger.warning(f'after increment; n_cluster {n_cluster}')
 
             if not clustering_successfully:
+                return f"clutering not sucessfully for MV {mv_grid_district}, LA {id_db}"
 
-                return 'clustering cannot ensure dist from substation to each node <= threshold'
-            
-            
-            return mvlv_subst_list, cluster_graph, nodes_w_labels
-            
-             
-            
             
             # get loadds on mv level
             loads_mv_df = buildings_w_loads_df.loc[(get_config_osm('mv_lv_threshold_capacity') <= buildings_w_loads_df.capacity) &
@@ -977,8 +997,6 @@ class NetworkDing0:
                 # get list of location of substations
                 mvlv_subst_list = add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w_labels)
                 
-                
-            
 
             # create LV load_area object
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
@@ -990,8 +1008,6 @@ class NetworkDing0:
                 
             # todo: obtain right index for sustaion/ district
             if len(lv_load_area._lv_grid_districts) < 1:
-                
-                
                 logger.warning('start w. index 0')
                 last_row_ix = 0 
 
@@ -999,9 +1015,6 @@ class NetworkDing0:
                 
                 logger.warning('use global index or count districts due to each district has one station')
                 last_row_ix = 0 # todo_ use right index
-                
-            
-            return cluster_graph, buffer_poly_list, mvlv_subst_list
                 
     
             # CREATE AND ASSIGN DING0 OBJECTS Station, Grid, District
@@ -1019,8 +1032,7 @@ class NetworkDing0:
 
 
                 if load_level == 'mv':
-
-                    cluster_geo_list+= buildings.nn_coords.tolist() # geo of location of substation
+                    cluster_geo_list += buildings.nn_coords.tolist() # geo of location of substation
 
                 # get convex hull for ding0 objects
                 points = get_points_in_load_area(cluster_geo_list)

@@ -15,7 +15,9 @@ import geopandas as gpd
 
 import numpy as np
 
-from shapely.geometry import LineString, Point
+from itertools import combinations
+
+from shapely.geometry import LineString, Point, MultiLineString, Polygon # PAUL NEW
 from shapely.ops import linemerge
 from shapely.wkt import dumps as wkt_dumps
 
@@ -69,7 +71,7 @@ def create_buffer_polygons(polygon):
     buffer_list = get_config_osm('buffer_distance')
             
     buffer_poly_list = [polygon.convex_hull.buffer(buffer_dist) for buffer_dist in buffer_list] 
-    buffer_poly_list.insert(0, polygon)
+    buffer_poly_list.insert(0, Polygon(polygon.exterior).buffer(buffer_list[0])) # PAUL NEW # due to fast within operator, import poly needs to be buffered
     
     return buffer_poly_list
 
@@ -156,7 +158,7 @@ def truncate_graph_nodes(graph, nested_node_list, poly_idx):
 
 
 
-def compose_graph(conn_graph, graph_subdiv_directed):
+def compose_graph(conn_graph, graph_subdiv):
     
     """
     composed_graph has all nodes & edges of both graphs, including attributes
@@ -164,7 +166,15 @@ def compose_graph(conn_graph, graph_subdiv_directed):
     compose conn_graph with graph_subdiv_directed to have subdivides edges of
     graph_subdiv_directed in conn_graph
     """
-    return nx.compose(conn_graph, graph_subdiv_directed)
+    
+    composed_graph = nx.compose(conn_graph, graph_subdiv)
+    
+    if not nx.is_weakly_connected(composed_graph):
+        
+        print('composed_graph not connected')
+        composed_graph = ox.utils_graph.get_largest_component(composed_graph)
+    
+    return composed_graph
 
 
 
@@ -220,6 +230,34 @@ def get_fully_conn_graph(graph, nested_node_list):
     return conn_graph
 
 
+def split_conn_graph(conn_graph, inner_node_list):
+    """
+    todo: write doc.
+    """
+    
+    inner_graph = conn_graph.subgraph(inner_node_list).copy()
+    inner_edges = inner_graph.edges()
+
+    outer_graph = conn_graph
+    outer_graph.remove_edges_from(inner_edges)
+    outer_graph.remove_nodes_from(list(nx.isolates(outer_graph)))
+    
+    return(inner_graph, outer_graph)
+
+
+def get_outer_conn_graph(G, inner_node_list):
+    """
+    todo: write doc.
+    """
+
+    common_nodes = set(G.nodes()) & set(inner_node_list)
+    G = simplify_graph_adv(G, list(common_nodes))
+    G = remove_unloaded_deadends(G, list(common_nodes))
+    G.remove_nodes_from(list(nx.isolates(G)))
+    
+    return G
+
+
 
 
 def remove_unloaded_deadends(G, nodes_of_interest):
@@ -236,6 +274,49 @@ def remove_unloaded_deadends(G, nodes_of_interest):
             break 
     return G
 
+
+def flatten_graph_components_to_lines(G, inner_node_list):
+    """
+    todo: write doc.
+    """
+    # todo: add edge tags 'highway' and 'osmid' to shortest path edge
+
+    components = list(nx.weakly_connected_components(G))
+    sp_path = lambda p1, p2: nx.shortest_path(G, p1, p2, weight='length') if nx.has_path(G, p1, p2) else None
+    
+    nodes_to_remove = []
+    edges_to_add = []
+    common_nodes = set(G.nodes()) & set(inner_node_list)
+
+    for comp in components:
+        
+        conn_nodes = list(comp & common_nodes)
+        
+        if len(comp) > 2 and len(conn_nodes) == 1:
+            G.remove_nodes_from(comp) # removes unwanted islands / loops
+            
+        else: 
+            endpoints = combinations(conn_nodes, 2)
+            paths = [sp_path(n[0], n[1]) for n in endpoints]
+            for path in paths:
+                geoms = []
+                for u, v in zip(path[:-1], path[1:]):
+                    try: geom = G.edges[u,v,0]['geometry']
+                    except: geom = LineString([Point((G.nodes[node]["x"], G.nodes[node]["y"])) for node in [u,v]])
+                    geoms.append(geom)
+
+                merged_line = linemerge(MultiLineString(geoms))
+                edges_to_add.append([path[0], path[-1], merged_line])
+                nodes_to_remove.append(list(set(comp) - set(conn_nodes)))
+
+    for nodes in nodes_to_remove:
+        G.remove_nodes_from(nodes)
+
+    for edge in edges_to_add:
+        G.add_edge(edge[0], edge[1], 0, geometry=edge[2], length=edge[2].length)
+        G.add_edge(edge[1], edge[0], 0, geometry=edge[2], length=edge[2].length)
+        
+    return G
 
 
 def remove_parallels(G):
@@ -270,7 +351,7 @@ def remove_unloaded_loops(G, nodes_of_interest):
 
 
 
-def subdivide_graph_edges(graph, inner_node_list):
+def subdivide_graph_edges(inner_graph): #(inner_graph, inner_node_list):
     
     """
     subdivide_graph_edges
@@ -278,8 +359,11 @@ def subdivide_graph_edges(graph, inner_node_list):
           ensure edge name does not exist when adding
     """    
     
-    graph_subdiv = graph.subgraph(inner_node_list).copy()
-    edges = graph.subgraph(inner_node_list).edges()
+    graph_subdiv = inner_graph.copy()
+    edges = inner_graph.edges()
+    
+    #graph_subdiv = graph.subgraph(inner_node_list).copy()
+    #edges = graph.subgraph(inner_node_list).edges()
 
     edge_data = []
     node_data = []
@@ -296,12 +380,12 @@ def subdivide_graph_edges(graph, inner_node_list):
 
         else:
 
-            linestring = LineString([(graph.nodes[u]['x'],graph.nodes[u]['y']), 
-                                     (graph.nodes[v]['x'],graph.nodes[v]['y'])])
+            linestring = LineString([(inner_graph.nodes[u]['x'],inner_graph.nodes[u]['y']), 
+                                     (inner_graph.nodes[v]['x'],inner_graph.nodes[v]['y'])])
             vertices_gen = ox.utils_geo.interpolate_points(linestring, get_config_osm('dist_edge_segments')) #### config
             vertices = list(vertices_gen) 
-            highway = graph.edges[u,v,0]['highway']
-            osmid = graph.edges[u,v,0]['osmid']
+            highway = inner_graph.edges[u,v,0]['highway']
+            osmid = inner_graph.edges[u,v,0]['osmid']
             # fromid = graph.edges[u,v,0]['from'] ### PAUL
             # toid = graph.edges[u,v,0]['to'] ### PAUL
             edge_id = u + v
@@ -331,7 +415,7 @@ def subdivide_graph_edges(graph, inner_node_list):
                 vertex_node_id.append(name)
                 unique_syn_nodes.append(name)
 
-            if vertices[0] == (graph.nodes[v]['x'],graph.nodes[v]['y']): ###
+            if vertices[0] == (inner_graph.nodes[v]['x'],inner_graph.nodes[v]['y']): ###
                 vertex_node_id.insert(0, v)
                 vertex_node_id.append(u)
             else:
@@ -355,7 +439,7 @@ def subdivide_graph_edges(graph, inner_node_list):
         graph_subdiv.add_node(name,x=x,y=y,node_type='synthetic')
         
         
-    return graph_subdiv, edges
+    return graph_subdiv #graph_subdiv, edges
 
 
 
@@ -611,6 +695,10 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
     
     endpoints = [n for n in G.nodes if ox.simplification._is_endpoint(G, n, strict=True)]
     nodes_to_keep = list(set(endpoints + street_load_nodes))
+    
+    if len(endpoints) < 1:
+        return G # TODO: check how to simplify without endpoints
+        
 
     # generate each path that needs to be simplified
     for path in _get_paths_to_simplify(G, nodes_to_keep, strict=strict):
@@ -618,7 +706,7 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
         if "simplified" in G.graph and G.graph["simplified"]: ### PAUL
             
             edge_path = [(path[i], path[i+1], next(iter(G.get_edge_data(path[i],path[i+1]).keys()))) for i in range(len(path)-1)]
-            linestring = linemerge([G.edges[edge]['geometry'] for edge in edge_path])
+            linestring = linemerge(MultiLineString([G.edges[edge]['geometry'] for edge in edge_path]))
 
         # add the interstitial edges we're removing to a list so we can retain
         # their spatial geometry
@@ -714,23 +802,84 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
     return G
 
 
-
-def get_cluster_graph_and_nodes(simp_graph, node_cluster_dict):
+def get_cluster_graph_and_nodes(simp_graph, labels):
     
     """
     get_cluster_graph_and_nodes
     """
 
     # assign cluster number to nodes V2
+    node_cluster_dict = dict(zip(list(simp_graph.nodes), labels))
     nx.set_node_attributes(simp_graph, node_cluster_dict, name='cluster')   
     nodes_w_labels = ox.graph_to_gdfs(simp_graph, nodes=True, edges=False)
 
     return simp_graph, nodes_w_labels
 
 
+def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_cluster):
+    
+    """
+    get list of location of mvlv substations for load areal
+    only for lv level: building loads < 200 kW (threshold)
+    n_cluster: number of cluster
+    """
+
+    mvlv_subst_list = []
+    
+    valid_cluster_distance = True
+    
+    for i in range(n_cluster):
+        
+        df_cluster = nodes[nodes['cluster'] == i]
+        cluster_nodes = list(df_cluster.index)
+
+        # create distance matrix for cluster
+        cluster_subgraph = cluster_graph.subgraph(cluster_nodes)
+        dm_cluster = nx.floyd_warshall_numpy(cluster_subgraph, nodelist=cluster_nodes, weight='length')
+
+        # map cluster_loads with capacity of street_loads
+        cluster_loads = pd.Series(cluster_nodes).map(street_loads_df.capacity).fillna(0).tolist()
+
+        # compute location of substation based on load center
+        load_vector = np.array(cluster_loads) #weighted
+        unweighted_nodes = dm_cluster.dot(load_vector)
+        
+        osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]        
+        
+        # todo organize functions
+        def loads_in_ons_dist_threshold(osmid):
+            
+            """
+            return False if loads_ not in_ons_dist_threshold
+            """
+            
+            ons_dist_threshold = get_config_osm('ons_dist_threshold')
+            
+            ons_max_branch_dist = dm_cluster[cluster_nodes.index(osmid)].max()
+            
+            if ons_max_branch_dist > ons_dist_threshold:
+            
+                return False
+            
+            else: return True
+            
+        
+        if not loads_in_ons_dist_threshold(osmid):
+            
+            # return empty list and False for cluster validity
+            # due to distance threshold to ons is trespassed
+            return []
+        
+        mvlv_subst_loc = cluster_graph.nodes[osmid]
+        mvlv_subst_loc['osmid'] = osmid
+        mvlv_subst_loc['load_level'] = 'lv'
+        mvlv_subst_loc['graph_district'] = cluster_subgraph
+        mvlv_subst_list.append(mvlv_subst_loc)
+        
+    return mvlv_subst_list
 
 
-def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, n_cluster):
+'''def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, n_cluster):
     
     """
     get list of location of mvlv substations for load areal
@@ -757,7 +906,7 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, n_cluster):
         #cluster_subgraph = ox.utils_graph.get_largest_component(cluster_subgraph)
         
         # connected_components for each subgraph
-        connected_components_gen=nx.weakly_connected_components(cluster_subgraph)
+        connected_components_gen = nx.weakly_connected_components(cluster_subgraph)
         connected_components_list = list(connected_components_gen)
         connected_components_list.sort(reverse=True)
         
@@ -770,18 +919,24 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, n_cluster):
             
             
         cluster_subgraph = nx.MultiDiGraph(cluster_subgraph.subgraph(largest_cc))
+        cluster_nodes_conn = list(cluster_subgraph.nodes)
         
-
+        dm_cluster = nx.floyd_warshall_numpy(cluster_subgraph, nodelist=cluster_nodes_conn, weight='length')
+        
+        idx = np.where(np.isin(cluster_nodes_conn, cluster_nodes))[0] #PAUL NEW
+        dm_cluster = dm_cluster[idx[:, None], idx] #PAUL NEW
+        cluster_nodes = list(np.array(cluster_nodes_conn)[idx]) #PAUL NEW
+        
         # map cluster_loads with capacity of street_loads
-        cluster_loads = pd.Series(list(cluster_subgraph.nodes)).map(street_loads.capacity).fillna(0).tolist()
-
-        dm_cluster = nx.floyd_warshall_numpy(cluster_subgraph, nodelist=cluster_subgraph.nodes, weight='length')
+        cluster_loads = pd.Series(cluster_nodes).map(street_loads.capacity).fillna(0).tolist()
 
         # compute location of substation based on load center
         load_vector = np.array(cluster_loads) #weighted
         unweighted_nodes = dm_cluster.dot(load_vector)
+        #print(unweighted_nodes)
+        #print(int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0]))
 
-        osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]
+        osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])] #PAUL NEW
         
         
         # todo organize functions
@@ -796,6 +951,8 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, n_cluster):
             ons_max_branch_dist = dm_cluster[cluster_nodes.index(osmid)].max()
             
             if ons_max_branch_dist > ons_dist_threshold:
+                
+                print(ons_max_branch_dist, osmid)
             
                 return False
             
@@ -816,7 +973,7 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads, n_cluster):
         mvlv_subst_list.append(mvlv_subst_loc)
         
     return mvlv_subst_list
-
+'''
 
 
 def add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w_labels):

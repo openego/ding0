@@ -21,7 +21,7 @@ def get_cluster_numbers(la_peak_loads):
 
 
 
-def apply_AgglomerativeClustering(G, inner_node_list, k, round_decimals=True):
+def apply_AgglomerativeClustering(G, k, round_decimals=True):
     
     """
     for graph: G apply_AgglomerativeClustering for k cluster
@@ -30,23 +30,18 @@ def apply_AgglomerativeClustering(G, inner_node_list, k, round_decimals=True):
     return labels
     """
     
-    G_inner = G.subgraph(inner_node_list)
-    
-    if len(inner_node_list) > 1:
+    if len(G.nodes) > 1:
 
         X = []    # collect nodes
-        for node in G_inner.nodes:
-            
-            X.append((G_inner.nodes[node]['x'],G_inner.nodes[node]['y']))
-            
+        for node in G.nodes:
+            X.append((G.nodes[node]['x'],G.nodes[node]['y']))
         X = np.array(X)
-        
 
-        adj_mat_sparse = nx.adjacency_matrix(G_inner)
+        adj_mat_sparse = nx.adjacency_matrix(G)
 
 
         # ensure number of clusters <= number of buildings 
-        if len(X) < k:
+        if k > len(X):
             k=len(X)
 
 
@@ -56,22 +51,9 @@ def apply_AgglomerativeClustering(G, inner_node_list, k, round_decimals=True):
 
         clustering = AgglomerativeClustering(n_clusters=k, linkage='ward', connectivity=adj_mat_sparse).fit(X)
         
-        # return dict containing G_inner.nodes: ClusterId
-        graph_cluster_dict = dict(zip(list(G_inner.nodes), clustering.labels_))
-            
-        
-        # set -1 for nodes without a cluster id
-        # todo: write -1 in config?
-        node_no_cluster_list = list(set(G.nodes)-set(G_inner.nodes))
-        graph_no_cluster_dict = dict(zip(node_no_cluster_list, [-1] * len(node_no_cluster_list)))
-        
-        # merge dict
-        graph_cluster_dict = graph_cluster_dict | graph_no_cluster_dict
-        
-        return graph_cluster_dict
+        return clustering.labels_
         
         
     # graph has only one node
-    # return node:clusterid={node: 0}
-    else: return dict(zip(list(G_inner.nodes), [0]))
+    else: return np.array([0])
     
