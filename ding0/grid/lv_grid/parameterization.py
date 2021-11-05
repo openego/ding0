@@ -27,6 +27,38 @@ def get_peak_load(category, load_profile_categories, load_profiles, area, n_amen
     return load_profiles[load_profile_categories[category]] * area / n_amenities_inside * 1e-3
 
 
+def get_peak_load_for_residential(number_residentials):
+    '''
+    calculate peak load in MW for residential depending on its number at feeder
+
+    SOURCE: Dissertation
+    AUTHOR: Thomas Stetz
+    TITEL: Autonomous Voltage Control Strategies in Distribution Grids with Photovoltaic Systems
+    - Technical and Economic Assessment - Stetz
+    Page: 14 
+    Formula: (2.4)
+
+    $\sqrt[k]{n}$ = k root n or check mardown
+    pl = a - ( b / $\sqrt[k]{n}$)
+
+    e.g. calculation        tranformation kW to MW before return
+    number residentials     peak load [kW]
+                     10     2.5291793904118034
+    Threshold after  35     1.7180038451156543
+    Threshold exceed 36     1.706869146916332
+                     70     1.500011219348335
+                    110     1.406355083981595
+    
+    return peak_load_per_residential
+    '''
+    a = 1.16221
+    b = - 7.14717
+    k = 1.39203
+
+    pl = a - b / number_residentials**(1/k)
+
+    return pl
+
 
 def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_sql_df, buildings_wo_a_sql_df): 
     

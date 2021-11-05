@@ -161,6 +161,10 @@ class LVLoadAreaDing0(RegionDing0):
        Descr
     db_data: :pandas:`pandas.DatetimeIndex<datetimeindex>`
        Descr
+
+    # new osm approach
+    load_area_graph: networkx.MultiDiGraph
+        contains all streets in load_area
     """
 
     def __init__(self, **kwargs):
@@ -203,12 +207,16 @@ class LVLoadAreaDing0(RegionDing0):
             self.peak_load_industrial = self.peak_load_industrial
         if hasattr(self, 'peak_load_agricultural'):
             self.peak_load_agricultural = self.peak_load_agricultural
+        
         if hasattr(self, 'peak_load'):
             self.peak_load = self.peak_load
+            
+        self.peak_load = kwargs.get('peak_load', None)
+        self.load_area_graph = kwargs.get('load_area_graph', False)
 
-            # if load area has got a peak load less than load_area_sat_threshold, it's a satellite
-            if self.peak_load < load_area_sat_load_threshold:
-                self.is_satellite = True
+        # if load area has got a peak load less than load_area_sat_threshold, it's a satellite
+        if self.peak_load < load_area_sat_load_threshold:
+            self.is_satellite = True
 
     @property
     def network(self):
@@ -394,6 +402,7 @@ class LVGridDistrictDing0(RegionDing0):
         self.graph_district = kwargs.get('graph_district', None)
         self.load_level = kwargs.get('load_level', None)
         self.buildings = kwargs.get('buildings_district', None)
+        self.peak_load = kwargs.get('peak_load', None)
         
 
     @property

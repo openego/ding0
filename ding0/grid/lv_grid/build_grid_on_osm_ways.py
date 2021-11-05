@@ -27,7 +27,8 @@ def get_routed_graph(
     input graph representing all streets in lvgd and 
         node of station in graph, all nodes of buildings.
         generator_nodes is none by default due to they are connected 
-        in a ding0 default way at a later point correspondinf to load
+        in a ding0 default way at a later point corresponding to load
+
     remove edges which are not mandatory and return routed graph
     '''
     routed_graph = graph.copy()
@@ -49,11 +50,13 @@ def get_routed_graph(
     return routed_graph
 
 
-# get number of nodes on each feeder leaving the lv station.
-# depending on its number we can calculate the loads we wanna add 
-# for residential by formula of stetz.
-def get_edges(graph, starting_node, feeder, seen, seen_w_feeder, lv_station_nn): 
-
+def get_edges_leaving_feeder(graph, starting_node, feeder, seen, seen_w_feeder, lv_station_nn):
+    """
+    # get {edge: feedeId} leaving the lv station.
+    # depending on its number we can calculate the loads we wanna
+    # add for residential by formula of stetz:
+    # vid parameterization.get_peak_load_for_residential()
+    """
     # check if we already checked this node
     if starting_node not in seen:
 
@@ -75,7 +78,7 @@ def get_edges(graph, starting_node, feeder, seen, seen_w_feeder, lv_station_nn):
                 feeder += 1
 
             # recusrive call to check its target nodes also 
-            get_edges(graph, nodes[1], feeder, seen, seen_w_feeder, lv_station_nn)
+            get_edges_leaving_feeder(graph, nodes[1], feeder, seen, seen_w_feeder, lv_station_nn)
 
     return seen_w_feeder
 
@@ -93,8 +96,8 @@ def add_feeder_to_buildings(lvgd):
     nodes_w_feeder = {}
 
     # get nodes with the feeder they connected with. starting point is lv station.
-    nodes_w_feeder = get_edges(lvgd.graph_district, lvgd.lv_grid._station.osm_id_node, feeder,
-                               seen_nodes, nodes_w_feeder, lvgd.lv_grid._station.osm_id_node)
+    nodes_w_feeder = get_edges_leaving_feeder(lvgd.graph_district, lvgd.lv_grid._station.osm_id_node, feeder,
+                                              seen_nodes, nodes_w_feeder, lvgd.lv_grid._station.osm_id_node)
 
     nodes = lvgd.buildings
     nodes['feeder'] = 0
@@ -180,7 +183,7 @@ def build_branches_on_osm_ways(lvgd):
     # count residentials connected to each feeder
     add_feeder_to_buildings(lvgd)
 
-    return lvgd, shortest_tree_district_graph
+    return lvgd
 
     # get all existing nodes in graph and build for each one
     # lv_cable_dist/ lv_cable_dist_building and add to graph
@@ -210,7 +213,7 @@ def build_branches_on_osm_ways(lvgd):
         lv_load = LVLoadDing0(grid=lvgd.lv_grid,
                               branch_no=i,
                               load_no=i,
-                              peak_load=building.capacity,    # is kn kW, e.g. 1.7 for a residential
+                              peak_load=building.capacity,    # is in kW, e.g. 1.7 for a residential
                               consumption=building.capacity)  # TODO: what here? isnt known yet.
 
         # add lv_load to graph

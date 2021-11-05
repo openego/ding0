@@ -85,7 +85,7 @@ from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
 from grid.lv_grid.clustering import get_cluster_numbers, apply_AgglomerativeClustering
 
-from grid.lv_grid.geo import get_Point_from_x_y, get_points_in_load_area, get_convex_hull_from_points
+from grid.lv_grid.geo import get_Point_from_x_y, get_points_in_load_area, get_convex_hull_from_points, get_bounding_box_from_points
 
 ############ NEW END
 
@@ -621,8 +621,9 @@ class NetworkDing0:
 
     def import_mv_grid_districts(self, session,
                                  mv_grid_districts_no,
-                                 ding0_default,
-                                 need_parameterization):
+                                 ding0_default=True,
+                                 need_parameterization=False,
+                                 create_lvgd_geo_method='convex_hull'):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
         and MV-LV stations, instantiates and initiates objects.
@@ -714,13 +715,12 @@ class NetworkDing0:
                                           lv_grid_districts, lv_stations)
                 
                 
-            else: 
-                
-                
-                # todo: del return. 
+            else:
+
                 # import lv areas and create new lv_grid_districts 
                 self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
-                                                                            need_parameterization)
+                                                                            need_parameterization,
+                                                                            create_lvgd_geo_method)
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
             mv_grid_district.add_peak_demand()        
@@ -730,7 +730,7 @@ class NetworkDing0:
         
         
     def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district, 
-                                                        need_parameterization):
+                                                        need_parameterization, create_lvgd_geo_method):
                 
         """
         Imports load_areas (load areas) from database for a single MV grid_district
@@ -812,23 +812,11 @@ class NetworkDing0:
         
         
         # create load_area objects from rows and add them to graph
-        countrrrr = 0
         for id_db, row in lv_load_areas.iterrows():
-            
-            countrrrr += 1
-            
-            # if countrrrr != 74: # ober unterlottenweiler
-                #  TODO: outer graph is len(G) == 0
-                # TODO: composed_graph = compose_graph(outer_graph, graph_subdiv)
-                # continue
-                #break
-                
-            print(countrrrr)
-                                    
-            # if id_db != 170209: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
+                        
+            # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
             #    continue
-            
-            
+
             # create session to load from (local) DB OSM data 
             session_osm = create_session_osm()
             
@@ -891,7 +879,7 @@ class NetworkDing0:
             outer_graph = add_edge_geometry_entry(outer_graph)
             outer_graph = flatten_graph_components_to_lines(outer_graph, inner_node_list)
             outer_graph = remove_detours(outer_graph)
-            
+
 
             #compose graph
             composed_graph = compose_graph(outer_graph, graph_subdiv) # PAUL NEW changed position order
@@ -1016,17 +1004,16 @@ class NetworkDing0:
             if len(loads_mv_df):
                 # get list of location of substations
                 mvlv_subst_list = add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w_labels)
-                
+            
 
             # create LV load_area object
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
                                            db_data=row,
                                            mv_grid_district=mv_grid_district,
-                                           peak_load=buildings_w_loads_df.capacity.sum()) # contains not only lv loads gens
-                                           #peak_load=row['peak_load']) # = buildings.capacity.sum()
+                                           peak_load=buildings_w_loads_df.capacity.sum(),
+                                           load_area_graph=cluster_graph)
 
-            
-            
+
             # TODO: ORGANISE FCT TO APPROPRIATE LOCATION/ DIR
             # logic for filling zeros
             def get_lvgd_id(la_id_db, cluster_id, max_n_digits=10):
@@ -1047,31 +1034,67 @@ class NetworkDing0:
 
                 return int(la_id + lvgd_id.zfill(need_to_fill_n_digits))
 
-                
+
+            def get_load_center(lv_load_area):
+                """
+                get station which is load center to set its
+                geo_data as load center of load areal.
+                """
+                from shapely.geometry import Point
+                import numpy as np
+                from scipy.spatial.distance import pdist, squareform
+
+                station_peak_loads = []
+                station_coordinates = []
+
+                for lvgd in lv_load_area._lv_grid_districts:
+                    station_peak_loads.append(lvgd.lv_grid._station.peak_load)
+                    station_coordinates.append(lvgd.lv_grid._station.geo_data)
+
+                coordinates = [[p.x, p.y] for p in station_coordinates]
+                coordinates_array = np.array(coordinates)
+                dist_array = pdist(coordinates_array)
+                dist_matrix = squareform(dist_array)
+                unweighted_nodes = dist_matrix.dot(station_peak_loads)
+                load_center_ix = int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])
+
+                return lv_load_area._lv_grid_districts[load_center_ix].lv_grid._station 
     
             # CREATE AND ASSIGN DING0 OBJECTS Station, Grid, District
             # todo: update index with len(stations) !!!!
+            ons_cluster_coord_list = []  # store to calc new load center of la
+            ons_cluster_load_list = []  # store to calc new load center of la
             for mvlv_subst_loc in mvlv_subst_list:
 
                 cluster_id = mvlv_subst_loc.get('cluster') 
                 load_level = mvlv_subst_list[cluster_id].get('load_level')
 
                 lvgd_id = get_lvgd_id(id_db, cluster_id)
-
-                # get convex hull per cluster
                 buildings = buildings_w_loads_df.loc[buildings_w_loads_df.cluster==cluster_id]
-                cluster_geo_list = buildings.geometry.tolist()  # geo of building
-                cluster_geo_list += nodes_w_labels.loc[
-                    nodes_w_labels.cluster==mvlv_subst_loc.get('cluster')].geometry.tolist()
 
+                if (create_lvgd_geo_method == 'convex_hull') | (create_lvgd_geo_method == 'bounding_box'):
+                    # get convex hull per cluster
+                    cluster_geo_list = buildings.geometry.tolist()  # geo of building
+                    cluster_geo_list += nodes_w_labels.loc[
+                        nodes_w_labels.cluster==mvlv_subst_loc.get('cluster')].geometry.tolist()
 
-                if load_level == 'mv':
-                    cluster_geo_list += buildings.nn_coords.tolist() # geo of location of substation
+                    if load_level == 'mv':
+                        cluster_geo_list += buildings.nn_coords.tolist() # geo of location of substation
 
-                # get convex hull for ding0 objects
-                points = get_points_in_load_area(cluster_geo_list)
-                polygon = get_convex_hull_from_points(points)
+                    # get convex hull for ding0 objects
+                    points = get_points_in_load_area(cluster_geo_list)
+                    if create_lvgd_geo_method == 'convex_hull':
+                        polygon = get_convex_hull_from_points(points)
+                    elif create_lvgd_geo_method == 'bounding_box':
+                        polygon = get_bounding_box_from_points(points)
+                    else:
+                        logging.warning(f'create_lvgd_geo_method {create_lvgd_geo_method} not implemented.')
 
+                elif create_lvgd_geo_method == 'off':
+                    polygon = None
+
+                else:
+                    logging.warning(f'create_lvgd_geo_method {create_lvgd_geo_method} not implemented.')
 
                 # create LVGridDistrictDing0
                 lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id, 
@@ -1098,8 +1121,9 @@ class NetworkDing0:
                     grid=lv_grid,
                     lv_load_area=lv_load_area,
                     geo_data=Point(mvlv_subst_loc.get('x'), mvlv_subst_loc.get('y')),
-                    osm_id_node=mvlv_subst_loc.get('osmid'),  # defined node in graph where station is located
-                    peak_load=lv_grid_district.peak_load)
+                    osm_id_node=mvlv_subst_loc.get('osmid')  # defined node in graph where station is located
+                    #, peak_load=lv_grid_district.peak_load
+                )
                                 
                 
                 # assign created objects
@@ -1107,23 +1131,24 @@ class NetworkDing0:
                 # see NetworkDing0.build_lv_grids()
                 lv_grid.add_station(lv_station)
                 lv_grid_district.lv_grid = lv_grid
-                lv_load_area.add_lv_grid_district(lv_grid_district)                
-
+                lv_load_area.add_lv_grid_district(lv_grid_district)
+                
+            lv_load_area_centre_geo_data = get_load_center(lv_load_area).geo_data
 
             # create new centre object for Load Area
             lv_load_area_centre = LVLoadAreaCentreDing0(id_db=id_db,
-                                                        geo_data=wkt_loads(row['geo_centre']), # todo: update with location on street
+                                                        geo_data=lv_load_area_centre_geo_data,
                                                         lv_load_area=lv_load_area,
                                                         grid=mv_grid_district.mv_grid)
+
             # links the centre object to Load Area
-            # todo: update load area center in right appropriate position
             lv_load_area.lv_load_area_centre = lv_load_area_centre
 
             # add Load Area to MV grid district (and add centre object to MV gris district's graph)
             mv_grid_district.add_lv_load_area(lv_load_area)
 
             # todo del return
-            # return lv_load_area
+            # return lv_load_area, buildings_w_loads_df
             # return cluster_graph, mvlv_subst_list, lv_load_area
         
             

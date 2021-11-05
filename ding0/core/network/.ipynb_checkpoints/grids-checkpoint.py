@@ -916,9 +916,6 @@ class LVGridDing0(GridDing0):
             # own grid building
             return build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
             
-            # return self to obtain one lvgd to check its new graph 
-            return self
-            
         else:     # ding0 default
 
             # add required transformers

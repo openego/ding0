@@ -16,7 +16,7 @@ def get_config_osm(key):
     avg_cluster_capacity    : n_cluster = sum(peak_load) / avg_cluster_capacity
                               Clusters are NOT homogenous
                               
-    additional_trafo_capacity: 1.5; so, transformers have max load factor of 70%.
+    additional_trafo_capacity: e.g. 1.5; so, transformers have max load factor of 70%.
                                capacity_to_cover = capacity_of_area * 1.5
                                
                               
@@ -24,12 +24,19 @@ def get_config_osm(key):
 
     config_osm = {
         
-        'srid' : 4326,
+        'srid' : 3035,
         'EARTH_RADIUS_M' : 6_371_009,
         'mv_lv_threshold_capacity' : 200,
-        'avg_cluster_capacity' : 500,
-        'additional_trafo_capacity' : 1.5,
+        'hv_mv_threshold_capacity' : 5500,
+        'additional_trafo_capacity' : 1.0,
+        'avg_trafo_size' : 500,
         'avg_square_meters' : 100,
+        'quadrat_width' : 1000,
+        'dist_edge_segments' : 50,
+        'ons_dist_threshold' : 1500,
+        'buffer_distance' : [5, 25, 50, 100],
+        'unconn_nodes_ratio' : 0.02,
+        'get_fully_conn_graph_number_max_it' : 4,
         
     }
         
@@ -74,7 +81,7 @@ def get_peak_loads():
         'sport'        :  72.72,
         'technical'    :  13.25,
         'public'       :  115.8,
-        'charging_station' : 22.0 / get_config_osm('avg_square_meters'), 
+        'charging_station' : 22000.0 / get_config_osm('avg_square_meters'), 
         'residential' :   17.0847,
         'leftover'         :  0.1
 
@@ -93,6 +100,7 @@ def get_load_profile_categories():
         "lodging": "lodging",
         "education": "education",
         "language_school": "education",
+        "childcare": "education",
         "kindergarten": "education",
         "school": "education",
         "art_school": "education",
@@ -149,6 +157,7 @@ def get_load_profile_categories():
         "biergarten": "restaurant",
         "cafe": "restaurant",
         "fast_food": "restaurant",
+        "food_court": "restaurant",
         "ice_cream": "restaurant",
         "pub": "restaurant",
         "canteen": "restaurant",
@@ -184,7 +193,9 @@ def get_load_profile_categories():
         "yes": "residential",
         "charging_station": "charging_station",
         "public": "public",
+        "archive": "public",
         "public_building": "public",
+        "events_venue": "public",
         "arts_centre": "public",
         "civic": "public",
         "bakehouse": "public",
@@ -211,6 +222,7 @@ def get_load_profile_categories():
         "synagogue": "public",
         "temple": "public",
         "fuel": "public",
+        "leftover": "leftover",
         "chapel": "leftover",
         "place_of_worship": "leftover",
         "toilets": "leftover",
