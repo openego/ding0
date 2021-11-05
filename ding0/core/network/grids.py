@@ -20,7 +20,7 @@ from ding0.core.network import RingDing0, CircuitBreakerDing0
 from ding0.core.network.loads import *
 from ding0.core.network.cable_distributors import MVCableDistributorDing0, LVCableDistributorDing0
 from ding0.grid.mv_grid import mv_routing, mv_connect
-from ding0.grid.lv_grid import build_grid, lv_connect
+from ding0.grid.lv_grid import build_grid, build_grid_on_osm_ways, lv_connect
 from ding0.tools import config as cfg_ding0, pypsa_io, tools
 from ding0.tools.geo import calc_geo_dist
 from ding0.grid.mv_grid.tools import set_circuit_breakers
@@ -907,15 +907,28 @@ class LVGridDing0(GridDing0):
     def build_grid(self):
         """Create LV grid graph
         """
+    
+        if True:  # new approach
 
-        # add required transformers
-        build_grid.transformer(self)
+            # add required transformers
+            build_grid.transformer(self)
+        
+            # own grid building
+            return build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
+            
+            # return self to obtain one lvgd to check its new graph 
+            return self
+            
+        else:     # ding0 default
 
-        # add branches of sectors retail/industrial and agricultural
-        build_grid.build_ret_ind_agr_branches(self.grid_district)
+            # add required transformers
+            build_grid.transformer(self)
 
-        # add branches of sector residential
-        build_grid.build_residential_branches(self.grid_district)
+            # add branches of sectors retail/industrial and agricultural
+            build_grid.build_ret_ind_agr_branches(self.grid_district)
+
+            # add branches of sector residential
+            build_grid.build_residential_branches(self.grid_district)
 
         #self.graph_draw(mode='LV')
 

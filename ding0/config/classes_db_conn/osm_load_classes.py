@@ -22,8 +22,8 @@ srid = 3035
 DB = 'postgresql'
 DB_USER = 'postgres'
 DB_PW   = 'labor'
-DB_Name = 'sandbox_bw' 
-engine_osm = create_engine(DB + '://' + DB_USER + ': ' + DB_PW + '@localhost:5432/' + DB_Name, echo=False)
+DB_Name = 'sandbox' 
+engine_osm = create_engine(DB + '://' + DB_USER + ':' + DB_PW + '@localhost/' + DB_Name, echo=False)
 
 
 '''
@@ -61,7 +61,6 @@ class Building_wo_Amenity(Base):
     geometry   = Column(Geometry('POLYGON'))
     geo_center = Column(Geometry('POINT'))
     name       = Column(String(50))
-    tags       = Column(String(50))
     n_apartments = Column(Float)
     
     
@@ -79,7 +78,6 @@ class Amenities_ni_Buildings(Base):
     amenity  = Column(String(50))
     name     = Column(String(50))
     geometry = Column(Geometry('POINT'))
-    tags     = Column(String(50))        
 
         
         
@@ -98,8 +96,6 @@ class Buildings_with_Amenities(Base):
     geometry_amenity  = Column(Geometry('POINT'))
     geo_center        = Column(Geometry('POINT'))
     name              = Column(String(50))
-    building_tags     = Column(String(50))
-    amenity_tags      = Column(String(50))
     n_amenities_inside = Column(Float)
     n_apartments = Column(Float)
 

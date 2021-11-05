@@ -20,10 +20,10 @@ def create_session_osm():
     DB = 'postgresql'
     DB_USER = 'postgres'
     DB_PW   = 'labor'
-    DB_Name = 'sandbox_bw' # osm data baden-wuerttemberg
+    DB_Name = 'sandbox' # osm data baden-wuerttemberg
 
 
-    engine_osm = create_engine(DB + '://' + DB_USER + ': ' + DB_PW + '@localhost:5432/' + DB_Name, echo=False)
+    engine_osm = create_engine(DB + '://' + DB_USER + ':' + DB_PW + '@localhost/' + DB_Name, echo=False)
 
     Session = sessionmaker(bind=engine_osm)
     
