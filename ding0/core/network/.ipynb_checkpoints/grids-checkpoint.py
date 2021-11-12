@@ -497,7 +497,8 @@ class MVGridDing0(GridDing0):
             for node in self.graph_nodes_sorted():
                 if isinstance(node, LVLoadAreaCentreDing0):
                     # calc distance from MV-LV station to LA centre
-                    dist_node = calc_geo_dist(self.station(), node) / 1e3
+                    srid = 3035  # param due to station is in 4326 and needs to bre transformed to 3035 
+                    dist_node = calc_geo_dist(self.station(), node, srid) / 1e3
                     if dist_node > dist_max:
                         dist_max = dist_node
 
@@ -914,7 +915,7 @@ class LVGridDing0(GridDing0):
             build_grid.transformer(self)
         
             # own grid building
-            return build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
+            build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
             
         else:     # ding0 default
 

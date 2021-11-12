@@ -115,7 +115,7 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
     return branches
 
 
-def calc_geo_dist(node_source, node_target):
+def calc_geo_dist(node_source, node_target, srid=4326):
     """ Calculates the geodesic distance between `node_source` and `node_target`
     incorporating the detour factor specified in :file:`ding0/ding0/config/config_calc.cfg`.
 
@@ -125,7 +125,7 @@ def calc_geo_dist(node_source, node_target):
         source node, member of GridDing0.graph
     node_target: LVStationDing0, GeneratorDing0, or CableDistributorDing0
         target node, member of GridDing0.graph
-
+    srid: defines crs. 4326 by default check config_misc.cfg
     Returns
     -------
     :any:`float`
@@ -134,9 +134,16 @@ def calc_geo_dist(node_source, node_target):
 
     branch_detour_factor = cfg_ding0.get('assumptions', 'branch_detour_factor')
 
-    # notice: geodesic takes (lat,lon)
-    branch_length = branch_detour_factor * geodesic((node_source.geo_data.y, node_source.geo_data.x),
-                                                    (node_target.geo_data.y, node_target.geo_data.x)).m
+    if srid == 4326:
+        # notice: geodesic takes (lat,lon)
+        branch_length = branch_detour_factor * geodesic((node_source.geo_data.y, node_source.geo_data.x),
+                                                        (node_target.geo_data.y, node_target.geo_data.x)).m
+    elif srid == 3035:
+        # NEU weil srid=4326 in config.misc.cfg
+        station_point_4326 = node_source.geo_data  # transform station from griven srid 4326 to 3035
+        proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
+        station_point_3035 = transform(proj_source, station_point_4326)
+        branch_length = LineString([station_point_3035, node_target.geo_data]).length * branch_detour_factor
 
     # ========= BUG: LINE LENGTH=0 WHEN CONNECTING GENERATORS ===========
     # When importing generators, the geom_new field is used as position. If it is empty, EnergyMap's geom

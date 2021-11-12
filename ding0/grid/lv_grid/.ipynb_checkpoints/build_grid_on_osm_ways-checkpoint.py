@@ -16,6 +16,12 @@ __author__     = "nesnoj, gplssm"
 import networkx as nx
 import osmnx as ox
 
+from ding0.core.network.cable_distributors import LVCableDistributorDing0
+from ding0.core.network.loads import LVLoadDing0
+
+from config.config_lv_grids_osm import get_config_osm
+
+
 import logging
 logger = logging.getLogger('ding0')
 
@@ -54,7 +60,7 @@ def get_edges_leaving_feeder(graph, starting_node, feeder, seen, seen_w_feeder, 
     """
     # get {edge: feedeId} leaving the lv station.
     # depending on its number we can calculate the loads we wanna
-    # add for residential by formula of stetz:
+    # at later point add for residential by formula of stetz:
     # vid parameterization.get_peak_load_for_residential()
     """
     # check if we already checked this node
@@ -83,9 +89,10 @@ def get_edges_leaving_feeder(graph, starting_node, feeder, seen, seen_w_feeder, 
     return seen_w_feeder
 
 
-def add_feeder_to_buildings(lvgd):
+def add_feeder_to_buildings(lvgd, graph):
     """
-    # add feeder and the number of residentials connected to feeder 
+    for each feeder/ Strang leaving ons
+    add id for feeder and the number of residentials connected to feeder
     """
 
     # key is node/ osmid, value is feeder
@@ -96,8 +103,9 @@ def add_feeder_to_buildings(lvgd):
     nodes_w_feeder = {}
 
     # get nodes with the feeder they connected with. starting point is lv station.
-    nodes_w_feeder = get_edges_leaving_feeder(lvgd.graph_district, lvgd.lv_grid._station.osm_id_node, feeder,
-                                              seen_nodes, nodes_w_feeder, lvgd.lv_grid._station.osm_id_node)
+    nodes_w_feeder = get_edges_leaving_feeder(graph, lvgd.lv_grid._station.osm_id_node,
+                                              feeder, seen_nodes, nodes_w_feeder,
+                                              lvgd.lv_grid._station.osm_id_node)
 
     nodes = lvgd.buildings
     nodes['feeder'] = 0
@@ -174,88 +182,124 @@ def build_branches_on_osm_ways(lvgd):
     # obtain shortest_tree_graph_district from graph_district
     # due to graph_district contains all osm ways in district 
     # e.g. circles and it is not shortest paths
-    shortest_tree_district_graph = get_routed_graph(
-        lvgd.graph_district,  # graph in district
-        lvgd.lv_grid._station.osm_id_node,  # osmid of node representating station
-        lvgd.buildings.nn.tolist())    
+    # 1.) start with filtering for loads < 100kW.
+    #     they will be connected in grid 
+    # 2.) get loads w. capacity >= 100kW and capacity < 200 kW
+    #     and route em via shortest path to station. connect em 
+    #     with em own feeder/ cabel
+    # 3.) each load with capacity >= 200kW and < 5.5 MW have its 
+    #     own station to which it is connected
 
-    # add feeder id to each feeder leavin ons and
-    # count residentials connected to each feeder
-    add_feeder_to_buildings(lvgd)
+    # get shortest path tree for all loads < 100 kW
+    graph_district = lvgd.graph_district
+    # check if there is a graph. a graph only exists for lv grids with 
+    # each load has a capacity < 100 kW
+    if graph_district:
 
-    return lvgd
+        # separate loads w. capacity
+        lv_loads_grid = lvgd.buildings.loc[
+            lvgd.buildings.capacity < get_config_osm('lv_threshold_capacity')]
 
-    # get all existing nodes in graph and build for each one
-    # lv_cable_dist/ lv_cable_dist_building and add to graph
-    # build branch between each building and nearest node in ways
-    for i, row in lvgd.buildings.iterrows():
+        lv_loads_to_station = lvgd.buildings.loc[
+            (get_config_osm('lv_threshold_capacity') <= lvgd.buildings.capacity) &
+            (lvgd.buildings.capacity < get_config_osm('mv_lv_threshold_capacity'))]
 
-        # cable distributor to divert from main branch
-        lv_cable_dist = LVCableDistributorDing0(
-            grid=lvgd.lv_grid,
-            branch_no=i,
-            load_no=i,
-            geo_data=row.nn_coords)
-        # add lv_cable_dist to graph
-        lvgd.lv_grid.add_cable_dist(lv_cable_dist)
+        shortest_tree_district_graph = get_routed_graph(
+            graph_district,  # graph in district
+            lvgd.lv_grid._station.osm_id_node,  # osmid of node representating station
+            lv_loads_grid.nn.tolist())
 
-        # cable distributor within building (to connect load+geno)
-        lv_cable_dist_building = LVCableDistributorDing0(
-            grid=lvgd.lv_grid,
-            branch_no=i,
-            load_no=i,
-            in_building=True,
-            geo_data=row.raccordement_building)
-        # add lv_cable_dist_building to graph
-        lvgd.lv_grid.add_cable_dist(lv_cable_dist_building)
+        # add feeder id to each feeder leaving ons and
+        # count residentials connected to each feeder
+        # but only for lv_loads_grid due to higher loads 
+        # are considered on them own
+        add_feeder_to_buildings(lvgd, shortest_tree_district_graph)
 
-        # create an instance of Ding0 LV load
-        lv_load = LVLoadDing0(grid=lvgd.lv_grid,
-                              branch_no=i,
-                              load_no=i,
-                              peak_load=building.capacity,    # is in kW, e.g. 1.7 for a residential
-                              consumption=building.capacity)  # TODO: what here? isnt known yet.
+        # TODO: ADD LVCableDistributorDing0 FOR NODES IN GRAPH: shortest_tree_district_graph
+        # ADD BRANCHES TO CONNECT LVCableDistributorDing0
 
-        # add lv_load to graph
-        lvgd.lv_grid.add_load(lv_load)
+        # PROCESSING LV LOADS W. CAPACITY < 100 KW
+        # add LVCableDistributorDing0 for lv_loads_grid buildings and
+        # em nearest nodes. add load to building.
+        # build branch between each building and nearest node in ways
+        for i, row in lv_loads_grid.iterrows():
 
-        # connect load
+            # cable distributor to divert from main branch
+            lv_cable_dist = LVCableDistributorDing0(
+                grid=lvgd.lv_grid,
+                branch_no=i,
+                load_no=i,
+                geo_data=row.nn_coords)
+            # add lv_cable_dist to graph
+            lvgd.lv_grid.add_cable_dist(lv_cable_dist)
+
+            # cable distributor within building (to connect load+geno)
+            lv_cable_dist_building = LVCableDistributorDing0(
+                grid=lvgd.lv_grid,
+                branch_no=i,
+                load_no=i,
+                in_building=True,
+                geo_data=row.raccordement_building)
+            # add lv_cable_dist_building to graph
+            lvgd.lv_grid.add_cable_dist(lv_cable_dist_building)
+
+            # create an instance of Ding0 LV load
+            lv_load = LVLoadDing0(grid=lvgd.lv_grid,
+                                  branch_no=i,
+                                  load_no=i,
+                                  peak_load=row.capacity,  # in kW
+                                  consumption=row.capacity * 1000)  # TODO: what here? isnt known yet.
+
+            # add lv_load to graph
+            lvgd.lv_grid.add_load(lv_load)
+
+            # connect load
 
 
+            # TODO:
+            # route each load in lv_loads_to_station to get edges to add as cables
+            # for i, row in lv_loads_to_station.iterrows():
+            # get shortest path from row.nn to statio_osm_id
+            # get its coords and total length
+            # add 
+            # add it as ding0Branch 
+
+    else:  # there is no graph, thus, each load has a capacity >= 200 kW
+        pass
 
         # get cables to add
         
-        if .15 <= capacity <= .2:
-            cable_type = 'NAYY 4x120 SE'
-            cables = [cable_type, cable_type]
-        elif .1 <= capacity < .15:
-            cable_type = 'NAYY 4x150 SE'
-            cables = [cable_type]
-        elif .5 <= capacity < .1:
-            cable_type = 'NAYY 4x120 SE'
-            cables = [cable_type]
-        elif capacity < .5:
-            cable_type = 'NAYY 4x50 SE'
-            cables = [cable_type]
-        else:
-            logger.warning(f'capacity {building.capacity} isnt covered!')
+        #if .15 <= capacity <= .2:
+        #    cable_type = 'NAYY 4x120 SE'
+        #    cables = [cable_type, cable_type]
+        #elif .1 <= capacity < .15:
+        #    cable_type = 'NAYY 4x150 SE'
+        #    cables = [cable_type]
+        #elif .5 <= capacity < .1:
+        #    cable_type = 'NAYY 4x120 SE'
+        #    cables = [cable_type]
+        #elif capacity < .5:
+        #    cable_type = 'NAYY 4x50 SE'
+        #    cables = [cable_type]
+        #else:
+        #    logger.warning(f'capacity {building.capacity} isnt covered!')
 
         # add mandatory cable
-        for i_cable, cable in enumerate(cables):
-            grid.add("Line", f"{capacity_lvl}_building_connecting_cable_" +
-                     str(i) + "_" + str(i_cable), type=cable,
-                     bus0="osm_id_" + str(i),
-                     bus1="osm_id_" + str(building.nn),
-                     length=building.nn_dist * 1e-3)
-            grid.lines.loc[f"{capacity_lvl}_building_connecting_cable_" +
-                           str(i) + "_" + str(i_cable), 'coordinates'] = \
-                str([[x_b, y_b], [x_nn, y_nn]])
-            grid.lines.loc[f"{capacity_lvl}_building_connecting_cable_" +
-                           str(i) + "_" + str(i_cable),
-                           'street_type'] = 'building_to_street'
+        #for i_cable, cable in enumerate(cables):
+        #    grid.add("Line", f"{capacity_lvl}_building_connecting_cable_" +
+        #             str(i) + "_" + str(i_cable), type=cable,
+        #             bus0="osm_id_" + str(i),
+        #             bus1="osm_id_" + str(building.nn),
+        #             length=building.nn_dist * 1e-3)
+        #    grid.lines.loc[f"{capacity_lvl}_building_connecting_cable_" +
+        #                   str(i) + "_" + str(i_cable), 'coordinates'] = \
+        #        str([[x_b, y_b], [x_nn, y_nn]])
+        #    grid.lines.loc[f"{capacity_lvl}_building_connecting_cable_" +
+        #                   str(i) + "_" + str(i_cable),
+        #                   'street_type'] = 'building_to_street'
                 
     # build branches for each edge in shortest_tree_district_graph
-    add_way_lines(grid, routed_graph, lv_vnom)
+    # add_way_lines(grid, routed_graph, lv_vnom)
     
     
     # TODO: what to do with average_load, average_consumption?

@@ -26,8 +26,9 @@ def get_config_osm(key):
         
         'srid' : 3035,
         'EARTH_RADIUS_M' : 6_371_009,
-        'mv_lv_threshold_capacity' : 200,
-        'hv_mv_threshold_capacity' : 5500,
+        'lv_threshold_capacity' : 100,      # < 100kW connected to grid
+        'mv_lv_threshold_capacity' : 200,   # 100 to < 200kW connected to station directly
+        'hv_mv_threshold_capacity' : 5500,  # 200 to < 5.5MW own station with trafos
         'additional_trafo_capacity' : 1.0,
         'avg_trafo_size' : 500,
         'avg_square_meters' : 100,
