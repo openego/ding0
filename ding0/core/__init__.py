@@ -2344,11 +2344,9 @@ class NetworkDing0:
                 if load_area.id_db != 4488:
                     continue
                 else:
-                    print('id_db', load_area.id_db)
                     for lv_grid_district in load_area.lv_grid_districts():
-                        print('id_db', lv_grid_district.id_db)
-                    #    lv_grid_district.lv_grid.build_grid()
-                return load_area
+                        print(str(lv_grid_district))
+                        return load_area, lv_grid_district.lv_grid.build_grid()
 
         logger.info('=====> LV model grids created')
 

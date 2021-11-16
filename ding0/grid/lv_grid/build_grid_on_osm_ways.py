@@ -48,19 +48,28 @@ def get_routed_graph(
     edges_to_del = []
     for edge in list(graph.edges()):
         if edge not in edges_to_keep:
-            edges_to_del.append(edge)
+            if station_node not in edge:
+                edges_to_del.append(edge)
     routed_graph.remove_edges_from(edges_to_del)
     logging.info('Routing shortest path for each node to station. '
                  f'{len(edges_to_del)} edges removed in graph to obtain '
                  'shortest path tree.')
+    # due to edges are removed, nodes which are not connected anymore needs to be removed also
+    # e.g. nodes which representing intersections on ways but not mandatory for shortest tree
+    # graph to route loads to station need to be removed to dont add as ding0CableDist
+    for loose_components in list(nx.weakly_connected_components(routed_graph)):
+        if len(loose_components) == 1:  # there is only one not conencted node
+            for node in loose_components:
+                routed_graph.remove_node(node)
+
     return routed_graph
 
 
 def get_edges_leaving_feeder(graph, starting_node, feeder, seen, seen_w_feeder, lv_station_nn):
     """
-    # get {edge: feedeId} leaving the lv station.
-    # depending on its number we can calculate the loads we wanna
-    # at later point add for residential by formula of stetz:
+    # get {edge: feederId} leaving the lv station.
+    # depending on its number at later its possible to
+    # add load residentials per feeder by formula of stetz:
     # vid parameterization.get_peak_load_for_residential()
     """
     # check if we already checked this node
@@ -79,12 +88,19 @@ def get_edges_leaving_feeder(graph, starting_node, feeder, seen, seen_w_feeder, 
         # for each node we received of starting node
         for nodes in new_target_nodes:
 
-            # increment feeder as long as edge is leavong the lv station
+            # increment feeder as long as edge is leaving the lv station
             if starting_node == lv_station_nn:
                 feeder += 1
 
+            # get node connected via edge to starting node to follow 
+            # itd edges until end to give these edges all same feeder id
+            if nodes[1] == starting_node:
+                node = nodes[0]
+            else:
+                node = nodes[1]
+
             # recusrive call to check its target nodes also 
-            get_edges_leaving_feeder(graph, nodes[1], feeder, seen, seen_w_feeder, lv_station_nn)
+            seen_w_feeder = get_edges_leaving_feeder(graph, node, feeder, seen, seen_w_feeder, lv_station_nn)
 
     return seen_w_feeder
 
@@ -109,14 +125,19 @@ def add_feeder_to_buildings(lvgd, graph):
 
     nodes = lvgd.buildings
     nodes['feeder'] = 0
-    nodes['n_residential_at_this_feeder'] = 0
+    # init n_residential_at_this_feeder with number_households
+    # afterwards loads < 100 kW will be grouped per feeder and
+    # n_residential_at_this_feeder will be updated but in this
+    # way, loads >= 100 kW have value for n_residential_at_this_feeder
+    nodes['n_residential_at_this_feeder'] = nodes['number_households']
 
     # due to buildings are not in graph, update em nearest nodes: loc[buildings.nn, 'feeder']
     for building_nearest_node, feeder_id in nodes_w_feeder.items():
         nodes.loc[nodes.nn == building_nearest_node, 'feeder'] = feeder_id
 
     # get number residentials per feeder
-    nodes.loc[nodes['category'] == 'residential', 'n_residential_at_this_feeder'] = nodes[nodes['category'] == 'residential'].groupby('feeder')['number_households'].transform('count')
+    nodes = nodes[nodes.capacity < get_config_osm('lv_threshold_capacity')]
+    nodes.loc[nodes['category'] == 'residential', 'n_residential_at_this_feeder'] = nodes[nodes['category'] == 'residential'].groupby('feeder')['number_households'].transform('sum')
 
 
 def add_lines(grid, graph, lv_vnom, cable_type='NAYY 4x120 SE'):
@@ -190,30 +211,45 @@ def build_branches_on_osm_ways(lvgd):
     # 3.) each load with capacity >= 200kW and < 5.5 MW have its 
     #     own station to which it is connected
 
-    # get shortest path tree for all loads < 100 kW
-    graph_district = lvgd.graph_district
-    # check if there is a graph. a graph only exists for lv grids with 
-    # each load has a capacity < 100 kW
-    if graph_district:
-
-        # separate loads w. capacity
+    
+    # check if there is a graph. a graph only exists for lv grids 
+    # where each load alone has a capacity < 200 kW
+    if lvgd.graph_district:
+        
+        # separate loads w. capacity: loads < 100 kW connected to grid
         lv_loads_grid = lvgd.buildings.loc[
             lvgd.buildings.capacity < get_config_osm('lv_threshold_capacity')]
 
-        lv_loads_to_station = lvgd.buildings.loc[
-            (get_config_osm('lv_threshold_capacity') <= lvgd.buildings.capacity) &
-            (lvgd.buildings.capacity < get_config_osm('mv_lv_threshold_capacity'))]
-
+        # get graph for loads < 100 kW
         shortest_tree_district_graph = get_routed_graph(
-            graph_district,  # graph in district
+            lvgd.graph_district,  # graph in district
             lvgd.lv_grid._station.osm_id_node,  # osmid of node representating station
-            lv_loads_grid.nn.tolist())
-
+            lv_loads_grid.nn.tolist())             # list of nodes connected to staion
+        
+        # make shortest_tree_district_graph to undirected due to 
+        # dont need duplicated edegs u to v and v to u
+        # furthermore mandatory for add_feeder_to_buildings
+        # due to graph.edges(node) only wokring for undirected graph
+        shortest_tree_district_graph = shortest_tree_district_graph.to_undirected()
+        
         # add feeder id to each feeder leaving ons and
         # count residentials connected to each feeder
         # but only for lv_loads_grid due to higher loads 
         # are considered on them own
         add_feeder_to_buildings(lvgd, shortest_tree_district_graph)
+        
+        # separate loads w. capacity: loads < 100 kW connected to grid
+        # update with number residentials per feeder and feeder id
+        lv_loads_grid = lvgd.buildings.loc[
+            lvgd.buildings.capacity < get_config_osm('lv_threshold_capacity')]
+
+
+        # loads 100 - 200 kW connected to lv station diretly
+        lv_loads_to_station = lvgd.buildings.loc[
+            (get_config_osm('lv_threshold_capacity') <= lvgd.buildings.capacity) &
+            (lvgd.buildings.capacity < get_config_osm('mv_lv_threshold_capacity'))]
+        
+        return lv_loads_grid, lv_loads_to_station, shortest_tree_district_graph
 
         # TODO: ADD LVCableDistributorDing0 FOR NODES IN GRAPH: shortest_tree_district_graph
         # ADD BRANCHES TO CONNECT LVCableDistributorDing0
@@ -264,7 +300,11 @@ def build_branches_on_osm_ways(lvgd):
             # add 
             # add it as ding0Branch 
 
-    else:  # there is no graph, thus, each load has a capacity >= 200 kW
+    # there is no graph, thus, each load has a capacity >= 200 kW
+    # there exist the node for the load and the next nearest osm node
+    # the next osm node is located on a osm way to be able to route
+    # the station along streets
+    else:
         pass
 
         # get cables to add

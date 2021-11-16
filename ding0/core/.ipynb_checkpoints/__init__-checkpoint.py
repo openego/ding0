@@ -843,8 +843,8 @@ class NetworkDing0:
                 # kann es möglich sein, dass dort keine Straßen zu finden sind, weil zensus daten korrupt.
                 logger.warning(f'ways_sql_df.empty. No ways found in MV {mv_grid_district}, LA {id_db}')
                 continue
-        
-        
+
+
             # call to_shape(ways.geometry) to transform WKBElement to  
             ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
             
@@ -2344,11 +2344,9 @@ class NetworkDing0:
                 if load_area.id_db != 4488:
                     continue
                 else:
-                    print('id_db', load_area.id_db)
                     for lv_grid_district in load_area.lv_grid_districts():
-                        print('id_db', lv_grid_district.id_db)
-                    #    lv_grid_district.lv_grid.build_grid()
-                return load_area
+                        print(str(lv_grid_district))
+                        return load_area, lv_grid_district.lv_grid.build_grid()
 
         logger.info('=====> LV model grids created')
 
