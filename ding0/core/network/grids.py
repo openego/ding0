@@ -909,7 +909,7 @@ class LVGridDing0(GridDing0):
         """Create LV grid graph
         """
     
-        if False:  # new approach
+        if True:  # new approach
 
             # add required transformers
             build_grid.transformer(self)

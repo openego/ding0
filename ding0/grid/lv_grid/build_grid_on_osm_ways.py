@@ -161,7 +161,7 @@ def get_feeder_cable_type_dict(lvgd):
 
     feeder_cable_type_dict = {}
     for feeder_id in feeder_ids:
-        I_max_load = lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id].capacity.sum() / (3 ** 0.5 * 0.4) / cos_phi_load
+        I_max_load = lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id].capacity.sum() / (3 ** 0.5 * v_nom) / cos_phi_load
 
         # determine suitable cable for this current
         suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
@@ -389,6 +389,7 @@ def build_branches_on_osm_ways(lvgd):
                                   load_no=i,
                                   peak_load=row.capacity,  # in kW
                                   consumption=row.capacity * 1000)  # TODO: what here? isnt known yet.
+
 
             # add lv_load to graph
             lvgd.lv_grid.add_load(lv_load)

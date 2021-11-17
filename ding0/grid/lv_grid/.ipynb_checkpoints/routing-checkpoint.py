@@ -56,25 +56,23 @@ def update_ways_geo_to_shape(ways_sql_df):
     update_ways_geo_to_shape
     after laoding from DB
     """
-    
+
     ways_sql_df['geometry'] = ways_sql_df.apply(lambda way: to_shape(way.geometry).coords, axis=1)
-    
+
     return ways_sql_df
 
 
-
 def create_buffer_polygons(polygon):
-    
+
     """
     todo: write doc
     """
     buffer_list = get_config_osm('buffer_distance')
-            
+
     buffer_poly_list = [polygon.convex_hull.buffer(buffer_dist) for buffer_dist in buffer_list] 
     buffer_poly_list.insert(0, Polygon(polygon.exterior).buffer(buffer_list[0])) # PAUL NEW # due to fast within operator, import poly needs to be buffered
     
     return buffer_poly_list
-
 
 
 def build_graph_from_ways(ways):
@@ -128,6 +126,7 @@ def graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list):
     
     """
     src: https://www.matecdev.com/posts/point-in-polygon.html
+    TODO: write doc.
     """
     
     nodes = flatten(ways_sql_df.nodes.tolist())
@@ -152,6 +151,9 @@ def graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list):
 
 
 def truncate_graph_nodes(graph, nested_node_list, poly_idx):
+    """
+    todo: write doc.
+    """
     G = graph.copy()
     G.remove_nodes_from(nested_node_list[poly_idx])
     return G
@@ -159,14 +161,14 @@ def truncate_graph_nodes(graph, nested_node_list, poly_idx):
 
 
 def compose_graph(outer_graph, graph_subdiv):
-    
+
     """
     composed_graph has all nodes & edges of both graphs, including attributes
     Where the attributes conflict, it uses the attributes of graph_subdiv_directed.
     compose conn_graph with graph_subdiv_directed to have subdivides edges of
     graph_subdiv_directed in conn_graph
     """
-    
+
     composed_graph = nx.compose(outer_graph, graph_subdiv)
     
     if not nx.is_weakly_connected(composed_graph):
@@ -189,7 +191,7 @@ def nodes_connected_component(G, inner_node_list):
 
 def get_fully_conn_graph(G, nlist): #nested_node_list
     """
-    TODO. write doc.
+    TODO. Paul writes doc.
     """
 
     poly_idx = 0 
@@ -331,6 +333,9 @@ def flatten_graph_components_to_lines(G, inner_node_list):
     return G
 
 def remove_detours(G):
+    """
+    todo. write doc.
+    """
     #G = G.copy()
     #todo: config transfer
     edges = [(u,v,k,d['length'], LineString(d['geometry'].boundary).length) for u,v,k,d in G.edges(keys=True, data=True) if d['length']>=1500]
@@ -340,6 +345,9 @@ def remove_detours(G):
     return G
 
 def remove_parallels(G):
+    """
+    write doc.
+    """
     # from https://github.com/gboeing/osmnx/blob/main/osmnx/utils_graph.py#L341
     #G = G.copy()
     to_remove = []
@@ -356,6 +364,9 @@ def remove_parallels(G):
     return G
 
 def remove_parallels_and_loops(G):
+    """
+    todo. write doc.
+    """
     # from https://github.com/gboeing/osmnx/blob/main/osmnx/utils_graph.py#L341
     #G = G.copy()
     to_remove = []
@@ -926,7 +937,6 @@ def add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w
     loads_mv_df['y'] = loads_mv_df.apply(lambda x: x.nn_coords.y, axis=1)
 
     loads_mv_df['node_type'] = loads_mv_df.index.map(nodes_w_labels.node_type)
-    loads_mv_df['osm_id_building']: loads_mv_df.index.tolist()
 
     loads_mv_df['osmid'] = loads_mv_df['nn']
     loads_mv_df['load_level'] = 'mv'
@@ -936,3 +946,76 @@ def add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w
     mvlv_subst_list += loads_mv_df.to_dict(orient='records')
 
     return mvlv_subst_list
+
+
+# mv trafo placement
+def mv_trafo_placement(cluster_graph, mvlv_subst_list):
+    """
+    For mv loads, locate trafo in building and add edge from
+    building to graph instead keeping trafo at nearest node 
+    of building in graph.
+    """
+    for mvlv_subst in mvlv_subst_list:
+        if mvlv_subst.get('load_level') == 'mv':
+            # set values for mv
+            name = mvlv_subst.get('osm_id_building')
+            mvlv_subst['osmid'] = name
+            x = mvlv_subst.get('raccordement_building').x
+            y = mvlv_subst.get('raccordement_building').y
+            mvlv_subst['x'] = x
+            mvlv_subst['y'] = y
+
+            # add node to graph
+            cluster_graph.add_node(
+                name,x=x,y=y, node_type='non_synthetic', cluster=mvlv_subst.get('cluster'))
+            # add edge to graph
+            line = LineString([mvlv_subst.get('raccordement_building'), mvlv_subst.get('nn_coords')])
+            cluster_graph.add_edge(name, mvlv_subst.get('nn'),
+                                   geometry=line,length=line.length,highway='trafo_graph_connect')
+            cluster_graph.add_edge(mvlv_subst.get('nn'), name,
+                                   geometry=line,length=line.length,highway='trafo_graph_connect')
+
+
+# logic for filling zeros
+def get_lvgd_id(la_id_db, cluster_id, max_n_digits=10):
+    """
+    param: lvgd
+           max_n_digits defines number of digits a la or lvgd should have
+    due to la ids and lvgd ids should have a length of 10 fill zeros
+    new id looks like la_id (what is id_db) + filling zeros + cluster id of lvgd
+    return new id
+    """
+    # getting la_id and its length given by ding0
+    la_id = str(la_id_db)
+
+    # getting cluster id and its length computed in new approach
+    lvgd_id = str(cluster_id)
+    need_to_fill_n_digits = max_n_digits - len(la_id)
+
+    return int(la_id + lvgd_id.zfill(need_to_fill_n_digits))
+
+
+def get_load_center(lv_load_area):
+    """
+    get station which is load center to set its
+    geo_data as load center of load areal.
+    """
+    from shapely.geometry import Point
+    import numpy as np
+    from scipy.spatial.distance import pdist, squareform
+
+    station_peak_loads = []
+    station_coordinates = []
+
+    for lvgd in lv_load_area._lv_grid_districts:
+        station_peak_loads.append(lvgd.lv_grid._station.peak_load)
+        station_coordinates.append(lvgd.lv_grid._station.geo_data)
+
+    coordinates = [[p.x, p.y] for p in station_coordinates]
+    coordinates_array = np.array(coordinates)
+    dist_array = pdist(coordinates_array)
+    dist_matrix = squareform(dist_array)
+    unweighted_nodes = dist_matrix.dot(station_peak_loads)
+    load_center_ix = int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])
+
+    return lv_load_area._lv_grid_districts[load_center_ix].lv_grid._station
