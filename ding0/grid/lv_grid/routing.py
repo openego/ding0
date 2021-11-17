@@ -178,63 +178,58 @@ def compose_graph(outer_graph, graph_subdiv):
 
 
 def nodes_connected_component(G, inner_node_list):
+    """
+    todo. write doc.
+    """
     nodes = [(cc, len(set(cc)&set(inner_node_list))) for cc in nx.weakly_connected_components(G)]
     largest_cc = max(nodes,key=lambda item:item[1])[0]
     G = nx.MultiDiGraph(G.subgraph(largest_cc))
     return G
 
 
-def get_fully_conn_graph(graph, nested_node_list):
-    
+def get_fully_conn_graph(G, nlist): #nested_node_list
     """
-    TODO. write doc
+    TODO. write doc.
     """
-    
+
     poly_idx = 0 
-    graph_min = truncate_graph_nodes(graph, nested_node_list, poly_idx)
-    
-    if nx.number_weakly_connected_components(graph_min) > 1:
-        
-        nodes_to_connect = graph_min.nodes()
-        conn_graph_nodes = ox.utils_graph.get_largest_component(graph_min).nodes()
-        unconn_nodes_iter_list = []
-        max_it = len(nested_node_list) - 1    # todo: update config: get_config_osm('get_fully_conn_graph_number_max_it')
-        unconn_nodes_ratio = get_config_osm('unconn_nodes_ratio')
-        
-        while not all(node in conn_graph_nodes for node in nodes_to_connect):
-            
+    G_min = truncate_graph_nodes(G, nlist, poly_idx)
+    max_it = len(nlist) - 1
+
+    if nx.number_weakly_connected_components(G_min) > 1:
+
+        G_c_max = nodes_connected_component(G, G_min.nodes())
+        nodes_to_connect = set(G_c_max.nodes) & set(G_min.nodes)
+        G_c = nodes_connected_component(G_min, G_min.nodes())
+
+        while not all(node in G_c.nodes for node in nodes_to_connect):
+
             poly_idx += 1
-            
-            buffer_graph = truncate_graph_nodes(graph, nested_node_list, poly_idx)
-            
-            #conn_graph = ox.utils_graph.get_largest_component(buffer_graph) # wie schnell?
-            conn_graph = nodes_connected_component(buffer_graph, nodes_to_connect) # wie schnell?
-            conn_graph_nodes = conn_graph.nodes()
-            
-            unconn_nodes = list(set(nodes_to_connect)-set(conn_graph_nodes))
-            unconn_nodes_iter_list.append(unconn_nodes)
-                        
-            logger.warning(f'Finding connected graph, iteration {poly_idx} of max. {max_it}.')
-            logger.warning(f'Finding connected graph, number of unconnected nodes is {len(unconn_nodes_iter_list[-1])}.')
-            
-            if len(unconn_nodes_iter_list) > 1:
-                if unconn_nodes_iter_list[-2] == unconn_nodes_iter_list[-1]:
-                    
-                    if len(unconn_nodes_iter_list[-1]) / len(nodes_to_connect) < unconn_nodes_ratio: 
-                        
-                        logger.warning(f'Finding connected graph, removed number of nodes {len(unconn_nodes_iter_list[-1])}. Break.')
-                        break
-            
+            G_buff = truncate_graph_nodes(G, nlist, poly_idx)
+            G_c = nodes_connected_component(G_buff, nodes_to_connect) 
+
+            unconn_nodes = list(set(nodes_to_connect)-set(G_c.nodes))
+
+            if len(unconn_nodes) == 0:
+
+                print(f'Finding connected graph, iteration {poly_idx} of max. {max_it}.')
+                break
+
             if poly_idx >= max_it:
 
-                logger.warning(f'Finding connected graph, max. iterations {max_it} trespassed. Break.')
+                print(f'Finding connected graph, max. iterations {max_it} trespassed. Break.')
                 break
+
+        else:
+            print(f'Found connected graph, iteration {poly_idx} of max. {max_it}.')
+            return G_c
+
     else:
-        
+
         logger.warning(f'Graph already fully connected.')
-        conn_graph = graph
-        
-    return conn_graph
+        G_c = G_min
+
+    return G_c
 
 
 def split_conn_graph(conn_graph, inner_node_list):
