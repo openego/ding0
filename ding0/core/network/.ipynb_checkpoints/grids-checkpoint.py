@@ -901,6 +901,7 @@ class LVGridDing0(GridDing0):
             Description #TODO
         """
         # THIS IS NOT WORKING FOR ME. e.g.
+        # Create two LVCableDist as a and b
         # a = LVCableDist_mvgd_40_lvgd_4488000000_2274291202
         # b = LVCableDist_mvgd_40_lvgd_4488000000_2274291202
         # self._cable_distributors = []
@@ -937,7 +938,7 @@ class LVGridDing0(GridDing0):
             build_grid.transformer(self)
         
             # own grid building
-            return build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
+            build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
             
         else:     # ding0 default
 

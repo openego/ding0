@@ -15,6 +15,7 @@ __author__     = "nesnoj, gplssm"
 
 import networkx as nx
 import osmnx as ox
+from shapely.geometry import LineString
 
 from ding0.core.network import BranchDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
@@ -176,7 +177,7 @@ def get_feeder_cable_type_dict(lvgd, cable_lf, cos_phi_load, v_nom):
     return feeder_cable_type_dict
 
 
-def get_cable_type_by_load(capacity, cable_lf, cos_phi_load, v_nom):
+def get_cable_type_by_load(lvgd, capacity, cable_lf, cos_phi_load, v_nom):
     """ get cable type for given capacity as param """
     I_max_load = capacity / (3 ** 0.5 * v_nom) / cos_phi_load
 
@@ -354,7 +355,6 @@ def build_branches_on_osm_ways(lvgd):
                         kind='cable',
                         grid=lvgd.lv_grid,
                         type=cable_type,
-                        geometry=edge.geometry,
                         id_db='branch_{branch}_{load}'.format(
                             branch=branch_no,
                             load=u)))  # load has to be a unique id to avoid duplicates
@@ -369,7 +369,6 @@ def build_branches_on_osm_ways(lvgd):
                         kind='cable',
                         grid=lvgd.lv_grid,
                         type=cable_type,
-                        geometry=edge.geometry,
                         id_db='branch_{branch}_{load}'.format(
                             branch=branch_no,
                             load=v)))  # load has to be a unique id to avoid duplicates
@@ -404,7 +403,7 @@ def build_branches_on_osm_ways(lvgd):
             # get branch_no
             branch_no = node_feederId_dict.get(v)
             # get cable_type
-            cable_type = get_cable_type_by_load(capacity, cable_lf, cos_phi_load, v_nom)
+            cable_type = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
 
             # cable distributor within building (to connect load+geno)
             if u not in added_cable_dist_list:  # create new LVCableDistributorDing0 for building
@@ -432,7 +431,7 @@ def build_branches_on_osm_ways(lvgd):
                     geo_data=row.nn_coords)
                 # add lv_cable_dist to graph
                 lvgd.lv_grid.add_cable_dist(lv_cable_dist_v)
-                added_cable_dist_list.append(u)
+                added_cable_dist_list.append(v)
             else:  # load from lvgd.lv_grid._cable_distributors
                 lv_cable_dist_v = lvgd.lv_grid.get_cable_dist(v)
 
@@ -460,8 +459,111 @@ def build_branches_on_osm_ways(lvgd):
                         branch=branch_no,
                         load=u
                         # , sector='HH'
-                    ))
-            )
+                    )))
 
-            # TODO:
-            # route each load in lv_loads_to_station to get edges to add as cables
+            # connect u v
+            lvgd.lv_grid.graph.add_edge(
+                u,  # is building
+                v,  # nearest node to building
+                branch=BranchDing0(
+                    length=row.nn_dist,
+                    kind='cable',
+                    grid=lvgd.lv_grid,
+                    type=cable_type,
+                    geometry=LineString([row.raccordement_building, row.nn_coords]),
+                    id_db='branch_{branch}_{load}'.format(
+                        branch=branch_no,
+                        load=u
+                        # , sector='HH'
+                    )))
+
+        # adding cable_dist and loads and edges/Brahcnes for lv_loads_to_station
+        for u, row in lv_loads_to_station.iterrows():
+
+                        # u is osm id building
+            v = row.nn  # v is nearest osm id of nearest node in graph
+
+            # get branch_no
+            branch_no = node_feederId_dict.get(v)
+            # get cable_type
+            cable_type = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
+
+            route = nx.shortest_path(shortest_tree_district_graph, source=v, target=lvgd.lv_grid._station.osm_id_node, weight='length')
+
+            point_list = []  # for LineString
+            point_list.append(row.raccordement_building) # geometry of load
+            for r in route:
+                point_list.append(nodes.loc[r].geometry)
+            ls = LineString(point_list)
+            length = ls.length + row.nn_dist  # dist from nearest node to station + building to nearest node
+
+            # cable distributor within building (to connect load+geno)
+            if u not in added_cable_dist_list:  # create new LVCableDistributorDing0 for building
+                lv_cable_dist_u = LVCableDistributorDing0(
+                    id_db=u,  # need to set an unique identifier due to u may apper multiple times in edges
+                    grid=lvgd.lv_grid,
+                    branch_no=branch_no,
+                    load_no=u,  # has to be a unique id to avoid duplicates
+                    in_building=True,
+                    geo_data=row.raccordement_building)
+                # add lv_cable_dist to graph
+                lvgd.lv_grid.add_cable_dist(lv_cable_dist_u)
+                added_cable_dist_list.append(u)
+            else:  # load from lvgd.lv_grid._cable_distributors
+                lv_cable_dist_u = lvgd.lv_grid.get_cable_dist(u)
+            
+            # cable distributor to divert from main branch
+            if v not in added_cable_dist_list:  # create new LVCableDistributorDing0
+                lv_cable_dist_v = LVCableDistributorDing0(
+                    id_db=v,  # need to set an unqie identifier due to u may apper multiple times in edges
+                    grid=lvgd.lv_grid,
+                    branch_no=branch_no,
+                    load_no=v,  # has to be a unique id to avoid duplicates
+                    geo_data=row.nn_coords)
+                # add lv_cable_dist to graph
+                lvgd.lv_grid.add_cable_dist(lv_cable_dist_v)
+                added_cable_dist_list.append(v)
+            else:  # load from lvgd.lv_grid._cable_distributors
+                lv_cable_dist_v = lvgd.lv_grid.get_cable_dist(v)
+
+            # create an instance of Ding0 LV load
+            lv_load = LVLoadDing0(grid=lvgd.lv_grid,
+                                  branch_no=branch_no,
+                                  load_no=u,
+                                  peak_load=row.capacity,  # in kW
+                                  consumption=row.capacity * 1000)  # TODO: what here? isnt known yet.
+
+
+            # add lv_load to graph
+            lvgd.lv_grid.add_load(lv_load)
+
+            # add cable load to bus
+            lvgd.lv_grid.graph.add_edge(
+                lv_cable_dist_u,  # is building
+                lv_load,
+                branch=BranchDing0(
+                    length=1,
+                    kind='cable',
+                    grid=lvgd.lv_grid,
+                    type=cable_type,
+                    id_db='branch_{branch}_{load}'.format(
+                        branch=branch_no,
+                        load=u
+                        # , sector='HH'
+                    )))
+
+            # connect building to station
+            lvgd.lv_grid.graph.add_edge(
+                u,  # is building
+                lvgd.lv_grid.station(),  # nearest node to building
+                branch=BranchDing0(
+                    length=length,
+                    kind='cable',
+                    grid=lvgd.lv_grid,
+                    type=cable_type,
+                    geometry=ls,
+                    id_db='branch_{branch}_{load}'.format(
+                        branch=branch_no,
+                        load=u
+                        # , sector='HH'
+                    )))

@@ -2261,8 +2261,8 @@ class NetworkDing0:
                         continue
                     else:
                         for lv_grid_district in load_area.lv_grid_districts():
-                            print(str(lv_grid_district))
-                            return load_area, lv_grid_district.lv_grid.build_grid()
+                            lv_grid_district.lv_grid.build_grid()
+                        return load_area
 
             else:  # ding0 default
                 for mv_grid_district in self.mv_grid_districts():
