@@ -492,7 +492,7 @@ def build_branches_on_osm_ways(lvgd):
         for r in route:
             point_list.append(nodes.loc[r].geometry)
         ls = LineString(point_list)
-        length = ls.length + row.nn_dist  # dist from nearest node to station + building to nearest node
+        length = ls.length # dist from nearest node to station + building to nearest node
 
         # cable distributor within building (to connect load+geno)
         if u not in added_cable_dist_list:  # create new LVCableDistributorDing0 for building

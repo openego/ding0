@@ -74,19 +74,22 @@ from config.config_lv_grids_osm import get_config_osm
 from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways, \
 get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
 
-from ding0.grid.lv_grid.routing import build_graph_from_ways, get_lvgd_id, \
+from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
+build_graph_from_ways
+
+from ding0.grid.lv_grid.routing import get_lvgd_id, \
 subdivide_graph_edges, assign_nearest_nodes_to_buildings, identify_street_loads, \
-simplify_graph_adv, get_mvlv_subst_loc_list, update_ways_geo_to_shape, get_load_center, \
-add_mv_load_station_to_mvlv_subst_list, get_fully_conn_graph, connect_mv_loads_to_graph, \
-create_buffer_polygons, graph_nodes_outside_buffer_polys, remove_unloaded_deadends, \
+simplify_graph_adv, get_mvlv_subst_loc_list, get_load_center, \
+get_fully_conn_graph, connect_mv_loads_to_graph, create_buffer_polygons, \
+graph_nodes_outside_buffer_polys, remove_unloaded_deadends, \
 compose_graph, split_conn_graph, get_outer_conn_graph, flatten_graph_components_to_lines, \
-remove_detours, add_edge_geometry_entry, add_mv_load_station_to_mvlv_subst_list
+remove_detours, add_edge_geometry_entry
 
 from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
 from grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
 
-from grid.lv_grid.geo import get_Point_from_x_y, get_points_in_load_area, get_convex_hull_from_points, get_bounding_box_from_points
+from grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, get_bounding_box_from_points
 
 ############ NEW END
 
@@ -815,7 +818,7 @@ class NetworkDing0:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
-            # todo:
+            # todo: remove. exists to process a selected load area instead all load areas.
             # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
             #    continue
 
@@ -975,23 +978,12 @@ class NetworkDing0:
                 mv_grid_district.mv_grid.add_load(mv_load)
 
 
-            # TODO: REMOVE MV LOADS FROM buildings_w_loads_df?
+            # TODO: REMOVE MV LOADS FROM buildings_w_loads_df. Weil peak load for load area without loads > 200 kW?
+            # calculation peak load for load area with buildings < 200 kW.
             buildings_w_loads_df = buildings_w_loads_df.loc[buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')]
-            
-            # assign cluster id to loads on mv level
-            # add + 1 to avoid first mv load cluster id == last lv load cluster id
-            # mv_cluster_ids = list(range(n_cluster, n_cluster + len(loads_mv_df)))
-            # loads_mv_df['cluster'] = mv_cluster_ids
-            # loads_mv_df['osm_id_building'] = loads_mv_df.index.tolist()
 
+            # set cluster Id for buildings
             buildings_w_loads_df['cluster'] = buildings_w_loads_df.nn.map(nodes_w_labels.cluster)
-
-
-            # concat lv and mv level after assignment of cluster ids
-            # buildings_w_loads_df = pd.concat([buildings_w_loads_df, loads_mv_df])
-            # if len(loads_mv_df):
-            #    # get list of location of substations
-            #    mvlv_subst_list = add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w_labels)
 
             # create LV load_area object
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
@@ -1000,8 +992,7 @@ class NetworkDing0:
                                            peak_load=buildings_w_loads_df.capacity.sum(),
                                            load_area_graph=cluster_graph)
 
-            # create ding0 elements for each cluster
-            # 
+            # create ding0 elements (LVGridDistrictDing0, LVGridDing0, LVStationDing0) for each cluster
             for mvlv_subst_loc in mvlv_subst_list:
 
                 cluster_id = mvlv_subst_loc.get('cluster')
@@ -1065,6 +1056,9 @@ class NetworkDing0:
                 lv_grid_district.lv_grid = lv_grid
                 lv_load_area.add_lv_grid_district(lv_grid_district)
 
+            # calculate load center to set lv_load_area_centre_geo_data
+            # based on peak load and position of lvgd.station
+            # MVLoads are not considered.
             lv_load_area_centre_geo_data = get_load_center(lv_load_area).geo_data
 
             # create new centre object for Load Area
