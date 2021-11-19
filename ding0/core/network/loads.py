@@ -28,6 +28,11 @@ class MVLoadDing0(LoadDing0):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.id_db = self.grid.mv_grid.loads_count() + 1
+        self.osmid_building = kwargs.get('osmid_building', None)
+        self.osmid_nn = kwargs.get('osmid_nn', None)
+        self.nn_coords = kwargs.get('nn_coords', None)
+        self.lv_load_area_id = kwargs.get('lv_load_area_id', None)
 
     def __repr__(self):
         """
@@ -57,6 +62,7 @@ class LVLoadDing0(LoadDing0):
         self.string_id = kwargs.get('string_id', None)
         self.branch_no = kwargs.get('branch_no', None)
         self.load_no = kwargs.get('load_no', None)
+        self.id_db = self.grid.loads_count() + 1
 
     def __repr__(self):
         """

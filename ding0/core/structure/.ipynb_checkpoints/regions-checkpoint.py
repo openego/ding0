@@ -397,10 +397,9 @@ class LVGridDistrictDing0(RegionDing0):
             'sector_consumption_agricultural',
             None)
         
-        # todo do doc
+        # todo: do doc
         self.mvlv_subst_id = kwargs.get('mvlv_subst_id', None)
         self.graph_district = kwargs.get('graph_district', None)
-        self.load_level = kwargs.get('load_level', None)
         self.buildings = kwargs.get('buildings_district', None)
         self.peak_load = kwargs.get('peak_load', None)
         

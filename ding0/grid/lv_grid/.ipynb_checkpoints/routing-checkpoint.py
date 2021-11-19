@@ -6,6 +6,8 @@ TODO: Separate routing.py to graph_processing.py
 import osmnx as ox
 import networkx as nx
 
+from scipy.spatial.distance import pdist, squareform
+
 from geoalchemy2.shape import to_shape
 
 from pyproj import CRS
@@ -949,31 +951,24 @@ def add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w
 
 
 # mv trafo placement
-def mv_trafo_placement(cluster_graph, mvlv_subst_list):
+def connect_mv_loads_to_graph(cluster_graph, osm_id_building, row):
     """
-    For mv loads, locate trafo in building and add edge from
-    building to graph instead keeping trafo at nearest node 
-    of building in graph.
+    For mv loads, add edge from building to graph instead
+    keeping trafo at nearest node of building in graph.
     """
-    for mvlv_subst in mvlv_subst_list:
-        if mvlv_subst.get('load_level') == 'mv':
-            # set values for mv
-            name = mvlv_subst.get('osm_id_building')
-            mvlv_subst['osmid'] = name
-            x = mvlv_subst.get('raccordement_building').x
-            y = mvlv_subst.get('raccordement_building').y
-            mvlv_subst['x'] = x
-            mvlv_subst['y'] = y
+    # set values for mv
+    name = osm_id_building
+    x = row.raccordement_building.x
+    y = row.raccordement_building.y
 
-            # add node to graph
-            cluster_graph.add_node(
-                name,x=x,y=y, node_type='non_synthetic', cluster=mvlv_subst.get('cluster'))
-            # add edge to graph
-            line = LineString([mvlv_subst.get('raccordement_building'), mvlv_subst.get('nn_coords')])
-            cluster_graph.add_edge(name, mvlv_subst.get('nn'),
-                                   geometry=line,length=line.length,highway='trafo_graph_connect')
-            cluster_graph.add_edge(mvlv_subst.get('nn'), name,
-                                   geometry=line,length=line.length,highway='trafo_graph_connect')
+    # add node to graph
+    cluster_graph.add_node(name,x=x,y=y, node_type='non_synthetic', cluster=None)
+    # add edge to graph
+    line = LineString([row.raccordement_building, row.nn_coords])
+    cluster_graph.add_edge(name, row.nn,
+                           geometry=line,length=line.length,highway='trafo_graph_connect')
+    cluster_graph.add_edge(row.nn, name,
+                           geometry=line,length=line.length,highway='trafo_graph_connect')
 
 
 # logic for filling zeros
@@ -1000,9 +995,6 @@ def get_load_center(lv_load_area):
     get station which is load center to set its
     geo_data as load center of load areal.
     """
-    from shapely.geometry import Point
-    import numpy as np
-    from scipy.spatial.distance import pdist, squareform
 
     station_peak_loads = []
     station_coordinates = []

@@ -132,7 +132,7 @@ class MVGridDing0(GridDing0):
             else:
                 raise Exception('MV Station already set, use argument `force=True` to override.')
 
-    def add_load(self, lv_load):
+    def add_load(self, mv_load):
         """Adds a MV load to _loads and grid graph if not already existing
         
         Args
@@ -140,10 +140,10 @@ class MVGridDing0(GridDing0):
         lv_load : float
             Desription #TODO
         """
-        if lv_load not in self._loads and isinstance(lv_load,
+        if mv_load not in self._loads and isinstance(mv_load,
                                                      MVLoadDing0):
-            self._loads.append(lv_load)
-            self.graph_add_node(lv_load)
+            self._loads.append(mv_load)
+            self.graph_add_node(mv_load)
 
     def add_cable_distributor(self, cable_dist):
         """Adds a cable distributor to _cable_distributors if not already existing
@@ -938,7 +938,7 @@ class LVGridDing0(GridDing0):
             build_grid.transformer(self)
         
             # own grid building
-            build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
+            return build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
             
         else:     # ding0 default
 

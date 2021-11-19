@@ -28,6 +28,7 @@ from ding0.tools.plots import plot_mv_topology
 from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
 from ding0.tools.tools import merge_two_dicts_of_dataframes
+from ding0.core.network.loads import MVLoadDing0
 
 import os
 import logging
@@ -76,7 +77,7 @@ get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
 from ding0.grid.lv_grid.routing import build_graph_from_ways, get_lvgd_id, \
 subdivide_graph_edges, assign_nearest_nodes_to_buildings, identify_street_loads, \
 simplify_graph_adv, get_mvlv_subst_loc_list, update_ways_geo_to_shape, get_load_center, \
-add_mv_load_station_to_mvlv_subst_list, get_fully_conn_graph, mv_trafo_placement, \
+add_mv_load_station_to_mvlv_subst_list, get_fully_conn_graph, connect_mv_loads_to_graph, \
 create_buffer_polygons, graph_nodes_outside_buffer_polys, remove_unloaded_deadends, \
 compose_graph, split_conn_graph, get_outer_conn_graph, flatten_graph_components_to_lines, \
 remove_detours, add_edge_geometry_entry, add_mv_load_station_to_mvlv_subst_list
@@ -813,7 +814,8 @@ class NetworkDing0:
         
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
-                        
+
+            # todo:
             # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
             #    continue
 
@@ -944,34 +946,52 @@ class NetworkDing0:
                 return f"clutering not sucessfully for MV {mv_grid_district}, LA {id_db}"
 
             
-            # get loadds on mv level
+            # get loads on mv level
             loads_mv_df = buildings_w_loads_df.loc[(get_config_osm('mv_lv_threshold_capacity') <= buildings_w_loads_df.capacity) &
                                                    (buildings_w_loads_df.capacity < get_config_osm('hv_mv_threshold_capacity'))]
 
+            # add MVLoadsDing0 and
+            # add mv loads to graph. connect via edges. if True
+            trafo_in_mv_building = True  # Paul
+            for osm_id_building, row in loads_mv_df.iterrows():
+                # create MVLoadDing0
+                # create an instance of Ding0 LV load
+                if trafo_in_mv_building:
+                    geo_data=row.raccordement_building
+                    connect_mv_loads_to_graph(cluster_graph, osm_id_building, row)
+
+                else:
+                    geo_data = row.nn_coords
+
+                mv_load = MVLoadDing0(geo_data=geo_data,
+                                      grid=mv_grid_district,
+                                      peak_load=row.capacity,  # in kW
+                                      osmid_building=osm_id_building,
+                                      osmid_nn=row.nn,
+                                      nn_coords=row.nn_coords,
+                                      lv_load_area_id=id_db)
+
+                # add mv_load to graph
+                mv_grid_district.mv_grid.add_load(mv_load)
+
+
+            # TODO: REMOVE MV LOADS FROM buildings_w_loads_df?
+            buildings_w_loads_df = buildings_w_loads_df.loc[buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')]
+            
             # assign cluster id to loads on mv level
             # add + 1 to avoid first mv load cluster id == last lv load cluster id
-            mv_cluster_ids = list(range(n_cluster, n_cluster + len(loads_mv_df)))
-            loads_mv_df['cluster'] = mv_cluster_ids
-            loads_mv_df['osm_id_building'] = loads_mv_df.index.tolist()
+            # mv_cluster_ids = list(range(n_cluster, n_cluster + len(loads_mv_df)))
+            # loads_mv_df['cluster'] = mv_cluster_ids
+            # loads_mv_df['osm_id_building'] = loads_mv_df.index.tolist()
 
-
-            # map cluster to buildings of lv level
-            buildings_w_loads_df = buildings_w_loads_df[~buildings_w_loads_df.index.isin(loads_mv_df.index.tolist())]
             buildings_w_loads_df['cluster'] = buildings_w_loads_df.nn.map(nodes_w_labels.cluster)
 
 
             # concat lv and mv level after assignment of cluster ids
-            buildings_w_loads_df = pd.concat([buildings_w_loads_df, loads_mv_df])
-
-
-            if len(loads_mv_df):
-                # get list of location of substations
-                mvlv_subst_list = add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w_labels)
-
-
-            trafo_at_mv_building = True  # Paul
-            if trafo_at_mv_building:
-                mv_trafo_placement(cluster_graph, mvlv_subst_list)
+            # buildings_w_loads_df = pd.concat([buildings_w_loads_df, loads_mv_df])
+            # if len(loads_mv_df):
+            #    # get list of location of substations
+            #    mvlv_subst_list = add_mv_load_station_to_mvlv_subst_list(loads_mv_df, mvlv_subst_list, nodes_w_labels)
 
             # create LV load_area object
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
@@ -980,16 +1000,11 @@ class NetworkDing0:
                                            peak_load=buildings_w_loads_df.capacity.sum(),
                                            load_area_graph=cluster_graph)
 
-
-            # CREATE AND ASSIGN DING0 OBJECTS Station, Grid, District
-            # todo: update index with len(stations) !!!!
-            ons_cluster_coord_list = []  # store to calc new load center of la
-            ons_cluster_load_list = []  # store to calc new load center of la
-
+            # create ding0 elements for each cluster
+            # 
             for mvlv_subst_loc in mvlv_subst_list:
 
                 cluster_id = mvlv_subst_loc.get('cluster')
-                load_level = mvlv_subst_list[cluster_id].get('load_level')
 
                 lvgd_id = get_lvgd_id(id_db, cluster_id)
                 buildings = buildings_w_loads_df.loc[buildings_w_loads_df.cluster==cluster_id]
@@ -999,9 +1014,6 @@ class NetworkDing0:
                     cluster_geo_list = buildings.geometry.tolist()  # geo of building
                     cluster_geo_list += nodes_w_labels.loc[
                         nodes_w_labels.cluster==mvlv_subst_loc.get('cluster')].geometry.tolist()
-
-                    if load_level == 'mv':
-                        cluster_geo_list += buildings.nn_coords.tolist() # geo of location of substation
 
                     # get convex hull for ding0 objects
                     points = get_points_in_load_area(cluster_geo_list)
@@ -1019,14 +1031,13 @@ class NetworkDing0:
                     logging.warning(f'create_lvgd_geo_method {create_lvgd_geo_method} not implemented.')
 
                 # create LVGridDistrictDing0
-                lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id, 
+                lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id,
                                                        geo_data=polygon,
                                                        graph_district=mvlv_subst_loc.get('graph_district'),
                                                        lv_load_area=lv_load_area,
                                                        buildings_district=buildings,
                                                        id_db=lvgd_id, 
-                                                       peak_load=buildings.capacity.sum(),
-                                                       load_level=load_level)
+                                                       peak_load=buildings.capacity.sum())
 
                 # create LVGridDing0
                 # be aware, lv_grid takes grid district's geom!
@@ -1045,15 +1056,15 @@ class NetworkDing0:
                     osm_id_node=mvlv_subst_loc.get('osmid')  # defined node in graph where station is located
                     #, peak_load=lv_grid_district.peak_load
                 )
-                                
-                
+
+
                 # assign created objects
                 # note: creation of LV grid is done separately,
                 # see NetworkDing0.build_lv_grids()
                 lv_grid.add_station(lv_station)
                 lv_grid_district.lv_grid = lv_grid
                 lv_load_area.add_lv_grid_district(lv_grid_district)
-                
+
             lv_load_area_centre_geo_data = get_load_center(lv_load_area).geo_data
 
             # create new centre object for Load Area
@@ -2256,13 +2267,15 @@ class NetworkDing0:
         for mv_grid_district in self.mv_grid_districts():
 
             if True:  # new approach
+                g_list = []
                 for load_area in mv_grid_district.lv_load_areas():
                     if load_area.id_db != 4488:
                         continue
                     else:
                         for lv_grid_district in load_area.lv_grid_districts():
-                            lv_grid_district.lv_grid.build_grid()
-                        return load_area
+                            g = lv_grid_district.lv_grid.build_grid()
+                            g_list.append(g)
+                        return load_area, g_list
 
             else:  # ding0 default
                 for mv_grid_district in self.mv_grid_districts():

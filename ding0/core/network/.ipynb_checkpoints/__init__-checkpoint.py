@@ -184,7 +184,8 @@ class GridDing0:
             :class:`~.ding0.core.network.LoadDing0` or
             :class:`~.ding0.core.network.StationDing0` or
             :class:`~.ding0.core.network.CircuitBreakerDing0` or
-            :class:`~.ding0.core.network.CableDistributorDing0`
+            :class:`~.ding0.core.network.CableDistributorDing0` or
+            :class:`~.ding0.core.network.loads.MVLoadDing0`
 
         """
         if ((node_object not in self.graph.nodes()) and
@@ -192,7 +193,8 @@ class GridDing0:
                                       CableDistributorDing0,
                                       LVLoadAreaCentreDing0,
                                       CircuitBreakerDing0,
-                                      GeneratorDing0)))):
+                                      GeneratorDing0,
+                                      LoadDing0)))):
             self.graph.add_node(node_object)
 
     def graph_draw(self, mode):
@@ -1107,8 +1109,6 @@ class LoadDing0:
         self.grid = kwargs.get('grid', None)
         self.peak_load = kwargs.get('peak_load', None)
         self.consumption = kwargs.get('consumption', None)
-
-        self.id_db = self.grid.loads_count() + 1
 
     @property
     def network(self):
