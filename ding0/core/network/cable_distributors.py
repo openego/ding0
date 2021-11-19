@@ -69,7 +69,8 @@ class LVCableDistributorDing0(CableDistributorDing0):
         self.string_id = kwargs.get('string_id', None)
         self.branch_no = kwargs.get('branch_no', None)
         self.load_no = kwargs.get('load_no', None)
-        self.id_db = self.grid.cable_distributors_count() + 1
+        # self.id_db = self.grid.cable_distributors_count() + 1  # NOT WORKING BECAUSE WHEN ADDING EDGES, U or V MAY APPEAR MORE TIMES IN G.EDGES()
+        self.id_db = kwargs.get('id_db', None)  # set osm_id as id_db to have unqie identifiers.
         self.in_building = kwargs.get('in_building', False)
 
     @property

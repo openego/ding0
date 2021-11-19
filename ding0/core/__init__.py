@@ -718,7 +718,7 @@ class NetworkDing0:
             else:
 
                 # import lv areas and create new lv_grid_districts 
-                return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
+                self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
                                                                             need_parameterization,
                                                                             create_lvgd_geo_method)
 
@@ -814,8 +814,8 @@ class NetworkDing0:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
                         
-            if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
-                continue
+            # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
+            #    continue
 
             # create session to load from (local) DB OSM data 
             session_osm = create_session_osm()
@@ -950,7 +950,7 @@ class NetworkDing0:
 
             # assign cluster id to loads on mv level
             # add + 1 to avoid first mv load cluster id == last lv load cluster id
-            mv_cluster_ids = list(range(n_cluster + 1, n_cluster + len(loads_mv_df) + 1))
+            mv_cluster_ids = list(range(n_cluster, n_cluster + len(loads_mv_df)))
             loads_mv_df['cluster'] = mv_cluster_ids
             loads_mv_df['osm_id_building'] = loads_mv_df.index.tolist()
 
@@ -985,9 +985,10 @@ class NetworkDing0:
             # todo: update index with len(stations) !!!!
             ons_cluster_coord_list = []  # store to calc new load center of la
             ons_cluster_load_list = []  # store to calc new load center of la
+
             for mvlv_subst_loc in mvlv_subst_list:
 
-                cluster_id = mvlv_subst_loc.get('cluster') 
+                cluster_id = mvlv_subst_loc.get('cluster')
                 load_level = mvlv_subst_list[cluster_id].get('load_level')
 
                 lvgd_id = get_lvgd_id(id_db, cluster_id)
@@ -1066,9 +1067,7 @@ class NetworkDing0:
 
             # add Load Area to MV grid district (and add centre object to MV gris district's graph)
             mv_grid_district.add_lv_load_area(lv_load_area)
-            
-            return lv_load_area, mvlv_subst_list, cluster_graph
-            
+
 
     def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts, lv_stations):
         """

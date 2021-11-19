@@ -900,10 +900,32 @@ class LVGridDing0(GridDing0):
         lv_cable_dist : 
             Description #TODO
         """
+        # THIS IS NOT WORKING FOR ME. e.g.
+        # a = LVCableDist_mvgd_40_lvgd_4488000000_2274291202
+        # b = LVCableDist_mvgd_40_lvgd_4488000000_2274291202
+        # self._cable_distributors = []
+        # self._cable_distributors.append(a)
+        # if b not in self._cable_distributors:
+        #     self._cable_distributors.append(b)
+        # resulting in 
+        # self._cable_distributors.append = [LVCableDist_mvgd_40_lvgd_4488000000_2274291202, LVCableDist_mvgd_40_lvgd_4488000000_2274291202]
+        # Thus get_cable_dist is added
         if lv_cable_dist not in self._cable_distributors and isinstance(lv_cable_dist,
                                                                         LVCableDistributorDing0):
             self._cable_distributors.append(lv_cable_dist)
             self.graph_add_node(lv_cable_dist)
+    
+    def get_cable_dist(self, lv_cable_dist_id_db):
+        """Get a LV cable_dist if already existing
+        
+        Parameters
+        ----------
+        lv_cable_dist : 
+            Description #TODO
+        """
+        for lv_cable_dist in self._cable_distributors:
+            if lv_cable_dist.id_db == lv_cable_dist_id_db:
+                return lv_cable_dist
 
     def build_grid(self):
         """Create LV grid graph
