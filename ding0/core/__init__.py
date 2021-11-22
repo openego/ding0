@@ -2263,13 +2263,21 @@ class NetworkDing0:
             if True:  # new approach
                 g_list = []
                 for load_area in mv_grid_district.lv_load_areas():
-                    if load_area.id_db != 4488:
-                        continue
-                    else:
+                    logger.warning(f'LV grid building for la {str(load_area)}')
+                    if True:
                         for lv_grid_district in load_area.lv_grid_districts():
-                            g = lv_grid_district.lv_grid.build_grid()
-                            g_list.append(g)
-                        return load_area, g_list
+                            logger.warning(f'LVGD building for {str(lv_grid_district)}')
+                            lv_grid_district.lv_grid.build_grid()
+                    else:  # do a specific load area and return it
+                        if load_area.id_db != 2765:
+                            continue
+                        else:
+                            return load_area
+                            for lv_grid_district in load_area.lv_grid_districts():
+                                lv_grid_district.lv_grid.build_grid()
+                                g = lv_grid_district.lv_grid.build_grid()
+                                g_list.append(g)
+                            return load_area, g_list
 
             else:  # ding0 default
                 for mv_grid_district in self.mv_grid_districts():
