@@ -32,7 +32,7 @@ class MVLoadDing0(LoadDing0):
         self.osmid_building = kwargs.get('osmid_building', None)
         self.osmid_nn = kwargs.get('osmid_nn', None)
         self.nn_coords = kwargs.get('nn_coords', None)
-        self.lv_load_area_id = kwargs.get('lv_load_area_id', None)
+        self.lv_load_area = kwargs.get('lv_load_area', None)
 
     def __repr__(self):
         """

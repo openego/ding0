@@ -27,8 +27,12 @@ if not 'READTHEDOCS' in os.environ:
 logger = logging.getLogger('ding0')
 
 
-def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
-    """ Calculate geographical branches in polygon.
+def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj, srid=3035):
+    """
+    NEW PARAM srid=3035 to calculate calc_geo_branches_in_buffer.
+    Before srid=4326 was assumed.
+    
+    Calculate geographical branches in polygon.
 
     For a given `mv_grid` all branches (edges in the graph of the grid) are
     tested if they are in the given `polygon`. You can choose different modes
@@ -52,29 +56,49 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj):
         List of branches
 
     """
+    if srid == 3035:
+        branches = []
+        for branch in mv_grid.graph_edges():
+            nodes = branch['adj_nodes']
+            branch_shp = LineString([nodes[0].geo_data, nodes[1].geo_data])
+            # check if branches intersect with polygon if mode = 'intersects'
+            if mode == 'intersects':
+                if polygon.intersects(branch_shp):
+                    branches.append(branch)
+            # check if polygon contains branches if mode = 'contains'
+            elif mode == 'contains':
+                if polygon.contains(branch_shp):
+                    branches.append(branch)
+            # error
+            else:
+                raise ValueError('Mode is invalid!')
+    else:
+        branches = []
+        polygon_shp = transform(proj, polygon)
+        for branch in mv_grid.graph_edges():
+            nodes = branch['adj_nodes']
+            branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
 
-    branches = []
-    polygon_shp = transform(proj, polygon)
-    for branch in mv_grid.graph_edges():
-        nodes = branch['adj_nodes']
-        branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
-
-        # check if branches intersect with polygon if mode = 'intersects'
-        if mode == 'intersects':
-            if polygon_shp.intersects(branch_shp):
-                branches.append(branch)
-        # check if polygon contains branches if mode = 'contains'
-        elif mode == 'contains':
-            if polygon_shp.contains(branch_shp):
-                branches.append(branch)
-        # error
-        else:
-            raise ValueError('Mode is invalid!')
+            # check if branches intersect with polygon if mode = 'intersects'
+            if mode == 'intersects':
+                if polygon_shp.intersects(branch_shp):
+                    branches.append(branch)
+            # check if polygon contains branches if mode = 'contains'
+            elif mode == 'contains':
+                if polygon_shp.contains(branch_shp):
+                    branches.append(branch)
+            # error
+            else:
+                raise ValueError('Mode is invalid!')
     return branches
 
 
-def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
-    """ Determines branches in nodes' associated graph that are at least partly
+def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj, srid=3035):
+    """
+    NEW PARAM srid=3035 to calculate calc_geo_branches_in_buffer.
+    Before srid=4326 was assumed.
+    
+    Determines branches in nodes' associated graph that are at least partly
     within buffer of `radius` from `node`.
     
     If there are no nodes, the buffer is successively extended by `radius_inc`
@@ -100,22 +124,36 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj):
 
     """
 
-    branches = []
+    if srid == 3035:
+        branches = []
 
-    while not branches:
-        node_shp = transform(proj, node.geo_data)
-        buffer_zone_shp = node_shp.buffer(radius)
-        for branch in mv_grid.graph_edges():
-            nodes = branch['adj_nodes']
-            branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
-            if buffer_zone_shp.intersects(branch_shp):
-                branches.append(branch)
-        radius += radius_inc
+        while not branches:
+            node_shp = node.geo_data
+            buffer_zone_shp = node_shp.buffer(radius)
+            for branch in mv_grid.graph_edges():
+                nodes = branch['adj_nodes']
+                branch_shp = LineString([nodes[0].geo_data, nodes[1].geo_data])
+                if buffer_zone_shp.intersects(branch_shp):
+                    branches.append(branch)
+            radius += radius_inc
+
+    else:
+        branches = []
+
+        while not branches:
+            node_shp = transform(proj, node.geo_data)
+            buffer_zone_shp = node_shp.buffer(radius)
+            for branch in mv_grid.graph_edges():
+                nodes = branch['adj_nodes']
+                branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
+                if buffer_zone_shp.intersects(branch_shp):
+                    branches.append(branch)
+            radius += radius_inc
 
     return branches
 
 
-def calc_geo_dist(node_source, node_target, srid=4326):
+def calc_geo_dist(node_source, node_target, srid=3035):
     """ Calculates the geodesic distance between `node_source` and `node_target`
     incorporating the detour factor specified in :file:`ding0/ding0/config/config_calc.cfg`.
 
@@ -140,10 +178,7 @@ def calc_geo_dist(node_source, node_target, srid=4326):
                                                         (node_target.geo_data.y, node_target.geo_data.x)).m
     elif srid == 3035:
         # NEU weil srid=4326 in config.misc.cfg
-        station_point_4326 = node_source.geo_data  # transform station from griven srid 4326 to 3035
-        proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
-        station_point_3035 = transform(proj_source, station_point_4326)
-        branch_length = LineString([station_point_3035, node_target.geo_data]).length * branch_detour_factor
+        branch_length = LineString([node_source.geo_data, node_target.geo_data]).length * branch_detour_factor
 
     # ========= BUG: LINE LENGTH=0 WHEN CONNECTING GENERATORS ===========
     # When importing generators, the geom_new field is used as position. If it is empty, EnergyMap's geom
@@ -158,7 +193,7 @@ def calc_geo_dist(node_source, node_target, srid=4326):
     return branch_length
 
 
-def calc_geo_dist_matrix(nodes_pos):
+def calc_geo_dist_matrix(nodes_pos, srid=3035):
     """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor in config_calc.cfg.
         
     For every two points/coord it uses geopy's geodesic function. As default ellipsoidal model of the earth WGS-84 is used.
@@ -193,22 +228,36 @@ def calc_geo_dist_matrix(nodes_pos):
     branch_detour_factor = cfg_ding0.get('assumptions', 'branch_detour_factor')
 
     matrix = {}
+    
+    if srid == 3035:
+        
+        for i in nodes_pos:
+            pos_origin = tuple(nodes_pos[i])  # pos_origin to pos_dest
 
-    for i in nodes_pos:
-        pos_origin = tuple(nodes_pos[i])
+            matrix[i] = {}
 
-        matrix[i] = {}
+            for j in nodes_pos:
+                pos_dest = tuple(nodes_pos[j])
+                distance = LineString([pos_origin, pos_dest]).length * branch_detour_factor / 1000  # km
+                matrix[i][j] = distance
+        
+    else:  # ding0 default old
 
-        for j in nodes_pos:
-            pos_dest = tuple(nodes_pos[j])
-            # notice: geodesic takes (lat,lon), thus the (x,y)/(lon,lat) tuple is reversed
-            distance = branch_detour_factor * geodesic(tuple(reversed(pos_origin)), tuple(reversed(pos_dest))).km
-            matrix[i][j] = distance
+        for i in nodes_pos:
+            pos_origin = tuple(nodes_pos[i])
+
+            matrix[i] = {}
+
+            for j in nodes_pos:
+                pos_dest = tuple(nodes_pos[j])
+                # notice: geodesic takes (lat,lon), thus the (x,y)/(lon,lat) tuple is reversed
+                distance = branch_detour_factor * geodesic(tuple(reversed(pos_origin)), tuple(reversed(pos_dest))).km
+                matrix[i][j] = distance
 
     return matrix
 
 
-def calc_geo_centre_point(node_source, node_target):
+def calc_geo_centre_point(node_source, node_target, srid=3035):
     """ Calculates the geodesic distance between `node_source` and `node_target`
     incorporating the detour factor specified in config_calc.cfg.
     
@@ -225,16 +274,21 @@ def calc_geo_centre_point(node_source, node_target):
         Distance in m.
     """
 
-    # WGS84 (conformal) to ETRS (equidistant) projection
-    proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
-    # ETRS (equidistant) to WGS84 (conformal) projection
-    proj_target = Transformer.from_crs("epsg:3035", "epsg:4326", always_xy=True).transform
+    if srid == 3035:  # calc new approach
+        branch_shp = LineString([node_source.geo_data, node_target.geo_data])
+        distance = branch_shp.length
+        centre_point_shp = branch_shp.interpolate(distance/2)
+    else:
+        # WGS84 (conformal) to ETRS (equidistant) projection
+        proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
+        # ETRS (equidistant) to WGS84 (conformal) projection
+        proj_target = Transformer.from_crs("epsg:3035", "epsg:4326", always_xy=True).transform
 
-    branch_shp = transform(proj_source, LineString([node_source.geo_data, node_target.geo_data]))
+        branch_shp = transform(proj_source, LineString([node_source.geo_data, node_target.geo_data]))
 
-    distance = geodesic((node_source.geo_data.y, node_source.geo_data.x),
-                        (node_target.geo_data.y, node_target.geo_data.x)).m
+        distance = geodesic((node_source.geo_data.y, node_source.geo_data.x),
+                            (node_target.geo_data.y, node_target.geo_data.x)).m
 
-    centre_point_shp = transform(proj_target, branch_shp.interpolate(distance/2))
+        centre_point_shp = transform(proj_target, branch_shp.interpolate(distance/2))
 
     return centre_point_shp

@@ -70,24 +70,22 @@ from ding0.config.db_conn_local import create_session_osm
 
 from config.config_lv_grids_osm import get_config_osm
 
-
 from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways, \
 get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
 
 from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
-build_graph_from_ways
-
-from ding0.grid.lv_grid.routing import get_lvgd_id, \
-subdivide_graph_edges, assign_nearest_nodes_to_buildings, identify_street_loads, \
-simplify_graph_adv, get_mvlv_subst_loc_list, get_load_center, \
-get_fully_conn_graph, connect_mv_loads_to_graph, create_buffer_polygons, \
-graph_nodes_outside_buffer_polys, remove_unloaded_deadends, \
-compose_graph, split_conn_graph, get_outer_conn_graph, flatten_graph_components_to_lines, \
-remove_detours, add_edge_geometry_entry
-
-from grid.lv_grid.parameterization import parameterize_by_load_profiles
+build_graph_from_ways, create_buffer_polygons, graph_nodes_outside_buffer_polys, \
+compose_graph, get_fully_conn_graph, split_conn_graph, get_outer_conn_graph, \
+remove_detours, add_edge_geometry_entry, remove_unloaded_deadends, \
+flatten_graph_components_to_lines, subdivide_graph_edges, simplify_graph_adv
 
 from grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
+
+from ding0.grid.lv_grid.routing import assign_nearest_nodes_to_buildings, \
+get_lvgd_id, identify_street_loads, get_mvlv_subst_loc_list, get_load_center, \
+connect_mv_loads_to_graph
+
+from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
 from grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, get_bounding_box_from_points
 
@@ -356,7 +354,8 @@ class NetworkDing0:
         msg = self.validate_grid_districts()
 
         # STEP 5: Build LV grids
-        return self.build_lv_grids()
+        # return self.build_lv_grids()
+        self.build_lv_grids()
 
         # STEP 6: Build MV grids
         self.mv_routing(debug=False)
@@ -696,7 +695,10 @@ class NetworkDing0:
             #     pyproj.Proj(init='epsg:3035'))  # destination coordinate system
             #
             # region_geo_data = transform(projection, region_geo_data)
-            
+            # transform to epsg 3035
+            proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
+            region_geo_data = transform(proj_source, region_geo_data)
+            station_geo_data = transform(proj_source, station_geo_data)
             
 
             mv_grid_district = self.build_mv_grid_district(poly_id,
@@ -722,6 +724,11 @@ class NetworkDing0:
             else:
 
                 # import lv areas and create new lv_grid_districts 
+                # 1)
+                #return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
+                #                                                            need_parameterization,
+                #                                                            create_lvgd_geo_method)
+            
                 self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
                                                                             need_parameterization,
                                                                             create_lvgd_geo_method)
@@ -818,8 +825,9 @@ class NetworkDing0:
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
+            # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
-            # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
+            #if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
             #    continue
 
             # create session to load from (local) DB OSM data 
@@ -870,6 +878,9 @@ class NetworkDing0:
         
             # get connected graph
             conn_graph = get_fully_conn_graph(graph, nodes_to_remove_nested_list)
+            
+            #PLOT 1-3
+            # return geo_load_area, buffer_poly_list, graph, inner_node_list, conn_graph
 
 
             # TODO: remove or move
@@ -953,29 +964,11 @@ class NetworkDing0:
             loads_mv_df = buildings_w_loads_df.loc[(get_config_osm('mv_lv_threshold_capacity') <= buildings_w_loads_df.capacity) &
                                                    (buildings_w_loads_df.capacity < get_config_osm('hv_mv_threshold_capacity'))]
 
-            # add MVLoadsDing0 and
+
             # add mv loads to graph. connect via edges. if True
-            trafo_in_mv_building = True  # Paul
-            for osm_id_building, row in loads_mv_df.iterrows():
-                # create MVLoadDing0
-                # create an instance of Ding0 LV load
-                if trafo_in_mv_building:
-                    geo_data=row.raccordement_building
-                    connect_mv_loads_to_graph(cluster_graph, osm_id_building, row)
-
-                else:
-                    geo_data = row.nn_coords
-
-                mv_load = MVLoadDing0(geo_data=geo_data,
-                                      grid=mv_grid_district,
-                                      peak_load=row.capacity,  # in kW
-                                      osmid_building=osm_id_building,
-                                      osmid_nn=row.nn,
-                                      nn_coords=row.nn_coords,
-                                      lv_load_area_id=id_db)
-
-                # add mv_load to graph
-                mv_grid_district.mv_grid.add_load(mv_load)
+            trafo_in_mv_building = False  # Paul
+            for osm_id_building, loads_mv_df_row in loads_mv_df.iterrows():
+                connect_mv_loads_to_graph(cluster_graph, osm_id_building, loads_mv_df_row)
 
 
             # TODO: REMOVE MV LOADS FROM buildings_w_loads_df. Weil peak load for load area without loads > 200 kW?
@@ -991,6 +984,33 @@ class NetworkDing0:
                                            mv_grid_district=mv_grid_district,
                                            peak_load=buildings_w_loads_df.capacity.sum(),
                                            load_area_graph=cluster_graph)
+                                           # ,_mv_loads=mv_load_list)
+
+            if False:  # NEED TO CONNECT MVLOAD, OTHERWISE:
+                # IN STEP 10:: Do power flow analysis of MV grid: nd.run_powerflow
+                # Exception: Load_mvgd_40_1 is isolated node. Please check.
+
+                # add MVLoadsDing0 and add to lvla
+                for osm_id_building, row in loads_mv_df.iterrows():
+                    # create MVLoadDing0
+                    # create an instance of Ding0 LV load
+                    if trafo_in_mv_building:
+                        geo_data=row.raccordement_building
+                        # connect_mv_loads_to_graph(cluster_graph, osm_id_building, row)
+                    else:
+                        geo_data = row.nn_coords
+
+                    mv_load = MVLoadDing0(geo_data=geo_data,
+                                          grid=mv_grid_district,
+                                          peak_load=row.capacity,  # in kW
+                                          osmid_building=osm_id_building,
+                                          osmid_nn=row.nn,
+                                          nn_coords=row.nn_coords,
+                                          lv_load_area=lv_load_area)
+
+                    # add mv_load to mv_load_list and graph
+                    mv_grid_district.mv_grid.add_load(mv_load)
+                    lv_load_area.add_mv_load(mv_load)
 
             # create ding0 elements (LVGridDistrictDing0, LVGridDing0, LVStationDing0) for each cluster
             for mvlv_subst_loc in mvlv_subst_list:
@@ -1072,6 +1092,12 @@ class NetworkDing0:
 
             # add Load Area to MV grid district (and add centre object to MV gris district's graph)
             mv_grid_district.add_lv_load_area(lv_load_area)
+            
+            # PLOT from 4
+            # return graph, geo_load_area, inner_graph, conn_graph, graph_subdiv, outer_graph, composed_graph, buildings_w_loads_df, street_loads_df, simp_graph, lv_load_area, mv_grid_district
+            
+            # 3)
+            # return lv_load_area, mv_grid_district, geo_load_area, buildings_w_loads_df
 
 
     def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts, lv_stations):
@@ -1323,6 +1349,7 @@ class NetworkDing0:
             """
             Imports renewable (res) generators
             """
+            srid = 3035  # new to calc distance matrix in step 6
 
             # build query
             generators_sqla = session.query(
@@ -1361,8 +1388,10 @@ class NetworkDing0:
                 # otherwise use original geom from EnergyMap
                 if row['geom_new']:
                     geo_data = wkt_loads(row['geom_new'])
+                    
                 elif not row['geom_new']:
                     geo_data = wkt_loads(row['geom'])
+                    
                     logger.warning(
                         'Generator {} has no geom_new entry,'
                         'EnergyMap\'s geom entry will be used.'.format(
@@ -1451,6 +1480,7 @@ class NetworkDing0:
             """
             Imports conventional (conv) generators
             """
+            srid = 3035  # new to calc distance matrix in step 6
 
             # build query
             generators_sqla = session.query(
@@ -2257,39 +2287,32 @@ class NetworkDing0:
         Builds LV grids for every non-aggregated LA in every MV grid
         district using model grids.
         """
-
         for mv_grid_district in self.mv_grid_districts():
-
             if True:  # new approach
-                g_list = []
                 for load_area in mv_grid_district.lv_load_areas():
                     logger.warning(f'LV grid building for la {str(load_area)}')
                     if True:
                         for lv_grid_district in load_area.lv_grid_districts():
                             logger.warning(f'LVGD building for {str(lv_grid_district)}')
                             lv_grid_district.lv_grid.build_grid()
+
                     else:  # do a specific load area and return it
                         if load_area.id_db != 2765:
                             continue
                         else:
                             return load_area
-                            for lv_grid_district in load_area.lv_grid_districts():
-                                lv_grid_district.lv_grid.build_grid()
-                                g = lv_grid_district.lv_grid.build_grid()
-                                g_list.append(g)
-                            return load_area, g_list
 
             else:  # ding0 default
                 for mv_grid_district in self.mv_grid_districts():
                     for load_area in mv_grid_district.lv_load_areas():
-                        # if not load_area.is_aggregated:
-                        for lv_grid_district in load_area.lv_grid_districts():
-                            lv_grid_district.lv_grid.build_grid()
-                        # else:
-                        #    logger.info(
-                        #        '{} is of type aggregated. No grid is created.'.format(repr(load_area)))
+                        if not load_area.is_aggregated:
+                            for lv_grid_district in load_area.lv_grid_districts():
+                                lv_grid_district.lv_grid.build_grid()
+                        else:
+                            logger.info('{} is of type aggregated. No grid is created.'.format(repr(load_area)))
 
         logger.info('=====> LV model grids created')
+
 
     def connect_generators(self, debug=False):
         """

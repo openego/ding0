@@ -498,7 +498,7 @@ class MVGridDing0(GridDing0):
                 if isinstance(node, LVLoadAreaCentreDing0):
                     # calc distance from MV-LV station to LA centre
                     srid = 3035  # param due to station is in 4326 and needs to bre transformed to 3035 
-                    dist_node = calc_geo_dist(self.station(), node, srid) / 1e3
+                    dist_node = calc_geo_dist(self.station(), node) / 1e3
                     if dist_node > dist_max:
                         dist_max = dist_node
 

@@ -16,6 +16,7 @@ __author__     = "nesnoj, gplssm"
 import os
 from . import RegionDing0
 from ding0.tools import config as cfg_ding0
+# from ding0.core.network.loads import MVLoadDing0
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
@@ -23,7 +24,7 @@ if not 'READTHEDOCS' in os.environ:
 
 class MVGridDistrictDing0(RegionDing0):
         # TODO: check docstring
-    """Defines a MV-grid_district in DINGO
+    """Defines a MV-grid_district in DfINGO
     
     Attributes
     ----------
@@ -165,6 +166,8 @@ class LVLoadAreaDing0(RegionDing0):
     # new osm approach
     load_area_graph: networkx.MultiDiGraph
         contains all streets in load_area
+    MVLoads: list
+        list containing ding0.MVLoads in lvla
     """
 
     def __init__(self, **kwargs):
@@ -173,6 +176,7 @@ class LVLoadAreaDing0(RegionDing0):
 
         # more params
         self._lv_grid_districts = []
+        self._mv_loads = []
         self.ring = kwargs.get('ring', None)
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
         self.lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
@@ -243,8 +247,20 @@ class LVLoadAreaDing0(RegionDing0):
         """
         return len(self._lv_grid_districts)
 
+    def add_mv_load(self, mv_load):
+        """Adds a MVLoad to _lv_grid_districts if not already existing
+        
+        Parameters
+        ----------
+        mv_load: ding0.core.network.MVLoadDing0
+        """
+
+        if mv_load not in self._mv_loads:
+        # TODO: CHECK IF ITS AN MV LOAD
+        # isinstance(mv_load, MVLoadDing0):
+            self._mv_loads.append(mv_load)
+
     def add_lv_grid_district(self, lv_grid_district):
-        # TODO: check docstring
         """Adds a LV grid district to _lv_grid_districts if not already existing
         
         Parameters
