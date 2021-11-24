@@ -183,8 +183,14 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
         str(mv_grid_district.id_db)))
     if not only_export_mv:
         # add lv grid components
+        logger.warning('STARTING TO EXPORT LV')
         for lv_load_area in mv_grid_district.lv_load_areas():
+            logger.warning(f'STARTING TO EXPORT LVLA {lv_load_area}')
+            if lv_load_area.is_aggregated:
+                logger.warning(f'LVLA {lv_load_area} is aggregated. Skip it: continue.')
+                continue
             for lv_grid_district in lv_load_area.lv_grid_districts():
+                logger.warning(f'STARTING TO EXPORT LVGD {lv_grid_district}. Going to fill_component_dataframes.')
                 lv_grid = lv_grid_district.lv_grid
                 lv_components_tmp, lv_component_data = \
                     fill_component_dataframes(lv_grid, buses_df, lines_df,
@@ -251,14 +257,17 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
                 open_circuit_breakers.append(repr(circuit_breaker))
                 circuit_breaker.close()
     # get all grid nodes
+    logger.warning('GET NODES')
     nodes = grid.graph.nodes()
     # get all grid edges
+    logger.warning('GET EDGES')
     edges = [edge for edge in list(grid.graph_edges())
              if (edge['adj_nodes'][0] in nodes and not isinstance(
             edge['adj_nodes'][0], LVLoadAreaCentreDing0))
              and (edge['adj_nodes'][1] in nodes and not isinstance(
             edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
     # add station transformers to respective dataframe
+    logger.warning('GET TRAFOS')
     for trafo in grid.station()._transformers:
         if trafo.x_pu == None:
             type = '{} MVA 110/{} kV'.format(int(trafo.s_max_a/1e3), grid.v_level)
@@ -267,14 +276,17 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
         else:
             transformer_df = append_transformers_df(transformer_df, trafo)
     # handle all nodes and append to respective dataframes
+    logger.warning('GOING TO nodes_to_dict_of_dataframes')
     node_components, component_data = \
         nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df,
                                     loads_df, transformer_df, only_export_mv,
                                     return_time_varying_data)
     # handle all edges and append to respective dataframe
+    logger.warning('GOING TO edges_to_dict_of_dataframes')
     branch_components = edges_to_dict_of_dataframes(edges, lines_df,
                                                     node_components['Bus'])
     # merge node and edges
+    logger.warning('GOING TO merge_two_dicts')
     components = merge_two_dicts(node_components, branch_components)
     components, component_data = \
         circuit_breakers_to_df(grid, components, component_data,
@@ -446,9 +458,11 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 # accordingly
                 # Todo: replace when loads are seperated in a cleaner way
                 #  (retail, industrial)
-                sorted_consumption = [(value, key) for key, value in
-                                      node.consumption.items()]
-                sector = max(sorted_consumption)[1]
+                # TODO: SET SECTOR FOR CONSUMPTION
+                # sorted_consumption = [(value, key) for key, value in
+                #                      node.consumption.items()]
+                # sector = max(sorted_consumption)[1]
+                sector = 'ALL'
                 # check whether load is in building
                 branches = node.grid.graph_branches_from_node(node)
                 if len(branches) == 1 and hasattr(branches[0][0],
@@ -467,8 +481,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 # add load
                 load = pd.Series({'name': repr(node), 'bus': bus_name,
                                   'peak_load': node.peak_load/1e3,
-                                  'annual_consumption':
-                                      node.consumption[sector]/1e3,
+                                  'annual_consumption': 0,  # TODO: set consumption due to there is no consomption yet.
+                                      # node.consumption[sector]/1e3,
                                   'sector': sector})
                 loads_df = loads_df.append(load, ignore_index=True)
                 buses_df = append_buses_df(buses_df, grid, node)
@@ -856,17 +870,27 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
         only exported if return_time_varying_data is True
     """
     # get annual consumption
-    if isinstance(load_area, LVGridDistrictDing0):
-        consumption = getattr(load_area, '_'.join(['sector_consumption',
-                                                   sector]))
-    elif isinstance(load_area,LVLoadAreaDing0):
-        consumption = 0
-        for lv_grid_district in load_area.lv_grid_districts():
-            consumption += getattr(lv_grid_district,
-                                   '_'.join(['sector_consumption', sector]))
+    consumption = 0
+    if False:  # there is no consumption known. TODO. set comsumption.
+        if isinstance(load_area, LVGridDistrictDing0):
+            consumption = getattr(load_area, '_'.join(['sector_consumption',
+                                                       sector]))
+        elif isinstance(load_area,LVLoadAreaDing0):
+            consumption = 0
+            for lv_grid_district in load_area.lv_grid_districts():
+                consumption += getattr(lv_grid_district,
+                                       '_'.join(['sector_consumption', sector]))
     # create and append load to df
     name_load = '_'.join([name_load, sector])
     peak_load = getattr(load_area, '_'.join(['peak_load', sector]))
+    # new, it may be, that peak_load or consumption is None
+    # then set 0
+    if not peak_load:
+        peak_load = 0
+        logger.warning(f'name_load: {name_load} has peak_load=None')
+    if not consumption:
+        consumption = 0
+        logger.warning(f'name_load: {name_load} has peak_load=None')
     load = pd.Series(
         {'name': name_load, 'bus': name_bus,
          'peak_load': peak_load/1e3,

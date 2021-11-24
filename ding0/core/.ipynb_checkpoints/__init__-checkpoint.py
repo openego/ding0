@@ -334,10 +334,8 @@ class NetworkDing0:
             The rings are finally closed to hold a complete graph (if the SDs are open,
             the edges adjacent to a SD will not be exported!)
         """
-        
+
         # TODO run ding0 needs to consider new features
-        
-        
         if debug:
             start = time.time()
 
@@ -827,7 +825,7 @@ class NetworkDing0:
 
             # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
-            #if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
+            # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
             #    continue
 
             # create session to load from (local) DB OSM data 
@@ -2291,15 +2289,17 @@ class NetworkDing0:
             if True:  # new approach
                 for load_area in mv_grid_district.lv_load_areas():
                     logger.warning(f'LV grid building for la {str(load_area)}')
-                    if True:
+                    if True:  # process all la and lvgds
                         for lv_grid_district in load_area.lv_grid_districts():
                             logger.warning(f'LVGD building for {str(lv_grid_district)}')
                             lv_grid_district.lv_grid.build_grid()
 
                     else:  # do a specific load area and return it
-                        if load_area.id_db != 2765:
+                        if load_area.id_db != 4347:
                             continue
                         else:
+                            for lv_grid_district in load_area.lv_grid_districts():
+                                lv_grid_district.lv_grid.build_grid()
                             return load_area
 
             else:  # ding0 default
@@ -2466,11 +2466,19 @@ class NetworkDing0:
             # reinforce MV grid
             grid_district.mv_grid.reinforce_grid()
 
+            # TODO: ERROR FOR lv_grid_district.lv_grid.reinforce_grid()
+#            ~\anaconda3\envs\ding0_env\lib\site-packages\ding0\flexopt\check_tech_constraints.py in get_critical_voltage_at_nodes(grid)
+#    462 
+#    463             # roughly estimate transverse voltage drop
+#--> 464             stub_node = [_ for _ in tree.successors(successor) if
+#    465                          _ not in main_branch][0]
+#    466             v_delta_load_stub, v_delta_gen_stub  = get_delta_voltage_preceding_line(grid, tree, stub_node)
+# IndexError: list index out of range
             # reinforce LV grids
-            for lv_load_area in grid_district.lv_load_areas():
-                if not lv_load_area.is_aggregated:
-                    for lv_grid_district in lv_load_area.lv_grid_districts():
-                        lv_grid_district.lv_grid.reinforce_grid()
+            # for lv_load_area in grid_district.lv_load_areas():
+            #    if not lv_load_area.is_aggregated:
+            #        for lv_grid_district in lv_load_area.lv_grid_districts():
+            #            lv_grid_district.lv_grid.reinforce_grid()
 
     @property
     def metadata(self, run_id=None):
