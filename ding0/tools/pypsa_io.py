@@ -186,6 +186,8 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
         logger.warning('STARTING TO EXPORT LV')
         for lv_load_area in mv_grid_district.lv_load_areas():
             logger.warning(f'STARTING TO EXPORT LVLA {lv_load_area}')
+            # if not continue the aggregated LA, it causes error. check notebook
+            # ERR_RUN_POWERFLOW_FORAGGREGATED_LOAD_AREA
             if lv_load_area.is_aggregated:
                 logger.warning(f'LVLA {lv_load_area} is aggregated. Skip it: continue.')
                 continue

@@ -83,12 +83,12 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
         
     # set avg square meter from config
     avg_mxm = get_config_osm('avg_square_meters')
-    
-    
+
     # prepare pd.read_sql to concat as one df
     # preprocess amenities_ni_Buildings_sql_df for df
     if len(amenities_ni_Buildings_sql_df) > 0:
-        amenities_ni_Buildings_sql_df.index = amenities_ni_Buildings_sql_df['osm_id']
+        amenities_ni_Buildings_sql_df.index = amenities_ni_Buildings_sql_df['osm_id'].tolist()  # set osm_id amenity as index to have a load for each amenity
+        amenities_ni_Buildings_sql_df['osm_id_building'] = amenities_ni_Buildings_sql_df['osm_id']  # set osm_id_building to connect load to it
         del amenities_ni_Buildings_sql_df['osm_id']
         amenities_ni_Buildings_sql_df['number_households'] = 0
         amenities_ni_Buildings_sql_df = amenities_ni_Buildings_sql_df.rename(
@@ -107,6 +107,7 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
     # preprocess buildings_wo_a_sql_df for df
     if len(buildings_wo_a_sql_df) > 0:
         buildings_wo_a_sql_df['n_amenities_inside'] = 1
+        buildings_wo_a_sql_df['osm_id_building'] = buildings_wo_a_sql_df['osm_id']
         buildings_wo_a_sql_df.index = buildings_wo_a_sql_df['osm_id']
         del buildings_wo_a_sql_df['osm_id']
         concat_b1 = True
@@ -114,7 +115,7 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
     
     # preprocess buildings_w_a_sql_df for df
     if len(buildings_w_a_sql_df) > 0:
-        buildings_w_a_sql_df.index = buildings_w_a_sql_df['osm_id_amenity']
+        buildings_w_a_sql_df.index = buildings_w_a_sql_df['osm_id_amenity'].tolist()  # set osm_id amenity as index to have a load for each amenity
         buildings_w_a_sql_df = buildings_w_a_sql_df.rename({'geometry_building': 'geometry'}, axis=1)
         del buildings_w_a_sql_df['osm_id_amenity']
         concat_b2 = True

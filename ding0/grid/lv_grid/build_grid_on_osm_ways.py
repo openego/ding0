@@ -23,7 +23,7 @@ from ding0.core.network.loads import LVLoadDing0
 from ding0.tools import config as cfg_ding0
 
 from config.config_lv_grids_osm import get_config_osm
-
+from ding0.grid.lv_grid.parameterization import get_peak_load_for_residential
 
 import logging
 logger = logging.getLogger('ding0')
@@ -279,6 +279,16 @@ def build_branches_on_osm_ways(lvgd):
         node_feederId_dict = {}
         for nn in lvgd.buildings.nn.tolist():
             node_feederId_dict[nn] = 1
+    
+    # update capacity with residentials for loads < 100 kW
+    feeder_ids = list(set(lvgd.buildings.feeder.tolist()))
+    # reset capacity for residentials to 0 due to update em capacity like capacity += capacity_res
+    lvgd.buildings.loc[lvgd.buildings.category == 'residential', 'capacity'] = 0
+    for feeder_id in feeder_ids:
+        capacity_res = \
+            get_peak_load_for_residential(lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'n_residential_at_this_feeder'])
+        lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'capacity'] = \
+            lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'capacity'] + capacity_res
 
     # lv_branch_no_max stores the max value of feeder leaving station
     # when adding loads w 100 <= capacity < 200 kW, set branch_no:
@@ -307,6 +317,7 @@ def build_branches_on_osm_ways(lvgd):
     # store LVCableDistributorDing0 in added_cable_dist_dict, e.g. a nearest node of a building
     # may have multiple edges, thus, it appears multiple times in edges, so, load it from dict.
     added_cable_dist_dict = {}
+    new_lvgd_peak_load_considering_simultaneity = 0
 
     # Add LVCableDistributorDing0 for nodes and branch for each edge to connect 
     # LVCableDistributorDing0 based on graph: shortest_tree_district_graph
@@ -460,7 +471,11 @@ def build_branches_on_osm_ways(lvgd):
     # build branch between each building and nearest node in ways
     for u, row in lv_loads_grid.iterrows():
 
-        # u is osm id building
+        # u is osm id of load, e.g. amenity bu if there are mu.tiple amenities in
+        # one building, each amenity would have its own connection point, thus
+        # set u = row.osm_id_building to connect all loads in one building w. < 100 kW 
+        # to same connection point in building
+        u = row.osm_id_building  # u is connection point of building
         v = row.nn  # v is nearest osm id of nearest node in graph
 
         # get branch_no
@@ -508,6 +523,7 @@ def build_branches_on_osm_ways(lvgd):
                               load_no=load_no,
                               peak_load=row.capacity  # in kW
                              )  # TODO: what here? isnt known yet.
+        new_lvgd_peak_load_considering_simultaneity += row.capacity  # considering simultaneity for loads per feeder
 
         # add lv_load to graph
         lvgd.lv_grid.add_load(lv_load)
@@ -562,16 +578,27 @@ def build_branches_on_osm_ways(lvgd):
     # adding cable_dist and loads and edges/Branches for lv_loads_to_station
     for u, row in lv_loads_to_station.iterrows():
 
-                    # u is osm id building
+                    # u is osm id of load. it has a own connection point.
+                    # if there are multiple loads in same building, each
+                    # load has is own connection point.
         v = row.nn  # v is nearest osm id of nearest node in graph
+
+        # update capacity with residentials
+        # if building is residentail, set capacity to 0 and update with calculated capacity simultaneity
+        capacity = row.capacity
+        if row.category == 'residential':
+            capacity = 0
+        capacity_res = get_peak_load_for_residential(row.n_residential_at_this_feeder)
+        capacity += capacity_res
+        new_lvgd_peak_load_considering_simultaneity += capacity  # considering simultaneity for loads per feeder
 
         # get branch_no
         lv_branch_no_max += 1
         branch_no = lv_branch_no_max
         # get number of necessary cables
-        n_cables = n_cables = get_number_of_cables(row.capacity, cos_phi_load, v_nom)
+        n_cables = get_number_of_cables(capacity, cos_phi_load, v_nom)
         # get cable_type. divide by n_cables in case 1 < cables are necessary to connect load
-        cable_type = get_cable_type_by_load(lvgd, row.capacity / n_cables, cable_lf, cos_phi_load, v_nom)
+        cable_type = get_cable_type_by_load(lvgd, capacity / n_cables, cable_lf, cos_phi_load, v_nom)
                 
         # logger.warning(f'FOR lv_loads_to_station: u={u}, v={v}, branch_no={branch_no}')
 
@@ -603,7 +630,7 @@ def build_branches_on_osm_ways(lvgd):
         lv_load = LVLoadDing0(grid=lvgd.lv_grid,
                               branch_no=branch_no,
                               load_no=load_no,
-                              peak_load=row.capacity)  # in kW
+                              peak_load=capacity)  # in kW
 
         # add lv_load to graph
         lvgd.lv_grid.add_load(lv_load)
@@ -637,3 +664,10 @@ def build_branches_on_osm_ways(lvgd):
                         load=load_no)))
         
         load_no += 1  # increment to set unique load_no for next building with load
+
+    # beacause of simultaneity calculation for residentials, capacity changed.
+    # simultaneity calculation can happen only after ids of feeder are identified
+    # thus, we can group loads by feederId, to which loads are connected and do calculation
+    # set new keak_load for lvgd BUT CONSIDERING ONLY simultaneity loads per feeder
+    # TODO: DO IT RIGHT; CONSIDERING ALL LOADS OVERALL DUE TO ALL LOADS ARE CONNECTED TO STATION
+    # lvgd.peak_load = new_lvgd_peak_load_considering_simultaneity

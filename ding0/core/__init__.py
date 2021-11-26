@@ -721,15 +721,17 @@ class NetworkDing0:
                 
             else:
 
-                # import lv areas and create new lv_grid_districts 
+                # import lv areas and create new lv_grid_districts
+                # return if want to see result but not mandatory
+                # for ding0 processing.
                 # 1)
-                #return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
+                # return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
                 #                                                            need_parameterization,
                 #                                                            create_lvgd_geo_method)
             
-                self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
-                                                                            need_parameterization,
-                                                                            create_lvgd_geo_method)
+                self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district,
+                                                                     need_parameterization,
+                                                                     create_lvgd_geo_method)
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
             mv_grid_district.add_peak_demand()        
@@ -824,8 +826,8 @@ class NetworkDing0:
         for id_db, row in lv_load_areas.iterrows():
 
             # 2)
-            # todo: remove. exists to process a selected load area instead all load areas.
-            # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209
+            # todo: remove continue. exists to process a selected load area instead all load areas.
+            # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209. 2765 no building
             #    continue
 
             # create session to load from (local) DB OSM data 
@@ -919,7 +921,7 @@ class NetworkDing0:
                 buildings_w_a  = get_osm_buildings_w_a(row.geo_area, session_osm)
                 buildings_wo_a = get_osm_buildings_wo_a(row.geo_area, session_osm)
                 amenities_ni_Buildings = get_osm_amenities_ni_Buildings(row.geo_area, session_osm)
-                
+
                 if (len(buildings_w_a) + len(buildings_wo_a) + len(amenities_ni_Buildings)) < 1:
                     logger.warning(f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
                     continue
@@ -931,7 +933,6 @@ class NetworkDing0:
                 
                 # todo: load ding0 default loads
                 return 'Not implemented yet. Need to load ding0 default parameterization.'
-
                 
             # assign nearest nodes
             buildings_w_loads_df = assign_nearest_nodes_to_buildings(composed_graph, buildings_w_loads_df) #PAUL NEW changed graph
@@ -2293,6 +2294,8 @@ class NetworkDing0:
                         for lv_grid_district in load_area.lv_grid_districts():
                             logger.warning(f'LVGD building for {str(lv_grid_district)}')
                             lv_grid_district.lv_grid.build_grid()
+                        # if peak loads per feeder are updated in lv_grid_district.lv_grid.build_grid()
+                        # peak_load per load_area can be updated afterwards in case of interest.
 
                     else:  # do a specific load area and return it
                         if load_area.id_db != 4347:
