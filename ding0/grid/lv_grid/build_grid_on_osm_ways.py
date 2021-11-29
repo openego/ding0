@@ -286,7 +286,7 @@ def build_branches_on_osm_ways(lvgd):
     lvgd.buildings.loc[lvgd.buildings.category == 'residential', 'capacity'] = 0
     for feeder_id in feeder_ids:
         capacity_res = \
-            get_peak_load_for_residential(lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'n_residential_at_this_feeder'])
+            get_peak_load_for_residential(lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'n_residential_at_this_feeder'].item())
 	for i, row in lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id].iterrows():
 		lvgd.buildings.loc[i, 'capacity'] = row.capacity + capacity_res * row.number_households
 
