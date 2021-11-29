@@ -287,8 +287,8 @@ def build_branches_on_osm_ways(lvgd):
     for feeder_id in feeder_ids:
         capacity_res = \
             get_peak_load_for_residential(lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'n_residential_at_this_feeder'])
-        lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'capacity'] = \
-            lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'capacity'] + capacity_res
+	for i, row in lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id].iterrows():
+		lvgd.buildings.loc[i, 'capacity'] = row.capacity + capacity_res * row.number_households
 
     # lv_branch_no_max stores the max value of feeder leaving station
     # when adding loads w 100 <= capacity < 200 kW, set branch_no:
@@ -362,8 +362,6 @@ def build_branches_on_osm_ways(lvgd):
             if branch_no == 0:
                 logger.warning(f'for edges() branch_no == 0. There is no load known, thus, set cable_type = NAYY 150.')
                 logger.warning(f'edges.iterrows(): branchno = {branch_no}, for lvgd {str(lvgd)}')
-		# because branch_no is 0: load may be connected to station directly, thus
-		# maybe connect load depending on load capacity instead using .iloc[3]?
                 cable_type_stub = lvgd.lv_grid.network.static_data['LV_cables'].iloc[3]
 
             if branch_no not in feeder_cable_type_dict.keys():
@@ -590,7 +588,7 @@ def build_branches_on_osm_ways(lvgd):
         capacity = row.capacity
         if row.category == 'residential':
             capacity = 0
-        capacity_res = get_peak_load_for_residential(row.n_residential_at_this_feeder)
+        capacity_res = get_peak_load_for_residential(row.n_residential_at_this_feeder) * row.n_residential_at_this_feeder
         capacity += capacity_res
         new_lvgd_peak_load_considering_simultaneity += capacity  # considering simultaneity for loads per feeder
 
