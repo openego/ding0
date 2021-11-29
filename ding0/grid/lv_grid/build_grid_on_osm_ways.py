@@ -360,8 +360,10 @@ def build_branches_on_osm_ways(lvgd):
                 
             # logger.warning(f'FOR EDGES: u={u}, v={v}, branch_no={branch_no}')
             if branch_no == 0:
-                logger.warning(f'for edges() branch_no == 0. There is n load known, thus, set cable_type = NAYY 150.')
+                logger.warning(f'for edges() branch_no == 0. There is no load known, thus, set cable_type = NAYY 150.')
                 logger.warning(f'edges.iterrows(): branchno = {branch_no}, for lvgd {str(lvgd)}')
+		# because branch_no is 0: load may be connected to station directly, thus
+		# maybe connect load depending on load capacity instead using .iloc[3]?
                 cable_type_stub = lvgd.lv_grid.network.static_data['LV_cables'].iloc[3]
 
             if branch_no not in feeder_cable_type_dict.keys():
