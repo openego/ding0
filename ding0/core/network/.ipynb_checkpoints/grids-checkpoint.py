@@ -933,15 +933,11 @@ class LVGridDing0(GridDing0):
         """
     
         if True:  # new approach
-
-            # add required transformers
-            # here transformer is selected by peak load of all buildings in lvgd
-            build_grid.transformer(self)
-
-            # new osm based lv grid building
-            # simultane pick load calculation for residentials happens here, thus
-            # if want to consider simultaneity, select trafo after
+            # lv grid building. new peak load will be calculated considering diversity factor
             build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district)
+
+            # add required transformers. IMPORTANT! ENSURE RIGHT PEAK_LOAD!
+            build_grid.transformer(self)
             
         else:     # ding0 default
 

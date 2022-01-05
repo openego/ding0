@@ -85,7 +85,7 @@ from ding0.grid.lv_grid.routing import assign_nearest_nodes_to_buildings, \
 get_lvgd_id, identify_street_loads, get_mvlv_subst_loc_list, get_load_center, \
 connect_mv_loads_to_graph
 
-from grid.lv_grid.parameterization import parameterize_by_load_profiles
+from grid.lv_grid.parameterization import parameterize_by_load_profiles, get_peak_load_diversity
 
 from grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, get_bounding_box_from_points
 
@@ -334,8 +334,10 @@ class NetworkDing0:
             The rings are finally closed to hold a complete graph (if the SDs are open,
             the edges adjacent to a SD will not be exported!)
         """
-
+        
         # TODO run ding0 needs to consider new features
+        
+        
         if debug:
             start = time.time()
 
@@ -352,7 +354,6 @@ class NetworkDing0:
         msg = self.validate_grid_districts()
 
         # STEP 5: Build LV grids
-        # return self.build_lv_grids()
         self.build_lv_grids()
 
         # STEP 6: Build MV grids
@@ -705,7 +706,6 @@ class NetworkDing0:
                                              station_geo_data)
             
             
-            #### TODO: check ding0_default
             if ding0_default:
 
                 # import all lv_stations within mv_grid_district
@@ -719,19 +719,10 @@ class NetworkDing0:
                                           lv_grid_districts, lv_stations)
                 
                 
-            else:
-
-                # import lv areas and create new lv_grid_districts
-                # return if want to see result but not mandatory
-                # for ding0 processing.
-                # 1)
-                # return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
-                #                                                            need_parameterization,
-                #                                                            create_lvgd_geo_method)
-            
-                self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district,
-                                                                     need_parameterization,
-                                                                     create_lvgd_geo_method)
+            else:  # apply new approach
+                self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district, 
+                                                                            need_parameterization,
+                                                                            create_lvgd_geo_method)
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
             mv_grid_district.add_peak_demand()        
@@ -826,8 +817,8 @@ class NetworkDing0:
         for id_db, row in lv_load_areas.iterrows():
 
             # 2)
-            # todo: remove continue. exists to process a selected load area instead all load areas.
-            # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209. 2765 no building
+            # todo: remove. exists to process a selected load area instead all load areas.
+            # if id_db != 4488: # 2128 is first , 4347, 4488 is kluftern, 5588. no buildings: 2625, GB 170209
             #    continue
 
             # create session to load from (local) DB OSM data 
@@ -910,7 +901,6 @@ class NetworkDing0:
             outer_graph = flatten_graph_components_to_lines(outer_graph, inner_node_list)
             outer_graph = remove_detours(outer_graph)
 
-
             #compose graph
             composed_graph = compose_graph(outer_graph, graph_subdiv) # PAUL NEW changed position order
 
@@ -921,7 +911,7 @@ class NetworkDing0:
                 buildings_w_a  = get_osm_buildings_w_a(row.geo_area, session_osm)
                 buildings_wo_a = get_osm_buildings_wo_a(row.geo_area, session_osm)
                 amenities_ni_Buildings = get_osm_amenities_ni_Buildings(row.geo_area, session_osm)
-
+                
                 if (len(buildings_w_a) + len(buildings_wo_a) + len(amenities_ni_Buildings)) < 1:
                     logger.warning(f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
                     continue
@@ -933,6 +923,7 @@ class NetworkDing0:
                 
                 # todo: load ding0 default loads
                 return 'Not implemented yet. Need to load ding0 default parameterization.'
+
                 
             # assign nearest nodes
             buildings_w_loads_df = assign_nearest_nodes_to_buildings(composed_graph, buildings_w_loads_df) #PAUL NEW changed graph
@@ -954,7 +945,7 @@ class NetworkDing0:
 
             # cluster graph and locate lv stations based on load center per cluster
             clustering_successfully, cluster_graph, mvlv_subst_list, nodes_w_labels = \
-                distance_restricted_clustering(simp_graph, n_cluster, street_loads_df)
+                distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_grid_district, id_db)
             if not clustering_successfully:
                 return f"clutering not sucessfully for MV {mv_grid_district}, LA {id_db}"
 
@@ -962,7 +953,6 @@ class NetworkDing0:
             # get loads on mv level
             loads_mv_df = buildings_w_loads_df.loc[(get_config_osm('mv_lv_threshold_capacity') <= buildings_w_loads_df.capacity) &
                                                    (buildings_w_loads_df.capacity < get_config_osm('hv_mv_threshold_capacity'))]
-
 
             # add mv loads to graph. connect via edges. if True
             trafo_in_mv_building = False  # Paul
@@ -978,10 +968,13 @@ class NetworkDing0:
             buildings_w_loads_df['cluster'] = buildings_w_loads_df.nn.map(nodes_w_labels.cluster)
 
             # create LV load_area object
+            # calc peak load based considering diverity factor
+            peak_load_div = get_peak_load_diversity(buildings_w_loads_df)
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
                                            db_data=row,
                                            mv_grid_district=mv_grid_district,
-                                           peak_load=buildings_w_loads_df.capacity.sum(),
+                                           peak_load=peak_load_div,
+                                           # peak_load=buildings_w_loads_df.capacity.sum(),
                                            load_area_graph=cluster_graph)
                                            # ,_mv_loads=mv_load_list)
 
@@ -1041,13 +1034,16 @@ class NetworkDing0:
                     logging.warning(f'create_lvgd_geo_method {create_lvgd_geo_method} not implemented.')
 
                 # create LVGridDistrictDing0
+                # calc peak load based considering diverity factor for each district
+                peak_load_div = get_peak_load_diversity(buildings)
                 lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id,
                                                        geo_data=polygon,
                                                        graph_district=mvlv_subst_loc.get('graph_district'),
                                                        lv_load_area=lv_load_area,
                                                        buildings_district=buildings,
                                                        id_db=lvgd_id, 
-                                                       peak_load=buildings.capacity.sum())
+                                                       peak_load=peak_load_div)
+                                                       # peak_load=buildings.capacity.sum())
 
                 # create LVGridDing0
                 # be aware, lv_grid takes grid district's geom!
@@ -2290,19 +2286,15 @@ class NetworkDing0:
             if True:  # new approach
                 for load_area in mv_grid_district.lv_load_areas():
                     logger.warning(f'LV grid building for la {str(load_area)}')
-                    if True:  # process all la and lvgds
+                    if True:
                         for lv_grid_district in load_area.lv_grid_districts():
                             logger.warning(f'LVGD building for {str(lv_grid_district)}')
                             lv_grid_district.lv_grid.build_grid()
-                        # if peak loads per feeder are updated in lv_grid_district.lv_grid.build_grid()
-                        # peak_load per load_area can be updated afterwards in case of interest.
 
                     else:  # do a specific load area and return it
-                        if load_area.id_db != 4347:
+                        if load_area.id_db != 2765:
                             continue
                         else:
-                            for lv_grid_district in load_area.lv_grid_districts():
-                                lv_grid_district.lv_grid.build_grid()
                             return load_area
 
             else:  # ding0 default
@@ -2469,19 +2461,11 @@ class NetworkDing0:
             # reinforce MV grid
             grid_district.mv_grid.reinforce_grid()
 
-            # TODO: ERROR FOR lv_grid_district.lv_grid.reinforce_grid()
-#            ~\anaconda3\envs\ding0_env\lib\site-packages\ding0\flexopt\check_tech_constraints.py in get_critical_voltage_at_nodes(grid)
-#    462 
-#    463             # roughly estimate transverse voltage drop
-#--> 464             stub_node = [_ for _ in tree.successors(successor) if
-#    465                          _ not in main_branch][0]
-#    466             v_delta_load_stub, v_delta_gen_stub  = get_delta_voltage_preceding_line(grid, tree, stub_node)
-# IndexError: list index out of range
             # reinforce LV grids
-            # for lv_load_area in grid_district.lv_load_areas():
-            #    if not lv_load_area.is_aggregated:
-            #        for lv_grid_district in lv_load_area.lv_grid_districts():
-            #            lv_grid_district.lv_grid.reinforce_grid()
+            for lv_load_area in grid_district.lv_load_areas():
+                if not lv_load_area.is_aggregated:
+                    for lv_grid_district in lv_load_area.lv_grid_districts():
+                        lv_grid_district.lv_grid.reinforce_grid()
 
     @property
     def metadata(self, run_id=None):

@@ -72,6 +72,7 @@ class LVCableDistributorDing0(CableDistributorDing0):
         # self.id_db = self.grid.cable_distributors_count() + 1  # NOT WORKING BECAUSE WHEN ADDING EDGES, U or V MAY APPEAR MORE TIMES IN G.EDGES()
         self.id_db = kwargs.get('id_db', None)  # set osm_id as id_db to have unqie identifiers.
         self.in_building = kwargs.get('in_building', False)
+        self.osm_id = kwargs.get('osm_id', None)
 
     @property
     def pypsa_bus_id(self):

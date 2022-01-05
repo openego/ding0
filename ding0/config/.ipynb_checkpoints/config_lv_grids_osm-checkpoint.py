@@ -19,7 +19,9 @@ def get_config_osm(key):
     additional_trafo_capacity: e.g. 1.5; so, transformers have max load factor of 70%.
                                capacity_to_cover = capacity_of_area * 1.5
                                
-                              
+    diversity_factor_not_residential: 0.6
+    src.: https://assets.new.siemens.com/siemens/assets/api/uuid:d683c81df25afb360b79c5d48441eeda8b23477b/planung-der-elektrischen-energieverteilung-technische-grundlagen.pdf, page 18. 23.12.2021.
+
     """
 
     config_osm = {
@@ -38,7 +40,7 @@ def get_config_osm(key):
         'buffer_distance' : [5, 25, 50, 100],
         'unconn_nodes_ratio' : 0.02,
         'get_fully_conn_graph_number_max_it' : 4,
-        
+        'diversity_factor_not_residential' : 0.6,
     }
         
     return config_osm[key]

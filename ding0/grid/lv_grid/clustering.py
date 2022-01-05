@@ -56,7 +56,7 @@ def apply_AgglomerativeClustering(G, k, round_decimals=True):
     else: return np.array([0])
 
 
-def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df):
+def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_grid_district, id_db):
     """
     Apply ward hierarchical AgglomerativeClustering with connectivity constraints for underlying graph
     https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
@@ -75,11 +75,10 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df):
         cluster_graph, nodes_w_labels = get_cluster_graph_and_nodes(simp_graph, labels)
 
         # locate stations for districts
-        mvlv_subst_list = get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, street_loads_df, labels, n_cluster)
-        if len(mvlv_subst_list) > 0:
-
+        mvlv_subst_list, valid_cluster_distance = \
+            get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, street_loads_df, labels, n_cluster)
+        if valid_cluster_distance:
             logger.warning('all clusters are in range')
-
             clustering_successfully=True
             break
 

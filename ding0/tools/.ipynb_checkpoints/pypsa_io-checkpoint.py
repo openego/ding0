@@ -476,7 +476,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 else:
                     # add new bus to connect load to
                     bus_name = node.pypsa_bus_id
-                    buses_df = append_buses_df(buses_df, grid, node)
+                    # buses_df = append_buses_df(buses_df, grid, node) would be duplicated to line 490
                     if return_time_varying_data:
                         bus_v_mag_set_df = \
                             append_bus_v_mag_set_df(bus_v_mag_set_df, node)

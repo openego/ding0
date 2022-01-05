@@ -146,14 +146,15 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_clu
         if not loads_in_ons_dist_threshold(dm_cluster, cluster_nodes, osmid):
             # return empty list and False for cluster validity
             # due to distance threshold to ons is trespassed
-            return []
+            valid_cluster_distance = False
+            return mvlv_subst_list, valid_cluster_distance
 
         mvlv_subst_loc = cluster_graph.nodes[osmid]
         mvlv_subst_loc['osmid'] = osmid
         mvlv_subst_loc['graph_district'] = cluster_subgraph
         mvlv_subst_list.append(mvlv_subst_loc)
         
-    return mvlv_subst_list
+    return mvlv_subst_list, valid_cluster_distance
 
 
 # mv trafo placement

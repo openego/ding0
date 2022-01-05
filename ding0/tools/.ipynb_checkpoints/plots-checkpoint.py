@@ -156,7 +156,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         return node_types, nodes_by_type, node_colors_by_type,\
                node_sizes_by_type, zindex_by_type, nodes_pos
 
-    def reproject_nodes(nodes_pos, model_proj='4326'):
+    def reproject_nodes(nodes_pos, model_proj='3035'):
         inProj = Proj(init='epsg:{srid}'.format(srid=model_proj))
         outProj = Proj(init='epsg:3857')
         nodes_pos2 = {}
@@ -203,6 +203,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
 
     g = grid.graph
     model_proj = grid.network.config['geo']['srid']
+    model_proj='3035'
 
     if testcase == 'feedin':
         case_idx = 1
