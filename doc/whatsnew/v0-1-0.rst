@@ -1,6 +1,0 @@
-Release v0.1.0 (July 25, 2017)
-++++++++++++++++++++++++++++++
-
-As this is the first release of ding0, we built everything from scratch.
-
-

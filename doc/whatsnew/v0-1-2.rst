@@ -1,6 +1,0 @@
-Release v0.1.2 (July 25, 2017)
-++++++++++++++++++++++++++++++
-
-Renaming of package: dingo to ding0
-
-

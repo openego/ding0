@@ -1,5 +1,0 @@
-pytest
-pytest-dependency
-pytest-parallel
-sphinx
-sphinx_rtd_theme

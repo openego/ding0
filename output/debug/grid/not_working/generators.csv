@@ -1,0 +1,2 @@
+name,bus,control,type,weather_cell_id,subtype,min_up_time,min_down_time,up_time_before,down_time_before
+MV_40_slack,Busbar_mvgd_40_MV,Slack,station,,mv_station,0,0,1,0

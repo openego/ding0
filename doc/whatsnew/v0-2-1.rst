@@ -1,7 +1,0 @@
-Release v0.2.1 (May 29, 2021)
-+++++++++++++++++++++++++++++
-
-Changes
--------
-
-Release to fix ego.io dependency in v0.2.0 (PyPI did not accept git link)
