@@ -1,0 +1,14 @@
+Release v0.1.10 November 5, 2018
+++++++++++++++++++++++++++++++++
+
+This release introduces new plotting functionalities.
+
+Changes
+-------
+
+* New plotting function :func:`~.tools.plots.plot_mv_topology` allows plots of the MV grid including grid topology
+  with line loadings and node voltages. You can simply fire it using an MVGrid instance or pass argument
+  :code:`export_figures=True` to :meth:`~core.Network.run_ding0()` to export some key figures.
+* Find a new Jupyter notebook example `here <https://nbviewer.jupyter.org/urls/gist.githubusercontent.com/nesnoj/6ee605cd3494fa6e3e848385c4afbe19/raw/6c3ec5452253804558807244a015cd0ded5b1782/dingo_session.ipynb>`_ (sorry, currently only in German).
+* Fix animation feature in :meth:`~.core.NetworkDing0.mv_routing()` to allow image export of routing process.
+* Minor bugfixes

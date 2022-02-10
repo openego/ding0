@@ -1,0 +1,20 @@
+Release v0.2.0 (May 28, 2021)
++++++++++++++++++++++++++++++
+
+Changes
+-------
+
+* Added Python 3.8 support `#325 <https://github.com/openego/ding0/issues/325>`_
+* Fix installation with Conda `#339 <https://github.com/openego/ding0/issues/339>`_
+
+* CSV export in PyPSA format `#307 <https://github.com/openego/ding0/issues/307>`_ ,
+  this required further changes and fixing of tests, cf. `#312 <https://github.com/openego/ding0/pull/312>`_
+* Switched from pyproj1 to pyproj2 for CRS transformations `#343 <https://github.com/openego/ding0/issues/343>`_
+* Reproducible stats by fixing `#315 <https://github.com/openego/ding0/issues/315>`_, for details see
+  `#324 <https://github.com/openego/ding0/pull/324>`_
+* In the CSV export, (in-building) household loads and generators are no more
+  contained as extra nodes but directly connected to the house's grid
+  connection point to reduce the number of nodes.
+  `#322 <https://github.com/openego/ding0/issues/322>`_
+* Fix sum capacity of grid generators `#326 <https://github.com/openego/ding0/issues/326>`_
+* Fix PyPI description `#311 <https://github.com/openego/ding0/issues/311>`_

@@ -1,0 +1,4 @@
+Release v0.1.6 July 6, 2018)
+++++++++++++++++++++++++++++++++++
+
+* Update of underlying data version to v0.4.2 of open_eGo data processing

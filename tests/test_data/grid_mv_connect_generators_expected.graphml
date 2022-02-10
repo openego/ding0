@@ -1,0 +1,424 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d9" for="edge" attr.name="length" attr.type="int" />
+  <key id="d8" for="edge" attr.name="C_per_km" attr.type="double" />
+  <key id="d7" for="edge" attr.name="L_per_km" attr.type="double" />
+  <key id="d6" for="edge" attr.name="R_per_km" attr.type="double" />
+  <key id="d5" for="edge" attr.name="I_max_th" attr.type="int" />
+  <key id="d4" for="edge" attr.name="U_n" attr.type="int" />
+  <key id="d3" for="edge" attr.name="name" attr.type="string" />
+  <key id="d2" for="edge" attr.name="kind" attr.type="string" />
+  <key id="d1" for="edge" attr.name="length" attr.type="double" />
+  <key id="d0" for="edge" attr.name="grid" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="MVStation_mvgd_0" />
+    <node id="Generator_mvgd_0_biogas_from_grid_0" />
+    <node id="Generator_mvgd_0_biogas_from_grid_1" />
+    <node id="Generator_mvgd_0_wind_onshore_2" />
+    <node id="Generator_mvgd_0_wind_onshore_3" />
+    <node id="LVStation_mvgd_0_lvgd_1000" />
+    <node id="LVStation_mvgd_0_lvgd_1001" />
+    <node id="LVStation_mvgd_0_lvgd_1002" />
+    <node id="LVStation_mvgd_0_lvgd_1003" />
+    <node id="LVStation_mvgd_0_lvgd_1004" />
+    <node id="LVStation_mvgd_0_lvgd_1005" />
+    <node id="LVStation_mvgd_0_lvgd_1006" />
+    <node id="LVStation_mvgd_0_lvgd_1007" />
+    <node id="LVStation_mvgd_0_lvgd_1008" />
+    <node id="LVStation_mvgd_0_lvgd_1009" />
+    <node id="LVStation_mvgd_0_lvgd_1010" />
+    <node id="LVStation_mvgd_0_lvgd_1011" />
+    <node id="LVStation_mvgd_0_lvgd_1012" />
+    <node id="LVStation_mvgd_0_lvgd_1013" />
+    <node id="LVStation_mvgd_0_lvgd_1014" />
+    <node id="LVStation_mvgd_0_lvgd_1015" />
+    <node id="LVStation_mvgd_0_lvgd_1016" />
+    <node id="LVStation_mvgd_0_lvgd_1017" />
+    <node id="LVStation_mvgd_0_lvgd_1018" />
+    <node id="circuit_breaker_1" />
+    <node id="MVCableDist_mvgd_0_1" />
+    <node id="circuit_breaker_2" />
+    <node id="MVCableDist_mvgd_0_2" />
+    <node id="circuit_breaker_3" />
+    <node id="MVCableDist_mvgd_0_3" />
+    <node id="circuit_breaker_4" />
+    <node id="circuit_breaker_5" />
+    <node id="circuit_breaker_6" />
+    <node id="MVCableDist_mvgd_0_4" />
+    <node id="MVCableDist_mvgd_0_5" />
+    <edge source="MVStation_mvgd_0" target="MVCableDist_mvgd_0_1">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">13778.978047867522</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="MVCableDist_mvgd_0_2">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">38339.02005888106</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="MVCableDist_mvgd_0_3">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">44574.65321549841</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1000">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">5513.896144897531</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1001">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">16078.003272121707</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1013">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">21538.994758563163</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1016">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">13778.978047867522</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1017">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">38339.02005888106</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1018">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">44574.65321549841</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1004">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">5516.969009803307</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1005">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">16082.219207948681</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="MVStation_mvgd_0" target="LVStation_mvgd_0_lvgd_1007">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">16088.536598926754</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="Generator_mvgd_0_biogas_from_grid_0" target="LVStation_mvgd_0_lvgd_1000">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">5513.896144897531</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="Generator_mvgd_0_biogas_from_grid_0" target="Generator_mvgd_0_biogas_from_grid_1">
+      <data key="d0">mv_grid_0</data>
+      <data key="d9">1</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="Generator_mvgd_0_biogas_from_grid_0" target="Generator_mvgd_0_wind_onshore_2">
+      <data key="d0">mv_grid_0</data>
+      <data key="d9">1</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="Generator_mvgd_0_biogas_from_grid_0" target="Generator_mvgd_0_wind_onshore_3">
+      <data key="d0">mv_grid_0</data>
+      <data key="d9">1</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1000" target="LVStation_mvgd_0_lvgd_1003">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">11693.483853825253</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1001" target="LVStation_mvgd_0_lvgd_1002">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">11673.919910575649</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1002" target="LVStation_mvgd_0_lvgd_1003">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">11699.99999654535</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1004" target="LVStation_mvgd_0_lvgd_1008">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">18508.076227984075</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1005" target="LVStation_mvgd_0_lvgd_1006">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">11726.038724984652</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1006" target="LVStation_mvgd_0_lvgd_1007">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">11699.999996564226</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1008" target="MVCableDist_mvgd_0_4">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">2727.17127371167</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1009" target="LVStation_mvgd_0_lvgd_1010">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">5530.773027601033</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1009" target="MVCableDist_mvgd_0_4">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">2764.7162362310705</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1011" target="LVStation_mvgd_0_lvgd_1015">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">3899.9999997158393</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1012" target="MVCableDist_mvgd_0_5">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">2762.3092302135738</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1013" target="MVCableDist_mvgd_0_5">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">2752.3911923495984</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1014" target="LVStation_mvgd_0_lvgd_1015">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">5524.644437298107</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1015" target="MVCableDist_mvgd_0_4">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">2794.40470952057</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1015" target="MVCableDist_mvgd_0_5">
+      <data key="d0">mv_grid_0</data>
+      <data key="d1">2773.784479525642</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1016" target="MVCableDist_mvgd_0_1">
+      <data key="d0">mv_grid_0</data>
+      <data key="d9">1</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1017" target="MVCableDist_mvgd_0_2">
+      <data key="d0">mv_grid_0</data>
+      <data key="d9">1</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+    <edge source="LVStation_mvgd_0_lvgd_1018" target="MVCableDist_mvgd_0_3">
+      <data key="d0">mv_grid_0</data>
+      <data key="d9">1</data>
+      <data key="d2">line</data>
+      <data key="d3">48-AL1/8-ST1A</data>
+      <data key="d4">20</data>
+      <data key="d5">210</data>
+      <data key="d6">0.37</data>
+      <data key="d7">1.18</data>
+      <data key="d8">0.0098</data>
+    </edge>
+  </graph>
+</graphml>

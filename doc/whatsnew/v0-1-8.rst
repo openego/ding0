@@ -1,0 +1,7 @@
+Release v0.1.8 September 5, 2018
++++++++++++++++++++++++++++++++++++
+
+A release to update software dependencies.
+
+* Data processing and ego.io versions are updated to 0.4.5
+
