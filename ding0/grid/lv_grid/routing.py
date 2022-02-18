@@ -115,7 +115,7 @@ def loads_in_ons_dist_threshold(dm_cluster, cluster_nodes, osmid):
         return True
 
 
-def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_cluster):
+def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_cluster, check_distance_criterion=True):
     """
     identify position of station at street load center
     get list of location of mvlv substations for load areal
@@ -140,20 +140,21 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_clu
         # compute location of substation based on load center
         load_vector = np.array(cluster_loads) #weighted
         unweighted_nodes = dm_cluster.dot(load_vector)
-        
-        osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]        
 
-        if not loads_in_ons_dist_threshold(dm_cluster, cluster_nodes, osmid):
-            # return empty list and False for cluster validity
-            # due to distance threshold to ons is trespassed
-            valid_cluster_distance = False
-            return mvlv_subst_list, valid_cluster_distance
+        osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]
+
+        if check_distance_criterion:
+            if not loads_in_ons_dist_threshold(dm_cluster, cluster_nodes, osmid):
+                # return empty list and False for cluster validity
+                # due to distance threshold to ons is trespassed
+                valid_cluster_distance = False
+                return mvlv_subst_list, valid_cluster_distance
 
         mvlv_subst_loc = cluster_graph.nodes[osmid]
         mvlv_subst_loc['osmid'] = osmid
         mvlv_subst_loc['graph_district'] = cluster_subgraph
         mvlv_subst_list.append(mvlv_subst_loc)
-        
+
     return mvlv_subst_list, valid_cluster_distance
 
 

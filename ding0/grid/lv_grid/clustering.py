@@ -66,6 +66,7 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
     """
     clustering_successfully = False  # init False
     cluster_increment_counter = 0  # init 0
+    check_distance_criterion = True
 
     for i in range(len(simp_graph.nodes)):
 
@@ -74,32 +75,35 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
 
         cluster_graph, nodes_w_labels = get_cluster_graph_and_nodes(simp_graph, labels)
 
+        if cluster_increment_counter > 10:
+            check_distance_criterion = False
+
+            logger.warning('cluster_increment_counter > 10. \
+            break increment n_cluster. 1500 m distance is not ensured. \
+            check export: no_1500m_distance_ensured.txt')
+
+            # write mv and la id to file
+            f = open("no_1500m_distance_ensured.txt", "a")
+            f.write(f"MV {mv_grid_district}, LA {id_db}\n does not ensure"
+                    " max dist of 1500m between station and loads \n")
+            f.close()
+            clustering_successfully = True
+
         # locate stations for districts
-        mvlv_subst_list, valid_cluster_distance = get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, street_loads_df, labels, n_cluster)
+        mvlv_subst_list, valid_cluster_distance = get_mvlv_subst_loc_list(cluster_graph, nodes_w_labels, \
+                                                                          street_loads_df, labels, n_cluster, \
+                                                                          check_distance_criterion)
+
         if valid_cluster_distance:
 
             logger.warning('all clusters are in range')
 
-            clustering_successfully=True
+            clustering_successfully = True
             break
 
         else:
 
-            if cluster_increment_counter > 10: # todo: write 10 to config 
-
-                logger.warning('cluster_increment_counter > 10. \
-                break increment n_cluster. 1500 m distance is not ensured. \
-                check export: no_1500m_distance_ensured.txt')
-
-                # write mv and la id to file
-                f = open("no_1500m_distance_ensured.txt", "a")
-                f.write(f"MV {mv_grid_district}, LA {id_db}\n does not ensure"
-                        " max dist of 1500m between station and loads \n")
-                f.close()
-                clustering_successfully=True
-                break
-
-            else:
+            if cluster_increment_counter <= 10:  # todo: write 10 to config
 
                 cluster_increment_counter += 1
                 n_cluster += 1
