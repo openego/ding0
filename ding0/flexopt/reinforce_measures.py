@@ -60,7 +60,6 @@ def reinforce_branches_current(grid, crit_branches):
     branch_ctr = 0
 
     for branch, rel_overload in crit_branches.items():
-        # PAUL new replaced branch['branch'] with branch line 67 and line 73
         try:
             type = branch_parameters.loc[
                 branch_parameters[

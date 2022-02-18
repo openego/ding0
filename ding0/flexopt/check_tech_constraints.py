@@ -111,10 +111,12 @@ def check_load(grid, mode):
             try:
                 # check if s_res exceeds allowed values for laod and feedin case
                 # CAUTION: The order of values is fix! (1. load case, 2. feedin case)
-                if any([s_res * mw2kw > _ for s_res, _ in zip(branch['branch'].s_res, s_max_th_lcfc)]):
-                    # save max. relative overloading
-                    #crit_branches[branch] = max(branch['branch'].s_res) * mw2kw / s_max_th
-                    crit_branches[branch['branch']] = max(branch['branch'].s_res) * mw2kw / s_max_th # PAUL new made change, this fct did not work
+                s_res_lcfc = branch['branch'].s_res
+                if any([s_res * mw2kw > _ for s_res, _ in zip(s_res_lcfc, s_max_th_lcfc)]):
+                    # save max. relative overloading with respect to load or feedin case
+                    s_res_max = max(s_res_lcfc)
+                    lcfc_idx = s_res_lcfc.index(s_res_max)
+                    crit_branches[branch['branch']] = s_res_max * mw2kw / s_max_th_lcfc[lcfc_idx]
             except:
                 pass
 
