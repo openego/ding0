@@ -211,7 +211,7 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
                                                                        ring=branch_ring))
 
             # add demand to ring
-            branch_ring._demand += int(node_list[load_node].peak_load / 0.97) # TODO config
+            branch_ring._demand += int(node_list[load_node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
 
         else: #for stubs having more than one edge
 
@@ -257,7 +257,7 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
                                                                            ring=branch_ring))
 
                 #add demand to ring
-                comp_demand = sum([node_list[n].peak_load for n in load_node_set]) / 0.97 #TODO config # in future from dict
+                comp_demand = sum([node_list[n].peak_load for n in load_node_set]) / cfg_ding0.get('assumptions', 'cos_phi_load')
                 branch_ring._demand += int(comp_demand)
         
     return mv_grid

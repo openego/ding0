@@ -217,6 +217,11 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             logger.debug('Peak load sum: {}'.format(sum(nodes_peak_load)))
             logger.debug('Peak loads: {}'.format(nodes_peak_load))
 
+from shapely.ops import linemerge
+from shapely.geometry import Point, LineString
+from ding0.grid.lv_grid.graph_processing import simplify_graph_adv, remove_unloaded_deadends, remove_parallels_and_loops
+import networkx as nx
+import pandas as pd
 
 
 def get_edge_tuples_from_path(G, path_list):
@@ -231,10 +236,6 @@ def get_edge_tuples_from_path(G, path_list):
     
     return edge_path
 
-
-import networkx as nx
-import osmnx as ox
-from shapely.ops import linemerge
 
 def get_line_shp_from_shortest_path(osm_graph, node1, node2, return_path=False):
     
@@ -258,12 +259,9 @@ def get_line_shp_from_shortest_path(osm_graph, node1, node2, return_path=False):
         return line_shp, line_length
 
 
-#inspired by shapely
-
-from shapely.geometry import LineString, Point
-
 def cut_line_by_distance(line, distance, normalized=True):
-    
+    # inspried from shapely
+
     if normalized:
         distance = distance*line.length
     # Cuts a line in two at a distance from its starting point
@@ -284,9 +282,6 @@ def cut_line_by_distance(line, distance, normalized=True):
                 LineString([(cp.x, cp.y)] + coords[i:])]
         
 
-from ding0.grid.lv_grid.graph_processing import simplify_graph_adv, remove_unloaded_deadends, remove_parallels_and_loops
-        
-        
 def reduce_graph_for_dist_matrix_calc(graph, nodes_to_keep):
     
     '''
@@ -309,9 +304,6 @@ def reduce_graph_for_dist_matrix_calc(graph, nodes_to_keep):
     return graph
 
 
-import networkx as nx
-import pandas as pd
-
 def calc_street_dist_matrix(G, matrix_node_list):
 
     node_list = matrix_node_list.copy()
@@ -332,9 +324,6 @@ def calc_street_dist_matrix(G, matrix_node_list):
     return matrix_dict
 
 
-import osmnx as ox 
-from shapely.geometry import LineString
-
 def conn_ding0_obj_to_osm_graph(osm_graph, ding0_obj):
 
     '''
@@ -350,8 +339,6 @@ def conn_ding0_obj_to_osm_graph(osm_graph, ding0_obj):
     osm_graph.add_edge(ding0_obj, nn, geometry=line_shp, length=line_shp.length) #missing: highway, osmid
     
     return osm_graph
-
-
 
 
 
@@ -433,7 +420,7 @@ def check_stub_criterion(stub_dict, stub_graph):
 
         cum_stub_load = sum(stub_data['load'].values())
 
-        if cum_stub_load > 1000: #TODO 1000
+        if cum_stub_load > cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
 
             if len(stub_data['load']) == 1:
 
@@ -455,7 +442,7 @@ def check_stub_criterion(stub_dict, stub_graph):
 
                     for n in load_nodes:
                         cum_load = sum([stub_data['load'][n] for n in load_nodes])
-                        if cum_load < 1000:
+                        if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                             comp = [root] + load_nodes
                             mod_stubs_list.append(comp)
                             break
@@ -485,7 +472,7 @@ def check_stub_criterion(stub_dict, stub_graph):
                             for n in load_nodes:
 
                                 cum_load = sum([stub_data['load'][n] for n in load_nodes])
-                                if cum_load < 1000:
+                                if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                                     comp = [root] + load_nodes
                                     mod_stubs_list.append(comp)
                                     break
