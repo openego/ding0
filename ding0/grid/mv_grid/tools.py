@@ -345,23 +345,41 @@ def conn_ding0_obj_to_osm_graph(osm_graph, ding0_obj):
 # graph processing
 
 def get_core_graph(G):
-    
     C = ox.utils_graph.get_digraph(G, weight='length')
     C.remove_edges_from(nx.selfloop_edges(C))
     C = nx.k_core(C, k=3, core_number=None)
     C = nx.MultiDiGraph(G.subgraph(C.nodes))
-    
+
     return C
 
 
 def get_stub_graph(osm_graph_red, core_graph):
-
     stub_edges = [n for n in osm_graph_red.edges if n in core_graph.edges]
     R = osm_graph_red.copy()
     R.remove_edges_from(stub_edges)
     R.remove_nodes_from(list(nx.isolates(R)))
-    
+
     return R
+
+def split_graph_by_core(street_graph, depot):
+
+    G = ox.utils_graph.get_digraph(street_graph, weight='length')
+    G.remove_edges_from(nx.selfloop_edges(G))
+
+    core_graph = nx.k_core(G, k=3, core_number=None)
+    core_graph = nx.MultiDiGraph(G.subgraph(core_graph.nodes))
+
+    core_edges = [n for n in street_graph.edges if n in core_graph.edges]
+    stub_graph = street_graph.copy()
+    stub_graph.remove_edges_from(core_edges)
+    stub_graph.remove_nodes_from(list(nx.isolates(stub_graph)))
+
+    # make sure mv_station node is connected to core graph
+    core_graph = conn_ding0_obj_to_osm_graph(core_graph, depot)
+    if stub_graph.has_node(str(depot)):
+        stub_graph.remove_node(str(depot))
+
+    return core_graph, stub_graph
 
 
 def update_graphs(core_graph, stub_graph, nodes_to_switch):
