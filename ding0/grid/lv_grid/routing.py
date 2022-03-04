@@ -6,8 +6,6 @@ TODO: Separate routing.py to graph_processing.py
 import osmnx as ox
 import networkx as nx
 
-from scipy.spatial.distance import pdist, squareform
-
 #from pyproj import CRS
 
 import pandas as pd
@@ -199,38 +197,6 @@ def get_lvgd_id(la_id_db, cluster_id, max_n_digits=10):
 
 import logging
 logger = logging.getLogger('ding0')
-
-def get_load_center(lv_load_area):
-    """
-    get station which is load center to set its
-    geo_data as load center of load areal.
-    """
-    
-    '''if len(lv_load_area._lv_grid_districts) <= 2:
-        
-        logger.warning(lv_load_area._lv_grid_districts)
-        station = lv_load_area._lv_grid_districts[0].lv_grid._station
-        
-    else:'''
-        
-    station_peak_loads = []
-    station_coordinates = []
-
-    for lvgd in lv_load_area._lv_grid_districts:
-        station_peak_loads.append(lvgd.lv_grid._station.peak_load)
-        station_coordinates.append(lvgd.lv_grid._station.geo_data)
-
-    coordinates = [[p.x, p.y] for p in station_coordinates]
-    coordinates_array = np.array(coordinates)
-    dist_array = pdist(coordinates_array)
-    #logger.warning(len(list(lv_load_area._lv_grid_districts)), dist_array)
-    dist_matrix = squareform(dist_array)
-    unweighted_nodes = dist_matrix.dot(station_peak_loads)
-    load_center_ix = int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])
-
-    station = lv_load_area._lv_grid_districts[load_center_ix].lv_grid._station
-
-    return station.osm_id_node, station.geo_data
 
 
 

@@ -77,12 +77,13 @@ from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
 from grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
 
 from ding0.grid.lv_grid.routing import assign_nearest_nodes_to_buildings, \
-    get_lvgd_id, identify_street_loads, get_mvlv_subst_loc_list, get_load_center, \
+    get_lvgd_id, identify_street_loads, get_mvlv_subst_loc_list, \
     connect_mv_loads_to_graph
 
 from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
-from grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, get_bounding_box_from_points
+from grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, \
+    get_bounding_box_from_points, get_load_center
 
 
 ############ NEW END
@@ -1074,10 +1075,13 @@ class NetworkDing0:
             # based on peak load and position of lvgd.station
             # MVLoads are not considered.
             if len(lv_load_area._lv_grid_districts):  # just in case there are stations
-                la_centre_osmid, la_centre_geo_data = get_load_center(lv_load_area)
+                la_centre_osmid, la_centre_geo_data, load_area_geo = get_load_center(lv_load_area)
 
             else:
-                la_centre_osmid, la_centre_geo_data = None, lv_load_area.geo_centre
+                la_centre_osmid, la_centre_geo_data, load_area_geo = None, lv_load_area.geo_centre, lv_load_area.geo_area
+
+            # update shape of load_area, if centre does not intersect with original load area
+            lv_load_area.geo_area = load_area_geo
 
             # create new centre object for Load Area
             lv_load_area_centre = LVLoadAreaCentreDing0(id_db=id_db,
