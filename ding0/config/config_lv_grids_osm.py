@@ -98,6 +98,7 @@ def get_peak_loads():
 def get_load_profile_categories():
 
     """ get dictionary containing categorie types assigned to categories """
+    #TODO exclude leftover category from building import
 
     load_profile_categories = {
         "lodging": "lodging",
@@ -139,7 +140,6 @@ def get_load_profile_categories():
         "clinic": "health_care",
         "dentist": "health_care",
         "doctors": "health_care",
-        "hospital": "health_care",
         "pharmacy": "health_care",
         "social_facility": "health_care",
         "veterinary": "health_care",
@@ -191,7 +191,6 @@ def get_load_profile_categories():
         "semi": "residential",
         "dormitory": "residential",
         "farm": "residential",
-        "semidetached_house": "residential",
         "terrace": "residential",
         "yes": "residential",
         "charging_station": "charging_station",
@@ -199,7 +198,6 @@ def get_load_profile_categories():
         "archive": "public",
         "public_building": "public",
         "events_venue": "public",
-        "arts_centre": "public",
         "civic": "public",
         "bakehouse": "public",
         "community_centre": "public",
@@ -229,6 +227,38 @@ def get_load_profile_categories():
         "chapel": "leftover",
         "place_of_worship": "leftover",
         "toilets": "leftover",
+        "recycling": "industry",
+        "waste_transfer_station": "industry",
+        "shelter": "leftover",
+        "kiosk": "retail",
+        "nursing_home": "health_care",
+        "planetarium": "public",
+        "gambling": "public",
+        "static_caravan": "leftover",
+        "bicycle_parking": "leftover",
+        "parish_hall": "public",
+        "embassy": "public",
+        "emergency_service": "health_care",
+        "bench": "leftover", #TODO: drop amenities with obviously no consumption
+        "love_hotel": "public",
+        "stripclub": "public",
+        "swingerclub": "public",
+        "research_institute": "research",
+        "school;driving_school": "education",
+        "sailing_school": "education",
+        "job_centre": "public",
+        "dive_centre": "swimming",
+        "student_accommodation": "lodging",
+        "animal_boarding": "leftover",
+        "bicycle_repair_station": "leftover",
+        "parking_space": "leftover", #TODO: drop amenities with obviously no consumption
+        "motorcycle_parking": "leftover",  # TODO: drop amenities with obviously no consumption
+        "dressing_room": "leftover",
+        "funeral_hall": "leftover",
+        "waste_disposal": "leftover", # TODO: drop amenities with obviously no consumption
+        "station": "public",
+        "gatehouse": "leftover",
+        "fountain": "leftover",
         "residentials_list": [
             "residential",
             "retirement_home",
