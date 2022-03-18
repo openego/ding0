@@ -29,7 +29,7 @@ import logging
 #PAUl new
 from ding0.grid.mv_grid.tools import get_edge_tuples_from_path, cut_line_by_distance, reduce_graph_for_dist_matrix_calc, \
 calc_street_dist_matrix, conn_ding0_obj_to_osm_graph, get_line_shp_from_shortest_path, get_core_graph, get_stub_graph, \
-update_graphs, create_stub_dict, check_stub_criterion, update_stub_dict, split_graph_by_core
+update_graphs, create_stub_dict, check_stub_criterion, update_stub_dict, split_graph_by_core, relabel_graph_nodes
 from shapely.ops import linemerge
 import networkx as nx
 import osmnx as ox
@@ -247,13 +247,11 @@ def solve(mv_grid, debug=False, anim=None):
             # import required objects
             mv_station = mv_grid._station
             la, la_centre = load_area, load_area.lv_load_area_centre
-            street_graph = la.load_area_graph
-            lv_stations = [lvgd.lv_grid._station for lvgd in la._lv_grid_districts]
-            mv_loads = [mv_load for mv_load in la._mv_loads]
+            supply_nodes = [mv_load for mv_load in la._mv_loads] + \
+                           [lvgd.lv_grid._station for lvgd in la._lv_grid_districts]
 
             # nodes required to be supplied by urban mv grid
             # get demand (apparent power) and position of supply nodes as dict {ding0_name: value}
-            supply_nodes = lv_stations + mv_loads
             nodes_pos = {node: (node.geo_data.x, node.geo_data.y) for node in supply_nodes}
             nodes_demands = {node: int(node.peak_load /
                                        cfg_ding0.get('assumptions', 'cos_phi_load')) for node in supply_nodes}
@@ -266,27 +264,20 @@ def solve(mv_grid, debug=False, anim=None):
 
             ##### prepare osm graph for routing and stub connections
 
-            # get supply nodes as mapping dicts {osmid: str(ding0_name)}
-            lv_stations_map = {lv_station.osm_id_node: str(lv_station) for lv_station in
-                               lv_stations}  # TODO: make osmid access consistent
-            mv_loads_map = {mv_load.osmid_building: str(mv_load) for mv_load in mv_loads}
-            supply_nodes_map = {**lv_stations_map, **mv_loads_map}
-
             # relabel street_graph
             # 1. convert all osmids to str, 2. relabel supply_nodes' osmid with str(ding0_name)
-            osmids_to_str_map = {osmid: str(osmid) for osmid in street_graph.nodes}
-            street_graph = nx.relabel_nodes(street_graph, {**osmids_to_str_map, **supply_nodes_map})
+            street_graph, ding0_nodes_map = relabel_graph_nodes(la, cable_dists=None)
 
             # add mv_station to street_graph
             # reduce street_graph to least necessary size (supply_nodes, mv_station are kept in graph)
             street_graph = conn_ding0_obj_to_osm_graph(street_graph, mv_station)
             street_graph = reduce_graph_for_dist_matrix_calc(street_graph,
-                                                             list(supply_nodes_map.values()) + [str(mv_station)])
+                                                             list(ding0_nodes_map.values()) + [str(mv_station)])
 
             # split street_graph using k-core
             core_graph, stub_graph = split_graph_by_core(street_graph, mv_station)
 
-            # 11. initial core and stub graph will be adapted based on stub citerion
+            # 11. initial core and stub graph will be adapted based on stub criterion
             # all lv stations / mv loads from stub graph surpassing a load of 1 MVA
             # will be assigned to core graph
             root_nodes = set(stub_graph.nodes) & set(core_graph.nodes)
@@ -295,10 +286,10 @@ def solve(mv_grid, debug=False, anim=None):
             # containing all involved nodes: {'comp': {all nodes}, 'root': node,
             # 'load': {node: load}, 'dist': node}
             stub_dict = create_stub_dict(stub_graph, root_nodes, node_list)
-            # 11.2 identify nodes to sitch by stub citerion
+            # 11.2 identify nodes to switch by stub criterion
             mod_stubs_list, nodes_to_switch = check_stub_criterion(stub_dict, stub_graph)
             # 11.3 update the stub dict such that just stubs exists fulfilling
-            # stub citerion
+            # stub criterion
             stub_dict = update_stub_dict(stub_dict, mod_stubs_list, node_list)
             # 11.4 update graphs respectively
             core_graph, stub_graph = update_graphs(core_graph, stub_graph, nodes_to_switch)

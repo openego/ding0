@@ -955,7 +955,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                     cable_dists = relocate_cable_dists_settle(lv_load_area, branches)
 
                     # relabel street graph geoms to ease assignment to ding0 graph
-                    street_graph = relabel_graph_nodes(lv_load_area, cable_dists)
+                    street_graph, _ = relabel_graph_nodes(lv_load_area, cable_dists)
 
                     # branch geometries inside / incoming (load area) will be adapated
                     # by following the street courses
