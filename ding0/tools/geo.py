@@ -59,8 +59,7 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj, srid=3035):
     if srid == 3035:
         branches = []
         for branch in mv_grid.graph_edges():
-            nodes = branch['adj_nodes']
-            branch_shp = LineString([nodes[0].geo_data, nodes[1].geo_data])
+            branch_shp = branch['branch'].geometry
             # check if branches intersect with polygon if mode = 'intersects'
             if mode == 'intersects':
                 if polygon.intersects(branch_shp):
@@ -76,8 +75,7 @@ def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj, srid=3035):
         branches = []
         polygon_shp = transform(proj, polygon)
         for branch in mv_grid.graph_edges():
-            nodes = branch['adj_nodes']
-            branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
+            branch_shp = transform(proj, branch['branch'].geometry)
 
             # check if branches intersect with polygon if mode = 'intersects'
             if mode == 'intersects':
@@ -131,8 +129,7 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj, srid=30
             node_shp = node.geo_data
             buffer_zone_shp = node_shp.buffer(radius)
             for branch in mv_grid.graph_edges():
-                nodes = branch['adj_nodes']
-                branch_shp = LineString([nodes[0].geo_data, nodes[1].geo_data])
+                branch_shp = branch['branch'].geometry
                 if buffer_zone_shp.intersects(branch_shp):
                     branches.append(branch)
             radius += radius_inc
@@ -144,8 +141,7 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj, srid=30
             node_shp = transform(proj, node.geo_data)
             buffer_zone_shp = node_shp.buffer(radius)
             for branch in mv_grid.graph_edges():
-                nodes = branch['adj_nodes']
-                branch_shp = transform(proj, LineString([nodes[0].geo_data, nodes[1].geo_data]))
+                branch_shp = transform(proj, branch['branch'].geometry)
                 if buffer_zone_shp.intersects(branch_shp):
                     branches.append(branch)
             radius += radius_inc
