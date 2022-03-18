@@ -635,10 +635,10 @@ def relabel_graph_nodes(load_area, cable_dists):
 from shapely.geometry import MultiPoint, LinearRing
 from shapely.ops import nearest_points
 import numpy as np
+from ding0.core.network.stations import MVStationDing0
 
 def update_branch_shps_settle(load_area, branches, street_graph):
-
-    # update branches routing in settlement areas
+    # update branches routinh in settlement areas
     # if both endpoints in la update whole shape
     # if one endpoint in la update part of shape
     # if no endpoints in la, do nothing (maybe check if part of linestring crosses same/other la
@@ -647,13 +647,29 @@ def update_branch_shps_settle(load_area, branches, street_graph):
 
     for branch in branches:
 
+        mv_station = [node for node in branch['adj_nodes'] if isinstance(node, MVStationDing0)]
+        G = street_graph
+
+        if mv_station:
+            if not G.has_node(str(mv_station[0])):
+                # add node to street graph, if not element of it
+                street_node_mvs = ox.nearest_nodes(G, mv_station[0].geo_data.x, mv_station[0].geo_data.y,
+                                                   return_dist=False)
+                street_node_mvs_shp = Point([(G.nodes[street_node_mvs]['x'], G.nodes[street_node_mvs]['y'])])
+                # add connecting branch shape to street graph
+                G.add_node(str(mv_station[0]), x=mv_station[0].geo_data.x, y=mv_station[0].geo_data.y)
+                line_shp_mvs = LineString([mv_station[0].geo_data, street_node_mvs_shp])
+                # add two edges, cause G is digraph
+                G.add_edge(str(mv_station[0]), street_node_mvs, geometry=line_shp_mvs, length=line_shp_mvs.length)
+                G.add_edge(street_node_mvs, str(mv_station[0]), geometry=line_shp_mvs, length=line_shp_mvs.length)
+
         endpoints = [load_area.geo_area.intersects(node.geo_data) for node in branch['adj_nodes']]
 
         # both branch endpoints are within load area - update whole branch geometry
         if all(endpoints):
 
             node1, node2 = branch['adj_nodes']
-            line_shp, line_length, path = get_line_shp_from_shortest_path(street_graph, node1, node2, return_path=True)
+            line_shp, line_length, path = get_line_shp_from_shortest_path(G, node1, node2, return_path=True)
 
             branch['branch'].geometry = line_shp
             branch['branch'].length = line_length
@@ -688,19 +704,6 @@ def update_branch_shps_settle(load_area, branches, street_graph):
                 mp = MultiPoint(intersect_shp)
                 intersect_shp = nearest_points(mp, node_out.geo_data)[0]
 
-            G = street_graph
-
-            # add inner node to street graph, if not element of it
-            if not street_graph.has_node(str(node_in)):
-                street_node_in = ox.nearest_nodes(G, node_in.geo_data.x, node_in.geo_data.y, return_dist=False)
-                street_node_in_shp = Point([(G.nodes[street_node_in]['x'], G.nodes[street_node_in]['y'])])
-                # add connecting branch shape to street graph
-                G.add_node(str(node_in), x=node_in.geo_data.x, y=node_in.geo_data.y)
-                line_shp_in = LineString([node_in.geo_data, street_node_in_shp])
-                # add two edges, cause G is digraph
-                G.add_edge(str(node_in), street_node_in, geometry=line_shp_in, length=line_shp_in.length)
-                G.add_edge(street_node_in, str(node_in), geometry=line_shp_in, length=line_shp_in.length)
-
             # find nearest street graph node from intersection point
             street_node = ox.nearest_nodes(G, intersect_shp.x, intersect_shp.y, return_dist=False)
             street_shp = Point([(G.nodes[street_node]['x'], G.nodes[street_node]['y'])])
@@ -711,7 +714,7 @@ def update_branch_shps_settle(load_area, branches, street_graph):
             G.add_edge(str(node_out), street_node, geometry=line_shp_out, length=line_shp_out.length)
             G.add_edge(street_node, str(node_out), geometry=line_shp_out, length=line_shp_out.length)
 
-            # retrieve new geometry for branch
+            # retrieve new geoemtry for branch
             line_shp, line_length, path = get_line_shp_from_shortest_path(G, node_in, node_out, return_path=True)
 
             branch['branch'].geometry = line_shp
@@ -725,5 +728,5 @@ def update_branch_shps_settle(load_area, branches, street_graph):
             path_passed_osmids.update(dict.fromkeys([(branch['adj_nodes'][0], branch['adj_nodes'][1]),
                                                      (branch['adj_nodes'][1], branch['adj_nodes'][0])], path))
 
-    return path_passed_osmids
+    return path_passed_osmids, G
 

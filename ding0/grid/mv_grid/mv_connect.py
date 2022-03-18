@@ -959,7 +959,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
 
                     # branch geometries inside / incoming (load area) will be adapated
                     # by following the street courses
-                    path_passed_osmids = update_branch_shps_settle(lv_load_area, branches, street_graph)
+                    path_passed_osmids, street_graph = update_branch_shps_settle(lv_load_area, branches, street_graph)
 
                     for supply_node in lv_load_area_supply_nodes:
 
