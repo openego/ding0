@@ -978,6 +978,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                                 # if it belongs to a ring different from the ring of the current LVLA
                                 if (lv_load_area_group is None) and\
                                    (branch['branch'].ring is lv_load_area.ring):
+                                    # just consider branches that have supply nodes located inside load area
                                     if any([lv_load_area.geo_area.intersects(node.geo_data)
                                             for node in branch['adj_nodes']]):
                                         branches_valid.append(branch)

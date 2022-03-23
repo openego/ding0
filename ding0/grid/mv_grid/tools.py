@@ -324,14 +324,23 @@ def calc_street_dist_matrix(G, matrix_node_list):
     return matrix_dict
 
 
-def conn_ding0_obj_to_osm_graph(osm_graph, ding0_obj):
+def conn_ding0_obj_to_osm_graph(osm_graph, ding0_obj, search_shp=None):
 
     '''
     connects ding0 object with shortest euclidic distance to existing osm graph node
+    if search_shp is not None but shapely Point, those coordinates are used for
+    finding nearest graph node
     create new node and edges
     osm_graph is of type MultiDiGraph
     '''
-    x,y = ding0_obj.geo_data.x, ding0_obj.geo_data.y
+
+    # search_shp is None, take ding0 objects' shp
+    if not search_shp:
+        x,y = ding0_obj.geo_data.x, ding0_obj.geo_data.y
+    # search_shp is passed
+    else:
+        x,y = search_shp.x, search_shp.y
+
     nn = ox.distance.nearest_nodes(osm_graph, x, y, return_dist=False)
     line_shp = LineString([(osm_graph.nodes[nn]['x'], osm_graph.nodes[nn]['y']), (x,y)])
     osm_graph.add_node(ding0_obj, x=x, y=y, node_type='synthetic')
@@ -419,7 +428,8 @@ def create_stub_dict(stub_graph, root_nodes, node_list):
             stub_dict[i] = {}
             stub_dict[i]['comp'] = comp
             stub_dict[i]['root'] = list(root_node_set)[0] #next(iter())
-            stub_dict[i]['load'] = {node: int(node_list[node].peak_load / 0.97) for node in load_node_set} #{node: demand}
+            stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
+                                    for node in load_node_set} #{node: demand}
             stub_dict[i]['dist'] = cable_dist_set
             
     return stub_dict
@@ -523,7 +533,8 @@ def update_stub_dict(stub_dict, mod_stubs_list, node_list):
         i = max(stub_dict.keys()) + 1 
 
         stub_dict[i] = {}
-        stub_dict[i]['load'] = {node: int(node_list[node].peak_load / 0.97) for node in load_node_set} #{node: demand}
+        stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
+                                for node in load_node_set} #{node: demand}
         stub_dict[i]['root'] = root
         stub_dict[i]['comp'] = set(comp)
         stub_dict[i]['dist'] = set()
@@ -650,18 +661,10 @@ def update_branch_shps_settle(load_area, branches, street_graph):
         mv_station = [node for node in branch['adj_nodes'] if isinstance(node, MVStationDing0)]
         G = street_graph
 
+        # add node to street graph, if not element of it
         if mv_station:
             if not G.has_node(str(mv_station[0])):
-                # add node to street graph, if not element of it
-                street_node_mvs = ox.nearest_nodes(G, mv_station[0].geo_data.x, mv_station[0].geo_data.y,
-                                                   return_dist=False)
-                street_node_mvs_shp = Point([(G.nodes[street_node_mvs]['x'], G.nodes[street_node_mvs]['y'])])
-                # add connecting branch shape to street graph
-                G.add_node(str(mv_station[0]), x=mv_station[0].geo_data.x, y=mv_station[0].geo_data.y)
-                line_shp_mvs = LineString([mv_station[0].geo_data, street_node_mvs_shp])
-                # add two edges, cause G is digraph
-                G.add_edge(str(mv_station[0]), street_node_mvs, geometry=line_shp_mvs, length=line_shp_mvs.length)
-                G.add_edge(street_node_mvs, str(mv_station[0]), geometry=line_shp_mvs, length=line_shp_mvs.length)
+                G = conn_ding0_obj_to_osm_graph(G, mv_station[0])
 
         endpoints = [load_area.geo_area.intersects(node.geo_data) for node in branch['adj_nodes']]
 
@@ -705,14 +708,7 @@ def update_branch_shps_settle(load_area, branches, street_graph):
                 intersect_shp = nearest_points(mp, node_out.geo_data)[0]
 
             # find nearest street graph node from intersection point
-            street_node = ox.nearest_nodes(G, intersect_shp.x, intersect_shp.y, return_dist=False)
-            street_shp = Point([(G.nodes[street_node]['x'], G.nodes[street_node]['y'])])
-            # add outer brnach shapes to street graph
-            G.add_node(str(node_out), x=node_out.geo_data.x, y=node_out.geo_data.y)
-            line_shp_out = LineString([node_out.geo_data, street_shp])
-            # add two edges, cause G is digraph
-            G.add_edge(str(node_out), street_node, geometry=line_shp_out, length=line_shp_out.length)
-            G.add_edge(street_node, str(node_out), geometry=line_shp_out, length=line_shp_out.length)
+            G = conn_ding0_obj_to_osm_graph(G, node_out, search_shp=intersect_shp)
 
             # retrieve new geoemtry for branch
             line_shp, line_length, path = get_line_shp_from_shortest_path(G, node_in, node_out, return_path=True)
