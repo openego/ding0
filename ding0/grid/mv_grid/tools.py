@@ -237,7 +237,7 @@ def get_edge_tuples_from_path(G, path_list):
     return edge_path
 
 
-def get_line_shp_from_shortest_path(osm_graph, node1, node2, return_path=False):
+def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=False):
     
     sp = nx.shortest_path(osm_graph, str(node1), str(node2), weight='length')
     edge_path = get_edge_tuples_from_path(osm_graph, sp)
@@ -257,6 +257,22 @@ def get_line_shp_from_shortest_path(osm_graph, node1, node2, return_path=False):
         return line_shp, line_length, sp
     else:
         return line_shp, line_length
+
+
+def get_shortest_path_shp_multi_target(G, source, targets):
+
+    _, line_path = nx.multi_source_dijkstra(G, targets, source, weight='length')
+    edge_path = get_edge_tuples_from_path(G, line_path)
+    line_shp = linemerge([G.edges[edge]['geometry'] for edge in edge_path])
+    line_length = line_shp.length
+
+    # make sure length is greater 1m
+    if line_length == 0:
+        line_length = 1
+        logger.warning('Geo distance is zero, check objects\' positions. '
+                       'Distance is set to 1m')
+
+    return line_shp, line_length, line_path
 
 
 def cut_line_by_distance(line, distance, normalized=True):
@@ -673,7 +689,7 @@ def update_branch_shps_settle(load_area, branches, street_graph):
         if all(endpoints):
 
             node1, node2 = branch['adj_nodes']
-            line_shp, line_length, path = get_line_shp_from_shortest_path(G, node1, node2, return_path=True)
+            line_shp, line_length, path = get_shortest_path_shp_single_target(G, node1, node2, return_path=True)
 
             branch['branch'].geometry = line_shp
             branch['branch'].length = line_length
@@ -712,7 +728,7 @@ def update_branch_shps_settle(load_area, branches, street_graph):
             G = conn_ding0_obj_to_osm_graph(G, node_out, search_shp=intersect_shp)
 
             # retrieve new geoemtry for branch
-            line_shp, line_length, path = get_line_shp_from_shortest_path(G, node_in, node_out, return_path=True)
+            line_shp, line_length, path = get_shortest_path_shp_single_target(G, node_in, node_out, return_path=True)
 
             branch['branch'].geometry = line_shp
             branch['branch'].length = line_length

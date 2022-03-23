@@ -28,7 +28,7 @@ import logging
 
 #PAUl new
 from ding0.grid.mv_grid.tools import get_edge_tuples_from_path, cut_line_by_distance, reduce_graph_for_dist_matrix_calc, \
-calc_street_dist_matrix, conn_ding0_obj_to_osm_graph, get_line_shp_from_shortest_path, get_core_graph, get_stub_graph, \
+calc_street_dist_matrix, conn_ding0_obj_to_osm_graph, get_shortest_path_shp_single_target, \
 update_graphs, create_stub_dict, check_stub_criterion, update_stub_dict, split_graph_by_core, relabel_graph_nodes
 from shapely.ops import linemerge
 import networkx as nx
@@ -162,7 +162,7 @@ def routing_solution_to_ding0_graph(mv_grid, core_graph, solution):
                     node2 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][0].name()]):
                 branch = mv_branches[circ_breaker_pos - 1]
 
-                line_shp = get_line_shp_from_shortest_path(core_graph, node1, node2)[0]
+                line_shp = get_shortest_path_shp_single_target(core_graph, node1, node2)[0]
 
                 circ_breaker = CircuitBreakerDing0(grid=mv_grid, branch=branch,
                                                    geo_data=cut_line_by_distance(line_shp, 0.5, normalized=True)[0])
@@ -197,7 +197,7 @@ def routing_solution_to_ding0_graph(mv_grid, core_graph, solution):
 
                 # calculate branch geometry and length for street courses
                 ##TODO introduce, new fct::
-                line_shp, line_length, sp = get_line_shp_from_shortest_path(core_graph, node1, node2, return_path=True)
+                line_shp, line_length, sp = get_shortest_path_shp_single_target(core_graph, node1, node2, return_path=True)
 
                 b.geometry = line_shp
                 b.length = line_length

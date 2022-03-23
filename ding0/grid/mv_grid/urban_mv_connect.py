@@ -23,7 +23,7 @@ from ding0.core.network import RingDing0, BranchDing0, CircuitBreakerDing0
 import logging
 
 #PAUl new
-from ding0.grid.mv_grid.tools import get_edge_tuples_from_path, cut_line_by_distance
+from ding0.grid.mv_grid.tools import cut_line_by_distance, get_shortest_path_shp_multi_target
 from shapely.ops import linemerge, split
 import networkx as nx
 import osmnx as ox
@@ -61,9 +61,8 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
                 if not node in node_list.keys():
                     cabledist_node_set.add(node)
 
-                _, path = nx.multi_source_dijkstra(osm_graph_red, routed_graph_node_set, node, weight='length')
-                edge_path = get_edge_tuples_from_path(osm_graph_red, path)
-                line_shp = linemerge([osm_graph_red.edges[edge]['geometry'] for edge in edge_path])
+                line_shp, line_length, path = get_shortest_path_shp_multi_target(osm_graph_red,
+                                                                                 node, routed_graph_node_set)
 
                 root_node = path[0]
                 stub_graph.add_node(root_node, x=osm_graph_red.nodes[root_node]['x'], y=osm_graph_red.nodes[root_node]['y'])
@@ -74,9 +73,8 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
                 # in case deg = 1, delete old root and compute new edge from root neignbor to graph
                 # compute new edge geometry to ding0 graph 
                 root_nb = list({n for n in stub_graph.neighbors(root_node)} & set(comp))[0]
-                _, path = nx.multi_source_dijkstra(osm_graph_red, routed_graph_node_set, root_nb, weight='length')
-                edge_path = get_edge_tuples_from_path(osm_graph_red, path)
-                line_shp = linemerge([osm_graph_red.edges[edge]['geometry'] for edge in edge_path])
+                line_shp, line_length, path = get_shortest_path_shp_multi_target(osm_graph_red,
+                                                                                 root_nb, routed_graph_node_set)
                 #remove old root node from graph and component
                 stub_graph.remove_edge(root_node, root_nb)
                 comp.discard(root_node)

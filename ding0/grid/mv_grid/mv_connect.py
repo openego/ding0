@@ -29,7 +29,7 @@ from ding0.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist,\
                             calc_geo_centre_point, calc_geo_branches_in_polygon, \
                             calc_edge_geometry
 from ding0.grid.mv_grid.tools import update_branch_shps_settle, relocate_cable_dists_settle, \
-                                     relabel_graph_nodes
+                                     relabel_graph_nodes, get_shortest_path_shp_multi_target
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
@@ -1130,7 +1130,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
     return graph
 
 # functions for settlement routing
-from ding0.grid.mv_grid.tools import get_edge_tuples_from_path, get_line_shp_from_shortest_path, cut_line_by_distance
+from ding0.grid.mv_grid.tools import get_shortest_path_shp_single_target, cut_line_by_distance
 from shapely.ops import linemerge
 from shapely.geometry import Point
 import networkx as nx
@@ -1157,19 +1157,13 @@ def find_nearest_conn_objects_settle(supply_node, branches, street_graph, path_p
         except:
             line_path = [str(end_node1), str(end_node2)]
 
-        line_s1_shp, line_s1_length, line_s1_path = get_line_shp_from_shortest_path(G, conn_node,
-                                                                                    end_node1, return_path=True)
+        line_s1_shp, line_s1_length, line_s1_path = get_shortest_path_shp_single_target(G, conn_node,
+                                                                                        end_node1, return_path=True)
 
-        line_s2_shp, line_s2_length, line_s2_path = get_line_shp_from_shortest_path(G, conn_node,
-                                                                                    end_node2, return_path=True)
+        line_s2_shp, line_s2_length, line_s2_path = get_shortest_path_shp_single_target(G, conn_node,
+                                                                                        end_node2, return_path=True)
 
-        _, line_b_path = nx.multi_source_dijkstra(G, line_path, str(conn_node), weight='length')
-        edge_path = get_edge_tuples_from_path(G, line_b_path)
-        line_b_shp = linemerge([G.edges[edge]['geometry'] for edge in edge_path])
-        line_b_length = line_b_shp.length
-        # make sure length is greater 1m
-        if line_b_length == 0:
-            line_b_length = 1
+        line_b_shp, line_b_length, line_b_path = get_shortest_path_shp_multi_target(G, str(conn_node), line_path)
 
         # create dict with DING0 objects (line & 2 adjacent stations), shapely objects and distances
         if not branches_only:
@@ -1262,10 +1256,10 @@ def connect_node_settle(node, node_shp, mv_grid, target_obj, proj, street_graph,
                 branch_ring = graph.adj[adj_node1][adj_node2]['branch'].ring
 
                 # find new line geoms connecting supply node with adjacent nodes
-                line_1_shp, line_1_length, line_1_path = get_line_shp_from_shortest_path(street_graph, adj_node1,
-                                                                                         node, return_path=True)
-                line_2_shp, line_2_length, line_2_path = get_line_shp_from_shortest_path(street_graph, adj_node2,
-                                                                                         node, return_path=True)
+                line_1_shp, line_1_length, line_1_path = get_shortest_path_shp_single_target(street_graph, adj_node1,
+                                                                                             node, return_path=True)
+                line_2_shp, line_2_length, line_2_path = get_shortest_path_shp_single_target(street_graph, adj_node2,
+                                                                                             node, return_path=True)
 
                 # check if there's a circuit breaker on current branch,
                 # if yes set new position between first node (adj_node1) and newly inserted node
@@ -1321,10 +1315,10 @@ def connect_node_settle(node, node_shp, mv_grid, target_obj, proj, street_graph,
                 # find new line geoms connecting supply node with adjacent nodes
                 # note: splittage also possible, but this way is more intuitive for obtaining path nodes
 
-                line_1_shp, line_1_length, line_1_path = get_line_shp_from_shortest_path(street_graph, adj_node1,
-                                                                                         conn_node, return_path=True)
-                line_2_shp, line_2_length, line_2_path = get_line_shp_from_shortest_path(street_graph, adj_node2,
-                                                                                         conn_node, return_path=True)
+                line_1_shp, line_1_length, line_1_path = get_shortest_path_shp_single_target(street_graph, adj_node1,
+                                                                                             conn_node, return_path=True)
+                line_2_shp, line_2_length, line_2_path = get_shortest_path_shp_single_target(street_graph, adj_node2,
+                                                                                             conn_node, return_path=True)
 
                 # check if there's a circuit breaker on current branch,
                 # if yes set new position between first node (adj_node1) and newly created cable distributor
