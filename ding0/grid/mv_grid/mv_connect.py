@@ -897,7 +897,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                 # =========================================
 
                 # in case load area has just one unconnected supply node
-                # cable routing is done with considering the street topology
+                # cable routing is done without considering the street topology
                 if len(lv_load_area_supply_nodes) < 2:
 
                     for supply_node in lv_load_area_supply_nodes:
@@ -978,7 +978,9 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                                 # if it belongs to a ring different from the ring of the current LVLA
                                 if (lv_load_area_group is None) and\
                                    (branch['branch'].ring is lv_load_area.ring):
-                                    branches_valid.append(branch)
+                                    if any([lv_load_area.geo_area.intersects(node.geo_data)
+                                            for node in branch['adj_nodes']]):
+                                        branches_valid.append(branch)
                             branches = branches_valid
 
                             conn_objects_min_stack, path_passed_osmids = find_nearest_conn_objects_settle(supply_node, branches,
