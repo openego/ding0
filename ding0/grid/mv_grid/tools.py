@@ -342,11 +342,12 @@ def conn_ding0_obj_to_osm_graph(osm_graph, ding0_obj, search_shp=None):
         x,y = search_shp.x, search_shp.y
 
     nn = ox.distance.nearest_nodes(osm_graph, x, y, return_dist=False)
-    line_shp = LineString([(osm_graph.nodes[nn]['x'], osm_graph.nodes[nn]['y']), (x,y)])
-    osm_graph.add_node(ding0_obj, x=x, y=y, node_type='synthetic')
-    osm_graph.add_edge(nn, ding0_obj, geometry=line_shp, length=line_shp.length) #missing: highway, osmid
-    osm_graph.add_edge(ding0_obj, nn, geometry=line_shp, length=line_shp.length) #missing: highway, osmid
-    
+    line_shp = LineString([(osm_graph.nodes[nn]['x'], osm_graph.nodes[nn]['y']),
+                           (ding0_obj.geo_data.x, ding0_obj.geo_data.y)])
+    osm_graph.add_node(str(ding0_obj), x=ding0_obj.geo_data.x, y=ding0_obj.geo_data.y, node_type='synthetic')
+    osm_graph.add_edge(nn, str(ding0_obj), geometry=line_shp, length=line_shp.length) #missing: highway, osmid
+    osm_graph.add_edge(str(ding0_obj), nn, geometry=line_shp, length=line_shp.length) #missing: highway, osmid
+
     return osm_graph
 
 
