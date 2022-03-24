@@ -18,7 +18,13 @@ def get_cluster_numbers(la_peak_loads):
     """
     cum_peak_load = la_peak_loads.loc[la_peak_loads.capacity < get_config_osm('mv_lv_threshold_capacity')].capacity.sum()
 
-    return int(np.ceil(cum_peak_load / get_config_osm('avg_trafo_size')) * get_config_osm('additional_trafo_capacity'))
+    n_cluster = int(np.ceil(cum_peak_load / get_config_osm('avg_trafo_size')) * get_config_osm('additional_trafo_capacity'))
+    # workaround if peak load of low voltage loads is zero,
+    # TODO: check if load area should be removed -> cfg_ding0.get('mv_routing', 'load_area_threshold')
+    if n_cluster == 0:
+        n_cluster = 1
+
+    return n_cluster
 
 
 def apply_AgglomerativeClustering(G, k, round_decimals=True):
