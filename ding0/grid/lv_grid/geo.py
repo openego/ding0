@@ -68,7 +68,7 @@ def get_convex_hull_from_points(points):
     return mpt.convex_hull
 
 
-def get_load_center(lv_load_area):
+def get_load_center_node(lv_load_area):
     """
     get station which is load center to set its
     geo_data as load center of load areal.
@@ -115,3 +115,17 @@ def get_load_center(lv_load_area):
         centre_osm = centre.osmid_building
 
     return centre_osm, centre.geo_data, load_area_geo
+
+
+def get_load_center_coords(buildings_w_loads_df):
+
+    x = buildings_w_loads_df.x.tolist()
+    y = buildings_w_loads_df.y.tolist()
+    peak_loads = buildings_w_loads_df.capacity.tolist()
+
+    coords_array = np.array(list(zip(x, y)))
+    peak_loads_array = np.array(peak_loads)
+
+    centre_coords = list(np.average(coords_array, axis=0, weights=peak_loads_array))
+
+    return centre_coords

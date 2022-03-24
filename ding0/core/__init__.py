@@ -72,7 +72,8 @@ from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
     build_graph_from_ways, create_buffer_polygons, graph_nodes_outside_buffer_polys, \
     compose_graph, get_fully_conn_graph, split_conn_graph, get_outer_conn_graph, \
     remove_detours, add_edge_geometry_entry, remove_unloaded_deadends, \
-    flatten_graph_components_to_lines, subdivide_graph_edges, simplify_graph_adv
+    flatten_graph_components_to_lines, subdivide_graph_edges, simplify_graph_adv, \
+    create_simple_synthetic_graph
 
 from grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
 
@@ -83,7 +84,7 @@ from ding0.grid.lv_grid.routing import assign_nearest_nodes_to_buildings, \
 from grid.lv_grid.parameterization import parameterize_by_load_profiles
 
 from grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, \
-    get_bounding_box_from_points, get_load_center
+    get_bounding_box_from_points, get_load_center_node, get_load_center_coords
 
 
 ############ NEW END
@@ -840,22 +841,31 @@ class NetworkDing0:
                 # con=engine_osm both ways are working. select the easier/ more appropriate one
             )
 
-            if ways_sql_df.empty:  # TODO: was wenn von osm keine ways in areal gefunden werden?
-                # wenn synthetische lasten/ gebäude basierend auf zensus daten erzeugt werden,
-                # kann es möglich sein, dass dort keine Straßen zu finden sind, weil zensus daten korrupt.
-                logger.warning(f'ways_sql_df.empty. No ways found in MV {mv_grid_district}, LA {id_db}')
-                continue
+            # if ways found in query build graph from osm data
+            if not ways_sql_df.empty:
 
-            # call to_shape(ways.geometry) to transform WKBElement to
-            ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
+                # call to_shape(ways.geometry) to transform WKBElement to
+                ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
 
-            # build graph
-            graph = build_graph_from_ways(ways)
+                # build graph
+                graph = build_graph_from_ways(ways)
 
-            # get nodes to remove from graph
-            # is a list of lists containing
-            # nodes to remove per buffer polygon
-            nodes_to_remove_nested_list = graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list)
+                # get nodes to remove from graph
+                # is a list of lists containing
+                # nodes to remove per buffer polygon
+                nodes_to_remove_nested_list = graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list)
+
+            # no osm ways data could be found
+            else:
+
+                # create synthetic graph with ome street node instead
+                graph, node_id = create_simple_synthetic_graph(geo_load_area)
+
+                # no outlier nodes in synthetic graph, nested list must be empty
+                nodes_to_remove_nested_list = [[]]
+
+                logger.warning(f'ways_sql_df.empty. No ways found in MV {mv_grid_district}, LA {id_db} \n' \
+                               f'Build synthetic graph instead.')
 
             # inner_node_list define nodes without buffer
             inner_node_list = list(set(graph.nodes()) - set(nodes_to_remove_nested_list[0]))
@@ -869,18 +879,6 @@ class NetworkDing0:
 
             # PLOT 1-3
             # return geo_load_area, buffer_poly_list, graph, inner_node_list, conn_graph
-
-            # TODO: remove or move
-            # import osmnx as ox
-            # if len(conn_graph):
-            #    bounds = buffer_poly_list[0].bounds
-            #    spacer = 30
-            #    fig,ax = ox.plot_graph(graph,edge_color='red', node_size=0, show=False, close=False)
-            #    ox.plot_graph(conn_graph, ax=ax, node_size=0, edge_linewidth=3, show=False, close=False)
-            #    x,y=buffer_poly_list[0].exterior.xy
-            #    ax.plot(x,y, color='red')
-            #    ax.set_xlim(bounds[0]-spacer, bounds[2]+spacer)
-            #    ax.set_ylim(bounds[1]-spacer, bounds[3]+spacer)
 
             # split fully conn graph in inner and outer part
             inner_graph, outer_graph = split_conn_graph(conn_graph, inner_node_list)
@@ -921,13 +919,20 @@ class NetworkDing0:
                 # todo: load ding0 default loads
                 return 'Not implemented yet. Need to load ding0 default parameterization.'
 
+            # if composed graph of type synthetic (no osm ways have been found) update
+            # graph node's coord (geo load center) using building's positions and peak loads
+            if composed_graph.graph['source'] == 'synthetic':
+                x, y = get_load_center_coords(buildings_w_loads_df)
+                composed_graph.nodes[node_id]['x'] = x
+                composed_graph.nodes[node_id]['y'] = y
+
             # assign nearest nodes
             buildings_w_loads_df = assign_nearest_nodes_to_buildings(composed_graph,
-                                                                     buildings_w_loads_df)  # PAUL NEW changed graph
+                                                                     buildings_w_loads_df)
 
             # get nodes to keep and street_loads_df for graph.
             # street_loads_df contains nearest nodes and cum(load) per node
-            street_loads_df = identify_street_loads(buildings_w_loads_df, composed_graph)  # composed_graph) #PAUL NEW
+            street_loads_df = identify_street_loads(buildings_w_loads_df, composed_graph)
 
             # simp_graph to keep overview
             # simp_graph = simplify_graph(composed_graph, street_loads_df.index.tolist())
@@ -967,6 +972,7 @@ class NetworkDing0:
 
             # create LV load_area object
             # calc peak load based on diversity of loads
+            # TODO: if peak load smaller than threshold: do not add
             peak_load_div = get_peak_load_diversity(buildings_w_loads_df)
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
                                            db_data=row,
@@ -1075,7 +1081,7 @@ class NetworkDing0:
             # based on peak load and position of lvgd.station
             # MVLoads are not considered.
             if len(lv_load_area._lv_grid_districts):  # just in case there are stations
-                la_centre_osmid, la_centre_geo_data, load_area_geo = get_load_center(lv_load_area)
+                la_centre_osmid, la_centre_geo_data, load_area_geo = get_load_center_node(lv_load_area)
 
             else:
                 la_centre_osmid, la_centre_geo_data, load_area_geo = None, lv_load_area.geo_centre, lv_load_area.geo_area
