@@ -1192,17 +1192,17 @@ def find_nearest_conn_objects_settle(supply_node, branches, street_graph, path_p
             ):
                 del conn_objects['b']
 
+            # remove branch as possible connection, if endpoint is
+            # identical with origin of shortest path (line splittage
+            # is not possible for this particular case)
+            elif conn_objects['b']['line_path'][0] in [str(end_node1), str(end_node2)]:
+                del conn_objects['b']
+
             # remove MV station as possible connection point
             if isinstance(conn_objects['s1']['obj'], MVStationDing0):
                 del conn_objects['s1']
             elif isinstance(conn_objects['s2']['obj'], MVStationDing0):
                 del conn_objects['s2']
-
-            # remove branch as possible connection, if endpoint is
-            # identical with origin of shortest path (line splittage
-            # is not possible for this particular case)
-            if conn_objects['b']['line_path'][0] in [str(end_node1), str(end_node2)]:
-                del conn_objects['b']
 
         else:
             conn_objects = {'b': {'obj': branch,
