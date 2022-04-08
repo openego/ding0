@@ -589,7 +589,6 @@ def get_mvgd_ids_for_city(osm_city_name):
 def relocate_cable_dists_settle(load_area, branches):
 
     # returns list of relocated cable dists in load area
-
     cable_dist_settle = set()
 
     # find cable distributors inside load area
@@ -603,22 +602,36 @@ def relocate_cable_dists_settle(load_area, branches):
     # nearest node's position in street graph, update branch geoms as well
     if cable_dist_settle:
 
+        # osm_ids allocated to ding0 supply nodes are unique, can't be used for cable dists
+        locked_osm_ids = set([mv_load.osmid_building for mv_load in load_area._mv_loads] +
+                             [lvgd.lv_grid._station.osm_id_node for lvgd in load_area._lv_grid_districts])
+
         for cd in cable_dist_settle:
 
+            # get copy of street graph and remove locked osm ids
             G = load_area.load_area_graph.copy()
-            cd_shp = cd.geo_data
-
-            # osm_ids allocated to ding0 supply nodes are unique, can't be used for cable dists
-            locked_osm_ids = set([mv_load.osmid_building for mv_load in load_area._mv_loads] +
-                                 [lvgd.lv_grid._station.osm_id_node for lvgd in load_area._lv_grid_districts])
             G.remove_nodes_from(locked_osm_ids)
 
-            osm_id = ox.nearest_nodes(G, cd_shp.x, cd_shp.y, return_dist=False)
-            osm_node_shp = Point([(G.nodes[osm_id]['x'], G.nodes[osm_id]['y'])])
+            # get cable dists point geometry
+            cd_shp = cd.geo_data
+
+            # osm nodes are available for relocalisation
+            if not nx.is_empty(G):
+                osm_id = ox.nearest_nodes(G, cd_shp.x, cd_shp.y, return_dist=False)
+                osm_node_shp = Point([(G.nodes[osm_id]['x'], G.nodes[osm_id]['y'])])
+            # nos osm node available, add synthetic node to graph instead by using
+            # original cable distributor coordinates
+            else:
+                load_area.load_area_graph = conn_ding0_obj_to_osm_graph(load_area.load_area_graph, cd)
+                osm_id = str(cd)
+                osm_node_shp = cd_shp
 
             # update cable distributors position
             cd.geo_data = osm_node_shp
             cd.osm_id_node = osm_id
+
+            # lock cable distributor's osm id , update locked osm ids set
+            locked_osm_ids.add(osm_id)
 
             # update adjacent branch geoms
             branches_upd = load_area.mv_grid_district.mv_grid.graph_branches_from_node(cd)

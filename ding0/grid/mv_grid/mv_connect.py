@@ -23,13 +23,14 @@ from ding0.core.network.loads import MVLoadDing0
 from ding0.core.network import BranchDing0, GeneratorDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.structure.groups import LoadAreaGroupDing0
-from ding0.core.structure.regions import LVLoadAreaCentreDing0, LVGridDistrictDing0
+from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.tools import config as cfg_ding0
 from ding0.tools.geo import calc_geo_branches_in_buffer,calc_geo_dist,\
                             calc_geo_centre_point, calc_geo_branches_in_polygon, \
                             calc_edge_geometry
 from ding0.grid.mv_grid.tools import update_branch_shps_settle, relocate_cable_dists_settle, \
-                                     relabel_graph_nodes, get_shortest_path_shp_multi_target
+                                     relabel_graph_nodes, get_shortest_path_shp_multi_target, \
+                                     conn_ding0_obj_to_osm_graph
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
@@ -974,6 +975,11 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                                 node1, node2 = branch['adj_nodes']
                                 lv_load_area_group = get_lv_load_area_group_from_node_pair(node1, node2)
 
+                                # in case updated branch shapes are additionally intersecting with load area
+                                for node in branch['adj_nodes']:
+                                    if not street_graph.has_node(str(node)):
+                                        street_graph = conn_ding0_obj_to_osm_graph(street_graph, node)
+
                                 # delete branch as possible conn. target if it belongs to a group (=satellite) or
                                 # if it belongs to a ring different from the ring of the current LVLA
                                 if (lv_load_area_group is None) and\
@@ -984,23 +990,24 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                                         branches_valid.append(branch)
                             branches = branches_valid
 
-                            conn_objects_min_stack, path_passed_osmids = find_nearest_conn_objects_settle(supply_node, branches,
-                                                                                                          street_graph,
-                                                                                                          path_passed_osmids,
-                                                                                                          conn_dist_weight,
-                                                                                                          debug, branches_only=False)
+                        conn_objects_min_stack, path_passed_osmids = find_nearest_conn_objects_settle(supply_node, branches,
+                                                                                                      lv_load_area_supply_nodes,
+                                                                                                      street_graph,
+                                                                                                      path_passed_osmids,
+                                                                                                      conn_dist_weight,
+                                                                                                      debug, branches_only=False)
 
 
-                            target_obj_result, street_graph, path_passed_osmids = connect_node_settle(supply_node,
-                                                                                                     supply_node.geo_data,
-                                                                                                     mv_grid_district.mv_grid,
-                                                                                                     conn_objects_min_stack[0],
-                                                                                                     proj2,
-                                                                                                     street_graph,
-                                                                                                     path_passed_osmids,
-                                                                                                     graph,
-                                                                                                     conn_dist_ring_mod,
-                                                                                                     debug)
+                        target_obj_result, street_graph, path_passed_osmids = connect_node_settle(supply_node,
+                                                                                                 supply_node.geo_data,
+                                                                                                 mv_grid_district.mv_grid,
+                                                                                                 conn_objects_min_stack[0],
+                                                                                                 proj2,
+                                                                                                 street_graph,
+                                                                                                 path_passed_osmids,
+                                                                                                 graph,
+                                                                                                 conn_dist_ring_mod,
+                                                                                                 debug)
 
 
             # Replace all overhead lines by cables
@@ -1135,8 +1142,8 @@ from shapely.ops import linemerge
 from shapely.geometry import Point
 import networkx as nx
 
-def find_nearest_conn_objects_settle(supply_node, branches, street_graph, path_passed_osmids,
-                                     conn_dist_weight, debug, branches_only=False):
+def find_nearest_conn_objects_settle(supply_node, branches, lv_load_area_supply_nodes, street_graph,
+                                     path_passed_osmids, conn_dist_weight, debug, branches_only=False):
 
     # threshold which is used to determine if 2 objects are on the same position (see below for details on usage)
     conn_diff_tolerance = cfg_ding0.get('mv_routing', 'conn_diff_tolerance')
@@ -1196,6 +1203,10 @@ def find_nearest_conn_objects_settle(supply_node, branches, street_graph, path_p
             # identical with origin of shortest path (line splittage
             # is not possible for this particular case)
             elif conn_objects['b']['line_path'][0] in [str(end_node1), str(end_node2)]:
+                del conn_objects['b']
+            # remove branch as possible connection, if root node
+            # of shortest path is a ding0 object (supply node)
+            elif conn_objects['b']['line_path'][0] in map(str, lv_load_area_supply_nodes):
                 del conn_objects['b']
 
             # remove MV station as possible connection point
