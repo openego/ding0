@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger('ding0')
 
 
-def get_cluster_numbers(la_peak_loads):
+def get_cluster_numbers(la_peak_loads, simp_graph):
     """
     caculate the number of clusters for load areal based on peak load / avg
     peak loads < 200 kW are accumulated
@@ -22,6 +22,9 @@ def get_cluster_numbers(la_peak_loads):
     # workaround if peak load of low voltage loads is zero,
     # TODO: check if load area should be removed -> cfg_ding0.get('mv_routing', 'load_area_threshold')
     if n_cluster == 0:
+        n_cluster = 1
+
+    elif len(simp_graph) == 1:
         n_cluster = 1
 
     return n_cluster

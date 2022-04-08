@@ -815,6 +815,9 @@ class NetworkDing0:
                                           session.bind,
                                           index_col='id_db')
 
+        # create session to load from (local) DB OSM data
+        session_osm = create_session_osm()
+
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
@@ -822,9 +825,6 @@ class NetworkDing0:
             # todo: remove. exists to process a selected load area instead all load areas.
             # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
             #    continue ####
-
-            # create session to load from (local) DB OSM data
-            session_osm = create_session_osm()
 
             # transform geo_load_area from str to poly
             # buildings without buffer, ways with buffer
@@ -853,7 +853,7 @@ class NetworkDing0:
                 # get nodes to remove from graph
                 # is a list of lists containing
                 # nodes to remove per buffer polygon
-                nodes_to_remove_nested_list = graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list)
+                outlier_nodes_list = graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list)
 
             # no osm ways data could be found
             else:
@@ -862,20 +862,20 @@ class NetworkDing0:
                 graph, node_id = create_simple_synthetic_graph(geo_load_area)
 
                 # no outlier nodes in synthetic graph, nested list must be empty
-                nodes_to_remove_nested_list = [[]]
+                outlier_nodes_list = [[]]
 
                 logger.warning(f'ways_sql_df.empty. No ways found in MV {mv_grid_district}, LA {id_db} \n' \
                                f'Build synthetic graph instead.')
 
             # inner_node_list define nodes without buffer
-            inner_node_list = list(set(graph.nodes()) - set(nodes_to_remove_nested_list[0]))
+            inner_node_list = list(set(graph.nodes()) - set(outlier_nodes_list[0]))
 
             if len(inner_node_list) < 1:
                 logger.warning(f'no graph found in origin polygon of MV {mv_grid_district}, LA {id_db}')
                 continue
 
             # get connected graph
-            conn_graph = get_fully_conn_graph(graph, nodes_to_remove_nested_list)
+            conn_graph = get_fully_conn_graph(graph, outlier_nodes_list)
 
             # PLOT 1-3
             # return geo_load_area, buffer_poly_list, graph, inner_node_list, conn_graph
@@ -895,7 +895,7 @@ class NetworkDing0:
             outer_graph = remove_detours(outer_graph)
 
             # compose graph
-            composed_graph = compose_graph(outer_graph, graph_subdiv)  # PAUL NEW changed position order
+            composed_graph = compose_graph(outer_graph, graph_subdiv)
 
             # building_loads
             if need_parameterization:
@@ -942,7 +942,7 @@ class NetworkDing0:
             simp_graph = remove_unloaded_deadends(simp_graph, street_loads_df.index.tolist())
 
             # get n_clusters based on capacity in load area
-            n_cluster = get_cluster_numbers(buildings_w_loads_df)
+            n_cluster = get_cluster_numbers(buildings_w_loads_df, simp_graph)
 
             # cluster graph and locate lv stations based on load center per cluster
             clustering_successfully, cluster_graph, mvlv_subst_list, nodes_w_labels = \
@@ -956,7 +956,6 @@ class NetworkDing0:
                 (buildings_w_loads_df.capacity < get_config_osm('hv_mv_threshold_capacity'))]
 
             # add mv loads to graph. connect via edges. if True
-
             trafo_in_mv_building = True  # Paul
 
             for osm_id_building, loads_mv_df_row in loads_mv_df.iterrows():
@@ -2298,13 +2297,14 @@ class NetworkDing0:
         else:
             anim = None
 
-        chunk_size = 20
+        chunk_size = 10
         mvgd_chunks = [list(self.mv_grid_districts())[i:i + chunk_size] for i in
                        range(0, len(list(self.mv_grid_districts())), chunk_size)]
 
         for mvgd_chunk in mvgd_chunks:
 
             for grid_district in mvgd_chunk:  # self.mv_grid_districts():
+                print(grid_district)
                 grid_district.mv_grid.routing(debug=debug, anim=anim)
                 # PAUL new: include urban routing on aggregated load area
                 if True:
