@@ -24,8 +24,8 @@ def get_cluster_numbers(la_peak_loads, simp_graph):
     if n_cluster == 0:
         n_cluster = 1
 
-    elif len(simp_graph) == 1:
-        n_cluster = 1
+    elif n_cluster > len(simp_graph):
+        n_cluster = len(simp_graph)
 
     return n_cluster
 
