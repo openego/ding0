@@ -252,6 +252,16 @@ class LVLoadAreaDing0(RegionDing0):
         """
         return len(self._lv_grid_districts)
 
+    def mv_loads_count(self):
+        """Returns the count of MV loads
+
+        Returns
+        -------
+        int
+            Number of MV loads.
+        """
+        return len(self._mv_loads)
+
     def add_mv_load(self, mv_load):
         """Adds a MVLoad to _lv_grid_districts if not already existing
         

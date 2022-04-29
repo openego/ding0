@@ -14,13 +14,20 @@ __author__     = "nesnoj, gplssm"
 
 
 import networkx as nx
+import nxmetis
+# G. Karypis, V. Kumar: A fast and high quality multilevel scheme for partitioning irregular graphs
+# https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/metis.pdf
+
 import osmnx as ox
+import numpy as np
 from shapely.geometry import LineString
 
 from ding0.core.network import BranchDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core.network.loads import LVLoadDing0
 from ding0.tools import config as cfg_ding0
+from ding0.grid.lv_grid.routing import identify_street_loads
+from ding0.grid.mv_grid.tools import get_shortest_path_shp_multi_target
 
 from config.config_lv_grids_osm import get_config_osm, get_load_profile_categories
 from ding0.grid.lv_grid.parameterization import get_peak_load_for_residential
@@ -29,131 +36,68 @@ import logging
 logger = logging.getLogger('ding0')
 
 
-def get_routed_graph(full_graph, station_node, building_nodes):
+def get_routed_graph(
+        graph, station_node, building_nodes, generator_nodes=None):
     '''
-    build minimum spanning tree (MST) for building nearest nodes and station node
-    return MST
+    routing via shortest path from station to loads and gens
+    input graph representing all streets in lvgd and 
+        node of station in graph, all nodes of buildings.
+        generator_nodes is none by default due to they are connected 
+        in a ding0 default way at a later point corresponding to load
+    remove edges which are not mandatory and return routed graph
     '''
-    mandatory_nodes = [station_node]
+    routed_graph = graph.copy()
+
+    edges_to_keep = []
     for n in building_nodes:
-        mandatory_nodes += nx.shortest_path(full_graph, n, station_node, weight='length')
-    mandatory_sub_graph = full_graph.subgraph(mandatory_nodes)
-    MST=nx.minimum_spanning_tree(mandatory_sub_graph, weight='length')
-    return MST
+        route = nx.shortest_path(graph, n, station_node, weight='length')
+        for i, r in enumerate(route[:-1]):
+            edges_to_keep.append((r, route[i+1]))
+    edges_to_keep = list(set(edges_to_keep))
+    edges_to_del = []
+    for edge in list(graph.edges()):
+        if edge not in edges_to_keep:
+            if station_node not in edge:
+                edges_to_del.append(edge)
+    routed_graph.remove_edges_from(edges_to_del)
+    logging.info('Routing shortest path for each node to station. '
+                 f'{len(edges_to_del)} edges removed in graph to obtain '
+                 'shortest path tree.')
+    # due to edges are removed, nodes which are not connected anymore needs to be removed also
+    # e.g. nodes which representing intersections on ways but not mandatory for shortest tree
+    # graph to route loads to station need to be removed to dont add as ding0CableDist
+    for loose_components in list(nx.weakly_connected_components(routed_graph)):
+        if len(loose_components) == 1:  # there is only one not conencted node
+            for node in loose_components:
+                routed_graph.remove_node(node)
+
+    return routed_graph
 
 
-def get_edges_leaving_feeder(graph, starting_node, feeder, seen, seen_w_feeder, lv_station_nn):
-    """
-    # get {edge: feederId} leaving the lv station.
-    # depending on its number at later its possible to
-    # add load residentials per feeder by formula of stetz:
-    # vid parameterization.get_peak_load_for_residential()
-    """
-    # check if we already checked this node
-    if starting_node not in seen:
+def allocate_street_load_nodes(lv_loads_grid, shortest_tree_district_graph, station_id):
+    
+    # in order to do a size constrainted tree partioning
+    # allocate capacity to street nodes (as integer)
+    # allocate number_households to household nodes
+    street_loads, household_loads = identify_street_loads(lv_loads_grid, shortest_tree_district_graph, get_number_households=True)
+    street_loads_map = street_loads.to_dict()['capacity']
+    household_loads_map = household_loads.to_dict()['number_households']
 
-        # if not checked yet, check it. get its edges and check its target nodes also
-        # get edges from starting node. edges are touple (starting_node, target_node)
-        new_target_nodes = graph.edges(starting_node)
+    for node in shortest_tree_district_graph.nodes:
 
-        # mark starting node as visited to dont check it again.
-        # save the feeder also that to count the number for each feeder 
-        # respectively group_by(feeder) at a later point
-        seen.add(starting_node)
-        seen_w_feeder.update({starting_node: feeder})
+        if node in street_loads_map.keys():
+            shortest_tree_district_graph.nodes[node]['load'] = int(np.ceil(street_loads_map[node] * 1e3)) # as int * 1000
+        else:
+            shortest_tree_district_graph.nodes[node]['load'] = 0
+        if node in household_loads_map:
+            shortest_tree_district_graph.nodes[node]['n_households'] = household_loads_map[node]
+        else:
+            shortest_tree_district_graph.nodes[node]['n_households'] = 0
 
-        # for each node we received of starting node
-        for nodes in new_target_nodes:
-
-            # increment feeder as long as edge is leaving the lv station
-            if starting_node == lv_station_nn:
-                feeder += 1
-
-            # get node connected via edge to starting node to follow 
-            # itd edges until end to give these edges all same feeder id
-            if nodes[1] == starting_node:
-                node = nodes[0]
-            else:
-                node = nodes[1]
-
-            # recursive call to check its target nodes also 
-            seen_w_feeder = get_edges_leaving_feeder(graph, node, feeder, seen, seen_w_feeder, lv_station_nn)
-
-    return seen_w_feeder
-
-
-def add_feeder_to_buildings(lvgd, graph):
-    """
-    for each feeder/ Strang leaving ons
-    add id for feeder and the number of residentials connected to feeder
-    """
-
-    # key is node/ osmid, value is feeder
-    feeder = 0  # set feeder = 0 due to its lv station what is root node
-
-    # in set and dictioniary we gonna save seen nodes and its feeder.
-    seen_nodes = set()
-    nodes_w_feeder = {}
-    load_profile_categories = get_load_profile_categories()
-
-    # get nodes with the feeder they connected with. starting point is lv station.
-    nodes_w_feeder = get_edges_leaving_feeder(graph, lvgd.lv_grid._station.osm_id_node,
-                                              feeder, seen_nodes, nodes_w_feeder,
-                                              lvgd.lv_grid._station.osm_id_node)
-
-    nodes = lvgd.buildings
-    nodes['feeder'] = 0
-    # init n_residential_at_this_feeder with number_households
-    # afterwards loads < 100 kW will be grouped per feeder and
-    # n_residential_at_this_feeder will be updated but in this
-    # way, loads >= 100 kW have value for n_residential_at_this_feeder
-    nodes['n_residential_at_this_feeder'] = nodes['number_households']
-
-    # due to buildings are not in graph, update em nearest nodes: loc[buildings.nn, 'feeder']
-    for building_nearest_node, feeder_id in nodes_w_feeder.items():
-        nodes.loc[nodes.nn == building_nearest_node, 'feeder'] = feeder_id
-
-    # get number residentials per feeder
-    nodes = nodes[nodes.capacity < get_config_osm('lv_threshold_capacity')]
-    nodes.loc[nodes['category'].isin(load_profile_categories['residentials_list']), 'n_residential_at_this_feeder'] = nodes[nodes['category'].isin(load_profile_categories['residentials_list'])].groupby('feeder')['number_households'].transform('sum')
-
-    lvgd.buildings = nodes
-
-    return nodes_w_feeder  # need to return to get feeder id for edges
-
-
-def get_feeder_cable_type_dict(lvgd, cable_lf, cos_phi_load, v_nom):
-    """
-    Get cable type for each feeder based on sum(peak_load) connected to each feeder.
-    If cable_type doesn't cover load, set cable_type='NAYY 4x1x150' with intention
-    to ensure grid integrity at a later point.
-    return feeder_cable_type_dict: dict key: feederId, value: cable_type
-    e.g. feeder_cable_type_dict = {1: 'NAYY 4x1x150', 2: 'NAYY 4x1x150', 3: 'NAYY 4x1x150'}
-    """
-    # TODO: only the nearest nodes of buildings are considered to get appropriate cable_type_stub
-    # but Graph.edges() are added also and not every node in Graph.edges() has a load/ is connected
-    # to a building, thus if to a node in Graph.nodes() no load/ building is connected, it could be
-    # checked along the feeder, which loads are really connected and by em total sum(capacity),
-    # select cable_type_stub for feeder and all nodes of Graph.nodes() where cable_type_stub isn't known.
-    feeder_ids = list(set(lvgd.buildings.feeder.tolist()))
-
-    feeder_cable_type_dict = {}
-    for feeder_id in feeder_ids:
-        # TODO: if I_max_load to high that no suitable cable stubs are good enough, consider to bypass 
-        I_max_load = lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id].capacity.sum() / (3 ** 0.5 * v_nom) / cos_phi_load
-
-        # determine suitable cable for this current
-        suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
-            (lvgd.lv_grid.network.static_data['LV_cables'][
-                'I_max_th'] * cable_lf) > I_max_load]
-        if len(suitable_cables_stub):
-            cable_type_stub = suitable_cables_stub.loc[suitable_cables_stub['I_max_th'].idxmin(), :]
-        else:  # TODO: what to do if no cable is suitable for I_max_load, e.g. many loads connected to feeder?
-            cable_type_stub = lvgd.lv_grid.network.static_data['LV_cables'].iloc[0]  # take strongest cable if no one suits
-
-        feeder_cable_type_dict[feeder_id] = cable_type_stub
-
-    return feeder_cable_type_dict
+    # make sure substation's capacity is always zero
+    shortest_tree_district_graph.nodes[station_id]['load'] = 0 
+    
+    return shortest_tree_district_graph, street_loads, household_loads
 
 
 def get_cable_type_by_load(lvgd, capacity, cable_lf, cos_phi_load, v_nom):
@@ -172,16 +116,10 @@ def get_cable_type_by_load(lvgd, capacity, cable_lf, cos_phi_load, v_nom):
     return cable_type_stub
 
 
-def get_number_of_cables(capacity, cos_phi_load, v_nom):
-    """ get number of cables for given capacity as param """
-    I_max_load = capacity / (3 ** 0.5 * v_nom) / cos_phi_load
-
-    max_possible_i_load = 400
-    n_cables = 1
-    while I_max_load > 400:
-        n_cables +=1
-        I_max_load /= n_cables
-    return n_cables
+def get_n_feeder_mandatory(capacity): 
+    I_max_allowed = 245 ##TODO: get value via config from standard cable type
+    I_max_load_at_feeder = capacity / (3 ** 0.5 * v_nom) / cos_phi_load
+    return np.ceil(I_max_load_at_feeder / I_max_allowed)
 
 
 def build_branches_on_osm_ways(lvgd):
@@ -231,22 +169,111 @@ def build_branches_on_osm_ways(lvgd):
         lvgd.lv_grid._station.osm_id_node,  # osmid of node representating station
         lv_loads_grid.nn.tolist())             # list of nodes connected to staion
 
-    # add feeder id to each feeder leaving ons and
-    # count residentials connected to each feeder
-    # but only for lv_loads_grid due to higher loads 
-    # are considered on them own
-    if len(shortest_tree_district_graph.edges):
-        graph_has_edges = True
-        node_feederId_dict = add_feeder_to_buildings(lvgd, shortest_tree_district_graph)
-    else:  # graph has no edges, thus, set feederId=1 due to station has Id=0 as root.
-        graph_has_edges = False
-        lvgd.buildings['feeder'] = 1
-        lvgd.buildings['n_residential_at_this_feeder'] = lvgd.buildings['number_households']
-        node_feederId_dict = {}
-        for nn in lvgd.buildings.nn.tolist():
-            node_feederId_dict[nn] = 1
+    station_id = lvgd.lv_grid._station.osm_id_node
+
+    # pre-process graph
+    # allocate loads to street nodes
+    shortest_tree_district_graph = allocate_street_load_nodes(lv_loads_grid, shortest_tree_district_graph, station_id)
+
+    # split the graph into subtrees based on station's incident edges
+    # if number of edges larger 1 
+    # prepare shortest path tree graph
+    g = shortest_tree_district_graph.copy()
+    station_attr = g.nodes[station_id]
+
+    # find subtrees in shortest path tree graph using substation's inicident edges
+    #TODO: Check if len(G) is bigger 1 / G.has_edges: lvgd graph with one node -> remove station leads to empty graph
+    g.remove_node(station_id)
     
+    
+    nodelists = list(nx.weakly_connected_components(g))
+
+    feederID = 0
+
+    # create subtrees from tree graph based on number of with station incident edges
+    for nodelist in nodelists:
+
+        subtree_graph = shortest_tree_district_graph.subgraph(list(nodelist) + station_id).to_undirected()
+        cum_subtree_load = sum([subtree_graph.nodes[node]['load'] for node in subtree_graph.nodes]) / 1e3
+        n_feeder = get_n_feeder_mandatory(cum_subtree_load)
+
+        # print(f"load {cum_subtree_load} needs n_feeder {n_feeder}")
+
+        if n_feeder > 1:
+
+            G = nx.Graph(subtree_graph.copy())
+
+            # transform edge length to int
+            for edge in G.edges:
+                G.edges[edge]['length'] = int(np.ceil(G.edges[edge]['length']))
+
+            (cut, parts) = nxmetis.partition(G, int(n_feeder), 
+                                             node_weight='load', edge_weight='length', 
+                                             options=nxmetis.MetisOptions(contig=True))
+
+            for cluster in parts:
+
+                feederID += 1
+                # get feeder graphs separately
+                feeder_graph = subtree_graph.subgraph(cluster).copy()
+                cum_feeder_graph_load = sum([feeder_graph.nodes[node]['load'] for node in feeder_graph.nodes]) / 1e3
+
+                # print(f"feeder id {feederID} has a load of {cum_feeder_graph_load}")
+
+                suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][(lvgd.lv_grid.network.static_data['LV_cables']['I_max_th'] * cable_lf) > cum_feeder_graph_load]
+                if len(suitable_cables_stub):
+                    cable_type_stub = suitable_cables_stub.loc[suitable_cables_stub['I_max_th'].idxmin(), :]
+                else:  # TODO: what to do if no cable is suitable for I_max_load, e.g. many loads connected to feeder?
+                    cable_type_stub = lvgd.lv_grid.network.static_data['LV_cables'].iloc[0]  # take strongest cable if no one suits
+
+                for node in cluster:
+                    feeder_graph.nodes[node]['feederID'] = feederID
+
+                for edge in feeder_graph.edges:
+                    feeder_graph.edges[edge]['feederID'] = feederID
+                    feeder_graph.edges[edge]['cum_load'] = cum_feeder_graph_load
+                    feeder_graph.edges[edge]['cable_type_stub'] = cable_type_stub
+
+                if not station_id[0] in feeder_graph.nodes:
+
+                    line_shp, line_length, line_path = get_shortest_path_shp_multi_target(subtree_graph, station_id[0], cluster)
+                    feeder_graph.add_edge(line_path[0], station_id[0], 0, geometry=line_shp, length=line_length, feederID=feederID, cable_type_stub=cable_type_stub)
+                    feeder_graph.add_node(station_id[0], **station_attr)
+
+                feeder_graph_list.append(feeder_graph)
+
+        else:
+
+            feederID += 1
+
+            feeder_graph = subtree_graph.copy()
+
+            # print(f"feeder id {feederID} has a load of {cum_subtree_load}")
+
+            suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][(lvgd.lv_grid.network.static_data['LV_cables']['I_max_th'] * cable_lf) > cum_subtree_load]
+            if len(suitable_cables_stub):
+                cable_type_stub = suitable_cables_stub.loc[suitable_cables_stub['I_max_th'].idxmin(), :]
+            else:  # TODO: what to do if no cable is suitable for I_max_load, e.g. many loads connected to feeder?
+                cable_type_stub = lvgd.lv_grid.network.static_data['LV_cables'].iloc[0]  # take strongest cable if no one suits
+
+            for node in feeder_graph.nodes:
+                feeder_graph.nodes[node]['feederID'] = feederID
+
+            for edge in feeder_graph.edges:
+                feeder_graph.edges[edge]['feederID'] = feederID
+                feeder_graph.edges[edge]['cum_load'] = cum_subtree_load
+                feeder_graph.edges[edge]['cable_type_stub'] = cable_type_stub
+
+            feeder_graph_list.append(feeder_graph)
+
+
+    G = nx.compose_all(feeder_graph_list)
+    lvgd.graph_district = G  # update graph for district. doesn't differntiate loads < 100kW < loads < 200 kW
+
+    # todo: after feeder are identified, count residentials per feeder
+    # after count residentials per feeder is identified, update load due to diversity factor needs to be updated
     # update capacity with residentials for loads < 100 kW
+    """
     feeder_ids = list(set(lvgd.buildings.feeder.tolist()))
     # reset capacity for residentials to 0 due to update em capacity like capacity += capacity_res
     lvgd.buildings.loc[lvgd.buildings.category.isin(load_profile_categories['residentials_list']), 'capacity'] = 0
@@ -262,13 +289,7 @@ def build_branches_on_osm_ways(lvgd):
             if (not capacity) | (capacity == 0):
                 capacity = 0.1  # set a minimum capacity of 0.1. TODO: need decision if a capacity of 0 is allowed.
             lvgd.buildings.loc[i, 'capacity'] = capacity
-
-    # lv_branch_no_max stores the max value of feeder leaving station
-    # when adding loads w 100 <= capacity < 200 kW, set branch_no:
-    # lv_branch_no_max += 1
-    # branch_no = lv_branch_no_max
-    # to consider loads connected to station directly as own branch.
-    lv_branch_no_max = max(list(node_feederId_dict.values()))
+    """
 
     # separate loads w. capacity: loads < 100 kW connected to grid
     # update with number residentials per feeder and feeder id
@@ -580,14 +601,6 @@ def build_branches_on_osm_ways(lvgd):
         capacity += capacity_res
         
         new_lvgd_peak_load_considering_simultaneity += capacity  # considering simultaneity for loads per feeder
-
-        # get branch_no
-        lv_branch_no_max += 1
-        branch_no = lv_branch_no_max
-        # get number of necessary cables
-        n_cables = get_number_of_cables(capacity, cos_phi_load, v_nom)
-        # get cable_type. divide by n_cables in case 1 < cables are necessary to connect load
-        cable_type = get_cable_type_by_load(lvgd, capacity / n_cables, cable_lf, cos_phi_load, v_nom)
 
         route = nx.shortest_path(full_graph, source=v, target=lvgd.lv_grid._station.osm_id_node, weight='length')
 

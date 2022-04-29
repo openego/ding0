@@ -15,15 +15,15 @@ def create_session_osm():
     """
     return Session() for sql queries
     """
-'''
+
     # sqlachemy local osm data
     DB = 'postgresql'
     DB_USER = 'postgres'
     DB_PW   = 'labor'
-    DB_Name = 'sandbox_bw' # osm data baden-wuerttemberg
+    DB_Name = 'sandbox' # osm data baden-wuerttemberg
 
 
-    engine_osm = create_engine(DB + '://' + DB_USER + ': ' + DB_PW + '@localhost:5432/' + DB_Name, echo=False)
+    engine_osm = create_engine(DB + '://' + DB_USER + ':' + DB_PW + '@localhost/' + DB_Name, echo=False)
 
     Session = sessionmaker(bind=engine_osm)
     
@@ -38,7 +38,7 @@ def create_session_osm():
     #          'Hit [Enter] to take defaults')
     host = 'localhost' # input('host (default 127.0.0.1): ')
     port = '5432' # input('port (default 5432): ')
-    database = 'berlin_osm' # 'berlin_osm' # bawu_rob_upd
+    database = 'bawu_rob_upd' #'sonnja_db' # input("database name (default 'sonnja_db'): ")
     user = 'RL-INSTITUT\paul.dubielzig' # input('user (default sonnja): ')
     password = 'labor'
     # password = input('password: ')
@@ -55,3 +55,4 @@ def create_session_osm():
     Session = sessionmaker(bind=engine_osm)
     
     return Session()
+'''

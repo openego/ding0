@@ -28,6 +28,7 @@ class MVCableDistributorDing0(CableDistributorDing0):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.osm_id_node = kwargs.get('osm_id_node', None)  # defined node in graph where cable dist is located
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.id_db = self.grid.cable_distributors_count() + 1
 

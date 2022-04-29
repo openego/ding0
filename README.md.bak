@@ -33,6 +33,7 @@ For windows you may try:
 conda config --prepend channels conda-forge
 conda create -n ding0 --strict-channel-priority osmnx pandas=1.2.4 pyproj=3.0.1
 conda install pytables
+conda install pyproj=3.0.1
 pip install git+https://github.com/openego/ego.io
 pip install git+https://github.com/openego/ding0
 conda install Cython

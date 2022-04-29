@@ -15,7 +15,7 @@ __author__     = "nesnoj, gplssm"
 
 from ding0.core.network.stations import LVStationDing0
 from ding0.core.network.loads import MVLoadDing0
-
+from ding0.core import MVCableDistributorDing0
 from ding0.core.network import CableDistributorDing0, GeneratorDing0, LoadDing0
 from ding0.tools.geo import calc_geo_centre_point
 from ding0.tools import config as cfg_ding0
@@ -217,6 +217,11 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             logger.debug('Peak load sum: {}'.format(sum(nodes_peak_load)))
             logger.debug('Peak loads: {}'.format(nodes_peak_load))
 
+from shapely.ops import linemerge
+from shapely.geometry import Point, LineString
+from ding0.grid.lv_grid.graph_processing import simplify_graph_adv, remove_unloaded_deadends, remove_parallels_and_loops
+import networkx as nx
+import pandas as pd
 
 
 def get_edge_tuples_from_path(G, path_list):
@@ -232,11 +237,7 @@ def get_edge_tuples_from_path(G, path_list):
     return edge_path
 
 
-import networkx as nx
-import osmnx as ox
-from shapely.ops import linemerge
-
-def get_line_shp_from_shortest_path(osm_graph, node1, node2, return_path=False):
+def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=False):
     
     sp = nx.shortest_path(osm_graph, str(node1), str(node2), weight='length')
     edge_path = get_edge_tuples_from_path(osm_graph, sp)
@@ -258,12 +259,25 @@ def get_line_shp_from_shortest_path(osm_graph, node1, node2, return_path=False):
         return line_shp, line_length
 
 
-#inspired by shapely
+def get_shortest_path_shp_multi_target(G, source, targets):
 
-from shapely.geometry import LineString, Point
+    _, line_path = nx.multi_source_dijkstra(G, targets, source, weight='length')
+    edge_path = get_edge_tuples_from_path(G, line_path)
+    line_shp = linemerge([G.edges[edge]['geometry'] for edge in edge_path])
+    line_length = line_shp.length
+
+    # make sure length is greater 1m
+    if line_length == 0:
+        line_length = 1
+        logger.warning('Geo distance is zero, check objects\' positions. '
+                       'Distance is set to 1m')
+
+    return line_shp, line_length, line_path
+
 
 def cut_line_by_distance(line, distance, normalized=True):
-    
+    # inspried from shapely
+
     if normalized:
         distance = distance*line.length
     # Cuts a line in two at a distance from its starting point
@@ -284,9 +298,6 @@ def cut_line_by_distance(line, distance, normalized=True):
                 LineString([(cp.x, cp.y)] + coords[i:])]
         
 
-from ding0.grid.lv_grid.graph_processing import simplify_graph_adv, remove_unloaded_deadends, remove_parallels_and_loops
-        
-        
 def reduce_graph_for_dist_matrix_calc(graph, nodes_to_keep):
     
     '''
@@ -309,9 +320,6 @@ def reduce_graph_for_dist_matrix_calc(graph, nodes_to_keep):
     return graph
 
 
-import networkx as nx
-import pandas as pd
-
 def calc_street_dist_matrix(G, matrix_node_list):
 
     node_list = matrix_node_list.copy()
@@ -332,49 +340,72 @@ def calc_street_dist_matrix(G, matrix_node_list):
     return matrix_dict
 
 
-import osmnx as ox 
-from shapely.geometry import LineString
-
-def conn_ding0_obj_to_osm_graph(osm_graph, ding0_obj):
+def conn_ding0_obj_to_osm_graph(osm_graph, ding0_obj, search_shp=None):
 
     '''
     connects ding0 object with shortest euclidic distance to existing osm graph node
+    if search_shp is not None but shapely Point, those coordinates are used for
+    finding nearest graph node
     create new node and edges
     osm_graph is of type MultiDiGraph
     '''
-    x,y = ding0_obj.geo_data.x, ding0_obj.geo_data.y
+
+    # search_shp is None, take ding0 objects' shp
+    if not search_shp:
+        x,y = ding0_obj.geo_data.x, ding0_obj.geo_data.y
+    # search_shp is passed
+    else:
+        x,y = search_shp.x, search_shp.y
+
     nn = ox.distance.nearest_nodes(osm_graph, x, y, return_dist=False)
-    line_shp = LineString([(osm_graph.nodes[nn]['x'], osm_graph.nodes[nn]['y']), (x,y)])
-    osm_graph.add_node(ding0_obj, x=x, y=y, node_type='synthetic')
-    osm_graph.add_edge(nn, ding0_obj, geometry=line_shp, length=line_shp.length) #missing: highway, osmid
-    osm_graph.add_edge(ding0_obj, nn, geometry=line_shp, length=line_shp.length) #missing: highway, osmid
-    
+    line_shp = LineString([(osm_graph.nodes[nn]['x'], osm_graph.nodes[nn]['y']),
+                           (ding0_obj.geo_data.x, ding0_obj.geo_data.y)])
+    osm_graph.add_node(str(ding0_obj), x=ding0_obj.geo_data.x, y=ding0_obj.geo_data.y, node_type='synthetic')
+    osm_graph.add_edge(nn, str(ding0_obj), geometry=line_shp, length=line_shp.length) #missing: highway, osmid
+    osm_graph.add_edge(str(ding0_obj), nn, geometry=line_shp, length=line_shp.length) #missing: highway, osmid
+
     return osm_graph
-
-
 
 
 
 # graph processing
 
 def get_core_graph(G):
-    
     C = ox.utils_graph.get_digraph(G, weight='length')
     C.remove_edges_from(nx.selfloop_edges(C))
     C = nx.k_core(C, k=3, core_number=None)
     C = nx.MultiDiGraph(G.subgraph(C.nodes))
-    
+
     return C
 
 
 def get_stub_graph(osm_graph_red, core_graph):
-
     stub_edges = [n for n in osm_graph_red.edges if n in core_graph.edges]
     R = osm_graph_red.copy()
     R.remove_edges_from(stub_edges)
     R.remove_nodes_from(list(nx.isolates(R)))
-    
+
     return R
+
+def split_graph_by_core(street_graph, depot):
+
+    G = ox.utils_graph.get_digraph(street_graph, weight='length')
+    G.remove_edges_from(nx.selfloop_edges(G))
+
+    core_graph = nx.k_core(G, k=3, core_number=None)
+    core_graph = nx.MultiDiGraph(G.subgraph(core_graph.nodes))
+
+    core_edges = [n for n in street_graph.edges if n in core_graph.edges]
+    stub_graph = street_graph.copy()
+    stub_graph.remove_edges_from(core_edges)
+    stub_graph.remove_nodes_from(list(nx.isolates(stub_graph)))
+
+    # make sure mv_station node is connected to core graph
+    core_graph = conn_ding0_obj_to_osm_graph(core_graph, depot)
+    if stub_graph.has_node(str(depot)):
+        stub_graph.remove_node(str(depot))
+
+    return core_graph, stub_graph
 
 
 def update_graphs(core_graph, stub_graph, nodes_to_switch):
@@ -414,7 +445,8 @@ def create_stub_dict(stub_graph, root_nodes, node_list):
             stub_dict[i] = {}
             stub_dict[i]['comp'] = comp
             stub_dict[i]['root'] = list(root_node_set)[0] #next(iter())
-            stub_dict[i]['load'] = {node: int(node_list[node].peak_load / 0.97) for node in load_node_set} #{node: demand}
+            stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
+                                    for node in load_node_set} #{node: demand}
             stub_dict[i]['dist'] = cable_dist_set
             
     return stub_dict
@@ -433,7 +465,7 @@ def check_stub_criterion(stub_dict, stub_graph):
 
         cum_stub_load = sum(stub_data['load'].values())
 
-        if cum_stub_load > 1000: #TODO 1000
+        if cum_stub_load > cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
 
             if len(stub_data['load']) == 1:
 
@@ -455,7 +487,7 @@ def check_stub_criterion(stub_dict, stub_graph):
 
                     for n in load_nodes:
                         cum_load = sum([stub_data['load'][n] for n in load_nodes])
-                        if cum_load < 1000:
+                        if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                             comp = [root] + load_nodes
                             mod_stubs_list.append(comp)
                             break
@@ -485,7 +517,7 @@ def check_stub_criterion(stub_dict, stub_graph):
                             for n in load_nodes:
 
                                 cum_load = sum([stub_data['load'][n] for n in load_nodes])
-                                if cum_load < 1000:
+                                if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                                     comp = [root] + load_nodes
                                     mod_stubs_list.append(comp)
                                     break
@@ -518,7 +550,8 @@ def update_stub_dict(stub_dict, mod_stubs_list, node_list):
         i = max(stub_dict.keys()) + 1 
 
         stub_dict[i] = {}
-        stub_dict[i]['load'] = {node: int(node_list[node].peak_load / 0.97) for node in load_node_set} #{node: demand}
+        stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
+                                for node in load_node_set} #{node: demand}
         stub_dict[i]['root'] = root
         stub_dict[i]['comp'] = set(comp)
         stub_dict[i]['dist'] = set()
@@ -550,4 +583,176 @@ def get_mvgd_ids_for_city(osm_city_name):
     gdf_mvgds_in_city = gdf_mvgds.loc[gdf_mvgds['poly_inside'] == True]
 
     return gdf_mvgds_in_city['subst_id'].to_list()
+
+### functions for cable routing in settlements
+
+def relocate_cable_dists_settle(load_area, branches):
+
+    # returns list of relocated cable dists in load area
+    cable_dist_settle = set()
+
+    # find cable distributors inside load area
+    for branch in branches:
+        cd_in_load_area = [node for node in branch['adj_nodes'] if isinstance(node, MVCableDistributorDing0) \
+                           and node.geo_data.intersects(load_area.geo_area)]
+
+        cable_dist_settle.update(cd_in_load_area)
+
+    # if found, update cable distributors' coordinates by finding
+    # nearest node's position in street graph, update branch geoms as well
+    if cable_dist_settle:
+
+        # osm_ids allocated to ding0 supply nodes are unique, can't be used for cable dists
+        locked_osm_ids = set([mv_load.osmid_building for mv_load in load_area._mv_loads] +
+                             [lvgd.lv_grid._station.osm_id_node for lvgd in load_area._lv_grid_districts])
+
+        for cd in cable_dist_settle:
+
+            # get copy of street graph and remove locked osm ids
+            G = load_area.load_area_graph.copy()
+            G.remove_nodes_from(locked_osm_ids)
+
+            # get cable dists point geometry
+            cd_shp = cd.geo_data
+
+            # osm nodes are available for relocalisation
+            if not nx.is_empty(G):
+                osm_id = ox.nearest_nodes(G, cd_shp.x, cd_shp.y, return_dist=False)
+                osm_node_shp = Point([(G.nodes[osm_id]['x'], G.nodes[osm_id]['y'])])
+            # nos osm node available, add synthetic node to graph instead by using
+            # original cable distributor coordinates
+            else:
+                load_area.load_area_graph = conn_ding0_obj_to_osm_graph(load_area.load_area_graph, cd)
+                osm_id = str(cd)
+                osm_node_shp = cd_shp
+
+            # update cable distributors position
+            cd.geo_data = osm_node_shp
+            cd.osm_id_node = osm_id
+
+            # lock cable distributor's osm id , update locked osm ids set
+            locked_osm_ids.add(osm_id)
+
+            # update adjacent branch geoms
+            branches_upd = load_area.mv_grid_district.mv_grid.graph_branches_from_node(cd)
+
+            for node, branch in branches_upd:
+
+                line_shp_upd = LineString([node.geo_data, cd.geo_data])
+
+                branch['branch'].geometry = line_shp_upd
+
+                circ_breaker = branch['branch'].circuit_breaker
+                if circ_breaker is not None:
+                    circ_breaker.geo_data = cut_line_by_distance(line_shp_upd, 0.5, normalized=True)[0]
+
+    return list(cable_dist_settle)
+
+import networkx as nx
+
+def relabel_graph_nodes(load_area, cable_dists):
+    # get ding0 nodes
+    lv_stations = [lvgd.lv_grid._station for lvgd in load_area._lv_grid_districts]
+    mv_loads = [mv_load for mv_load in load_area._mv_loads]
+
+    # create mapping dicts: get nodes as mapping dicts {osmid: str(ding0_name)}
+    lv_stations_map = {lv_station.osm_id_node: str(lv_station) for lv_station in
+                       lv_stations}  # TODO: make osmid access consistent
+    mv_loads_map = {mv_load.osmid_building: str(mv_load) for mv_load in mv_loads}
+
+    if cable_dists:
+        cable_dists_map = {cd.osm_id_node: str(cd) for cd in cable_dists}
+        ding0_nodes_map = {**lv_stations_map, **mv_loads_map, **cable_dists_map}
+    else:
+        ding0_nodes_map = {**lv_stations_map, **mv_loads_map}
+
+    # update
+    street_graph = load_area.load_area_graph
+    osmids_to_str_map = {osmid: str(osmid) for osmid in street_graph.nodes}
+    street_graph = nx.relabel_nodes(street_graph, {**osmids_to_str_map, **ding0_nodes_map})
+
+    return street_graph, ding0_nodes_map
+
+from shapely.geometry import MultiPoint, LinearRing
+from shapely.ops import nearest_points
+import numpy as np
+from ding0.core.network.stations import MVStationDing0
+
+def update_branch_shps_settle(load_area, branches, street_graph):
+    # update branches routinh in settlement areas
+    # if both endpoints in la update whole shape
+    # if one endpoint in la update part of shape
+    # if no endpoints in la, do nothing (maybe check if part of linestring crosses same/other la
+
+    path_passed_osmids = {}
+
+    for branch in branches:
+
+        mv_station = [node for node in branch['adj_nodes'] if isinstance(node, MVStationDing0)]
+        G = street_graph
+
+        # add node to street graph, if not element of it
+        if mv_station:
+            if not G.has_node(str(mv_station[0])):
+                G = conn_ding0_obj_to_osm_graph(G, mv_station[0])
+
+        endpoints = [load_area.geo_area.intersects(node.geo_data) for node in branch['adj_nodes']]
+
+        # both branch endpoints are within load area - update whole branch geometry
+        if all(endpoints):
+
+            node1, node2 = branch['adj_nodes']
+            line_shp, line_length, path = get_shortest_path_shp_single_target(G, node1, node2, return_path=True)
+
+            branch['branch'].geometry = line_shp
+            branch['branch'].length = line_length
+
+            circ_breaker = branch['branch'].circuit_breaker
+            if circ_breaker is not None:
+                circ_breaker.geo_data = cut_line_by_distance(line_shp, 0.5, normalized=True)[0]
+
+            # fill branch path dict
+            path_passed_osmids.update(dict.fromkeys([(branch['adj_nodes'][0], branch['adj_nodes'][1]),
+                                                     (branch['adj_nodes'][1], branch['adj_nodes'][0])], path))
+
+        # one branch endpoint is within load area - update inner part of branch geometry
+        elif endpoints.count(True) == 1:
+
+            node_in = list(np.array(branch['adj_nodes'])[endpoints])[0]
+            node_out = list(set(branch['adj_nodes']) - {node_in})[0]
+            line_shp = branch['branch'].geometry
+            branch_coords = line_shp.coords[:]
+
+            # make sure branch shp is directed with origin inside of load area
+            if branch_coords[0] != node_in.geo_data.coords[0]:
+                branch_coords = list(reversed(branch_coords))
+                line_shp = LineString(branch_coords)
+
+            # retrieve intersection point(s) with load area polygon
+            ring_shp = LinearRing(load_area.geo_area.exterior.coords)
+            intersect_shp = line_shp.intersection(ring_shp)
+
+            # in case of more than one intersection, find first intersection point
+            if not isinstance(intersect_shp, Point):
+                mp = MultiPoint(intersect_shp)
+                intersect_shp = nearest_points(mp, node_out.geo_data)[0]
+
+            # find nearest street graph node from intersection point
+            G = conn_ding0_obj_to_osm_graph(G, node_out, search_shp=intersect_shp)
+
+            # retrieve new geoemtry for branch
+            line_shp, line_length, path = get_shortest_path_shp_single_target(G, node_in, node_out, return_path=True)
+
+            branch['branch'].geometry = line_shp
+            branch['branch'].length = line_length
+
+            circ_breaker = branch['branch'].circuit_breaker
+            if circ_breaker is not None:
+                circ_breaker.geo_data = cut_line_by_distance(line_shp, 0.5, normalized=True)[0]
+
+            # fill branch path dict
+            path_passed_osmids.update(dict.fromkeys([(branch['adj_nodes'][0], branch['adj_nodes'][1]),
+                                                     (branch['adj_nodes'][1], branch['adj_nodes'][0])], path))
+
+    return path_passed_osmids, G
 

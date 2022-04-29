@@ -55,6 +55,4 @@ def create_session_osm():
     Session = sessionmaker(bind=engine_osm)
     
     return Session()
-
-
 '''

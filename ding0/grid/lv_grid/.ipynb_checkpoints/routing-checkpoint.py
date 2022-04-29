@@ -6,8 +6,6 @@ TODO: Separate routing.py to graph_processing.py
 import osmnx as ox
 import networkx as nx
 
-from scipy.spatial.distance import pdist, squareform
-
 #from pyproj import CRS
 
 import pandas as pd
@@ -67,7 +65,7 @@ def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
     return buildings_w_loads_df
 
 
-def identify_street_loads(buildings_w_loads_df, graph):
+def identify_street_loads(buildings_w_loads_df, graph, get_number_households=False):
     """
     identify street_loads
     street_loads are grouped for lv level only.
@@ -77,11 +75,18 @@ def identify_street_loads(buildings_w_loads_df, graph):
     mv_lv_level_threshold = get_config_osm('mv_lv_threshold_capacity')
     
     # keep only street_load_nodes and endpoints
-    street_loads = buildings_w_loads_df.copy()
-    street_loads.loc[street_loads.capacity > mv_lv_level_threshold, 'capacity'] = 0
-    street_loads = street_loads.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
+    loads = buildings_w_loads_df.copy()
+
+    loads.loc[loads.capacity > mv_lv_level_threshold, 'capacity'] = 0
+    street_loads = loads.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
     
-    return street_loads
+    if get_number_households:
+        household_loads = loads.groupby(['nn']).number_households.sum().reset_index().set_index('nn')
+        return street_loads, household_loads
+    
+    else:
+    
+        return street_loads
 
 
 
@@ -115,7 +120,7 @@ def loads_in_ons_dist_threshold(dm_cluster, cluster_nodes, osmid):
         return True
 
 
-def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_cluster):
+def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_cluster, check_distance_criterion=True):
     """
     identify position of station at street load center
     get list of location of mvlv substations for load areal
@@ -140,20 +145,21 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_clu
         # compute location of substation based on load center
         load_vector = np.array(cluster_loads) #weighted
         unweighted_nodes = dm_cluster.dot(load_vector)
-        
-        osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]        
 
-        if not loads_in_ons_dist_threshold(dm_cluster, cluster_nodes, osmid):
-            # return empty list and False for cluster validity
-            # due to distance threshold to ons is trespassed
-            valid_cluster_distance = False
-            return mvlv_subst_list, valid_cluster_distance
+        osmid = cluster_nodes[int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])]
+
+        if check_distance_criterion:
+            if not loads_in_ons_dist_threshold(dm_cluster, cluster_nodes, osmid):
+                # return empty list and False for cluster validity
+                # due to distance threshold to ons is trespassed
+                valid_cluster_distance = False
+                return mvlv_subst_list, valid_cluster_distance
 
         mvlv_subst_loc = cluster_graph.nodes[osmid]
         mvlv_subst_loc['osmid'] = osmid
         mvlv_subst_loc['graph_district'] = cluster_subgraph
         mvlv_subst_list.append(mvlv_subst_loc)
-        
+
     return mvlv_subst_list, valid_cluster_distance
 
 
@@ -198,38 +204,6 @@ def get_lvgd_id(la_id_db, cluster_id, max_n_digits=10):
 
 import logging
 logger = logging.getLogger('ding0')
-
-def get_load_center(lv_load_area):
-    """
-    get station which is load center to set its
-    geo_data as load center of load areal.
-    """
-    
-    '''if len(lv_load_area._lv_grid_districts) <= 2:
-        
-        logger.warning(lv_load_area._lv_grid_districts)
-        station = lv_load_area._lv_grid_districts[0].lv_grid._station
-        
-    else:'''
-        
-    station_peak_loads = []
-    station_coordinates = []
-
-    for lvgd in lv_load_area._lv_grid_districts:
-        station_peak_loads.append(lvgd.lv_grid._station.peak_load)
-        station_coordinates.append(lvgd.lv_grid._station.geo_data)
-
-    coordinates = [[p.x, p.y] for p in station_coordinates]
-    coordinates_array = np.array(coordinates)
-    dist_array = pdist(coordinates_array)
-    #logger.warning(len(list(lv_load_area._lv_grid_districts)), dist_array)
-    dist_matrix = squareform(dist_array)
-    unweighted_nodes = dist_matrix.dot(station_peak_loads)
-    load_center_ix = int(np.where(unweighted_nodes == np.amin(unweighted_nodes))[0][0])
-
-    station = lv_load_area._lv_grid_districts[load_center_ix].lv_grid._station
-
-    return station.osm_id_node, station.geo_data
 
 
 

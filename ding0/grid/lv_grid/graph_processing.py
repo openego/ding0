@@ -40,7 +40,8 @@ def build_graph_from_ways(ways):
     """
     # init a graph and set srid.
     graph = nx.MultiGraph()
-    graph.graph["crs"] = 'epsg:'+str(get_config_osm('srid')) 
+    graph.graph["crs"] = 'epsg:'+str(get_config_osm('srid'))
+    graph.graph["source"] = 'osm'
 
     for w in ways:
         # add edges
@@ -66,6 +67,25 @@ def build_graph_from_ways(ways):
     graph = graph.to_directed()  
     
     return graph
+
+
+def create_simple_synthetic_graph(geo_load_area):
+    """
+    Build synthetic graph with one node containing
+    coordinates of geo_load_area centroid
+    """
+    # init a graph and set srid and source parameter.
+    graph = nx.MultiDiGraph()
+    graph.graph["crs"] = 'epsg:' + str(get_config_osm('srid'))
+    graph.graph["source"] = 'synthetic'
+
+    # add id and coordinates of area centroid
+    node_id = 1
+    la_geo_center = geo_load_area.centroid
+    node_data = {'x': la_geo_center.x, 'y': la_geo_center.y, 'node_type': 'synthetic'}
+    graph.add_node(node_id, **node_data)
+
+    return graph, node_id
 
 
 def create_buffer_polygons(polygon):
