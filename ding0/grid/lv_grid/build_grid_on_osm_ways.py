@@ -116,7 +116,7 @@ def get_cable_type_by_load(lvgd, capacity, cable_lf, cos_phi_load, v_nom):
     return cable_type_stub
 
 
-def get_n_feeder_mandatory(capacity): 
+def get_n_feeder_mandatory(capacity, v_nom, cos_phi_load): 
     I_max_allowed = 245 ##TODO: get value via config from standard cable type
     I_max_load_at_feeder = capacity / (3 ** 0.5 * v_nom) / cos_phi_load
     return np.ceil(I_max_load_at_feeder / I_max_allowed)
@@ -161,7 +161,7 @@ def build_branches_on_osm_ways(lvgd):
         lvgd.buildings.capacity < get_config_osm('lv_threshold_capacity')]
 
     # full graph for routing 100 - 200 kW to station
-    full_graph = lvgd.graph_district.to_undirected()
+    full_graph = lvgd.graph_district  # .to_undirected()
 
     # get graph for loads < 100 kW
     shortest_tree_district_graph = get_routed_graph(
@@ -174,8 +174,7 @@ def build_branches_on_osm_ways(lvgd):
 
     # pre-process graph
     # allocate loads to street nodes
-    shortest_tree_district_graph = allocate_street_load_nodes(lv_loads_grid, shortest_tree_district_graph, station_id)
-
+    shortest_tree_district_graph, street_loads, household_loads = allocate_street_load_nodes(lv_loads_grid, shortest_tree_district_graph, station_id)
     # split the graph into subtrees based on station's incident edges
     # if number of edges larger 1 
     # prepare shortest path tree graph
@@ -202,7 +201,7 @@ def build_branches_on_osm_ways(lvgd):
 
         cum_subtree_load = sum([subtree_graph.nodes[node]['load'] for node in subtree_graph.nodes]) / 1e3
 
-        n_feeder = get_n_feeder_mandatory(cum_subtree_load)
+        n_feeder = get_n_feeder_mandatory(cum_subtree_load, v_nom, cos_phi_load)
 
         # print(f"load {cum_subtree_load} needs n_feeder {n_feeder}")
 
@@ -276,7 +275,11 @@ def build_branches_on_osm_ways(lvgd):
 
     G = nx.compose_all(feeder_graph_list)
     G.nodes[station_id]['feederID'] = 0
-    # lvgd.graph_district = G  # update graph for district. doesn't contain 100kW < loads < 200 kW
+    station_node = G.nodes[station_id]
+    # reset loads to zero due to adding buildings to graph with em real load
+    # to avoid adding loads twice
+    for node in G.nodes:
+        G.nodes[node]['load'] = 0
 
     # todo: after feeder are identified, count residentials per feeder
     # after count residentials per feeder is identified, update load due to diversity factor needs to be updated
@@ -336,13 +339,17 @@ def build_branches_on_osm_ways(lvgd):
                 'feederID': feederID,
                 'residentials_total_at_feeder': row.number_households
                }
-        length=nx.shortest_path_length(G, source=building_node, target=station_id, weight='length', method='dijkstra')
-        cable_type_stub = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
         G.add_node(building_node, **attr)
+        length=nx.shortest_path_length(shortest_tree_district_graph, source=row.nn, target=station_id, weight='length', method='dijkstra')
+        length += row.nn_dist
+        cable_type_stub = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
         G.add_edge(building_node, station_id, geometry=LineString([row.raccordement_building, Point(station_node['x'], station_node['y'])]),
                    length=length, feederID=feederID, cable_type_stub=cable_type_stub)
 
 
+    lvgd.graph_district = G  # update graph for district. doesn't contain 100kW < loads < 200 kW
+    
+    return None
 
     # build lv grid based on graph
     for edge in G.edges:
