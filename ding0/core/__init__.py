@@ -2305,11 +2305,12 @@ class NetworkDing0:
 
             for grid_district in mvgd_chunk:  # self.mv_grid_districts():
                 print(grid_district)
-                grid_district.mv_grid.routing(debug=debug, anim=anim)
-                # PAUL new: include urban routing on aggregated load area
+                # 1) urban routing in aggregated load area(s)
                 if True:
                     grid_district.mv_grid.urban_routing(debug=debug, anim=anim)
                     logger.info('=====> Urban MV Routing (Routing, Connection of Stations) performed')
+                # 2) rural routing between remaining load areas
+                grid_district.mv_grid.routing(debug=debug, anim=anim)
 
             logger.info('=====> MV Routing (Routing, Connection of Satellites & '
                         'Stations) performed')

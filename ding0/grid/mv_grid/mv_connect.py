@@ -528,7 +528,7 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
         #   LVStationDing0: Connect to LVLoadAreaCentreDing0, LVStationDing0 or MVCableDistributorDing0
         #   GeneratorDing0: Connect to LVLoadAreaCentreDing0, LVStationDing0, MVCableDistributorDing0 or GeneratorDing0
         if isinstance(node, LVLoadAreaCentreDing0):
-            valid_conn_objects = LVLoadAreaCentreDing0
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0)
         elif isinstance(node, LVStationDing0):
             valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0)
         elif isinstance(node, MVLoadDing0):
@@ -539,14 +539,16 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
             raise ValueError('Oops, the node you are trying to connect is not a valid connection object')
 
         # if target is Load Area centre or LV station, check if it belongs to a load area of type aggregated
-        # (=> connection not allowed)
+        # deprecated: (=> connection of nodes belonging to aggregated load areas not allowed)
+        # updated: connection between satellites and nodes of aggregated load areas is allowed
+        # connection from satellite to lines of aggregated load area is still not allowed
         if isinstance(target_obj['obj'], (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0)):
             target_is_aggregated = target_obj['obj'].lv_load_area.is_aggregated
         else:
             target_is_aggregated = False
 
         # target node is not a load area of type aggregated
-        if isinstance(target_obj['obj'], valid_conn_objects) and not target_is_aggregated:
+        if isinstance(target_obj['obj'], valid_conn_objects): # and not target_is_aggregated:
 
             # get default branch kind and type from grid to use it for new branch
             branch_kind = mv_grid.default_branch_kind
