@@ -2,6 +2,7 @@ import os
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import networkx as nx
 from pyproj import Proj, transform, Transformer
 import logging
@@ -45,7 +46,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     testcase : :obj:`str`
         Defines which case is to be used. Refer to config_calc.cfg to see further
         assumptions for the cases. Possible options are:
-        
+
         * 'load' (default)
           Heavy-load-flow case
         * 'feedin'
@@ -97,41 +98,41 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         # node types (name of classes)
         node_types = ['MVStationDing0',
                       'LVStationDing0',
-                      'MVLoadDing0', #PAUL new
+                      'MVLoadDing0',  # PAUL new
                       'LVLoadAreaCentreDing0',
                       'MVCableDistributorDing0',
                       'GeneratorDing0',
                       'GeneratorFluctuatingDing0',
                       'CircuitBreakerDing0',
                       'n/a']
-        
+
         # node styles
         colors_dict = {'MVStationDing0': '#f2ae00',
                        'LVStationDing0': 'grey',
-                       'MVLoadDing0': 'cyan', # PAUL new
+                       'MVLoadDing0': 'cyan',  # PAUL new
                        'LVLoadAreaCentreDing0': '#fffc3d',
-                       'MVCableDistributorDing0': '#ffa500', # PAUL new'#000000',
+                       'MVCableDistributorDing0': '#ffa500',  # PAUL new'#000000',
                        'GeneratorDing0': '#00b023',
                        'GeneratorFluctuatingDing0': '#0078b0',
                        'CircuitBreakerDing0': '#c20000',
                        'n/a': 'orange'}
         sizes_dict = {'MVStationDing0': 40,
-                      'LVStationDing0': 7,
-                      'MVLoadDing0': 7, # PAUL new
+                      'LVStationDing0': 3,
+                      'MVLoadDing0': 3,  # PAUL new
                       'LVLoadAreaCentreDing0': 25,
-                      'MVCableDistributorDing0': 5,
-                      'GeneratorDing0': 50,
-                      'GeneratorFluctuatingDing0': 50,
-                      'CircuitBreakerDing0': 25,
-                      'n/a': 5}
-        zindex_by_type = {'MVStationDing0': 16,
+                      'MVCableDistributorDing0': 3,
+                      'GeneratorDing0': 15,
+                      'GeneratorFluctuatingDing0': 15,
+                      'CircuitBreakerDing0': 15,
+                      'n/a': 3}
+        zindex_by_type = {'MVStationDing0': 3,
                           'LVStationDing0': 12,
-                          'MVLoadDing0': 12, #PAUL new
-                          'LVLoadAreaCentreDing0': 11,
-                          'MVCableDistributorDing0': 13, #TODO PAULchange to smaller than station
-                          'GeneratorDing0': 14,
-                          'GeneratorFluctuatingDing0': 14,
-                          'CircuitBreakerDing0': 15,
+                          'MVLoadDing0': 12,  # PAUL new
+                          'LVLoadAreaCentreDing0': 2,
+                          'MVCableDistributorDing0': 9,
+                          'GeneratorDing0': 2,
+                          'GeneratorFluctuatingDing0': 2,
+                          'CircuitBreakerDing0': 3,
                           'n/a': 10}
 
         # dict of node class names: list of nodes
@@ -157,14 +158,14 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                 node_sizes_by_type['all'].append(sizes_dict['n/a'])
             nodes_pos[n] = (n.geo_data.x, n.geo_data.y)
 
-        return node_types, nodes_by_type, node_colors_by_type,\
+        return node_types, nodes_by_type, node_colors_by_type, \
                node_sizes_by_type, zindex_by_type, nodes_pos
 
-    def reproject_nodes(nodes_pos, model_proj='3035'): # changed from 4326 to new CRS 3035
+    def reproject_nodes(nodes_pos, model_proj='3035'):  # changed from 4326 to new CRS 3035
         # PAUL new: replace transform with Transformer in pyproj, to keep syntax up-to-date
         transformer = Transformer.from_crs(int(model_proj), 3857, always_xy=True)
         nodes_pos2 = {}
-        for k,v in nodes_pos.items():
+        for k, v in nodes_pos.items():
             nodes_pos2[k] = (transformer.transform(v[0], v[1]))
         return nodes_pos2
 
@@ -176,12 +177,25 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         ax.imshow(basemap, extent=extent, interpolation='bilinear', zorder=0)
         ax.axis((xmin, xmax, ymin, ymax))
 
+    # regions style by type
+    mvgd_style = {'facecolor': '#ffffff', 'alpha': 1, 'edgecolor': '#fdcc02', 'linewidth': 1, 'zorder': 1}
+    la_style_sat = {'facecolor': '#ffffde', 'alpha': 1, 'edgecolor': 'k', 'linewidth': 0.2, 'zorder': 1}
+    la_style_reg = {'facecolor': '#e1c938', 'alpha': 1, 'edgecolor': 'k', 'linewidth': 0.2, 'zorder': 1}
+    la_style_agg = {'facecolor': '#c3c3c3', 'alpha': 1, 'edgecolor': 'k', 'linewidth': 0.2, 'zorder': 1}
+
     def plot_region_data(ax):
         # get geoms of MV grid district, load areas and LV grid districts
         mv_grid_district = gpd.GeoDataFrame({'geometry': grid.grid_district.geo_data},
                                             crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
-        load_areas = gpd.GeoDataFrame({'geometry': [la.geo_area for la in grid.grid_district.lv_load_areas()]},
+        load_areas_sat = gpd.GeoDataFrame({'geometry': [la.geo_area for la in grid.grid_district.lv_load_areas()
+                                                        if la.is_satellite]},
                                       crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
+        load_areas_reg = gpd.GeoDataFrame({'geometry': [la.geo_area for la in grid.grid_district.lv_load_areas()
+                                                        if not la.is_satellite and not la.is_aggregated]},
+                                          crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
+        load_areas_agg = gpd.GeoDataFrame({'geometry': [la.geo_area for la in grid.grid_district.lv_load_areas()
+                                                        if la.is_aggregated]},
+                                          crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
         lv_grid_districts = gpd.GeoDataFrame({'geometry': [lvgd.geo_data
                                                            for la in grid.grid_district.lv_load_areas()
                                                            for lvgd in la.lv_grid_districts()]},
@@ -189,13 +203,38 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
 
         # reproject to WGS84 pseudo mercator
         mv_grid_district = mv_grid_district.to_crs(epsg=3857)
-        load_areas = load_areas.to_crs(epsg=3857)
+        load_areas_sat = load_areas_sat.to_crs(epsg=3857)
+        load_areas_reg = load_areas_reg.to_crs(epsg=3857)
+        load_areas_agg = load_areas_agg.to_crs(epsg=3857)
         lv_grid_districts = lv_grid_districts.to_crs(epsg=3857)
 
         # plot
-        mv_grid_district.plot(ax=ax, color='#ffffff', alpha=0.2, edgecolor='k', linewidth=2, zorder=2)
-        load_areas.plot(ax=ax, color='#fffea3', alpha=0.1, edgecolor='k', linewidth=0.5, zorder=3)
-        lv_grid_districts.plot(ax=ax, color='#ffffff', alpha=0.05, edgecolor='k', linewidth=0.5, zorder=4)
+        mv_grid_district.plot(ax=ax, **mvgd_style)
+        load_areas_sat.plot(ax=ax, **la_style_sat)
+        load_areas_reg.plot(ax=ax, **la_style_reg)
+        load_areas_agg.plot(ax=ax, **la_style_agg)
+        lv_grid_districts.plot(ax=ax, color='#ffffff', alpha=0.1, edgecolor='k', linewidth=0.5, zorder=4)
+
+        # patches
+        patches = [Patch(**mvgd_style, label='MV grid district')]
+        if not load_areas_sat.empty:
+            patches.append(Patch(**la_style_sat, label='Satellite load area'))
+        if not load_areas_reg.empty:
+            patches.append(Patch(**la_style_reg, label='Regular load area'))
+        if not load_areas_agg.empty:
+            patches.append(Patch(**la_style_agg, label='Aggregated load area'))
+
+        return patches
+
+
+    # plot legend including patches (regions)
+    def plt_legend_without_duplicate_labels(ax, patches):
+        handles, labels = ax.get_legend_handles_labels()
+        unique = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
+        if patches is not None:
+            for patch in patches:
+                unique.append((patch, patch.get_label()))
+        ax.legend(*zip(*unique), fontsize=5)
 
     if not isinstance(grid, MVGridDing0):
         logger.warning('Sorry, but plotting is currently only available for MV grids but you did not pass an'
@@ -206,13 +245,13 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     # model_proj = grid.network.config['geo']['srid'] # changed from 4326 to new CRS 3035 # update in config but be
     # aware, that it will effect import of genearors, load ares, etc
     model_proj = '3035'
-    
+
     if testcase == 'feedin':
         case_idx = 1
     else:
         case_idx = 0
 
-    nodes_types, nodes_by_type, node_colors_by_type, node_sizes_by_type, zindex_by_type, nodes_pos =\
+    nodes_types, nodes_by_type, node_colors_by_type, node_sizes_by_type, zindex_by_type, nodes_pos = \
         set_nodes_style_and_position(g.nodes())
 
     # reproject to WGS84 pseudo mercator
@@ -222,7 +261,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     ax = plt.gca()
 
     if line_color == 'loading':
-        color=None
+        color = None
         edges_color = []
         edges_geom = []
         for n1, n2 in g.edges():
@@ -234,7 +273,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
             else:
                 edges_color.append(0)
         edges_cmap = plt.get_cmap('jet')
-        #edges_cmap.set_over('#952eff')
+        # edges_cmap.set_over('#952eff')
     else:
         edges_color = ['black'] * len(list(grid.graph_edges()))
         color = 'black'
@@ -279,14 +318,14 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
 
         # colorbar nodes
         if limits_cb_nodes is None:
-            limits_cb_nodes = (math.floor(min(nodes_color)*100)/100,
-                               math.ceil(max(nodes_color)*100)/100)
+            limits_cb_nodes = (math.floor(min(nodes_color) * 100) / 100,
+                               math.ceil(max(nodes_color) * 100) / 100)
         v_range = np.linspace(limits_cb_nodes[0], limits_cb_nodes[1], 101)
         cb_voltage = plt.colorbar(nodes, boundaries=v_range,
                                   ticks=v_range[0:101:10],
                                   fraction=0.04, pad=0.1)
         cb_voltage.mappable.set_clim(vmin=limits_cb_nodes[0],
-                            vmax=limits_cb_nodes[1])
+                                     vmax=limits_cb_nodes[1])
         cb_voltage.set_label('Node voltage deviation in %', size='smaller')
         cb_voltage.ax.tick_params(labelsize='smaller')
 
@@ -308,55 +347,35 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                                                ax=ax)
                 nodes.set_zorder(zindex_by_type[node_type])
                 nodes.set_edgecolor('k')
-                
-    #PAUL new: plotting based on geometry linestring
-    '''edges = gpd.GeoDataFrame({'geometry': [edge['branch'].geometry for edge in list(grid.graph_edges())]},
-                                      crs={'init': 'epsg:{srid}'.format(srid=model_proj)})
-    
-    edges = edges.to_crs(epsg=3857)
-    
-    edges.plot(ax=ax, 
-               color=edges_color, 
-               #lw=1, 
-               zorder=5)'''
-    
-    '''
-    #edges with geometry and color
+
+    # plotting based on geometry linestring
+
+    # edges with geometry and color
     edges = gpd.GeoDataFrame({'geometry': [edge['branch'].geometry for edge in list(grid.graph_edges())],
-                          'ring': [str(edge['branch'].ring) for edge in list(grid.graph_edges())]},
-                                      crs={'init': 'epsg:{srid}'.format(srid=3035)})
-    
-    edges['color'] = edges['ring'].str.extract('(\d+)').astype(int)
-    
+                              'ring': [str(edge['branch'].ring) for edge in list(grid.graph_edges())]},
+                             crs={'init': 'epsg:{srid}'.format(srid=3035)})
+
     edges = edges.to_crs(epsg=3857)
-    
-    edges.plot(column=edges['color'],
-           ax=ax,
-           cmap='jet',
-           alpha=0.5,
-           zorder=5)'''
-    
-    #edges with geometry and color
-    edges = gpd.GeoDataFrame({'geometry': edges_geom,
-                          'ring': [str(edge['branch'].ring) for edge in list(grid.graph_edges())],
-                          'color': edges_color},
-                                      crs={'init': 'epsg:{srid}'.format(srid=3035)})
-    
-    #edges['color'] = edges['ring'].str.extract('(\d+)').astype(int)
-    
-    edges = edges.to_crs(epsg=3857)
-    
-    edges.plot(column=edges['color'],
-           ax=ax,
-           color=color,
-           cmap=edges_cmap,
-           vmin=0,
-           vmax=1,
-           zorder=5)
-    
-    
-    
-    
+
+    if not edges.empty:
+
+        edges['color'] = edges['ring'].str.extract('(\d+)').astype(int)
+
+        edges.plot(column=edges['color'],
+                   ax=ax,
+                   cmap='jet',
+                   linewidth=0.7,
+                   alpha=1,
+                   zorder=2)
+
+    else:
+
+        edges.plot(ax=ax,
+                   color=edges_color,
+                   linewidth=0.7,
+                   # lw=1,
+                   zorder=2)
+
     edges = nx.draw_networkx_edges(g,
                                    pos=nodes_pos,
                                    edge_color=edges_color,
@@ -365,28 +384,31 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
                                    edge_vmax=1,
                                    width=0,
                                    ax=ax)
-    edges.set_zorder(5)
 
     if line_color == 'loading':
         # colorbar edges
         if limits_cb_lines is None:
-            limits_cb_lines = (math.floor(min(edges_color)*100)/100,
-                               math.ceil(max(edges_color)*100)/100)
+            limits_cb_lines = (math.floor(min(edges_color) * 100) / 100,
+                               math.ceil(max(edges_color) * 100) / 100)
         loading_range = np.linspace(limits_cb_lines[0], limits_cb_lines[1], 101)
         cb_loading = plt.colorbar(edges, boundaries=loading_range,
                                   ticks=loading_range[0:101:10],
                                   fraction=0.04, pad=0.04)
         cb_loading.mappable.set_clim(vmin=limits_cb_lines[0],
-                            vmax=limits_cb_lines[1])
+                                     vmax=limits_cb_lines[1])
         cb_loading.set_label('Line loading in % of nominal capacity', size='smaller')
         cb_loading.ax.tick_params(labelsize='smaller')
 
     if use_ctx and background_map:
         plot_background_map(ax=ax)
     if use_gpd:
-        plot_region_data(ax=ax)
+        patches = plot_region_data(ax=ax)
 
-    plt.legend(fontsize=7)
+    if patches:
+        plt_legend_without_duplicate_labels(ax, patches)
+    else:
+        plt_legend_without_duplicate_labels(ax, patches=None)
+
     plt.title('MV Grid District {id} - {st}'.format(id=grid.id_db,
                                                     st=subtitle))
 
