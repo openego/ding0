@@ -208,21 +208,20 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         load_areas_agg = load_areas_agg.to_crs(epsg=3857)
         lv_grid_districts = lv_grid_districts.to_crs(epsg=3857)
 
-        # plot
-        mv_grid_district.plot(ax=ax, **mvgd_style)
-        load_areas_sat.plot(ax=ax, **la_style_sat)
-        load_areas_reg.plot(ax=ax, **la_style_reg)
-        load_areas_agg.plot(ax=ax, **la_style_agg)
-        lv_grid_districts.plot(ax=ax, color='#ffffff', alpha=0.1, edgecolor='k', linewidth=0.5, zorder=4)
-
+        # plot with
         # patches
+        mv_grid_district.plot(ax=ax, **mvgd_style)
         patches = [Patch(**mvgd_style, label='MV grid district')]
         if not load_areas_sat.empty:
             patches.append(Patch(**la_style_sat, label='Satellite load area'))
+            load_areas_sat.plot(ax=ax, **la_style_sat)
         if not load_areas_reg.empty:
             patches.append(Patch(**la_style_reg, label='Regular load area'))
+            load_areas_reg.plot(ax=ax, **la_style_reg)
         if not load_areas_agg.empty:
             patches.append(Patch(**la_style_agg, label='Aggregated load area'))
+            load_areas_agg.plot(ax=ax, **la_style_agg)
+        lv_grid_districts.plot(ax=ax, color='#ffffff', alpha=0.1, edgecolor='k', linewidth=0.1, zorder=4)
 
         return patches
 
