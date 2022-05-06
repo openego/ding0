@@ -316,11 +316,8 @@ def solve(mv_grid, debug=False, anim=None):
             mv_grid = mv_urban_connect(mv_grid, street_graph, core_graph, stub_graph, stub_dict, osmid_branch_dict)
             #plot_mv_topology(mv_grid, subtitle='Routing completed', filename='berlin_stub')
 
-            # remove load area centre
-            if mv_grid.graph.has_node(la_centre):
-                mv_grid.graph.remove_node(la_centre)
+            # remove load area centre (has been shifted to mv_routing)
 
-    
     return mv_grid.graph
 
 
