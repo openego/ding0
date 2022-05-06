@@ -673,7 +673,7 @@ def relabel_graph_nodes(load_area, cable_dists):
 
     return street_graph, ding0_nodes_map
 
-from shapely.geometry import MultiPoint, LinearRing
+from shapely.geometry import MultiPoint, LinearRing, GeometryCollection
 from shapely.ops import nearest_points
 import numpy as np
 from ding0.core.network.stations import MVStationDing0
@@ -732,8 +732,15 @@ def update_branch_shps_settle(load_area, branches, street_graph):
             ring_shp = LinearRing(load_area.geo_area.exterior.coords)
             intersect_shp = line_shp.intersection(ring_shp)
 
+            # if no intersection shape found use representative point of line (rare case)
+            if intersect_shp.is_empty:
+                intersect_shp = line_shp.representative_point()
+
             # in case of more than one intersection, find first intersection point
             if not isinstance(intersect_shp, Point):
+                # in case shape is GeoCollection and has geometries apart from Points
+                if isinstance(intersect_shp, GeometryCollection):
+                    intersect_shp = MultiPoint([shp.representative_point() for shp in intersect_shp])
                 mp = MultiPoint(intersect_shp)
                 intersect_shp = nearest_points(mp, node_out.geo_data)[0]
 
