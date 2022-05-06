@@ -820,7 +820,7 @@ class NetworkDing0:
 
             # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
-            if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
+            if id_db != 4347: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
                 continue ####
 
             # create session to load from (local) DB OSM data

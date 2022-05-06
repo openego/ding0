@@ -162,6 +162,7 @@ def build_branches_on_osm_ways(lvgd):
 
     # full graph for routing 100 - 200 kW to station
     full_graph = lvgd.graph_district  # .to_undirected()
+    full_graph_simple = nx.Graph(full_graph)
 
     # get graph for loads < 100 kW
     shortest_tree_district_graph = get_routed_graph(
@@ -341,7 +342,7 @@ def build_branches_on_osm_ways(lvgd):
                 'residentials_total_at_feeder': row.number_households
                }
         G.add_node(building_node, **attr)
-        length=nx.shortest_path_length(shortest_tree_district_graph, source=row.nn, target=station_id, weight='length', method='dijkstra')
+        length=nx.shortest_path_length(full_graph_simple, source=row.nn, target=station_id, weight='length', method='dijkstra')
         length += row.nn_dist
         cable_type_stub = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
         G.add_edge(building_node, station_id, geometry=LineString([row.raccordement_building, Point(station_node['x'], station_node['y'])]),
@@ -430,7 +431,7 @@ def build_branches_on_osm_ways(lvgd):
                 added_cable_dist_dict[u] = lv_cable_dist_u
     
             else:  # load from lvgd.lv_grid._cable_distributors
-                lv_cable_dist_v = added_cable_dist_dict.get(u)
+                lv_cable_dist_u = added_cable_dist_dict.get(u)
                 
             # connect u and station (which is v)
             lvgd.lv_grid.graph.add_edge(
@@ -486,7 +487,7 @@ def build_branches_on_osm_ways(lvgd):
                 added_cable_dist_dict[u] = lv_cable_dist_u
     
             else:  # load from lvgd.lv_grid._cable_distributors
-                lv_cable_dist_v = added_cable_dist_dict.get(u)
+                lv_cable_dist_u = added_cable_dist_dict.get(u)
             
             # connect lv_cable_dist_u and lv_cable_dist_v
             lvgd.lv_grid.graph.add_edge(
