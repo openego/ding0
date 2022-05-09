@@ -1,4 +1,4 @@
-from shapely.geometry import MultiPoint, Point, shape, box
+from shapely.geometry import MultiPoint, Point, shape, box, GeometryCollection
 
 import pyproj
 import pandas as pd
@@ -108,6 +108,8 @@ def get_load_center_node(lv_load_area):
         points = get_points_in_load_area(coordinates)
         polygon_extended = get_convex_hull_from_points(points)
         load_area_geo = lv_load_area.geo_area.union(polygon_extended)
+        if isinstance(load_area_geo, GeometryCollection):
+            load_area_geo = load_area_geo.convex_hull
 
     if isinstance(centre, LVStationDing0):  # TODO make consistent
         centre_osm = centre.osm_id_node
