@@ -65,21 +65,28 @@ def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
     return buildings_w_loads_df
 
 
-def identify_street_loads(buildings_w_loads_df, graph):
+def identify_street_loads(buildings_w_loads_df, graph, get_number_households=False):
     """
     identify street_loads
     street_loads are grouped for lv level only.
-    capacity of loads of mv level are not included. 
+    capacity of loads of mv level are not included.
     """
-    
+
     mv_lv_level_threshold = get_config_osm('mv_lv_threshold_capacity')
-    
+
     # keep only street_load_nodes and endpoints
-    street_loads = buildings_w_loads_df.copy()
-    street_loads.loc[street_loads.capacity > mv_lv_level_threshold, 'capacity'] = 0
-    street_loads = street_loads.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
-    
-    return street_loads
+    loads = buildings_w_loads_df.copy()
+
+    loads.loc[loads.capacity > mv_lv_level_threshold, 'capacity'] = 0
+    street_loads = loads.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
+
+    if get_number_households:
+        household_loads = loads.groupby(['nn']).number_households.sum().reset_index().set_index('nn')
+        return street_loads, household_loads
+
+    else:
+
+        return street_loads
 
 
 

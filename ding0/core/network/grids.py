@@ -214,7 +214,8 @@ class MVGridDing0(GridDing0):
         for ring in nx.cycle_basis(self.graph, root=self._station):
             
             if not include_root_node:
-                ring.remove(self._station)
+                if self._station in ring:
+                    ring.remove(self._station)
 
             # make sure rings are always returned in same order, starting with
             # node of which representative is smaller

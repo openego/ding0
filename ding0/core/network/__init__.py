@@ -777,7 +777,8 @@ class BranchDing0:
     def __init__(self, **kwargs):
 
         self.id_db = kwargs.get('id_db', None)
-        self.ring = kwargs.get('ring', None)
+        self.ring = kwargs.get('ring', None) # MV ring allocation
+        self.feeder = kwargs.get('feeder', None) # LV feeder allocation
         self.grid = kwargs.get('grid', None)
         self.length = kwargs.get('length', None)  # branch (line/cable) length in m
         self.kind = kwargs.get('kind', None)  # 'line' or 'cable'

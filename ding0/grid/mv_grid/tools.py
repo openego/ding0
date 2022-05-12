@@ -237,17 +237,19 @@ def get_edge_tuples_from_path(G, path_list):
     return edge_path
 
 
-def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=False):
-    
-    sp = nx.shortest_path(osm_graph, str(node1), str(node2), weight='length')
+def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=False, nodes_as_str=True):
+    if nodes_as_str:
+        node1, node2 = str(node1), str(node2)
+
+    sp = nx.shortest_path(osm_graph, node1, node2, weight='length')
     edge_path = get_edge_tuples_from_path(osm_graph, sp)
     line_shp = linemerge([osm_graph.edges[edge]['geometry'] for edge in edge_path])
-    
-    if line_shp.is_empty: # in case of route_length == 1
-        line_shp = osm_graph.edges[str(node1), str(node2), 0]['geometry']
-    
+
+    if line_shp.is_empty:  # in case of route_length == 1
+        line_shp = osm_graph.edges[node1, node2, next(iter(osm_graph.get_edge_data(node1, node2).keys()))]['geometry']  # TODO make universal
+
     line_length = line_shp.length
-    
+
     if line_length == 0:
         line_length = 1
         logger.warning('Geo distance is zero, check objects\' positions. '
