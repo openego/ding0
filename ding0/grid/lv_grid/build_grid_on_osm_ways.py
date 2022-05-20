@@ -229,7 +229,7 @@ def build_branches_on_osm_ways(lvgd):
 
     # station_id is node in graph which is root node
     station_id = lvgd.lv_grid._station.osm_id_node
-    print(lvgd, station_id)
+    print(lvgd)
     # separate loads w. capacity: loads < 100 kW connected to grid
     lv_loads_grid = lvgd.buildings.loc[
         lvgd.buildings.capacity < get_config_osm('lv_threshold_capacity')]
@@ -439,8 +439,9 @@ def build_branches_on_osm_ways(lvgd):
 
     added_cable_dist_dict = {}  # store u and v here to avoid duplicates
 
+    load_no = 0
     # build lv grid based on graph
-    for load_no, edge_uv in enumerate(G.edges):
+    for edge_uv in G.edges:
 
         u = edge_uv[0]
         v = edge_uv[1]
@@ -482,6 +483,7 @@ def build_branches_on_osm_ways(lvgd):
                 # add lv_cable_dist to graph
                 lvgd.lv_grid.add_cable_dist(lv_cable_dist_v)
                 added_cable_dist_dict[v] = lv_cable_dist_v
+                load_no+=1
 
             else:  # load from lvgd.lv_grid._cable_distributors
                 lv_cable_dist_v = added_cable_dist_dict.get(v)
@@ -525,6 +527,7 @@ def build_branches_on_osm_ways(lvgd):
                 # add lv_cable_dist to graph
                 lvgd.lv_grid.add_cable_dist(lv_cable_dist_u)
                 added_cable_dist_dict[u] = lv_cable_dist_u
+                load_no += 1
 
             else:  # load from lvgd.lv_grid._cable_distributors
                 lv_cable_dist_u = added_cable_dist_dict.get(u)
@@ -563,6 +566,7 @@ def build_branches_on_osm_ways(lvgd):
                 # add lv_cable_dist to graph
                 lvgd.lv_grid.add_cable_dist(lv_cable_dist_v)
                 added_cable_dist_dict[v] = lv_cable_dist_v
+                load_no += 1
 
             else:  # load from lvgd.lv_grid._cable_distributors
                 lv_cable_dist_v = added_cable_dist_dict.get(v)
@@ -582,6 +586,7 @@ def build_branches_on_osm_ways(lvgd):
                 # add lv_cable_dist to graph
                 lvgd.lv_grid.add_cable_dist(lv_cable_dist_u)
                 added_cable_dist_dict[u] = lv_cable_dist_u
+                load_no += 1
 
             else:  # load from lvgd.lv_grid._cable_distributors
                 lv_cable_dist_u = added_cable_dist_dict.get(u)
@@ -620,6 +625,8 @@ def build_branches_on_osm_ways(lvgd):
                 load_u = lvgd.lv_grid.station()
             else:
                 load_u = lv_cable_dist_u
+                # set in_building parameter
+                # load_u.in_building = True
 
             lvgd.lv_grid.graph.add_edge(
                 load_u,
@@ -652,6 +659,8 @@ def build_branches_on_osm_ways(lvgd):
                 load_v = lvgd.lv_grid.station()
             else:
                 load_v = lv_cable_dist_v
+                # set in_building parameter
+                # load_v.in_building = True
 
             lvgd.lv_grid.graph.add_edge(
                 load_v,
@@ -671,3 +680,12 @@ def build_branches_on_osm_ways(lvgd):
     # thus, we can group loads by feederId, to which loads are connected and do calculation
     # set new peak_load for lvgd BUT CONSIDERING ONLY simultaneity loads per feeder
     lvgd.peak_load = new_lvgd_peak_load_considering_simultaneity
+
+    #### in_building bugfix
+    #for la in nd._mv_grid_districts[0]._lv_load_areas:
+    #    for lvgd in la._lv_grid_districts:
+    #        for node in lvgd.lv_grid._loads:
+    #            branches = node.grid.graph_branches_from_node(node)
+    #            if len(branches) == 1 and branches[0][1]['branch'].length == 1:
+    #                cable_dist = branches[0][0]
+    #                cable_dist.in_building = True
