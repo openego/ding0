@@ -786,7 +786,7 @@ class BranchDing0:
         self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.circuit_breaker = kwargs.get('circuit_breaker', None)
         self.geometry = kwargs.get('geometry', None) # branch coordinates
-
+        self.num_parallel = 1 # number of parallel lines, initially one
         self.critical = False
 
     @property
@@ -1105,6 +1105,8 @@ class LoadDing0:
         The MV or LV grid that this Load is to be a part of.
     peak_load : :obj:`float`
         Peak load of the current object
+    building_id : :obj:`int`
+        refers to OSM oder eGo^n ID, depending on chosen database
 
     """
 
@@ -1114,6 +1116,8 @@ class LoadDing0:
         self.grid = kwargs.get('grid', None)
         self.peak_load = kwargs.get('peak_load', None)
         self.consumption = kwargs.get('consumption', None)
+        self.building_id = kwargs.get('building_id', None)
+        # self.id_db = self.grid.loads_count() + 1
 
     @property
     def network(self):

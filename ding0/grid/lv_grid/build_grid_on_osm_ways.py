@@ -461,7 +461,7 @@ def build_branches_on_osm_ways(lvgd):
         geometry = edge['geometry']
         cable_type = edge['cable_type_stub']
 
-        # ADDING CABLE DISTRIBUTOR ND EDGES
+        # ADDING CABLE DISTRIBUTOR AND EDGES
         if u == station_id:
 
             if v in street_loads:
@@ -608,31 +608,37 @@ def build_branches_on_osm_ways(lvgd):
 
         # ADD LOADS AND CONNECT EM
         if load_u_capacity > 0:
+            print(u)
             # TODO: if u == station_id:  # do we need to create a CABLE DISTRIBUTOR FOR U TO CONNECT LOAD TO?
             # create an instance of Ding0 LV load
             lv_load = LVLoadDing0(grid=lvgd.lv_grid,
                                   branch_no=branch_no,
                                   load_no=load_no,
                                   peak_load=load_u_capacity,
-                                  geo_data=u_point)
+                                  geo_data=u_point,
+                                  building_id=u)
             new_lvgd_peak_load_considering_simultaneity += load_u_capacity
 
             # add load
             lvgd.lv_grid.add_load(lv_load)
 
+            # direct load - station connection is deprecated
+            #if u == station_id:
+            #    print(u, load_u_capacity)
+            #    load_u = lvgd.lv_grid.station()
+            #else:
+
             # connect load
-            if u == station_id:
-                load_u = lvgd.lv_grid.station()
-            else:
-                load_u = lv_cable_dist_u
-                # set in_building parameter
-                # load_u.in_building = True
+            load_u = lv_cable_dist_u
+            # set in_building parameter
+            load_u.in_building = True
 
             lvgd.lv_grid.graph.add_edge(
                 load_u,
                 lv_load,
                 branch=BranchDing0(
                     length=1,
+                    #geometry=line,
                     kind='cable',
                     grid=lvgd.lv_grid,
                     type=cable_type,
@@ -648,25 +654,30 @@ def build_branches_on_osm_ways(lvgd):
                                   branch_no=branch_no,
                                   load_no=load_no,
                                   peak_load=load_v_capacity,
-                                  geo_data=v_point)
+                                  geo_data=v_point,
+                                  building_id=v)
             new_lvgd_peak_load_considering_simultaneity += load_v_capacity
 
             # add load
             lvgd.lv_grid.add_load(lv_load)
 
+            # direct load - station connection is deprecated
+            #if u == station_id:
+            #    print(v, load_v_capacity)
+            #    load_v = lvgd.lv_grid.station()
+            #else:
+
             # connect load
-            if u == station_id:
-                load_v = lvgd.lv_grid.station()
-            else:
-                load_v = lv_cable_dist_v
-                # set in_building parameter
-                # load_v.in_building = True
+            load_v = lv_cable_dist_v
+            # set in_building parameter
+            load_v.in_building = True
 
             lvgd.lv_grid.graph.add_edge(
                 load_v,
                 lv_load,
                 branch=BranchDing0(
                     length=1,
+                    #geometry=line,
                     kind='cable',
                     grid=lvgd.lv_grid,
                     type=cable_type,
