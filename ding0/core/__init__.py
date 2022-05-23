@@ -823,14 +823,17 @@ class NetworkDing0:
 
         # create session to load from (local) DB OSM data
         session_osm = create_session_osm()
-
+        ctr=0
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
 
             # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
-            if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
+            if id_db != 4544: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
                 continue ####
+            #ctr+=1
+            #if ctr<1:pass
+            #if ctr>13: continue
 
             # transform geo_load_area from str to poly
             # buildings without buffer, ways with buffer
