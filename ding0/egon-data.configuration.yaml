@@ -1,0 +1,8 @@
+egon-data:
+  --database-host: 127.0.0.1
+  --database-name: egon-data
+  --database-port: '59779'
+  --database-user: egon
+  --database-password: data
+  --dataset-boundary: Everything
+  --random-seed: 42

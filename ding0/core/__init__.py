@@ -32,6 +32,8 @@ from ding0.tools.tools import merge_two_dicts_of_dataframes
 from ding0.core.network.loads import MVLoadDing0
 from grid.lv_grid.parameterization import parameterize_by_load_profiles, get_peak_load_diversity
 
+from ding0.data.egon_data.egon_building_integration import get_egon_residential_buildings
+
 import os
 import logging
 import pandas as pd
@@ -242,7 +244,7 @@ class NetworkDing0:
         return self._orm
 
     def run_ding0(self, session, mv_grid_districts_no=None, debug=False, export_figures=False,
-                  ding0_default=True, need_parameterization=False):
+                  ding0_default=True, local_db=False, egon_db=False):
 
         """
         Let DING0 run by shouting at this method (or just call
@@ -338,7 +340,7 @@ class NetworkDing0:
             start = time.time()
 
         # STEP 1: Import MV Grid Districts and subjacent objects
-        self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_default, need_parameterization)
+        self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_default, local_db, egon_db)
 
         # STEP 2: Import generators
         self.import_generators(session, debug=debug)
@@ -621,7 +623,8 @@ class NetworkDing0:
     def import_mv_grid_districts(self, session,
                                  mv_grid_districts_no,
                                  ding0_default=True,
-                                 need_parameterization=False,
+                                 local_db=False,
+                                 egon_db=False,
                                  create_lvgd_geo_method='convex_hull'):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
@@ -638,7 +641,8 @@ class NetworkDing0:
         ding0_default: if True ding0 run
                         else: build new lv_districts...
 
-        need_parameterization: parameterize buildings from osm if True
+        local_db: parameterize buildings from osm if True
+        egon_db: get buildings with loads from egon database
 
         See Also
         --------
@@ -720,11 +724,13 @@ class NetworkDing0:
                 # import lv areas and create new lv_grid_districts
                 # 1) ####
                 # return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district,
-                #                                                            need_parameterization,
+                #                                                            local_db,
+                #                                                            egon_db,
                 #                                                            create_lvgd_geo_method)
 
                 self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district,
-                                                                     need_parameterization,
+                                                                     local_db,
+                                                                     egon_db,
                                                                      create_lvgd_geo_method)
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
@@ -734,7 +740,7 @@ class NetworkDing0:
         logger.warning('=====> MV Grid Districts imported')
 
     def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district,
-                                                        need_parameterization, create_lvgd_geo_method):
+                                                        local_db, egon_db, create_lvgd_geo_method):
 
         """
         Imports load_areas (load areas) from database for a single MV grid_district
@@ -823,8 +829,8 @@ class NetworkDing0:
 
             # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
-            # if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
-            #    continue ####
+            if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
+                continue ####
 
             # transform geo_load_area from str to poly
             # buildings without buffer, ways with buffer
@@ -898,7 +904,7 @@ class NetworkDing0:
             composed_graph = compose_graph(outer_graph, graph_subdiv)
 
             # building_loads
-            if need_parameterization:
+            if local_db:
                 # load buildings and amenities
                 ### Load buildings_w_a, wo_a, a
                 buildings_w_a = get_osm_buildings_w_a(row.geo_area, session_osm)
@@ -913,6 +919,20 @@ class NetworkDing0:
                 # parameterization and merge to buildings_df
                 buildings_w_loads_df = parameterize_by_load_profiles(amenities_ni_Buildings, buildings_w_a,
                                                                      buildings_wo_a)
+
+                # sort index to make load allocation reproducible
+                buildings_w_loads_df.sort_index(inplace=True)
+
+            elif egon_db:
+
+                # import residential buildings from egon data
+                buildings_residential = get_egon_residential_buildings(row.geo_area)
+
+                #TODO: concat residential and cts building dataframes
+                buildings_w_loads_df = buildings_residential
+
+                # sort index to make load allocation reproducible
+                buildings_w_loads_df.sort_index(inplace=True)
 
             else:
 
