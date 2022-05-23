@@ -111,9 +111,6 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         # instantiate ding0  network object
         nd = NetworkDing0(name='network', run_id=run_id)
 
-        if not os.path.exists(os.path.join(base_path, "grids")):
-            os.mkdir(os.path.join(base_path, "grids"))
-
         if not failsafe:
             # run DING0 on selected MV Grid District
             msg = nd.run_ding0(session=session,
