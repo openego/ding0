@@ -33,6 +33,7 @@ from ding0.core.network.loads import MVLoadDing0
 from grid.lv_grid.parameterization import parameterize_by_load_profiles, get_peak_load_diversity
 
 from ding0.data.egon_data.egon_building_integration import get_egon_residential_buildings
+from ding0.data.egon_data.egon_ways_integration import get_egon_ways
 
 import os
 import logging
@@ -829,11 +830,11 @@ class NetworkDing0:
 
             # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
-            if id_db != 4544: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
+            if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
                 continue ####
             #ctr+=1
             #if ctr<1:pass
-            #if ctr>13: continue
+            #if ctr>30: continue
 
             # transform geo_load_area from str to poly
             # buildings without buffer, ways with buffer
@@ -842,13 +843,28 @@ class NetworkDing0:
             # get buffer_poly_list
             buffer_poly_list = create_buffer_polygons(geo_load_area)
 
-            # load ways from db for last element of buffer_poly_list
-            ways = get_osm_ways(buffer_poly_list[-1].wkt, session_osm)
-            ways_sql_df = pd.read_sql(
-                ways.statement,
-                con=session_osm.bind
-                # con=engine_osm both ways are working. select the easier/ more appropriate one
-            )
+            if local_db:
+
+                # load ways from db for last element of buffer_poly_list
+                ways = get_osm_ways(buffer_poly_list[-1].wkt, session_osm)
+                ways_sql_df = pd.read_sql(
+                    ways.statement,
+                    con=session_osm.bind
+                    # con=engine_osm both ways are working. select the easier/ more appropriate one
+                )
+
+            elif egon_db:
+
+                ways = get_egon_ways(buffer_poly_list[-1].wkt)
+
+                ways_sql_df = pd.read_sql(
+                    sql=ways.statement,
+                    con=ways.session.bind,
+                    index_col=None
+                )
+
+            else:
+                return 'No database source defined, set local_db or egon_db True'
 
             # if ways found in query build graph from osm data
             if not ways_sql_df.empty:
@@ -931,6 +947,11 @@ class NetworkDing0:
                 # import residential buildings from egon data
                 buildings_residential = get_egon_residential_buildings(row.geo_area)
 
+                if (len(buildings_residential)) < 1:
+                    logger.warning(
+                        f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
+                    continue
+
                 #TODO: concat residential and cts building dataframes
                 buildings_w_loads_df = buildings_residential
 
@@ -940,7 +961,7 @@ class NetworkDing0:
             else:
 
                 # todo: load ding0 default loads
-                return 'Not implemented yet. Need to load ding0 default parameterization.'
+                return 'No database source defined, set local_db or egon_db True'
 
             # if composed graph of type synthetic (no osm ways have been found) update
             # graph node's coord (geo load center) using building's positions and peak loads
