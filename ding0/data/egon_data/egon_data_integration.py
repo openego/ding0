@@ -10,19 +10,20 @@ from geoalchemy2.shape import to_shape
 from sqlalchemy import func, Integer, cast
 from ding0.data.egon_data import egon_db
 
+#create engine
+egon_db.credentials()
+engine = egon_db.engine()
+
+# get schema metadata from db
+saio.register_schema("demand", engine)
+saio.register_schema("openstreetmap", engine)
+
+# get table metadata from db
+# from saio.demand import tables of interest
+from saio.demand import egon_household_electricity_profile_of_buildings, egon_building_peak_loads
+from saio.openstreetmap import osm_buildings_residential, osm_buildings_synthetic, osm_ways_with_segments
+
 def get_egon_residential_buildings(geo_area):
-    
-    egon_db.credentials()
-    engine = egon_db.engine()
-
-    # get schema metadata from db
-    saio.register_schema("demand", engine)
-    saio.register_schema("openstreetmap", engine)
-
-    # get table metadata from db
-    # from saio.demand import egon_building_peak_loads
-    from saio.demand import egon_household_electricity_profile_of_buildings, egon_building_peak_loads
-    from saio.openstreetmap import osm_buildings_residential, osm_buildings_synthetic
 
     # retrieve residential buildings
     with egon_db.session_scope() as session:
@@ -136,3 +137,23 @@ def get_egon_residential_buildings(geo_area):
     df_all_buildings_residential['category'] = 'residential'
 
     return df_all_buildings_residential
+
+def get_egon_ways(geo_area):
+
+    # retrieve ways
+    with egon_db.session_scope() as session:
+        cells_query = session.query(
+            osm_ways_with_segments.osm_id,
+            osm_ways_with_segments.nodes,
+            osm_ways_with_segments.geom.label('geometry'),
+            osm_ways_with_segments.highway,
+            osm_ways_with_segments.length_segments,
+        ).filter(
+            func.st_intersects(
+                func.ST_GeomFromText(geo_area, get_config_osm("srid")),
+                osm_ways_with_segments.geom,
+            )
+        )
+
+    # query needed for post processing  - return query instead of dataframe
+    return cells_query
