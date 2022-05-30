@@ -32,8 +32,6 @@ from ding0.tools.tools import merge_two_dicts_of_dataframes
 from ding0.core.network.loads import MVLoadDing0
 from grid.lv_grid.parameterization import parameterize_by_load_profiles, get_peak_load_diversity
 
-from ding0.data.egon_data.egon_building_integration import get_egon_residential_buildings
-from ding0.data.egon_data.egon_ways_integration import get_egon_ways
 
 import os
 import logging
@@ -830,11 +828,8 @@ class NetworkDing0:
 
             # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
-            if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
-                continue ####
-            #ctr+=1
-            #if ctr<1:pass
-            #if ctr>30: continue
+            #if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
+            #    continue
 
             # transform geo_load_area from str to poly
             # buildings without buffer, ways with buffer
@@ -843,9 +838,9 @@ class NetworkDing0:
             # get buffer_poly_list
             buffer_poly_list = create_buffer_polygons(geo_load_area)
 
+            # load ways from db for last element of buffer_poly_list
             if local_db:
 
-                # load ways from db for last element of buffer_poly_list
                 ways = get_osm_ways(buffer_poly_list[-1].wkt, session_osm)
                 ways_sql_df = pd.read_sql(
                     ways.statement,
@@ -855,8 +850,9 @@ class NetworkDing0:
 
             elif egon_db:
 
-                ways = get_egon_ways(buffer_poly_list[-1].wkt)
+                from ding0.data.egon_data.egon_data_integration import get_egon_ways
 
+                ways = get_egon_ways(buffer_poly_list[-1].wkt)
                 ways_sql_df = pd.read_sql(
                     sql=ways.statement,
                     con=ways.session.bind,
@@ -943,6 +939,8 @@ class NetworkDing0:
                 buildings_w_loads_df.sort_index(inplace=True)
 
             elif egon_db:
+
+                from ding0.data.egon_data.egon_data_integration import get_egon_residential_buildings, get_egon_ways
 
                 # import residential buildings from egon data
                 buildings_residential = get_egon_residential_buildings(row.geo_area)

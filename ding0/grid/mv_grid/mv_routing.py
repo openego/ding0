@@ -60,7 +60,10 @@ def ding0_graph_to_routing_specs(graph):
     load_area_center_agg = []
 
     # check if there are only load areas of type aggregated and satellite
-    # -> treat satellites as normal load areas (allow for routing)
+    # if only satellites and aggregated load area no routing will be done
+    # and satellite will be connected via stubs
+    # in case there is no aggregated load area available
+    # treat satellites as normal load areas (allow for routing)
     satellites_only = True
     has_aggregated = False
     for node in graph.nodes():
