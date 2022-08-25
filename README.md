@@ -1,8 +1,10 @@
 <img align="right" width="300" height="300" src="https://raw.githubusercontent.com/openego/ding0/dev/doc/images/DING0_Logo_300px.png">
 
+
+[![Coverage Status](https://coveralls.io/repos/github/openego/ding0/badge.svg?branch=dev)](https://coveralls.io/github/openego/ding0?branch=dev)
+[![Tests & coverage](https://github.com/openego/ding0/actions/workflows/tests-coverage.yml/badge.svg)](https://github.com/openego/ding0/actions/workflows/tests-coverage.yml)
 [![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://dingo.readthedocs.io/en/dev)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.834751.svg)](https://doi.org/10.5281/zenodo.834751)
-[![Build Status](https://travis-ci.org/openego/ding0.svg?branch=dev)](https://travis-ci.org/openego/ding0)
 
 DING0
 =====
