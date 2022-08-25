@@ -13,3 +13,4 @@ unittest2 == 1.1.0
 oedialect == 0.0.10
 geopandas == 0.9.0
 descartes == 1.1.0
+numpy == 1.22.4
