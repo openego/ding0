@@ -30,7 +30,7 @@ from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
 from ding0.tools.tools import merge_two_dicts_of_dataframes
 from ding0.core.network.loads import MVLoadDing0
-from grid.lv_grid.parameterization import parameterize_by_load_profiles, get_peak_load_diversity
+from ding0.grid.lv_grid.parameterization import parameterize_by_load_profiles, get_peak_load_diversity
 
 
 import os
@@ -63,8 +63,9 @@ if 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
 
 from ding0.config.db_conn_local import create_session_osm
+from ding0.data.egon_data import egon_db as db_egon
 
-from config.config_lv_grids_osm import get_config_osm
+from ding0.config.config_lv_grids_osm import get_config_osm
 
 from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways, \
     get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
@@ -76,15 +77,15 @@ from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
     flatten_graph_components_to_lines, subdivide_graph_edges, simplify_graph_adv, \
     create_simple_synthetic_graph
 
-from grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
+from ding0.grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
 
 from ding0.grid.lv_grid.routing import assign_nearest_nodes_to_buildings, \
     get_lvgd_id, identify_street_loads, get_mvlv_subst_loc_list, \
     connect_mv_loads_to_graph
 
-from grid.lv_grid.parameterization import parameterize_by_load_profiles
+from ding0.grid.lv_grid.parameterization import parameterize_by_load_profiles
 
-from grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, \
+from ding0.grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, \
     get_bounding_box_from_points, get_load_center_node, get_load_center_coords
 
 

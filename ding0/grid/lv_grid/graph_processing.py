@@ -3,7 +3,7 @@ Graph processing.
 """
 from geoalchemy2.shape import to_shape
 
-from config.config_lv_grids_osm import get_config_osm 
+from ding0.config.config_lv_grids_osm import get_config_osm
 import logging
 logger = logging.getLogger('ding0')
 

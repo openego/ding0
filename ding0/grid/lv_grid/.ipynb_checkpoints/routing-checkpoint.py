@@ -21,7 +21,7 @@ from shapely.geometry import LineString, Point #, MultiLineString, Polygon # PAU
 #from shapely.ops import linemerge
 #from shapely.wkt import dumps as wkt_dumps
 
-from config.config_lv_grids_osm import get_config_osm 
+from ding0.config.config_lv_grids_osm import get_config_osm
 
 #from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways
 

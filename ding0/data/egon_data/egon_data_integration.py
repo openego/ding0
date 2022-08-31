@@ -5,7 +5,7 @@
 
 import pandas as pd
 import saio
-from config.config_lv_grids_osm import get_config_osm
+from ding0.config.config_lv_grids_osm import get_config_osm
 from geoalchemy2.shape import to_shape
 from sqlalchemy import func, Integer, cast
 from ding0.data.egon_data import egon_db

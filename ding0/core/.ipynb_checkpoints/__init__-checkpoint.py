@@ -69,7 +69,7 @@ if 'READTHEDOCS' in os.environ:
 
 from ding0.config.db_conn_local import create_session_osm
 
-from config.config_lv_grids_osm import get_config_osm
+from ding0.config.config_lv_grids_osm import get_config_osm
 
 from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways, \
 get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings

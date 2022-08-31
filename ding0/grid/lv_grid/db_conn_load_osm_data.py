@@ -4,9 +4,9 @@ From local DB
 """
 
 
-from config.classes_db_conn.osm_load_classes import Buildings_with_Amenities, Building_wo_Amenity, Amenities_ni_Buildings, Way
+from ding0.config.classes_db_conn.osm_load_classes import Buildings_with_Amenities, Building_wo_Amenity, Amenities_ni_Buildings, Way
 
-from config.config_lv_grids_osm import get_config_osm
+from ding0.config.config_lv_grids_osm import get_config_osm
 
 from sqlalchemy import func
 

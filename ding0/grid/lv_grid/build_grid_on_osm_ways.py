@@ -28,7 +28,7 @@ from ding0.tools import config as cfg_ding0
 from ding0.grid.lv_grid.routing import identify_street_loads
 from ding0.grid.mv_grid.tools import get_shortest_path_shp_single_target, get_shortest_path_shp_multi_target
 
-from config.config_lv_grids_osm import get_config_osm, get_load_profile_categories
+from ding0.config.config_lv_grids_osm import get_config_osm, get_load_profile_categories
 from ding0.grid.lv_grid.parameterization import get_peak_load_for_residential
 from ding0.grid.lv_grid.graph_processing import simplify_graph_adv
 

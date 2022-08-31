@@ -2,7 +2,7 @@ import pandas as pd
 
 from geoalchemy2.shape import to_shape
 
-from config.config_lv_grids_osm import get_peak_loads, get_load_profile_categories, get_config_osm 
+from ding0.config.config_lv_grids_osm import get_peak_loads, get_load_profile_categories, get_config_osm
 
 def get_peak_load_diversity(buildings):
     
