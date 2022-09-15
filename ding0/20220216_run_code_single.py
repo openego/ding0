@@ -13,13 +13,13 @@ from ding0.tools import results # to load pickl file
 nd = NetworkDing0(name='network')
 
 # set ID of MV grid district
-mv_grid_districts = [878] # fn
-
+# mv_grid_districts = [878] # fn
+mv_grid_districts = [2534] # fn
 #
 ding0_default=False
 engine = db.connection(section='oedb_dialect', readonly=True)
 session = sessionmaker(bind=engine)()
-create_lvgd_geo_method='convex_hull' # off, convex_hull
+create_lvgd_geo_method = 'convex_hull'  # off, convex_hull
 
 # STEP 1
 nd.import_mv_grid_districts(session, mv_grid_districts_no=mv_grid_districts,

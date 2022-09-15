@@ -174,7 +174,8 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path,
             nw_name = nw_name+'_to_'+str(cl[-1])
         nw = NetworkDing0(name=nw_name)
         try:
-            msg = nw.run_ding0(session=session, mv_grid_districts_no=cl)
+            msg = nw.run_ding0(session=session, mv_grid_districts_no=cl, debug=True,
+                               ding0_default=False, local_db=False, egon_db=True)
             if msg:
                 status = 'run error'
             else:
@@ -190,7 +191,7 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path,
                     results.save_nd_to_pickle(nw, os.path.join(base_path, run_id))
                 else:
                     msg = 'save_as not correct, network not saved.'
-            output_clusters.append((nw_name,status,msg, nw.metadata))
+            output_clusters.append((nw_name, status, msg, nw.metadata))
         except Exception as e:
             output_clusters.append((nw_name,  'corrupt dist', e, nw.metadata))
             continue
@@ -238,7 +239,8 @@ if __name__ == '__main__':
     run_id = datetime.now().strftime("%Y%m%d%H%M%S")
 
     # run in parallel
-    mv_grid_districts = list(range(1, 3609))
+    # mv_grid_districts = list(range(1, 3609))
+    mv_grid_districts = [2534]
     n_of_processes = mp.cpu_count() #number of parallel threaths
     n_of_districts = 1 #n° of districts in each serial cluster
 
