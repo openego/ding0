@@ -20,7 +20,7 @@ saio.register_schema("openstreetmap", engine)
 
 # get table metadata from db
 # from saio.demand import tables of interest
-from saio.demand import egon_household_electricity_profile_of_buildings, egon_building_peak_loads
+from saio.demand import egon_household_electricity_profile_of_buildings, egon_building_electricity_peak_loads
 from saio.openstreetmap import osm_buildings_residential, osm_buildings_synthetic, osm_ways_with_segments
 
 def get_egon_residential_buildings(geo_area):
@@ -94,6 +94,7 @@ def get_egon_residential_buildings(geo_area):
         df_osm_buildings_synthetic, ignore_index=True
     )
 
+
     # retrieve number of households in buildings for selected buildings
     with egon_db.session_scope() as session:
         cells_query = (
@@ -103,7 +104,7 @@ def get_egon_residential_buildings(geo_area):
                     egon_household_electricity_profile_of_buildings.profile_id
                 ).label("number_households"),
                 # TODO: no status quo peak loads are available, grid are build based on 2035 scenario
-                (egon_building_peak_loads.peak_load_in_w / 1000).label("capacity"),
+                (egon_building_electricity_peak_loads.peak_load_in_w / 1000).label("capacity"),
             )
             .filter(
                 egon_household_electricity_profile_of_buildings.building_id.in_(
@@ -111,17 +112,18 @@ def get_egon_residential_buildings(geo_area):
                 )
             )
             # TODO: check if .join() is slower than to create a third separate df with building peak loads
-            .join(egon_building_peak_loads,
+            .join(egon_building_electricity_peak_loads,
                   egon_household_electricity_profile_of_buildings.building_id ==
                   # TODO: id of building peak loads comes in str format -> convert to int in egon_db, workaround:
-                  cast(egon_building_peak_loads.building_id, Integer)
+                  cast(egon_building_electricity_peak_loads.building_id, Integer)
                   ).filter(
-                egon_building_peak_loads.sector == 'residential'
+                egon_building_electricity_peak_loads.sector == 'residential'
             ).filter(
-                egon_building_peak_loads.scenario == 'eGon2035'
+                # TODO: which scenario shoudl be taken?
+                egon_building_electricity_peak_loads.scenario == 'eGon2035'
             ).group_by(
                 egon_household_electricity_profile_of_buildings.building_id,
-                egon_building_peak_loads.peak_load_in_w,
+                egon_building_electricity_peak_loads.peak_load_in_w,
             )
         )
 

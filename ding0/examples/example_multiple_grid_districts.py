@@ -117,6 +117,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
             # run DING0 on selected MV Grid District
             msg = nd.run_ding0(session=session,
                                mv_grid_districts_no=[mvgd],
+                               # TODO: use new method and egon-data
                                ding0_default=False, local_db=False, egon_db=True)
 
             # save results
