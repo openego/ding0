@@ -8,34 +8,37 @@ from sqlalchemy import Column, Integer, Float, String
 from geoalchemy2 import Geometry
 from sqlalchemy.dialects import postgresql
 
+from ding0.data.egon_data import egon_db
 from sqlalchemy import create_engine
 
 # todo: read from config
-srid = 3035
-'''
- # sqlachemy local osm data
-DB = 'postgresql'
-DB_USER = 'postgres'
-DB_PW   = 'labor'
-DB_Name = 'sandbox_bw' 
-engine_osm = create_engine(DB + '://' + DB_USER + ': ' + DB_PW + '@localhost:5432/' + DB_Name, echo=False)
+# srid = 3035
+# '''
+#  # sqlachemy local osm data
+# DB = 'postgresql'
+# DB_USER = 'postgres'
+# DB_PW   = 'labor'
+# DB_Name = 'sandbox_bw'
+# engine_osm = create_engine(DB + '://' + DB_USER + ': ' + DB_PW + '@localhost:5432/' + DB_Name, echo=False)
+#
+#
+# '''
+# host = 'localhost'  # input('host (default 127.0.0.1): ')
+# port = '5432'  # input('port (default 5432): ')
+# database = 'berlin_osm'  # 'berlin_osm' # bawu_rob_upd
+# user = 'RL-INSTITUT\paul.dubielzig'  # input('user (default sonnja): ')
+# password = 'labor'
+# # password = input('password: ')
+# # password = getpass.getpass(prompt='password: ',
+# #                               stream=sys.stderr)
+# engine_osm = create_engine(
+#     'postgresql://' + '%s:%s@%s:%s/%s' % (user,
+#                                           password,
+#                                           host,
+#                                           port,
+#                                           database)).connect()
 
-
-'''
-host = 'localhost'  # input('host (default 127.0.0.1): ')
-port = '5432'  # input('port (default 5432): ')
-database = 'berlin_osm'  # 'berlin_osm' # bawu_rob_upd
-user = 'RL-INSTITUT\paul.dubielzig'  # input('user (default sonnja): ')
-password = 'labor'
-# password = input('password: ')
-# password = getpass.getpass(prompt='password: ',
-#                               stream=sys.stderr)
-engine_osm = create_engine(
-    'postgresql://' + '%s:%s@%s:%s/%s' % (user,
-                                          password,
-                                          host,
-                                          port,
-                                          database)).connect()
+engine_osm = egon_db.engine()
 
 Base = declarative_base()
 
@@ -94,7 +97,7 @@ class Way(Base):
     osm_id = Column(Integer, primary_key=True)
     nodes = Column(postgresql.ARRAY(Integer))
     highway = Column(String(50))
-    geometry = Column(Geometry('LINESTRING', srid=srid))
+    geometry = Column(Geometry('LINESTRING', srid="3035"))
     length_segments = Column(postgresql.ARRAY(Float))
 
 

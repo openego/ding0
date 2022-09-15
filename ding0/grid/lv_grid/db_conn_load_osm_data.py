@@ -28,7 +28,7 @@ def get_osm_buildings_w_a(geo_area, session_osm):
     
     """ load buildings_with_amenities from db for given polygon as geo_area_wkt """
     
-    buildings_w_a =  session_osm.query(Buildings_with_Amenities).filter(func.st_intersects(
+    buildings_w_a = session_osm.query(Buildings_with_Amenities).filter(func.st_intersects(
         func.ST_GeomFromText(geo_area, get_config_osm('srid')), Buildings_with_Amenities.geo_center))
     
     buildings_w_a_sql_df = pd.read_sql(

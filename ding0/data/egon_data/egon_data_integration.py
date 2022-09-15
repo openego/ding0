@@ -30,7 +30,7 @@ def get_egon_residential_buildings(geo_area):
         cells_query = session.query(
             osm_buildings_residential.id,
             osm_buildings_residential.osm_id,
-            osm_buildings_residential.geom.label("geometry"),
+            osm_buildings_residential.geom_building.label("geometry"),
             osm_buildings_residential.geom_point.label("raccordement_building"),
             osm_buildings_residential.building.label("category"),
             osm_buildings_residential.area,
@@ -61,7 +61,7 @@ def get_egon_residential_buildings(geo_area):
     with egon_db.session_scope() as session:
         cells_query = session.query(
             osm_buildings_synthetic.id,
-            osm_buildings_synthetic.geom.label("geometry"),
+            osm_buildings_synthetic.geom_building.label("geometry"),
             osm_buildings_synthetic.geom_point.label("raccordement_building"),
             osm_buildings_synthetic.building.label("category"),
             osm_buildings_synthetic.area,
@@ -101,20 +101,27 @@ def get_egon_residential_buildings(geo_area):
                 egon_household_electricity_profile_of_buildings.building_id.label("id"),
                 func.count(
                     egon_household_electricity_profile_of_buildings.profile_id
-                ).label("number_households"), #TODO: no status quo peak loads are available, grid are build based on 2035 scenario
-                (egon_building_peak_loads.building_peak_load_in_w_2035 / 1000).label("capacity"), 
+                ).label("number_households"),
+                # TODO: no status quo peak loads are available, grid are build based on 2035 scenario
+                (egon_building_peak_loads.peak_load_in_w / 1000).label("capacity"),
             )
             .filter(
                 egon_household_electricity_profile_of_buildings.building_id.in_(
                     df_all_buildings_residential['id'].values
                 )
-            ) #TODO: check if .join() is slower than to create a third separate df with building peak loads
-            .join(egon_building_peak_loads, #TODO: id of building peak loads comes in str format -> convert to int in egon_db, workaround:
-              egon_household_electricity_profile_of_buildings.building_id == cast(egon_building_peak_loads.building_id, Integer) 
             )
-            .group_by(
+            # TODO: check if .join() is slower than to create a third separate df with building peak loads
+            .join(egon_building_peak_loads,
+                  egon_household_electricity_profile_of_buildings.building_id ==
+                  # TODO: id of building peak loads comes in str format -> convert to int in egon_db, workaround:
+                  cast(egon_building_peak_loads.building_id, Integer)
+                  ).filter(
+                egon_building_peak_loads.sector == 'residential'
+            ).filter(
+                egon_building_peak_loads.scenario == 'eGon2035'
+            ).group_by(
                 egon_household_electricity_profile_of_buildings.building_id,
-                egon_building_peak_loads.building_peak_load_in_w_2035,
+                egon_building_peak_loads.peak_load_in_w,
             )
         )
 
@@ -129,9 +136,9 @@ def get_egon_residential_buildings(geo_area):
         right_on="id",
         how="left",
     )
-    
-    #TODO: do not import buildings with no_households or peak load == NaN, workaround:
-    df_all_buildings_residential = df_all_buildings_residential[df_all_buildings_residential["number_households"].notna()]
+
+    # TODO: do not import buildings with no_households or peak load == NaN, workaround:
+    df_all_buildings_residential.dropna(axis=0, inplace=True)
     # set residential catgeory and egon_id to df index
     df_all_buildings_residential = df_all_buildings_residential.set_index('id')
     df_all_buildings_residential['category'] = 'residential'
