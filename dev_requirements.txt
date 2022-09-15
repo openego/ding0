@@ -3,3 +3,5 @@ pytest-dependency
 pytest-parallel
 sphinx
 sphinx_rtd_theme
+Cython
+git+https://github.com/networkx/networkx-metis.git
