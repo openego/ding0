@@ -236,7 +236,7 @@ if __name__ == '__main__':
     base_path = BASEPATH
 
     # set run_id to current timestamp
-    run_id = datetime.now().strftime("%Y%m%d%H%M%S")
+    run_id = datetime.now().strftime("run_%Y-%m-%d-%H-%M-%S")
 
     # run in parallel
     # mv_grid_districts = list(range(1, 3609))
