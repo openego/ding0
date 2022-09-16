@@ -944,18 +944,25 @@ class NetworkDing0:
 
             elif egon_db:
 
-                from ding0.data.egon_data.egon_data_integration import get_egon_residential_buildings, get_egon_ways
+                from ding0.data.egon_data.egon_data_integration import (get_egon_residential_buildings, get_egon_ways)
 
                 # import residential buildings from egon data
-                buildings_residential = get_egon_residential_buildings(row.geo_area)
+                buildings_residential = get_egon_residential_buildings(row.geo_area, scenario="eGon2035")
 
                 if (len(buildings_residential)) < 1:
                     logger.warning(
                         f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
                     continue
 
+
+                from ding0.data.egon_data.egon_data_integration import get_egon_cts_buildings
+
+                # import cts buildings from egon data
+                buildings_cts = get_egon_cts_buildings(row.geo_area, scenario="eGon2035")
+
+
                 #TODO: concat residential and cts building dataframes
-                buildings_w_loads_df = buildings_residential
+                buildings_w_loads_df = buildings_residential.append(buildings_cts)
 
                 # sort index to make load allocation reproducible
                 buildings_w_loads_df.sort_index(inplace=True)
