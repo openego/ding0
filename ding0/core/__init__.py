@@ -961,7 +961,8 @@ class NetworkDing0:
                 buildings_cts = get_egon_cts_buildings(row.geo_area, scenario="eGon2035")
 
 
-                #TODO: concat residential and cts building dataframes
+                #TODO: cts and residential buildings might have duplicated ids
+                #   adhoc fix if error occurs: remove building of one sector
                 buildings_w_loads_df = buildings_residential.append(buildings_cts)
 
                 # sort index to make load allocation reproducible
