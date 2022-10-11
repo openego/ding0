@@ -37,10 +37,11 @@ __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-import os.path as path
-import ding0
+import configparser as cp
 import logging
+import os.path as path
 
+import ding0
 
 logger = logging.getLogger(__name__)
 
