@@ -24,7 +24,7 @@ if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
     from shapely.ops import transform
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj, srid=3035):

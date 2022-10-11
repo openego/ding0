@@ -36,7 +36,7 @@ if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
     from shapely.ops import transform
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def find_nearest_conn_objects(node_shp, branches, proj, conn_dist_weight, debug, branches_only=False):

@@ -53,7 +53,7 @@ if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import shape, mapping
     from shapely.wkt import dumps as wkt_dumps
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 package_path = ding0.__path__[0]
 

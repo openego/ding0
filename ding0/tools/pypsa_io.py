@@ -49,7 +49,7 @@ from networkx import connected_components
 if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 # parameter to enable sector-specific consumption data
 # for egon data buildings set to False, because

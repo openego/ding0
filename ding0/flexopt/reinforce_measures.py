@@ -25,7 +25,7 @@ import networkx as nx
 import logging
 
 package_path = ding0.__path__[0]
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def reinforce_branches_current(grid, crit_branches):

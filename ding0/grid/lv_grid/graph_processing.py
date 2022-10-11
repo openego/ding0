@@ -5,7 +5,7 @@ from geoalchemy2.shape import to_shape
 
 from ding0.config.config_lv_grids_osm import get_config_osm
 import logging
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 import pandas as pd
 from itertools import combinations

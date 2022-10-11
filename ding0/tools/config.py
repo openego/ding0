@@ -42,13 +42,7 @@ import ding0
 import logging
 
 
-logger = logging.getLogger('ding0')
-
-try:
-    import configparser as cp
-except:
-    # to be compatible with Python2.7
-    import ConfigParser as cp
+logger = logging.getLogger(__name__)
 
 cfg = cp.RawConfigParser()
 _loaded = False

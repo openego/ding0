@@ -26,7 +26,7 @@ import networkx as nx
 import math
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def check_load(grid, mode):

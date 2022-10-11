@@ -23,8 +23,8 @@ from ding0.config.config_lv_grids_osm import get_config_osm
 
 #from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways
 
-#import logging
-#logger = logging.getLogger('ding0')
+import logging
+logger = logging.getLogger(__name__)
 
 
 
@@ -201,10 +201,6 @@ def get_lvgd_id(la_id_db, cluster_id, max_n_digits=10):
     need_to_fill_n_digits = max_n_digits - len(la_id)
 
     return int(la_id + lvgd_id.zfill(need_to_fill_n_digits))
-
-import logging
-logger = logging.getLogger('ding0')
-
 
 
 '''

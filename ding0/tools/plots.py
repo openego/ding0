@@ -7,7 +7,7 @@ import networkx as nx
 from pyproj import Proj, transform, Transformer
 import logging
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 from ding0.tools.logger import get_default_home_dir
 from ding0.core.network.grids import MVGridDing0
 from ding0.config.config_lv_grids_osm import get_config_osm

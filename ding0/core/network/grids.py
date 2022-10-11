@@ -37,7 +37,7 @@ from pyproj import Transformer
 if not 'READTHEDOCS' in os.environ:
     from shapely.ops import transform
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 class MVGridDing0(GridDing0):

@@ -37,7 +37,7 @@ from shapely.geometry import LineString
 #from ding0.tools.plots import plot_mv_topology
 from ding0.grid.mv_grid.urban_mv_connect import mv_urban_connect
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 def osm_graph_to_routing_specs_urban(agg_load_area, core_graph, depot_node, nodes_pos, nodes_demands):
     

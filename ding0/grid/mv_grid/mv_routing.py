@@ -27,7 +27,7 @@ from ding0.core.network.cable_distributors import MVCableDistributorDing0
 import logging
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def ding0_graph_to_routing_specs(graph):

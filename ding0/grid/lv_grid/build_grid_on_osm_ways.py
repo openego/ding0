@@ -34,7 +34,7 @@ from ding0.grid.lv_grid.graph_processing import simplify_graph_adv
 
 import logging
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def get_routed_graph(

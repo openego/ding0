@@ -6,7 +6,7 @@ from ding0.config.config_lv_grids_osm import get_config_osm
 from ding0.grid.lv_grid.routing import get_mvlv_subst_loc_list, get_cluster_graph_and_nodes
 
 import logging
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def get_cluster_numbers(la_peak_loads, simp_graph):

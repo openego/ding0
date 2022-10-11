@@ -29,7 +29,7 @@ from ding0.tools import config as cfg_ding0
 import logging
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 class LocalSearchSolution(BaseSolution):

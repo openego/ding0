@@ -21,7 +21,7 @@ from ding0.core.network.loads import LVLoadDing0
 import logging
 import math
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def select_transformers(grid, s_max=None):

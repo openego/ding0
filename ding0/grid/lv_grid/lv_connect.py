@@ -21,7 +21,7 @@ from ding0.grid.tools import cable_type
 import logging
 import random
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def lv_connect_generators(lv_grid_district, graph, debug=False):
