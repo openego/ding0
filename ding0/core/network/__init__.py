@@ -22,7 +22,7 @@ import ding0.tools as tl
 
 class GridDing0:
     """
-    The fundamental abstract class used to encapsulated
+    The fundamental abstract class used to encapsulate
     the networkx graph and the relevant attributes of a
     power grid irrespective of voltage level. By design,
     this class is not expected to be instantiated directly.
@@ -41,7 +41,7 @@ class GridDing0:
         class, area that is covered by the lv grid
     v_level: :obj:`int`
         The integer value of the voltage level of the Grid in kV.
-        Typically either 10 or 20.
+        Typically, either 10 or 20.
 
 
     Attributes
@@ -73,9 +73,8 @@ class GridDing0:
         self._loads = []
         self._generators = []
         self.v_level = kwargs.get('v_level', None)
-        
-        #PAUL new: in order to allow parallel branches MultiGraph instead of Graph is used
-        self._graph = nx.Graph() #nx.MultiGraph()
+
+        self._graph = nx.Graph()
 
     def cable_distributors(self):
         """
@@ -1109,6 +1108,7 @@ class LoadDing0:
         refers to OSM oder eGo^n ID, depending on chosen database
 
     """
+    #ToDo: Add consumption to the documentation
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id', None)

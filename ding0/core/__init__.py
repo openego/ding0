@@ -152,9 +152,9 @@ class NetworkDing0:
         These are used in many parts of ding0's calculations.
         Data values:
 
-        * Typical cable types, and typical line types' electrical impedences,
+        * Typical cable types, and typical line types' electrical impedances,
             thermal ratings, operating voltage level.
-        * Typical transformers types' electrical impedences, voltage drops,
+        * Typical transformers types' electrical impedances, voltage drops,
             thermal ratings, winding voltages
         * Typical LV grid topologies' line types, line lengths and
             distribution
@@ -1760,7 +1760,7 @@ class NetworkDing0:
         -------
         :obj: `dict`
             key value pairs of names of datasets versus
-            sqlalchmey maps to acess
+            SQLAlchemy maps to access
             various tables where the datasets
             used to build grids are stored on the open
             energy platform.
