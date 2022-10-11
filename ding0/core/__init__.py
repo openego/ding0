@@ -339,42 +339,41 @@ class NetworkDing0:
         if debug:
             start = time.time()
 
-        # STEP 1: Import MV Grid Districts and subjacent objects
+        logger.info("STEP 1: Import MV Grid Districts and subjacent objects")
         self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_default, local_db, egon_db)
 
-        # STEP 2: Import generators
+        logger.info("STEP 2: Import generators")
         self.import_generators(session, debug=debug)
 
-        # STEP 3: Parametrize MV grid
+        logger.info("STEP 3: Parametrize MV grid")
         self.mv_parametrize_grid(debug=debug)
 
-        # STEP 4: Validate MV Grid Districts
+        logger.info("STEP 4: Validate MV Grid Districts")
         msg = self.validate_grid_districts()
 
-        # STEP 5: Build LV grids
-        # return self.build_lv_grids()
+        logger.info("STEP 5: Build LV grids")
         self.build_lv_grids()
 
-        # STEP 6: Build MV grids
+        logger.info("STEP 6: Build MV grids")
         self.mv_routing(debug=False)
         if export_figures:
             grid = self._mv_grid_districts[0].mv_grid
             plot_mv_topology(grid, subtitle='Routing completed', filename='1_routing_completed.png')
 
-        # STEP 7: Connect MV and LV generators
+        logger.info("STEP 7: Connect MV and LV generators")
         self.connect_generators(debug=False)
         if export_figures:
             plot_mv_topology(grid, subtitle='Generators connected', filename='2_generators_connected.png')
 
-        # STEP 8: Relocate switch disconnectors in MV grid
+        logger.info("STEP 8: Relocate switch disconnectors in MV grid")
         self.set_circuit_breakers(debug=debug)
         if export_figures:
             plot_mv_topology(grid, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
 
-        # STEP 9: Open all switch disconnectors in MV grid
+        logger.info("STEP 9: Open all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='open')
 
-        # STEP 10: Do power flow analysis of MV grid
+        logger.info("STEP 10: Do power flow analysis of MV grid")
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
         if export_figures:
             plot_mv_topology(grid, subtitle='PF result (load case)',
@@ -384,10 +383,10 @@ class NetworkDing0:
                              filename='5_PF_result_feedin.png',
                              line_color='loading', node_color='voltage', testcase='feedin')
 
-        # STEP 11: Reinforce MV grid
+        logger.info("STEP 11: Reinforce MV grid")
         self.reinforce_grid()
 
-        # STEP 12: Close all switch disconnectors in MV grid
+        logger.info("STEP 12: Close all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='close')
 
         if export_figures:
@@ -828,8 +827,9 @@ class NetworkDing0:
             session_osm = db_egon.engine()
         ctr=0
         # create load_area objects from rows and add them to graph
+        logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
         for id_db, row in lv_load_areas.iterrows():
-
+            logger.debug(f"LV Load Area: {id_db}")
             # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
             #if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
@@ -864,7 +864,7 @@ class NetworkDing0:
                 )
 
             else:
-                return 'No database source defined, set local_db or egon_db True'
+                ValueError('No database source defined, set local_db or egon_db True')
 
             # if ways found in query build graph from osm data
             if not ways_sql_df.empty:
@@ -971,7 +971,7 @@ class NetworkDing0:
             else:
 
                 # todo: load ding0 default loads
-                return 'No database source defined, set local_db or egon_db True'
+                ValueError('No database source defined, set local_db or egon_db True')
 
             # if composed graph of type synthetic (no osm ways have been found) update
             # graph node's coord (geo load center) using building's positions and peak loads
@@ -1442,7 +1442,7 @@ class NetworkDing0:
                            'generation_subtype'] = 'unknown'
 
             for id_db, row in generators.iterrows():
-
+                logger.debug(f"Generator {id_db}")
                 # treat generators' geom:
                 # use geom_new (relocated genos from data processing)
                 # otherwise use original geom from EnergyMap
@@ -1535,6 +1535,8 @@ class NetworkDing0:
 
                     generator.lv_load_area = lv_grid_district.lv_load_area
                     lv_grid_district.lv_grid.add_generator(generator)
+                else:
+                    ValueError("False voltage level")
 
         def import_conv_generators():
             """

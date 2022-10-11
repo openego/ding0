@@ -1483,12 +1483,11 @@ def data_integrity(components, components_data):
     # print short report to user and exit program if not integer
     for comp in list(data_check.keys()):
         if data_check[comp]['length_diff'] != 0:
-            logger.exception("{comp} data is invalid. You supplied {no_comp} "
+            logger.error("{comp} data is invalid. You supplied {no_comp} "
                 "{comp} objects and {no_data} datasets. Check you grid data "
                 "and try again".format(comp=comp,
                                      no_comp=len(components[comp]),
                                      no_data=len(components_data[comp])))
-            sys.exit(1)
 
 
 def _check_integrity_of_pypsa(pypsa_network):
