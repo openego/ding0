@@ -742,7 +742,7 @@ class MVGridDing0(GridDing0):
                                                   start_time=start_time)
         elif method == 'onthefly':
             buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
-            components, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+            components, _, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
                                                                             lines_df, loads_df, transformer_df,
                                                                             only_export_mv=only_calc_mv,
                                                                             return_time_varying_data=True)
@@ -786,7 +786,7 @@ class MVGridDing0(GridDing0):
 
         elif method == 'onthefly':
             buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
-            components, _,  components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+            components, _, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
                                                                          lines_df, loads_df, transformer_df,  only_export_mv=only_calc_mv,
                                                                          return_time_varying_data=True)
             pypsa_io.run_powerflow_onthefly(components,

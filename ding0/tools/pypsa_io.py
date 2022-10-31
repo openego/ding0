@@ -165,10 +165,24 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
     """
     srid = str(int(cfg_ding0.get('geo', 'srid')))
     # fill dataframes
+
+    # fill grids_df with population and geoms of grids
+    grids_df = pd.DataFrame(
+        columns=["name", "grid_district_population", "srid", "grid_district_geom"]
+    ).set_index("name")
+    grids_df.loc[f"mvgd_{mv_grid_district.id_db}"] = (0, srid, mv_grid_district.geo_data)
+    mvgd_population = 0
+    for lv_load_area in mv_grid_district.lv_load_areas():
+        grids_df.loc[f"lvgd_{lv_load_area.id_db}"] = (lv_load_area.population, srid, lv_load_area.geo_area)
+        mvgd_population += lv_load_area.population
+    grids_df.loc[f"mvgd_{mv_grid_district.id_db}", "grid_district_population"] = mvgd_population
+
+
     network_df = pd.DataFrame(
         {'name': [mv_grid_district.id_db], 'srid': [srid],
          'mv_grid_district_geom': [mv_grid_district.geo_data],
-         'mv_grid_district_population': [0]}).set_index('name')
+         'mv_grid_district_population': [int(mvgd_population)]}).set_index('name')
+
     # add mv grid components
     mv_grid = mv_grid_district.mv_grid
     mv_components, mv_component_data = \
@@ -201,7 +215,7 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
                                                   lv_component_data)
                 logger.info('LV grid {} exported to pypsa format.'.format(
                     str(lv_grid.id_db)))
-    return mv_components, network_df, mv_component_data
+    return mv_components, network_df, grids_df, mv_component_data
 
 
 def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,

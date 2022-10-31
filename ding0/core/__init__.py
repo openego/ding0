@@ -772,7 +772,7 @@ class NetworkDing0:
         # build SQL query
         lv_load_areas_sqla = session.query(
             self.orm['orm_lv_load_areas'].id.label('id_db'),
-            self.orm['orm_lv_load_areas'].zensus_sum,
+            self.orm['orm_lv_load_areas'].zensus_sum.label('population'),
             self.orm['orm_lv_load_areas'].zensus_count.label('zensus_cnt'),
             self.orm['orm_lv_load_areas'].ioer_sum,
             self.orm['orm_lv_load_areas'].ioer_count.label('ioer_cnt'),
@@ -2263,7 +2263,7 @@ class NetworkDing0:
         self.control_circuit_breakers(mode='open')
         # start filling component dataframes
         for grid_district in self.mv_grid_districts():
-            gd_components, network_df, _ = fill_mvgd_component_dataframes(
+            gd_components, network_df, grids_df, _ = fill_mvgd_component_dataframes(
                 grid_district, buses_df, generators_df,
                 lines_df, loads_df, transformer_df, only_export_mv)
             # save network and components to csv
@@ -2271,6 +2271,7 @@ class NetworkDing0:
             if not os.path.exists(path):
                 os.makedirs(path)
             network_df.to_csv(os.path.join(path, 'network.csv'))
+            grids_df.to_csv(os.path.join(path, 'grids.csv'))
             gd_components['HVMV_Transformer'].to_csv(
                 os.path.join(path, 'transformers_hvmv.csv'))
             gd_components['Transformer'].to_csv(
@@ -2318,7 +2319,7 @@ class NetworkDing0:
         self.control_circuit_breakers(mode='open')
         # start filling component dataframes
         for grid_district in self.mv_grid_districts():
-            gd_components, network_df, _ = fill_mvgd_component_dataframes(grid_district, buses_df, generators_df,
+            gd_components, network_df, _, _ = fill_mvgd_component_dataframes(grid_district, buses_df, generators_df,
                                                                           lines_df, loads_df, transformer_df,
                                                                           only_export_mv)
             if len(components) == 0:
