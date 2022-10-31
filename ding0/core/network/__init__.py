@@ -1108,7 +1108,7 @@ class LoadDing0:
         refers to OSM oder eGo^n ID, depending on chosen database
 
     """
-    #ToDo: Add consumption to the documentation
+    #ToDo: Add consumption, type and sector to the documentation
 
     def __init__(self, **kwargs):
         self.id_db = kwargs.get('id', None)
@@ -1117,6 +1117,8 @@ class LoadDing0:
         self.peak_load = kwargs.get('peak_load', None)
         self.consumption = kwargs.get('consumption', None)
         self.building_id = kwargs.get('building_id', None)
+        self.sector = kwargs.get('sector', None)
+        self.type = kwargs.get('type', None)
         # self.id_db = self.grid.loads_count() + 1
 
     @property
