@@ -360,17 +360,17 @@ class NetworkDing0:
         self.mv_routing(debug=False)
         if export_figures:
             grid = self._mv_grid_districts[0].mv_grid
-            plot_mv_topology(path, grid, subtitle='Routing completed', filename='1_routing_completed.png')
+            plot_mv_topology(grid, path=path, subtitle='Routing completed', filename='1_routing_completed.png')
 
         logger.info("STEP 7: Connect MV and LV generators")
         self.connect_generators(debug=False)
         if export_figures:
-            plot_mv_topology(path, grid, subtitle='Generators connected', filename='2_generators_connected.png')
+            plot_mv_topology(grid, path=path, subtitle='Generators connected', filename='2_generators_connected.png')
 
         logger.info("STEP 8: Relocate switch disconnectors in MV grid")
         self.set_circuit_breakers(debug=debug)
         if export_figures:
-            plot_mv_topology(path, grid, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
+            plot_mv_topology(grid, path=path, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
 
         logger.info("STEP 9: Open all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='open')
@@ -378,10 +378,10 @@ class NetworkDing0:
         logger.info("STEP 10: Do power flow analysis of MV grid")
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
         if export_figures:
-            plot_mv_topology(path, grid, subtitle='PF result (load case)',
+            plot_mv_topology(grid, path=path, subtitle='PF result (load case)',
                              filename='4_PF_result_load.png',
                              line_color='loading', node_color='voltage', testcase='load')
-            plot_mv_topology(path, grid, subtitle='PF result (feedin case)',
+            plot_mv_topology(grid, path=path, subtitle='PF result (feedin case)',
                              filename='5_PF_result_feedin.png',
                              line_color='loading', node_color='voltage', testcase='feedin')
 
@@ -392,10 +392,10 @@ class NetworkDing0:
         self.control_circuit_breakers(mode='close')
 
         if export_figures:
-            plot_mv_topology(path, grid, subtitle='Final grid PF result (load case)',
+            plot_mv_topology(grid, path=path, subtitle='Final grid PF result (load case)',
                              filename='6_final_grid_PF_result_load.png',
                              line_color='loading', node_color='voltage', testcase='load')
-            plot_mv_topology(path, grid, subtitle='Final grid PF result (feedin case)',
+            plot_mv_topology(grid, path=path, subtitle='Final grid PF result (feedin case)',
                              filename='7_final_grid_PF_result_feedin.png',
                              line_color='loading', node_color='voltage', testcase='feedin')
 
