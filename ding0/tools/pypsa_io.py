@@ -490,9 +490,9 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 load = pd.Series({'name': repr(node), 'bus': bus_name,
                                   'p_set': node.peak_load/1e3,
                                   'building_id': node.building_id,
-                                  'annual_consumption':
-                                      annual_consumption,
-                                  'sector': sector})
+                                  'annual_consumption': annual_consumption,
+                                  'sector': node.sector,
+                                  'type': node.type})
                 loads_df = loads_df.append(load, ignore_index=True)
                 # buses_df = append_buses_df(buses_df, grid, node)
                 # add time varying elements
@@ -512,9 +512,9 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 load = pd.Series({'name': repr(node), 'bus': bus_name,
                                   'p_set': node.peak_load / 1e3,
                                   'building_id': node.osmid_building, #TODO make consistent with lv load
-                                  'annual_consumption':
-                                      annual_consumption,
-                                  'sector': sector})
+                                  'annual_consumption': annual_consumption,
+                                  'sector': node.sector,
+                                  'type': node.type})
                 loads_df = loads_df.append(load, ignore_index=True)
                 buses_df = append_buses_df(buses_df, grid, node)
                 # add time varying elements
@@ -968,7 +968,7 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
             load_pq_set_df = kwargs.get('load_pq_set_df', None)
             load_pq_set_df = append_load_pq_set_df(conf, load_pq_set_df,
                                                    None, name_load, peak_load)
-            return loads_df,load_pq_set_df
+            return loads_df, load_pq_set_df
         else:
             return loads_df
 

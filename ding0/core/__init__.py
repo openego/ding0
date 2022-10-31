@@ -1071,7 +1071,9 @@ class NetworkDing0:
                                           osmid_building=osm_id_building,
                                           osmid_nn=row.nn,
                                           nn_coords=row.nn_coords,
-                                          lv_load_area=lv_load_area)
+                                          lv_load_area=lv_load_area,
+                                          sector=row.category,
+                                          type="conventional_load")
 
                     # add mv_load to mv_load_list and graph
                     mv_grid_district.mv_grid.add_load(mv_load)
