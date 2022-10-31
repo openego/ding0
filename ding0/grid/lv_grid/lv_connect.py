@@ -16,7 +16,7 @@ __author__     = "nesnoj, gplssm"
 from ding0.core.network import BranchDing0
 
 from ding0.tools import config as cfg_ding0
-from ding0.tools.geo import calc_geo_dist
+from ding0.tools.geo import calc_geo_dist, calc_edge_geometry
 from ding0.grid.tools import cable_type
 import logging
 import random
@@ -78,6 +78,7 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
         if generator.v_level == 6:
             lv_station = lv_grid_district.lv_grid.station()
 
+            branch_shp, branch_length = calc_edge_geometry(generator, lv_station)
             branch_length = calc_geo_dist(generator, lv_station)
             branch_type = cable_type(
                 generator.capacity / (cable_lf * cos_phi_gen),
@@ -86,8 +87,9 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
 
             branch = BranchDing0(length=branch_length,
                                  kind='cable',
-                                 grid = lv_grid_district.lv_grid,
-                                 type=branch_type)
+                                 grid=lv_grid_district.lv_grid,
+                                 type=branch_type,
+                                 geometry=branch_shp)
 
             graph.add_edge(generator, lv_station, branch=branch)
 
@@ -141,10 +143,12 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
                 lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
             # connect to cable dist. of building
+            branch_shp, branch_length = calc_edge_geometry(generator, lv_conn_target)
             branch = BranchDing0(length=1,
                                  kind='cable',
                                  grid=lv_grid_district.lv_grid,
-                                 type=branch_type)
+                                 type=branch_type,
+                                 geometry=branch_shp)
 
             graph.add_edge(generator, lv_conn_target, branch=branch)
 

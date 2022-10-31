@@ -641,7 +641,7 @@ def build_branches_on_osm_ways(lvgd):
                 lv_load,
                 branch=BranchDing0(
                     length=1,
-                    #geometry=line,
+                    geometry=geometry,
                     kind='cable',
                     grid=lvgd.lv_grid,
                     type=cable_type,
