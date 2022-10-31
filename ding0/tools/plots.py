@@ -29,7 +29,7 @@ if 'READTHEDOCS' not in os.environ:
         use_ctx = False
 
 
-def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
+def plot_mv_topology(grid, path = None, subtitle='', filename=None, testcase='load',
                      line_color='ring', node_color='type',
                      limits_cb_lines=None, limits_cb_nodes=None,
                      background_map=True):
@@ -39,6 +39,8 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
     ----------
     grid : :obj:`MVGridDing0`
         MV grid to plot.
+    path : :obj:`str`
+        Path to save the plot.
     subtitle : :obj:`str`
         Extend plot's title by this string.
     filename : :obj:`str`
@@ -456,8 +458,13 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         plt.tight_layout()
         plt.show()
     else:
-        path = os.path.join(get_default_home_dir(), 'ding0_grid_{id}_{filename}'.format(id=str(grid.id_db),
-                                                                                        filename=filename))
+        if path:
+            path = os.path.join(path, str(grid.id_db))
+            if not os.path.exists(path):
+                os.makedirs(path)
+        else:
+            path = get_default_home_dir()
+        path = os.path.join(path, f'ding0_grid_{str(grid.id_db)}_{filename}')
         plt.savefig(path, dpi=300, bbox_inches='tight')
         plt.close()
         logger.info('==> Figure saved to {path}'.format(path=path))
