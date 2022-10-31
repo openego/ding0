@@ -201,7 +201,7 @@ class LVLoadAreaDing0(RegionDing0):
             for attribute in list(db_data.keys()):
                 setattr(self, attribute, db_data[attribute])
 
-        # convert geo attributes to to shapely objects
+        # convert geo attributes to shapely objects
         if hasattr(self, 'geo_area'):
             self.geo_area = wkt_loads(self.geo_area)
         if hasattr(self, 'geo_centre'):

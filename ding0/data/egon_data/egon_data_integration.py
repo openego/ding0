@@ -145,8 +145,7 @@ def get_egon_residential_buildings(geo_area, scenario="eGon2035"):
 
     # TODO: do not import buildings with no_households or peak load == NaN, workaround:
     df_all_buildings_residential.dropna(axis=0, inplace=True)
-    # set residential catgeory and egon_id to df index
-    df_all_buildings_residential = df_all_buildings_residential.set_index('id')
+    # set residential category and egon_id to df index
     df_all_buildings_residential['category'] = 'residential'
 
     return df_all_buildings_residential
@@ -269,8 +268,7 @@ def get_egon_cts_buildings(geo_area, scenario="eGon2035"):
 
     # TODO: do not import buildings with no_households or peak load == NaN, workaround:
     df_all_buildings_cts.dropna(axis=0, inplace=True)
-    # set residential catgeory and egon_id to df index
-    df_all_buildings_cts = df_all_buildings_cts.set_index('id')
+    # set residential category and egon_id to df index
     df_all_buildings_cts['category'] = 'cts'
     df_all_buildings_cts["number_households"] = 0
 

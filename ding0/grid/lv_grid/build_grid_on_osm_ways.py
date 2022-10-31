@@ -257,7 +257,7 @@ def build_branches_on_osm_ways(lvgd):
                                                       lv_loads_grid.nn.tolist() + [station_id])
     # split the graph into subtrees based on station's incident edges
     # if number of edges larger 1
-    # prepare shortest path tree graph
+    # prepare the shortest path tree graph
     g = shortest_tree_district_graph.copy()
     station_attr = g.nodes[station_id]
 
@@ -298,7 +298,7 @@ def build_branches_on_osm_ways(lvgd):
                                              node_weight='load', edge_weight='length',
                                              options=nxmetis.MetisOptions(contig=True))
 
-            # workround due to metis rarely contains single empty clusters
+            # workaround due to metis rarely contains single empty clusters
             parts = [cluster for cluster in parts if cluster != []]
 
             for cluster in parts:
@@ -473,7 +473,7 @@ def build_branches_on_osm_ways(lvgd):
 
                 # create new LVCableDistributorDing0
                 lv_cable_dist_v = LVCableDistributorDing0(
-                    id_db=load_no,  # need to set an unqie identifier due to u may apper multiple times in edges
+                    id_db=load_no,  # need to set a unique identifier due to u may apper multiple times in edges
                     grid=lvgd.lv_grid,
                     branch_no=branch_no,
                     load_no=load_no,

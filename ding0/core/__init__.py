@@ -1002,7 +1002,7 @@ class NetworkDing0:
             clustering_successfully, cluster_graph, mvlv_subst_list, nodes_w_labels = \
                 distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_grid_district, id_db)
             if not clustering_successfully:
-                return f"clutering not sucessfully for MV {mv_grid_district}, LA {id_db}"
+                return f"Clustering not successful for MV {mv_grid_district}, LA {id_db}"
 
             # get loads on mv level
             loads_mv_df = buildings_w_loads_df.loc[
@@ -1020,7 +1020,7 @@ class NetworkDing0:
             buildings_w_loads_df = buildings_w_loads_df.loc[
                 buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')]
 
-            # set cluster Id for buildings
+            # set cluster ID for buildings
             buildings_w_loads_df['cluster'] = buildings_w_loads_df.nn.map(nodes_w_labels.cluster)
 
             # create LV load_area object
