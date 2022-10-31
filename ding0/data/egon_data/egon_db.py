@@ -12,7 +12,9 @@ from pathlib import Path
 import yaml
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+import logging
 
+logger = logging.getLogger()
 
 def paths(pid=None):
     """Obtain configuration file paths.
@@ -55,10 +57,9 @@ def config_settings() -> dict[str, dict[str, str]]:
     """
     files = paths(pid="*") + paths()
     if not files[0].exists():
-        #         logger.warning(
-        #             f"Configuration file:"
-        #             f"\n\n{files[0]}\n\nnot found.\nUsing defaults."
-        #         )
+        logger.warning(
+            f"Configuration file: {files[0]} not found. -> Using defaults."
+        )
         return {
             "egon-data": {
                 "--airflow-database-name": "airflow",
