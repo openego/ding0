@@ -388,7 +388,7 @@ def build_branches_on_osm_ways(lvgd):
 
     # add loads < 100 kW to Graph G
     for building_node, row in lv_loads_grid[
-        ['x', 'y', 'capacity', 'nn', 'nn_dist', 'nn_coords', 'raccordement_building']].iterrows():
+        ['x', 'y', 'capacity', 'category', 'nn', 'nn_dist', 'nn_coords', 'raccordement_building']].iterrows():
         nn_attr = G.nodes[row.nn]
         # todo: update capacity with load for residentials
         attr = {'x': row.x,
@@ -396,6 +396,7 @@ def build_branches_on_osm_ways(lvgd):
                 'node_type': 'non_synthetic',
                 'cluster': nn_attr['cluster'],
                 'load': row.capacity,
+                'category': row.category,
                 'feederID': nn_attr['feederID'],
                 'residentials_total_at_feeder': nn_attr['residentials_total_at_feeder']
                 }
@@ -412,7 +413,7 @@ def build_branches_on_osm_ways(lvgd):
         (lvgd.buildings.capacity < get_config_osm('mv_lv_threshold_capacity'))]
 
     for building_node, row in lv_loads_to_station[
-        ['x', 'y', 'capacity', 'nn', 'nn_dist', 'nn_coords', 'raccordement_building', 'number_households']].iterrows():
+        ['x', 'y', 'capacity', 'category', 'nn', 'nn_dist', 'nn_coords', 'raccordement_building', 'number_households']].iterrows():
         feederID += 1
         # todo: update capacity with load for residentials
         attr = {'x': row.x,
@@ -420,6 +421,7 @@ def build_branches_on_osm_ways(lvgd):
                 'node_type': 'non_synthetic',
                 'cluster': nn_attr['cluster'],
                 'load': row.capacity,
+                'category': row.category,
                 'feederID': feederID,
                 'residentials_total_at_feeder': row.number_households
                 }
@@ -615,7 +617,9 @@ def build_branches_on_osm_ways(lvgd):
                                   load_no=load_no,
                                   peak_load=load_u_capacity,
                                   geo_data=u_point,
-                                  building_id=u)
+                                  building_id=u,
+                                  sector=node_u["category"],
+                                  type="conventional_load")
             new_lvgd_peak_load_considering_simultaneity += load_u_capacity
 
             # add load
@@ -654,7 +658,9 @@ def build_branches_on_osm_ways(lvgd):
                                   load_no=load_no,
                                   peak_load=load_v_capacity,
                                   geo_data=v_point,
-                                  building_id=v)
+                                  building_id=v,
+                                  sector=node_v["category"],
+                                  type="conventional_load")
             new_lvgd_peak_load_considering_simultaneity += load_v_capacity
 
             # add load
