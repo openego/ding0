@@ -891,7 +891,7 @@ class NetworkDing0:
                 # no outlier nodes in synthetic graph, nested list must be empty
                 outlier_nodes_list = [[]]
 
-                logger.warning(f'ways_sql_df.empty. No ways found in MV {mv_grid_district}, LA {id_db} \n' \
+                logger.warning(f'ways_sql_df.empty. No ways found in MV {mv_grid_district}, LA {id_db} ' \
                                f'Build synthetic graph instead.')
 
             # inner_node_list define nodes without buffer
