@@ -26,6 +26,26 @@ from saio.openstreetmap import (osm_buildings_residential, osm_buildings_filtere
                                 osm_buildings_synthetic, osm_ways_with_segments, osm_buildings_filtered)
 from saio.boundaries import egon_map_zensus_buildings_filtered, egon_map_zensus_buildings_filtered_all
 
+def get_egon_ways(geo_area):
+
+    # retrieve ways
+    with egon_db.session_scope() as session:
+        cells_query = session.query(
+            osm_ways_with_segments.osm_id,
+            osm_ways_with_segments.nodes,
+            osm_ways_with_segments.geom.label('geometry'),
+            osm_ways_with_segments.highway,
+            osm_ways_with_segments.length_segments,
+        ).filter(
+            func.st_intersects(
+                func.ST_GeomFromText(geo_area, get_config_osm("srid")),
+                osm_ways_with_segments.geom,
+            )
+        )
+
+    # query needed for post-processing - return query instead of dataframe
+    return cells_query
+
 def get_egon_residential_buildings(geo_area, scenario="eGon2035"):
 
     # retrieve residential buildings
@@ -151,25 +171,6 @@ def get_egon_residential_buildings(geo_area, scenario="eGon2035"):
     return df_all_buildings_residential
 
 
-def get_egon_ways(geo_area):
-
-    # retrieve ways
-    with egon_db.session_scope() as session:
-        cells_query = session.query(
-            osm_ways_with_segments.osm_id,
-            osm_ways_with_segments.nodes,
-            osm_ways_with_segments.geom.label('geometry'),
-            osm_ways_with_segments.highway,
-            osm_ways_with_segments.length_segments,
-        ).filter(
-            func.st_intersects(
-                func.ST_GeomFromText(geo_area, get_config_osm("srid")),
-                osm_ways_with_segments.geom,
-            )
-        )
-
-    # query needed for post processing  - return query instead of dataframe
-    return cells_query
 
 def get_egon_cts_buildings(geo_area, scenario="eGon2035"):
 
