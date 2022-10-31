@@ -1879,8 +1879,8 @@ class NetworkDing0:
 
         for grid_district in invalid_mv_grid_districts:
             self._mv_grid_districts.remove(grid_district)
-
-        logger.warning("\n".join(msg_invalidity))
+        if msg_invalidity:
+            logger.warning("\n".join(msg_invalidity))
         logger.info('=====> MV Grids validated')
         return msg_invalidity
 
@@ -2362,7 +2362,7 @@ class NetworkDing0:
         for mvgd_chunk in mvgd_chunks:
 
             for grid_district in mvgd_chunk:  # self.mv_grid_districts():
-                print(grid_district)
+                logger.info(f"Urban routing for: {grid_district}")
                 # 1) urban routing in aggregated load area(s)
                 if True:
                     grid_district.mv_grid.urban_routing(debug=debug, anim=anim)

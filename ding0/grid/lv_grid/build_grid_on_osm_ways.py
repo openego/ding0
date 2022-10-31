@@ -229,7 +229,7 @@ def build_branches_on_osm_ways(lvgd):
 
     # station_id is node in graph which is root node
     station_id = lvgd.lv_grid._station.osm_id_node
-    print(lvgd)
+    logger.info(f"LVGD: {lvgd}")
     # separate loads w. capacity: loads < 100 kW connected to grid
     lv_loads_grid = lvgd.buildings.loc[
         lvgd.buildings.capacity < get_config_osm('lv_threshold_capacity')]
@@ -608,7 +608,6 @@ def build_branches_on_osm_ways(lvgd):
 
         # ADD LOADS AND CONNECT EM
         if load_u_capacity > 0:
-            print(u)
             # TODO: if u == station_id:  # do we need to create a CABLE DISTRIBUTOR FOR U TO CONNECT LOAD TO?
             # create an instance of Ding0 LV load
             lv_load = LVLoadDing0(grid=lvgd.lv_grid,

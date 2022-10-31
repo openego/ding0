@@ -100,7 +100,7 @@ def setup_logger(log_dir=None, filename="ding0.log", loglevel=logging.DEBUG):
 
     # create a stream handler (print to prompt)
     stream = logging.StreamHandler()
-    stream.setLevel(logging.INFO)
+    stream.setLevel(logging.DEBUG)
     stream_formatter = logging.Formatter(
         '%(name)-35s - %(levelname)8s: %(message)s ')
     stream.setFormatter(stream_formatter)
