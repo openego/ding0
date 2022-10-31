@@ -961,12 +961,23 @@ class NetworkDing0:
 
                 # import cts buildings from egon data
                 buildings_cts = get_egon_cts_buildings(row.geo_area, scenario="eGon2035")
+                buildings_w_loads_df = pd.concat([buildings_residential, buildings_cts], ignore_index=True)
 
+                # sum capacity of buildings with the same id
+                if buildings_w_loads_df["id"].duplicated(keep=False).any():
+                    def sum_capacity(x):
+                        y = x.iloc[0]
+                        if x.shape[0] > 1:
+                            y["category"] = "mixed_residential_cts"
+                        y["capacity"] = x["capacity"].sum()
+                        return y
+                    buildings_w_loads_df = buildings_w_loads_df.groupby(["id"], as_index=False).apply(sum_capacity)
 
-                #TODO: cts and residential buildings might have duplicated ids
-                #   adhoc fix if error occurs: remove building of one sector
-                buildings_w_loads_df = buildings_residential.append(buildings_cts)
+                if buildings_w_loads_df["id"].duplicated(keep=False).any():
+                    raise ValueError("There are duplicated building_ids, "
+                                     "for residential non-synthetic and synthetic buildings.")
 
+                buildings_w_loads_df.set_index('id', inplace=True)
                 # sort index to make load allocation reproducible
                 buildings_w_loads_df.sort_index(inplace=True)
 

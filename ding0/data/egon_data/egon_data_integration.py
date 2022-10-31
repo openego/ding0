@@ -94,10 +94,10 @@ def get_egon_residential_buildings(geo_area, scenario="eGon2035"):
     df_osm_buildings_synthetic['id'] = df_osm_buildings_synthetic['id'].astype(int)
 
     # append residential and synthetic buildings
-    df_all_buildings_residential = df_osm_buildings_residential.append(
-        df_osm_buildings_synthetic, ignore_index=True
-    )
-
+    df_all_buildings_residential = pd.concat([df_osm_buildings_residential, df_osm_buildings_synthetic],
+                                             ignore_index=True)
+    if df_all_buildings_residential["id"].duplicated(keep=False).any():
+        raise ValueError("There are duplicated building_ids, for residential non-synthetic and synthetic buildings.")
 
     # retrieve number of households in buildings for selected buildings
     with egon_db.session_scope() as session:
@@ -239,15 +239,15 @@ def get_egon_cts_buildings(geo_area, scenario="eGon2035"):
     df_osm_buildings_synthetic['id'] = df_osm_buildings_synthetic['id'].astype(int)
 
     # append residential and synthetic buildings
-    df_all_buildings = df_osm_buildings_cts.append(
-        df_osm_buildings_synthetic, ignore_index=True
-    )
+    df_all_buildings = pd.concat([df_osm_buildings_cts, df_osm_buildings_synthetic], ignore_index=True)
+    if df_all_buildings["id"].duplicated(keep=False).any():
+        raise ValueError("There are duplicated building_ids, for cts non-synthetic and synthetic buildings.")
 
     # retrieve peak load of cts
     with egon_db.session_scope() as session:
         cells_query = session.query(
             egon_building_electricity_peak_loads.building_id.label("id"),
-            egon_building_electricity_peak_loads.peak_load_in_w
+            (egon_building_electricity_peak_loads.peak_load_in_w / 1000).label("capacity"),
         ).filter(
             egon_building_electricity_peak_loads.scenario == scenario
         ).filter(
