@@ -836,7 +836,7 @@ def mv_connect_stations(mv_grid_district, graph, debug=False):
                 # delete Load Area centre from graph
                 graph.remove_node(lv_load_area_centre)
 
-            # there're more than one supply node: Do normal connection process (as in satellites)
+            # there is more than one supply node: Do normal connection process (as in satellites)
             else:
 
                 # get supply nodes in load area

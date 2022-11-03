@@ -153,7 +153,7 @@ def compose_graph(outer_graph, graph_subdiv):
     composed_graph = nx.compose(outer_graph, graph_subdiv)
 
     if not nx.is_weakly_connected(composed_graph):
-        logger.warning('composed_graph not connected')
+        logger.warning('Composed_graph not connected.')
         composed_graph = ox.utils_graph.get_largest_component(composed_graph)
 
     return composed_graph
@@ -195,21 +195,21 @@ def get_fully_conn_graph(G, nlist): #nested_node_list
 
             if len(unconn_nodes) == 0:
 
-                logger.warning(f'Finding connected graph, iteration {poly_idx} of max. {max_it}.')
+                logger.debug(f'Finding connected graph, iteration {poly_idx} of max. {max_it}.')
                 break
 
             if poly_idx >= max_it:
 
-                logger.warning(f'Finding connected graph, max. iterations {max_it} trespassed. Break.')
+                logger.debug(f'Finding connected graph, max. iterations {max_it} trespassed. Break.')
                 break
 
         else:
-            logger.warning(f'Found connected graph, iteration {poly_idx} of max. {max_it}.')
+            logger.debug(f'Found connected graph, iteration {poly_idx} of max. {max_it}.')
             return G_c
 
     else:
 
-        logger.warning(f'Graph already fully connected.')
+        logger.debug(f'Graph already fully connected.')
         G_c = G_min
 
     return G_c
@@ -328,7 +328,7 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
         #raise Exception("This graph has already been simplified, cannot simplify it again.")
 
     #utils.log("Begin topologically simplifying the graph...")
-    logger.info("Begin topologically simplifying the graph...")
+    logger.debug("Begin topologically simplifying the graph...")
 
     # define edge segment attributes to sum upon edge simplification
     attrs_to_sum = {"length", "travel_time"}
@@ -440,7 +440,7 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
         f"Simplified graph: {initial_node_count} to {len(G)} nodes, "
         f"{initial_edge_count} to {len(G.edges)} edges"
     )
-    logger.warning(msg)
+    logger.debug(msg)
     return G
 
 def flatten_graph_components_to_lines(G, inner_node_list):

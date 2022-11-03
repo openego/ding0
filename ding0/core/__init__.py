@@ -500,6 +500,7 @@ class NetworkDing0:
 
         """
 
+        logger.info(f"Build MV grid district: {poly_id}")
         mv_station = MVStationDing0(id_db=subst_id, geo_data=station_geo_data)
 
         mv_grid = MVGridDing0(network=self,
@@ -833,7 +834,7 @@ class NetworkDing0:
         # create load_area objects from rows and add them to graph
         logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
         for id_db, row in lv_load_areas.iterrows():
-            logger.debug(f"LV Load Area: {id_db}")
+            logger.info(f"Build LV Load Area: {id_db}")
             # 2)
             # todo: remove. exists to process a selected load area instead all load areas.
             #if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
@@ -887,7 +888,7 @@ class NetworkDing0:
             # no osm ways data could be found
             else:
 
-                # create synthetic graph with ome street node instead
+                # create synthetic graph with one street node instead
                 graph, node_id = create_simple_synthetic_graph(geo_load_area)
 
                 # no outlier nodes in synthetic graph, nested list must be empty
@@ -900,7 +901,7 @@ class NetworkDing0:
             inner_node_list = list(set(graph.nodes()) - set(outlier_nodes_list[0]))
 
             if len(inner_node_list) < 1:
-                logger.warning(f'no graph found in origin polygon of MV {mv_grid_district}, LA {id_db}')
+                logger.warning(f'No graph found in origin polygon of MV {mv_grid_district}, LA {id_db}.')
                 continue
 
             # get connected graph
@@ -978,6 +979,9 @@ class NetworkDing0:
                 if buildings_w_loads_df["id"].duplicated(keep=False).any():
                     raise ValueError("There are duplicated building_ids, "
                                      "for residential non-synthetic and synthetic buildings.")
+
+                if buildings_w_loads_df.empty:
+                    raise ValueError("There are no buildings for the LoadArea.")
 
                 buildings_w_loads_df.set_index('id', inplace=True)
                 # sort index to make load allocation reproducible
@@ -2398,19 +2402,9 @@ class NetworkDing0:
             if True:  # new approach
                 for load_area in mv_grid_district.lv_load_areas():
                     # logger.warning(f'LV grid building for la {str(load_area)}')
-                    if True:  # process all la and lvgds
-                        for lv_grid_district in load_area.lv_grid_districts():
-                            # logger.warning(f'LVGD building for {str(lv_grid_district)}')
-                            lv_grid_district.lv_grid.build_grid()
-
-                    else:  # do a specific load area and return it
-                        if load_area.id_db != 4347:
-                            continue
-                        else:
-                            for lv_grid_district in load_area.lv_grid_districts():
-                                lv_grid_district.lv_grid.build_grid()
-                            return load_area
-
+                    for lv_grid_district in load_area.lv_grid_districts():
+                        # logger.warning(f'LVGD building for {str(lv_grid_district)}')
+                        lv_grid_district.lv_grid.build_grid()
             else:  # ding0 default
                 for mv_grid_district in self.mv_grid_districts():
                     for load_area in mv_grid_district.lv_load_areas():

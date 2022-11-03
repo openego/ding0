@@ -104,7 +104,7 @@ from ding0.grid.mv_grid.tools import get_edge_tuples_from_path
 
 def get_shortest_path_tree(graph, station_node, building_nodes, generator_nodes=None):
     '''
-    routing via shortest path from station to loads and gens
+    routing via the shortest path from station to loads and gens
     input graph representing all streets in lvgd and
         node of station in graph, all nodes of buildings.
         generator_nodes is none by default due to they are connected
@@ -245,7 +245,8 @@ def build_branches_on_osm_ways(lvgd):
     shortest_tree_district_graph = get_shortest_path_tree(
         full_graph,  # graph in district
         station_id,  # osmid of node representating station
-        lv_loads_grid.nn.tolist())  # list of nodes connected to staion
+        lv_loads_grid.nn.tolist())  # list of nodes connected to station
+
 
     # pre-process graph
     # allocate loads to street nodes

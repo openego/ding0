@@ -104,7 +104,7 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
 
         if valid_cluster_distance:
 
-            logger.warning('all clusters are in range')
+            logger.debug('All clusters are in range.')
 
             clustering_successfully = True
             break
@@ -115,8 +115,7 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
 
                 cluster_increment_counter += 1
                 n_cluster += 1
-                logger.warning('at least one node trespasses dist to substation. \
-                               cluster again with n_clusters+=1')
-                logger.warning(f'after increment; n_cluster {n_cluster}')
+                logger.debug(f'At least one node trespasses dist to substation, for n_clusters = {n_cluster}. '
+                             f'Cluster again with n_clusters+=1')
 
     return clustering_successfully, cluster_graph, mvlv_subst_list, nodes_w_labels

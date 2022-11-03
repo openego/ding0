@@ -369,7 +369,7 @@ class MVGridDing0(GridDing0):
                                                        debug=debug)
         logger.info('==> MV Sat1 for {} done'.format(repr(self)))
 
-        # connect satellites to closest line/station on a MV ring that have not been connected in step 1
+        # connect satellites to the closest line/station to an MV ring that has not been connected in step 1
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
                                                        graph=self.graph,
                                                        mode='isolated',
