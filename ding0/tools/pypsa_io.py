@@ -173,8 +173,13 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
     grids_df.loc[f"mvgd_{mv_grid_district.id_db}"] = (0, srid, mv_grid_district.geo_data)
     mvgd_population = 0
     for lv_load_area in mv_grid_district.lv_load_areas():
+        if pd.isna(lv_load_area.population):
+            lv_load_area_population = 0
+            logger.warning(f"Population of {lv_load_area} is NaN")
+        else:
+            lv_load_area_population = lv_load_area.population
         grids_df.loc[f"lvgd_{lv_load_area.id_db}"] = (lv_load_area.population, srid, lv_load_area.geo_area)
-        mvgd_population += lv_load_area.population
+        mvgd_population += lv_load_area_population
     grids_df.loc[f"mvgd_{mv_grid_district.id_db}", "grid_district_population"] = mvgd_population
 
 
