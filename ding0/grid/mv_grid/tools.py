@@ -732,7 +732,14 @@ def update_branch_shps_settle(load_area, branches, street_graph):
 
             # retrieve intersection point(s) with load area polygon
             ring_shp = LinearRing(load_area.geo_area.exterior.coords)
-            intersect_shp = line_shp.intersection(ring_shp)
+            try:
+                intersect_shp = line_shp.intersection(ring_shp)
+            except:
+                from shapely.validation import explain_validity
+                print(explain_validity(line_shp))
+                from shapely.validation import make_valid
+                line_shp = make_valid(line_shp)
+                intersect_shp = line_shp.intersection(ring_shp)
 
             # if no intersection shape found use representative point of line (rare case)
             if intersect_shp.is_empty:
