@@ -830,7 +830,7 @@ class NetworkDing0:
             session_osm = create_session_osm()
         elif egon_db:
             session_osm = db_egon.engine()
-        ctr=0
+
         # create load_area objects from rows and add them to graph
         logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
         for id_db, row in lv_load_areas.iterrows():
