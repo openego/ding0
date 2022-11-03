@@ -179,7 +179,7 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         diff_min = 10e9
 
         # if none of the nodes is of the type LVStation, a switch
-        # disconnecter will be installed anyways.
+        # disconnecter will be installed anyway.
         if any([isinstance(n, LVStationDing0) for n in ring]):
             has_lv_station = True
         else:
@@ -252,8 +252,7 @@ def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=Fal
 
     if line_length == 0:
         line_length = 1
-        logger.warning('Geo distance is zero, check objects\' positions. '
-                       'Distance is set to 1m')
+        logger.warning('Geo distance is zero, check objects positions. Distance is set to 1m')
 
     if return_path:
         return line_shp, line_length, sp
@@ -271,8 +270,7 @@ def get_shortest_path_shp_multi_target(G, source, targets):
     # make sure length is greater 1m
     if line_length == 0:
         line_length = 1
-        logger.warning('Geo distance is zero, check objects\' positions. '
-                       'Distance is set to 1m')
+        logger.warning('Geo distance is zero, check objects positions. Distance is set to 1m')
 
     return line_shp, line_length, line_path
 
@@ -681,7 +679,7 @@ import numpy as np
 from ding0.core.network.stations import MVStationDing0
 
 def update_branch_shps_settle(load_area, branches, street_graph):
-    # update branches routinh in settlement areas
+    # update branches routing in settlement areas
     # if both endpoints in la update whole shape
     # if one endpoint in la update part of shape
     # if no endpoints in la, do nothing (maybe check if part of linestring crosses same/other la
