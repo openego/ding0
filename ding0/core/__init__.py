@@ -174,6 +174,7 @@ class NetworkDing0:
         self._pf_config = self.import_pf_config()
         self._static_data = self.import_static_data()
         self._orm = self.import_orm()
+        self.message = []
 
     def mv_grid_districts(self):
         """
@@ -352,6 +353,7 @@ class NetworkDing0:
 
         logger.info("STEP 4: Validate MV Grid Districts")
         msg = self.validate_grid_districts()
+        self.message.append(msg)
 
         logger.info("STEP 5: Build LV grids")
         self.build_lv_grids()
@@ -403,7 +405,7 @@ class NetworkDing0:
             logger.info('Elapsed time for {0} MV Grid Districts (seconds): {1}'.format(
                 str(len(mv_grid_districts_no)), time.time() - start))
 
-        return msg
+        return self.message
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
         """

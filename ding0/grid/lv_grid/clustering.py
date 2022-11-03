@@ -87,15 +87,14 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
         if cluster_increment_counter > 10:
             check_distance_criterion = False
 
-            logger.warning('cluster_increment_counter > 10. \
-            break increment n_cluster. 1500 m distance is not ensured. \
-            check export: no_1500m_distance_ensured.txt')
+            message = f"cluster_increment_counter > {cluster_increment_counter_threshold} -> " \
+                      f"{get_config_osm('ons_dist_threshold')}m distance is not ensured. " \
+                      f"Check export: MV {mv_grid_district}, LA {id_db} does not ensure " \
+                      f"max dist of {get_config_osm('ons_dist_threshold')}m between station and loads."
 
-            # write mv and la id to file
-            f = open("no_1500m_distance_ensured.txt", "a")
-            f.write(f"MV {mv_grid_district}, LA {id_db}\n does not ensure"
-                    " max dist of 1500m between station and loads \n")
-            f.close()
+            mv_grid_district.network.message.append(message)
+            logger.warning(message)
+
             clustering_successfully = True
 
         # locate stations for districts
