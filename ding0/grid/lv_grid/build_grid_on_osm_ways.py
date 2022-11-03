@@ -114,7 +114,7 @@ def get_shortest_path_tree(graph, station_node, building_nodes, generator_nodes=
 
     G = graph.copy()
 
-    if len(building_nodes) == 1 and building_nodes[0] == station_node:
+    if (len(building_nodes) == 1 and building_nodes[0] == station_node) or (len(building_nodes) == 0):
 
         sp_tree = G.subgraph([station_node])
 
@@ -420,7 +420,6 @@ def build_branches_on_osm_ways(lvgd):
         attr = {'x': row.x,
                 'y': row.y,
                 'node_type': 'non_synthetic',
-                'cluster': nn_attr['cluster'],
                 'load': row.capacity,
                 'category': row.category,
                 'feederID': feederID,
