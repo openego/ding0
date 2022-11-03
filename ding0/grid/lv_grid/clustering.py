@@ -76,6 +76,7 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
     clustering_successfully = False  # init False
     cluster_increment_counter = 0  # init 0
     check_distance_criterion = True
+    cluster_increment_counter_threshold = get_config_osm('cluster_increment_counter_threshold')
 
     for i in range(len(simp_graph.nodes)):
 
@@ -84,7 +85,7 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
 
         cluster_graph, nodes_w_labels = get_cluster_graph_and_nodes(simp_graph, labels)
 
-        if cluster_increment_counter > 10:
+        if cluster_increment_counter > cluster_increment_counter_threshold:
             check_distance_criterion = False
 
             message = f"cluster_increment_counter > {cluster_increment_counter_threshold} -> " \
@@ -111,7 +112,7 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
 
         else:
 
-            if cluster_increment_counter <= 10:  # todo: write 10 to config
+            if cluster_increment_counter <= cluster_increment_counter_threshold:
 
                 cluster_increment_counter += 1
                 n_cluster += 1
