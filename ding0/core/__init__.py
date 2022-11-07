@@ -2319,7 +2319,7 @@ class NetworkDing0:
             # Save metadata to disk
         with open(os.path.join(path, 'Ding0_{}.meta'.format(metadata['run_id'])),
                   'w') as f:
-            json.dump(metadata, f)
+            json.dump(metadata, f, indent=4)
 
     def to_dataframe(self, only_export_mv=False):
         '''
