@@ -1117,39 +1117,40 @@ class NetworkDing0:
                 # create LVGridDistrictDing0
                 # calc peak load based on diversity of loads
                 peak_load_div = get_peak_load_diversity(buildings)
-                lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id,
-                                                       geo_data=polygon,
-                                                       graph_district=mvlv_subst_loc.get('graph_district'),
-                                                       lv_load_area=lv_load_area,
-                                                       buildings_district=buildings,
-                                                       id_db=lvgd_id,
-                                                       peak_load=peak_load_div)
-                # peak_load=buildings.capacity.sum())
+                if peak_load_div > 0:
+                    lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id,
+                                                           geo_data=polygon,
+                                                           graph_district=mvlv_subst_loc.get('graph_district'),
+                                                           lv_load_area=lv_load_area,
+                                                           buildings_district=buildings,
+                                                           id_db=lvgd_id,
+                                                           peak_load=peak_load_div)
+                    # peak_load=buildings.capacity.sum())
 
-                # create LVGridDing0
-                # be aware, lv_grid takes grid district's geom!
-                lv_grid = LVGridDing0(network=self,
-                                      grid_district=lv_grid_district,
-                                      id_db=lvgd_id,
-                                      geo_data=polygon,
-                                      v_level=lv_nominal_voltage)
+                    # create LVGridDing0
+                    # be aware, lv_grid takes grid district's geom!
+                    lv_grid = LVGridDing0(network=self,
+                                          grid_district=lv_grid_district,
+                                          id_db=lvgd_id,
+                                          geo_data=polygon,
+                                          v_level=lv_nominal_voltage)
 
-                # create LV station
-                lv_station = LVStationDing0(
-                    id_db=lvgd_id,
-                    grid=lv_grid,
-                    lv_load_area=lv_load_area,
-                    geo_data=Point(mvlv_subst_loc.get('x'), mvlv_subst_loc.get('y')),
-                    osm_id_node=mvlv_subst_loc.get('osmid')  # defined node in graph where station is located
-                    # , peak_load=lv_grid_district.peak_load
-                )
+                    # create LV station
+                    lv_station = LVStationDing0(
+                        id_db=lvgd_id,
+                        grid=lv_grid,
+                        lv_load_area=lv_load_area,
+                        geo_data=Point(mvlv_subst_loc.get('x'), mvlv_subst_loc.get('y')),
+                        osm_id_node=mvlv_subst_loc.get('osmid')  # defined node in graph where station is located
+                        # , peak_load=lv_grid_district.peak_load
+                    )
 
-                # assign created objects
-                # note: creation of LV grid is done separately,
-                # see NetworkDing0.build_lv_grids()
-                lv_grid.add_station(lv_station)
-                lv_grid_district.lv_grid = lv_grid
-                lv_load_area.add_lv_grid_district(lv_grid_district)
+                    # assign created objects
+                    # note: creation of LV grid is done separately,
+                    # see NetworkDing0.build_lv_grids()
+                    lv_grid.add_station(lv_station)
+                    lv_grid_district.lv_grid = lv_grid
+                    lv_load_area.add_lv_grid_district(lv_grid_district)
 
             # calculate load center to set lv_load_area_centre_geo_data
             # based on peak load and position of lvgd.station

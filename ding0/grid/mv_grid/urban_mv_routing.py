@@ -256,12 +256,6 @@ def solve(mv_grid, debug=False, anim=None):
             nodes_demands = {node: int(node.peak_load /
                                        cfg_ding0.get('assumptions', 'cos_phi_load')) for node in supply_nodes}
 
-            # workaround: if peak_load is zero, remove station / load from nodes demands and graph
-            nodes_unloaded = {node: pl for node, pl in nodes_demands.items() if pl == 0}  # TODO: do this in STEP 1
-            for node in nodes_unloaded:
-                nodes_demands.pop(node, None)
-                mv_grid.graph.remove_node(node)
-
             ##### prepare osm graph for routing and stub connections
 
             # relabel street_graph
