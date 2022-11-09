@@ -2275,6 +2275,32 @@ class NetworkDing0:
         only_export_mv: bool
             When True only mv topology is exported with aggregated lv grid districts
         '''
+        def transform_all_geodata(gd_components, network_df, grids_df):
+            from pyproj import Transformer
+            from shapely.ops import transform
+            import time
+
+            logger.info("Transform all geodata from 'EPSG:3035' to 'EPSG:4326'.")
+            t_start = time.perf_counter()
+
+            # initialize the Coordinate-Reference-System-Transformer
+            crs_transformer = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True).transform
+
+            # Transform geodata
+            network_df["mv_grid_district_geom"] = [transform(crs_transformer, geom) for geom in
+                                                   network_df["mv_grid_district_geom"].to_list()]
+            grids_df["grid_district_geom"] = [transform(crs_transformer, geom) for geom in
+                                              grids_df["grid_district_geom"].to_list()]
+            for key, item in gd_components.items():
+                if key == 'Bus':
+                    gd_components[key]['x'], gd_components[key]['y'] = crs_transformer(gd_components[key]['x'],
+                                                                                       gd_components[key]['y'])
+                elif key == 'Line':
+                    gd_components[key]["geometry"] = [transform(crs_transformer, geom) for geom in
+                                                      gd_components[key]["geometry"].to_list()]
+
+            logger.debug(f"Transformed all geodata in {time.perf_counter() - t_start}s.")
+            return gd_components, network_df, grids_df
 
         buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
         if (dir == ''):
@@ -2290,6 +2316,7 @@ class NetworkDing0:
             path = os.path.join(dir, str(grid_district.id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
+            gd_components, network_df, grids_df = transform_all_geodata(gd_components, network_df, grids_df)
             network_df.to_csv(os.path.join(path, 'network.csv'))
             grids_df.to_csv(os.path.join(path, 'grids.csv'))
             gd_components['HVMV_Transformer'].to_csv(
