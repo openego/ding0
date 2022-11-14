@@ -168,9 +168,9 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
 
     # fill grids_df with population and geoms of grids
     grids_df = pd.DataFrame(
-        columns=["name", "grid_district_population", "srid", "grid_district_geom"]
+        columns=["name", "grid_district_population", "srid", "area", "grid_district_geom"]
     ).set_index("name")
-    grids_df.loc[f"mvgd_{mv_grid_district.id_db}"] = (0, srid, mv_grid_district.geo_data)
+    grids_df.loc[f"mvgd_{mv_grid_district.id_db}"] = (0, srid, mv_grid_district.geo_data.area, mv_grid_district.geo_data)
     mvgd_population = 0
     for lv_load_area in mv_grid_district.lv_load_areas():
         if pd.isna(lv_load_area.population):
@@ -178,7 +178,7 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
             logger.warning(f"Population of {lv_load_area} is NaN")
         else:
             lv_load_area_population = lv_load_area.population
-        grids_df.loc[f"lvgd_{lv_load_area.id_db}"] = (lv_load_area.population, srid, lv_load_area.geo_area)
+        grids_df.loc[f"lvgd_{lv_load_area.id_db}"] = (lv_load_area.population, srid, lv_load_area.geo_area.area, lv_load_area.geo_area)
         mvgd_population += lv_load_area_population
     grids_df.loc[f"mvgd_{mv_grid_district.id_db}", "grid_district_population"] = mvgd_population
 
