@@ -2596,21 +2596,10 @@ class NetworkDing0:
         for grid_district in self.mv_grid_districts():
             # reinforce MV grid
             grid_district.mv_grid.reinforce_grid()
-
-            # TODO: ERROR FOR lv_grid_district.lv_grid.reinforce_grid()
-
-    #            ~\anaconda3\envs\ding0_env\lib\site-packages\ding0\flexopt\check_tech_constraints.py in get_critical_voltage_at_nodes(grid)
-    #    462
-    #    463             # roughly estimate transverse voltage drop
-    # --> 464             stub_node = [_ for _ in tree.successors(successor) if
-    #    465                          _ not in main_branch][0]
-    #    466             v_delta_load_stub, v_delta_gen_stub  = get_delta_voltage_preceding_line(grid, tree, stub_node)
-    # IndexError: list index out of range
-    # reinforce LV grids
-    # for lv_load_area in grid_district.lv_load_areas():
-    #    if not lv_load_area.is_aggregated:
-    #        for lv_grid_district in lv_load_area.lv_grid_districts():
-    #            lv_grid_district.lv_grid.reinforce_grid()
+            # reinforce LV grids
+            for lv_load_area in grid_district.lv_load_areas():
+                for lv_grid_district in lv_load_area.lv_grid_districts():
+                    lv_grid_district.lv_grid.reinforce_grid()
 
     @property
     def metadata(self, run_id=None):
