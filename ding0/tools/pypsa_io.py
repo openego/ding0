@@ -1213,6 +1213,9 @@ def append_lines_df(edge, lines_df, buses_df):
                 edge['branch'].type['U_n']/unitconversion
     # get lengths of line
     length = edge['branch'].length / 1e3
+    # Add minimal length of 1m
+    if length < 0.001:
+        length = 0.001
     #Todo: change into same format
     if 'name' in edge['branch'].type:
         type = edge['branch'].type['name']
