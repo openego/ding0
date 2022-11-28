@@ -291,16 +291,24 @@ def build_branches_on_osm_ways(lvgd):
 
             G = nx.Graph(subtree_graph.copy())
 
-            # transform edge length to int
-            for edge in G.edges:
-                G.edges[edge]['length'] = int(np.ceil(G.edges[edge]['length']))
+            # If the Graph has to be portioned to more than the number of nodes without the station node,
+            # make every Node to a feeder, because METIS sometimes portion not contiguous.
+            if len(G) - 1 > n_feeder:
+                # transform edge length to int
+                for edge in G.edges:
+                    G.edges[edge]['length'] = int(np.ceil(G.edges[edge]['length']))
 
-            (cut, parts) = nxmetis.partition(G, int(n_feeder),
-                                             node_weight='load', edge_weight='length',
-                                             options=nxmetis.MetisOptions(contig=True))
+                (cut, parts) = nxmetis.partition(G, int(n_feeder),
+                                                 node_weight='load', edge_weight='length',
+                                                 options=nxmetis.MetisOptions(contig=True))
 
-            # workaround due to metis rarely contains single empty clusters
-            parts = [cluster for cluster in parts if cluster != []]
+                # workaround due to metis rarely contains single empty clusters
+                parts = [cluster for cluster in parts if cluster != []]
+            else:
+                parts = [list(nodelist)]
+                msg = f"In the LVGrid {lvgd} every grid_district.graph node becomes a feeder."
+                logger.warning(msg)
+                lvgd.network.message.append(msg)
 
             for cluster in parts:
 
@@ -358,6 +366,8 @@ def build_branches_on_osm_ways(lvgd):
 
             feeder_graph_list.append(feeder_graph)
 
+    if max([len(list(nx.connected_components(_))) for _ in feeder_graph_list]) > 1:
+        raise ValueError("Probably METIS did not partitioned contiguously.")
     G = nx.compose_all(feeder_graph_list)
     G.nodes[station_id]['feederID'] = 0
     station_node = G.nodes[station_id]

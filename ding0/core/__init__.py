@@ -2432,7 +2432,14 @@ class NetworkDing0:
                     # logger.warning(f'LV grid building for la {str(load_area)}')
                     for lv_grid_district in load_area.lv_grid_districts():
                         # logger.warning(f'LVGD building for {str(lv_grid_district)}')
+                        if len(list(nx.connected_components(nx.Graph(lv_grid_district.graph_district)))) > 1:
+                            raise ValueError(f"Isolates in lv_grid_district.graph_district: {lv_grid_district.lv_grid}")
+                        # Save number of isolated nodes, these nodes are the unconnected generators and station_bus.
+                        number_of_subgraphs = len(list(nx.connected_components(lv_grid_district.lv_grid.graph)))
                         lv_grid_district.lv_grid.build_grid()
+                        # Error if more isolates than before.
+                        if len(list(nx.connected_components(lv_grid_district.lv_grid.graph))) > number_of_subgraphs:
+                            raise ValueError(f"Isolate Nodes in LV-Grid: {lv_grid_district.lv_grid}")
             else:  # ding0 default
                 for mv_grid_district in self.mv_grid_districts():
                     for load_area in mv_grid_district.lv_load_areas():
