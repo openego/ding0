@@ -175,7 +175,7 @@ def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path,
         nw = NetworkDing0(name=nw_name)
         try:
             msg = nw.run_ding0(session=session, mv_grid_districts_no=cl, debug=True,
-                               ding0_default=False, local_db=False, egon_db=True)
+                               ding0_legacy=False, local_db=False, egon_db=True)
             if msg:
                 status = 'run error'
             else:

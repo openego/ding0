@@ -245,7 +245,7 @@ class NetworkDing0:
         return self._orm
 
     def run_ding0(self, session, mv_grid_districts_no=None, debug=False, export_figures=False,
-                  ding0_default=True, local_db=False, egon_db=False, path=None):
+                  ding0_legacy=False, local_db=False, egon_db=False, path=None):
 
         """
         Let DING0 run by shouting at this method (or just call
@@ -343,7 +343,7 @@ class NetworkDing0:
             start = time.time()
 
         logger.info("STEP 1: Import MV Grid Districts and subjacent objects")
-        self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_default, local_db, egon_db)
+        self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_legacy, local_db, egon_db)
 
         logger.info("STEP 2: Import generators")
         self.import_generators(session, debug=debug)
@@ -626,7 +626,7 @@ class NetworkDing0:
 
     def import_mv_grid_districts(self, session,
                                  mv_grid_districts_no,
-                                 ding0_default=True,
+                                 ding0_legacy=True,
                                  local_db=False,
                                  egon_db=False,
                                  create_lvgd_geo_method='convex_hull'):
@@ -642,7 +642,7 @@ class NetworkDing0:
             List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
 
-        ding0_default: if True ding0 run
+        ding0_legacy: if True ding0 run
                         else: build new lv_districts...
 
         local_db: parameterize buildings from osm if True
@@ -709,8 +709,8 @@ class NetworkDing0:
                                                            region_geo_data,
                                                            station_geo_data)
 
-            #### TODO: check ding0_default
-            if ding0_default:
+            #### TODO: check ding0_legacy
+            if ding0_legacy:
 
                 # import all lv_stations within mv_grid_district
                 lv_stations = self.import_lv_stations(session)

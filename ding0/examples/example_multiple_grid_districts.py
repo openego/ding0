@@ -118,7 +118,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
             msg = nd.run_ding0(session=session,
                                mv_grid_districts_no=[mvgd],
                                # TODO: use new method and egon-data
-                               ding0_default=False, local_db=False, egon_db=True)
+                               ding0_legacy=False, local_db=False, egon_db=True)
 
             # save results
             if save_as == 'csv':
@@ -133,7 +133,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
             try:
                 msg = nd.run_ding0(session=session,
                                    mv_grid_districts_no=[mvgd],
-                                   ding0_default=False, local_db=False, egon_db=True)
+                                   ding0_legacy=False, local_db=False, egon_db=True)
                 # if not successful, put grid district to report
                 if msg:
                     corrupt_grid_districts = corrupt_grid_districts.append(
