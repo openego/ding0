@@ -165,7 +165,7 @@ class NetworkDing0:
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, session, **kwargs):
         self.name = kwargs.get('name', None)
         self._run_id = kwargs.get('run_id', None)
         self._mv_grid_districts = []
@@ -173,7 +173,7 @@ class NetworkDing0:
         self._config = self.import_config()
         self._pf_config = self.import_pf_config()
         self._static_data = self.import_static_data()
-        self._orm = self.import_orm()
+        self._orm = self.import_orm(session)
         self.message = []
 
     def mv_grid_districts(self):
@@ -1774,7 +1774,7 @@ class NetworkDing0:
 
         return static_data
 
-    def import_orm(self):
+    def import_orm(self, session):
         """
         Import ORM classes names for  the correct connection to
         open energy platform and access tables depending on input in config in
@@ -1805,6 +1805,16 @@ class NetworkDing0:
             supply as orm_supply, \
             demand as orm_demand, \
             grid as orm_grid
+
+        from ding0.tools import database
+        import saio
+        import sys
+
+        engine = database.engine()
+        saio.register_schema("demand", engine)
+        saio.register_schema("openstreetmap", engine)
+        saio.register_schema("boundaries", engine)
+        saio.register_schema("grid", engine)
 
         if data_source == 'model_draft':
             orm['orm_mv_grid_districts'] = orm_model_draft.__getattribute__(mv_grid_districts_name)
@@ -1844,6 +1854,21 @@ class NetworkDing0:
                 orm['orm_re_generators'].columns.version == orm['data_version']
             orm['version_condition_conv'] = \
                 orm['orm_conv_generators'].columns.version == orm['data_version']
+        elif data_source == "local":
+            orm['orm_mv_grid_districts'] = sys.modules["saio.grid"].__getattr__(mv_grid_districts_name)
+            orm['orm_mv_stations'] = sys.modules["saio.grid"].__getattr__(mv_stations_name)
+            orm['orm_lv_load_areas'] = sys.modules["saio.demand"].__getattr__(lv_load_areas_name)
+            # orm['orm_lv_grid_district'] = orm_grid.__getattribute__(lv_grid_district_name)
+            # orm['orm_lv_stations'] = orm_grid.__getattribute__(lv_stations_name)
+            orm['orm_conv_generators'] = orm_model_draft.__getattribute__(conv_generators_name)
+            orm['orm_re_generators'] = orm_model_draft.__getattribute__(re_generators_name)
+            orm['version_condition_mvgd'] = True
+            orm['version_condition_mv_stations'] = True
+            orm['version_condition_la'] = True
+            # orm['version_condition_lvgd'] = True
+            # orm['version_condition_mvlvst'] = True
+            orm['version_condition_re'] = True
+            orm['version_condition_conv'] = True
         else:
             logger.error("Invalid data source {} provided. Please re-check the file "
                          "`config_db_tables.cfg`".format(data_source))
