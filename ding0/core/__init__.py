@@ -471,18 +471,15 @@ class NetworkDing0:
 
         return mv_grid_districts_dict, lv_load_areas_dict, lv_grid_districts_dict, lv_stations_dict
 
-    def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
-                               station_geo_data):
+    def build_mv_grid_district(self, subst_id, grid_district_geo_data, station_geo_data):
         """
         Initiates single MV grid_district including station and grid
 
         Parameters
         ----------
 
-        poly_id: :obj:`int`
-            ID of grid_district according to database table. Also used as ID for created grid #TODO: check type
         subst_id: :obj:`int`
-            ID of station according to database table #TODO: check type
+            ID of station and mv_grid_district according to database table Also used as ID for created grid.
         grid_district_geo_data: :shapely:`Shapely Polygon object<polygons>`
             Polygon of grid district, The geo-spatial polygon
             in the coordinate reference system with the
@@ -500,13 +497,13 @@ class NetworkDing0:
 
         """
 
-        logger.info(f"Build MV grid district: {poly_id}")
+        logger.info(f"Build MV grid district: {subst_id}")
         mv_station = MVStationDing0(id_db=subst_id, geo_data=station_geo_data)
 
         mv_grid = MVGridDing0(network=self,
-                              id_db=poly_id,
+                              id_db=subst_id,
                               station=mv_station)
-        mv_grid_district = MVGridDistrictDing0(id_db=poly_id,
+        mv_grid_district = MVGridDistrictDing0(id_db=subst_id,
                                                mv_grid=mv_grid,
                                                geo_data=grid_district_geo_data)
         mv_grid.grid_district = mv_grid_district
@@ -666,16 +663,14 @@ class NetworkDing0:
             logger.exception('cannot open config file.')
 
         # build SQL query
-        grid_districts = session.query(self.orm['orm_mv_grid_districts'].subst_id,
-                                       func.ST_AsText(func.ST_Transform(
-                                           self.orm['orm_mv_grid_districts'].geom, srid)). \
+        grid_districts = session.query(self.orm['orm_mv_grid_districts'].bus_id,
+                                       func.ST_AsText(self.orm['orm_mv_grid_districts'].geom). \
                                        label('poly_geom'),
-                                       func.ST_AsText(func.ST_Transform(
-                                           self.orm['orm_mv_stations'].point, srid)). \
+                                       func.ST_AsText(self.orm['orm_mv_stations'].point). \
                                        label('subs_geom')). \
-            join(self.orm['orm_mv_stations'], self.orm['orm_mv_grid_districts'].subst_id ==
-                 self.orm['orm_mv_stations'].subst_id). \
-            filter(self.orm['orm_mv_grid_districts'].subst_id.in_(mv_grid_districts_no)). \
+            join(self.orm['orm_mv_stations'], self.orm['orm_mv_grid_districts'].bus_id ==
+                 self.orm['orm_mv_stations'].bus_id). \
+            filter(self.orm['orm_mv_grid_districts'].bus_id.in_(mv_grid_districts_no)). \
             filter(self.orm['version_condition_mvgd']). \
             filter(self.orm['version_condition_mv_stations']). \
             distinct()
@@ -683,31 +678,16 @@ class NetworkDing0:
         # read MV data from db
         mv_data = pd.read_sql_query(grid_districts.statement,
                                     session.bind,
-                                    index_col='subst_id')
+                                    index_col='bus_id')
 
         # iterate over grid_district/station datasets and initiate objects
-        for poly_id, row in mv_data.iterrows():
-            subst_id = poly_id
+        for subst_id, row in mv_data.iterrows():
             region_geo_data = wkt_loads(row['poly_geom'])
-
-            # transform `region_geo_data` to epsg 3035
-            # to achieve correct area calculation of mv_grid_district
             station_geo_data = wkt_loads(row['subs_geom'])
-            # projection = partial(
-            #     pyproj.transform,
-            #     pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            #     pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-            #
-            # region_geo_data = transform(projection, region_geo_data)
             # transform to epsg 3035
             proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
-            region_geo_data = transform(proj_source, region_geo_data)
             station_geo_data = transform(proj_source, station_geo_data)
-
-            mv_grid_district = self.build_mv_grid_district(poly_id,
-                                                           subst_id,
-                                                           region_geo_data,
-                                                           station_geo_data)
+            mv_grid_district = self.build_mv_grid_district(subst_id, region_geo_data, station_geo_data)
 
             #### TODO: check ding0_legacy
             if ding0_legacy:
