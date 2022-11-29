@@ -230,7 +230,7 @@ def build_branches_on_osm_ways(lvgd):
 
         # station_id is node in graph which is root node
         station_id = lvgd.lv_grid._station.osm_id_node
-        print(lvgd)
+        # print(lvgd)
         # separate loads w. capacity: loads < 100 kW connected to grid
         lv_loads_grid = lvgd.buildings.loc[
             lvgd.buildings.capacity < get_config_osm('lv_threshold_capacity')]
@@ -393,21 +393,34 @@ def build_branches_on_osm_ways(lvgd):
         # add loads < 100 kW to Graph G
         for building_node, row in lv_loads_grid[
             ['x', 'y', 'capacity', 'nn', 'nn_dist', 'nn_coords', 'raccordement_building']].iterrows():
-            nn_attr = G.nodes[row.nn]
+            nn_attr = full_graph_simple.nodes[row.nn]
+            if "feederID" in nn_attr:
+                feedderId_nn = nn_attr['feederID']
+            elif "feederID" in G.nodes[row.nn]:
+                feedderId_nn = G.nodes[row.nn]['feederID']
+            else:
+                feederID += 1
+                feedderId_nn = feederID
+            if "residentials_total_at_feeder" in full_graph_simple.nodes[row.nn]:
+                residentials_total_at_feeder = full_graph_simple.nodes[row.nn]["residentials_total_at_feeder"]
+            elif "residentials_total_at_feeder" in G.nodes[row.nn]:
+                residentials_total_at_feeder = G.nodes[row.nn]["residentials_total_at_feeder"]
+            else:
+                residentials_total_at_feeder = 0
             # todo: update capacity with load for residentials
             attr = {'x': row.x,
                     'y': row.y,
                     'node_type': 'non_synthetic',
                     'cluster': nn_attr['cluster'],
                     'load': row.capacity,
-                    'feederID': nn_attr['feederID'],
-                    'residentials_total_at_feeder': nn_attr['residentials_total_at_feeder']
+                    'feederID': feedderId_nn,
+                    'residentials_total_at_feeder': residentials_total_at_feeder
                     }
 
             cable_type_stub = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
             G.add_node(building_node, **attr)
             G.add_edge(building_node, row.nn, 0, geometry=LineString([row.raccordement_building, row.nn_coords]),
-                       length=row.nn_dist, feederID=nn_attr['feederID'], cable_type_stub=cable_type_stub)
+                       length=row.nn_dist, feederID=feedderId_nn, cable_type_stub=cable_type_stub)
 
         # connect buildings to graph with capacity < 100 kW
         # loads 100 - 200 kW connected to lv station diretly
@@ -415,15 +428,17 @@ def build_branches_on_osm_ways(lvgd):
             (get_config_osm('lv_threshold_capacity') <= lvgd.buildings.capacity) &
             (lvgd.buildings.capacity < get_config_osm('mv_lv_threshold_capacity'))]
 
+        new_cluster_Id = 0
         for building_node, row in lv_loads_to_station[
             ['x', 'y', 'capacity', 'nn', 'nn_dist', 'nn_coords', 'raccordement_building', 'number_households']].iterrows():
             feederID += 1
-            nn_attr = G.nodes[row.nn]
+            new_cluster_Id += 1
+            nn_attr = full_graph_simple.nodes[row.nn]
             # todo: update capacity with load for residentials
             attr = {'x': row.x,
                     'y': row.y,
                     'node_type': 'non_synthetic',
-                    'cluster': nn_attr['cluster'],
+                    'cluster': nn_attr['cluster'] + new_cluster_Id,
                     'load': row.capacity,
                     'feederID': feederID,
                     'residentials_total_at_feeder': row.number_households
