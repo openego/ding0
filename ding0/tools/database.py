@@ -15,6 +15,7 @@ logger = logging.getLogger()
 package_path = ding0.__path__[0]
 cfg_ding0.load_config("config_db_tables.cfg")
 
+
 def get_database_type_from_config():
     input_data = cfg_ding0.get("input_data_source", "input_data")
     if input_data in ["model_draft", "versioned"]:
@@ -24,6 +25,7 @@ def get_database_type_from_config():
     else:
         raise ValueError("Selected not implemented database.")
     return database
+
 
 def engine(overwrite_database=None):
     """

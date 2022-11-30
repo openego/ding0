@@ -30,7 +30,7 @@ from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
 from ding0.tools.tools import merge_two_dicts_of_dataframes
 from ding0.core.network.loads import MVLoadDing0
-from ding0.grid.lv_grid.parameterization import parameterize_by_load_profiles, get_peak_load_diversity
+from ding0.grid.lv_grid.parameterization import get_peak_load_diversity
 
 
 import os
@@ -40,16 +40,14 @@ import random
 import time
 from math import isnan
 
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 import subprocess
 import json
-import oedialect
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
-    from shapely.geometry import Point, MultiPoint, MultiLineString, LineString, Polygon  # PAUL NEW
+    from shapely.geometry import Point, MultiPoint, MultiLineString, LineString  # PAUL NEW
     from shapely.geometry import shape, mapping
     from shapely.wkt import dumps as wkt_dumps
 
@@ -62,13 +60,7 @@ package_path = ding0.__path__[0]
 if 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
 
-from ding0.config.db_conn_local import create_session_osm
-from ding0.data.egon_data import egon_db as db_egon
-
 from ding0.config.config_lv_grids_osm import get_config_osm
-
-from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways, \
-    get_osm_buildings_w_a, get_osm_buildings_wo_a, get_osm_amenities_ni_Buildings
 
 from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
     build_graph_from_ways, create_buffer_polygons, graph_nodes_outside_buffer_polys, \
@@ -80,14 +72,12 @@ from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
 from ding0.grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
 
 from ding0.grid.lv_grid.routing import assign_nearest_nodes_to_buildings, \
-    get_lvgd_id, identify_street_loads, get_mvlv_subst_loc_list, \
-    connect_mv_loads_to_graph
-
-from ding0.grid.lv_grid.parameterization import parameterize_by_load_profiles
+    get_lvgd_id, identify_street_loads, connect_mv_loads_to_graph
 
 from ding0.grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, \
     get_bounding_box_from_points, get_load_center_node, get_load_center_coords
 
+import ding0.tools.egon_data_integration as db_io
 
 ############ NEW END
 
@@ -245,7 +235,7 @@ class NetworkDing0:
         return self._orm
 
     def run_ding0(self, session, mv_grid_districts_no=None, debug=False, export_figures=False,
-                  ding0_legacy=False, local_db=False, egon_db=False, path=None):
+                  ding0_legacy=False, path=None):
 
         """
         Let DING0 run by shouting at this method (or just call
@@ -343,10 +333,10 @@ class NetworkDing0:
             start = time.time()
 
         logger.info("STEP 1: Import MV Grid Districts and subjacent objects")
-        self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_legacy, local_db, egon_db)
+        self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_legacy=ding0_legacy)
 
-        logger.info("STEP 2: Import generators")
-        self.import_generators(session, debug=debug)
+        # logger.info("STEP 2: Import generators")
+        # self.import_generators(session, debug=debug)
 
         logger.info("STEP 3: Parametrize MV grid")
         self.mv_parametrize_grid(debug=debug)
@@ -621,11 +611,10 @@ class NetworkDing0:
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-    def import_mv_grid_districts(self, session,
+    def import_mv_grid_districts(self,
+                                 session,
                                  mv_grid_districts_no,
-                                 ding0_legacy=True,
-                                 local_db=False,
-                                 egon_db=False,
+                                 ding0_legacy=False,
                                  create_lvgd_geo_method='convex_hull'):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
@@ -704,18 +693,9 @@ class NetworkDing0:
 
 
             else:
-
-                # import lv areas and create new lv_grid_districts
-                # 1) ####
-                # return self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district,
-                #                                                            local_db,
-                #                                                            egon_db,
-                #                                                            create_lvgd_geo_method)
-
-                self.import_lv_load_areas_and_build_new_lv_districts(session, mv_grid_district,
-                                                                     local_db,
-                                                                     egon_db,
-                                                                     create_lvgd_geo_method)
+                self.import_lv_load_areas_and_build_new_lv_districts(
+                    session, mv_grid_district, create_lvgd_geo_method
+                )
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
             mv_grid_district.add_peak_demand()
@@ -723,8 +703,9 @@ class NetworkDing0:
         logger.info('=====> MV Grid Districts imported')
         logger.warning('=====> MV Grid Districts imported')
 
-    def import_lv_load_areas_and_build_new_lv_districts(self, session, mv_grid_district,
-                                                        local_db, egon_db, create_lvgd_geo_method):
+    def import_lv_load_areas_and_build_new_lv_districts(
+            self, session, mv_grid_district, create_lvgd_geo_method
+    ):
 
         """
         Imports load_areas (load areas) from database for a single MV grid_district
@@ -738,18 +719,12 @@ class NetworkDing0:
             which the import of load areas is performed
         """
 
-        # get ding0s' standard CRS (SRID)
-        # srid = str(int(cfg_ding0.get('geo', 'srid')))
-        # SET SRID 3035 to achieve correct area calculation of lv_grid_district
-
-        # TODO: check epsg: this may be working for osm data only
         srid = '3035'
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
         lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
-
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in MW -> scale to kW
         lv_nominal_voltage = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
 
         # build SQL query
@@ -757,47 +732,34 @@ class NetworkDing0:
             self.orm['orm_lv_load_areas'].id.label('id_db'),
             self.orm['orm_lv_load_areas'].zensus_sum.label('population'),
             self.orm['orm_lv_load_areas'].zensus_count.label('zensus_cnt'),
-            self.orm['orm_lv_load_areas'].ioer_sum,
-            self.orm['orm_lv_load_areas'].ioer_count.label('ioer_cnt'),
             self.orm['orm_lv_load_areas'].area_ha.label('area'),
-            self.orm['orm_lv_load_areas'].sector_area_residential,
-            self.orm['orm_lv_load_areas'].sector_area_retail,
-            self.orm['orm_lv_load_areas'].sector_area_industrial,
             self.orm['orm_lv_load_areas'].sector_area_agricultural,
-            self.orm['orm_lv_load_areas'].sector_share_residential,
-            self.orm['orm_lv_load_areas'].sector_share_retail,
-            self.orm['orm_lv_load_areas'].sector_share_industrial,
+            self.orm['orm_lv_load_areas'].sector_area_cts,
+            self.orm['orm_lv_load_areas'].sector_area_industrial,
+            self.orm['orm_lv_load_areas'].sector_area_residential,
             self.orm['orm_lv_load_areas'].sector_share_agricultural,
-            self.orm['orm_lv_load_areas'].sector_count_residential,
-            self.orm['orm_lv_load_areas'].sector_count_retail,
-            self.orm['orm_lv_load_areas'].sector_count_industrial,
+            self.orm['orm_lv_load_areas'].sector_share_cts,
+            self.orm['orm_lv_load_areas'].sector_share_industrial,
+            self.orm['orm_lv_load_areas'].sector_share_residential,
             self.orm['orm_lv_load_areas'].sector_count_agricultural,
+            self.orm['orm_lv_load_areas'].sector_count_cts,
+            self.orm['orm_lv_load_areas'].sector_count_industrial,
+            self.orm['orm_lv_load_areas'].sector_count_residential,
             self.orm['orm_lv_load_areas'].nuts.label('nuts_code'),
-            func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom, srid)). \
-                label('geo_area'),
-            func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom_centre, srid)). \
-                label('geo_centre'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_residential * gw2kw). \
-                label('peak_load_residential'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_retail * gw2kw). \
-                label('peak_load_retail'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * gw2kw). \
-                label('peak_load_industrial'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * gw2kw). \
-                label('peak_load_agricultural'),
-            ((self.orm['orm_lv_load_areas'].sector_peakload_residential
-              + self.orm['orm_lv_load_areas'].sector_peakload_retail
+            func.ST_AsText(self.orm['orm_lv_load_areas'].geom).label('geo_area'),
+            func.ST_AsText(self.orm['orm_lv_load_areas'].geom_centre).label('geo_centre'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_cts * mw2kw).label('peak_load_cts'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * mw2kw).label('peak_load_industrial'),
+            (self.orm['orm_lv_load_areas'].sector_peakload_residential * mw2kw).label('peak_load_residential'),
+            ((self.orm['orm_lv_load_areas'].sector_peakload_cts
               + self.orm['orm_lv_load_areas'].sector_peakload_industrial
-              + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
-             * gw2kw).label('peak_load')). \
-            filter(self.orm['orm_lv_load_areas'].subst_id == mv_grid_district. \
-                   mv_grid._station.id_db). \
-            filter(((self.orm[
-                         'orm_lv_load_areas'].sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
-                     + self.orm['orm_lv_load_areas'].sector_peakload_retail
+              + self.orm['orm_lv_load_areas'].sector_peakload_residential)
+             * mw2kw).label('peak_load')). \
+            filter(self.orm['orm_lv_load_areas'].bus_id == mv_grid_district.mv_grid._station.id_db). \
+            filter(((self.orm['orm_lv_load_areas'].sector_peakload_cts
                      + self.orm['orm_lv_load_areas'].sector_peakload_industrial
-                     + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
-                    * gw2kw) > lv_loads_threshold). \
+                     + self.orm['orm_lv_load_areas'].sector_peakload_residential)
+                    * mw2kw) > lv_loads_threshold). \
             filter(self.orm['version_condition_la'])
 
         # read data from db
@@ -805,51 +767,19 @@ class NetworkDing0:
                                           session.bind,
                                           index_col='id_db')
 
-        # create session to load from (local) DB OSM data
-        if local_db:
-            session_osm = create_session_osm()
-        elif egon_db:
-            session_osm = db_egon.engine()
 
         # create load_area objects from rows and add them to graph
         logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
         for id_db, row in lv_load_areas.iterrows():
             logger.info(f"Build LV Load Area: {id_db}")
-            # 2)
-            # todo: remove. exists to process a selected load area instead all load areas.
-            #if id_db != 4488: # 2128, 4347, 4488, 5588. no buildings: 2625, GB 170209 ####
-            #    continue
-
             # transform geo_load_area from str to poly
             # buildings without buffer, ways with buffer
             geo_load_area = wkt_loads(row.geo_area)
-
             # get buffer_poly_list
             buffer_poly_list = create_buffer_polygons(geo_load_area)
-
             # load ways from db for last element of buffer_poly_list
-            if local_db:
 
-                ways = get_osm_ways(buffer_poly_list[-1].wkt, session_osm)
-                ways_sql_df = pd.read_sql(
-                    ways.statement,
-                    con=session_osm.bind
-                    # con=engine_osm both ways are working. select the easier/ more appropriate one
-                )
-
-            elif egon_db:
-
-                from ding0.data.egon_data.egon_data_integration import get_egon_ways
-
-                ways = get_egon_ways(buffer_poly_list[-1].wkt)
-                ways_sql_df = pd.read_sql(
-                    sql=ways.statement,
-                    con=ways.session.bind,
-                    index_col=None
-                )
-
-            else:
-                ValueError('No database source defined, set local_db or egon_db True')
+            ways_sql_df = db_io.get_egon_ways(self.orm, session, buffer_poly_list[-1].wkt)
 
             # if ways found in query build graph from osm data
             if not ways_sql_df.empty:
@@ -858,7 +788,7 @@ class NetworkDing0:
                 ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
 
                 # build graph
-                graph = build_graph_from_ways(ways)
+                graph = build_graph_from_ways(ways_sql_df)
 
                 # get nodes to remove from graph
                 # is a list of lists containing
@@ -908,69 +838,41 @@ class NetworkDing0:
             composed_graph = compose_graph(outer_graph, graph_subdiv)
 
             # building_loads
-            if local_db:
-                # load buildings and amenities
-                ### Load buildings_w_a, wo_a, a
-                buildings_w_a = get_osm_buildings_w_a(row.geo_area, session_osm)
-                buildings_wo_a = get_osm_buildings_wo_a(row.geo_area, session_osm)
-                amenities_ni_Buildings = get_osm_amenities_ni_Buildings(row.geo_area, session_osm)
+            # import residential buildings from egon data
+            buildings_residential = db_io.get_egon_residential_buildings(
+                self.orm, session, row.geo_area, scenario="eGon2035"
+            )
+            if (len(buildings_residential)) < 1:
+                logger.warning(
+                    f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
+                continue
 
-                if (len(buildings_w_a) + len(buildings_wo_a) + len(amenities_ni_Buildings)) < 1:
-                    logger.warning(
-                        f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
-                    continue
+            # import cts buildings from egon data
+            buildings_cts = db_io.get_egon_cts_buildings(self.orm, session, row.geo_area, scenario="eGon2035")
+            buildings_w_loads_df = pd.concat([buildings_residential, buildings_cts], ignore_index=True)
 
-                # parameterization and merge to buildings_df
-                buildings_w_loads_df = parameterize_by_load_profiles(amenities_ni_Buildings, buildings_w_a,
-                                                                     buildings_wo_a)
+            # sum capacity of buildings with the same id
+            if buildings_w_loads_df["id"].duplicated(keep=False).any():
+                def sum_capacity(x):
+                    y = x.iloc[0]
+                    if x.shape[0] > 1:
+                        y["category"] = "mixed_residential_cts"
+                    y["capacity"] = x["capacity"].sum()
+                    return y
+                buildings_w_loads_df = buildings_w_loads_df.groupby(["id"], as_index=False).apply(sum_capacity)
+                logger.warning("There is a building_id which have cts and residential.")
 
-                # sort index to make load allocation reproducible
-                buildings_w_loads_df.sort_index(inplace=True)
+            if buildings_w_loads_df["id"].duplicated(keep=False).any():
+                raise ValueError("There are duplicated building_ids, "
+                                 "for residential non-synthetic and synthetic buildings.")
 
-            elif egon_db:
+            if buildings_w_loads_df.empty:
+                raise ValueError("There are no buildings for the LoadArea.")
 
-                from ding0.data.egon_data.egon_data_integration import (get_egon_residential_buildings, get_egon_ways)
+            buildings_w_loads_df.set_index('id', inplace=True)
+            # sort index to make load allocation reproducible
+            buildings_w_loads_df.sort_index(inplace=True)
 
-                # import residential buildings from egon data
-                buildings_residential = get_egon_residential_buildings(row.geo_area, scenario="eGon2035")
-
-                if (len(buildings_residential)) < 1:
-                    logger.warning(
-                        f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
-                    continue
-
-
-                from ding0.data.egon_data.egon_data_integration import get_egon_cts_buildings
-
-                # import cts buildings from egon data
-                buildings_cts = get_egon_cts_buildings(row.geo_area, scenario="eGon2035")
-                buildings_w_loads_df = pd.concat([buildings_residential, buildings_cts], ignore_index=True)
-
-                # sum capacity of buildings with the same id
-                if buildings_w_loads_df["id"].duplicated(keep=False).any():
-                    def sum_capacity(x):
-                        y = x.iloc[0]
-                        if x.shape[0] > 1:
-                            y["category"] = "mixed_residential_cts"
-                        y["capacity"] = x["capacity"].sum()
-                        return y
-                    buildings_w_loads_df = buildings_w_loads_df.groupby(["id"], as_index=False).apply(sum_capacity)
-
-                if buildings_w_loads_df["id"].duplicated(keep=False).any():
-                    raise ValueError("There are duplicated building_ids, "
-                                     "for residential non-synthetic and synthetic buildings.")
-
-                if buildings_w_loads_df.empty:
-                    raise ValueError("There are no buildings for the LoadArea.")
-
-                buildings_w_loads_df.set_index('id', inplace=True)
-                # sort index to make load allocation reproducible
-                buildings_w_loads_df.sort_index(inplace=True)
-
-            else:
-
-                # todo: load ding0 default loads
-                ValueError('No database source defined, set local_db or egon_db True')
 
             # if composed graph of type synthetic (no osm ways have been found) update
             # graph node's coord (geo load center) using building's positions and peak loads
@@ -1188,7 +1090,7 @@ class NetworkDing0:
         # load area
         lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
 
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in GW -> scale to kW
 
         # build SQL query
         lv_load_areas_sqla = session.query(
@@ -1215,19 +1117,19 @@ class NetworkDing0:
                 label('geo_area'),
             func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom_centre, srid)). \
                 label('geo_centre'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_residential * gw2kw). \
+            (self.orm['orm_lv_load_areas'].sector_peakload_residential * mw2kw). \
                 label('peak_load_residential'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_retail * gw2kw). \
+            (self.orm['orm_lv_load_areas'].sector_peakload_retail * mw2kw). \
                 label('peak_load_retail'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * gw2kw). \
+            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * mw2kw). \
                 label('peak_load_industrial'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * gw2kw). \
+            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * mw2kw). \
                 label('peak_load_agricultural'),
             ((self.orm['orm_lv_load_areas'].sector_peakload_residential
               + self.orm['orm_lv_load_areas'].sector_peakload_retail
               + self.orm['orm_lv_load_areas'].sector_peakload_industrial
               + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
-             * gw2kw).label('peak_load')). \
+             * mw2kw).label('peak_load')). \
             filter(self.orm['orm_lv_load_areas'].subst_id == mv_grid_district. \
                    mv_grid._station.id_db). \
             filter(((self.orm[
@@ -1235,7 +1137,7 @@ class NetworkDing0:
                      + self.orm['orm_lv_load_areas'].sector_peakload_retail
                      + self.orm['orm_lv_load_areas'].sector_peakload_industrial
                      + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
-                    * gw2kw) > lv_loads_threshold). \
+                    * mw2kw) > lv_loads_threshold). \
             filter(self.orm['version_condition_la'])
 
         # read data from db
@@ -1292,7 +1194,7 @@ class NetworkDing0:
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
         # srid = '3035'
 
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in GW -> scale to kW
 
         # 1. filter grid districts of relevant load area
         lv_grid_districs_sqla = session.query(
@@ -1300,21 +1202,21 @@ class NetworkDing0:
             self.orm['orm_lv_grid_district'].la_id,
             self.orm['orm_lv_grid_district'].zensus_sum.label('population'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_residential * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_residential * mw2kw).
                 label('peak_load_residential'),
-            (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
+            (self.orm['orm_lv_grid_district'].sector_peakload_retail * mw2kw).
                 label('peak_load_retail'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_industrial * mw2kw).
                 label('peak_load_industrial'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_agricultural * mw2kw).
                 label('peak_load_agricultural'),
             ((self.orm['orm_lv_grid_district'].sector_peakload_residential
               + self.orm['orm_lv_grid_district'].sector_peakload_retail
               + self.orm['orm_lv_grid_district'].sector_peakload_industrial
               + self.orm['orm_lv_grid_district'].sector_peakload_agricultural)
-             * gw2kw).label('peak_load'),
+             * mw2kw).label('peak_load'),
             func.ST_AsText(func.ST_Transform(
                 self.orm['orm_lv_grid_district'].geom, srid)).label('geom'),
             self.orm['orm_lv_grid_district'].sector_count_residential,
@@ -1322,15 +1224,15 @@ class NetworkDing0:
             self.orm['orm_lv_grid_district'].sector_count_industrial,
             self.orm['orm_lv_grid_district'].sector_count_agricultural,
             (self.orm[
-                 'orm_lv_grid_district'].sector_consumption_residential * gw2kw). \
+                 'orm_lv_grid_district'].sector_consumption_residential * mw2kw). \
                 label('sector_consumption_residential'),
-            (self.orm['orm_lv_grid_district'].sector_consumption_retail * gw2kw). \
+            (self.orm['orm_lv_grid_district'].sector_consumption_retail * mw2kw). \
                 label('sector_consumption_retail'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_consumption_industrial * gw2kw). \
+                 'orm_lv_grid_district'].sector_consumption_industrial * mw2kw). \
                 label('sector_consumption_industrial'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_consumption_agricultural * gw2kw). \
+                 'orm_lv_grid_district'].sector_consumption_agricultural * mw2kw). \
                 label('sector_consumption_agricultural'),
             self.orm['orm_lv_grid_district'].mvlv_subst_id). \
             filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(
@@ -1780,6 +1682,12 @@ class NetworkDing0:
         lv_stations_name = self.config[data_source]['lv_stations']
         conv_generators_name = self.config[data_source]['conv_generators']
         re_generators_name = self.config[data_source]['re_generators']
+        osm_ways_with_segments = self.config[data_source]['osm_ways_with_segments']
+        osm_buildings_residential = self.config[data_source]['osm_buildings_residential']
+        osm_buildings_synthetic = self.config[data_source]['osm_buildings_synthetic']
+        osm_buildings_filtered = self.config[data_source]['osm_buildings_filtered']
+        household_electricity_profile = self.config[data_source]['household_electricity_profile']
+        building_peak_loads = self.config[data_source]['building_peak_loads']
 
         from egoio.db_tables import model_draft as orm_model_draft, \
             supply as orm_supply, \
@@ -1795,6 +1703,12 @@ class NetworkDing0:
         saio.register_schema("openstreetmap", engine)
         saio.register_schema("boundaries", engine)
         saio.register_schema("grid", engine)
+        saio.register_schema("openstreetmap", engine)
+        saio.register_schema("boundaries", engine)
+
+        # from saio.demand import tables of interest
+        # from saio.demand import egon_household_electricity_profile_of_buildings, egon_building_electricity_peak_loads
+        # from saio.openstreetmap import (osm_buildings_residential, osm_buildings_synthetic, osm_ways_with_segments, osm_buildings_filtered)
 
         if data_source == 'model_draft':
             orm['orm_mv_grid_districts'] = orm_model_draft.__getattribute__(mv_grid_districts_name)
@@ -1842,6 +1756,13 @@ class NetworkDing0:
             # orm['orm_lv_stations'] = orm_grid.__getattribute__(lv_stations_name)
             orm['orm_conv_generators'] = orm_model_draft.__getattribute__(conv_generators_name)
             orm['orm_re_generators'] = orm_model_draft.__getattribute__(re_generators_name)
+            orm['osm_ways_with_segments'] = sys.modules["saio.openstreetmap"].__getattr__(osm_ways_with_segments)
+            orm['osm_buildings_residential'] = sys.modules["saio.openstreetmap"].__getattr__(osm_buildings_residential)
+            orm['osm_buildings_synthetic'] = sys.modules["saio.openstreetmap"].__getattr__(osm_buildings_synthetic)
+            orm['osm_buildings_filtered'] = sys.modules["saio.openstreetmap"].__getattr__(osm_buildings_filtered)
+            orm['household_electricity_profile'] = sys.modules["saio.demand"].__getattr__(household_electricity_profile)
+            orm['building_peak_loads'] = sys.modules["saio.demand"].__getattr__(building_peak_loads)
+
             orm['version_condition_mvgd'] = True
             orm['version_condition_mv_stations'] = True
             orm['version_condition_la'] = True
@@ -2788,7 +2709,7 @@ class NetworkDing0:
         lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
         # lv_loads_threshold = 0
 
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in GW -> scale to kW
 
         # filter list for only desired MV districts
         stations_list = [d.mv_grid._station.id_db for d in mv_districts]
@@ -2796,13 +2717,13 @@ class NetworkDing0:
         # build SQL query
         lv_load_areas_sqla = session.query(
             self.orm['orm_lv_load_areas'].id.label('id_db'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_residential * gw2kw). \
+            (self.orm['orm_lv_load_areas'].sector_peakload_residential * mw2kw). \
                 label('peak_load_residential'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_retail * gw2kw). \
+            (self.orm['orm_lv_load_areas'].sector_peakload_retail * mw2kw). \
                 label('peak_load_retail'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * gw2kw). \
+            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * mw2kw). \
                 label('peak_load_industrial'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * gw2kw). \
+            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * mw2kw). \
                 label('peak_load_agricultural'),
             # self.orm['orm_lv_load_areas'].subst_id
         ). \
@@ -2812,7 +2733,7 @@ class NetworkDing0:
                      + self.orm['orm_lv_load_areas'].sector_peakload_retail
                      + self.orm['orm_lv_load_areas'].sector_peakload_industrial
                      + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
-                    * gw2kw) > lv_loads_threshold). \
+                    * mw2kw) > lv_loads_threshold). \
             filter(self.orm['version_condition_la'])
 
         # read data from db
@@ -2838,21 +2759,21 @@ class NetworkDing0:
             Pandas Data Frame
             Table of lv_grid_districts
         """
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in GW -> scale to kW
 
         # 1. filter grid districts of relevant load area
         lv_grid_districs_sqla = session.query(
             self.orm['orm_lv_grid_district'].mvlv_subst_id,
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_residential * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_residential * mw2kw).
                 label('peak_load_residential'),
-            (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
+            (self.orm['orm_lv_grid_district'].sector_peakload_retail * mw2kw).
                 label('peak_load_retail'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_industrial * mw2kw).
                 label('peak_load_industrial'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_agricultural * mw2kw).
                 label('peak_load_agricultural'),
         ). \
             filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(

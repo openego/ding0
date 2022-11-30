@@ -32,7 +32,7 @@ def update_ways_geo_to_shape(ways_sql_df):
     return ways_sql_df
 
 
-def build_graph_from_ways(ways):
+def build_graph_from_ways(ways_df):
 
     """ 
     Build graph based on osm ways
@@ -40,23 +40,24 @@ def build_graph_from_ways(ways):
     """
     # init a graph and set srid.
     graph = nx.MultiGraph()
-    graph.graph["crs"] = 'epsg:'+str(get_config_osm('srid'))
+    graph.graph["crs"] = 'epsg:' + str(get_config_osm('srid'))
     graph.graph["source"] = 'osm'
 
-    for w in ways:
+    for index, osm_id, nodes, geometry, highway, length_segments in ways_df.itertuples():
         # add edges
         ix = 0
-        for node in w.nodes[:-1]:
-            # add_edge(u,v,geometry=line,length=leng,highway=highway,osmid=osmid)
-            graph.add_edge(w.nodes[ix], w.nodes[ix+1], length=w.length_segments[ix], 
-                                  osmid=w.osm_id, highway=w.highway)
+        for node in nodes[:-1]:
+            graph.add_edge(nodes[ix],
+                           nodes[ix + 1],
+                           length=length_segments[ix],
+                           osmid=osm_id,
+                           highway=highway)
             ix += 1
 
         # add coords
         ix = 0
-        coords_list = list(to_shape(w.geometry).coords)
-        
-        for node in w.nodes:
+        coords_list = list(geometry)
+        for node in nodes:
             graph.nodes[node]['x'] = coords_list[ix][0]
             graph.nodes[node]['y'] = coords_list[ix][1]
             graph.nodes[node]['node_type'] = 'non_synthetic'
@@ -64,8 +65,8 @@ def build_graph_from_ways(ways):
             ix += 1
 
     # convert undirected graph to digraph due to truncate_graph_polygon
-    graph = graph.to_directed()  
-    
+    graph = graph.to_directed()
+
     return graph
 
 
