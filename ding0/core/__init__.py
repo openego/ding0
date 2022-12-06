@@ -336,7 +336,7 @@ class NetworkDing0:
         self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_legacy=ding0_legacy)
 
         # logger.info("STEP 2: Import generators")
-        # self.import_generators(session, debug=debug)
+        self.import_generators(session, debug=debug)
 
         logger.info("STEP 3: Parametrize MV grid")
         self.mv_parametrize_grid(debug=debug)
@@ -651,23 +651,7 @@ class NetworkDing0:
         except OSError:
             logger.exception('cannot open config file.')
 
-        # build SQL query
-        grid_districts = session.query(self.orm['orm_mv_grid_districts'].bus_id,
-                                       func.ST_AsText(self.orm['orm_mv_grid_districts'].geom). \
-                                       label('poly_geom'),
-                                       func.ST_AsText(self.orm['orm_mv_stations'].point). \
-                                       label('subs_geom')). \
-            join(self.orm['orm_mv_stations'], self.orm['orm_mv_grid_districts'].bus_id ==
-                 self.orm['orm_mv_stations'].bus_id). \
-            filter(self.orm['orm_mv_grid_districts'].bus_id.in_(mv_grid_districts_no)). \
-            filter(self.orm['version_condition_mvgd']). \
-            filter(self.orm['version_condition_mv_stations']). \
-            distinct()
-
-        # read MV data from db
-        mv_data = pd.read_sql_query(grid_districts.statement,
-                                    session.bind,
-                                    index_col='bus_id')
+        mv_data = db_io.get_mv_data(self.orm, session, mv_grid_districts_no)
 
         # iterate over grid_district/station datasets and initiate objects
         for subst_id, row in mv_data.iterrows():
@@ -719,54 +703,7 @@ class NetworkDing0:
             which the import of load areas is performed
         """
 
-        srid = '3035'
-
-        # threshold: load area peak load, if peak load < threshold => disregard
-        # load area
-        lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
-        mw2kw = 10 ** 3  # load in database is in MW -> scale to kW
-        lv_nominal_voltage = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
-
-        # build SQL query
-        lv_load_areas_sqla = session.query(
-            self.orm['orm_lv_load_areas'].id.label('id_db'),
-            self.orm['orm_lv_load_areas'].zensus_sum.label('population'),
-            self.orm['orm_lv_load_areas'].zensus_count.label('zensus_cnt'),
-            self.orm['orm_lv_load_areas'].area_ha.label('area'),
-            self.orm['orm_lv_load_areas'].sector_area_agricultural,
-            self.orm['orm_lv_load_areas'].sector_area_cts,
-            self.orm['orm_lv_load_areas'].sector_area_industrial,
-            self.orm['orm_lv_load_areas'].sector_area_residential,
-            self.orm['orm_lv_load_areas'].sector_share_agricultural,
-            self.orm['orm_lv_load_areas'].sector_share_cts,
-            self.orm['orm_lv_load_areas'].sector_share_industrial,
-            self.orm['orm_lv_load_areas'].sector_share_residential,
-            self.orm['orm_lv_load_areas'].sector_count_agricultural,
-            self.orm['orm_lv_load_areas'].sector_count_cts,
-            self.orm['orm_lv_load_areas'].sector_count_industrial,
-            self.orm['orm_lv_load_areas'].sector_count_residential,
-            self.orm['orm_lv_load_areas'].nuts.label('nuts_code'),
-            func.ST_AsText(self.orm['orm_lv_load_areas'].geom).label('geo_area'),
-            func.ST_AsText(self.orm['orm_lv_load_areas'].geom_centre).label('geo_centre'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_cts * mw2kw).label('peak_load_cts'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * mw2kw).label('peak_load_industrial'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_residential * mw2kw).label('peak_load_residential'),
-            ((self.orm['orm_lv_load_areas'].sector_peakload_cts
-              + self.orm['orm_lv_load_areas'].sector_peakload_industrial
-              + self.orm['orm_lv_load_areas'].sector_peakload_residential)
-             * mw2kw).label('peak_load')). \
-            filter(self.orm['orm_lv_load_areas'].bus_id == mv_grid_district.mv_grid._station.id_db). \
-            filter(((self.orm['orm_lv_load_areas'].sector_peakload_cts
-                     + self.orm['orm_lv_load_areas'].sector_peakload_industrial
-                     + self.orm['orm_lv_load_areas'].sector_peakload_residential)
-                    * mw2kw) > lv_loads_threshold). \
-            filter(self.orm['version_condition_la'])
-
-        # read data from db
-        lv_load_areas = pd.read_sql_query(lv_load_areas_sqla.statement,
-                                          session.bind,
-                                          index_col='id_db')
-
+        lv_load_areas = db_io.get_lv_load_areas(self.orm, session, mv_grid_district)
 
         # create load_area objects from rows and add them to graph
         logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
@@ -1313,33 +1250,7 @@ class NetworkDing0:
             """
             Imports renewable (res) generators
             """
-            srid = 3035  # new to calc distance matrix in step 6
-
-            # build query
-            generators_sqla = session.query(
-                self.orm['orm_re_generators'].columns.id,
-                self.orm['orm_re_generators'].columns.subst_id,
-                self.orm['orm_re_generators'].columns.la_id,
-                self.orm['orm_re_generators'].columns.mvlv_subst_id,
-                self.orm['orm_re_generators'].columns.electrical_capacity,
-                self.orm['orm_re_generators'].columns.generation_type,
-                self.orm['orm_re_generators'].columns.generation_subtype,
-                self.orm['orm_re_generators'].columns.voltage_level,
-                self.orm['orm_re_generators'].columns.w_id,
-                func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_re_generators'].columns.rea_geom_new, srid)).label('geom_new'),
-                func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_re_generators'].columns.geom, srid)).label('geom')
-            ). \
-                filter(
-                self.orm['orm_re_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
-                filter(self.orm['orm_re_generators'].columns.voltage_level.in_([4, 5, 6, 7])). \
-                filter(self.orm['version_condition_re'])
-
-            # read data from db
-            generators = pd.read_sql_query(generators_sqla.statement,
-                                           session.bind,
-                                           index_col='id')
+            generators = db_io.get_res_generators(self.orm, session, mv_grid_districts_dict)
             # define generators with unknown subtype as 'unknown'
             generators.loc[generators[
                                'generation_subtype'].isnull(),
@@ -1446,27 +1357,7 @@ class NetworkDing0:
             """
             Imports conventional (conv) generators
             """
-            srid = 3035  # new to calc distance matrix in step 6
-
-            # build query
-            generators_sqla = session.query(
-                self.orm['orm_conv_generators'].columns.id,
-                self.orm['orm_conv_generators'].columns.subst_id,
-                self.orm['orm_conv_generators'].columns.name,
-                self.orm['orm_conv_generators'].columns.capacity,
-                self.orm['orm_conv_generators'].columns.fuel,
-                self.orm['orm_conv_generators'].columns.voltage_level,
-                func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_conv_generators'].columns.geom, srid)).label('geom')). \
-                filter(
-                self.orm['orm_conv_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
-                filter(self.orm['orm_conv_generators'].columns.voltage_level.in_([4, 5, 6])). \
-                filter(self.orm['version_condition_conv'])
-
-            # read data from db
-            generators = pd.read_sql_query(generators_sqla.statement,
-                                           session.bind,
-                                           index_col='id')
+            generators = db_io.get_conv_generators(self.orm, session, mv_grid_districts_dict)
 
             for id_db, row in generators.iterrows():
 
@@ -1699,16 +1590,10 @@ class NetworkDing0:
         import sys
 
         engine = database.engine()
-        saio.register_schema("demand", engine)
-        saio.register_schema("openstreetmap", engine)
         saio.register_schema("boundaries", engine)
+        saio.register_schema("demand", engine)
         saio.register_schema("grid", engine)
         saio.register_schema("openstreetmap", engine)
-        saio.register_schema("boundaries", engine)
-
-        # from saio.demand import tables of interest
-        # from saio.demand import egon_household_electricity_profile_of_buildings, egon_building_electricity_peak_loads
-        # from saio.openstreetmap import (osm_buildings_residential, osm_buildings_synthetic, osm_ways_with_segments, osm_buildings_filtered)
 
         if data_source == 'model_draft':
             orm['orm_mv_grid_districts'] = orm_model_draft.__getattribute__(mv_grid_districts_name)
