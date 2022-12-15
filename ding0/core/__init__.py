@@ -1562,47 +1562,27 @@ class NetworkDing0:
             used to build grids are stored on the open
             energy platform.
         """
-
-        orm = {}
-
-        data_source = self.config['input_data_source']['input_data']
-        mv_grid_districts_name = self.config[data_source]['mv_grid_districts']
-        mv_stations_name = self.config[data_source]['mv_stations']
-        lv_load_areas_name = self.config[data_source]['lv_load_areas']
-        lv_grid_district_name = self.config[data_source]['lv_grid_district']
-        lv_stations_name = self.config[data_source]['lv_stations']
-        conv_generators_name = self.config[data_source]['conv_generators']
-        re_generators_name = self.config[data_source]['re_generators']
-        osm_ways_with_segments = self.config[data_source]['osm_ways_with_segments']
-        osm_buildings_residential = self.config[data_source]['osm_buildings_residential']
-        osm_buildings_synthetic = self.config[data_source]['osm_buildings_synthetic']
-        osm_buildings_filtered = self.config[data_source]['osm_buildings_filtered']
-        household_electricity_profile = self.config[data_source]['household_electricity_profile']
-        building_peak_loads = self.config[data_source]['building_peak_loads']
-
-        from egoio.db_tables import model_draft as orm_model_draft, \
-            supply as orm_supply, \
-            demand as orm_demand, \
-            grid as orm_grid
-
         from ding0.tools import database
         import saio
         import sys
 
+        orm = {}
+        data_source = self.config['input_data_source']['input_data']
         engine = database.engine()
-        saio.register_schema("boundaries", engine)
-        saio.register_schema("demand", engine)
-        saio.register_schema("grid", engine)
-        saio.register_schema("openstreetmap", engine)
+
+        def write_table_in_dict(orm, engine, name, table_str):
+            table_list = table_str.split(".")
+            table_schema = table_list[0]
+            table_name = table_list[1]
+            saio.register_schema(table_schema, engine)
+            orm[name] = sys.modules[f"saio.{table_schema}"].__getattr__(table_name)
+            return orm
+
+        for name, table_str in self.config[data_source].items():
+            if not name == "version":
+                orm = write_table_in_dict(orm, engine, name, table_str)
 
         if data_source == 'model_draft':
-            orm['orm_mv_grid_districts'] = orm_model_draft.__getattribute__(mv_grid_districts_name)
-            orm['orm_mv_stations'] = orm_model_draft.__getattribute__(mv_stations_name)
-            orm['orm_lv_load_areas'] = orm_model_draft.__getattribute__(lv_load_areas_name)
-            orm['orm_lv_grid_district'] = orm_model_draft.__getattribute__(lv_grid_district_name)
-            orm['orm_lv_stations'] = orm_model_draft.__getattribute__(lv_stations_name)
-            orm['orm_conv_generators'] = orm_model_draft.__getattribute__(conv_generators_name)
-            orm['orm_re_generators'] = orm_model_draft.__getattribute__(re_generators_name)
             orm['version_condition_mvgd'] = 1 == 1
             orm['version_condition_mv_stations'] = 1 == 1
             orm['version_condition_la'] = 1 == 1
@@ -1611,13 +1591,6 @@ class NetworkDing0:
             orm['version_condition_re'] = 1 == 1
             orm['version_condition_conv'] = 1 == 1
         elif data_source == 'versioned':
-            orm['orm_mv_grid_districts'] = orm_grid.__getattribute__(mv_grid_districts_name)
-            orm['orm_mv_stations'] = orm_grid.__getattribute__(mv_stations_name)
-            orm['orm_lv_load_areas'] = orm_demand.__getattribute__(lv_load_areas_name)
-            orm['orm_lv_grid_district'] = orm_grid.__getattribute__(lv_grid_district_name)
-            orm['orm_lv_stations'] = orm_grid.__getattribute__(lv_stations_name)
-            orm['orm_conv_generators'] = orm_supply.__getattribute__(conv_generators_name)
-            orm['orm_re_generators'] = orm_supply.__getattribute__(re_generators_name)
             orm['data_version'] = self.config[data_source]['version']
             orm['version_condition_mvgd'] = \
                 orm['orm_mv_grid_districts'].version == orm['data_version']
@@ -1634,25 +1607,11 @@ class NetworkDing0:
             orm['version_condition_conv'] = \
                 orm['orm_conv_generators'].columns.version == orm['data_version']
         elif data_source == "local":
-            orm['orm_mv_grid_districts'] = sys.modules["saio.grid"].__getattr__(mv_grid_districts_name)
-            orm['orm_mv_stations'] = sys.modules["saio.grid"].__getattr__(mv_stations_name)
-            orm['orm_lv_load_areas'] = sys.modules["saio.demand"].__getattr__(lv_load_areas_name)
-            # orm['orm_lv_grid_district'] = orm_grid.__getattribute__(lv_grid_district_name)
-            # orm['orm_lv_stations'] = orm_grid.__getattribute__(lv_stations_name)
-            orm['orm_conv_generators'] = orm_model_draft.__getattribute__(conv_generators_name)
-            orm['orm_re_generators'] = orm_model_draft.__getattribute__(re_generators_name)
-            orm['osm_ways_with_segments'] = sys.modules["saio.openstreetmap"].__getattr__(osm_ways_with_segments)
-            orm['osm_buildings_residential'] = sys.modules["saio.openstreetmap"].__getattr__(osm_buildings_residential)
-            orm['osm_buildings_synthetic'] = sys.modules["saio.openstreetmap"].__getattr__(osm_buildings_synthetic)
-            orm['osm_buildings_filtered'] = sys.modules["saio.openstreetmap"].__getattr__(osm_buildings_filtered)
-            orm['household_electricity_profile'] = sys.modules["saio.demand"].__getattr__(household_electricity_profile)
-            orm['building_peak_loads'] = sys.modules["saio.demand"].__getattr__(building_peak_loads)
-
             orm['version_condition_mvgd'] = True
             orm['version_condition_mv_stations'] = True
             orm['version_condition_la'] = True
-            # orm['version_condition_lvgd'] = True
-            # orm['version_condition_mvlvst'] = True
+            orm['version_condition_lvgd'] = True
+            orm['version_condition_mvlvst'] = True
             orm['version_condition_re'] = True
             orm['version_condition_conv'] = True
         else:
