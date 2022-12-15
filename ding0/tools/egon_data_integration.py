@@ -71,6 +71,9 @@ def get_lv_load_areas(orm, session, mv_grid_id):
         orm["orm_lv_load_areas"].sector_peakload_industrial.label(
             "peak_load_industrial"
         ),
+        (orm["orm_lv_load_areas"].sector_peakload_residential/orm["orm_lv_load_areas"].sector_peakload_residential_2035).label("peak_load_residential_scaling_factor"),
+        (orm["orm_lv_load_areas"].sector_peakload_cts/orm["orm_lv_load_areas"].sector_peakload_cts_2035).label("peak_load_cts_scaling_factor"),
+        (orm["orm_lv_load_areas"].sector_peakload_industrial/orm["orm_lv_load_areas"].sector_peakload_industrial_2035).label("peak_load_industrial_scaling_factor"),
     ).filter(
         orm["orm_lv_load_areas"].bus_id == mv_grid_id,
         orm["version_condition_la"],
@@ -105,7 +108,7 @@ def get_egon_ways(orm, session, geo_area):
         orm["osm_ways_with_segments"].highway,
         orm["osm_ways_with_segments"].length_segments,
     ).filter(
-        func.st_intersects(
+        func.ST_Intersects(
             func.ST_GeomFromText(geo_area, get_config_osm("srid")),
             orm["osm_ways_with_segments"].geom,
         )
@@ -148,10 +151,10 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         )
         .filter(
             orm["egon_map_zensus_mvgd_buildings"].sector == sector,
-            orm["egon_map_zensus_mvgd_buildings"].bus_id == subst_id,
+            # orm["egon_map_zensus_mvgd_buildings"].bus_id == subst_id,
             orm["egon_map_zensus_mvgd_buildings"].electricity == True,
             orm["egon_map_zensus_mvgd_buildings"].osm == True,
-            func.st_intersects(
+            func.ST_Intersects(
                 func.ST_GeomFromText(load_area.geo_area, get_config_osm("srid")),
                 orm["osm_buildings_filtered"].geom_point,
             ),
@@ -176,10 +179,10 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         )
         .filter(
             orm["egon_map_zensus_mvgd_buildings"].sector == sector,
-            orm["egon_map_zensus_mvgd_buildings"].bus_id == subst_id,
+            # orm["egon_map_zensus_mvgd_buildings"].bus_id == subst_id,
             orm["egon_map_zensus_mvgd_buildings"].electricity == True,
             orm["egon_map_zensus_mvgd_buildings"].osm == False,
-            func.st_intersects(
+            func.ST_Intersects(
                 func.ST_GeomFromText(load_area.geo_area, get_config_osm("srid")),
                 orm["osm_buildings_synthetic"].geom_point,
             ),
@@ -224,8 +227,8 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         right_on="building_id",
         how="left",
     )
-    residential_buildings_df["capacity"] = residential_buildings_df["capacity"] * 1.09
-    if not load_area.peak_load_residential == residential_buildings_df.capacity.sum():
+    residential_buildings_df["capacity"] = residential_buildings_df["capacity"] * load_area.peak_load_residential_scaling_factor
+    if not round(load_area.peak_load_residential) == round(residential_buildings_df.capacity.sum()):
         logger.error(
             f"{load_area.peak_load_residential=} != {residential_buildings_df.capacity.sum()=}"
         )
@@ -255,10 +258,10 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
         )
         .filter(
             orm["egon_map_zensus_mvgd_buildings"].sector == sector,
-            orm["egon_map_zensus_mvgd_buildings"].bus_id == subst_id,
+            # orm["egon_map_zensus_mvgd_buildings"].bus_id == subst_id,
             orm["egon_map_zensus_mvgd_buildings"].electricity == True,
             orm["egon_map_zensus_mvgd_buildings"].osm == True,
-            func.st_intersects(
+            func.ST_Intersects(
                 func.ST_GeomFromText(load_area.geo_area, get_config_osm("srid")),
                 orm["osm_buildings_filtered"].geom_point,
             ),
@@ -283,10 +286,10 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
         )
         .filter(
             orm["egon_map_zensus_mvgd_buildings"].sector == sector,
-            orm["egon_map_zensus_mvgd_buildings"].bus_id == subst_id,
+            # orm["egon_map_zensus_mvgd_buildings"].bus_id == subst_id,
             orm["egon_map_zensus_mvgd_buildings"].electricity == True,
             orm["egon_map_zensus_mvgd_buildings"].osm == False,
-            func.st_intersects(
+            func.ST_Intersects(
                 func.ST_GeomFromText(load_area.geo_area, get_config_osm("srid")),
                 orm["osm_buildings_synthetic"].geom_point,
             ),
@@ -329,8 +332,8 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
         right_on="building_id",
         how="left",
     )
-    cts_buildings_df["capacity"] = cts_buildings_df["capacity"] * 1.09
-    if not load_area.peak_load_cts == cts_buildings_df.capacity.sum():
+    cts_buildings_df["capacity"] = cts_buildings_df["capacity"] * load_area.peak_load_cts_scaling_factor
+    if not round(load_area.peak_load_cts) == round(cts_buildings_df.capacity.sum()):
         logger.error(
             f"{load_area.peak_load_cts=} != {cts_buildings_df.capacity.sum()=}"
         )
@@ -343,7 +346,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
     # Industrial loads 1
     # demand.egon_sites_ind_load_curves_individual, geom from demand.egon_industrial_sites
     # Filter: voltage level, scenario, subst_id
-    scn_name = "eGon2035"
+    scn_name = "eGon2021"
     mw2kw = 10**3
     query = (
         session.query(
@@ -366,7 +369,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
             orm["egon_sites_ind_load_curves_individual"].voltage_level.in_(
                 [4, 5, 6, 7]
             ),
-            func.st_intersects(
+            func.ST_Intersects(
                 func.ST_GeomFromText(load_area.geo_area, get_config_osm("srid")),
                 func.ST_Transform(orm["egon_industrial_sites"].geom, 3035),
             ),
@@ -396,7 +399,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
             orm["egon_osm_ind_load_curves_individual"].bus_id == subst_id,
             orm["egon_osm_ind_load_curves_individual"].scn_name == scn_name,
             orm["egon_osm_ind_load_curves_individual"].voltage_level.in_([4, 5, 6, 7]),
-            func.st_intersects(
+            func.ST_Intersects(
                 func.ST_GeomFromText(load_area.geo_area, get_config_osm("srid")),
                 orm["osm_landuse"].geom,
             ),
@@ -413,13 +416,13 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
         columns={"site_id": "industrial_site_id", "osm_id": "industrial_osm_id"}
     )
     industrial_buildings_df["capacity"] = (
-        industrial_buildings_df["capacity"] * 1.09 * 1000
+        industrial_buildings_df["capacity"] * mw2kw
     )
     industrial_buildings_df["geometry"] = industrial_buildings_df["geometry"].apply(
         shapely.wkt.loads
     )
     industrial_buildings_df["sector"] = "industrial"
-    if not load_area.peak_load_industrial == industrial_buildings_df.capacity.sum():
+    if not round(load_area.peak_load_industrial) == round(industrial_buildings_df.capacity.sum()):
         logger.error(
             f"{load_area.peak_load_industrial=} != {industrial_buildings_df.capacity.sum()=}"
         )
@@ -466,7 +469,7 @@ def get_egon_buildings(orm, session, subst_id, load_area):
     buildings_w_loads_df.rename(columns={"sector": "category"}, inplace=True)
     if buildings_w_loads_df.empty:
         raise ValueError("There are no buildings in the LoadArea.")
-    if not load_area.peak_load == buildings_w_loads_df.capacity.sum():
+    if not round(load_area.peak_load) == round(buildings_w_loads_df.capacity.sum()):
         logger.error(
             f"{load_area.peak_load=} != {buildings_w_loads_df.capacity.sum()=}"
         )
@@ -489,7 +492,7 @@ def func_within(geom_a, geom_b, srid=3035):
 def get_res_generators(orm, session, subst_id):
     srid = 3035  # new to calc distance matrix in step 6
 
-    # Get PV open spac
+    # Get PV open space join weather cell id
     query = (
         session.query(
             orm["generators_pv"].bus_id,
@@ -515,7 +518,10 @@ def get_res_generators(orm, session, subst_id):
     generators_pv_open_space_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
     )
+    generators_pv_open_space_df["generation_type"] = "solar"
+    generators_pv_open_space_df["generation_subtype"] = "open_space"
 
+    # Get pv rooftop join geoms
     osm_buildings_filtered = session.query(
         orm["osm_buildings_filtered"].id.cast(Integer).label("building_id"),
         func.ST_AsText(orm["osm_buildings_filtered"].geom_point).label("geom"),
@@ -550,6 +556,10 @@ def get_res_generators(orm, session, subst_id):
     generators_pv_rooftop_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
     )
+    generators_pv_rooftop_df["generation_type"] = "solar"
+    generators_pv_rooftop_df["generation_subtype"] = "pv_rooftop"
+
+    # Get generators wind join weather cells
     query = (
         session.query(
             orm["generators_wind"].bus_id,
@@ -575,20 +585,18 @@ def get_res_generators(orm, session, subst_id):
     generators_wind_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
     )
+    generators_wind_df["generation_type"] = "wind"
+
+    # Generators biomass
     query = (
         session.query(
             orm["generators_biomass"].bus_id,
             orm["generators_biomass"].gens_id,
             orm["generators_biomass"].capacity.label("electrical_capacity"),
             orm["generators_biomass"].voltage_level,
-            orm["weather_cells"].w_id,
             func.ST_AsText(
                 func.ST_Transform(orm["generators_biomass"].geom, srid)
             ).label("geom"),
-        )
-        .join(
-            orm["weather_cells"],
-            func_within(orm["generators_biomass"].geom, orm["weather_cells"].geom),
         )
         .filter(
             orm["generators_biomass"].bus_id == subst_id,
@@ -599,20 +607,18 @@ def get_res_generators(orm, session, subst_id):
     generators_biomass_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
     )
+    generators_biomass_df["generation_type"] = "biomass"
+
+    # Generators water
     query = (
         session.query(
             orm["generators_water"].bus_id,
             orm["generators_water"].gens_id,
             orm["generators_water"].capacity.label("electrical_capacity"),
             orm["generators_water"].voltage_level,
-            orm["weather_cells"].w_id,
             func.ST_AsText(func.ST_Transform(orm["generators_water"].geom, srid)).label(
                 "geom"
             ),
-        )
-        .join(
-            orm["weather_cells"],
-            func_within(orm["generators_water"].geom, orm["weather_cells"].geom),
         )
         .filter(
             orm["generators_water"].bus_id == subst_id,
@@ -623,6 +629,8 @@ def get_res_generators(orm, session, subst_id):
     generators_water_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
     )
+    generators_water_df["generation_type"] = "water"
+
     renewable_generators_df = pd.concat(
         [
             generators_pv_open_space_df,
@@ -633,6 +641,11 @@ def get_res_generators(orm, session, subst_id):
         ],
         ignore_index=True,
     )
+    # Save geom column to geom_new to fit the data to the underlying functions
+    renewable_generators_df["geom_new"] = renewable_generators_df["geom"]
+    renewable_generators_df.rename(columns={"bus_id":"subst_id"}, inplace=True)
+    renewable_generators_df["mvlv_subst_id"] = pd.Series()
+
     return renewable_generators_df
 
 
