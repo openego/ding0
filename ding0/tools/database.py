@@ -3,12 +3,11 @@
 import logging
 from contextlib import contextmanager
 
+import ding0
+from ding0.tools import config as cfg_ding0
 from egoio.tools import db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-import ding0
-from ding0.tools import config as cfg_ding0
 
 logger = logging.getLogger()
 
@@ -39,9 +38,9 @@ def engine(overwrite_database=None):
         conn = db.connection(readonly=True)
     elif database == "local":
         conn = create_engine(
-            f"postgresql+psycopg2://{cfg_ding0.get('local', 'database_user')}:"
-            f"{cfg_ding0.get('local', 'database_password')}@{cfg_ding0.get('local', 'database_host')}:"
-            f"{int(cfg_ding0.get('local', 'database_port'))}/{cfg_ding0.get('local', 'database_name')}",
+            f"postgresql+psycopg2://{cfg_ding0.get('database_credentials', 'user')}:"
+            f"{cfg_ding0.get('database_credentials', 'password')}@{cfg_ding0.get('database_credentials', 'host')}:"
+            f"{int(cfg_ding0.get('database_credentials', 'port'))}/{cfg_ding0.get('database_credentials', 'name')}",
             echo=False,
         )
     return conn
