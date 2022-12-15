@@ -335,7 +335,7 @@ class NetworkDing0:
         logger.info("STEP 1: Import MV Grid Districts and subjacent objects")
         self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_legacy=ding0_legacy)
 
-        # logger.info("STEP 2: Import generators")
+        logger.info("STEP 2: Import generators")
         self.import_generators(session, debug=debug)
 
         logger.info("STEP 3: Parametrize MV grid")
@@ -703,7 +703,7 @@ class NetworkDing0:
             which the import of load areas is performed
         """
 
-        lv_load_areas = db_io.get_lv_load_areas(self.orm, session, mv_grid_district)
+        lv_load_areas = db_io.get_lv_load_areas(self.orm, session, mv_grid_district.mv_grid._station.id_db)
 
         # create load_area objects from rows and add them to graph
         logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
@@ -774,42 +774,7 @@ class NetworkDing0:
             # compose graph
             composed_graph = compose_graph(outer_graph, graph_subdiv)
 
-            # building_loads
-            # import residential buildings from egon data
-            buildings_residential = db_io.get_egon_residential_buildings(
-                self.orm, session, row.geo_area, scenario="eGon2035"
-            )
-            if (len(buildings_residential)) < 1:
-                logger.warning(
-                    f'buildings_w_loads_df.empty. No buildings found in MV {mv_grid_district}, LA {id_db}')
-                continue
-
-            # import cts buildings from egon data
-            buildings_cts = db_io.get_egon_cts_buildings(self.orm, session, row.geo_area, scenario="eGon2035")
-            buildings_w_loads_df = pd.concat([buildings_residential, buildings_cts], ignore_index=True)
-
-            # sum capacity of buildings with the same id
-            if buildings_w_loads_df["id"].duplicated(keep=False).any():
-                def sum_capacity(x):
-                    y = x.iloc[0]
-                    if x.shape[0] > 1:
-                        y["category"] = "mixed_residential_cts"
-                    y["capacity"] = x["capacity"].sum()
-                    return y
-                buildings_w_loads_df = buildings_w_loads_df.groupby(["id"], as_index=False).apply(sum_capacity)
-                logger.warning("There is a building_id which have cts and residential.")
-
-            if buildings_w_loads_df["id"].duplicated(keep=False).any():
-                raise ValueError("There are duplicated building_ids, "
-                                 "for residential non-synthetic and synthetic buildings.")
-
-            if buildings_w_loads_df.empty:
-                raise ValueError("There are no buildings for the LoadArea.")
-
-            buildings_w_loads_df.set_index('id', inplace=True)
-            # sort index to make load allocation reproducible
-            buildings_w_loads_df.sort_index(inplace=True)
-
+            buildings_w_loads_df = db_io.get_egon_buildings(self.orm, session, mv_grid_district.id_db, row)
 
             # if composed graph of type synthetic (no osm ways have been found) update
             # graph node's coord (geo load center) using building's positions and peak loads
@@ -1250,7 +1215,7 @@ class NetworkDing0:
             """
             Imports renewable (res) generators
             """
-            generators = db_io.get_res_generators(self.orm, session, mv_grid_districts_dict)
+            generators = db_io.get_res_generators(self.orm, session, list(mv_grid_districts_dict)[0])
             # define generators with unknown subtype as 'unknown'
             generators.loc[generators[
                                'generation_subtype'].isnull(),
@@ -1357,7 +1322,7 @@ class NetworkDing0:
             """
             Imports conventional (conv) generators
             """
-            generators = db_io.get_conv_generators(self.orm, session, mv_grid_districts_dict)
+            generators = db_io.get_conv_generators(self.orm, session, list(mv_grid_districts_dict)[0])
 
             for id_db, row in generators.iterrows():
 
