@@ -712,178 +712,158 @@ class NetworkDing0:
             # transform geo_load_area from str to poly
             # buildings without buffer, ways with buffer
             geo_load_area = wkt_loads(row.geo_area)
-            # get buffer_poly_list
+            # Get buffer_poly_list.
             buffer_poly_list = create_buffer_polygons(geo_load_area)
-            # load ways from db for last element of buffer_poly_list
-
+            # Load ways from db for last element of buffer_poly_list.
             ways_sql_df = db_io.get_egon_ways(self.orm, session, buffer_poly_list[-1].wkt)
-
-            # if ways found in query build graph from osm data
+            # If ways found in query build graph from osm data.
             if not ways_sql_df.empty:
-
-                # call to_shape(ways.geometry) to transform WKBElement to
+                # Transform ways to shape.
                 ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
-
-                # build graph
+                # Build graph
                 graph = build_graph_from_ways(ways_sql_df)
-
-                # get nodes to remove from graph
-                # is a list of lists containing
-                # nodes to remove per buffer polygon
+                # Get nodes to remove from graph (per buffer polygon).
+                # "outlier_nodes_list" is a list of lists
                 outlier_nodes_list = graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list)
 
-            # no osm ways data could be found
+            # If no osm ways data could be found create synthetic graph.
             else:
-
-                # create synthetic graph with one street node instead
+                # Create synthetic graph with one street node instead.
                 graph, node_id = create_simple_synthetic_graph(geo_load_area)
-
-                # no outlier nodes in synthetic graph, nested list must be empty
+                # No outlier nodes in synthetic graph, nested list must be empty.
                 outlier_nodes_list = [[]]
-
-                logger.warning(f'ways_sql_df.empty. No ways found in MV {mv_grid_district}, LA {id_db} ' \
+                logger.warning(f'ways_sql_df.empty. No ways found in '
+                               f'MV {mv_grid_district}, LA {id_db} '
                                f'Build synthetic graph instead.')
 
-            # inner_node_list define nodes without buffer
+            # Inner_node_list define nodes without buffer.
             inner_node_list = list(set(graph.nodes()) - set(outlier_nodes_list[0]))
 
             if len(inner_node_list) < 1:
                 logger.warning(f'No graph found in origin polygon of MV {mv_grid_district}, LA {id_db}.')
                 continue
 
-            # get connected graph
+            # Get connected graph.
             conn_graph = get_fully_conn_graph(graph, outlier_nodes_list)
 
-            # PLOT 1-3
-            # return geo_load_area, buffer_poly_list, graph, inner_node_list, conn_graph
-
-            # split fully conn graph in inner and outer part
+            # Split "fully_conn_graph" in inner and outer part.
             inner_graph, outer_graph = split_conn_graph(conn_graph, inner_node_list)
 
-            # subdivide_graph_edges for only graph in list
-            # edges_to_remove are edges which are subdivided into 20m segments
-            # process inner graph
+            # "subdivide_graph_edges" for only graph in list.
+            # "edges_to_remove" are edges which are subdivided into 20m segments.
+            # Process inner graph
             graph_subdiv = subdivide_graph_edges(inner_graph)
 
-            # process outer graph
+            # Process outer graph
             outer_graph = get_outer_conn_graph(outer_graph, inner_node_list)
             outer_graph = add_edge_geometry_entry(outer_graph)
             outer_graph = flatten_graph_components_to_lines(outer_graph, inner_node_list)
             outer_graph = remove_detours(outer_graph)
 
-            # compose graph
+            # Compose graph
             composed_graph = compose_graph(outer_graph, graph_subdiv)
 
-            buildings_w_loads_df = db_io.get_egon_buildings(self.orm, session, mv_grid_district.id_db, row)
+            # Get buildings with loads from database.
+            buildings_w_loads_df = db_io.get_egon_buildings(
+                self.orm, session, mv_grid_district.id_db, row
+            )
 
-            # if composed graph of type synthetic (no osm ways have been found) update
-            # graph node's coord (geo load center) using building's positions and peak loads
+            # If composed graph of type synthetic (no osm ways have been found), then
+            # update graph node's coord (geo load center) using building's positions
+            # and peak loads.
             if composed_graph.graph['source'] == 'synthetic':
                 x, y = get_load_center_coords(buildings_w_loads_df)
                 composed_graph.nodes[node_id]['x'] = x
                 composed_graph.nodes[node_id]['y'] = y
 
-            # assign nearest nodes
+            # Assign nearest nodes
             buildings_w_loads_df = assign_nearest_nodes_to_buildings(composed_graph,
                                                                      buildings_w_loads_df)
 
-            # get nodes to keep and street_loads_df for graph.
-            # street_loads_df contains nearest nodes and cum(load) per node
-            street_loads_df = identify_street_loads(buildings_w_loads_df, composed_graph)
+            # Get nodes of graph to keep -> "street_loads_df".
+            # "street_loads_df" contains nearest nodes (nn) and cumulated load per nn.
+            street_loads_df, _ = identify_street_loads(buildings_w_loads_df, composed_graph)
 
-            # simp_graph to keep overview
-            # simp_graph = simplify_graph(composed_graph, street_loads_df.index.tolist())
+            # Simplify graph to keep overview
             simp_graph = simplify_graph_adv(composed_graph, street_loads_df.index.tolist())
-            # if len(street_loads_df.index.tolist()) > 1:
-            # in order to keep in plottable, graph containing 1 node/0 edges not plottable with osmnx
             simp_graph = remove_unloaded_deadends(simp_graph, street_loads_df.index.tolist())
 
-            # get n_clusters based on capacity in load area
+            # Get n_clusters based on capacity of the load area.
             n_cluster = get_cluster_numbers(buildings_w_loads_df, simp_graph)
 
-            # cluster graph and locate lv stations based on load center per cluster
+            # Cluster graph and locate lv stations based on load center per cluster.
             clustering_successfully, cluster_graph, mvlv_subst_list, nodes_w_labels = \
-                distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_grid_district, id_db)
+                distance_restricted_clustering(
+                    simp_graph, n_cluster, street_loads_df, mv_grid_district, id_db
+                )
             if not clustering_successfully:
-                return f"Clustering not successful for MV {mv_grid_district}, LA {id_db}"
+                return f"Clustering not successful for " \
+                       f"MV {mv_grid_district}, LA {id_db}"
 
-            # get loads on mv level
+            # Get loads on mv level.
             loads_mv_df = buildings_w_loads_df.loc[
                 (get_config_osm('mv_lv_threshold_capacity') <= buildings_w_loads_df.capacity) &
                 (buildings_w_loads_df.capacity < get_config_osm('hv_mv_threshold_capacity'))]
-
-            # add mv loads to graph. connect via edges. if True
-            trafo_in_mv_building = True  # Paul
 
             for osm_id_building, loads_mv_df_row in loads_mv_df.iterrows():
                 connect_mv_loads_to_graph(cluster_graph, osm_id_building, loads_mv_df_row)
 
             # TODO: REMOVE MV LOADS FROM buildings_w_loads_df. Weil peak load for load area without loads > 200 kW?
-            # calculation peak load for load area with buildings < 200 kW.
-            buildings_w_loads_df = buildings_w_loads_df.loc[
-                buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')]
+            # Calculation peak load for load area with buildings < 200 kW.
+            loads_lv_df = buildings_w_loads_df.loc[
+                buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')
+            ]
 
-            # set cluster ID for buildings
-            buildings_w_loads_df['cluster'] = buildings_w_loads_df.nn.map(nodes_w_labels.cluster)
+            # Set cluster ID for buildings.
+            loads_lv_df['cluster'] = loads_lv_df.nn.map(nodes_w_labels.cluster)
 
-            # create LV load_area object
-            # calc peak load based on diversity of loads
+            # Create LVLoadAreaDing0
             # TODO: if peak load smaller than threshold: do not add
-            peak_load_div = get_peak_load_diversity(buildings_w_loads_df)
+            # Old behaviour:
+            # - Calculate peak load based on diversity of loads.
+            # >>> peak_load = get_peak_load_diversity(loads_lv_df)
+            # New behaviour:
+            # - Calculate peak load base by sum of building loads.
+            peak_load = loads_lv_df.capacity.sum()
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
                                            db_data=row,
                                            mv_grid_district=mv_grid_district,
-                                           peak_load=peak_load_div,
-                                           # peak_load=buildings_w_loads_df.capacity.sum(),
+                                           peak_load=peak_load,
                                            load_area_graph=cluster_graph)
-            # ,_mv_loads=mv_load_list)
 
-            # PAUL new
-            enable_mv_loads = True
+            # Add MV Loads to LV Load Area
+            for osm_id_building, row in loads_mv_df.iterrows():
+                # Create MVLoadDing0
+                mv_load = MVLoadDing0(geo_data=row.geometry,
+                                      grid=mv_grid_district,
+                                      peak_load=row.capacity,  # in kW
+                                      osmid_building=osm_id_building,
+                                      osmid_nn=row.nn,
+                                      nn_coords=row.nn_coords,
+                                      lv_load_area=lv_load_area,
+                                      sector=row.category,
+                                      type="conventional_load")
 
-            if enable_mv_loads:  # NEED TO CONNECT MVLOAD, OTHERWISE:
-                # IN STEP 10:: Do power flow analysis of MV grid: nd.run_powerflow
-                # Exception: Load_mvgd_40_1 is isolated node. Please check.
+                # Add mv_load to mv_grid_district and lv_load_area
+                mv_grid_district.mv_grid.add_load(mv_load)
+                lv_load_area.add_mv_load(mv_load)
 
-                # add MVLoadsDing0 and add to lvla
-                for osm_id_building, row in loads_mv_df.iterrows():
-                    # create MVLoadDing0
-                    # create an instance of Ding0 LV load
-                    if trafo_in_mv_building:
-                        geo_data = row.raccordement_building
-                        # connect_mv_loads_to_graph(cluster_graph, osm_id_building, row)
-                    else:
-                        geo_data = row.nn_coords
-
-                    mv_load = MVLoadDing0(geo_data=geo_data,
-                                          grid=mv_grid_district,
-                                          peak_load=row.capacity,  # in kW
-                                          osmid_building=osm_id_building,
-                                          osmid_nn=row.nn,
-                                          nn_coords=row.nn_coords,
-                                          lv_load_area=lv_load_area,
-                                          sector=row.category,
-                                          type="conventional_load")
-
-                    # add mv_load to mv_load_list and graph
-                    mv_grid_district.mv_grid.add_load(mv_load)
-                    lv_load_area.add_mv_load(mv_load)
-
-            # create ding0 elements (LVGridDistrictDing0, LVGridDing0, LVStationDing0) for each cluster
+            # Create LVGridDistrictDing0, LVGridDing and LVStationDing0
+            # for each cluster.
             for mvlv_subst_loc in mvlv_subst_list:
 
                 cluster_id = mvlv_subst_loc.get('cluster')
 
                 lvgd_id = get_lvgd_id(id_db, cluster_id)
-                buildings = buildings_w_loads_df.loc[buildings_w_loads_df.cluster == cluster_id]
+                buildings = loads_lv_df.loc[loads_lv_df.cluster == cluster_id]
 
                 if (create_lvgd_geo_method == 'convex_hull') | (create_lvgd_geo_method == 'bounding_box'):
-                    # get convex hull per cluster
+                    # Get convex hull per cluster.
                     cluster_geo_list = buildings.geometry.tolist()  # geo of building
                     cluster_geo_list += nodes_w_labels.loc[
                         nodes_w_labels.cluster == mvlv_subst_loc.get('cluster')].geometry.tolist()
 
-                    # get convex hull for ding0 objects
+                    # Get convex hull for ding0 objects.
                     points = get_points_in_load_area(cluster_geo_list)
                     if create_lvgd_geo_method == 'convex_hull':
                         polygon = get_convex_hull_from_points(points)
@@ -898,10 +878,16 @@ class NetworkDing0:
                 else:
                     logging.warning(f'create_lvgd_geo_method {create_lvgd_geo_method} not implemented.')
 
-                # create LVGridDistrictDing0
-                # calc peak load based on diversity of loads
-                peak_load_div = get_peak_load_diversity(buildings)
+                # Create LVGridDistrictDing0
+                # Therefore calculate "peak_load_div"
+                # Old behaviour before new data:
+                # - calc peak load based on diversity of loads
+                # >>> peak_load_div = get_peak_load_diversity(buildings)
+                # New behaviour with new data:
+                # - calc peak load as sum of buildings capacity
+                peak_load_div = buildings.capacity.sum()
                 if peak_load_div > 0:
+                    # Create LVGridDistrictDing0
                     lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id,
                                                            geo_data=polygon,
                                                            graph_district=mvlv_subst_loc.get('graph_district'),
@@ -909,63 +895,59 @@ class NetworkDing0:
                                                            buildings_district=buildings,
                                                            id_db=lvgd_id,
                                                            peak_load=peak_load_div)
-                    # peak_load=buildings.capacity.sum())
 
-                    # create LVGridDing0
-                    # be aware, lv_grid takes grid district's geom!
+                    # Create LVGridDing0
+                    # Be aware, lv_grid takes grid district's geom!
+                    lv_nominal_voltage = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
                     lv_grid = LVGridDing0(network=self,
                                           grid_district=lv_grid_district,
                                           id_db=lvgd_id,
                                           geo_data=polygon,
                                           v_level=lv_nominal_voltage)
 
-                    # create LV station
+                    # Create LVStationDing0
+                    # osm_id_node: Defined node in graph where station is located
                     lv_station = LVStationDing0(
                         id_db=lvgd_id,
                         grid=lv_grid,
                         lv_load_area=lv_load_area,
                         geo_data=Point(mvlv_subst_loc.get('x'), mvlv_subst_loc.get('y')),
-                        osm_id_node=mvlv_subst_loc.get('osmid')  # defined node in graph where station is located
-                        # , peak_load=lv_grid_district.peak_load
+                        osm_id_node=mvlv_subst_loc.get('osmid')
                     )
 
-                    # assign created objects
-                    # note: creation of LV grid is done separately,
+                    # Assign created objects
+                    # Note: Creation of LV grid is done separately,
                     # see NetworkDing0.build_lv_grids()
                     lv_grid.add_station(lv_station)
                     lv_grid_district.lv_grid = lv_grid
                     lv_load_area.add_lv_grid_district(lv_grid_district)
 
-            # calculate load center to set lv_load_area_centre_geo_data
-            # based on peak load and position of lvgd.station
-            # MVLoads are not considered.
+            # Calculate load center to set lv_load_area_centre_geo_data based on
+            # peak load and position of lvgd.station
+            # Note: MVLoads are not considered.
             if len(lv_load_area._lv_grid_districts):  # just in case there are stations
                 la_centre_osmid, la_centre_geo_data, load_area_geo = get_load_center_node(lv_load_area)
-
             else:
-                la_centre_osmid, la_centre_geo_data, load_area_geo = None, lv_load_area.geo_centre, lv_load_area.geo_area
+                la_centre_osmid = None
+                la_centre_geo_data = lv_load_area.geo_centre
+                load_area_geo = lv_load_area.geo_area
 
-            # update shape of load_area, if centre does not intersect with original load area
+            # Update shape of load_area, if centre does not
+            # intersect with original load area.
             lv_load_area.geo_area = load_area_geo
 
-            # create new centre object for Load Area
+            # Create new centre object for Load Area.
             lv_load_area_centre = LVLoadAreaCentreDing0(id_db=id_db,
                                                         geo_data=la_centre_geo_data,
                                                         osm_id_node=la_centre_osmid,
                                                         lv_load_area=lv_load_area,
                                                         grid=mv_grid_district.mv_grid)
 
-            # links the centre object to Load Area
+            # Links the centre object to Load Area.
             lv_load_area.lv_load_area_centre = lv_load_area_centre
 
-            # add Load Area to MV grid district (and add centre object to MV gris district's graph)
+            # Add Load Area to MV grid district.
             mv_grid_district.add_lv_load_area(lv_load_area)
-
-            # PLOT from 4
-            # return graph, geo_load_area, inner_graph, conn_graph, graph_subdiv, outer_graph, composed_graph, buildings_w_loads_df, street_loads_df, simp_graph, cluster_graph, lv_load_area, mv_grid_district
-
-            # 3)
-            # return lv_load_area, mv_grid_district, geo_load_area, buildings_w_loads_df, loads_mv_df
 
     def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts, lv_stations):
         """

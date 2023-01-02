@@ -54,8 +54,8 @@ def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
     assign nearest nodes of graph to buildings by euclidean distance.
     """
 
-    X = buildings_w_loads_df['x'].tolist()
-    Y = buildings_w_loads_df['y'].tolist()
+    X = buildings_w_loads_df["geometry"].apply(lambda point: point.x)
+    Y = buildings_w_loads_df["geometry"].apply(lambda point: point.y)
 
     buildings_w_loads_df['nn'], buildings_w_loads_df['nn_dist'] = ox.nearest_nodes(
         graph_subdiv, X, Y, return_dist=True)
@@ -86,7 +86,7 @@ def identify_street_loads(buildings_w_loads_df, graph, get_number_households=Fal
 
     else:
 
-        return street_loads
+        return street_loads, pd.DataFrame(columns=["number_households"])
 
 
 
@@ -169,15 +169,16 @@ def connect_mv_loads_to_graph(cluster_graph, osm_id_building, row):
     For mv loads, add edge from building to graph instead
     keeping trafo at nearest node of building in graph.
     """
+    # row geometry is the coordinate of the building
     # set values for mv
     name = osm_id_building
-    x = row.raccordement_building.x
-    y = row.raccordement_building.y
+    x = row.geometry.x
+    y = row.geometry.y
 
     # add node to graph
     cluster_graph.add_node(name,x=x,y=y, node_type='non_synthetic', cluster=None)
     # add edge to graph
-    line = LineString([row.raccordement_building, row.nn_coords])
+    line = LineString([row.geometry, row.nn_coords])
     cluster_graph.add_edge(name, row.nn,
                            geometry=line,length=line.length,highway='trafo_graph_connect')
     cluster_graph.add_edge(row.nn, name,

@@ -91,7 +91,7 @@ def relocate_buildings_with_station_as_nn(full_graph, station_id, lv_loads_grid)
         if len(station_as_nn) != len(lv_loads_grid) or len(station_as_nn) > 1:
 
             for building_node, row in station_as_nn.iterrows():
-                node_id, nn_dist = ox.nearest_nodes(G, row['x'], row['y'], return_dist=True)
+                node_id, nn_dist = ox.nearest_nodes(G, row["geometry"].x, row["geometry"].y, return_dist=True)
                 lv_loads_grid.at[building_node, 'nn'] = node_id
                 lv_loads_grid.at[building_node, 'nn_coords'] = Point(G.nodes[node_id]['x'], G.nodes[node_id]['y'])
                 lv_loads_grid.at[building_node, 'nn_dist'] = nn_dist
@@ -148,8 +148,7 @@ def allocate_street_load_nodes(lv_loads_grid, shortest_tree_district_graph, stat
     # in order to do a size constrainted tree partioning
     # allocate capacity to street nodes (as integer)
     # allocate number_households to household nodes
-    street_loads, household_loads = identify_street_loads(lv_loads_grid, shortest_tree_district_graph,
-                                                          get_number_households=True)
+    street_loads, household_loads = identify_street_loads(lv_loads_grid, shortest_tree_district_graph)
     street_loads_map = street_loads.to_dict()['capacity']
     household_loads_map = household_loads.to_dict()['number_households']
 
@@ -399,45 +398,45 @@ def build_branches_on_osm_ways(lvgd):
 
     # add loads < 100 kW to Graph G
     for building_node, row in lv_loads_grid[
-        ['x', 'y', 'capacity', 'category', 'nn', 'nn_dist', 'nn_coords', 'raccordement_building']].iterrows():
+        ['capacity', 'category', 'nn', 'nn_dist', 'nn_coords', 'geometry']].iterrows():
         nn_attr = G.nodes[row.nn]
         # todo: update capacity with load for residentials
-        attr = {'x': row.x,
-                'y': row.y,
+        attr = {'x': row.geometry.x,
+                'y': row.geometry.y,
                 'node_type': 'non_synthetic',
                 'cluster': nn_attr['cluster'],
                 'load': row.capacity,
                 'category': row.category,
                 'feederID': nn_attr['feederID'],
-                'residentials_total_at_feeder': nn_attr['residentials_total_at_feeder']
+                # 'residentials_total_at_feeder': nn_attr['residentials_total_at_feeder']
                 }
 
         cable_type_stub = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
         G.add_node(building_node, **attr)
-        G.add_edge(building_node, row.nn, 0, geometry=LineString([row.raccordement_building, row.nn_coords]),
+        G.add_edge(building_node, row.nn, 0, geometry=LineString([row.geometry, row.nn_coords]),
                    length=row.nn_dist, feederID=nn_attr['feederID'], cable_type_stub=cable_type_stub)
 
     # connect buildings to graph with capacity < 100 kW
-    # loads 100 - 200 kW connected to lv station diretly
+    # loads 100 - 200 kW connected to lv station directly
     lv_loads_to_station = lvgd.buildings.loc[
         (get_config_osm('lv_threshold_capacity') <= lvgd.buildings.capacity) &
         (lvgd.buildings.capacity < get_config_osm('mv_lv_threshold_capacity'))]
 
     for building_node, row in lv_loads_to_station[
-        ['x', 'y', 'capacity', 'category', 'nn', 'nn_dist', 'nn_coords', 'raccordement_building', 'number_households']].iterrows():
+        ['capacity', 'category', 'nn', 'nn_dist', 'nn_coords', 'geometry']].iterrows():
         feederID += 1
         # todo: update capacity with load for residentials
-        attr = {'x': row.x,
-                'y': row.y,
+        attr = {'x': row.geometry.x,
+                'y': row.geometry.y,
                 'node_type': 'non_synthetic',
                 'load': row.capacity,
                 'category': row.category,
                 'feederID': feederID,
-                'residentials_total_at_feeder': row.number_households
+                # 'residentials_total_at_feeder': row.number_households
                 }
         G.add_node(building_node, **attr)
         # add new edge to street graph
-        stub_line_shp = LineString([row.raccordement_building, row.nn_coords])
+        stub_line_shp = LineString([row.geometry, row.nn_coords])
         # add edge to full graph for shortest path calculation
         full_graph.add_edge(building_node, row.nn, geometry=stub_line_shp, length=stub_line_shp.length)
         # route singular cable

@@ -121,8 +121,8 @@ def get_load_center_node(lv_load_area):
 
 def get_load_center_coords(buildings_w_loads_df):
 
-    x = buildings_w_loads_df.x.tolist()
-    y = buildings_w_loads_df.y.tolist()
+    x = buildings_w_loads_df["geometry"].apply(lambda point: point.x)
+    y = buildings_w_loads_df["geometry"].apply(lambda point: point.y)
     peak_loads = buildings_w_loads_df.capacity.tolist()
 
     coords_array = np.array(list(zip(x, y)))
