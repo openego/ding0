@@ -25,7 +25,7 @@ from ding0.core.structure.regions import *
 from ding0.core.powerflow import *
 from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
 from ding0.tools.animation import AnimationDing0
-from ding0.tools.plots import plot_mv_topology
+from ding0.tools.plots import plot_mv_topology, plot_lv_topology
 from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
 from ding0.tools.tools import merge_two_dicts_of_dataframes
@@ -38,6 +38,7 @@ import logging
 import pandas as pd
 import random
 import time
+import traceback
 from math import isnan
 
 from sqlalchemy import func
@@ -234,8 +235,16 @@ class NetworkDing0:
         """
         return self._orm
 
-    def run_ding0(self, session, mv_grid_districts_no=None, debug=False, export_figures=False,
-                  ding0_legacy=False, path=None):
+    def run_ding0(
+            self,
+            session,
+            mv_grid_districts_no=None,
+            debug=False,
+            export_figures=False,
+            export_lv_figures=False,
+            ding0_legacy=False,
+            path=None
+    ):
 
         """
         Let DING0 run by shouting at this method (or just call
@@ -347,22 +356,23 @@ class NetworkDing0:
 
         logger.info("STEP 5: Build LV grids")
         self.build_lv_grids()
+        if export_lv_figures:
+            self.plot_lv_grids(path=path, filename="lv_grid_building_completed")
 
         logger.info("STEP 6: Build MV grids")
         self.mv_routing(debug=False)
         if export_figures:
-            grid = self._mv_grid_districts[0].mv_grid
-            plot_mv_topology(grid, path=path, subtitle='Routing completed', filename='1_routing_completed.png')
+            self.plot_mv_grids(path=path, filename='1_routing_completed')
 
         logger.info("STEP 7: Connect MV and LV generators")
         self.connect_generators(debug=False)
         if export_figures:
-            plot_mv_topology(grid, path=path, subtitle='Generators connected', filename='2_generators_connected.png')
+            self.plot_mv_grids(path=path, filename='2_generators_connected')
 
         logger.info("STEP 8: Relocate switch disconnectors in MV grid")
         self.set_circuit_breakers(debug=debug)
         if export_figures:
-            plot_mv_topology(grid, path=path, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
+            self.plot_mv_grids(path=path, filename='3_circuit_breakers_relocated')
 
         logger.info("STEP 9: Open all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='open')
@@ -370,26 +380,17 @@ class NetworkDing0:
         logger.info("STEP 10: Do power flow analysis of MV grid")
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
         if export_figures:
-            plot_mv_topology(grid, path=path, subtitle='PF result (load case)',
-                             filename='4_PF_result_load.png',
-                             line_color='loading', node_color='voltage', testcase='load')
-            plot_mv_topology(grid, path=path, subtitle='PF result (feedin case)',
-                             filename='5_PF_result_feedin.png',
-                             line_color='loading', node_color='voltage', testcase='feedin')
+            self.plot_mv_grids(path=path, filename='4_PF_result_load')
+            self.plot_mv_grids(path=path, filename='5_PF_result_feedin')
 
         logger.info("STEP 11: Reinforce MV grid")
         self.reinforce_grid()
 
         logger.info("STEP 12: Close all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='close')
-
         if export_figures:
-            plot_mv_topology(grid, path=path, subtitle='Final grid PF result (load case)',
-                             filename='6_final_grid_PF_result_load.png',
-                             line_color='loading', node_color='voltage', testcase='load')
-            plot_mv_topology(grid, path=path, subtitle='Final grid PF result (feedin case)',
-                             filename='7_final_grid_PF_result_feedin.png',
-                             line_color='loading', node_color='voltage', testcase='feedin')
+            self.plot_mv_grids(path=path, filename='6_final_grid_PF_result_load')
+            self.plot_mv_grids(path=path, filename='7_final_grid_PF_result_feedin')
 
         if debug:
             logger.info('Elapsed time for {0} MV Grid Districts (seconds): {1}'.format(
@@ -2577,3 +2578,59 @@ class NetworkDing0:
                                               index_col='mvlv_subst_id')
 
         return lv_grid_districts
+
+    def plot_mv_grids(self, path=None, filename=None):
+        kwargs = {}
+
+        kwargs["path"] = path
+        kwargs["filename"] = filename
+
+        if filename == '1_routing_completed':
+            kwargs["subtitle"] = 'Routing completed',
+        elif filename == '2_generators_connected':
+            kwargs["subtitle"] = 'Generators connected',
+        elif filename == '3_circuit_breakers_relocated':
+            kwargs["subtitle"] = 'Circuit breakers relocated',
+        elif filename == '4_PF_result_load':
+            kwargs["subtitle"] = 'PF result (load case)',
+            kwargs["line_color"] = 'loading',
+            kwargs["node_color"] = 'voltage',
+            kwargs["testcase"] = 'load'
+        elif filename == '5_PF_result_feedin':
+            kwargs["subtitle"] = 'PF result (feedin case)',
+            kwargs["line_color"] = 'loading',
+            kwargs["node_color"] = 'voltage',
+            kwargs["testcase"] = 'feedin'
+        elif filename == '6_final_grid_PF_result_load':
+            kwargs["subtitle"] = 'Final grid PF result (load case)',
+            kwargs["line_color"] = 'loading',
+            kwargs["node_color"] = 'voltage',
+            kwargs["testcase"] = 'load'
+        elif filename == '7_final_grid_PF_result_feedin':
+            kwargs["subtitle"] = 'Final grid PF result (feedin case)',
+            kwargs["line_color"] = 'loading',
+            kwargs["node_color"] = 'voltage',
+            kwargs["testcase"] = 'feedin'
+
+        for mv_grid_district in self.mv_grid_districts():
+            try:
+                plot_mv_topology(mv_grid_district.mv_grid, **kwargs)
+            except:
+                self.message.append(str(traceback.format_exc()))
+                logger.warning(f"Can't plot: {filename}")
+
+
+    def plot_lv_grids(self, path=None, filename=None):
+        for mv_grid_district in self.mv_grid_districts():
+            for load_area in mv_grid_district.lv_load_areas():
+                for lv_grid_district in load_area.lv_grid_districts():
+                    try:
+                        plot_lv_topology(
+                            lv_grid_district.lv_grid,
+                            path=path,
+                            mv_grid_id=mv_grid_district.id_db,
+                            filename=filename,
+                        )
+                    except:
+                        self.message.append(str(traceback.format_exc()))
+                        logger.warning(f"Can't plot: {filename}")

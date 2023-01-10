@@ -393,7 +393,11 @@ def plot_mv_topology(grid, path = None, subtitle='', filename=None, testcase='lo
                                      crs='epsg:{srid}'.format(srid=model_proj))
             edges = edges.to_crs(epsg=3857)
 
-            edges['color'] = edges['ring'].str.extract('(\d+)').astype(int)
+            try:
+                edges['color'] = edges['ring'].str.extract('(\d+)').astype(int)
+            except ValueError:
+                edges['color'] = edges['ring'].str.extract('(\d+)').fillna(0).astype(int)
+                logger.error("ValueError: Branch has no ring assigned. Fill nan with 0")
 
             edges.plot(column=edges['color'],
                        ax=ax,
@@ -459,18 +463,18 @@ def plot_mv_topology(grid, path = None, subtitle='', filename=None, testcase='lo
         plt.show()
     else:
         if path:
-            path = os.path.join(path, str(grid.id_db))
+            path = os.path.join(path, str(grid.id_db), "plot_mv")
             if not os.path.exists(path):
                 os.makedirs(path)
         else:
             path = get_default_home_dir()
-        path = os.path.join(path, f'ding0_grid_{str(grid.id_db)}_{filename}')
+        path = os.path.join(path, f'ding0_grid_{str(grid.id_db)}_{filename}.pdf')
         plt.savefig(path, dpi=300, bbox_inches='tight')
         plt.close()
         logger.info('==> Figure saved to {path}'.format(path=path))
 
 
-def plot_lv_topology(grid, subtitle, testcase='load', line_color='feeder', node_color='type',
+def plot_lv_topology(grid, path=None, mv_grid_id=None, subtitle="", testcase='load', line_color='feeder', node_color='type',
                      background_map=True, filename=None):
     """ Draws LV grid graph using networkx
 
@@ -744,10 +748,14 @@ def plot_lv_topology(grid, subtitle, testcase='load', line_color='feeder', node_
     if filename is None:
         plt.tight_layout()
         plt.show()
-
     else:
-        path = os.path.join(get_default_home_dir(), 'ding0_grid_{id}_{filename}'.format(id=str(grid.id_db),
-                                                                                        filename=filename))
+        if path:
+            path = os.path.join(path, str(mv_grid_id), "plot_lv")
+            if not os.path.exists(path):
+                os.makedirs(path)
+        else:
+            path = get_default_home_dir()
+        path = os.path.join(path, f'ding0_lv_grid_{str(grid.id_db)}_{filename}.pdf')
         plt.savefig(path, dpi=300, bbox_inches='tight')
         plt.close()
         logger.info('==> Figure saved to {path}'.format(path=path))
