@@ -47,7 +47,7 @@ def get_lv_load_areas(orm, session, mv_grid_id):
     lv_load_areas_sqla = session.query(
         orm["orm_lv_load_areas"].id.label("id_db"),
         orm["orm_lv_load_areas"].zensus_sum.label("population"),
-        orm["orm_lv_load_areas"].zensus_count.label("zensus_cnt"),
+        # orm["orm_lv_load_areas"].zensus_count.label("zensus_cnt"),
         orm["orm_lv_load_areas"].area_ha.label("area"),
         # orm["orm_lv_load_areas"].sector_area_agricultural,
         # orm["orm_lv_load_areas"].sector_area_cts,
@@ -233,13 +233,41 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
             f"{load_area.peak_load_residential=} != {residential_buildings_df.capacity.sum()=}"
         )
 
+    query = (
+        session.query(
+            orm["household_electricity_profile"].building_id.label("building_id"),
+            func.count(orm["household_electricity_profile"].building_id).label(
+                "number_households"
+            ),
+        )
+        .filter(
+            orm["household_electricity_profile"].building_id.in_(
+                residential_buildings_df["building_id"].values
+            )
+        )
+        .group_by(
+            orm["household_electricity_profile"].building_id,
+        )
+    )
+
+    apartments_per_building_df = pd.read_sql(
+        sql=query.statement, con=query.session.bind, index_col=None
+    )
+
+    residential_buildings_df = pd.merge(
+        left=residential_buildings_df,
+        right=apartments_per_building_df,
+        left_on="building_id",
+        right_on="building_id",
+        how="left",
+    )
+
     return residential_buildings_df
 
 
 def get_egon_cts_buildings(orm, session, subst_id, load_area):
     logger.debug("Get cts buildings by 'subst_id' from database.")
 
-    # TODO: which scenario should be taken?
     scenario = "eGon2035"
     sector = "cts"
 
