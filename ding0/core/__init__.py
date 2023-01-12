@@ -745,10 +745,9 @@ class NetworkDing0:
                 continue
 
             # Get connected graph.
-            conn_graph = get_fully_conn_graph(graph, outlier_nodes_list)
-
+            conn_graph, synthetic_edges = get_fully_conn_graph(graph, outlier_nodes_list)
             # Split "fully_conn_graph" in inner and outer part.
-            inner_graph, outer_graph = split_conn_graph(conn_graph, inner_node_list)
+            inner_graph, outer_graph = split_conn_graph(conn_graph, inner_node_list, synthetic_edges)
 
             # "subdivide_graph_edges" for only graph in list.
             # "edges_to_remove" are edges which are subdivided into 20m segments.

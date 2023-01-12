@@ -176,6 +176,7 @@ def get_fully_conn_graph(G, nlist): #nested_node_list
     Iterating over all buffered polygon graphs
     """
 
+    synthetic_edges = set()
     poly_idx = 0 
     G_min = truncate_graph_nodes(G, nlist, poly_idx)
     max_it = len(nlist) - 1
@@ -200,30 +201,71 @@ def get_fully_conn_graph(G, nlist): #nested_node_list
                 break
 
             if poly_idx >= max_it:
+                def connect_connected_components(graph):
+                    from itertools import combinations
+                    from scipy.spatial.distance import cdist
+                    import numpy as np
+                    # import random
 
+                    synthetic_edges = set()
+                    list_of_connected_nodes = list(nx.weakly_connected_components(graph))
+
+                    for comb in combinations(list_of_connected_nodes, 2):
+                        nodes_1 = list(comb[0])
+                        nodes_1_coordinates = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in nodes_1]
+                        nodes_2 = list(comb[1])
+                        nodes_2_coordinates = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in nodes_2]
+
+                        distance_array = cdist(nodes_1_coordinates, nodes_2_coordinates)
+                        index = np.where(distance_array == distance_array.min())
+
+
+                        synthetic_edges.add((nodes_1[int(index[0])], nodes_2[int(index[1])]))
+                        graph.add_edge(
+                            nodes_1[int(index[0])],
+                            nodes_2[int(index[1])],
+                            highway="synthetic",
+                            length=distance_array.min(),
+                            osmid=0 # random.randint(100000000, 200000000)
+                        )
+                        synthetic_edges.add((nodes_2[int(index[1])], nodes_1[int(index[0])]))
+                        graph.add_edge(
+                            nodes_2[int(index[1])],
+                            nodes_1[int(index[0])],
+                            highway="synthetic",
+                            length=distance_array.min(),
+                            osmid=0 # random.randint(100000000, 200000000)
+                        )
+
+                    list_of_connected_nodes_2 = list(nx.weakly_connected_components(graph))
+                    return graph, synthetic_edges
+
+                G_c, synthetic_edges = connect_connected_components(G)
                 logger.debug(f'Finding connected graph, max. iterations {max_it} trespassed. Break.')
+
                 break
 
         else:
             logger.debug(f'Found connected graph, iteration {poly_idx} of max. {max_it}.')
-            return G_c
+            return G_c, set()
 
     else:
 
         logger.debug(f'Graph already fully connected.')
         G_c = G_min
 
-    return G_c
+    return G_c, synthetic_edges
 
 ###
 
-def split_conn_graph(conn_graph, inner_node_list):
+def split_conn_graph(conn_graph, inner_node_list, synthetic_edges):
     """
     Divide graoh in inner and outer components.
     based on plygon borders.
     """
     
     inner_graph = conn_graph.subgraph(inner_node_list).copy()
+    inner_graph.remove_edges_from(synthetic_edges)
     inner_edges = inner_graph.edges()
 
     outer_graph = conn_graph
