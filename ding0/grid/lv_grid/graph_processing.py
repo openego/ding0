@@ -208,36 +208,60 @@ def get_fully_conn_graph(G, nlist): #nested_node_list
                     # import random
 
                     synthetic_edges = set()
-                    list_of_connected_nodes = list(nx.weakly_connected_components(graph))
 
-                    for comb in combinations(list_of_connected_nodes, 2):
-                        nodes_1 = list(comb[0])
-                        nodes_1_coordinates = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in nodes_1]
-                        nodes_2 = list(comb[1])
-                        nodes_2_coordinates = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in nodes_2]
+                    # get all connected components in a nested list and sort for reproducible results
+                    list_of_connected_nodes = [list(c) for c in nx.weakly_connected_components(graph)]
+                    list_of_connected_nodes = sorted(list_of_connected_nodes, key=lambda x: x[0])
 
-                        distance_array = cdist(nodes_1_coordinates, nodes_2_coordinates)
+                    # get nodes of largest component and delete from components list
+                    nodes_largest_comp = max(list_of_connected_nodes, key=len)
+                    list_of_connected_nodes.remove(nodes_largest_comp)
+
+                    while len(list_of_connected_nodes):
+
+                        # flatten comp_list to get unconnected node ids
+                        nodes_unconnected = list(flatten(list_of_connected_nodes))
+
+                        # get coordinates of largest and unconnected component(s)
+                        coords_larg_comp = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in nodes_largest_comp]
+                        coords_unconn_comp = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in nodes_unconnected]
+
+                        # find nearest unconnected component
+                        distance_array = cdist(coords_larg_comp, coords_unconn_comp)
                         index = np.where(distance_array == distance_array.min())
 
+                        # get nodes to ceonnect by synthetic edge
+                        conn_node_largest_comp = nodes_largest_comp[int(index[0])]
+                        conn_node_unconn_comp = nodes_unconnected[int(index[1])]
 
-                        synthetic_edges.add((nodes_1[int(index[0])], nodes_2[int(index[1])]))
+                        # connect both components using a synthetic edge
+                        synthetic_edges.add((conn_node_largest_comp, conn_node_unconn_comp))
+                        synthetic_edges.add((conn_node_largest_comp, conn_node_unconn_comp))
+
                         graph.add_edge(
-                            nodes_1[int(index[0])],
-                            nodes_2[int(index[1])],
+                            conn_node_largest_comp,
+                            conn_node_unconn_comp,
                             highway="synthetic",
                             length=distance_array.min(),
-                            osmid=0 # random.randint(100000000, 200000000)
+                            osmid=0  # random.randint(100000000, 200000000)
                         )
-                        synthetic_edges.add((nodes_2[int(index[1])], nodes_1[int(index[0])]))
+                        synthetic_edges.add((conn_node_unconn_comp, conn_node_largest_comp))
                         graph.add_edge(
-                            nodes_2[int(index[1])],
-                            nodes_1[int(index[0])],
+                            conn_node_unconn_comp,
+                            conn_node_largest_comp,
                             highway="synthetic",
                             length=distance_array.min(),
-                            osmid=0 # random.randint(100000000, 200000000)
+                            osmid=0  # random.randint(100000000, 200000000)
                         )
 
-                    list_of_connected_nodes_2 = list(nx.weakly_connected_components(graph))
+                        # find nodes of component that has been connected to largest component before
+                        nodes_comp_to_connect = \
+                            [comp for comp in list_of_connected_nodes if conn_node_unconn_comp in comp][0]
+
+                        # update lists containing components nodes
+                        nodes_largest_comp = nodes_largest_comp + nodes_comp_to_connect
+                        list_of_connected_nodes.remove(nodes_comp_to_connect)
+
                     return graph, synthetic_edges
 
                 G_c, synthetic_edges = connect_connected_components(G)
