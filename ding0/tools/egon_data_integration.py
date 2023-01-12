@@ -458,7 +458,8 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
 
 
 def get_egon_buildings(orm, session, subst_id, load_area):
-    logger.info("Get buildings by 'subst_id' from database.")
+    logger.info("Get buildings by 'subst_id' and 'load_area' from database.")
+
     residential_buildings_df = get_egon_residential_buildings(
         orm, session, subst_id, load_area
     )

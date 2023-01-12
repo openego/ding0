@@ -193,7 +193,8 @@ def get_n_feeder_mandatory(capacity, v_nom, cos_phi_load):
 
 
 def build_branches_on_osm_ways(lvgd):
-    """Based on osm ways, the according grid topology for
+    """
+    Based on osm ways, the according grid topology for
     residential sector is determined and attached to the grid graph
     Parameters
     ----------
@@ -261,7 +262,7 @@ def build_branches_on_osm_ways(lvgd):
     g = shortest_tree_district_graph.copy()
     station_attr = g.nodes[station_id]
 
-    # find subtrees in shortest path tree graph using substation's inicident edges
+    # find subtrees in shortest path tree graph using substation's incident edges
     # TODO: Check if len(G) is bigger 1 / G.has_edges: lvgd graph with one node -> remove station leads to empty graph
     if len(g.nodes) > 1:  # only if there are at least 2 nodes, else keep working on full graph
         g.remove_node(station_id)
@@ -365,8 +366,9 @@ def build_branches_on_osm_ways(lvgd):
 
             feeder_graph_list.append(feeder_graph)
 
+    # Check if a graph of the feeder_graph_list has more than one connected components
     if max([len(list(nx.connected_components(_))) for _ in feeder_graph_list]) > 1:
-        raise ValueError("Probably METIS did not partitioned contiguously.")
+        raise ValueError("Probably partitioned not contiguously.")
     G = nx.compose_all(feeder_graph_list)
     G.nodes[station_id]['feederID'] = 0
     station_node = G.nodes[station_id]
@@ -416,7 +418,6 @@ def build_branches_on_osm_ways(lvgd):
         G.add_edge(building_node, row.nn, 0, geometry=LineString([row.geometry, row.nn_coords]),
                    length=row.nn_dist, feederID=nn_attr['feederID'], cable_type_stub=cable_type_stub)
 
-    # connect buildings to graph with capacity < 100 kW
     # loads 100 - 200 kW connected to lv station directly
     lv_loads_to_station = lvgd.buildings.loc[
         (get_config_osm('lv_threshold_capacity') <= lvgd.buildings.capacity) &
@@ -446,7 +447,7 @@ def build_branches_on_osm_ways(lvgd):
         G.add_edge(building_node, station_id, geometry=line_shp,
                    length=line_length, feederID=feederID, cable_type_stub=cable_type_stub)
 
-    lvgd.graph_district = G  # update graph for district. doesn't contain 100kW < loads < 200 kW
+    lvgd.graph_district = G  # update graph for district.
 
     added_cable_dist_dict = {}  # store u and v here to avoid duplicates
 

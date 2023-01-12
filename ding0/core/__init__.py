@@ -710,8 +710,8 @@ class NetworkDing0:
         logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
         for id_db, row in lv_load_areas.iterrows():
             logger.info(f"Build LV Load Area: {id_db}")
-            # transform geo_load_area from str to poly
-            # buildings without buffer, ways with buffer
+            # Transform geo_load_area from str to shape.
+            # Note: Buildings without buffer, ways with buffer.
             geo_load_area = wkt_loads(row.geo_area)
             # Get buffer_poly_list.
             buffer_poly_list = create_buffer_polygons(geo_load_area)
@@ -809,7 +809,6 @@ class NetworkDing0:
             for osm_id_building, loads_mv_df_row in loads_mv_df.iterrows():
                 connect_mv_loads_to_graph(cluster_graph, osm_id_building, loads_mv_df_row)
 
-            # TODO: REMOVE MV LOADS FROM buildings_w_loads_df. Weil peak load for load area without loads > 200 kW?
             # Calculation peak load for load area with buildings < 200 kW.
             loads_lv_df = buildings_w_loads_df.loc[
                 buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')
@@ -820,6 +819,7 @@ class NetworkDing0:
 
             # Create LVLoadAreaDing0
             # TODO: if peak load smaller than threshold: do not add
+            # TODO: Reimplement diversity, number households
             # Old behaviour:
             # - Calculate peak load based on diversity of loads.
             # >>> peak_load = get_peak_load_diversity(loads_lv_df)
@@ -881,6 +881,7 @@ class NetworkDing0:
 
                 # Create LVGridDistrictDing0
                 # Therefore calculate "peak_load_div"
+                # TODO: Reimplement get_peak_load_diversity
                 # Old behaviour before new data:
                 # - calc peak load based on diversity of loads
                 # >>> peak_load_div = get_peak_load_diversity(buildings)
@@ -929,6 +930,7 @@ class NetworkDing0:
             if len(lv_load_area._lv_grid_districts):  # just in case there are stations
                 la_centre_osmid, la_centre_geo_data, load_area_geo = get_load_center_node(lv_load_area)
             else:
+                # raise ValueError("No lvgd available and load_area without lv_grid_district")
                 la_centre_osmid = None
                 la_centre_geo_data = lv_load_area.geo_centre
                 load_area_geo = lv_load_area.geo_area
