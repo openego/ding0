@@ -289,7 +289,8 @@ def build_branches_on_osm_ways(lvgd):
 
         if n_feeder > 1:
 
-            G = nx.Graph(subtree_graph.copy())
+            # Partition graph without station node
+            G = nx.Graph(subtree_graph.subgraph(list(nodelist)).copy())
 
             # If the Graph has to be portioned to more than the number of nodes without the station node,
             # make every Node to a feeder, because METIS sometimes portion not contiguous.
@@ -298,19 +299,23 @@ def build_branches_on_osm_ways(lvgd):
                 for edge in G.edges:
                     G.edges[edge]['length'] = int(np.ceil(G.edges[edge]['length']))
 
-                (cut, parts) = nxmetis.partition(G, int(n_feeder),
+                (_, parts) = nxmetis.partition(G, int(n_feeder),
                                                  node_weight='load', edge_weight='length',
                                                  options=nxmetis.MetisOptions(contig=True))
 
-                # workaround due to metis rarely contains single empty clusters
-                parts = [cluster for cluster in parts if cluster != []]
             else:
                 parts = [list(nodelist)]
                 msg = f"In the LVGrid {lvgd} every grid_district.graph node becomes a feeder."
                 logger.warning(msg)
                 lvgd.network.message.append(msg)
 
+            checked_contiguos_parts = []
             for cluster in parts:
+                if len(cluster):
+                    for nodes in nx.connected_components(subtree_graph.subgraph(cluster)):
+                        checked_contiguos_parts.append(list(nodes))
+
+            for cluster in checked_contiguos_parts:
 
                 feederID += 1
 
