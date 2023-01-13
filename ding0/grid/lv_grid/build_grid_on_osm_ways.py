@@ -518,43 +518,4 @@ def build_branches_on_osm_ways(lvgd):
             grid.graph.add_edge(edge[0], edge[1], branch=branch)
 
     transform_graph_to_ding0_graph(G, lvgd.lv_grid)
-
-            # direct load - station connection is deprecated
-            #if u == station_id:
-            #    print(v, load_v_capacity)
-            #    load_v = lvgd.lv_grid.station()
-            #else:
-
-            # connect load
-            load_v = lv_cable_dist_v
-            # set in_building parameter
-            load_v.in_building = True
-
-            lvgd.lv_grid.graph.add_edge(
-                load_v,
-                lv_load,
-                branch=BranchDing0(
-                    length=1,
-                    geometry=geometry,
-                    kind='cable',
-                    grid=lvgd.lv_grid,
-                    type=cable_type,
-                    feeder=node_u['feederID'],
-                    id_db='branch_{branch}_{load}'.format(
-                        branch=branch_no,
-                        load=load_no)))
-
-    # beacause of simultaneity calculation for residentials, capacity changed.
-    # simultaneity calculation can happen only after ids of feeder are identified
-    # thus, we can group loads by feederId, to which loads are connected and do calculation
-    # set new peak_load for lvgd BUT CONSIDERING ONLY simultaneity loads per feeder
-    lvgd.peak_load = new_lvgd_peak_load_considering_simultaneity
-
-    #### in_building bugfix
-    #for la in nd._mv_grid_districts[0]._lv_load_areas:
-    #    for lvgd in la._lv_grid_districts:
-    #        for node in lvgd.lv_grid._loads:
-    #            branches = node.grid.graph_branches_from_node(node)
-    #            if len(branches) == 1 and branches[0][1]['branch'].length == 1:
-    #                cable_dist = branches[0][0]
-    #                cable_dist.in_building = True
+    # Todo: Add function to remove unnecessary cable distributors
