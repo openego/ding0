@@ -7,7 +7,7 @@ import shapely.wkb
 from ding0.config.config_lv_grids_osm import get_config_osm
 from ding0.tools import config as cfg_ding0
 from geoalchemy2.shape import to_shape
-from sqlalchemy import Integer, cast, func
+from sqlalchemy import Integer, func
 
 
 def get_mv_data(orm, session, mv_grid_districts_no):
@@ -227,8 +227,13 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         right_on="building_id",
         how="left",
     )
-    residential_buildings_df["capacity"] = residential_buildings_df["capacity"] * load_area.peak_load_residential_scaling_factor
-    if not round(load_area.peak_load_residential) == round(residential_buildings_df.capacity.sum()):
+    residential_buildings_df["capacity"] = (
+        residential_buildings_df["capacity"]
+        * load_area.peak_load_residential_scaling_factor
+    )
+    if not round(load_area.peak_load_residential) == round(
+        residential_buildings_df.capacity.sum()
+    ):
         logger.error(
             f"{load_area.peak_load_residential=} != {residential_buildings_df.capacity.sum()=}"
         )
@@ -360,7 +365,9 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
         right_on="building_id",
         how="left",
     )
-    cts_buildings_df["capacity"] = cts_buildings_df["capacity"] * load_area.peak_load_cts_scaling_factor
+    cts_buildings_df["capacity"] = (
+        cts_buildings_df["capacity"] * load_area.peak_load_cts_scaling_factor
+    )
     if not round(load_area.peak_load_cts) == round(cts_buildings_df.capacity.sum()):
         logger.error(
             f"{load_area.peak_load_cts=} != {cts_buildings_df.capacity.sum()=}"
@@ -437,23 +444,29 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
         sql=query.statement, con=session.bind, index_col=None
     )
 
+    industrial_loads_1_df["site_id"] = industrial_loads_1_df["site_id"].astype(int)
+    industrial_loads_1_df["building_id"] = industrial_loads_1_df["site_id"]
+    industrial_loads_2_df["osm_id"] = industrial_loads_2_df["osm_id"].astype(int)
+    industrial_loads_2_df["building_id"] = industrial_loads_2_df["osm_id"]
+
     industrial_buildings_df = pd.concat(
         [industrial_loads_1_df, industrial_loads_2_df], ignore_index=True
     )
     industrial_buildings_df = industrial_buildings_df.rename(
         columns={"site_id": "industrial_site_id", "osm_id": "industrial_osm_id"}
     )
-    industrial_buildings_df["capacity"] = (
-        industrial_buildings_df["capacity"] * mw2kw
-    )
+    industrial_buildings_df["capacity"] = industrial_buildings_df["capacity"] * mw2kw
     industrial_buildings_df["geometry"] = industrial_buildings_df["geometry"].apply(
         shapely.wkt.loads
     )
     industrial_buildings_df["sector"] = "industrial"
-    if not round(load_area.peak_load_industrial) == round(industrial_buildings_df.capacity.sum()):
+    if not round(load_area.peak_load_industrial) == round(
+        industrial_buildings_df.capacity.sum()
+    ):
         logger.error(
             f"{load_area.peak_load_industrial=} != {industrial_buildings_df.capacity.sum()=}"
         )
+
     return industrial_buildings_df
 
 
@@ -464,45 +477,82 @@ def get_egon_buildings(orm, session, subst_id, load_area):
         orm, session, subst_id, load_area
     )
     cts_buildings_df = get_egon_cts_buildings(orm, session, subst_id, load_area)
-
-    buildings_w_loads_df = pd.concat(
-        [residential_buildings_df, cts_buildings_df], ignore_index=True
-    )
-    # sum capacity of buildings with the same id
-    if buildings_w_loads_df["building_id"].duplicated(keep=False).any():
-
-        def sum_capacity(x):
-            y = x.head(1)
-            if x.shape[0] > 1:
-                y["sector"] = "mixed_residential_cts"
-            y["capacity"] = x["capacity"].sum()
-            return y
-
-        buildings_w_loads_df = buildings_w_loads_df.groupby(
-            ["building_id"], axis="rows", as_index=False
-        ).apply(sum_capacity)
-        logger.warning(
-            "There is at least one building_id which have cts and residential."
-        )
-    if buildings_w_loads_df["building_id"].duplicated(keep=False).any():
-        raise ValueError(
-            "There are duplicated building_ids, for residential and cts buildings"
-        )
-
-    industrial_loads_df = get_egon_industrial_buildings(
+    industrial_buildings_df = get_egon_industrial_buildings(
         orm, session, subst_id, load_area
     )
-    buildings_w_loads_df = pd.concat(
-        [buildings_w_loads_df, industrial_loads_df], ignore_index=True
+
+    residential_buildings_df.drop(columns="sector", inplace=True)
+    residential_buildings_df.rename(
+        columns={
+            "capacity": "residential_capacity",
+            "geometry": "residential_geometry",
+        },
+        inplace=True,
     )
-    buildings_w_loads_df.rename(columns={"sector": "category"}, inplace=True)
-    if buildings_w_loads_df.empty:
-        raise ValueError("There are no buildings in the LoadArea.")
-    if not round(load_area.peak_load) == round(buildings_w_loads_df.capacity.sum()):
-        logger.error(
-            f"{load_area.peak_load=} != {buildings_w_loads_df.capacity.sum()=}"
-        )
-    return buildings_w_loads_df
+    cts_buildings_df.drop(columns="sector", inplace=True)
+    cts_buildings_df.rename(
+        columns={"capacity": "cts_capacity", "geometry": "cts_geometry"}, inplace=True
+    )
+    industrial_buildings_df.drop(
+        columns=["sector", "industrial_site_id", "industrial_osm_id"], inplace=True
+    )
+    industrial_buildings_df.rename(
+        columns={"capacity": "industrial_capacity", "geometry": "industrial_geometry"},
+        inplace=True,
+    )
+
+    buildings_df = pd.merge(
+        left=residential_buildings_df,
+        right=cts_buildings_df,
+        left_on="building_id",
+        right_on="building_id",
+        how="outer",
+    )
+
+    buildings_df = pd.merge(
+        left=buildings_df,
+        right=industrial_buildings_df,
+        left_on="building_id",
+        right_on="building_id",
+        how="outer",
+    )
+
+    buildings_df.fillna(
+        {
+            "number_households": 0,
+            "residential_capacity": 0,
+            "cts_capacity": 0,
+            "industrial_capacity": 0,
+        },
+        inplace=True,
+    )
+    buildings_df = buildings_df.astype({"building_id": int, "number_households": int})
+
+    columns_to_sum = ["residential_capacity", "cts_capacity", "industrial_capacity"]
+    buildings_df["capacity"] = buildings_df[columns_to_sum].sum(axis=1)
+
+    def reduce_geometry_columns(x):
+        # Check if all coordinates are the same
+        coordinates = x[x.notna()]
+        for i in range(1, coordinates.size):
+            if not coordinates.iat[i - 1].almost_equals(coordinates.iat[i]):
+                raise ValueError(
+                    "Coordinates of buildings with " "the same id are not equal!"
+                )
+
+        return coordinates.iat[0]
+
+    geometry_columns = ["residential_geometry", "cts_geometry", "industrial_geometry"]
+    buildings_df["geometry"] = buildings_df[geometry_columns].apply(
+        reduce_geometry_columns, axis="columns"
+    )
+    buildings_df.drop(columns=geometry_columns, inplace=True)
+
+    if not round(load_area.peak_load) == round(buildings_df.capacity.sum()):
+        logger.error(f"{load_area.peak_load=} != {buildings_df.capacity.sum()=}")
+    buildings_df.set_index("building_id", inplace=True)
+
+    return buildings_df
 
 
 def func_within(geom_a, geom_b, srid=3035):
@@ -617,21 +667,18 @@ def get_res_generators(orm, session, subst_id):
     generators_wind_df["generation_type"] = "wind"
 
     # Generators biomass
-    query = (
-        session.query(
-            orm["generators_biomass"].bus_id,
-            orm["generators_biomass"].gens_id,
-            orm["generators_biomass"].capacity.label("electrical_capacity"),
-            orm["generators_biomass"].voltage_level,
-            func.ST_AsText(
-                func.ST_Transform(orm["generators_biomass"].geom, srid)
-            ).label("geom"),
-        )
-        .filter(
-            orm["generators_biomass"].bus_id == subst_id,
-            orm["generators_biomass"].status == "InBetrieb",
-            orm["generators_biomass"].voltage_level.in_([4, 5, 6, 7]),
-        )
+    query = session.query(
+        orm["generators_biomass"].bus_id,
+        orm["generators_biomass"].gens_id,
+        orm["generators_biomass"].capacity.label("electrical_capacity"),
+        orm["generators_biomass"].voltage_level,
+        func.ST_AsText(func.ST_Transform(orm["generators_biomass"].geom, srid)).label(
+            "geom"
+        ),
+    ).filter(
+        orm["generators_biomass"].bus_id == subst_id,
+        orm["generators_biomass"].status == "InBetrieb",
+        orm["generators_biomass"].voltage_level.in_([4, 5, 6, 7]),
     )
     generators_biomass_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
@@ -639,21 +686,18 @@ def get_res_generators(orm, session, subst_id):
     generators_biomass_df["generation_type"] = "biomass"
 
     # Generators water
-    query = (
-        session.query(
-            orm["generators_water"].bus_id,
-            orm["generators_water"].gens_id,
-            orm["generators_water"].capacity.label("electrical_capacity"),
-            orm["generators_water"].voltage_level,
-            func.ST_AsText(func.ST_Transform(orm["generators_water"].geom, srid)).label(
-                "geom"
-            ),
-        )
-        .filter(
-            orm["generators_water"].bus_id == subst_id,
-            orm["generators_water"].status == "InBetrieb",
-            orm["generators_water"].voltage_level.in_([4, 5, 6, 7]),
-        )
+    query = session.query(
+        orm["generators_water"].bus_id,
+        orm["generators_water"].gens_id,
+        orm["generators_water"].capacity.label("electrical_capacity"),
+        orm["generators_water"].voltage_level,
+        func.ST_AsText(func.ST_Transform(orm["generators_water"].geom, srid)).label(
+            "geom"
+        ),
+    ).filter(
+        orm["generators_water"].bus_id == subst_id,
+        orm["generators_water"].status == "InBetrieb",
+        orm["generators_water"].voltage_level.in_([4, 5, 6, 7]),
     )
     generators_water_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
@@ -672,7 +716,7 @@ def get_res_generators(orm, session, subst_id):
     )
     # Save geom column to geom_new to fit the data to the underlying functions
     renewable_generators_df["geom_new"] = renewable_generators_df["geom"]
-    renewable_generators_df.rename(columns={"bus_id":"subst_id"}, inplace=True)
+    renewable_generators_df.rename(columns={"bus_id": "subst_id"}, inplace=True)
     renewable_generators_df["mvlv_subst_id"] = pd.Series()
 
     return renewable_generators_df
