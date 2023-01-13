@@ -691,8 +691,10 @@ def plot_lv_topology(grid, path=None, mv_grid_id=None, subtitle="", testcase='lo
     if not edges.empty:
 
         if line_color == 'feeder': # plots differnt color for feeder
-
-            edges['color'] = edges['feeder'].str.extract('(\d+)').astype(int)
+            try:
+                edges['color'] = edges['feeder'].str.extract('(\d+)').astype(int)
+            except ValueError:
+                edges['color'] = edges['feeder'].str.extract('(\d+)').fillna(0).astype(int)
             edges = edges.sort_values(by='color')
             color = None
             edges_color = edges['color']

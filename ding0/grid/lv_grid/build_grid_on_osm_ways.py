@@ -460,6 +460,7 @@ def build_branches_on_osm_ways(lvgd):
                 cable_distributor = LVCableDistributorDing0(
                         grid=grid,
                         id_db=f"helper_{helper_no}",
+                        geo_data=node_coordinates,
                         helper_component=True,
                     )
                 # Add helper cable
