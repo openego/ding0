@@ -837,11 +837,14 @@ class NetworkDing0:
                 mv_load = MVLoadDing0(geo_data=row.geometry,
                                       grid=mv_grid_district,
                                       peak_load=row.capacity,  # in kW
+                                      peak_load_residential=row.residential_capacity,
+                                      number_households=row.number_households,
+                                      peak_load_cts=row.cts_capacity,
+                                      peak_load_industrial=row.industrial_capacity,
                                       osmid_building=osm_id_building,
                                       osmid_nn=row.nn,
                                       nn_coords=row.nn_coords,
                                       lv_load_area=lv_load_area,
-                                      sector=row.category,
                                       type="conventional_load")
 
                 # Add mv_load to mv_grid_district and lv_load_area

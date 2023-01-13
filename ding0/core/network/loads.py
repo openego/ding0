@@ -75,7 +75,6 @@ class LVLoadDing0(LoadDing0):
         self.string_id = kwargs.get('string_id', None)
         self.branch_no = kwargs.get('branch_no', None)
         self.load_no = kwargs.get('load_no', None)
-        self.id_db = self.grid.loads_count() + 1
 
     def __repr__(self):
         """

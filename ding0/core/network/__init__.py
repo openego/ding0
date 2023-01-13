@@ -787,6 +787,8 @@ class BranchDing0:
         self.geometry = kwargs.get('geometry', None) # branch coordinates
         self.num_parallel = 1 # number of parallel lines, initially one
         self.critical = False
+        # workaround for connecting more than one component to a bus
+        self.helper_component = kwargs.get('helper_component', None)
 
     @property
     def network(self):
@@ -1075,6 +1077,8 @@ class CableDistributorDing0:
         self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
+        # workaround for connecting more than one component to a bus
+        self.helper_component = kwargs.get('helper_component', None)
 
     @property
     def network(self):
@@ -1111,15 +1115,18 @@ class LoadDing0:
     #ToDo: Add consumption, type and sector to the documentation
 
     def __init__(self, **kwargs):
-        self.id_db = kwargs.get('id', None)
+        self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self.peak_load = kwargs.get('peak_load', None)
+        self.peak_load_residential = kwargs.get('peak_load_residential', None)
+        self.number_households = kwargs.get('number_households', None)
+        self.peak_load_cts = kwargs.get('peak_load_cts', None)
+        self.peak_load_industrial = kwargs.get('peak_load_industrial', None)
         self.consumption = kwargs.get('consumption', None)
         self.building_id = kwargs.get('building_id', None)
         self.sector = kwargs.get('sector', None)
         self.type = kwargs.get('type', None)
-        # self.id_db = self.grid.loads_count() + 1
 
     @property
     def network(self):

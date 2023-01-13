@@ -323,19 +323,13 @@ def build_branches_on_osm_ways(lvgd):
                 feeder_graph = subtree_graph.subgraph(cluster).copy()
 
                 cum_feeder_graph_load = sum([feeder_graph.nodes[node]['load'] for node in feeder_graph.nodes]) / 1e3
-                cum_subtree_households = sum([feeder_graph.nodes[node]['n_households'] for node in feeder_graph.nodes])
-
-                # print(f"feeder id {feederID} has a load of {cum_feeder_graph_load}")
-                # print(f"feeder id {feederID} has a n households: {cum_subtree_households}")
 
                 cable_type_stub = get_cable_type_by_load(lvgd, cum_feeder_graph_load, cable_lf, cos_phi_load, v_nom)
                 for node in cluster:
                     feeder_graph.nodes[node]['feederID'] = feederID
-                    feeder_graph.nodes[node]['residentials_total_at_feeder'] = cum_subtree_households
 
                 for edge in feeder_graph.edges:
                     feeder_graph.edges[edge]['feederID'] = feederID
-                    feeder_graph.edges[edge]['cum_load'] = cum_feeder_graph_load
                     feeder_graph.edges[edge]['cable_type_stub'] = cable_type_stub
 
                 if not station_id in feeder_graph.nodes:
@@ -353,20 +347,13 @@ def build_branches_on_osm_ways(lvgd):
 
             feeder_graph = subtree_graph.copy()
 
-            cum_subtree_households = sum([subtree_graph.nodes[node]['n_households'] for node in subtree_graph.nodes])
-
-            # print(f"feeder id {feederID} has a load of {cum_subtree_load}")
-            # print(f"feeder id {feederID} has a n households: {cum_subtree_households}")
-
             cable_type_stub = get_cable_type_by_load(lvgd, cum_subtree_load, cable_lf, cos_phi_load, v_nom)
 
             for node in feeder_graph.nodes:
                 feeder_graph.nodes[node]['feederID'] = feederID
-                feeder_graph.nodes[node]['residentials_total_at_feeder'] = cum_subtree_households
 
             for edge in feeder_graph.edges:
                 feeder_graph.edges[edge]['feederID'] = feederID
-                feeder_graph.edges[edge]['cum_load'] = cum_subtree_load
                 feeder_graph.edges[edge]['cable_type_stub'] = cable_type_stub
 
             feeder_graph_list.append(feeder_graph)
@@ -376,46 +363,31 @@ def build_branches_on_osm_ways(lvgd):
         raise ValueError("Probably partitioned not contiguously.")
     G = nx.compose_all(feeder_graph_list)
     G.nodes[station_id]['feederID'] = 0
+
     station_node = G.nodes[station_id]
     # reset loads to zero due to adding buildings to graph with em real load
     # to avoid adding loads twice
     for node in G.nodes:
         G.nodes[node]['load'] = 0
+        G.nodes[node]['ding0_node_type'] = "cable_distributor"
 
-    # todo: after feeder are identified, count residentials per feeder
-    # after count residentials per feeder is identified, update load due to diversity factor needs to be updated
-    # update capacity with residentials for loads < 100 kW
-    """
-    feeder_ids = list(set(lvgd.buildings.feeder.tolist()))
-    # reset capacity for residentials to 0 due to update em capacity like capacity += capacity_res
-    lvgd.buildings.loc[lvgd.buildings.category.isin(load_profile_categories['residentials_list']), 'capacity'] = 0
-    for feeder_id in feeder_ids:
-        capacity_res = \
-            get_peak_load_for_residential(lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id, 'n_residential_at_this_feeder'].iloc[0], formula='stetz')  # use formula stetz or vdew per default
-        for i, row in lvgd.buildings.loc[lvgd.buildings.feeder == feeder_id].iterrows():
-            capacity = row.capacity + capacity_res * row.number_households
-            # multiply diversity factor for loads < 100 KW and non residentials also.
-            # capacity >= 100 kW will considered when creation and connection of Ding0Load happens.
-            if capacity < get_config_osm('lv_threshold_capacity'):
-                capacity = row.capacity * diversity_factor + capacity_res * row.number_households
-            if (not capacity) | (capacity == 0):
-                capacity = 0.1  # set a minimum capacity of 0.1. TODO: need decision if a capacity of 0 is allowed.
-            lvgd.buildings.loc[i, 'capacity'] = capacity
-    """
+    G.nodes[station_id]['ding0_node_type'] = "station"
 
     # add loads < 100 kW to Graph G
-    for building_node, row in lv_loads_grid[
-        ['capacity', 'category', 'nn', 'nn_dist', 'nn_coords', 'geometry']].iterrows():
+    for building_node, row in lv_loads_grid.iterrows():
         nn_attr = G.nodes[row.nn]
-        # todo: update capacity with load for residentials
         attr = {'x': row.geometry.x,
                 'y': row.geometry.y,
                 'node_type': 'non_synthetic',
+                'ding0_node_type': "load",
                 'cluster': nn_attr['cluster'],
                 'load': row.capacity,
-                'category': row.category,
+                'capacity': row.capacity,
+                'residential_capacity': row.residential_capacity,
+                'number_households': row.number_households,
+                'cts_capacity': row.cts_capacity,
+                'industrial_capacity': row.industrial_capacity,
                 'feederID': nn_attr['feederID'],
-                # 'residentials_total_at_feeder': nn_attr['residentials_total_at_feeder']
                 }
 
         cable_type_stub = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
@@ -428,17 +400,19 @@ def build_branches_on_osm_ways(lvgd):
         (get_config_osm('lv_threshold_capacity') <= lvgd.buildings.capacity) &
         (lvgd.buildings.capacity < get_config_osm('mv_lv_threshold_capacity'))]
 
-    for building_node, row in lv_loads_to_station[
-        ['capacity', 'category', 'nn', 'nn_dist', 'nn_coords', 'geometry']].iterrows():
+    for building_node, row in lv_loads_to_station.iterrows():
         feederID += 1
         # todo: update capacity with load for residentials
         attr = {'x': row.geometry.x,
                 'y': row.geometry.y,
                 'node_type': 'non_synthetic',
-                'load': row.capacity,
-                'category': row.category,
+                'ding0_node_type': "load",
+                'capacity': row.capacity,
+                'residential_capacity': row.residential_capacity,
+                'number_households': row.number_households,
+                'cts_capacity': row.cts_capacity,
+                'industrial_capacity': row.industrial_capacity,
                 'feederID': feederID,
-                # 'residentials_total_at_feeder': row.number_households
                 }
         G.add_node(building_node, **attr)
         # add new edge to street graph
@@ -454,232 +428,95 @@ def build_branches_on_osm_ways(lvgd):
 
     lvgd.graph_district = G  # update graph for district.
 
-    added_cable_dist_dict = {}  # store u and v here to avoid duplicates
+    def transform_graph_to_ding0_graph(G, grid):
+        # New approach of transforming graph to ding0 objects graph by mltja
+        # Add nodes
+        cable_distributor_no = 0
+        helper_no = 0
+        load_no = 0
+        relabel_nodes_dict = {}
 
-    load_no = 0
-    # build lv grid based on graph
-    for edge_uv in G.edges:
+        for node in G.nodes(data=True):
+            node_name = node[0]
+            node_data = node[1]
+            node_coordinates = Point(node_data['x'], node_data['y'])
 
-        u = edge_uv[0]
-        v = edge_uv[1]
-
-        node_u = G.nodes[u]
-        node_v = G.nodes[v]
-
-        load_u_capacity = node_u['load']
-        load_v_capacity = node_v['load']
-
-        u_point = Point(node_u['x'], node_u['y'])
-        v_point = Point(node_v['x'], node_v['y'])
-
-        edge = G.edges[edge_uv]
-        branch_no = edge['feederID']
-        length = edge['length']
-        geometry = edge['geometry']
-        cable_type = edge['cable_type_stub']
-
-        # ADDING CABLE DISTRIBUTOR AND EDGES
-        if u == station_id:
-
-            if v in street_loads:
-                feederID += 1
-                branch_no = feederID
-
-            # create cable dist and connect between v and station
-            if v not in added_cable_dist_dict.keys():
-
-                # create new LVCableDistributorDing0
-                lv_cable_dist_v = LVCableDistributorDing0(
-                    id_db=load_no,  # need to set a unique identifier due to u may apper multiple times in edges
-                    grid=lvgd.lv_grid,
-                    branch_no=branch_no,
-                    load_no=load_no,
-                    geo_data=v_point,
-                    osm_id=v)
-
-                # add lv_cable_dist to graph
-                lvgd.lv_grid.add_cable_dist(lv_cable_dist_v)
-                added_cable_dist_dict[v] = lv_cable_dist_v
-                load_no+=1
-
-            else:  # load from lvgd.lv_grid._cable_distributors
-                lv_cable_dist_v = added_cable_dist_dict.get(v)
-
-            # branch_no = feederID
-
-            # connect v and station (which is u)
-            lvgd.lv_grid.graph.add_edge(
-                lvgd.lv_grid.station(),
-                lv_cable_dist_v,
-                branch=BranchDing0(
-                    length=length,
-                    kind='cable',
-                    grid=lvgd.lv_grid,
-                    type=cable_type,
-                    geometry=geometry,
-                    feeder=branch_no,  # node_v['feederID'],
-                    id_db='branch_{branch}_{load}'.format(
-                        branch=branch_no,
-                        load=load_no)))
-
-
-        elif v == station_id:
-
-            if u in street_loads:
-                feederID += 1
-                branch_no = feederID
-
-            # create cable dist and connect between u and station
-            if u not in added_cable_dist_dict.keys():
-
-                # create new LVCableDistributorDing0
-                lv_cable_dist_u = LVCableDistributorDing0(
+            if node_data["ding0_node_type"] == "cable_distributor":
+                cable_distributor_no += 1
+                cable_distributor = LVCableDistributorDing0(
+                    grid=grid,
+                    id_db=cable_distributor_no,
+                    geo_data=node_coordinates,
+                    in_building=False,
+                    osm_id=node_name
+                )
+                grid.add_cable_dist(cable_distributor)
+                relabel_nodes_dict[node_name] = cable_distributor
+            elif node_data["ding0_node_type"] == "load":
+                load_no += 1  # load_number in every component
+                helper_no += 1
+                # Helper components are used for better pypsa export
+                # Add helper cable distributor
+                cable_distributor = LVCableDistributorDing0(
+                        grid=grid,
+                        id_db=f"helper_{helper_no}",
+                        helper_component=True,
+                    )
+                # Add helper cable
+                branch = BranchDing0(
+                    grid=grid,
+                    id_db=f"helper_{helper_no}",
+                    helper_component=True,
+                )
+                load = LVLoadDing0(
+                    grid=grid,
                     id_db=load_no,
-                    grid=lvgd.lv_grid,
-                    branch_no=branch_no,
                     load_no=load_no,
-                    geo_data=u_point,
-                    osm_id=u)
+                    peak_load=node_data["capacity"],
+                    peak_load_residential=node_data["residential_capacity"],
+                    number_households=node_data["number_households"],
+                    peak_load_cts=node_data["cts_capacity"],
+                    peak_load_industrial=node_data["industrial_capacity"],
+                    geo_data=node_coordinates,
+                    building_id=node_name,
+                    type="conventional_load"
+                )
+                grid.add_cable_dist(cable_distributor)
+                grid.graph.add_edge(
+                    cable_distributor,
+                    load,
+                    branch=branch
+                )
+                grid.add_load(load)
+                relabel_nodes_dict[node_name] = cable_distributor
 
-                # add lv_cable_dist to graph
-                lvgd.lv_grid.add_cable_dist(lv_cable_dist_u)
-                added_cable_dist_dict[u] = lv_cable_dist_u
-                load_no += 1
+            elif node_data["ding0_node_type"] == "station":
+                # Station node is already in the graph
+                relabel_nodes_dict[node_name] = grid._station
+            else:
+                raise ValueError(f"No ding0_node_type or the false: {node_data['ding0_node_type']}")
 
-            else:  # load from lvgd.lv_grid._cable_distributors
-                lv_cable_dist_u = added_cable_dist_dict.get(u)
+        G = nx.relabel_nodes(G, relabel_nodes_dict)
 
-            # connect u and station (which is v)
-            lvgd.lv_grid.graph.add_edge(
-                lvgd.lv_grid.station(),
-                lv_cable_dist_u,
-                branch=BranchDing0(
-                    length=length,
-                    kind='cable',
-                    grid=lvgd.lv_grid,
-                    type=cable_type,
-                    geometry=geometry,
-                    feeder=branch_no,  # node_u['feederID'],
-                    id_db='branch_{branch}_{load}'.format(
-                        branch=branch_no,
-                        load=load_no)))
+        # Add edges
+        branch_no = 0
+        for edge in G.edges(data=True):
+            branch_no += 1
 
+            edge_data = edge[2]
 
-        else:
+            branch = BranchDing0(
+                grid=grid,
+                id_db=branch_no,
+                length=edge_data["length"],
+                kind='cable',
+                type=edge_data["cable_type_stub"],
+                geometry=edge_data["geometry"],
+                feeder=edge_data['feederID'],
+            )
+            grid.graph.add_edge(edge[0], edge[1], branch=branch)
 
-            # create cable dist and connect between u and v
-            # get cable distributor for v
-            if v not in added_cable_dist_dict.keys():
-
-                # create new LVCableDistributorDing0
-                lv_cable_dist_v = LVCableDistributorDing0(
-                    id_db=load_no,  # need to set an unqie identifier due to u may apper multiple times in edges
-                    grid=lvgd.lv_grid,
-                    branch_no=branch_no,
-                    load_no=load_no,
-                    geo_data=v_point,
-                    osm_id=v)
-
-                # add lv_cable_dist to graph
-                lvgd.lv_grid.add_cable_dist(lv_cable_dist_v)
-                added_cable_dist_dict[v] = lv_cable_dist_v
-                load_no += 1
-
-            else:  # load from lvgd.lv_grid._cable_distributors
-                lv_cable_dist_v = added_cable_dist_dict.get(v)
-
-            # get cable distrivutor fpr u
-            if u not in added_cable_dist_dict.keys():
-
-                # create new LVCableDistributorDing0
-                lv_cable_dist_u = LVCableDistributorDing0(
-                    id_db=load_no,
-                    grid=lvgd.lv_grid,
-                    branch_no=branch_no,
-                    load_no=load_no,
-                    geo_data=u_point,
-                    osm_id=u)
-
-                # add lv_cable_dist to graph
-                lvgd.lv_grid.add_cable_dist(lv_cable_dist_u)
-                added_cable_dist_dict[u] = lv_cable_dist_u
-                load_no += 1
-
-            else:  # load from lvgd.lv_grid._cable_distributors
-                lv_cable_dist_u = added_cable_dist_dict.get(u)
-
-            # connect lv_cable_dist_u and lv_cable_dist_v
-            lvgd.lv_grid.graph.add_edge(
-                lv_cable_dist_u,
-                lv_cable_dist_v,
-                branch=BranchDing0(
-                    length=length,
-                    kind='cable',
-                    grid=lvgd.lv_grid,
-                    type=cable_type,
-                    geometry=geometry,
-                    feeder=node_u['feederID'],
-                    id_db='branch_{branch}_{load}'.format(
-                        branch=branch_no,
-                        load=load_no)))
-
-        # ADD LOADS AND CONNECT EM
-        if load_u_capacity > 0:
-            # TODO: if u == station_id:  # do we need to create a CABLE DISTRIBUTOR FOR U TO CONNECT LOAD TO?
-            # create an instance of Ding0 LV load
-            lv_load = LVLoadDing0(grid=lvgd.lv_grid,
-                                  branch_no=branch_no,
-                                  load_no=load_no,
-                                  peak_load=load_u_capacity,
-                                  geo_data=u_point,
-                                  building_id=u,
-                                  sector=node_u["category"],
-                                  type="conventional_load")
-            new_lvgd_peak_load_considering_simultaneity += load_u_capacity
-
-            # add load
-            lvgd.lv_grid.add_load(lv_load)
-
-            # direct load - station connection is deprecated
-            #if u == station_id:
-            #    print(u, load_u_capacity)
-            #    load_u = lvgd.lv_grid.station()
-            #else:
-
-            # connect load
-            load_u = lv_cable_dist_u
-            # set in_building parameter
-            load_u.in_building = True
-
-            lvgd.lv_grid.graph.add_edge(
-                load_u,
-                lv_load,
-                branch=BranchDing0(
-                    length=1,
-                    geometry=geometry,
-                    kind='cable',
-                    grid=lvgd.lv_grid,
-                    type=cable_type,
-                    feeder=node_u['feederID'],
-                    id_db='branch_{branch}_{load}'.format(
-                        branch=branch_no,
-                        load=load_no)))
-
-        if load_v_capacity > 0:
-            # if v == station_id:  # do we need to create a CABLE DISTRIBUTOR FOR v TO CONNECT LOAD TO?
-            # create an instance of Ding0 LV load
-            lv_load = LVLoadDing0(grid=lvgd.lv_grid,
-                                  branch_no=branch_no,
-                                  load_no=load_no,
-                                  peak_load=load_v_capacity,
-                                  geo_data=v_point,
-                                  building_id=v,
-                                  sector=node_v["category"],
-                                  type="conventional_load")
-            new_lvgd_peak_load_considering_simultaneity += load_v_capacity
-
-            # add load
-            lvgd.lv_grid.add_load(lv_load)
+    transform_graph_to_ding0_graph(G, lvgd.lv_grid)
 
             # direct load - station connection is deprecated
             #if u == station_id:
