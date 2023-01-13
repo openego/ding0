@@ -243,7 +243,8 @@ class NetworkDing0:
             export_figures=False,
             export_lv_figures=False,
             ding0_legacy=False,
-            path=None
+            path=None,
+            peak_load_determination_mode="sum_of_loads"
     ):
 
         """
@@ -342,7 +343,12 @@ class NetworkDing0:
             start = time.time()
 
         logger.info("STEP 1: Import MV Grid Districts and subjacent objects")
-        self.import_mv_grid_districts(session, mv_grid_districts_no, ding0_legacy=ding0_legacy)
+        self.import_mv_grid_districts(
+            session,
+            mv_grid_districts_no,
+            ding0_legacy=ding0_legacy,
+            peak_load_determination_mode=peak_load_determination_mode
+        )
 
         logger.info("STEP 2: Import generators")
         self.import_generators(session, debug=debug)
@@ -612,11 +618,14 @@ class NetworkDing0:
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-    def import_mv_grid_districts(self,
-                                 session,
-                                 mv_grid_districts_no,
-                                 ding0_legacy=False,
-                                 create_lvgd_geo_method='convex_hull'):
+    def import_mv_grid_districts(
+            self,
+            session,
+            mv_grid_districts_no,
+            ding0_legacy=False,
+            create_lvgd_geo_method='convex_hull',
+            peak_load_determination_mode="sum_of_loads"
+    ):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
         and MV-LV stations, instantiates and initiates objects.
@@ -633,7 +642,11 @@ class NetworkDing0:
                         else: build new lv_districts...
 
         local_db: parameterize buildings from osm if True
-        egon_db: get buildings with loads from egon database
+
+        peak_load_determination_mode: `str`
+            - "sum_of_loads" - sums all loads
+            - "diversity_equation" - calculate peak load with equation from literature
+            out of diversity factors and the number of households
 
         See Also
         --------
@@ -679,7 +692,10 @@ class NetworkDing0:
 
             else:
                 self.import_lv_load_areas_and_build_new_lv_districts(
-                    session, mv_grid_district, create_lvgd_geo_method
+                    session,
+                    mv_grid_district,
+                    create_lvgd_geo_method,
+                    peak_load_determination_mode
                 )
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
@@ -689,7 +705,11 @@ class NetworkDing0:
         logger.warning('=====> MV Grid Districts imported')
 
     def import_lv_load_areas_and_build_new_lv_districts(
-            self, session, mv_grid_district, create_lvgd_geo_method
+            self,
+            session,
+            mv_grid_district,
+            create_lvgd_geo_method,
+            peak_load_determination_mode
     ):
 
         """
@@ -818,13 +838,15 @@ class NetworkDing0:
 
             # Create LVLoadAreaDing0
             # TODO: if peak load smaller than threshold: do not add
-            # TODO: Reimplement diversity, number households
-            # Old behaviour:
-            # - Calculate peak load based on diversity of loads.
-            # >>> peak_load = get_peak_load_diversity(loads_lv_df)
-            # New behaviour:
-            # - Calculate peak load base by sum of building loads.
-            peak_load = loads_lv_df.capacity.sum()
+            if peak_load_determination_mode == "sum_of_loads":
+                # Calculate peak load base by sum of building loads.
+                peak_load = loads_lv_df.capacity.sum()
+            elif peak_load_determination_mode == "diversity_equation":
+                # Calculate peak load based on diversity of loads.
+                peak_load = get_peak_load_diversity(loads_lv_df)
+            else:
+                raise ValueError("False peak load determination mode.")
+
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
                                            db_data=row,
                                            mv_grid_district=mv_grid_district,
@@ -883,13 +905,15 @@ class NetworkDing0:
 
                 # Create LVGridDistrictDing0
                 # Therefore calculate "peak_load_div"
-                # TODO: Reimplement get_peak_load_diversity
-                # Old behaviour before new data:
-                # - calc peak load based on diversity of loads
-                # >>> peak_load_div = get_peak_load_diversity(buildings)
-                # New behaviour with new data:
-                # - calc peak load as sum of buildings capacity
-                peak_load_div = buildings.capacity.sum()
+                if peak_load_determination_mode == "sum_of_loads":
+                    # Calculate peak load base by sum of building loads.
+                    peak_load_div = loads_lv_df.capacity.sum()
+                elif peak_load_determination_mode == "diversity_equation":
+                    # Calculate peak load based on diversity of loads.
+                    peak_load_div = get_peak_load_diversity(loads_lv_df)
+                else:
+                    raise ValueError("False peak load determination mode.")
+
                 if peak_load_div > 0:
                     # Create LVGridDistrictDing0
                     lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id,
