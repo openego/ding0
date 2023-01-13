@@ -5,21 +5,22 @@ from geoalchemy2.shape import to_shape
 from ding0.config.config_lv_grids_osm import get_peak_loads, get_load_profile_categories, get_config_osm
 
 def get_peak_load_diversity(buildings):
-    
-    """ get get_peak_load_diversity for each given area """ 
-    load_profile_categories = get_load_profile_categories() 
-    diversity_factor = get_config_osm('diversity_factor_not_residential') 
-    if len(buildings.loc[buildings['category'].isin(load_profile_categories['residentials_list'])]):
-        total_number_hh = buildings.loc[buildings['category'].isin(load_profile_categories['residentials_list'])]['number_households'].sum() 
-        peak_load_res = get_peak_load_for_residential(total_number_hh) * total_number_hh 
-    else:
+    """ get get_peak_load_diversity for each given area """
+    diversity_factor = get_config_osm('diversity_factor_not_residential')
+
+    total_number_of_households = buildings["number_households"].sum()
+    peak_load_res_sum = buildings["residential_capacity"].sum()
+    if total_number_of_households > 0 and peak_load_res_sum > 0:
+        peak_load_res = get_peak_load_for_residential(total_number_of_households) * total_number_of_households
+    elif peak_load_res_sum == 0:
         peak_load_res = 0
-        
-    if len(buildings.loc[~buildings['category'].isin(load_profile_categories['residentials_list'])]):
-        peak_load_not_res = buildings.loc[~buildings['category'].isin(load_profile_categories['residentials_list']), 'capacity'].sum() * diversity_factor 
     else:
-        peak_load_not_res = 0
-                         
+        raise ValueError("Total number of households is 0, "
+                         "but residential load is not 0!")
+
+    peak_load_not_res = (buildings[["cts_capacity", "industrial_capacity"]]
+                         .sum().sum() * diversity_factor)
+
     return peak_load_res + peak_load_not_res 
 
 def get_peak_load(category, load_profile_categories, load_profiles, area, n_amenities_inside, number_households):
