@@ -909,10 +909,10 @@ class NetworkDing0:
                 # Therefore calculate "peak_load_div"
                 if peak_load_determination_mode == "sum_of_loads":
                     # Calculate peak load base by sum of building loads.
-                    peak_load_div = loads_lv_df.capacity.sum()
+                    peak_load_div = buildings.capacity.sum()
                 elif peak_load_determination_mode == "diversity_equation":
                     # Calculate peak load based on diversity of loads.
-                    peak_load_div = get_peak_load_diversity(loads_lv_df)
+                    peak_load_div = get_peak_load_diversity(buildings)
                 else:
                     raise ValueError("False peak load determination mode.")
 
