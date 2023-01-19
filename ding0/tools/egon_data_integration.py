@@ -517,6 +517,10 @@ def get_egon_buildings(orm, session, subst_id, load_area):
         how="outer",
     )
 
+    if buildings_df.empty:
+        logger.error(f"No buildings in LoadArea {load_area.name}")
+        return buildings_df
+
     buildings_df.fillna(
         {
             "number_households": 0,
@@ -536,8 +540,8 @@ def get_egon_buildings(orm, session, subst_id, load_area):
         coordinates = x[x.notna()]
         for i in range(1, coordinates.size):
             if not coordinates.iat[i - 1].almost_equals(coordinates.iat[i]):
-                raise ValueError(
-                    "Coordinates of buildings with " "the same id are not equal!"
+                logger.error(
+                    "Coordinates of buildings with the same id are not equal!"
                 )
 
         return coordinates.iat[0]

@@ -787,6 +787,8 @@ class NetworkDing0:
             buildings_w_loads_df = db_io.get_egon_buildings(
                 self.orm, session, mv_grid_district.id_db, row
             )
+            if buildings_w_loads_df.empty:
+                continue
 
             # If composed graph of type synthetic (no osm ways have been found), then
             # update graph node's coord (geo load center) using building's positions
