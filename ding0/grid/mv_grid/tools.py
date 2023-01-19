@@ -480,7 +480,13 @@ def check_stub_criterion(stub_dict, stub_graph):
                     load_nodes = list(tree)[1:]
 
                     for n in load_nodes:
-                        cum_load = sum([stub_data['load'][n] for n in load_nodes])
+                        cum_load = 0
+                        for inner_n in load_nodes:
+                            try:
+                                cum_load += stub_data['load'][inner_n]
+                            except KeyError:
+                                # ToDo: Find origin of problem that in load_nodes is not only loads
+                                logger.error(f"{inner_n} not in stub_data['load']")
                         if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                             comp = [root] + load_nodes
                             mod_stubs_list.append(comp)
