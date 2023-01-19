@@ -7,7 +7,7 @@ import shapely.wkb
 from ding0.config.config_lv_grids_osm import get_config_osm
 from ding0.tools import config as cfg_ding0
 from geoalchemy2.shape import to_shape
-from sqlalchemy import Integer, func
+from sqlalchemy import Integer, func, cast
 
 
 def get_mv_data(orm, session, mv_grid_districts_no):
@@ -399,7 +399,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
             == orm["egon_industrial_sites"].id,
         )
         .filter(
-            orm["egon_sites_ind_load_curves_individual"].bus_id == subst_id,
+            # orm["egon_sites_ind_load_curves_individual"].bus_id == subst_id,
             orm["egon_sites_ind_load_curves_individual"].scn_name == scn_name,
             orm["egon_sites_ind_load_curves_individual"].voltage_level.in_(
                 [4, 5, 6, 7]
@@ -566,10 +566,22 @@ def func_within(geom_a, geom_b, srid=3035):
             srid,
         ),
     )
+def func_intersect(geom_a, geom_b, srid=3035):
+    return func.ST_Intersects(
+        func.ST_Transform(
+            geom_a,
+            srid,
+        ),
+        func.ST_Transform(
+            geom_b,
+            srid,
+        ),
+    )
 
-
-def get_res_generators(orm, session, subst_id):
+def get_res_generators(orm, session, mv_grid_district):
     srid = 3035  # new to calc distance matrix in step 6
+    subst_id = str(mv_grid_district.id_db)
+    geo_area = mv_grid_district.geo_data
 
     # Get PV open space join weather cell id
     query = (
@@ -588,10 +600,14 @@ def get_res_generators(orm, session, subst_id):
             func_within(orm["generators_pv"].geom, orm["weather_cells"].geom),
         )
         .filter(
-            orm["generators_pv"].bus_id == subst_id,
+            # orm["generators_pv"].bus_id == subst_id,
             orm["generators_pv"].site_type == "Freifläche",
             orm["generators_pv"].status == "InBetrieb",
             orm["generators_pv"].voltage_level.in_([4, 5, 6, 7]),
+            func.ST_Intersects(
+                func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
+                func.ST_Transform(orm["generators_pv"].geom, srid)
+            ),
         )
     )
     generators_pv_open_space_df = pd.read_sql(
@@ -627,9 +643,13 @@ def get_res_generators(orm, session, subst_id):
             orm["generators_pv_rooftop"].building_id == building_geoms.c.building_id,
         )
         .filter(
-            orm["generators_pv_rooftop"].bus_id == subst_id,
+            # orm["generators_pv_rooftop"].bus_id == subst_id,
             orm["generators_pv_rooftop"].scenario == "status_quo",
             orm["generators_pv_rooftop"].voltage_level.in_([4, 5, 6, 7]),
+            func.ST_Intersects(
+                func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
+                func.ST_GeomFromText(building_geoms.c.geom, get_config_osm("srid"))
+            )
         )
     )
     generators_pv_rooftop_df = pd.read_sql(
@@ -655,10 +675,14 @@ def get_res_generators(orm, session, subst_id):
             func_within(orm["generators_wind"].geom, orm["weather_cells"].geom),
         )
         .filter(
-            orm["generators_wind"].bus_id == subst_id,
+            # orm["generators_wind"].bus_id == subst_id,
             orm["generators_wind"].site_type == "Windkraft an Land",
             orm["generators_wind"].status == "InBetrieb",
             orm["generators_wind"].voltage_level.in_([4, 5, 6, 7]),
+            func.ST_Intersects(
+                func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
+                func.ST_Transform(orm["generators_wind"].geom, srid)
+            )
         )
     )
     generators_wind_df = pd.read_sql(
@@ -676,9 +700,13 @@ def get_res_generators(orm, session, subst_id):
             "geom"
         ),
     ).filter(
-        orm["generators_biomass"].bus_id == subst_id,
+        # orm["generators_biomass"].bus_id == subst_id,
         orm["generators_biomass"].status == "InBetrieb",
         orm["generators_biomass"].voltage_level.in_([4, 5, 6, 7]),
+        func.ST_Intersects(
+            func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
+            func.ST_Transform(orm["generators_biomass"].geom, srid)
+        )
     )
     generators_biomass_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
@@ -695,9 +723,13 @@ def get_res_generators(orm, session, subst_id):
             "geom"
         ),
     ).filter(
-        orm["generators_water"].bus_id == subst_id,
+        # orm["generators_water"].bus_id == subst_id,
         orm["generators_water"].status == "InBetrieb",
         orm["generators_water"].voltage_level.in_([4, 5, 6, 7]),
+        func.ST_Intersects(
+            func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
+            func.ST_Transform(orm["generators_water"].geom, srid)
+        )
     )
     generators_water_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
@@ -714,10 +746,11 @@ def get_res_generators(orm, session, subst_id):
         ],
         ignore_index=True,
     )
-    # Save geom column to geom_new to fit the data to the underlying functions
-    renewable_generators_df["geom_new"] = renewable_generators_df["geom"]
     renewable_generators_df.rename(columns={"bus_id": "subst_id"}, inplace=True)
-    renewable_generators_df["mvlv_subst_id"] = pd.Series()
+    # define generators with unknown subtype as 'unknown'
+    renewable_generators_df['generation_subtype'].fillna(value='unknown', inplace=True)
+    # Overwrite subst_id of the data, to correct faulty data
+    renewable_generators_df["subst_id"] = int(subst_id)
 
     return renewable_generators_df
 
