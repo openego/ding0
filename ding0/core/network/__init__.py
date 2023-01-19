@@ -1006,7 +1006,7 @@ class GeneratorDing0:
         -------
         :obj:`str`
         """
-        if self.subtype != None:
+        if self.subtype not in [None, 'unknown']:
             type = self.subtype
         elif self.type != None:
             type = self.type

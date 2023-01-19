@@ -556,19 +556,24 @@ def plot_lv_topology(grid, path=None, mv_grid_id=None, subtitle="", testcase='lo
         node_types = ['LVStationDing0',
                       'LVLoadDing0',  # PAUL new
                       'LVCableDistributorDing0',
+                      'GeneratorFluctuatingDing0',
+                      'GeneratorDing0',
                       'n/a']
 
         # node styles
         colors_dict = {'LVStationDing0': '#f2ae00',
                        'LVLoadDing0': '#d62728',  # PAUL new
                        'LVCableDistributorDing0': '#ffa500',  # PAUL new'#000000',
+                       'GeneratorDing0': '#097969',
                        'n/a': 'orange'}
         sizes_dict = {'LVStationDing0': 50,
                       'LVLoadDing0': 6,  # PAUL new
+                      'GeneratorDing0': 12,
                       'LVCableDistributorDing0': 4,
                       'n/a': 3}
         zindex_by_type = {'LVStationDing0': 12,
                           'LVLoadDing0': 12,  # PAUL new
+                          'GeneratorDing0': 11,
                           'LVCableDistributorDing0': 9,
                           'n/a': 10}
 

@@ -70,6 +70,8 @@ class MVGridDing0(GridDing0):
         self.default_branch_kind_aggregated = kwargs.get('default_branch_kind_aggregated', None)
         self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
 
+        self.lv_generators_to_connect = []
+
         self.add_station(kwargs.get('station', None))
 
     def station(self):
@@ -413,6 +415,17 @@ class MVGridDing0(GridDing0):
         """
 
         self._graph = mv_connect.mv_connect_generators(self.grid_district, self.graph, debug)
+
+    def connect_lv_generators(self, debug=False):
+        """ Connects LV generators (graph nodes) to grid (graph)
+
+        Args
+        ----
+        debug: bool, defaults to False
+             If True, information is printed during process
+        """
+
+        lv_connect.lv_connect_generators(self, debug)
 
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment:
@@ -975,16 +988,6 @@ class LVGridDing0(GridDing0):
 
         #self.graph_draw(mode='LV')
 
-    def connect_generators(self, debug=False):
-        """ Connects LV generators (graph nodes) to grid (graph)
-
-        Args
-        ----
-        debug: bool, defaults to False
-             If True, information is printed during process
-        """
-
-        self._graph = lv_connect.lv_connect_generators(self.grid_district, self.graph, debug)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid.

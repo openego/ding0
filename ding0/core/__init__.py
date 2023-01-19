@@ -1228,37 +1228,17 @@ class NetworkDing0:
             """
             Imports renewable (res) generators
             """
-            generators = db_io.get_res_generators(self.orm, session, list(mv_grid_districts_dict)[0])
-            # define generators with unknown subtype as 'unknown'
-            generators.loc[generators[
-                               'generation_subtype'].isnull(),
-                           'generation_subtype'] = 'unknown'
-
+            generators = db_io.get_res_generators(self.orm, session, list(mv_grid_districts_dict.values())[0])
+            logger.debug(f"Import {generators.shape[0]} renewable generators.")
             for id_db, row in generators.iterrows():
-                logger.debug(f"Generator {id_db}")
-                # treat generators' geom:
-                # use geom_new (relocated genos from data processing)
-                # otherwise use original geom from EnergyMap
-                if row['geom_new']:
-                    geo_data = wkt_loads(row['geom_new'])
-
-                elif not row['geom_new']:
-                    geo_data = wkt_loads(row['geom'])
-
-                    logger.warning(
-                        'Generator {} has no geom_new entry,'
-                        'EnergyMap\'s geom entry will be used.'.format(
-                            id_db))
-                # if no geom is available at all, skip generator
-                elif not row['geom']:
-                    # geo_data =
-                    logger.error('Generator {} has no geom entry either'
-                                 'and will be skipped.'.format(id_db))
-                    continue
-
                 # look up MV grid
                 mv_grid_district_id = row['subst_id']
                 mv_grid = mv_grid_districts_dict[mv_grid_district_id].mv_grid
+
+                if pd.notna(row["building_id"]):
+                    building_id = int(row["building_id"])
+                else:
+                    building_id = None
 
                 # create generator object
                 if row['generation_type'] in ['solar', 'wind']:
@@ -1269,7 +1249,10 @@ class NetworkDing0:
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
                         v_level=int(row['voltage_level']),
-                        weather_cell_id=row['w_id'])
+                        weather_cell_id=int(row['w_id']),
+                        building_id=building_id,
+                        geo_data=wkt_loads(row['geom'])
+                    )
                 else:
                     generator = GeneratorDing0(
                         id_db=id_db,
@@ -1277,57 +1260,18 @@ class NetworkDing0:
                         capacity=float(row['electrical_capacity']),
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
-                        v_level=int(row['voltage_level']))
+                        v_level=int(row['voltage_level']),
+                        building_id=building_id,
+                        geo_data=wkt_loads(row['geom'])
+                    )
 
                 # MV generators
                 if generator.v_level in [4, 5]:
-                    generator.geo_data = geo_data
                     mv_grid.add_generator(generator)
 
                 # LV generators
                 elif generator.v_level in [6, 7]:
-
-                    # look up MV-LV substation id
-                    mvlv_subst_id = row['mvlv_subst_id']
-
-                    # if there's a LVGD id
-                    if mvlv_subst_id and not isnan(mvlv_subst_id):
-                        # assume that given LA exists
-                        try:
-                            # get LVGD
-                            lv_station = lv_stations_dict[mvlv_subst_id]
-                            lv_grid_district = lv_station.grid.grid_district
-                            generator.lv_grid = lv_station.grid
-
-                            # set geom (use original from db)
-                            generator.geo_data = geo_data
-
-                        # if LA/LVGD does not exist, choose random LVGD and move generator to station of LVGD
-                        # this occurs due to exclusion of LA with peak load < 1kW
-                        except:
-                            lv_grid_district = random.choice(list(lv_grid_districts_dict.values()))
-
-                            generator.lv_grid = lv_grid_district.lv_grid
-                            generator.geo_data = lv_grid_district.lv_grid.station().geo_data
-
-                            logger.warning('Generator {} cannot be assigned to '
-                                           'non-existent LV Grid District and was '
-                                           'allocated to a random LV Grid District ({}).'.format(
-                                repr(generator), repr(lv_grid_district)))
-                            pass
-
-                    else:
-                        lv_grid_district = random.choice(list(lv_grid_districts_dict.values()))
-
-                        generator.lv_grid = lv_grid_district.lv_grid
-                        generator.geo_data = lv_grid_district.lv_grid.station().geo_data
-
-                        logger.warning('Generator {} has no la_id and was '
-                                       'assigned to a random LV Grid District ({}).'.format(
-                            repr(generator), repr(lv_grid_district)))
-
-                    generator.lv_load_area = lv_grid_district.lv_load_area
-                    lv_grid_district.lv_grid.add_generator(generator)
+                    mv_grid.lv_generators_to_connect.append(generator)
                 else:
                     ValueError("False voltage level")
 
@@ -2208,25 +2152,13 @@ class NetworkDing0:
         debug: :obj:`bool`, defaults to False
             If True, information is printed during process.
         """
+        # get predefined random seed and initialize random generator
+        seed = int(cfg_ding0.get('random', 'seed'))
+        random.seed(a=seed)
 
         for mv_grid_district in self.mv_grid_districts():
             mv_grid_district.mv_grid.connect_generators(debug=debug)
-
-            # get predefined random seed and initialize random generator
-            seed = int(cfg_ding0.get('random', 'seed'))
-            random.seed(a=seed)
-
-            for load_area in mv_grid_district.lv_load_areas():
-                if not load_area.is_aggregated:
-                    for lv_grid_district in load_area.lv_grid_districts():
-
-                        lv_grid_district.lv_grid.connect_generators(debug=debug)
-                        if debug:
-                            lv_grid_district.lv_grid.graph_draw(mode='LV')
-                else:
-                    logger.info(
-                        '{} is of type aggregated. LV generators are not connected to LV grids.'.format(
-                            repr(load_area)))
+            mv_grid_district.mv_grid.connect_lv_generators(debug=debug)
 
         logger.info('=====> Generators connected')
 
