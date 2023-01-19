@@ -702,7 +702,6 @@ class NetworkDing0:
             mv_grid_district.add_peak_demand()
 
         logger.info('=====> MV Grid Districts imported')
-        logger.warning('=====> MV Grid Districts imported')
 
     def import_lv_load_areas_and_build_new_lv_districts(
             self,
