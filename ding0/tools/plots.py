@@ -12,6 +12,8 @@ from ding0.tools.logger import get_default_home_dir
 from ding0.core.network.grids import MVGridDing0
 from ding0.config.config_lv_grids_osm import get_config_osm
 
+from ding0.tools.debug import log_errors
+
 use_gpd = True
 use_ctx = False
 
@@ -29,6 +31,7 @@ if 'READTHEDOCS' not in os.environ:
         use_ctx = False
 
 
+@log_errors
 def plot_mv_topology(grid, path = None, subtitle='', filename=None, testcase='load',
                      line_color='ring', node_color='type',
                      limits_cb_lines=None, limits_cb_nodes=None,
@@ -474,6 +477,7 @@ def plot_mv_topology(grid, path = None, subtitle='', filename=None, testcase='lo
         logger.info('==> Figure saved to {path}'.format(path=path))
 
 
+@log_errors
 def plot_lv_topology(grid, path=None, mv_grid_id=None, subtitle="", testcase='load', line_color='feeder', node_color='type',
                      background_map=True, filename=None):
     """ Draws LV grid graph using networkx

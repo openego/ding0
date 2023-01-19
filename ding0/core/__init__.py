@@ -2575,24 +2575,17 @@ class NetworkDing0:
             kwargs["testcase"] = 'feedin'
 
         for mv_grid_district in self.mv_grid_districts():
-            try:
-                plot_mv_topology(mv_grid_district.mv_grid, **kwargs)
-            except:
-                self.message.append(str(traceback.format_exc()))
-                logger.warning(f"Can't plot: {filename}")
+            plot_mv_topology(mv_grid_district.mv_grid, **kwargs)
+
 
 
     def plot_lv_grids(self, path=None, filename=None):
         for mv_grid_district in self.mv_grid_districts():
             for load_area in mv_grid_district.lv_load_areas():
                 for lv_grid_district in load_area.lv_grid_districts():
-                    try:
-                        plot_lv_topology(
-                            lv_grid_district.lv_grid,
-                            path=path,
-                            mv_grid_id=mv_grid_district.id_db,
-                            filename=filename,
-                        )
-                    except:
-                        self.message.append(str(traceback.format_exc()))
-                        logger.warning(f"Can't plot: {filename}")
+                    plot_lv_topology(
+                        lv_grid_district.lv_grid,
+                        path=path,
+                        mv_grid_id=mv_grid_district.id_db,
+                        filename=filename,
+                    )
