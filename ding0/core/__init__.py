@@ -855,7 +855,7 @@ class NetworkDing0:
                                            load_area_graph=cluster_graph)
 
             # Add MV Loads to LV Load Area
-            for osm_id_building, row in loads_mv_df.iterrows():
+            for building_id, row in loads_mv_df.iterrows():
                 # Create MVLoadDing0
                 mv_load = MVLoadDing0(geo_data=row.geometry,
                                       grid=mv_grid_district,
@@ -864,7 +864,8 @@ class NetworkDing0:
                                       number_households=row.number_households,
                                       peak_load_cts=row.cts_capacity,
                                       peak_load_industrial=row.industrial_capacity,
-                                      osmid_building=osm_id_building,
+                                      building_id=building_id,
+                                      osmid_building=building_id,
                                       osmid_nn=row.nn,
                                       nn_coords=row.nn_coords,
                                       lv_load_area=lv_load_area,
