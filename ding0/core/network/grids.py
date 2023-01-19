@@ -227,7 +227,6 @@ class MVGridDing0(GridDing0):
                 ring.reverse()
 
             if include_satellites:
-                ring_nodes = ring
                 satellites = []
                 for ring_node in ring:
                     # determine all branches diverging from each ring node
