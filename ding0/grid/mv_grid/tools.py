@@ -89,13 +89,12 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             # of neighboring nodes
             diff2 = abs(sum(node_peak_data[0:position+1]) -
                         sum(node_peak_data[position+1:len(node_peak_data)]))
-            if diff2 < diff_min:
+            if diff2 < diff_min or position == 0:
                 node2 = ring[position+1]
             else:
                 node2 = ring[position-1]
         else:
             node2 = ring[position-1]
-
         circ_breaker.branch = mv_grid.graph.adj[node_cb][node2]['branch']
         circ_breaker.branch_nodes = (node_cb, node2)
         circ_breaker.switch_node = node_cb
@@ -131,8 +130,6 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             # node is LV station -> get peak load and peak generation
             elif isinstance(node, MVLoadDing0):
                 nodes_peak_load.append(node.peak_load / cos_phi_load)
-                #nodes_peak_generation.append(
-                #    node.peak_generation / cos_phi_feedin) # TODO include feedin for mv loads
 
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
             elif isinstance(node, CableDistributorDing0):
@@ -141,18 +138,18 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
                 nodes_subtree_peak_generation = 0
 
                 for node_subtree in nodes_subtree:
-
+                    # node is MVLoad -> get peak load
+                    if isinstance(node, MVLoadDing0):
+                        nodes_subtree_peak_load += node_subtree.peak_load / cos_phi_load
                     # node is LV station -> get peak load and peak generation
-                    if isinstance(node_subtree, LVStationDing0):
-                        nodes_subtree_peak_load += node_subtree.peak_load / \
-                                                   cos_phi_load
-                        nodes_subtree_peak_generation += node_subtree.peak_generation / \
-                                                         cos_phi_feedin
-
+                    elif isinstance(node_subtree, LVStationDing0):
+                        nodes_subtree_peak_load += node_subtree.peak_load / cos_phi_load
+                        nodes_subtree_peak_generation += node_subtree.peak_generation / cos_phi_feedin
                     # node is LV station -> get peak load and peak generation
-                    if isinstance(node_subtree, GeneratorDing0):
-                        nodes_subtree_peak_generation += node_subtree.capacity / \
-                                                         cos_phi_feedin
+                    elif isinstance(node_subtree, GeneratorDing0):
+                        nodes_subtree_peak_generation += node_subtree.capacity / cos_phi_feedin
+                    else:
+                        TypeError("False node type!")
 
                 nodes_peak_load.append(nodes_subtree_peak_load)
                 nodes_peak_generation.append(nodes_subtree_peak_generation)
@@ -184,9 +181,8 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             has_lv_station = True
         else:
             has_lv_station = False
-            logging.debug("Ring {} does not have a LV station. "
-                          "Switch disconnecter is installed at arbitrary "
-                          "node.".format(ring))
+            logging.debug(f"Ring {ring} does not have a LV station. "
+                          f"Switch disconnecter is installed at arbitrary node.")
 
         # check where difference of demand/generation in two half-rings is minimal
         for ctr in range(len(node_peak_data)):
@@ -209,13 +205,11 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         relocate_circuit_breaker()
 
         if debug:
-            logger.debug('Ring: {}'.format(ring))
-            logger.debug('Circuit breaker {0} was relocated to edge {1} '
-                  '(position on route={2})'.format(
-                    circ_breaker, repr(circ_breaker.branch), position)
-                )
-            logger.debug('Peak load sum: {}'.format(sum(nodes_peak_load)))
-            logger.debug('Peak loads: {}'.format(nodes_peak_load))
+            logger.debug(f'Ring: {ring}')
+            logger.debug(f'Circuit breaker {circ_breaker} was relocated to edge '
+                         f'{repr(circ_breaker.branch)} (position on route={position})')
+            logger.debug(f'Peak load sum: {sum(nodes_peak_load)}')
+            logger.debug(f'Peak loads: {nodes_peak_load}')
 
 from shapely.ops import linemerge
 from shapely.geometry import Point, LineString
