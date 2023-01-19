@@ -2002,29 +2002,50 @@ class NetworkDing0:
         # start filling component dataframes
         for grid_district in self.mv_grid_districts():
             gd_components, network_df, grids_df, _ = fill_mvgd_component_dataframes(
-                grid_district, buses_df, generators_df,
-                lines_df, loads_df, transformer_df, only_export_mv)
-            # save network and components to csv
+                grid_district,
+                buses_df,
+                generators_df,
+                lines_df,
+                loads_df,
+                transformer_df,
+                only_export_mv
+            )
+            # Transform all geodata from 'EPSG:3035' to 'EPSG:4326' for eDisGo
+            gd_components, network_df, grids_df = transform_all_geodata(
+                gd_components, network_df, grids_df
+            )
+            # Make directories for the grid data and save to csv
             path = os.path.join(dir, str(grid_district.id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
-            gd_components, network_df, grids_df = transform_all_geodata(gd_components, network_df, grids_df)
-            network_df.to_csv(os.path.join(path, 'network.csv'))
-            grids_df.to_csv(os.path.join(path, 'grids.csv'))
+
+            network_df.to_csv(
+                os.path.join(path, 'network.csv')
+            )
+            grids_df.to_csv(
+                os.path.join(path, 'grids.csv')
+            )
             gd_components['HVMV_Transformer'].to_csv(
-                os.path.join(path, 'transformers_hvmv.csv'))
+                os.path.join(path, 'transformers_hvmv.csv')
+            )
             gd_components['Transformer'].to_csv(
-                os.path.join(path, 'transformers.csv'))
+                os.path.join(path, 'transformers.csv')
+            )
             gd_components['Bus'].to_csv(
-                os.path.join(path, 'buses.csv'))
+                os.path.join(path, 'buses.csv')
+            )
             gd_components['Line'].to_csv(
-                os.path.join(path, 'lines.csv'))
+                os.path.join(path, 'lines.csv')
+            )
             gd_components['Load'].to_csv(
-                os.path.join(path, 'loads.csv'))
+                os.path.join(path, 'loads.csv')
+            )
             gd_components['Generator'].to_csv(
-                os.path.join(path, 'generators.csv'))
+                os.path.join(path, 'generators.csv')
+            )
             gd_components['Switch'].to_csv(
-                os.path.join(path, 'switches.csv'))
+                os.path.join(path, 'switches.csv')
+            )
 
             # Merge metadata of multiple runs
             if 'metadata' not in locals():
