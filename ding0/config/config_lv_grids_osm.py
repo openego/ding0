@@ -40,6 +40,7 @@ def get_config_osm(key):
         'ons_dist_threshold' : 1500,
         'buffer_distance' : [5, 25, 50, 100],
         'unconn_nodes_ratio' : 0.02,
+        'major_ccs_ratio_threshold' : .30,
         'get_fully_conn_graph_number_max_it' : 4,
         'diversity_factor_not_residential' : 0.6,
     }
