@@ -592,7 +592,7 @@ def get_res_generators(orm, session, mv_grid_district):
         session.query(
             orm["generators_pv"].bus_id,
             orm["generators_pv"].gens_id,
-            orm["generators_pv"].capacity.label("electrical_capacity"),
+            (orm["generators_pv"].capacity * 1000).label("electrical_capacity"),
             orm["generators_pv"].voltage_level,
             orm["weather_cells"].w_id,
             func.ST_AsText(func.ST_Transform(orm["generators_pv"].geom, srid)).label(
@@ -637,7 +637,7 @@ def get_res_generators(orm, session, mv_grid_district):
             orm["generators_pv_rooftop"].bus_id,
             orm["generators_pv_rooftop"].gens_id,
             orm["generators_pv_rooftop"].building_id,
-            orm["generators_pv_rooftop"].capacity.label("electrical_capacity"),
+            (orm["generators_pv_rooftop"].capacity * 1000).label("electrical_capacity"),
             orm["generators_pv_rooftop"].voltage_level,
             orm["generators_pv_rooftop"].weather_cell_id.label("w_id"),
             building_geoms.c.geom,
@@ -667,7 +667,7 @@ def get_res_generators(orm, session, mv_grid_district):
         session.query(
             orm["generators_wind"].bus_id,
             orm["generators_wind"].gens_id,
-            orm["generators_wind"].capacity.label("electrical_capacity"),
+            (orm["generators_wind"].capacity * 1000).label("electrical_capacity"),
             orm["generators_wind"].voltage_level,
             orm["weather_cells"].w_id,
             func.ST_AsText(func.ST_Transform(orm["generators_wind"].geom, srid)).label(
@@ -698,7 +698,7 @@ def get_res_generators(orm, session, mv_grid_district):
     query = session.query(
         orm["generators_biomass"].bus_id,
         orm["generators_biomass"].gens_id,
-        orm["generators_biomass"].capacity.label("electrical_capacity"),
+        (orm["generators_biomass"].capacity * 1000).label("electrical_capacity"),
         orm["generators_biomass"].voltage_level,
         func.ST_AsText(func.ST_Transform(orm["generators_biomass"].geom, srid)).label(
             "geom"
@@ -721,7 +721,7 @@ def get_res_generators(orm, session, mv_grid_district):
     query = session.query(
         orm["generators_water"].bus_id,
         orm["generators_water"].gens_id,
-        orm["generators_water"].capacity.label("electrical_capacity"),
+        (orm["generators_water"].capacity * 1000).label("electrical_capacity"),
         orm["generators_water"].voltage_level,
         func.ST_AsText(func.ST_Transform(orm["generators_water"].geom, srid)).label(
             "geom"
