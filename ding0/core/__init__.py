@@ -2348,7 +2348,8 @@ class NetworkDing0:
         # Get latest version and/or git commit hash
         try:
             version = subprocess.check_output(
-                ["git", "describe", "--tags", "--always"]).decode('utf8')
+                ["git", "describe", "--tags", "--always"], cwd=package_path
+            ).decode('utf8')
         except:
             version = None
 
