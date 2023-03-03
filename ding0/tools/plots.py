@@ -478,8 +478,17 @@ def plot_mv_topology(grid, path = None, subtitle='', filename=None, testcase='lo
 
 
 @log_errors
-def plot_lv_topology(grid, path=None, mv_grid_id=None, subtitle="", testcase='load', line_color='feeder', node_color='type',
-                     background_map=True, filename=None):
+def plot_lv_topology(
+        grid,
+        path=None,
+        mv_grid_id=None,
+        subtitle="",
+        testcase='load',
+        line_color='feeder',
+        node_color='type',
+        background_map=True,
+        filename=None
+):
     """ Draws LV grid graph using networkx
 
     Parameters
@@ -634,7 +643,7 @@ def plot_lv_topology(grid, path=None, mv_grid_id=None, subtitle="", testcase='lo
 
     def plot_region_data(ax):
         # get geoms of MV grid district, load areas and LV grid districts
-        buildings = gpd.GeoDataFrame({'geometry': grid.grid_district.buildings.geometry.tolist()},
+        buildings = gpd.GeoDataFrame({'geometry': grid.grid_district.buildings.footprint.tolist()},
                                      crs='epsg:{srid}'.format(srid=model_proj))
         lv_grid_district = gpd.GeoDataFrame({'geometry': [grid.grid_district.geo_data]},
                                             crs='epsg:{srid}'.format(srid=model_proj))

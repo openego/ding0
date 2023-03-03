@@ -239,8 +239,9 @@ class NetworkDing0:
             self,
             session,
             mv_grid_districts_no=None,
+            load_area_to_debug=None,
             debug=False,
-            export_figures=False,
+            export_mv_figures=False,
             export_lv_figures=False,
             ding0_legacy=False,
             path=None,
@@ -259,10 +260,14 @@ class NetworkDing0:
         mv_grid_districts_no : :obj:`list` of :obj:`int` objects.
             List of MV grid_districts/stations to be imported (if empty,
             all grid_districts & stations are imported)
+        load_area_to_debug: int or None
+            If load_area_id is set, only the load area is build.
         debug : obj:`bool`, defaults to False
             If True, information is printed during process
-        export_figures : :obj:`bool`, defaults to False
-            If True, figures are shown or exported (default path: ~/.ding0/) during run.
+        export_mv_figures : :obj:`bool`, defaults to False
+            If True, mv figures are shown or exported during run.
+        export_lv_figures : :obj:`bool`, defaults to False
+            If True, lv figures are shown or exported during run.
         path : :obj:`str` or None , defaults to None
             Set path to save the figures if not None
 
@@ -347,7 +352,8 @@ class NetworkDing0:
             session,
             mv_grid_districts_no,
             ding0_legacy=ding0_legacy,
-            peak_load_determination_mode=peak_load_determination_mode
+            peak_load_determination_mode=peak_load_determination_mode,
+            load_area_to_debug=load_area_to_debug,
         )
 
         logger.info("STEP 2: Import generators")
@@ -367,17 +373,17 @@ class NetworkDing0:
 
         logger.info("STEP 6: Build MV grids")
         self.mv_routing(debug=False)
-        if export_figures:
+        if export_mv_figures:
             self.plot_mv_grids(path=path, filename='1_routing_completed')
 
         logger.info("STEP 7: Connect MV and LV generators")
         self.connect_generators(debug=False)
-        if export_figures:
+        if export_mv_figures:
             self.plot_mv_grids(path=path, filename='2_generators_connected')
 
         logger.info("STEP 8: Relocate switch disconnectors in MV grid")
         self.set_circuit_breakers(debug=debug)
-        if export_figures:
+        if export_mv_figures:
             self.plot_mv_grids(path=path, filename='3_circuit_breakers_relocated')
 
         logger.info("STEP 9: Open all switch disconnectors in MV grid")
@@ -385,7 +391,7 @@ class NetworkDing0:
 
         logger.info("STEP 10: Do power flow analysis of MV grid")
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
-        if export_figures:
+        if export_mv_figures:
             self.plot_mv_grids(path=path, filename='4_PF_result_load')
             self.plot_mv_grids(path=path, filename='5_PF_result_feedin')
 
@@ -394,7 +400,7 @@ class NetworkDing0:
 
         logger.info("STEP 12: Close all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='close')
-        if export_figures:
+        if export_mv_figures:
             self.plot_mv_grids(path=path, filename='6_final_grid_PF_result_load')
             self.plot_mv_grids(path=path, filename='7_final_grid_PF_result_feedin')
 
@@ -624,7 +630,8 @@ class NetworkDing0:
             mv_grid_districts_no,
             ding0_legacy=False,
             create_lvgd_geo_method='convex_hull',
-            peak_load_determination_mode="sum_of_loads"
+            peak_load_determination_mode="sum_of_loads",
+            load_area_to_debug=None
     ):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
@@ -637,7 +644,8 @@ class NetworkDing0:
         mv_grid_districts : :obj:`list` of :obj:`int`
             List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
-
+        load_area_to_debug: int or None
+            If load_area_id is set, only the load area is build.
         ding0_legacy: if True ding0 run
                         else: build new lv_districts...
 
@@ -695,7 +703,8 @@ class NetworkDing0:
                     session,
                     mv_grid_district,
                     create_lvgd_geo_method,
-                    peak_load_determination_mode
+                    peak_load_determination_mode,
+                    load_area_to_debug=load_area_to_debug,
                 )
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
@@ -708,7 +717,8 @@ class NetworkDing0:
             session,
             mv_grid_district,
             create_lvgd_geo_method,
-            peak_load_determination_mode
+            peak_load_determination_mode,
+            load_area_to_debug=None,
     ):
 
         """
@@ -721,10 +731,13 @@ class NetworkDing0:
             Database session
         mv_grid_district : MV grid_district/station (instance of MVGridDistrictDing0 class) for
             which the import of load areas is performed
+        load_area_to_debug: int or None
+            If load_area_id is set, only the load area is build.
         """
 
         lv_load_areas = db_io.get_lv_load_areas(self.orm, session, mv_grid_district.mv_grid._station.id_db)
-
+        if load_area_to_debug:
+            lv_load_areas = lv_load_areas.loc[[load_area_to_debug], :]
         # create load_area objects from rows and add them to graph
         logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
         for id_db, row in lv_load_areas.iterrows():
@@ -787,6 +800,7 @@ class NetworkDing0:
                 self.orm, session, mv_grid_district.id_db, row
             )
             if buildings_w_loads_df.empty:
+                logger.error(f"Load area {id_db=} has no buildings!")
                 continue
 
             # If composed graph of type synthetic (no osm ways have been found), then
