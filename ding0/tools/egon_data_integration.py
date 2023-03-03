@@ -143,6 +143,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
             orm["egon_map_zensus_mvgd_buildings"].sector,
             # orm["osm_buildings_filtered"]
             orm["osm_buildings_filtered"].geom_point.label("geometry"),
+            orm["osm_buildings_filtered"].geom_building.label("footprint"),
         )
         .join(
             orm["osm_buildings_filtered"],
@@ -171,6 +172,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
             orm["egon_map_zensus_mvgd_buildings"].sector,
             # orm["osm_buildings_synthetic"]
             orm["osm_buildings_synthetic"].geom_point.label("geometry"),
+            orm["osm_buildings_synthetic"].geom_building.label("footprint"),
         )
         .join(
             orm["osm_buildings_synthetic"],
@@ -197,6 +199,9 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         ignore_index=True,
     )
     residential_buildings_df["geometry"] = residential_buildings_df["geometry"].apply(
+        to_shape
+    )
+    residential_buildings_df["footprint"] = residential_buildings_df["footprint"].apply(
         to_shape
     )
 
@@ -283,6 +288,7 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
             orm["egon_map_zensus_mvgd_buildings"].sector,
             # orm["osm_buildings_filtered"]
             orm["osm_buildings_filtered"].geom_point.label("geometry"),
+            orm["osm_buildings_filtered"].geom_building.label("footprint"),
         )
         .join(
             orm["osm_buildings_filtered"],
@@ -311,6 +317,7 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
             orm["egon_map_zensus_mvgd_buildings"].sector,
             # orm["osm_buildings_synthetic"]
             orm["osm_buildings_synthetic"].geom_point.label("geometry"),
+            orm["osm_buildings_synthetic"].geom_building.label("footprint"),
         )
         .join(
             orm["osm_buildings_synthetic"],
@@ -337,6 +344,7 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
         ignore_index=True,
     )
     cts_buildings_df["geometry"] = cts_buildings_df["geometry"].apply(to_shape)
+    cts_buildings_df["footprint"] = cts_buildings_df["footprint"].apply(to_shape)
 
     if cts_buildings_df["building_id"].duplicated(keep=False).any():
         raise ValueError(
@@ -391,6 +399,9 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
             func.ST_AsText(
                 func.ST_Transform(orm["egon_industrial_sites"].geom, 3035)
             ).label("geometry"),
+            func.ST_AsText(
+                func.ST_Transform(orm["egon_industrial_sites"].geom, 3035)
+            ).label("footprint"),
             orm["egon_sites_ind_load_curves_individual"].site_id,
         )
         .join(
@@ -424,6 +435,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
             func.ST_AsText(func.ST_PointOnSurface(orm["osm_landuse"].geom)).label(
                 "geometry"
             ),
+            func.ST_AsText(orm["osm_landuse"].geom).label("footprint"),
             orm["egon_osm_ind_load_curves_individual"].osm_id,
         )
         .join(
@@ -486,18 +498,28 @@ def get_egon_buildings(orm, session, subst_id, load_area):
         columns={
             "capacity": "residential_capacity",
             "geometry": "residential_geometry",
+            "footprint": "residential_footprint",
         },
         inplace=True,
     )
     cts_buildings_df.drop(columns="sector", inplace=True)
     cts_buildings_df.rename(
-        columns={"capacity": "cts_capacity", "geometry": "cts_geometry"}, inplace=True
+        columns={
+            "capacity": "cts_capacity",
+            "geometry": "cts_geometry",
+            "footprint": "cts_footprint",
+        },
+        inplace=True,
     )
     industrial_buildings_df.drop(
         columns=["sector", "industrial_site_id", "industrial_osm_id"], inplace=True
     )
     industrial_buildings_df.rename(
-        columns={"capacity": "industrial_capacity", "geometry": "industrial_geometry"},
+        columns={
+            "capacity": "industrial_capacity",
+            "geometry": "industrial_geometry",
+            "footprint": "industrial_footprint",
+        },
         inplace=True,
     )
 
@@ -540,9 +562,7 @@ def get_egon_buildings(orm, session, subst_id, load_area):
         coordinates = x[x.notna()]
         for i in range(1, coordinates.size):
             if not coordinates.iat[i - 1].almost_equals(coordinates.iat[i]):
-                logger.error(
-                    "Coordinates of buildings with the same id are not equal!"
-                )
+                logger.error("Coordinates of buildings with the same id are not equal!")
 
         return coordinates.iat[0]
 
@@ -552,7 +572,17 @@ def get_egon_buildings(orm, session, subst_id, load_area):
     )
     buildings_df.drop(columns=geometry_columns, inplace=True)
 
-    if not round(load_area.peak_load) == round(buildings_df.capacity.sum()):
+    footprint_columns = [
+        "residential_footprint",
+        "cts_footprint",
+        "industrial_footprint",
+    ]
+    buildings_df["footprint"] = buildings_df[footprint_columns].apply(
+        reduce_geometry_columns, axis="columns"
+    )
+    buildings_df.drop(columns=footprint_columns, inplace=True)
+
+    if not round(load_area.peak_load, -1) == round(buildings_df.capacity.sum(), -1):
         logger.error(f"{load_area.peak_load=} != {buildings_df.capacity.sum()=}")
     buildings_df.set_index("building_id", inplace=True)
 
@@ -570,6 +600,8 @@ def func_within(geom_a, geom_b, srid=3035):
             srid,
         ),
     )
+
+
 def func_intersect(geom_a, geom_b, srid=3035):
     return func.ST_Intersects(
         func.ST_Transform(
@@ -581,6 +613,7 @@ def func_intersect(geom_a, geom_b, srid=3035):
             srid,
         ),
     )
+
 
 def get_res_generators(orm, session, mv_grid_district):
     srid = 3035  # new to calc distance matrix in step 6
@@ -610,7 +643,7 @@ def get_res_generators(orm, session, mv_grid_district):
             orm["generators_pv"].voltage_level.in_([4, 5, 6, 7]),
             func.ST_Intersects(
                 func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
-                func.ST_Transform(orm["generators_pv"].geom, srid)
+                func.ST_Transform(orm["generators_pv"].geom, srid),
             ),
         )
     )
@@ -652,8 +685,8 @@ def get_res_generators(orm, session, mv_grid_district):
             orm["generators_pv_rooftop"].voltage_level.in_([4, 5, 6, 7]),
             func.ST_Intersects(
                 func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
-                func.ST_GeomFromText(building_geoms.c.geom, get_config_osm("srid"))
-            )
+                func.ST_GeomFromText(building_geoms.c.geom, get_config_osm("srid")),
+            ),
         )
     )
     generators_pv_rooftop_df = pd.read_sql(
@@ -685,8 +718,8 @@ def get_res_generators(orm, session, mv_grid_district):
             orm["generators_wind"].voltage_level.in_([4, 5, 6, 7]),
             func.ST_Intersects(
                 func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
-                func.ST_Transform(orm["generators_wind"].geom, srid)
-            )
+                func.ST_Transform(orm["generators_wind"].geom, srid),
+            ),
         )
     )
     generators_wind_df = pd.read_sql(
@@ -709,8 +742,8 @@ def get_res_generators(orm, session, mv_grid_district):
         orm["generators_biomass"].voltage_level.in_([4, 5, 6, 7]),
         func.ST_Intersects(
             func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
-            func.ST_Transform(orm["generators_biomass"].geom, srid)
-        )
+            func.ST_Transform(orm["generators_biomass"].geom, srid),
+        ),
     )
     generators_biomass_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
@@ -732,8 +765,8 @@ def get_res_generators(orm, session, mv_grid_district):
         orm["generators_water"].voltage_level.in_([4, 5, 6, 7]),
         func.ST_Intersects(
             func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
-            func.ST_Transform(orm["generators_water"].geom, srid)
-        )
+            func.ST_Transform(orm["generators_water"].geom, srid),
+        ),
     )
     generators_water_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
@@ -752,7 +785,7 @@ def get_res_generators(orm, session, mv_grid_district):
     )
     renewable_generators_df.rename(columns={"bus_id": "subst_id"}, inplace=True)
     # define generators with unknown subtype as 'unknown'
-    renewable_generators_df['generation_subtype'].fillna(value='unknown', inplace=True)
+    renewable_generators_df["generation_subtype"].fillna(value="unknown", inplace=True)
     # Overwrite subst_id of the data, to correct faulty data
     renewable_generators_df["subst_id"] = int(subst_id)
 
