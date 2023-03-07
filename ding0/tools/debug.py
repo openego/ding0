@@ -36,7 +36,7 @@ def log_errors(f):
             try:
                 return f(*args, **kwargs)
             except Exception as e:
-                args[0].message.append(str(traceback.format_exc()))
+                args[0].network.message.append(str(traceback.format_exc()))
                 logger.warning(f"Can't plot: {kwargs['filename']}")
                 logger.exception(traceback.format_exc())
 
