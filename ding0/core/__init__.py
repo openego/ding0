@@ -1352,6 +1352,7 @@ class NetworkDing0:
 
         # load parameters from configs
         cfg_ding0.load_config('config_db_tables.cfg')
+        cfg_ding0.load_config('config_db_credentials.cfg')
         cfg_ding0.load_config('config_calc.cfg')
         cfg_ding0.load_config('config_files.cfg')
         cfg_ding0.load_config('config_misc.cfg')

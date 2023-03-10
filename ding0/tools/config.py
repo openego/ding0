@@ -39,7 +39,8 @@ __author__     = "nesnoj, gplssm"
 
 import configparser as cp
 import logging
-import os.path as path
+import os
+import shutil
 
 import ding0
 
@@ -48,23 +49,35 @@ logger = logging.getLogger(__name__)
 cfg = cp.RawConfigParser()
 _loaded = False
 
+
 def load_config(filename):
-    """ Read config file specified by `filename`
-    
+    """Read config file specified by `filename`
+
     Parameters
     ----------
     filename : :obj:`str`
         Description of filename
     """
     package_path = ding0.__path__[0]
-    FILE = path.join(package_path, 'config', filename)
+
+    if filename == "config_db_credentials.cfg":
+        file = os.path.join(
+            os.path.expanduser("~"), cfg.get("config", "config_dir"), "config", filename
+        )
+        if not os.path.isfile(file):
+            print("Set your database config in '{file}'.")
+            os.makedirs(os.path.dirname(file), exist_ok=True)
+            shutil.copy(os.path.join(package_path, "config", filename), file)
+    else:
+        file = os.path.join(package_path, "config", filename)
 
     try:
-        cfg.read(FILE)
+        cfg.read(file)
         global _loaded
         _loaded = True
     except:
         logger.exception("configfile not found.")
+
 
 def get(section, key):
     """Returns the value of a given key of a given section of the main
