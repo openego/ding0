@@ -19,8 +19,8 @@ from ding0.core.network.stations import *
 from ding0.core.network import RingDing0, CircuitBreakerDing0
 from ding0.core.network.loads import *
 from ding0.core.network.cable_distributors import MVCableDistributorDing0, LVCableDistributorDing0
-from ding0.grid.mv_grid import mv_routing, mv_connect
-from ding0.grid.lv_grid import build_grid, lv_connect
+from ding0.grid.mv_grid import mv_routing, mv_connect, urban_mv_routing
+from ding0.grid.lv_grid import build_grid, build_grid_on_osm_ways, lv_connect
 from ding0.tools import config as cfg_ding0, pypsa_io, tools
 from ding0.tools.geo import calc_geo_dist
 from ding0.grid.mv_grid.tools import set_circuit_breakers
@@ -37,7 +37,7 @@ from pyproj import Transformer
 if not 'READTHEDOCS' in os.environ:
     from shapely.ops import transform
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 class MVGridDing0(GridDing0):
@@ -69,6 +69,8 @@ class MVGridDing0(GridDing0):
         self.default_branch_type_settle = kwargs.get('default_branch_type_settle', None)
         self.default_branch_kind_aggregated = kwargs.get('default_branch_kind_aggregated', None)
         self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
+
+        self.lv_generators_to_connect = []
 
         self.add_station(kwargs.get('station', None))
 
@@ -132,7 +134,7 @@ class MVGridDing0(GridDing0):
             else:
                 raise Exception('MV Station already set, use argument `force=True` to override.')
 
-    def add_load(self, lv_load):
+    def add_load(self, mv_load):
         """Adds a MV load to _loads and grid graph if not already existing
         
         Args
@@ -140,10 +142,10 @@ class MVGridDing0(GridDing0):
         lv_load : float
             Desription #TODO
         """
-        if lv_load not in self._loads and isinstance(lv_load,
+        if mv_load not in self._loads and isinstance(mv_load,
                                                      MVLoadDing0):
-            self._loads.append(lv_load)
-            self.graph_add_node(lv_load)
+            self._loads.append(mv_load)
+            self.graph_add_node(mv_load)
 
     def add_cable_distributor(self, cable_dist):
         """Adds a cable distributor to _cable_distributors if not already existing
@@ -214,7 +216,8 @@ class MVGridDing0(GridDing0):
         for ring in nx.cycle_basis(self.graph, root=self._station):
             
             if not include_root_node:
-                ring.remove(self._station)
+                if self._station in ring:
+                    ring.remove(self._station)
 
             # make sure rings are always returned in same order, starting with
             # node of which representative is smaller
@@ -224,7 +227,6 @@ class MVGridDing0(GridDing0):
                 ring.reverse()
 
             if include_satellites:
-                ring_nodes = ring
                 satellites = []
                 for ring_node in ring:
                     # determine all branches diverging from each ring node
@@ -368,7 +370,7 @@ class MVGridDing0(GridDing0):
                                                        debug=debug)
         logger.info('==> MV Sat1 for {} done'.format(repr(self)))
 
-        # connect satellites to closest line/station on a MV ring that have not been connected in step 1
+        # connect satellites to the closest line/station to an MV ring that has not been connected in step 1
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
                                                        graph=self.graph,
                                                        mode='isolated',
@@ -380,6 +382,27 @@ class MVGridDing0(GridDing0):
                                                      graph=self.graph,
                                                      debug=debug)
         logger.info('==> MV Stations for {} done'.format(repr(self)))
+    
+    #PAUL new: introduced function in grids to access urban_mv_routing
+        
+    def urban_routing(self, debug=False, anim=None):
+        """ Performs routing on aggregated Load Area to build MV grid with ring topology.
+
+        Args
+        ----
+        debug: bool, defaults to False
+            If True, information is printed while routing
+        anim: type, defaults to None
+            Descr #TODO
+        """
+
+        # do the routing
+        # PAUL new: pass mv_grid instead of graph, in order to be able to navigate to
+        # aggregated load area
+        self._graph = urban_mv_routing.solve(mv_grid=self,
+                                       debug=debug,
+                                       anim=anim)
+        logger.info('==> Urban MV Routing for {} done'.format(repr(self)))
 
     def connect_generators(self, debug=False):
         """ Connects MV generators (graph nodes) to grid (graph)
@@ -391,6 +414,17 @@ class MVGridDing0(GridDing0):
         """
 
         self._graph = mv_connect.mv_connect_generators(self.grid_district, self.graph, debug)
+
+    def connect_lv_generators(self, debug=False):
+        """ Connects LV generators (graph nodes) to grid (graph)
+
+        Args
+        ----
+        debug: bool, defaults to False
+             If True, information is printed during process
+        """
+
+        lv_connect.lv_connect_generators(self, debug)
 
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment:
@@ -497,6 +531,7 @@ class MVGridDing0(GridDing0):
             for node in self.graph_nodes_sorted():
                 if isinstance(node, LVLoadAreaCentreDing0):
                     # calc distance from MV-LV station to LA centre
+                    srid = 3035  # param due to station is in 4326 and needs to bre transformed to 3035 
                     dist_node = calc_geo_dist(self.station(), node) / 1e3
                     if dist_node > dist_max:
                         dist_max = dist_node
@@ -719,7 +754,7 @@ class MVGridDing0(GridDing0):
                                                   start_time=start_time)
         elif method == 'onthefly':
             buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
-            components, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+            components, _, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
                                                                             lines_df, loads_df, transformer_df,
                                                                             only_export_mv=only_calc_mv,
                                                                             return_time_varying_data=True)
@@ -763,7 +798,7 @@ class MVGridDing0(GridDing0):
 
         elif method == 'onthefly':
             buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
-            components, _,  components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+            components, _, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
                                                                          lines_df, loads_df, transformer_df,  only_export_mv=only_calc_mv,
                                                                          return_time_varying_data=True)
             pypsa_io.run_powerflow_onthefly(components,
@@ -899,36 +934,59 @@ class LVGridDing0(GridDing0):
         lv_cable_dist : 
             Description #TODO
         """
+        # THIS IS NOT WORKING FOR ME. e.g.
+        # Create two LVCableDist as a and b
+        # a = LVCableDist_mvgd_40_lvgd_4488000000_2274291202
+        # b = LVCableDist_mvgd_40_lvgd_4488000000_2274291202
+        # self._cable_distributors = []
+        # self._cable_distributors.append(a)
+        # if b not in self._cable_distributors:
+        #     self._cable_distributors.append(b)
+        # resulting in 
+        # self._cable_distributors.append = [LVCableDist_mvgd_40_lvgd_4488000000_2274291202, LVCableDist_mvgd_40_lvgd_4488000000_2274291202]
+        # Thus get_cable_dist is added
         if lv_cable_dist not in self._cable_distributors and isinstance(lv_cable_dist,
                                                                         LVCableDistributorDing0):
             self._cable_distributors.append(lv_cable_dist)
             self.graph_add_node(lv_cable_dist)
+    
+    def get_cable_dist(self, lv_cable_dist_id_db):
+        """Get a LV cable_dist if already existing
+        
+        Parameters
+        ----------
+        lv_cable_dist : 
+            Description #TODO
+        """
+        for lv_cable_dist in self._cable_distributors:
+            if lv_cable_dist.id_db == lv_cable_dist_id_db:
+                return lv_cable_dist
 
     def build_grid(self):
         """Create LV grid graph
         """
+    
+        if True:  # new approach
 
-        # add required transformers
-        build_grid.transformer(self)
+            # own grid building
+            build_grid_on_osm_ways.build_branches_on_osm_ways(self.grid_district) # Roberts Implemenataion skip build grid
 
-        # add branches of sectors retail/industrial and agricultural
-        build_grid.build_ret_ind_agr_branches(self.grid_district)
+            # add required transformers
+            build_grid.transformer(self)
+            
+        else:     # ding0 default
 
-        # add branches of sector residential
-        build_grid.build_residential_branches(self.grid_district)
+            # add required transformers
+            build_grid.transformer(self)
+
+            # add branches of sectors retail/industrial and agricultural
+            build_grid.build_ret_ind_agr_branches(self.grid_district)
+
+            # add branches of sector residential
+            build_grid.build_residential_branches(self.grid_district)
 
         #self.graph_draw(mode='LV')
 
-    def connect_generators(self, debug=False):
-        """ Connects LV generators (graph nodes) to grid (graph)
-
-        Args
-        ----
-        debug: bool, defaults to False
-             If True, information is printed during process
-        """
-
-        self._graph = lv_connect.lv_connect_generators(self.grid_district, self.graph, debug)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid.

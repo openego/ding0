@@ -55,6 +55,8 @@ def create_results_dirs(base_path):
         os.mkdir(os.path.join(base_path, 'info'))
     if not os.path.exists(os.path.join(base_path, 'log')):
         os.mkdir(os.path.join(base_path, 'log'))
+    if not os.path.exists(os.path.join(base_path, 'grids')):
+        os.mkdir(os.path.join(base_path, 'grids'))
 
 
 def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
@@ -111,13 +113,12 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
         # instantiate ding0  network object
         nd = NetworkDing0(name='network', run_id=run_id)
 
-        if not os.path.exists(os.path.join(base_path, "grids")):
-            os.mkdir(os.path.join(base_path, "grids"))
-
         if not failsafe:
             # run DING0 on selected MV Grid District
             msg = nd.run_ding0(session=session,
-                               mv_grid_districts_no=[mvgd])
+                               mv_grid_districts_no=[mvgd],
+                               # TODO: use new method and egon-data
+                               ding0_legacy=False, local_db=False, egon_db=True)
 
             # save results
             if save_as == 'csv':
@@ -131,7 +132,8 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
             # try to perform ding0 run on grid district
             try:
                 msg = nd.run_ding0(session=session,
-                                   mv_grid_districts_no=[mvgd])
+                                   mv_grid_districts_no=[mvgd],
+                                   ding0_legacy=False, local_db=False, egon_db=True)
                 # if not successful, put grid district to report
                 if msg:
                     corrupt_grid_districts = corrupt_grid_districts.append(
@@ -196,8 +198,8 @@ if __name__ == '__main__':
     create_results_dirs(base_path)
 
     # define grid district by its id (int)
-    mv_grid_districts = list(range(1729, 1732))
-
+    # mv_grid_districts = list(range(1729, 1732))
+    mv_grid_districts = [2534]
     # run grid districts
     run_multiple_grid_districts(mv_grid_districts,
                                 run_id,

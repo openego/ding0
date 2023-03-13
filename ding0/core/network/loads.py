@@ -28,6 +28,11 @@ class MVLoadDing0(LoadDing0):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.id_db = self.grid.mv_grid.loads_count() + 1
+        self.osmid_building = kwargs.get('osmid_building', None)
+        self.osmid_nn = kwargs.get('osmid_nn', None)
+        self.nn_coords = kwargs.get('nn_coords', None)
+        self.lv_load_area = kwargs.get('lv_load_area', None)
 
     def __repr__(self):
         """
@@ -40,6 +45,19 @@ class MVLoadDing0(LoadDing0):
         """
         return '_'.join(['Load', 'mvgd', str(self.grid.id_db),
                          str(self.id_db)])
+    
+    @property
+    def pypsa_bus_id(self):
+        """
+        Creates a unique identification for the generator
+        to export to pypsa using the id_db of the mv_grid
+        and the current object
+
+        Returns
+        -------
+        :obj:`str`
+        """
+        return '_'.join(['Bus', 'mvgd', str(self.grid.id_db), 'mvload', str(self.id_db)])
 
 
 class LVLoadDing0(LoadDing0):
@@ -70,3 +88,17 @@ class LVLoadDing0(LoadDing0):
         return '_'.join(['Load', 'mvgd', str(
             self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
             id_db), 'lvgd', str(self.grid.id_db), str(self.id_db)])
+    
+    @property
+    def pypsa_bus_id(self):
+        """
+        Creates a unique identification for the generator
+        to export to pypsa using the id_db of the mv_grid
+        and the current object
+
+        Returns
+        -------
+        :obj:`str`
+        """
+        return '_'.join(['Bus', 'mvgd', str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
+                id_db), 'lvgd', str(self.grid.id_db), 'loa', str(self.id_db)])

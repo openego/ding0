@@ -25,7 +25,7 @@ import networkx as nx
 import logging
 
 package_path = ding0.__path__[0]
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def reinforce_branches_current(grid, crit_branches):
@@ -63,13 +63,13 @@ def reinforce_branches_current(grid, crit_branches):
         try:
             type = branch_parameters.loc[
                 branch_parameters[
-                    branch_parameters['I_max_th'] >= branch['branch']
+                    branch_parameters['I_max_th'] >= branch 
                     .type['I_max_th'] * rel_overload
                 ].loc[
                     :, 'I_max_th'
                 ].idxmin(), :
             ]
-            branch['branch'].type = type
+            branch.type = type
             branch_ctr += 1
         except:
             logger.warning('Branch {} could not be reinforced (current '

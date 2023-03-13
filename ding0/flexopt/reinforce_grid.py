@@ -22,7 +22,7 @@ from ding0.core.network.stations import LVStationDing0
 import logging
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def reinforce_grid(grid, mode):

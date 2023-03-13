@@ -18,7 +18,7 @@ import time
 from ding0.grid.mv_grid.models.models import Graph, Node
 from ding0.grid.mv_grid.util import util, data_input
 from ding0.grid.mv_grid.solvers import savings, local_search
-from ding0.tools.geo import calc_geo_dist, calc_geo_dist_matrix, calc_geo_centre_point
+from ding0.tools.geo import calc_geo_dist, calc_geo_dist_matrix, calc_geo_centre_point, calc_edge_geometry
 from ding0.tools import config as cfg_ding0
 from ding0.core.network.stations import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
@@ -27,7 +27,7 @@ from ding0.core.network.cable_distributors import MVCableDistributorDing0
 import logging
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def ding0_graph_to_routing_specs(graph):
@@ -57,20 +57,28 @@ def ding0_graph_to_routing_specs(graph):
     nodes_pos = {}
     nodes_agg = {}
 
+    load_area_center_agg = []
+
     # check if there are only load areas of type aggregated and satellite
-    # -> treat satellites as normal load areas (allow for routing)
+    # if only satellites and aggregated load area no routing will be done
+    # and satellite will be connected via stubs
+    # in case there is no aggregated load area available
+    # treat satellites as normal load areas (allow for routing)
     satellites_only = True
+    has_aggregated = False
     for node in graph.nodes():
         if isinstance(node, LVLoadAreaCentreDing0):
             if not node.lv_load_area.is_satellite and not node.lv_load_area.is_aggregated:
                 satellites_only = False
+            if node.lv_load_area.is_aggregated:
+                has_aggregated = True
 
     for node in graph.nodes():
         # station is LV station
         if isinstance(node, LVLoadAreaCentreDing0):
             # only major stations are connected via MV ring
             # (satellites in case of there're only satellites in grid district)
-            if not node.lv_load_area.is_satellite or satellites_only:
+            if not node.lv_load_area.is_satellite or (satellites_only and not has_aggregated):
                 # get demand and position of node
                 # convert node's demand to int for performance purposes and to avoid that node
                 # allocation with subsequent deallocation results in demand<0 due to rounding errors.
@@ -79,6 +87,8 @@ def ding0_graph_to_routing_specs(graph):
                 # get aggregation flag
                 if node.lv_load_area.is_aggregated:
                     nodes_agg[str(node)] = True
+                    # collect load area center of aggregated load area(s)
+                    load_area_center_agg.append(node)
                 else:
                     nodes_agg[str(node)] = False
 
@@ -95,6 +105,11 @@ def ding0_graph_to_routing_specs(graph):
     specs['DEMAND'] = nodes_demands
     specs['MATRIX'] = calc_geo_dist_matrix(nodes_pos)
     specs['IS_AGGREGATED'] = nodes_agg
+
+    # remove aggregated load area center(s) from graph
+    for lac in load_area_center_agg:
+        if graph.has_node(lac):
+            graph.remove_node(lac)
 
     return specs
 
@@ -146,6 +161,12 @@ def routing_solution_to_ding0_graph(graph, solution):
 
                     # set circ breaker pos manually
                     circ_breaker_pos = 1
+            
+            # PAUL new: aggregated branch placement will be done in urban mv routing,
+            # therefor route to aggregated LA centre will be skipped an no branch build
+            if len(r._nodes) == 1:
+                if solution._problem._is_aggregated[r._nodes[0]._name]:
+                    continue
 
             # build edge list
             n1 = r._nodes[0:len(r._nodes)-1]
@@ -153,7 +174,8 @@ def routing_solution_to_ding0_graph(graph, solution):
             edges = list(zip(n1, n2))
             edges.append((depot, r._nodes[0]))
             edges.append((r._nodes[-1], depot))
-
+            
+            
             # create MV Branch object for every edge in `edges`
             mv_branches = [BranchDing0(grid=depot_node.grid) for _ in edges]
             edges_with_branches = list(zip(edges, mv_branches))
@@ -182,7 +204,7 @@ def routing_solution_to_ding0_graph(graph, solution):
                     node2 == depot_node and solution._problem._is_aggregated[edges[circ_breaker_pos - 1][0].name()]):
                 branch = mv_branches[circ_breaker_pos - 1]
                 circ_breaker = CircuitBreakerDing0(grid=depot_node.grid, branch=branch,
-                                                   geo_data=calc_geo_centre_point(node1, node2))
+                                                   geo_data=calc_geo_centre_point(node1, node2, 3035))  # set calc for srid=3035
                 branch.circuit_breaker = circ_breaker
 
             # create new ring object for route
@@ -204,7 +226,9 @@ def routing_solution_to_ding0_graph(graph, solution):
                     node1.lv_load_area.ring = ring
 
                 # set branch length
-                b.length = calc_geo_dist(node1, node2)
+                # PAUL new: add straight LineString as geometry to branch, replaces calc_geo_dist
+                b.geometry, b.length = calc_edge_geometry(node1, node2, srid=3035)
+                b.length = calc_geo_dist(node1, node2, srid=3035)  # new param: srid=3035
 
                 # set branch kind and type
                 # 1) default

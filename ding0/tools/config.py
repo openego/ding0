@@ -37,39 +37,47 @@ __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
 
-import os.path as path
-import ding0
+import configparser as cp
 import logging
+import os
+import shutil
 
+import ding0
 
-logger = logging.getLogger('ding0')
-
-try:
-    import configparser as cp
-except:
-    # to be compatible with Python2.7
-    import ConfigParser as cp
+logger = logging.getLogger(__name__)
 
 cfg = cp.RawConfigParser()
 _loaded = False
 
+
 def load_config(filename):
-    """ Read config file specified by `filename`
-    
+    """Read config file specified by `filename`
+
     Parameters
     ----------
     filename : :obj:`str`
         Description of filename
     """
     package_path = ding0.__path__[0]
-    FILE = path.join(package_path, 'config', filename)
+
+    if filename == "config_db_credentials.cfg":
+        file = os.path.join(
+            os.path.expanduser("~"), cfg.get("config", "config_dir"), "config", filename
+        )
+        if not os.path.isfile(file):
+            print("Set your database config in '{file}'.")
+            os.makedirs(os.path.dirname(file), exist_ok=True)
+            shutil.copy(os.path.join(package_path, "config", filename), file)
+    else:
+        file = os.path.join(package_path, "config", filename)
 
     try:
-        cfg.read(FILE)
+        cfg.read(file)
         global _loaded
         _loaded = True
     except:
         logger.exception("configfile not found.")
+
 
 def get(section, key):
     """Returns the value of a given key of a given section of the main
