@@ -12,10 +12,35 @@ __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
+import os
 
 import ding0
 import os.path as path
 import networkx as nx
+import traceback
+
+from functools import wraps
+import logging
+
+logger = logging.getLogger(__name__)
+
+def log_errors(f):
+    """
+    Decorator object that logs every exception into the defined logger object.
+    """
+    @wraps(f)
+    def exception_wrapper(*args, **kwargs):
+        if os.environ.get("DING0_DEBUG") == "true":
+            return f(*args, **kwargs)
+        else:
+            try:
+                return f(*args, **kwargs)
+            except Exception as e:
+                args[0].network.message.append(str(traceback.format_exc()))
+                logger.warning(f"Can't plot: {kwargs['filename']}")
+                logger.exception(traceback.format_exc())
+
+    return exception_wrapper
 
 
 def compare_graphs(graph1, mode, graph2=None):

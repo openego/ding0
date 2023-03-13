@@ -66,7 +66,7 @@ def get_default_home_dir():
     return os.path.join(os.path.expanduser('~'), ding0_dir)
 
 
-def setup_logger(log_dir=None, loglevel=logging.DEBUG):
+def setup_logger(log_dir=None, filename="ding0.log", loglevel=logging.DEBUG):
     """
     Instantiate logger
 
@@ -74,6 +74,8 @@ def setup_logger(log_dir=None, loglevel=logging.DEBUG):
     ----------
     log_dir: :obj:`str`
         Directory to save log, default: ~/.ding0/logging/
+    filename: :obj:`str`
+        Name of log file, default: ding0.log
     loglevel: 
         Level of logger.
     """
@@ -85,26 +87,26 @@ def setup_logger(log_dir=None, loglevel=logging.DEBUG):
         log_dir = os.path.join(get_default_home_dir(), 'log')
 
     logger = logging.getLogger('ding0') # use filename as name in log
+    logger.propagate = False
     logger.setLevel(loglevel)
 
     # create a file handler
-    handler = logging.FileHandler(os.path.join(log_dir, 'ding0.log'))
+    handler = logging.FileHandler(os.path.join(log_dir, filename))
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
-        '%(asctime)s-%(funcName)s-%(message)s (%(levelname)s)')
+        "%(asctime)s %(name)-35s %(levelname)-8s - %(funcName)s: %(message)s"
+    )
     handler.setFormatter(formatter)
 
     # create a stream handler (print to prompt)
     stream = logging.StreamHandler()
-    stream.setLevel(logging.INFO)
+    stream.setLevel(logging.DEBUG)
     stream_formatter = logging.Formatter(
-        '%(message)s (%(levelname)s)')
+        '%(name)-35s - %(levelname)8s: %(message)s ')
     stream.setFormatter(stream_formatter)
 
     # add the handlers to the logger
     logger.addHandler(handler)
     logger.addHandler(stream)
-
-    logger.info('########## New run of Ding0 issued #############')
 
     return logger

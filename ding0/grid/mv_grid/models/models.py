@@ -27,7 +27,7 @@ from math import pi, tan, acos
 import logging
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 class Route(object):

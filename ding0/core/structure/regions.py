@@ -16,6 +16,7 @@ __author__     = "nesnoj, gplssm"
 import os
 from . import RegionDing0
 from ding0.tools import config as cfg_ding0
+# from ding0.core.network.loads import MVLoadDing0
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
@@ -23,7 +24,7 @@ if not 'READTHEDOCS' in os.environ:
 
 class MVGridDistrictDing0(RegionDing0):
         # TODO: check docstring
-    """Defines a MV-grid_district in DINGO
+    """Defines a MV-grid_district in DfINGO
     
     Attributes
     ----------
@@ -122,10 +123,15 @@ class MVGridDistrictDing0(RegionDing0):
         (peak load sum and peak load of satellites)
         """
         peak_load = peak_load_satellites = 0
+        
         for lv_load_area in self.lv_load_areas():
             peak_load += lv_load_area.peak_load
             if lv_load_area.is_satellite:
                 peak_load_satellites += lv_load_area.peak_load
+        # PAUL new add mv load to peak load of mvgd    
+        for mv_load in self.mv_grid._loads:
+            peak_load += mv_load.peak_load
+            
         self.peak_load = peak_load
         self.peak_load_satellites = peak_load_satellites
 
@@ -161,6 +167,12 @@ class LVLoadAreaDing0(RegionDing0):
        Descr
     db_data: :pandas:`pandas.DatetimeIndex<datetimeindex>`
        Descr
+
+    # new osm approach
+    load_area_graph: networkx.MultiDiGraph
+        contains all streets in load_area
+    MVLoads: list
+        list containing ding0.MVLoads in lvla
     """
 
     def __init__(self, **kwargs):
@@ -169,6 +181,7 @@ class LVLoadAreaDing0(RegionDing0):
 
         # more params
         self._lv_grid_districts = []
+        self._mv_loads = []
         self.ring = kwargs.get('ring', None)
         self.mv_grid_district = kwargs.get('mv_grid_district', None)
         self.lv_load_area_centre = kwargs.get('lv_load_area_centre', None)
@@ -188,7 +201,7 @@ class LVLoadAreaDing0(RegionDing0):
             for attribute in list(db_data.keys()):
                 setattr(self, attribute, db_data[attribute])
 
-        # convert geo attributes to to shapely objects
+        # convert geo attributes to shapely objects
         if hasattr(self, 'geo_area'):
             self.geo_area = wkt_loads(self.geo_area)
         if hasattr(self, 'geo_centre'):
@@ -203,12 +216,16 @@ class LVLoadAreaDing0(RegionDing0):
             self.peak_load_industrial = self.peak_load_industrial
         if hasattr(self, 'peak_load_agricultural'):
             self.peak_load_agricultural = self.peak_load_agricultural
+        
         if hasattr(self, 'peak_load'):
             self.peak_load = self.peak_load
+            
+        self.peak_load = kwargs.get('peak_load', None)
+        self.load_area_graph = kwargs.get('load_area_graph', False)
 
-            # if load area has got a peak load less than load_area_sat_threshold, it's a satellite
-            if self.peak_load < load_area_sat_load_threshold:
-                self.is_satellite = True
+        # if load area has got a peak load less than load_area_sat_threshold, it's a satellite
+        if self.peak_load < load_area_sat_load_threshold:
+            self.is_satellite = True
 
     @property
     def network(self):
@@ -235,8 +252,30 @@ class LVLoadAreaDing0(RegionDing0):
         """
         return len(self._lv_grid_districts)
 
+    def mv_loads_count(self):
+        """Returns the count of MV loads
+
+        Returns
+        -------
+        int
+            Number of MV loads.
+        """
+        return len(self._mv_loads)
+
+    def add_mv_load(self, mv_load):
+        """Adds a MVLoad to _lv_grid_districts if not already existing
+        
+        Parameters
+        ----------
+        mv_load: ding0.core.network.MVLoadDing0
+        """
+
+        if mv_load not in self._mv_loads:
+        # TODO: CHECK IF ITS AN MV LOAD
+        # isinstance(mv_load, MVLoadDing0):
+            self._mv_loads.append(mv_load)
+
     def add_lv_grid_district(self, lv_grid_district):
-        # TODO: check docstring
         """Adds a LV grid district to _lv_grid_districts if not already existing
         
         Parameters
@@ -295,6 +334,9 @@ class LVLoadAreaCentreDing0:
         self.grid = kwargs.get('grid', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.lv_load_area = kwargs.get('lv_load_area', None)
+        # PAUL new
+        self.osm_id_node = kwargs.get('osm_id_node', None)
+        
 
     @property
     def network(self):
@@ -350,6 +392,9 @@ class LVGridDistrictDing0(RegionDing0):
        Descr
     sector_count_agricultural: :obj:`int`
        Descr
+       
+       
+    TODO UPDATE DESCR FOR GRAPH AND BUILDINGS
     """
 
     def __init__(self, **kwargs):
@@ -385,6 +430,13 @@ class LVGridDistrictDing0(RegionDing0):
         self.sector_consumption_agricultural = kwargs.get(
             'sector_consumption_agricultural',
             None)
+        
+        # todo: do doc
+        self.mvlv_subst_id = kwargs.get('mvlv_subst_id', None)
+        self.graph_district = kwargs.get('graph_district', None)
+        self.buildings = kwargs.get('buildings_district', None)
+        self.peak_load = kwargs.get('peak_load', None)
+        
 
     @property
     def network(self):

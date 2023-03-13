@@ -28,6 +28,7 @@ class MVCableDistributorDing0(CableDistributorDing0):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.osm_id_node = kwargs.get('osm_id_node', None)  # defined node in graph where cable dist is located
         self.lv_load_area_group = kwargs.get('lv_load_area_group', None)
         self.id_db = self.grid.cable_distributors_count() + 1
 
@@ -61,7 +62,6 @@ class LVCableDistributorDing0(CableDistributorDing0):
         Description #TODO
     in_building : 
         Description #TODO
-    
     """
 
     def __init__(self, **kwargs):
@@ -70,7 +70,6 @@ class LVCableDistributorDing0(CableDistributorDing0):
         self.string_id = kwargs.get('string_id', None)
         self.branch_no = kwargs.get('branch_no', None)
         self.load_no = kwargs.get('load_no', None)
-        self.id_db = self.grid.cable_distributors_count() + 1
         self.in_building = kwargs.get('in_building', False)
 
     @property

@@ -22,7 +22,7 @@ import ding0.tools as tl
 
 class GridDing0:
     """
-    The fundamental abstract class used to encapsulated
+    The fundamental abstract class used to encapsulate
     the networkx graph and the relevant attributes of a
     power grid irrespective of voltage level. By design,
     this class is not expected to be instantiated directly.
@@ -41,7 +41,7 @@ class GridDing0:
         class, area that is covered by the lv grid
     v_level: :obj:`int`
         The integer value of the voltage level of the Grid in kV.
-        Typically either 10 or 20.
+        Typically, either 10 or 20.
 
 
     Attributes
@@ -184,7 +184,8 @@ class GridDing0:
             :class:`~.ding0.core.network.LoadDing0` or
             :class:`~.ding0.core.network.StationDing0` or
             :class:`~.ding0.core.network.CircuitBreakerDing0` or
-            :class:`~.ding0.core.network.CableDistributorDing0`
+            :class:`~.ding0.core.network.CableDistributorDing0` or
+            :class:`~.ding0.core.network.loads.MVLoadDing0`
 
         """
         if ((node_object not in self.graph.nodes()) and
@@ -192,7 +193,8 @@ class GridDing0:
                                       CableDistributorDing0,
                                       LVLoadAreaCentreDing0,
                                       CircuitBreakerDing0,
-                                      GeneratorDing0)))):
+                                      GeneratorDing0,
+                                      LoadDing0)))):
             self.graph.add_node(node_object)
 
     def graph_draw(self, mode):
@@ -675,6 +677,9 @@ class RingDing0:
 
         # add circ breaker to grid and graph
         self._grid.add_ring(self)
+        
+        #PAUL new add ring demand, cum. demand from nodes part of respective ring
+        self._demand = kwargs.get('demand', None)
 
     @property
     def network(self):
@@ -758,20 +763,32 @@ class BranchDing0:
     Note
     -----
     Important: id_db is not set until whole grid is finished (setting at the end).
+    
+    
+        
+    ADDED FOR NEW LV GRID APPROACH:
+    geometry : shapely.LineString
+        due to for lv grids the coordinates of nodes and
+        edges are known coordinates are stored as LineString 
+        to enable visualisation of the right course of the road.
     """
 
     def __init__(self, **kwargs):
 
         self.id_db = kwargs.get('id_db', None)
-        self.ring = kwargs.get('ring', None)
+        self.ring = kwargs.get('ring', None) # MV ring allocation
+        self.feeder = kwargs.get('feeder', None) # LV feeder allocation
         self.grid = kwargs.get('grid', None)
         self.length = kwargs.get('length', None)  # branch (line/cable) length in m
         self.kind = kwargs.get('kind', None)  # 'line' or 'cable'
         self.type = kwargs.get('type', None)  # DataFrame with attributes of line/cable
         self.connects_aggregated = kwargs.get('connects_aggregated', False)
         self.circuit_breaker = kwargs.get('circuit_breaker', None)
-
+        self.geometry = kwargs.get('geometry', None) # branch coordinates
+        self.num_parallel = 1 # number of parallel lines, initially one
         self.critical = False
+        # workaround for connecting more than one component to a bus
+        self.helper_component = kwargs.get('helper_component', None)
 
     @property
     def network(self):
@@ -951,6 +968,8 @@ class GeneratorDing0:
         self.subtype = kwargs.get('subtype', None)
         self.v_level = kwargs.get('v_level', None)
 
+        self.building_id = kwargs.get('building_id', None)
+
     @property
     def network(self):
         """
@@ -989,7 +1008,7 @@ class GeneratorDing0:
         -------
         :obj:`str`
         """
-        if self.subtype != None:
+        if self.subtype not in [None, 'unknown']:
             type = self.subtype
         elif self.type != None:
             type = self.type
@@ -1060,6 +1079,8 @@ class CableDistributorDing0:
         self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
+        # workaround for connecting more than one component to a bus
+        self.helper_component = kwargs.get('helper_component', None)
 
     @property
     def network(self):
@@ -1089,17 +1110,25 @@ class LoadDing0:
         The MV or LV grid that this Load is to be a part of.
     peak_load : :obj:`float`
         Peak load of the current object
+    building_id : :obj:`int`
+        refers to OSM oder eGo^n ID, depending on chosen database
 
     """
+    #ToDo: Add consumption, type and sector to the documentation
 
     def __init__(self, **kwargs):
-        self.id_db = kwargs.get('id', None)
+        self.id_db = kwargs.get('id_db', None)
         self.geo_data = kwargs.get('geo_data', None)
         self.grid = kwargs.get('grid', None)
         self.peak_load = kwargs.get('peak_load', None)
+        self.peak_load_residential = kwargs.get('peak_load_residential', None)
+        self.number_households = kwargs.get('number_households', None)
+        self.peak_load_cts = kwargs.get('peak_load_cts', None)
+        self.peak_load_industrial = kwargs.get('peak_load_industrial', None)
         self.consumption = kwargs.get('consumption', None)
-
-        self.id_db = self.grid.loads_count() + 1
+        self.building_id = kwargs.get('building_id', None)
+        self.sector = kwargs.get('sector', None)
+        self.type = kwargs.get('type', None)
 
     @property
     def network(self):
@@ -1112,8 +1141,9 @@ class LoadDing0:
         :class:`~.ding0.core.network.NetworkDing0`
         """
         return self.grid.network
-
-    @property
+    
+    # has to be shifted to LV / MV load because needs to be distinguished
+    '''@property
     def pypsa_bus_id(self):
         """
         Creates a unique identification for the generator
@@ -1125,7 +1155,7 @@ class LoadDing0:
         :obj:`str`
         """
         return '_'.join(['Bus', 'mvgd', str(self.grid.grid_district.lv_load_area.mv_grid_district.mv_grid.\
-                id_db), 'lvgd', str(self.grid.id_db), 'loa', str(self.id_db)])
+                id_db), 'lvgd', str(self.grid.id_db), 'loa', str(self.id_db)])'''
 
 
 class CircuitBreakerDing0:

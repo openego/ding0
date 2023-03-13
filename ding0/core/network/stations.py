@@ -220,6 +220,7 @@ class LVStationDing0(StationDing0):
         super().__init__(**kwargs)
 
         self.lv_load_area = kwargs.get('lv_load_area', None)
+        self.osm_id_node = kwargs.get('osm_id_node', None)  # defined node in graph where station is located
 
     @property
     def peak_generation(self):

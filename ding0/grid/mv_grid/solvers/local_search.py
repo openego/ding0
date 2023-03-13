@@ -29,7 +29,7 @@ from ding0.tools import config as cfg_ding0
 import logging
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 class LocalSearchSolution(BaseSolution):
@@ -201,6 +201,12 @@ class LocalSearchSolver(BaseSolver):
                             if length_new < length_best:
                                 length_best = length_new
                                 s_best, i_best, j_best = s, i, j
+
+                # fix floating point error, length and length_best have different number of
+                # decimal places (in some cases). round values in order to exit the while loop
+                length = round(length, 5)
+                length_best = round(length_best, 5)
+
                 if length_best < length:
                     tour = tour[0:i_best] + tour[i_best+s_best:j_best] + tour[i_best:i_best+s_best] + tour[j_best:n+1]
 

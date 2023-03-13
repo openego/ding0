@@ -7,10 +7,11 @@ It is developed in the project open_eGo: https://openegoproject.wordpress.com
 DING0 lives at github: https://github.com/openego/ding0/
 The documentation is available on RTD: http://ding0.readthedocs.io"""
 
-__copyright__  = "Reiner Lemoine Institut gGmbH"
-__license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
-__url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
-__author__     = "nesnoj, gplssm"
+__copyright__ = "Reiner Lemoine Institut gGmbH"
+__license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
+__author__ = "nesnoj, gplssm"
+
 # TODO: check docstrings
 
 
@@ -24,34 +25,62 @@ from ding0.core.structure.regions import *
 from ding0.core.powerflow import *
 from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
 from ding0.tools.animation import AnimationDing0
-from ding0.tools.plots import plot_mv_topology
+from ding0.tools.plots import plot_mv_topology, plot_lv_topology
 from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
 from ding0.tools.tools import merge_two_dicts_of_dataframes
+from ding0.core.network.loads import MVLoadDing0
+from ding0.grid.lv_grid.parameterization import get_peak_load_diversity
+
 
 import os
 import logging
 import pandas as pd
 import random
 import time
+import traceback
 from math import isnan
 
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 import subprocess
 import json
-import oedialect
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
-    from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
+    from shapely.geometry import Point, MultiPoint, MultiLineString, LineString  # PAUL NEW
     from shapely.geometry import shape, mapping
     from shapely.wkt import dumps as wkt_dumps
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 package_path = ding0.__path__[0]
+
+############ NEW TODO CHECK IMPORTS
+
+if 'READTHEDOCS' in os.environ:
+    from shapely.wkt import loads as wkt_loads
+
+from ding0.config.config_lv_grids_osm import get_config_osm
+
+from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
+    build_graph_from_ways, create_buffer_polygons, graph_nodes_outside_buffer_polys, \
+    compose_graph, get_fully_conn_graph, split_conn_graph, get_outer_conn_graph, \
+    remove_detours, add_edge_geometry_entry, remove_unloaded_deadends, \
+    flatten_graph_components_to_lines, subdivide_graph_edges, simplify_graph_adv, \
+    create_simple_synthetic_graph
+
+from ding0.grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
+
+from ding0.grid.lv_grid.routing import assign_nearest_nodes_to_buildings, \
+    get_lvgd_id, identify_street_loads, connect_mv_loads_to_graph
+
+from ding0.grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from_points, \
+    get_bounding_box_from_points, get_load_center_node, get_load_center_coords
+
+import ding0.tools.egon_data_integration as db_io
+
+############ NEW END
 
 
 class NetworkDing0:
@@ -114,9 +143,9 @@ class NetworkDing0:
         These are used in many parts of ding0's calculations.
         Data values:
 
-        * Typical cable types, and typical line types' electrical impedences,
+        * Typical cable types, and typical line types' electrical impedances,
             thermal ratings, operating voltage level.
-        * Typical transformers types' electrical impedences, voltage drops,
+        * Typical transformers types' electrical impedances, voltage drops,
             thermal ratings, winding voltages
         * Typical LV grid topologies' line types, line lengths and
             distribution
@@ -127,7 +156,7 @@ class NetworkDing0:
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, session, **kwargs):
         self.name = kwargs.get('name', None)
         self._run_id = kwargs.get('run_id', None)
         self._mv_grid_districts = []
@@ -135,7 +164,8 @@ class NetworkDing0:
         self._config = self.import_config()
         self._pf_config = self.import_pf_config()
         self._static_data = self.import_static_data()
-        self._orm = self.import_orm()
+        self._orm = self.import_orm(session)
+        self.message = []
 
     def mv_grid_districts(self):
         """
@@ -205,7 +235,19 @@ class NetworkDing0:
         """
         return self._orm
 
-    def run_ding0(self, session, mv_grid_districts_no=None, debug=False, export_figures=False):
+    def run_ding0(
+            self,
+            session,
+            mv_grid_districts_no=None,
+            load_area_to_debug=None,
+            debug=False,
+            export_mv_figures=False,
+            export_lv_figures=False,
+            ding0_legacy=False,
+            path=None,
+            peak_load_determination_mode="sum_of_loads"
+    ):
+
         """
         Let DING0 run by shouting at this method (or just call
         it from NetworkDing0 instance). This method is a wrapper
@@ -218,10 +260,16 @@ class NetworkDing0:
         mv_grid_districts_no : :obj:`list` of :obj:`int` objects.
             List of MV grid_districts/stations to be imported (if empty,
             all grid_districts & stations are imported)
+        load_area_to_debug: int or None
+            If load_area_id is set, only the load area is build.
         debug : obj:`bool`, defaults to False
             If True, information is printed during process
-        export_figures : :obj:`bool`, defaults to False
-            If True, figures are shown or exported (default path: ~/.ding0/) during run.
+        export_mv_figures : :obj:`bool`, defaults to False
+            If True, mv figures are shown or exported during run.
+        export_lv_figures : :obj:`bool`, defaults to False
+            If True, lv figures are shown or exported during run.
+        path : :obj:`str` or None , defaults to None
+            Set path to save the figures if not None
 
         Returns
         -------
@@ -294,73 +342,73 @@ class NetworkDing0:
             The rings are finally closed to hold a complete graph (if the SDs are open,
             the edges adjacent to a SD will not be exported!)
         """
+
+        # TODO run ding0 needs to consider new features
         if debug:
             start = time.time()
 
-        # STEP 1: Import MV Grid Districts and subjacent objects
-        self.import_mv_grid_districts(session,
-                                      mv_grid_districts_no=mv_grid_districts_no)
+        logger.info("STEP 1: Import MV Grid Districts and subjacent objects")
+        self.import_mv_grid_districts(
+            session,
+            mv_grid_districts_no,
+            ding0_legacy=ding0_legacy,
+            peak_load_determination_mode=peak_load_determination_mode,
+            load_area_to_debug=load_area_to_debug,
+        )
 
-        # STEP 2: Import generators
+        logger.info("STEP 2: Import generators")
         self.import_generators(session, debug=debug)
 
-        # STEP 3: Parametrize MV grid
+        logger.info("STEP 3: Parametrize MV grid")
         self.mv_parametrize_grid(debug=debug)
 
-        # STEP 4: Validate MV Grid Districts
+        logger.info("STEP 4: Validate MV Grid Districts")
         msg = self.validate_grid_districts()
+        self.message.append(msg)
 
-        # STEP 5: Build LV grids
+        logger.info("STEP 5: Build LV grids")
         self.build_lv_grids()
+        if export_lv_figures:
+            self.plot_lv_grids(path=path, filename="lv_grid_building_completed")
 
-        # STEP 6: Build MV grids
+        logger.info("STEP 6: Build MV grids")
         self.mv_routing(debug=False)
-        if export_figures:
-            grid = self._mv_grid_districts[0].mv_grid
-            plot_mv_topology(grid, subtitle='Routing completed', filename='1_routing_completed.png')
+        if export_mv_figures:
+            self.plot_mv_grids(path=path, filename='1_routing_completed')
 
-        # STEP 7: Connect MV and LV generators
+        logger.info("STEP 7: Connect MV and LV generators")
         self.connect_generators(debug=False)
-        if export_figures:
-            plot_mv_topology(grid, subtitle='Generators connected', filename='2_generators_connected.png')
+        if export_mv_figures:
+            self.plot_mv_grids(path=path, filename='2_generators_connected')
 
-        # STEP 8: Relocate switch disconnectors in MV grid
+        logger.info("STEP 8: Relocate switch disconnectors in MV grid")
         self.set_circuit_breakers(debug=debug)
-        if export_figures:
-            plot_mv_topology(grid, subtitle='Circuit breakers relocated', filename='3_circuit_breakers_relocated.png')
+        if export_mv_figures:
+            self.plot_mv_grids(path=path, filename='3_circuit_breakers_relocated')
 
-        # STEP 9: Open all switch disconnectors in MV grid
+        logger.info("STEP 9: Open all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='open')
 
-        # STEP 10: Do power flow analysis of MV grid
+        logger.info("STEP 10: Do power flow analysis of MV grid")
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
-        if export_figures:
-            plot_mv_topology(grid, subtitle='PF result (load case)',
-                             filename='4_PF_result_load.png',
-                             line_color='loading', node_color='voltage', testcase='load')
-            plot_mv_topology(grid, subtitle='PF result (feedin case)',
-                             filename='5_PF_result_feedin.png',
-                             line_color='loading', node_color='voltage', testcase='feedin')
+        if export_mv_figures:
+            self.plot_mv_grids(path=path, filename='4_PF_result_load')
+            self.plot_mv_grids(path=path, filename='5_PF_result_feedin')
 
-        # STEP 11: Reinforce MV grid
+        logger.info("STEP 11: Reinforce MV grid")
         self.reinforce_grid()
 
-        # STEP 12: Close all switch disconnectors in MV grid
+        logger.info("STEP 12: Close all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='close')
-
-        if export_figures:
-            plot_mv_topology(grid, subtitle='Final grid PF result (load case)',
-                             filename='6_final_grid_PF_result_load.png',
-                             line_color='loading', node_color='voltage', testcase='load')
-            plot_mv_topology(grid, subtitle='Final grid PF result (feedin case)',
-                             filename='7_final_grid_PF_result_feedin.png',
-                             line_color='loading', node_color='voltage', testcase='feedin')
+        if export_mv_figures:
+            self.plot_mv_grids(path=path, filename='6_final_grid_PF_result_load')
+            self.plot_mv_grids(path=path, filename='7_final_grid_PF_result_feedin')
 
         if debug:
             logger.info('Elapsed time for {0} MV Grid Districts (seconds): {1}'.format(
                 str(len(mv_grid_districts_no)), time.time() - start))
 
-        return msg
+        return self.message
 
     def get_mvgd_lvla_lvgd_obj_from_id(self):
         """
@@ -426,18 +474,15 @@ class NetworkDing0:
 
         return mv_grid_districts_dict, lv_load_areas_dict, lv_grid_districts_dict, lv_stations_dict
 
-    def build_mv_grid_district(self, poly_id, subst_id, grid_district_geo_data,
-                        station_geo_data):
+    def build_mv_grid_district(self, subst_id, grid_district_geo_data, station_geo_data):
         """
         Initiates single MV grid_district including station and grid
 
         Parameters
         ----------
 
-        poly_id: :obj:`int`
-            ID of grid_district according to database table. Also used as ID for created grid #TODO: check type
         subst_id: :obj:`int`
-            ID of station according to database table #TODO: check type
+            ID of station and mv_grid_district according to database table Also used as ID for created grid.
         grid_district_geo_data: :shapely:`Shapely Polygon object<polygons>`
             Polygon of grid district, The geo-spatial polygon
             in the coordinate reference system with the
@@ -455,12 +500,13 @@ class NetworkDing0:
 
         """
 
+        logger.info(f"Build MV grid district: {subst_id}")
         mv_station = MVStationDing0(id_db=subst_id, geo_data=station_geo_data)
 
         mv_grid = MVGridDing0(network=self,
-                              id_db=poly_id,
+                              id_db=subst_id,
                               station=mv_station)
-        mv_grid_district = MVGridDistrictDing0(id_db=poly_id,
+        mv_grid_district = MVGridDistrictDing0(id_db=subst_id,
                                                mv_grid=mv_grid,
                                                geo_data=grid_district_geo_data)
         mv_grid.grid_district = mv_grid_district
@@ -539,9 +585,9 @@ class NetworkDing0:
                 peak_load_industrial=row['peak_load_industrial'],
                 peak_load_agricultural=row['peak_load_agricultural'],
                 peak_load=(row['peak_load_residential'] +
-                               row['peak_load_retail'] +
-                               row['peak_load_industrial'] +
-                               row['peak_load_agricultural']),
+                           row['peak_load_retail'] +
+                           row['peak_load_industrial'] +
+                           row['peak_load_agricultural']),
                 sector_count_residential=int(row['sector_count_residential']),
                 sector_count_retail=int(row['sector_count_retail']),
                 sector_count_industrial=int(row['sector_count_industrial']),
@@ -567,8 +613,8 @@ class NetworkDing0:
                 grid=lv_grid,
                 lv_load_area=lv_load_area,
                 geo_data=wkt_loads(lv_stations.loc[id, 'geom'])
-                            if id in lv_stations.index.values
-                            else lv_load_area.geo_centre,
+                if id in lv_stations.index.values
+                else lv_load_area.geo_centre,
                 peak_load=lv_grid_district.peak_load)
 
             # assign created objects
@@ -578,7 +624,15 @@ class NetworkDing0:
             lv_grid_district.lv_grid = lv_grid
             lv_load_area.add_lv_grid_district(lv_grid_district)
 
-    def import_mv_grid_districts(self, session, mv_grid_districts_no=None):
+    def import_mv_grid_districts(
+            self,
+            session,
+            mv_grid_districts_no,
+            ding0_legacy=False,
+            create_lvgd_geo_method='convex_hull',
+            peak_load_determination_mode="sum_of_loads",
+            load_area_to_debug=None
+    ):
         """
         Imports MV Grid Districts, HV-MV stations, Load Areas, LV Grid Districts
         and MV-LV stations, instantiates and initiates objects.
@@ -590,6 +644,17 @@ class NetworkDing0:
         mv_grid_districts : :obj:`list` of :obj:`int`
             List of MV grid_districts/stations (int) to be imported (if empty,
             all grid_districts & stations are imported)
+        load_area_to_debug: int or None
+            If load_area_id is set, only the load area is build.
+        ding0_legacy: if True ding0 run
+                        else: build new lv_districts...
+
+        local_db: parameterize buildings from osm if True
+
+        peak_load_determination_mode: `str`
+            - "sum_of_loads" - sums all loads
+            - "diversity_equation" - calculate peak load with equation from literature
+            out of diversity factors and the number of households
 
         See Also
         --------
@@ -608,65 +673,328 @@ class NetworkDing0:
         except OSError:
             logger.exception('cannot open config file.')
 
-        # build SQL query
-        grid_districts = session.query(self.orm['orm_mv_grid_districts'].subst_id,
-                                       func.ST_AsText(func.ST_Transform(
-                                           self.orm['orm_mv_grid_districts'].geom, srid)). \
-                                       label('poly_geom'),
-                                       func.ST_AsText(func.ST_Transform(
-                                           self.orm['orm_mv_stations'].point, srid)). \
-                                       label('subs_geom')).\
-            join(self.orm['orm_mv_stations'], self.orm['orm_mv_grid_districts'].subst_id ==
-                 self.orm['orm_mv_stations'].subst_id).\
-            filter(self.orm['orm_mv_grid_districts'].subst_id.in_(mv_grid_districts_no)). \
-            filter(self.orm['version_condition_mvgd']). \
-            filter(self.orm['version_condition_mv_stations']). \
-            distinct()
-
-        # read MV data from db
-        mv_data = pd.read_sql_query(grid_districts.statement,
-                                    session.bind,
-                                    index_col='subst_id')
+        mv_data = db_io.get_mv_data(self.orm, session, mv_grid_districts_no)
 
         # iterate over grid_district/station datasets and initiate objects
-        for poly_id, row in mv_data.iterrows():
-            subst_id = poly_id
+        for subst_id, row in mv_data.iterrows():
             region_geo_data = wkt_loads(row['poly_geom'])
-
-            # transform `region_geo_data` to epsg 3035
-            # to achieve correct area calculation of mv_grid_district
             station_geo_data = wkt_loads(row['subs_geom'])
-            # projection = partial(
-            #     pyproj.transform,
-            #     pyproj.Proj(init='epsg:4326'),  # source coordinate system
-            #     pyproj.Proj(init='epsg:3035'))  # destination coordinate system
-            #
-            # region_geo_data = transform(projection, region_geo_data)
+            # transform to epsg 3035
+            proj_source = Transformer.from_crs("epsg:4326", "epsg:3035", always_xy=True).transform
+            station_geo_data = transform(proj_source, station_geo_data)
+            mv_grid_district = self.build_mv_grid_district(subst_id, region_geo_data, station_geo_data)
 
-            mv_grid_district = self.build_mv_grid_district(poly_id,
-                                             subst_id,
-                                             region_geo_data,
-                                             station_geo_data)
+            #### TODO: check ding0_legacy
+            if ding0_legacy:
 
-            # import all lv_stations within mv_grid_district
-            lv_stations = self.import_lv_stations(session)
+                # import all lv_stations within mv_grid_district
+                lv_stations = self.import_lv_stations(session)
 
-            # import all lv_grid_districts within mv_grid_district
-            lv_grid_districts = self.import_lv_grid_districts(session, lv_stations)
+                # import all lv_grid_districts within mv_grid_district
+                lv_grid_districts = self.import_lv_grid_districts(session, lv_stations)
 
-            # import load areas
-            self.import_lv_load_areas(session,
-                                      mv_grid_district,
-                                      lv_grid_districts,
-                                      lv_stations)
+                # import load areas
+                self.import_lv_load_areas(session, mv_grid_district,
+                                          lv_grid_districts, lv_stations)
+
+
+            else:
+                self.import_lv_load_areas_and_build_new_lv_districts(
+                    session,
+                    mv_grid_district,
+                    create_lvgd_geo_method,
+                    peak_load_determination_mode,
+                    load_area_to_debug=load_area_to_debug,
+                )
 
             # add sum of peak loads of underlying lv grid_districts to mv_grid_district
             mv_grid_district.add_peak_demand()
 
         logger.info('=====> MV Grid Districts imported')
 
-    def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts,
-                             lv_stations):
+    def import_lv_load_areas_and_build_new_lv_districts(
+            self,
+            session,
+            mv_grid_district,
+            create_lvgd_geo_method,
+            peak_load_determination_mode,
+            load_area_to_debug=None,
+    ):
+
+        """
+        Imports load_areas (load areas) from database for a single MV grid_district
+        And compute new lv_districts
+
+        Parameters
+        ----------
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Database session
+        mv_grid_district : MV grid_district/station (instance of MVGridDistrictDing0 class) for
+            which the import of load areas is performed
+        load_area_to_debug: int or None
+            If load_area_id is set, only the load area is build.
+        """
+
+        lv_load_areas = db_io.get_lv_load_areas(self.orm, session, mv_grid_district.mv_grid._station.id_db)
+        if load_area_to_debug:
+            lv_load_areas = lv_load_areas.loc[[load_area_to_debug], :]
+        # create load_area objects from rows and add them to graph
+        logger.info(f"Creating load areas: {lv_load_areas.index.to_list()}")
+        for id_db, row in lv_load_areas.iterrows():
+            logger.info(f"Build LV Load Area: {id_db}")
+            # Transform geo_load_area from str to shape.
+            # Note: Buildings without buffer, ways with buffer.
+            geo_load_area = wkt_loads(row.geo_area)
+            # Get buffer_poly_list.
+            buffer_poly_list = create_buffer_polygons(geo_load_area)
+            # Load ways from db for last element of buffer_poly_list.
+            ways_sql_df = db_io.get_egon_ways(self.orm, session, buffer_poly_list[-1].wkt)
+            # If ways found in query build graph from osm data.
+            if not ways_sql_df.empty:
+                # Transform ways to shape.
+                ways_sql_df = update_ways_geo_to_shape(ways_sql_df)
+                # Build graph
+                graph = build_graph_from_ways(ways_sql_df)
+                # Get nodes to remove from graph (per buffer polygon).
+                # "outlier_nodes_list" is a list of lists
+                outlier_nodes_list = graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list)
+
+            # If no osm ways data could be found create synthetic graph.
+            else:
+                # Create synthetic graph with one street node instead.
+                graph, node_id = create_simple_synthetic_graph(geo_load_area)
+                # No outlier nodes in synthetic graph, nested list must be empty.
+                outlier_nodes_list = [[]]
+                logger.warning(f'ways_sql_df.empty. No ways found in '
+                               f'MV {mv_grid_district}, LA {id_db} '
+                               f'Build synthetic graph instead.')
+
+            # Inner_node_list define nodes without buffer.
+            inner_node_list = list(set(graph.nodes()) - set(outlier_nodes_list[0]))
+
+            if len(inner_node_list) < 1:
+                logger.warning(f'No graph found in origin polygon of MV {mv_grid_district}, LA {id_db}.')
+                continue
+
+            # Get connected graph.
+            conn_graph, synthetic_edges = get_fully_conn_graph(graph, outlier_nodes_list)
+            # Split "fully_conn_graph" in inner and outer part.
+            inner_graph, outer_graph = split_conn_graph(conn_graph, inner_node_list, synthetic_edges)
+
+            # "subdivide_graph_edges" for only graph in list.
+            # "edges_to_remove" are edges which are subdivided into 20m segments.
+            # Process inner graph
+            graph_subdiv = subdivide_graph_edges(inner_graph)
+
+            # Process outer graph
+            outer_graph = get_outer_conn_graph(outer_graph, inner_node_list)
+            outer_graph = add_edge_geometry_entry(outer_graph)
+            outer_graph = flatten_graph_components_to_lines(outer_graph, inner_node_list)
+            outer_graph = remove_detours(outer_graph)
+
+            # Compose graph
+            composed_graph = compose_graph(outer_graph, graph_subdiv)
+
+            # Get buildings with loads from database.
+            buildings_w_loads_df = db_io.get_egon_buildings(
+                self.orm, session, mv_grid_district.id_db, row
+            )
+            if buildings_w_loads_df.empty:
+                logger.error(f"Load area {id_db=} has no buildings!")
+                continue
+
+            # If composed graph of type synthetic (no osm ways have been found), then
+            # update graph node's coord (geo load center) using building's positions
+            # and peak loads.
+            if composed_graph.graph['source'] == 'synthetic':
+                x, y = get_load_center_coords(buildings_w_loads_df)
+                composed_graph.nodes[node_id]['x'] = x
+                composed_graph.nodes[node_id]['y'] = y
+
+            # Assign nearest nodes
+            buildings_w_loads_df = assign_nearest_nodes_to_buildings(composed_graph,
+                                                                     buildings_w_loads_df)
+
+            # Get nodes of graph to keep -> "street_loads_df".
+            # "street_loads_df" contains nearest nodes (nn) and cumulated load per nn.
+            street_loads_df, _ = identify_street_loads(buildings_w_loads_df, composed_graph)
+
+            # Simplify graph to keep overview
+            simp_graph = simplify_graph_adv(composed_graph, street_loads_df.index.tolist())
+            simp_graph = remove_unloaded_deadends(simp_graph, street_loads_df.index.tolist())
+
+            # Get n_clusters based on capacity of the load area.
+            n_cluster = get_cluster_numbers(buildings_w_loads_df, simp_graph)
+
+            # Cluster graph and locate lv stations based on load center per cluster.
+            clustering_successfully, cluster_graph, mvlv_subst_list, nodes_w_labels = \
+                distance_restricted_clustering(
+                    simp_graph, n_cluster, street_loads_df, mv_grid_district, id_db
+                )
+            if not clustering_successfully:
+                return f"Clustering not successful for " \
+                       f"MV {mv_grid_district}, LA {id_db}"
+
+            # Get loads on mv level.
+            loads_mv_df = buildings_w_loads_df.loc[
+                (get_config_osm('mv_lv_threshold_capacity') <= buildings_w_loads_df.capacity) &
+                (buildings_w_loads_df.capacity < get_config_osm('hv_mv_threshold_capacity'))]
+
+            for osm_id_building, loads_mv_df_row in loads_mv_df.iterrows():
+                connect_mv_loads_to_graph(cluster_graph, osm_id_building, loads_mv_df_row)
+
+            # Calculation peak load for load area with buildings < 200 kW.
+            loads_lv_df = buildings_w_loads_df.loc[
+                buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')
+            ]
+
+            # Set cluster ID for buildings.
+            loads_lv_df['cluster'] = loads_lv_df.nn.map(nodes_w_labels.cluster)
+
+            # Create LVLoadAreaDing0
+            # TODO: if peak load smaller than threshold: do not add
+            if peak_load_determination_mode == "sum_of_loads":
+                # Calculate peak load base by sum of building loads.
+                peak_load = loads_lv_df.capacity.sum()
+            elif peak_load_determination_mode == "diversity_equation":
+                # Calculate peak load based on diversity of loads.
+                peak_load = get_peak_load_diversity(loads_lv_df)
+            else:
+                raise ValueError("False peak load determination mode.")
+
+            lv_load_area = LVLoadAreaDing0(id_db=id_db,
+                                           db_data=row,
+                                           mv_grid_district=mv_grid_district,
+                                           peak_load=peak_load,
+                                           load_area_graph=cluster_graph)
+
+            # Add MV Loads to LV Load Area
+            for building_id, row in loads_mv_df.iterrows():
+                # Create MVLoadDing0
+                mv_load = MVLoadDing0(geo_data=row.geometry,
+                                      grid=mv_grid_district,
+                                      peak_load=row.capacity,  # in kW
+                                      peak_load_residential=row.residential_capacity,
+                                      number_households=row.number_households,
+                                      peak_load_cts=row.cts_capacity,
+                                      peak_load_industrial=row.industrial_capacity,
+                                      building_id=building_id,
+                                      osmid_building=building_id,
+                                      osmid_nn=row.nn,
+                                      nn_coords=row.nn_coords,
+                                      lv_load_area=lv_load_area,
+                                      type="conventional_load")
+
+                # Add mv_load to mv_grid_district and lv_load_area
+                mv_grid_district.mv_grid.add_load(mv_load)
+                lv_load_area.add_mv_load(mv_load)
+
+            # Create LVGridDistrictDing0, LVGridDing and LVStationDing0
+            # for each cluster.
+            for mvlv_subst_loc in mvlv_subst_list:
+
+                cluster_id = mvlv_subst_loc.get('cluster')
+
+                lvgd_id = get_lvgd_id(id_db, cluster_id)
+                buildings = loads_lv_df.loc[loads_lv_df.cluster == cluster_id]
+
+                if (create_lvgd_geo_method == 'convex_hull') | (create_lvgd_geo_method == 'bounding_box'):
+                    # Get convex hull per cluster.
+                    cluster_geo_list = buildings.geometry.tolist()  # geo of building
+                    cluster_geo_list += nodes_w_labels.loc[
+                        nodes_w_labels.cluster == mvlv_subst_loc.get('cluster')].geometry.tolist()
+
+                    # Get convex hull for ding0 objects.
+                    points = get_points_in_load_area(cluster_geo_list)
+                    if create_lvgd_geo_method == 'convex_hull':
+                        polygon = get_convex_hull_from_points(points)
+                    elif create_lvgd_geo_method == 'bounding_box':
+                        polygon = get_bounding_box_from_points(points)
+                    else:
+                        logging.warning(f'create_lvgd_geo_method {create_lvgd_geo_method} not implemented.')
+
+                elif create_lvgd_geo_method == 'off':
+                    polygon = None
+
+                else:
+                    logging.warning(f'create_lvgd_geo_method {create_lvgd_geo_method} not implemented.')
+
+                # Create LVGridDistrictDing0
+                # Therefore calculate "peak_load_div"
+                if peak_load_determination_mode == "sum_of_loads":
+                    # Calculate peak load base by sum of building loads.
+                    peak_load_div = buildings.capacity.sum()
+                elif peak_load_determination_mode == "diversity_equation":
+                    # Calculate peak load based on diversity of loads.
+                    peak_load_div = get_peak_load_diversity(buildings)
+                else:
+                    raise ValueError("False peak load determination mode.")
+
+                if peak_load_div > 0:
+                    # Create LVGridDistrictDing0
+                    lv_grid_district = LVGridDistrictDing0(mvlv_subst_id=lvgd_id,
+                                                           geo_data=polygon,
+                                                           graph_district=mvlv_subst_loc.get('graph_district'),
+                                                           lv_load_area=lv_load_area,
+                                                           buildings_district=buildings,
+                                                           id_db=lvgd_id,
+                                                           peak_load=peak_load_div)
+
+                    # Create LVGridDing0
+                    # Be aware, lv_grid takes grid district's geom!
+                    lv_nominal_voltage = cfg_ding0.get('assumptions', 'lv_nominal_voltage')
+                    lv_grid = LVGridDing0(network=self,
+                                          grid_district=lv_grid_district,
+                                          id_db=lvgd_id,
+                                          geo_data=polygon,
+                                          v_level=lv_nominal_voltage)
+
+                    # Create LVStationDing0
+                    # osm_id_node: Defined node in graph where station is located
+                    lv_station = LVStationDing0(
+                        id_db=lvgd_id,
+                        grid=lv_grid,
+                        lv_load_area=lv_load_area,
+                        geo_data=Point(mvlv_subst_loc.get('x'), mvlv_subst_loc.get('y')),
+                        osm_id_node=mvlv_subst_loc.get('osmid')
+                    )
+
+                    # Assign created objects
+                    # Note: Creation of LV grid is done separately,
+                    # see NetworkDing0.build_lv_grids()
+                    lv_grid.add_station(lv_station)
+                    lv_grid_district.lv_grid = lv_grid
+                    lv_load_area.add_lv_grid_district(lv_grid_district)
+
+            # Calculate load center to set lv_load_area_centre_geo_data based on
+            # peak load and position of lvgd.station
+            # Note: MVLoads are not considered.
+            if len(lv_load_area._lv_grid_districts):  # just in case there are stations
+                la_centre_osmid, la_centre_geo_data, load_area_geo = get_load_center_node(lv_load_area)
+            else:
+                # raise ValueError("No lvgd available and load_area without lv_grid_district")
+                la_centre_osmid = None
+                la_centre_geo_data = lv_load_area.geo_centre
+                load_area_geo = lv_load_area.geo_area
+
+            # Update shape of load_area, if centre does not
+            # intersect with original load area.
+            lv_load_area.geo_area = load_area_geo
+
+            # Create new centre object for Load Area.
+            lv_load_area_centre = LVLoadAreaCentreDing0(id_db=id_db,
+                                                        geo_data=la_centre_geo_data,
+                                                        osm_id_node=la_centre_osmid,
+                                                        lv_load_area=lv_load_area,
+                                                        grid=mv_grid_district.mv_grid)
+
+            # Links the centre object to Load Area.
+            lv_load_area.lv_load_area_centre = lv_load_area_centre
+
+            # Add Load Area to MV grid district.
+            mv_grid_district.add_lv_load_area(lv_load_area)
+
+    def import_lv_load_areas(self, session, mv_grid_district, lv_grid_districts, lv_stations):
         """
         Imports load_areas (load areas) from database for a single MV grid_district
 
@@ -685,13 +1013,13 @@ class NetworkDing0:
         # get ding0s' standard CRS (SRID)
         srid = str(int(cfg_ding0.get('geo', 'srid')))
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
-        #srid = '3035'
+        # srid = '3035'
 
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
         lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
 
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in GW -> scale to kW
 
         # build SQL query
         lv_load_areas_sqla = session.query(
@@ -714,30 +1042,31 @@ class NetworkDing0:
             self.orm['orm_lv_load_areas'].sector_count_industrial,
             self.orm['orm_lv_load_areas'].sector_count_agricultural,
             self.orm['orm_lv_load_areas'].nuts.label('nuts_code'),
-            func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom, srid)).\
+            func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom, srid)). \
                 label('geo_area'),
-            func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom_centre, srid)).\
+            func.ST_AsText(func.ST_Transform(self.orm['orm_lv_load_areas'].geom_centre, srid)). \
                 label('geo_centre'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_residential * gw2kw).\
+            (self.orm['orm_lv_load_areas'].sector_peakload_residential * mw2kw). \
                 label('peak_load_residential'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_retail * gw2kw).\
+            (self.orm['orm_lv_load_areas'].sector_peakload_retail * mw2kw). \
                 label('peak_load_retail'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * gw2kw).\
+            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * mw2kw). \
                 label('peak_load_industrial'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * gw2kw).\
+            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * mw2kw). \
                 label('peak_load_agricultural'),
             ((self.orm['orm_lv_load_areas'].sector_peakload_residential
               + self.orm['orm_lv_load_areas'].sector_peakload_retail
               + self.orm['orm_lv_load_areas'].sector_peakload_industrial
               + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
-             * gw2kw).label('peak_load')). \
+             * mw2kw).label('peak_load')). \
             filter(self.orm['orm_lv_load_areas'].subst_id == mv_grid_district. \
-                   mv_grid._station.id_db).\
-            filter(((self.orm['orm_lv_load_areas'].sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
+                   mv_grid._station.id_db). \
+            filter(((self.orm[
+                         'orm_lv_load_areas'].sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
                      + self.orm['orm_lv_load_areas'].sector_peakload_retail
                      + self.orm['orm_lv_load_areas'].sector_peakload_industrial
                      + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
-                       * gw2kw) > lv_loads_threshold). \
+                    * mw2kw) > lv_loads_threshold). \
             filter(self.orm['version_condition_la'])
 
         # read data from db
@@ -747,7 +1076,6 @@ class NetworkDing0:
 
         # create load_area objects from rows and add them to graph
         for id_db, row in lv_load_areas.iterrows():
-
             # create LV load_area object
             lv_load_area = LVLoadAreaDing0(id_db=id_db,
                                            db_data=row,
@@ -756,9 +1084,9 @@ class NetworkDing0:
 
             # sub-selection of lv_grid_districts/lv_stations within one
             # specific load area
-            lv_grid_districts_per_load_area = lv_grid_districts.\
+            lv_grid_districts_per_load_area = lv_grid_districts. \
                 loc[lv_grid_districts['la_id'] == id_db]
-            lv_stations_per_load_area = lv_stations.\
+            lv_stations_per_load_area = lv_stations. \
                 loc[lv_stations['la_id'] == id_db]
 
             self.build_lv_grid_district(lv_load_area,
@@ -795,7 +1123,7 @@ class NetworkDing0:
         # SET SRID 3035 to achieve correct area calculation of lv_grid_district
         # srid = '3035'
 
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in GW -> scale to kW
 
         # 1. filter grid districts of relevant load area
         lv_grid_districs_sqla = session.query(
@@ -803,21 +1131,21 @@ class NetworkDing0:
             self.orm['orm_lv_grid_district'].la_id,
             self.orm['orm_lv_grid_district'].zensus_sum.label('population'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_residential * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_residential * mw2kw).
                 label('peak_load_residential'),
-            (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
+            (self.orm['orm_lv_grid_district'].sector_peakload_retail * mw2kw).
                 label('peak_load_retail'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_industrial * mw2kw).
                 label('peak_load_industrial'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_agricultural * mw2kw).
                 label('peak_load_agricultural'),
             ((self.orm['orm_lv_grid_district'].sector_peakload_residential
               + self.orm['orm_lv_grid_district'].sector_peakload_retail
               + self.orm['orm_lv_grid_district'].sector_peakload_industrial
               + self.orm['orm_lv_grid_district'].sector_peakload_agricultural)
-             * gw2kw).label('peak_load'),
+             * mw2kw).label('peak_load'),
             func.ST_AsText(func.ST_Transform(
                 self.orm['orm_lv_grid_district'].geom, srid)).label('geom'),
             self.orm['orm_lv_grid_district'].sector_count_residential,
@@ -825,15 +1153,15 @@ class NetworkDing0:
             self.orm['orm_lv_grid_district'].sector_count_industrial,
             self.orm['orm_lv_grid_district'].sector_count_agricultural,
             (self.orm[
-                 'orm_lv_grid_district'].sector_consumption_residential * gw2kw). \
+                 'orm_lv_grid_district'].sector_consumption_residential * mw2kw). \
                 label('sector_consumption_residential'),
-            (self.orm['orm_lv_grid_district'].sector_consumption_retail * gw2kw). \
+            (self.orm['orm_lv_grid_district'].sector_consumption_retail * mw2kw). \
                 label('sector_consumption_retail'),
             (self.orm[
-                'orm_lv_grid_district'].sector_consumption_industrial * gw2kw). \
+                 'orm_lv_grid_district'].sector_consumption_industrial * mw2kw). \
                 label('sector_consumption_industrial'),
             (self.orm[
-                'orm_lv_grid_district'].sector_consumption_agricultural * gw2kw). \
+                 'orm_lv_grid_district'].sector_consumption_agricultural * mw2kw). \
                 label('sector_consumption_agricultural'),
             self.orm['orm_lv_grid_district'].mvlv_subst_id). \
             filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(
@@ -881,8 +1209,8 @@ class NetworkDing0:
         lv_stations_sqla = session.query(self.orm['orm_lv_stations'].mvlv_subst_id,
                                          self.orm['orm_lv_stations'].la_id,
                                          func.ST_AsText(func.ST_Transform(
-                                           self.orm['orm_lv_stations'].geom, srid)). \
-                                         label('geom')).\
+                                             self.orm['orm_lv_stations'].geom, srid)). \
+                                         label('geom')). \
             filter(self.orm['orm_lv_stations'].subst_id.in_(mv_grid_districts)). \
             filter(self.orm['version_condition_mvlvst'])
 
@@ -914,60 +1242,17 @@ class NetworkDing0:
             """
             Imports renewable (res) generators
             """
-
-            # build query
-            generators_sqla = session.query(
-                self.orm['orm_re_generators'].columns.id,
-                self.orm['orm_re_generators'].columns.subst_id,
-                self.orm['orm_re_generators'].columns.la_id,
-                self.orm['orm_re_generators'].columns.mvlv_subst_id,
-                self.orm['orm_re_generators'].columns.electrical_capacity,
-                self.orm['orm_re_generators'].columns.generation_type,
-                self.orm['orm_re_generators'].columns.generation_subtype,
-                self.orm['orm_re_generators'].columns.voltage_level,
-                self.orm['orm_re_generators'].columns.w_id,
-                func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_re_generators'].columns.rea_geom_new, srid)).label('geom_new'),
-                func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_re_generators'].columns.geom, srid)).label('geom')
-            ). \
-                filter(
-                self.orm['orm_re_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
-                filter(self.orm['orm_re_generators'].columns.voltage_level.in_([4, 5, 6, 7])). \
-                filter(self.orm['version_condition_re'])
-
-            # read data from db
-            generators = pd.read_sql_query(generators_sqla.statement,
-                                           session.bind,
-                                           index_col='id')
-            # define generators with unknown subtype as 'unknown'
-            generators.loc[generators[
-                               'generation_subtype'].isnull(),
-                           'generation_subtype'] = 'unknown'
-
+            generators = db_io.get_res_generators(self.orm, session, list(mv_grid_districts_dict.values())[0])
+            logger.debug(f"Import {generators.shape[0]} renewable generators.")
             for id_db, row in generators.iterrows():
-
-                # treat generators' geom:
-                # use geom_new (relocated genos from data processing)
-                # otherwise use original geom from EnergyMap
-                if row['geom_new']:
-                    geo_data = wkt_loads(row['geom_new'])
-                elif not row['geom_new']:
-                    geo_data = wkt_loads(row['geom'])
-                    logger.warning(
-                        'Generator {} has no geom_new entry,'
-                        'EnergyMap\'s geom entry will be used.'.format(
-                        id_db))
-                # if no geom is available at all, skip generator
-                elif not row['geom']:
-                    #geo_data =
-                    logger.error('Generator {} has no geom entry either'
-                                 'and will be skipped.'.format(id_db))
-                    continue
-
                 # look up MV grid
                 mv_grid_district_id = row['subst_id']
                 mv_grid = mv_grid_districts_dict[mv_grid_district_id].mv_grid
+
+                if pd.notna(row["building_id"]):
+                    building_id = int(row["building_id"])
+                else:
+                    building_id = None
 
                 # create generator object
                 if row['generation_type'] in ['solar', 'wind']:
@@ -978,7 +1263,10 @@ class NetworkDing0:
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
                         v_level=int(row['voltage_level']),
-                        weather_cell_id=row['w_id'])
+                        weather_cell_id=int(row['w_id']),
+                        building_id=building_id,
+                        geo_data=wkt_loads(row['geom'])
+                    )
                 else:
                     generator = GeneratorDing0(
                         id_db=id_db,
@@ -986,82 +1274,26 @@ class NetworkDing0:
                         capacity=float(row['electrical_capacity']),
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
-                        v_level=int(row['voltage_level']))
+                        v_level=int(row['voltage_level']),
+                        building_id=building_id,
+                        geo_data=wkt_loads(row['geom'])
+                    )
 
                 # MV generators
                 if generator.v_level in [4, 5]:
-                    generator.geo_data = geo_data
                     mv_grid.add_generator(generator)
 
                 # LV generators
                 elif generator.v_level in [6, 7]:
-
-                    # look up MV-LV substation id
-                    mvlv_subst_id = row['mvlv_subst_id']
-
-                    # if there's a LVGD id
-                    if mvlv_subst_id and not isnan(mvlv_subst_id):
-                        # assume that given LA exists
-                        try:
-                            # get LVGD
-                            lv_station = lv_stations_dict[mvlv_subst_id]
-                            lv_grid_district = lv_station.grid.grid_district
-                            generator.lv_grid = lv_station.grid
-
-                            # set geom (use original from db)
-                            generator.geo_data = geo_data
-
-                        # if LA/LVGD does not exist, choose random LVGD and move generator to station of LVGD
-                        # this occurs due to exclusion of LA with peak load < 1kW
-                        except:
-                            lv_grid_district = random.choice(list(lv_grid_districts_dict.values()))
-
-                            generator.lv_grid = lv_grid_district.lv_grid
-                            generator.geo_data = lv_grid_district.lv_grid.station().geo_data
-
-                            logger.warning('Generator {} cannot be assigned to '
-                                           'non-existent LV Grid District and was '
-                                           'allocated to a random LV Grid District ({}).'.format(
-                                            repr(generator), repr(lv_grid_district)))
-                            pass
-
-                    else:
-                        lv_grid_district = random.choice(list(lv_grid_districts_dict.values()))
-
-                        generator.lv_grid = lv_grid_district.lv_grid
-                        generator.geo_data = lv_grid_district.lv_grid.station().geo_data
-
-                        logger.warning('Generator {} has no la_id and was '
-                                       'assigned to a random LV Grid District ({}).'.format(
-                                        repr(generator), repr(lv_grid_district)))
-
-                    generator.lv_load_area = lv_grid_district.lv_load_area
-                    lv_grid_district.lv_grid.add_generator(generator)
+                    mv_grid.lv_generators_to_connect.append(generator)
+                else:
+                    ValueError("False voltage level")
 
         def import_conv_generators():
             """
             Imports conventional (conv) generators
             """
-
-            # build query
-            generators_sqla = session.query(
-                self.orm['orm_conv_generators'].columns.id,
-                self.orm['orm_conv_generators'].columns.subst_id,
-                self.orm['orm_conv_generators'].columns.name,
-                self.orm['orm_conv_generators'].columns.capacity,
-                self.orm['orm_conv_generators'].columns.fuel,
-                self.orm['orm_conv_generators'].columns.voltage_level,
-                func.ST_AsText(func.ST_Transform(
-                    self.orm['orm_conv_generators'].columns.geom, srid)).label('geom')). \
-                filter(
-                self.orm['orm_conv_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
-                filter(self.orm['orm_conv_generators'].columns.voltage_level.in_([4, 5, 6])). \
-                filter(self.orm['version_condition_conv'])
-
-            # read data from db
-            generators = pd.read_sql_query(generators_sqla.statement,
-                                           session.bind,
-                                           index_col='id')
+            generators = db_io.get_conv_generators(self.orm, session, list(mv_grid_districts_dict)[0])
 
             for id_db, row in generators.iterrows():
 
@@ -1095,9 +1327,9 @@ class NetworkDing0:
         random.seed(a=seed)
 
         # build dicts to map MV grid district and Load Area ids to related objects
-        mv_grid_districts_dict,\
-        lv_load_areas_dict,\
-        lv_grid_districts_dict,\
+        mv_grid_districts_dict, \
+        lv_load_areas_dict, \
+        lv_grid_districts_dict, \
         lv_stations_dict = self.get_mvgd_lvla_lvgd_obj_from_id()
 
         # import renewable generators
@@ -1120,6 +1352,7 @@ class NetworkDing0:
 
         # load parameters from configs
         cfg_ding0.load_config('config_db_tables.cfg')
+        cfg_ding0.load_config('config_db_credentials.cfg')
         cfg_ding0.load_config('config_calc.cfg')
         cfg_ding0.load_config('config_files.cfg')
         cfg_ding0.load_config('config_misc.cfg')
@@ -1147,7 +1380,7 @@ class NetworkDing0:
 
         return PFConfigDing0(scenarios=[scenario],
                              timestep_start=start_time,
-                             timesteps_count=end_hour-start_hour,
+                             timesteps_count=end_hour - start_hour,
                              srid=srid,
                              resolution=resolution)
 
@@ -1168,88 +1401,90 @@ class NetworkDing0:
         equipment_mv_parameters_trafos = cfg_ding0.get('equipment',
                                                        'equipment_mv_parameters_trafos')
         static_data['MV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
-                                   equipment_mv_parameters_trafos),
-                                   comment='#',
-                                   delimiter=',',
-                                   decimal='.',
-                                   converters={'S_nom': lambda x: int(x)})
+                                                            equipment_mv_parameters_trafos),
+                                               comment='#',
+                                               delimiter=',',
+                                               decimal='.',
+                                               converters={'S_nom': lambda x: int(x)})
 
         # import equipment
         equipment_mv_parameters_lines = cfg_ding0.get('equipment',
                                                       'equipment_mv_parameters_lines')
         static_data['MV_overhead_lines'] = pd.read_csv(os.path.join(package_path, 'data',
-                                           equipment_mv_parameters_lines),
-                                           comment='#',
-                                           converters={'I_max_th': lambda x: int(x),
-                                                       'U_n': lambda x: int(x),
-                                                       'reinforce_only': lambda x: int(x)})
+                                                                    equipment_mv_parameters_lines),
+                                                       comment='#',
+                                                       converters={'I_max_th': lambda x: int(x),
+                                                                   'U_n': lambda x: int(x),
+                                                                   'reinforce_only': lambda x: int(x)})
 
         equipment_mv_parameters_cables = cfg_ding0.get('equipment',
                                                        'equipment_mv_parameters_cables')
         static_data['MV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
-                                   equipment_mv_parameters_cables),
-                                   comment='#',
-                                   converters={'I_max_th': lambda x: int(x),
-                                               'U_n': lambda x: int(x),
-                                               'reinforce_only': lambda x: int(x)})
+                                                            equipment_mv_parameters_cables),
+                                               comment='#',
+                                               converters={'I_max_th': lambda x: int(x),
+                                                           'U_n': lambda x: int(x),
+                                                           'reinforce_only': lambda x: int(x)})
 
         equipment_lv_parameters_cables = cfg_ding0.get('equipment',
                                                        'equipment_lv_parameters_cables')
         static_data['LV_cables'] = pd.read_csv(os.path.join(package_path, 'data',
-                                   equipment_lv_parameters_cables),
-                                   comment='#',
-                                   index_col='name',
-                                   converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
+                                                            equipment_lv_parameters_cables),
+                                               comment='#',
+                                               index_col='name',
+                                               converters={'I_max_th': lambda x: int(x), 'U_n': lambda x: int(x)})
 
         equipment_lv_parameters_trafos = cfg_ding0.get('equipment',
                                                        'equipment_lv_parameters_trafos')
         static_data['LV_trafos'] = pd.read_csv(os.path.join(package_path, 'data',
-                                   equipment_lv_parameters_trafos),
-                                   comment='#',
-                                   delimiter=',',
-                                   decimal='.',
-                                   converters={'S_nom': lambda x: int(x)})
-        static_data['LV_trafos']['r_pu'] = static_data['LV_trafos']['P_k'] / (static_data['LV_trafos']['S_nom']*1000)
-        static_data['LV_trafos']['x_pu'] = np.sqrt((static_data['LV_trafos']['u_kr']/100)**2-static_data['LV_trafos']['r_pu']**2)
+                                                            equipment_lv_parameters_trafos),
+                                               comment='#',
+                                               delimiter=',',
+                                               decimal='.',
+                                               converters={'S_nom': lambda x: int(x)})
+        static_data['LV_trafos']['r_pu'] = static_data['LV_trafos']['P_k'] / (static_data['LV_trafos']['S_nom'] * 1000)
+        static_data['LV_trafos']['x_pu'] = np.sqrt(
+            (static_data['LV_trafos']['u_kr'] / 100) ** 2 - static_data['LV_trafos']['r_pu'] ** 2)
 
         # import LV model grids
         model_grids_lv_string_properties = cfg_ding0.get('model_grids',
                                                          'model_grids_lv_string_properties')
         static_data['LV_model_grids_strings'] = pd.read_csv(os.path.join(package_path, 'data',
-                                                model_grids_lv_string_properties),
-                                                comment='#',
-                                                delimiter=',',
-                                                decimal='.',
-                                                index_col='string_id',
-                                                converters={'string_id': lambda x: int(x),
-                                                            'type': lambda x: int(x),
-                                                            'Kerber Original': lambda x: int(x),
-                                                            'count house branch': lambda x: int(x),
-                                                            'distance house branch': lambda x: int(x),
-                                                            'cable width': lambda x: int(x),
-                                                            'string length': lambda x: int(x),
-                                                            'length house branch A': lambda x: int(x),
-                                                            'length house branch B': lambda x: int(x),
-                                                            'cable width A': lambda x: int(x),
-                                                            'cable width B': lambda x: int(x)})
+                                                                         model_grids_lv_string_properties),
+                                                            comment='#',
+                                                            delimiter=',',
+                                                            decimal='.',
+                                                            index_col='string_id',
+                                                            converters={'string_id': lambda x: int(x),
+                                                                        'type': lambda x: int(x),
+                                                                        'Kerber Original': lambda x: int(x),
+                                                                        'count house branch': lambda x: int(x),
+                                                                        'distance house branch': lambda x: int(x),
+                                                                        'cable width': lambda x: int(x),
+                                                                        'string length': lambda x: int(x),
+                                                                        'length house branch A': lambda x: int(x),
+                                                                        'length house branch B': lambda x: int(x),
+                                                                        'cable width A': lambda x: int(x),
+                                                                        'cable width B': lambda x: int(x)})
 
         model_grids_lv_apartment_string = cfg_ding0.get('model_grids',
                                                         'model_grids_lv_apartment_string')
         converters_ids = {}
-        for id in range(1,47):  # create int() converter for columns 1..46
+        for id in range(1, 47):  # create int() converter for columns 1..46
             converters_ids[str(id)] = lambda x: int(x)
         static_data['LV_model_grids_strings_per_grid'] = pd.read_csv(os.path.join(package_path, 'data',
-                                                         model_grids_lv_apartment_string),
-                                                         comment='#',
-                                                         delimiter=',',
-                                                         decimal='.',
-                                                         index_col='apartment_count',
-                                                         converters=dict({'apartment_count': lambda x: int(x)},
+                                                                                  model_grids_lv_apartment_string),
+                                                                     comment='#',
+                                                                     delimiter=',',
+                                                                     decimal='.',
+                                                                     index_col='apartment_count',
+                                                                     converters=dict(
+                                                                         {'apartment_count': lambda x: int(x)},
                                                                          **converters_ids))
 
         return static_data
 
-    def import_orm(self):
+    def import_orm(self, session):
         """
         Import ORM classes names for  the correct connection to
         open energy platform and access tables depending on input in config in
@@ -1259,36 +1494,32 @@ class NetworkDing0:
         -------
         :obj: `dict`
             key value pairs of names of datasets versus
-            sqlalchmey maps to acess
+            SQLAlchemy maps to access
             various tables where the datasets
             used to build grids are stored on the open
             energy platform.
         """
+        from ding0.tools import database
+        import saio
+        import sys
 
         orm = {}
-
         data_source = self.config['input_data_source']['input_data']
-        mv_grid_districts_name = self.config[data_source]['mv_grid_districts']
-        mv_stations_name = self.config[data_source]['mv_stations']
-        lv_load_areas_name = self.config[data_source]['lv_load_areas']
-        lv_grid_district_name = self.config[data_source]['lv_grid_district']
-        lv_stations_name = self.config[data_source]['lv_stations']
-        conv_generators_name = self.config[data_source]['conv_generators']
-        re_generators_name = self.config[data_source]['re_generators']
+        engine = database.engine()
 
-        from egoio.db_tables import model_draft as orm_model_draft, \
-            supply as orm_supply, \
-            demand as orm_demand, \
-            grid as orm_grid
+        def write_table_in_dict(orm, engine, name, table_str):
+            table_list = table_str.split(".")
+            table_schema = table_list[0]
+            table_name = table_list[1]
+            saio.register_schema(table_schema, engine)
+            orm[name] = sys.modules[f"saio.{table_schema}"].__getattr__(table_name)
+            return orm
+
+        for name, table_str in self.config[data_source].items():
+            if not name == "version":
+                orm = write_table_in_dict(orm, engine, name, table_str)
 
         if data_source == 'model_draft':
-            orm['orm_mv_grid_districts'] = orm_model_draft.__getattribute__(mv_grid_districts_name)
-            orm['orm_mv_stations'] = orm_model_draft.__getattribute__(mv_stations_name)
-            orm['orm_lv_load_areas'] = orm_model_draft.__getattribute__(lv_load_areas_name)
-            orm['orm_lv_grid_district'] = orm_model_draft.__getattribute__(lv_grid_district_name)
-            orm['orm_lv_stations'] = orm_model_draft.__getattribute__(lv_stations_name)
-            orm['orm_conv_generators'] = orm_model_draft.__getattribute__(conv_generators_name)
-            orm['orm_re_generators'] = orm_model_draft.__getattribute__(re_generators_name)
             orm['version_condition_mvgd'] = 1 == 1
             orm['version_condition_mv_stations'] = 1 == 1
             orm['version_condition_la'] = 1 == 1
@@ -1297,28 +1528,29 @@ class NetworkDing0:
             orm['version_condition_re'] = 1 == 1
             orm['version_condition_conv'] = 1 == 1
         elif data_source == 'versioned':
-            orm['orm_mv_grid_districts'] = orm_grid.__getattribute__(mv_grid_districts_name)
-            orm['orm_mv_stations'] = orm_grid.__getattribute__(mv_stations_name)
-            orm['orm_lv_load_areas'] = orm_demand.__getattribute__(lv_load_areas_name)
-            orm['orm_lv_grid_district'] = orm_grid.__getattribute__(lv_grid_district_name)
-            orm['orm_lv_stations'] = orm_grid.__getattribute__(lv_stations_name)
-            orm['orm_conv_generators'] = orm_supply.__getattribute__(conv_generators_name)
-            orm['orm_re_generators'] = orm_supply.__getattribute__(re_generators_name)
             orm['data_version'] = self.config[data_source]['version']
-            orm['version_condition_mvgd'] =\
+            orm['version_condition_mvgd'] = \
                 orm['orm_mv_grid_districts'].version == orm['data_version']
             orm['version_condition_mv_stations'] = \
                 orm['orm_mv_stations'].version == orm['data_version']
-            orm['version_condition_la'] =\
+            orm['version_condition_la'] = \
                 orm['orm_lv_load_areas'].version == orm['data_version']
-            orm['version_condition_lvgd'] =\
+            orm['version_condition_lvgd'] = \
                 orm['orm_lv_grid_district'].version == orm['data_version']
-            orm['version_condition_mvlvst'] =\
+            orm['version_condition_mvlvst'] = \
                 orm['orm_lv_stations'].version == orm['data_version']
-            orm['version_condition_re'] =\
+            orm['version_condition_re'] = \
                 orm['orm_re_generators'].columns.version == orm['data_version']
-            orm['version_condition_conv'] =\
+            orm['version_condition_conv'] = \
                 orm['orm_conv_generators'].columns.version == orm['data_version']
+        elif data_source == "local":
+            orm['version_condition_mvgd'] = True
+            orm['version_condition_mv_stations'] = True
+            orm['version_condition_la'] = True
+            orm['version_condition_lvgd'] = True
+            orm['version_condition_mvlvst'] = True
+            orm['version_condition_re'] = True
+            orm['version_condition_conv'] = True
         else:
             logger.error("Invalid data source {} provided. Please re-check the file "
                          "`config_db_tables.cfg`".format(data_source))
@@ -1341,26 +1573,41 @@ class NetworkDing0:
         msg_invalidity = []
         invalid_mv_grid_districts = []
 
-        for grid_district in self.mv_grid_districts():
+        # TODO PAUL: changed due to necessary import of aggregated load areas for urban routing
 
-            # there's only one node (MV station) => grid is empty
-            if len(grid_district.mv_grid.graph.nodes()) == 1:
-                invalid_mv_grid_districts.append(grid_district)
-                msg_invalidity.append('MV Grid District {} seems to be empty ' \
-                                      'and ' \
-                                      'was removed'.format(grid_district))
-            # there're only aggregated load areas
-            elif all([lvla.is_aggregated for lvla in
-                      grid_district.lv_load_areas()]):
-                invalid_mv_grid_districts.append(grid_district)
-                msg_invalidity.append("MV Grid District {} contains only " \
-                                 "aggregated Load Areas and was removed" \
-                                 "".format(grid_district))
+        if True:
+
+            for grid_district in self.mv_grid_districts():
+
+                # there's only one node (MV station) => grid is empty
+                if len(grid_district.mv_grid.graph.nodes()) == 1:
+                    invalid_mv_grid_districts.append(grid_district)
+                    msg_invalidity.append('MV Grid District {} seems to be empty ' \
+                                          'and ' \
+                                          'was removed'.format(grid_district))
+        else:
+
+            for grid_district in self.mv_grid_districts():
+
+                # there's only one node (MV station) => grid is empty
+                if len(grid_district.mv_grid.graph.nodes()) == 1:
+                    invalid_mv_grid_districts.append(grid_district)
+                    msg_invalidity.append('MV Grid District {} seems to be empty ' \
+                                          'and ' \
+                                          'was removed'.format(grid_district))
+
+                # there're only aggregated load areas
+                elif all([lvla.is_aggregated for lvla in
+                          grid_district.lv_load_areas()]):
+                    invalid_mv_grid_districts.append(grid_district)
+                    msg_invalidity.append("MV Grid District {} contains only " \
+                                          "aggregated Load Areas and was removed" \
+                                          "".format(grid_district))
 
         for grid_district in invalid_mv_grid_districts:
             self._mv_grid_districts.remove(grid_district)
-
-        logger.warning("\n".join(msg_invalidity))
+        if msg_invalidity:
+            logger.warning("\n".join(msg_invalidity))
         logger.info('=====> MV Grids validated')
         return msg_invalidity
 
@@ -1568,7 +1815,7 @@ class NetworkDing0:
                         type_name=branch['branch'].type['name'],
                         type_kind=branch['branch'].kind,
                         type_v_nom=branch['branch'].type['U_n'],
-                        type_s_nom=3**0.5 * branch['branch'].type['I_max_th'] * branch['branch'].type['U_n'],
+                        type_s_nom=3 ** 0.5 * branch['branch'].type['I_max_th'] * branch['branch'].type['U_n'],
                         length=branch['branch'].length / 1e3,
                         geom=from_shape(LineString([branch['adj_nodes'][0].geo_data,
                                                     branch['adj_nodes'][1].geo_data]),
@@ -1589,7 +1836,7 @@ class NetworkDing0:
                         type_name=branch['branch'].type['name'],
                         type_kind=branch['branch'].kind,
                         type_v_nom=branch['branch'].type['U_n'],
-                        type_s_nom=3**0.5 * branch['branch'].type['I_max_th'] * branch['branch'].type['U_n'],
+                        type_s_nom=3 ** 0.5 * branch['branch'].type['I_max_th'] * branch['branch'].type['U_n'],
                         length=branch['branch'].length / 1e3,
                         geom=from_shape(LineString([branch['adj_nodes'][0].geo_data,
                                                     branch['adj_nodes'][1].geo_data]),
@@ -1598,7 +1845,6 @@ class NetworkDing0:
                         s_res1=0
                     )
                     session.add(branch_dataset)
-
 
         # commit changes to db
         session.commit()
@@ -1665,9 +1911,9 @@ class NetworkDing0:
                     peak_load = 0
                     generation_capacity = 0
                     type = 'Switch Disconnector'
-                    #round coordinates of circuit breaker
+                    # round coordinates of circuit breaker
                     geosjson = mapping(node.geo_data)
-                    decimal_places = 4 #with 4, its around 10m error N-S or E-W
+                    decimal_places = 4  # with 4, its around 10m error N-S or E-W
                     geosjson['coordinates'] = np.round(np.array(geosjson['coordinates']), decimal_places)
                     geom = from_shape(Point(shape(geosjson)), srid=srid)
                 else:
@@ -1693,7 +1939,7 @@ class NetworkDing0:
                      'v_res1': v_res1,
                      'type': type,
                      'rings': len(grid_district.mv_grid._rings)
-                    }), ignore_index=True)
+                     }), ignore_index=True)
 
             # get branches (lines) from grid's graph and create datasets
             for branch in grid_district.mv_grid.graph_edges():
@@ -1707,24 +1953,24 @@ class NetworkDing0:
 
                     edges_df = edges_df.append(pd.Series(
                         {'branch_id': branch_name,
-                        'grid_id': grid_district.mv_grid.id_db,
-                        'type_name': branch['branch'].type['name'],
-                        'type_kind': branch['branch'].kind,
-                        'type_v_nom': branch['branch'].type['U_n'],
-                        'type_s_nom': 3 ** 0.5 * branch['branch'].type[
-                            'I_max_th'] * branch['branch'].type['U_n'],
-                        'length': branch['branch'].length / 1e3,
-                        'geom': from_shape(
-                            LineString([branch['adj_nodes'][0].geo_data,
-                                        branch['adj_nodes'][
-                                            1].geo_data]),
-                            srid=srid),
-                        's_res0': branch['branch'].s_res[0],
-                        's_res1': branch['branch'].s_res[1]}), ignore_index=True)
+                         'grid_id': grid_district.mv_grid.id_db,
+                         'type_name': branch['branch'].type['name'],
+                         'type_kind': branch['branch'].kind,
+                         'type_v_nom': branch['branch'].type['U_n'],
+                         'type_s_nom': 3 ** 0.5 * branch['branch'].type[
+                             'I_max_th'] * branch['branch'].type['U_n'],
+                         'length': branch['branch'].length / 1e3,
+                         'geom': from_shape(
+                             LineString([branch['adj_nodes'][0].geo_data,
+                                         branch['adj_nodes'][
+                                             1].geo_data]),
+                             srid=srid),
+                         's_res0': branch['branch'].s_res[0],
+                         's_res1': branch['branch'].s_res[1]}), ignore_index=True)
 
         return nodes_df, edges_df
 
-    def to_csv(self, dir = '', only_export_mv = False):
+    def to_csv(self, dir='', only_export_mv=False):
         '''
         Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
         Respectively saves files for network, buses, lines, transformers, loads and generators.
@@ -1736,6 +1982,32 @@ class NetworkDing0:
         only_export_mv: bool
             When True only mv topology is exported with aggregated lv grid districts
         '''
+        def transform_all_geodata(gd_components, network_df, grids_df):
+            from pyproj import Transformer
+            from shapely.ops import transform
+            import time
+
+            logger.info("Transform all geodata from 'EPSG:3035' to 'EPSG:4326'.")
+            t_start = time.perf_counter()
+
+            # initialize the Coordinate-Reference-System-Transformer
+            crs_transformer = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True).transform
+
+            # Transform geodata
+            network_df["mv_grid_district_geom"] = [transform(crs_transformer, geom) for geom in
+                                                   network_df["mv_grid_district_geom"].to_list()]
+            grids_df["grid_district_geom"] = [transform(crs_transformer, geom) for geom in
+                                              grids_df["grid_district_geom"].to_list()]
+            for key, item in gd_components.items():
+                if key == 'Bus':
+                    gd_components[key]['x'], gd_components[key]['y'] = crs_transformer(gd_components[key]['x'],
+                                                                                       gd_components[key]['y'])
+                elif key == 'Line':
+                    gd_components[key]["geometry"] = [transform(crs_transformer, geom) for geom in
+                                                      gd_components[key]["geometry"].to_list()]
+
+            logger.debug(f"Transformed all geodata in {time.perf_counter() - t_start}s.")
+            return gd_components, network_df, grids_df
 
         buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
         if (dir == ''):
@@ -1744,28 +2016,51 @@ class NetworkDing0:
         self.control_circuit_breakers(mode='open')
         # start filling component dataframes
         for grid_district in self.mv_grid_districts():
-            gd_components, network_df, _ = fill_mvgd_component_dataframes(
-                grid_district, buses_df, generators_df,
-                lines_df, loads_df,transformer_df, only_export_mv)
-            # save network and components to csv
+            gd_components, network_df, grids_df, _ = fill_mvgd_component_dataframes(
+                grid_district,
+                buses_df,
+                generators_df,
+                lines_df,
+                loads_df,
+                transformer_df,
+                only_export_mv
+            )
+            # Transform all geodata from 'EPSG:3035' to 'EPSG:4326' for eDisGo
+            gd_components, network_df, grids_df = transform_all_geodata(
+                gd_components, network_df, grids_df
+            )
+            # Make directories for the grid data and save to csv
             path = os.path.join(dir, str(grid_district.id_db))
             if not os.path.exists(path):
                 os.makedirs(path)
-            network_df.to_csv(os.path.join(path, 'network.csv'))
+
+            network_df.to_csv(
+                os.path.join(path, 'network.csv')
+            )
+            grids_df.to_csv(
+                os.path.join(path, 'grids.csv')
+            )
             gd_components['HVMV_Transformer'].to_csv(
-                os.path.join(path, 'transformers_hvmv.csv'))
+                os.path.join(path, 'transformers_hvmv.csv')
+            )
             gd_components['Transformer'].to_csv(
-                os.path.join(path, 'transformers.csv'))
+                os.path.join(path, 'transformers.csv')
+            )
             gd_components['Bus'].to_csv(
-                os.path.join(path, 'buses.csv'))
+                os.path.join(path, 'buses.csv')
+            )
             gd_components['Line'].to_csv(
-                os.path.join(path, 'lines.csv'))
+                os.path.join(path, 'lines.csv')
+            )
             gd_components['Load'].to_csv(
-                os.path.join(path, 'loads.csv'))
+                os.path.join(path, 'loads.csv')
+            )
             gd_components['Generator'].to_csv(
-                os.path.join(path, 'generators.csv'))
+                os.path.join(path, 'generators.csv')
+            )
             gd_components['Switch'].to_csv(
-                os.path.join(path, 'switches.csv'))
+                os.path.join(path, 'switches.csv')
+            )
 
             # Merge metadata of multiple runs
             if 'metadata' not in locals():
@@ -1780,10 +2075,9 @@ class NetworkDing0:
             # Save metadata to disk
         with open(os.path.join(path, 'Ding0_{}.meta'.format(metadata['run_id'])),
                   'w') as f:
-            json.dump(metadata, f)
+            json.dump(metadata, f, indent=4)
 
-
-    def to_dataframe(self,  only_export_mv = False):
+    def to_dataframe(self, only_export_mv=False):
         '''
         Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
         Respectively saves files for network, buses, lines, transformers, loads and generators.
@@ -1800,8 +2094,15 @@ class NetworkDing0:
         self.control_circuit_breakers(mode='open')
         # start filling component dataframes
         for grid_district in self.mv_grid_districts():
-            gd_components, network_df, _ = fill_mvgd_component_dataframes(grid_district, buses_df, generators_df,
-                                                                            lines_df, loads_df, transformer_df, only_export_mv)
+            gd_components, network_df, _, _ = fill_mvgd_component_dataframes(
+                grid_district,
+                buses_df,
+                generators_df,
+                lines_df,
+                loads_df,
+                transformer_df,
+                only_export_mv
+            )
             if len(components) == 0:
                 components = gd_components
                 networks = network_df
@@ -1811,7 +2112,6 @@ class NetworkDing0:
 
         components['Network'] = network_df
         return components
-
 
     def mv_routing(self, debug=False, animation=False):
         """
@@ -1837,27 +2137,51 @@ class NetworkDing0:
         else:
             anim = None
 
-        for grid_district in self.mv_grid_districts():
-            grid_district.mv_grid.routing(debug=debug, anim=anim)
+        chunk_size = 10
+        mvgd_chunks = [list(self.mv_grid_districts())[i:i + chunk_size] for i in
+                       range(0, len(list(self.mv_grid_districts())), chunk_size)]
 
-        logger.info('=====> MV Routing (Routing, Connection of Satellites & '
-                    'Stations) performed')
+        for mvgd_chunk in mvgd_chunks:
+
+            for grid_district in mvgd_chunk:  # self.mv_grid_districts():
+                logger.info(f"Urban routing for: {grid_district}")
+                # 1) urban routing in aggregated load area(s)
+                if True:
+                    grid_district.mv_grid.urban_routing(debug=debug, anim=anim)
+                    logger.info('=====> Urban MV Routing (Routing, Connection of Stations) performed')
+                # 2) rural routing between remaining load areas
+                grid_district.mv_grid.routing(debug=debug, anim=anim)
+
+            logger.info('=====> MV Routing (Routing, Connection of Satellites & '
+                        'Stations) performed')
 
     def build_lv_grids(self):
         """
         Builds LV grids for every non-aggregated LA in every MV grid
         district using model grids.
         """
-
         for mv_grid_district in self.mv_grid_districts():
-            for load_area in mv_grid_district.lv_load_areas():
-                if not load_area.is_aggregated:
+            if True:  # new approach
+                for load_area in mv_grid_district.lv_load_areas():
+                    # logger.warning(f'LV grid building for la {str(load_area)}')
                     for lv_grid_district in load_area.lv_grid_districts():
-
+                        # logger.warning(f'LVGD building for {str(lv_grid_district)}')
+                        if len(list(nx.connected_components(nx.Graph(lv_grid_district.graph_district)))) > 1:
+                            raise ValueError(f"Isolates in lv_grid_district.graph_district: {lv_grid_district.lv_grid}")
+                        # Save number of isolated nodes, these nodes are the unconnected generators and station_bus.
+                        number_of_subgraphs = len(list(nx.connected_components(lv_grid_district.lv_grid.graph)))
                         lv_grid_district.lv_grid.build_grid()
-                else:
-                    logger.info(
-                        '{} is of type aggregated. No grid is created.'.format(repr(load_area)))
+                        # Error if more isolates than before.
+                        if len(list(nx.connected_components(lv_grid_district.lv_grid.graph))) > number_of_subgraphs:
+                            raise ValueError(f"Isolate Nodes in LV-Grid: {lv_grid_district.lv_grid}")
+            else:  # ding0 default
+                for mv_grid_district in self.mv_grid_districts():
+                    for load_area in mv_grid_district.lv_load_areas():
+                        if not load_area.is_aggregated:
+                            for lv_grid_district in load_area.lv_grid_districts():
+                                lv_grid_district.lv_grid.build_grid()
+                        else:
+                            logger.info('{} is of type aggregated. No grid is created.'.format(repr(load_area)))
 
         logger.info('=====> LV model grids created')
 
@@ -1870,24 +2194,13 @@ class NetworkDing0:
         debug: :obj:`bool`, defaults to False
             If True, information is printed during process.
         """
+        # get predefined random seed and initialize random generator
+        seed = int(cfg_ding0.get('random', 'seed'))
+        random.seed(a=seed)
 
         for mv_grid_district in self.mv_grid_districts():
             mv_grid_district.mv_grid.connect_generators(debug=debug)
-
-            # get predefined random seed and initialize random generator
-            seed = int(cfg_ding0.get('random', 'seed'))
-            random.seed(a=seed)
-
-            for load_area in mv_grid_district.lv_load_areas():
-                if not load_area.is_aggregated:
-                    for lv_grid_district in load_area.lv_grid_districts():
-
-                        lv_grid_district.lv_grid.connect_generators(debug=debug)
-                        if debug:
-                            lv_grid_district.lv_grid.graph_draw(mode='LV')
-                else:
-                    logger.info(
-                        '{} is of type aggregated. LV generators are not connected to LV grids.'.format(repr(load_area)))
+            mv_grid_district.mv_grid.connect_lv_generators(debug=debug)
 
         logger.info('=====> Generators connected')
 
@@ -1954,7 +2267,8 @@ class NetworkDing0:
         elif mode == 'close':
             logger.info('=====> MV Circuit Breakers closed')
 
-    def run_powerflow(self, session = None, method='onthefly', only_calc_mv = True, export_pypsa=False, debug=False, export_result_dir=None):
+    def run_powerflow(self, session=None, method='onthefly', only_calc_mv=True, export_pypsa=False, debug=False,
+                      export_result_dir=None):
         """
         Performs power flow calculation for all MV grids
 
@@ -1997,7 +2311,7 @@ class NetworkDing0:
                 else:
                     export_pypsa_dir = None
                 grid_district.mv_grid.run_powerflow(method='onthefly',
-                                                    only_calc_mv = only_calc_mv,
+                                                    only_calc_mv=only_calc_mv,
                                                     export_pypsa_dir=export_pypsa_dir,
                                                     debug=debug,
                                                     export_result_dir=export_result_dir)
@@ -2009,15 +2323,12 @@ class NetworkDing0:
         # TODO: Finish method and enable LV case
 
         for grid_district in self.mv_grid_districts():
-
             # reinforce MV grid
             grid_district.mv_grid.reinforce_grid()
-
-            # reinforce LV grids
-            for lv_load_area in grid_district.lv_load_areas():
-                if not lv_load_area.is_aggregated:
-                    for lv_grid_district in lv_load_area.lv_grid_districts():
-                        lv_grid_district.lv_grid.reinforce_grid()
+            # # reinforce LV grids
+            # for lv_load_area in grid_district.lv_load_areas():
+            #     for lv_grid_district in lv_load_area.lv_grid_districts():
+            #         lv_grid_district.lv_grid.reinforce_grid()
 
     @property
     def metadata(self, run_id=None):
@@ -2038,7 +2349,8 @@ class NetworkDing0:
         # Get latest version and/or git commit hash
         try:
             version = subprocess.check_output(
-                ["git", "describe", "--tags", "--always"]).decode('utf8')
+                ["git", "describe", "--tags", "--always"], cwd=package_path
+            ).decode('utf8')
         except:
             version = None
 
@@ -2080,7 +2392,6 @@ class NetworkDing0:
 
         return metadata
 
-
     def __repr__(self):
         """"
         A repr string representation of the NetworkDing0 object.
@@ -2113,66 +2424,66 @@ class NetworkDing0:
         srid = str(int(cfg_ding0.get('geo', 'srid')))
 
         # build dicts to map MV grid district and Load Area ids to related objects
-        mv_grid_districts_dict,\
-        lv_load_areas_dict,\
-        lv_grid_districts_dict,\
+        mv_grid_districts_dict, \
+        lv_load_areas_dict, \
+        lv_grid_districts_dict, \
         lv_stations_dict = self.get_mvgd_lvla_lvgd_obj_from_id()
 
         # import renewable generators
         # build query
         generators_sqla = session.query(
-                self.orm['orm_re_generators'].columns.id,
-                self.orm['orm_re_generators'].columns.subst_id,
-                self.orm['orm_re_generators'].columns.la_id,
-                self.orm['orm_re_generators'].columns.mvlv_subst_id,
-                self.orm['orm_re_generators'].columns.electrical_capacity,
-                self.orm['orm_re_generators'].columns.generation_type,
-                self.orm['orm_re_generators'].columns.generation_subtype,
-                self.orm['orm_re_generators'].columns.voltage_level,
-                func.ST_AsText(func.ST_Transform(
-                   self.orm['orm_re_generators'].columns.rea_geom_new, srid)).label('geom_new'),
-                func.ST_AsText(func.ST_Transform(
-                   self.orm['orm_re_generators'].columns.geom, srid)).label('geom')
-                ).filter(
-                self.orm['orm_re_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
-                filter(self.orm['orm_re_generators'].columns.voltage_level.in_([4, 5, 6, 7])). \
-                filter(self.orm['version_condition_re'])
+            self.orm['orm_re_generators'].columns.id,
+            self.orm['orm_re_generators'].columns.subst_id,
+            self.orm['orm_re_generators'].columns.la_id,
+            self.orm['orm_re_generators'].columns.mvlv_subst_id,
+            self.orm['orm_re_generators'].columns.electrical_capacity,
+            self.orm['orm_re_generators'].columns.generation_type,
+            self.orm['orm_re_generators'].columns.generation_subtype,
+            self.orm['orm_re_generators'].columns.voltage_level,
+            func.ST_AsText(func.ST_Transform(
+                self.orm['orm_re_generators'].columns.rea_geom_new, srid)).label('geom_new'),
+            func.ST_AsText(func.ST_Transform(
+                self.orm['orm_re_generators'].columns.geom, srid)).label('geom')
+        ).filter(
+            self.orm['orm_re_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
+            filter(self.orm['orm_re_generators'].columns.voltage_level.in_([4, 5, 6, 7])). \
+            filter(self.orm['version_condition_re'])
 
         # read data from db
         generators_res = pd.read_sql_query(generators_sqla.statement,
-                                        session.bind,
-                                        index_col='id')
+                                           session.bind,
+                                           index_col='id')
 
-        generators_res.columns = ['GenCap' if c=='electrical_capacity' else
-                                  'type' if c=='generation_type' else
-                                  'subtype' if c=='generation_subtype' else
-                                  'v_level' if c=='voltage_level' else
+        generators_res.columns = ['GenCap' if c == 'electrical_capacity' else
+                                  'type' if c == 'generation_type' else
+                                  'subtype' if c == 'generation_subtype' else
+                                  'v_level' if c == 'voltage_level' else
                                   c for c in generators_res.columns]
         ###########################
         # Imports conventional (conv) generators
         # build query
         generators_sqla = session.query(
-                self.orm['orm_conv_generators'].columns.id,
-                self.orm['orm_conv_generators'].columns.subst_id,
-                self.orm['orm_conv_generators'].columns.name,
-                self.orm['orm_conv_generators'].columns.capacity,
-                self.orm['orm_conv_generators'].columns.fuel,
-                self.orm['orm_conv_generators'].columns.voltage_level,
-                func.ST_AsText(func.ST_Transform(
-                   self.orm['orm_conv_generators'].columns.geom, srid)).label('geom')
-                ).filter(
-                self.orm['orm_conv_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
-                filter(self.orm['orm_conv_generators'].columns.voltage_level.in_([4, 5, 6])). \
-                filter(self.orm['version_condition_conv'])
+            self.orm['orm_conv_generators'].columns.id,
+            self.orm['orm_conv_generators'].columns.subst_id,
+            self.orm['orm_conv_generators'].columns.name,
+            self.orm['orm_conv_generators'].columns.capacity,
+            self.orm['orm_conv_generators'].columns.fuel,
+            self.orm['orm_conv_generators'].columns.voltage_level,
+            func.ST_AsText(func.ST_Transform(
+                self.orm['orm_conv_generators'].columns.geom, srid)).label('geom')
+        ).filter(
+            self.orm['orm_conv_generators'].columns.subst_id.in_(list(mv_grid_districts_dict))). \
+            filter(self.orm['orm_conv_generators'].columns.voltage_level.in_([4, 5, 6])). \
+            filter(self.orm['version_condition_conv'])
 
         # read data from db
         generators_conv = pd.read_sql_query(generators_sqla.statement,
-                                           session.bind,
-                                           index_col='id')
+                                            session.bind,
+                                            index_col='id')
 
-        generators_conv.columns = ['GenCap' if c=='capacity' else
-                                   'type' if c=='fuel' else
-                                   'v_level' if c=='voltage_level' else
+        generators_conv.columns = ['GenCap' if c == 'capacity' else
+                                   'type' if c == 'fuel' else
+                                   'v_level' if c == 'voltage_level' else
                                    c for c in generators_conv.columns]
         ###########################
         generators = pd.concat([generators_conv, generators_res], axis=0)
@@ -2193,32 +2504,33 @@ class NetworkDing0:
         # threshold: load area peak load, if peak load < threshold => disregard
         # load area
         lv_loads_threshold = cfg_ding0.get('mv_routing', 'load_area_threshold')
-        #lv_loads_threshold = 0
+        # lv_loads_threshold = 0
 
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in GW -> scale to kW
 
-        #filter list for only desired MV districts
+        # filter list for only desired MV districts
         stations_list = [d.mv_grid._station.id_db for d in mv_districts]
 
         # build SQL query
         lv_load_areas_sqla = session.query(
             self.orm['orm_lv_load_areas'].id.label('id_db'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_residential * gw2kw).\
+            (self.orm['orm_lv_load_areas'].sector_peakload_residential * mw2kw). \
                 label('peak_load_residential'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_retail * gw2kw).\
+            (self.orm['orm_lv_load_areas'].sector_peakload_retail * mw2kw). \
                 label('peak_load_retail'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * gw2kw).\
+            (self.orm['orm_lv_load_areas'].sector_peakload_industrial * mw2kw). \
                 label('peak_load_industrial'),
-            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * gw2kw).\
+            (self.orm['orm_lv_load_areas'].sector_peakload_agricultural * mw2kw). \
                 label('peak_load_agricultural'),
-            #self.orm['orm_lv_load_areas'].subst_id
-            ). \
-            filter(self.orm['orm_lv_load_areas'].subst_id.in_(stations_list)).\
-            filter(((self.orm['orm_lv_load_areas'].sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
+            # self.orm['orm_lv_load_areas'].subst_id
+        ). \
+            filter(self.orm['orm_lv_load_areas'].subst_id.in_(stations_list)). \
+            filter(((self.orm[
+                         'orm_lv_load_areas'].sector_peakload_residential  # only pick load areas with peak load > lv_loads_threshold
                      + self.orm['orm_lv_load_areas'].sector_peakload_retail
                      + self.orm['orm_lv_load_areas'].sector_peakload_industrial
                      + self.orm['orm_lv_load_areas'].sector_peakload_agricultural)
-                       * gw2kw) > lv_loads_threshold). \
+                    * mw2kw) > lv_loads_threshold). \
             filter(self.orm['version_condition_la'])
 
         # read data from db
@@ -2244,23 +2556,23 @@ class NetworkDing0:
             Pandas Data Frame
             Table of lv_grid_districts
         """
-        gw2kw = 10 ** 6  # load in database is in GW -> scale to kW
+        mw2kw = 10 ** 3  # load in database is in GW -> scale to kW
 
         # 1. filter grid districts of relevant load area
         lv_grid_districs_sqla = session.query(
             self.orm['orm_lv_grid_district'].mvlv_subst_id,
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_residential * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_residential * mw2kw).
                 label('peak_load_residential'),
-            (self.orm['orm_lv_grid_district'].sector_peakload_retail * gw2kw).
+            (self.orm['orm_lv_grid_district'].sector_peakload_retail * mw2kw).
                 label('peak_load_retail'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_industrial * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_industrial * mw2kw).
                 label('peak_load_industrial'),
             (self.orm[
-                 'orm_lv_grid_district'].sector_peakload_agricultural * gw2kw).
+                 'orm_lv_grid_district'].sector_peakload_agricultural * mw2kw).
                 label('peak_load_agricultural'),
-            ). \
+        ). \
             filter(self.orm['orm_lv_grid_district'].mvlv_subst_id.in_(
             lv_stations)). \
             filter(self.orm['version_condition_lvgd'])
@@ -2271,3 +2583,52 @@ class NetworkDing0:
                                               index_col='mvlv_subst_id')
 
         return lv_grid_districts
+
+    def plot_mv_grids(self, path=None, filename=None):
+        kwargs = {}
+
+        kwargs["path"] = path
+        kwargs["filename"] = filename
+
+        if filename == '1_routing_completed':
+            kwargs["subtitle"] = 'Routing completed',
+        elif filename == '2_generators_connected':
+            kwargs["subtitle"] = 'Generators connected',
+        elif filename == '3_circuit_breakers_relocated':
+            kwargs["subtitle"] = 'Circuit breakers relocated',
+        elif filename == '4_PF_result_load':
+            kwargs["subtitle"] = 'PF result (load case)',
+            kwargs["line_color"] = 'loading',
+            kwargs["node_color"] = 'voltage',
+            kwargs["testcase"] = 'load'
+        elif filename == '5_PF_result_feedin':
+            kwargs["subtitle"] = 'PF result (feedin case)',
+            kwargs["line_color"] = 'loading',
+            kwargs["node_color"] = 'voltage',
+            kwargs["testcase"] = 'feedin'
+        elif filename == '6_final_grid_PF_result_load':
+            kwargs["subtitle"] = 'Final grid PF result (load case)',
+            kwargs["line_color"] = 'loading',
+            kwargs["node_color"] = 'voltage',
+            kwargs["testcase"] = 'load'
+        elif filename == '7_final_grid_PF_result_feedin':
+            kwargs["subtitle"] = 'Final grid PF result (feedin case)',
+            kwargs["line_color"] = 'loading',
+            kwargs["node_color"] = 'voltage',
+            kwargs["testcase"] = 'feedin'
+
+        for mv_grid_district in self.mv_grid_districts():
+            plot_mv_topology(mv_grid_district.mv_grid, **kwargs)
+
+
+
+    def plot_lv_grids(self, path=None, filename=None):
+        for mv_grid_district in self.mv_grid_districts():
+            for load_area in mv_grid_district.lv_load_areas():
+                for lv_grid_district in load_area.lv_grid_districts():
+                    plot_lv_topology(
+                        lv_grid_district.lv_grid,
+                        path=path,
+                        mv_grid_id=mv_grid_district.id_db,
+                        filename=filename,
+                    )

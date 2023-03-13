@@ -21,7 +21,7 @@ from ding0.core.network.loads import LVLoadDing0
 import logging
 import math
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def select_transformers(grid, s_max=None):
@@ -155,6 +155,9 @@ def transformer(grid):
     ----------
     grid: LVGridDing0
         LV grid data
+        
+    s_max_from_buildings: boolean
+        new approach if s_max_from_buildings
     """
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
     # choose size and amount of transformers
