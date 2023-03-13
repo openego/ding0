@@ -1,0 +1,34 @@
+# Tests with pytest the package and monitors the covarage and sends it to coveralls.io
+# Coverage is only send to coveralls.io when no pytest tests fail
+name: "Tests & coverage"
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.6', '3.7', '3.8' ]
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        pip3 install --upgrade pip
+        pip3 install -e $GITHUB_WORKSPACE[dev]
+        pip3 install coveralls
+    - name: Run tests and coverage
+      run: |
+        coverage run --source=ding0 -m pytest -vv
+    - name: Run coveralls
+      run: |
+        coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_SERVICE_NAME: github
