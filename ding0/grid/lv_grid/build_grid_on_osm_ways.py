@@ -141,6 +141,26 @@ def get_shortest_path_tree(graph, station_node, building_nodes, generator_nodes=
 
     return sp_tree
 
+def transform_feeder_to_aggregated_path(feeder, station_id):
+    """ aggregated representation of the feeder as path
+        containing weightes edges ('length') and nodes ('load') """
+
+    # transform to dfs tree
+    tree = nx.dfs_tree(feeder, station_id)
+    nx.set_edge_attributes(tree, {(u, v): feeder.edges[u, v, 0]['length']
+                                  for u, v, d in tree.edges.data()}, 'length')
+    # longest path in feeder
+    lp = nx.dag_longest_path(tree, 'length')
+
+    # aggregate branching load to path nodes
+    tree_h = tree.copy()
+    for n in reversed(lp):
+        branch_nodes = list(nx.dfs_postorder_nodes(tree_h, n))
+        tree.nodes[n]['load'] = sum([feeder.nodes[b]['load'] for b in branch_nodes])
+        tree_h.remove_nodes_from(branch_nodes)
+    path_tree = tree.subgraph(lp)
+
+    return path_tree, lp
 
 ###############
 
@@ -333,19 +353,15 @@ def build_branches_on_osm_ways(lvgd):
                 cable_type_stub = get_cable_type_by_load(lvgd, cum_feeder_graph_load, cable_lf, cos_phi_load, v_nom)
 
                 ######
-                # longest path in feeder
-                feeder_tree = nx.dfs_tree(feeder_graph, station_id)
-                nx.set_edge_attributes(feeder_tree, {(u, v): feeder_graph.edges[u, v, 0]['length']
-                                                     for u, v, d in feeder_tree.edges.data()}, 'length')
-                lp_feeder = nx.dag_longest_path(feeder_tree, 'length')
+                feeder_path, lp_in_feeder = transform_feeder_to_aggregated_path(feeder_graph, station_id)
 
                 # mv parameters to check voltage drop in half ring / feeder path
                 from math import tan, acos
                 from ding0.tools.pypsa_io import q_sign
                 cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
                 cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
-                mv_max_v_level_lc_diff_normal = float(cfg_ding0.get('mv_routing_tech_constraints',
-                                                                    'mv_max_v_level_lc_diff_normal'))
+                lv_max_v_level_lc_diff_normal = float(cfg_ding0.get('assumptions',
+                                                                    'lv_max_v_level_lc_diff_normal'))
                 r_per_km = cable_type_stub['R_per_km']
                 x_per_km = cable_type_stub['L_per_km']
                 Q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
@@ -354,20 +370,20 @@ def build_branches_on_osm_ways(lvgd):
                 r_lp = x_lp = 0
 
                 # calculate voltage deviation
-                for n1, n2 in zip(lp_feeder[0:len(lp_feeder) - 1], lp_feeder[1:len(lp_feeder)]):
-                    r_lp += feeder_tree.edges[n1, n2]['length'] * 1e-3 * r_per_km # m to km
-                    x_lp += feeder_tree.edges[n1, n2]['length'] * 1e-3 * x_per_km # m to km
-                    v_level_lp -= feeder_graph.nodes[n2]['load'] * (r_lp + x_lp * Q_factor) / v_level_op
-                    if (v_level_op - v_level_lp) > (v_level_op * mv_max_v_level_lc_diff_normal):
+                for n1, n2 in zip(lp_in_feeder[0:len(lp_in_feeder) - 1], lp_in_feeder[1:len(lp_in_feeder)]):
+                    r_lp += feeder_path.edges[n1, n2]['length'] * 1e-3 * r_per_km # m to km
+                    x_lp += feeder_path.edges[n1, n2]['length'] * 1e-3 * x_per_km # m to km
+                    v_level_lp -= feeder_path.nodes[n2]['load'] * (r_lp + x_lp * Q_factor) / v_level_op
+                    if (v_level_op - v_level_lp) > (v_level_op * lv_max_v_level_lc_diff_normal):
                         False
 
-                if (v_level_op - v_level_lp) > (v_level_op * mv_max_v_level_lc_diff_normal):
+                if (v_level_op - v_level_lp) > (v_level_op * lv_max_v_level_lc_diff_normal):
                     print('FALSE', (v_level_op - v_level_lp) / v_level_op * 100,
-                          nx.dag_longest_path_length(feeder_tree, 'length'),
+                          nx.dag_longest_path_length(feeder_path, 'length'),
                           cable_type_stub['I_max_th'])
                 else:
                     print('TRUE', (v_level_op - v_level_lp) / v_level_op * 100,
-                          nx.dag_longest_path_length(feeder_tree, 'length'),
+                          nx.dag_longest_path_length(feeder_path, 'length'),
                           cable_type_stub['I_max_th'])
                 ######
 
