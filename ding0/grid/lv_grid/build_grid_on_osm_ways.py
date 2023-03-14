@@ -322,22 +322,61 @@ def build_branches_on_osm_ways(lvgd):
                 # get feeder graphs separately
                 feeder_graph = subtree_graph.subgraph(cluster).copy()
 
-                cum_feeder_graph_load = sum([feeder_graph.nodes[node]['load'] for node in feeder_graph.nodes]) / 1e3
+                if not station_id in feeder_graph.nodes:
+                    line_shp, line_length, line_path = get_shortest_path_shp_multi_target(subtree_graph, station_id,
+                                                                                          cluster)
+                    feeder_graph.add_edge(line_path[0], station_id, 0, geometry=line_shp, length=line_length,
+                                          feederID=feederID)
+                    feeder_graph.add_node(station_id, **station_attr)
 
+                cum_feeder_graph_load = sum([feeder_graph.nodes[node]['load'] for node in feeder_graph.nodes]) / 1e3
                 cable_type_stub = get_cable_type_by_load(lvgd, cum_feeder_graph_load, cable_lf, cos_phi_load, v_nom)
+
+                ######
+                # longest path in feeder
+                feeder_tree = nx.dfs_tree(feeder_graph, station_id)
+                nx.set_edge_attributes(feeder_tree, {(u, v): feeder_graph.edges[u, v, 0]['length']
+                                                     for u, v, d in feeder_tree.edges.data()}, 'length')
+                lp_feeder = nx.dag_longest_path(feeder_tree, 'length')
+
+                # mv parameters to check voltage drop in half ring / feeder path
+                from math import tan, acos
+                from ding0.tools.pypsa_io import q_sign
+                cos_phi_load = cfg_ding0.get('assumptions', 'cos_phi_load')
+                cos_phi_load_mode = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
+                mv_max_v_level_lc_diff_normal = float(cfg_ding0.get('mv_routing_tech_constraints',
+                                                                    'mv_max_v_level_lc_diff_normal'))
+                r_per_km = cable_type_stub['R_per_km']
+                x_per_km = cable_type_stub['L_per_km']
+                Q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
+
+                v_level_op = v_level_lp = v_nom * 1e3 # kV to V
+                r_lp = x_lp = 0
+
+                # calculate voltage deviation
+                for n1, n2 in zip(lp_feeder[0:len(lp_feeder) - 1], lp_feeder[1:len(lp_feeder)]):
+                    r_lp += feeder_tree.edges[n1, n2]['length'] * 1e-3 * r_per_km # m to km
+                    x_lp += feeder_tree.edges[n1, n2]['length'] * 1e-3 * x_per_km # m to km
+                    v_level_lp -= feeder_graph.nodes[n2]['load'] * (r_lp + x_lp * Q_factor) / v_level_op
+                    if (v_level_op - v_level_lp) > (v_level_op * mv_max_v_level_lc_diff_normal):
+                        False
+
+                if (v_level_op - v_level_lp) > (v_level_op * mv_max_v_level_lc_diff_normal):
+                    print('FALSE', (v_level_op - v_level_lp) / v_level_op * 100,
+                          nx.dag_longest_path_length(feeder_tree, 'length'),
+                          cable_type_stub['I_max_th'])
+                else:
+                    print('TRUE', (v_level_op - v_level_lp) / v_level_op * 100,
+                          nx.dag_longest_path_length(feeder_tree, 'length'),
+                          cable_type_stub['I_max_th'])
+                ######
+
                 for node in cluster:
                     feeder_graph.nodes[node]['feederID'] = feederID
 
                 for edge in feeder_graph.edges:
                     feeder_graph.edges[edge]['feederID'] = feederID
                     feeder_graph.edges[edge]['cable_type_stub'] = cable_type_stub
-
-                if not station_id in feeder_graph.nodes:
-                    line_shp, line_length, line_path = get_shortest_path_shp_multi_target(subtree_graph, station_id,
-                                                                                          cluster)
-                    feeder_graph.add_edge(line_path[0], station_id, 0, geometry=line_shp, length=line_length,
-                                          feederID=feederID, cable_type_stub=cable_type_stub)
-                    feeder_graph.add_node(station_id, **station_attr)
 
                 feeder_graph_list.append(feeder_graph)
 
