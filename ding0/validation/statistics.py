@@ -27,14 +27,15 @@ class GridStats:
         self.grid_id = kwargs.get("grid_id", None)
         # grid_type: MV_Grid_District, MV_Grid, LV_Grid
         self.grid_type = kwargs.get("grid_type", None)
+        self.mv_grid_id = kwargs.get("mv_grid_id", None)
+        self.lv_grid_id = kwargs.get("lv_grid_id", None)
+        # source: db, file
+        self.source = kwargs.get("source", None)
+        self.suffix = kwargs.get("suffix", None)
 
         self.geom_grid_district = kwargs.get("geom_grid_district", None)
         self.geom_substation = kwargs.get("geom_substation", None)
         self.population = kwargs.get("population", None)
-
-        self.mv_grid_id = kwargs.get("mv_grid_id", None)
-        self.lv_grid_id = kwargs.get("lv_grid_id", None)
-        self.suffix = kwargs.get("suffix", None)
 
         self.integrity_check_messages = kwargs.get("integrity_check_messages", None)
         self.v_nom = kwargs.get("v_nom", None)
@@ -89,6 +90,8 @@ class GridStats:
 
     def update_from_db(self, orm, session, grid_id):
         logger.info("Update GridStats object from database.")
+        self.source = "db"
+
         # MV Grid District Data
         mv_data = db_io.get_mv_data(orm, session, [grid_id])
         mv_grid_district = MockMVGridDistrict(mv_data)
@@ -210,6 +213,8 @@ class GridStats:
         from edisgo import EDisGo
         from edisgo.network.grids import Grid, LVGrid, MVGrid
         from shapely.geometry import Point
+
+        self.source = "file"
 
         if isinstance(grid_obj, EDisGo):
             self.grid_type = "MV_Grid_District"
@@ -356,3 +361,18 @@ def get_stats_from_file(file_name=None):
 
     logger.debug("Finished getting stats from file.")
     return stats_obj
+
+
+def stats_files_to_df(dir_name):
+    df = pd.DataFrame()
+    for dirpath, dirnames, filenames in os.walk(dir_name):
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            if os.path.splitext(file_path)[-1] == ".json":
+                with open(file_path) as json_file:
+                    stats_dict = json.load(json_file)
+
+                df.loc[
+                    os.path.splitext(filename)[0], stats_dict.keys()
+                ] = stats_dict.values()
+    return df
