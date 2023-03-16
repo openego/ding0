@@ -7,7 +7,7 @@ import shapely.wkb
 from ding0.config.config_lv_grids_osm import get_config_osm
 from ding0.tools import config as cfg_ding0
 from geoalchemy2.shape import to_shape
-from sqlalchemy import Integer, func, cast
+from sqlalchemy import Integer, cast, func
 
 
 def get_mv_data(orm, session, mv_grid_districts_no):
@@ -71,9 +71,18 @@ def get_lv_load_areas(orm, session, mv_grid_id):
         orm["orm_lv_load_areas"].sector_peakload_industrial.label(
             "peak_load_industrial"
         ),
-        (orm["orm_lv_load_areas"].sector_peakload_residential/orm["orm_lv_load_areas"].sector_peakload_residential_2035).label("peak_load_residential_scaling_factor"),
-        (orm["orm_lv_load_areas"].sector_peakload_cts/orm["orm_lv_load_areas"].sector_peakload_cts_2035).label("peak_load_cts_scaling_factor"),
-        (orm["orm_lv_load_areas"].sector_peakload_industrial/orm["orm_lv_load_areas"].sector_peakload_industrial_2035).label("peak_load_industrial_scaling_factor"),
+        (
+            orm["orm_lv_load_areas"].sector_peakload_residential
+            / orm["orm_lv_load_areas"].sector_peakload_residential_2035
+        ).label("peak_load_residential_scaling_factor"),
+        (
+            orm["orm_lv_load_areas"].sector_peakload_cts
+            / orm["orm_lv_load_areas"].sector_peakload_cts_2035
+        ).label("peak_load_cts_scaling_factor"),
+        (
+            orm["orm_lv_load_areas"].sector_peakload_industrial
+            / orm["orm_lv_load_areas"].sector_peakload_industrial_2035
+        ).label("peak_load_industrial_scaling_factor"),
     ).filter(
         orm["orm_lv_load_areas"].bus_id == mv_grid_id,
         orm["version_condition_la"],
@@ -130,7 +139,9 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         - synthetic -> orm["osm_buildings_synthetic"]
     Get the capacity/peak_load from orm["building_peak_loads"].
     """
-    logger.debug("Get residential buildings by 'subst_id' from database.")
+    logger.debug(
+        "Get residential buildings by 'subst_id' and 'load_area' from database."
+    )
 
     # TODO: which scenario should be taken?
     scenario = "eGon2035"
@@ -276,7 +287,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
 
 
 def get_egon_cts_buildings(orm, session, subst_id, load_area):
-    logger.debug("Get cts buildings by 'subst_id' from database.")
+    logger.debug("Get cts buildings by 'subst_id' and 'load_area' from database.")
 
     scenario = "eGon2035"
     sector = "cts"
@@ -385,7 +396,9 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
 
 
 def get_egon_industrial_buildings(orm, session, subst_id, load_area):
-    logger.debug("Get industrial buildings by 'subst_id' from database.")
+    logger.debug(
+        "Get industrial buildings by 'subst_id' and 'load_area' from database."
+    )
     # Industrial loads 1
     # demand.egon_sites_ind_load_curves_individual, geom from demand.egon_industrial_sites
     # Filter: voltage level, scenario, subst_id
@@ -794,5 +807,5 @@ def get_res_generators(orm, session, mv_grid_district):
 
 def get_conv_generators(orm, session, subst_id):
     logger.warning("Database query of conventional is generators not integrated.")
-    conventional_generators_df = pd.DataFrame()
+    conventional_generators_df = pd.DataFrame(columns=["electrical_capacity"])
     return conventional_generators_df
