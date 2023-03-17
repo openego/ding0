@@ -25,7 +25,9 @@ def compare_to_stats_obj(stats_db_obj=None, stats_edisgo_obj=None):
     for key in common_keys:
         db_value = getattr(stats_db_obj, key)
         edisgo_value = getattr(stats_edisgo_obj, key)
-        if key in ["geom_grid_district", "geom_substation"]:
+        if key in ["source"]:
+            continue
+        elif key in ["geom_grid_district", "geom_substation"]:
             geom_db = wkt.loads(db_value)
             geom_edisgo_obj = wkt.loads(edisgo_value)
             if not geom_db.equals_exact(geom_edisgo_obj, 1e-3):
