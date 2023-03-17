@@ -5,8 +5,11 @@ import os
 import ding0.tools.egon_data_integration as db_io
 import pandas as pd
 import pyproj
+from edisgo import EDisGo
 from edisgo.edisgo import import_edisgo_from_files
+from edisgo.network.grids import Grid, LVGrid, MVGrid
 from shapely import wkt
+from shapely.geometry import Point
 from shapely.ops import transform
 from shapely.wkt import loads as wkt_loads
 
@@ -44,11 +47,13 @@ class GridStats:
 
         self.n_lines = kwargs.get("n_lines", None)
         self.l_lines = kwargs.get("l_lines", None)
-        self.types_lines = kwargs.get("types_lines", None)
+        self.n_types_lines = kwargs.get("n_types_lines", None)
 
         self.n_transformers = kwargs.get("n_transformers", None)
+        self.n_types_transformers = kwargs.get("n_types_transformers", None)
 
         self.n_feeders = kwargs.get("n_feeders", None)
+        self.l_feeders = kwargs.get("l_feeders", None)
         self.max_feeder_length = kwargs.get("max_feeder_length", None)
 
         self.n_loadareas = kwargs.get("n_loadareas", None)
@@ -210,14 +215,19 @@ class GridStats:
 
     def update_from_edisgo_obj(self, grid_obj):
         logger.info("Update GridStats object from edisgo object.")
-        from edisgo import EDisGo
-        from edisgo.network.grids import Grid, LVGrid, MVGrid
-        from shapely.geometry import Point
 
         self.source = "file"
 
         if isinstance(grid_obj, EDisGo):
             self.grid_type = "MV_Grid_District"
+            buses_df = grid_obj.topology.buses_df
+            lines_df = grid_obj.topology.lines_df
+            transformers_df = pd.concat(
+                [
+                    grid_obj.topology.transformers_df,
+                    grid_obj.topology.transformers_hvmv_df,
+                ]
+            )
             loads_df = grid_obj.topology.loads_df
             generators_df = grid_obj.topology.generators_df
 
@@ -227,9 +237,22 @@ class GridStats:
             self.geom_substation = Point(_["x"].values[0], _["y"].values[0]).wkt
             # LV Load Area Data
             self.population = grid_obj.topology.grid_district["population"]
+
+            grid_obj.set_time_series_worst_case_analysis()
+            self.integrity_check_messages = grid_obj.check_integrity()
         elif isinstance(grid_obj, Grid):
+            self.v_nom = grid_obj.nominal_voltage
+            buses_df = grid_obj.buses_df
+            lines_df = grid_obj.lines_df
+            transformers_df = grid_obj.transformers_df
             loads_df = grid_obj.loads_df
             generators_df = grid_obj.generators_df
+
+            _ = grid_obj.get_feeder_stats()
+            self.n_feeders = _.shape[0]
+            self.l_feeders = _["length_to_grid_station"].to_list()
+            self.max_feeder_length = _["length_to_grid_station"].max()
+
             if isinstance(grid_obj, MVGrid):
                 self.grid_type = "MV_Grid"
                 self.mv_grid_id = grid_obj.id
@@ -242,6 +265,17 @@ class GridStats:
                 raise TypeError
         else:
             raise TypeError
+
+        # Topology
+        self.n_buses = buses_df.shape[0]
+        self.n_lines = lines_df.shape[0]
+        self.l_lines = lines_df["length"].sum()
+        self.n_types_lines = lines_df.groupby(["type_info"]).size().to_dict()
+
+        self.n_transformers = transformers_df.shape[0]
+        self.n_types_transformers = (
+            transformers_df.groupby(["type_info"]).size().to_dict()
+        )
 
         # Load Data
         self.n_loads_residential = loads_df[loads_df["sector"] == "residential"].shape[
@@ -331,6 +365,9 @@ def get_stats_from_edisgo_dir(dir_name=None, file_name=None):
     grid_obj_list = list(edisgo_obj.topology.mv_grid.lv_grids)
     grid_obj_list = grid_obj_list + [edisgo_obj, edisgo_obj.topology.mv_grid]
 
+    grid_obj_list[-2].topology.buses_df.iloc[0, 0] = 1
+    grid_obj_list[-1].buses_df.iloc[0, 1] = 1
+
     for grid_obj in grid_obj_list:
         stats_obj = GridStats(grid_id=edisgo_obj.topology.id)
         stats_obj.update_from_edisgo_obj(grid_obj)
@@ -364,15 +401,12 @@ def get_stats_from_file(file_name=None):
 
 
 def stats_files_to_df(dir_name):
-    df = pd.DataFrame()
+    index = []
+    data = []
     for dirpath, dirnames, filenames in os.walk(dir_name):
         for filename in filenames:
             file_path = os.path.join(dirpath, filename)
             if os.path.splitext(file_path)[-1] == ".json":
-                with open(file_path) as json_file:
-                    stats_dict = json.load(json_file)
-
-                df.loc[
-                    os.path.splitext(filename)[0], stats_dict.keys()
-                ] = stats_dict.values()
-    return df
+                index.append(os.path.splitext(filename)[0])
+                data.append(pd.read_json(file_path, typ="series"))
+    return pd.DataFrame(index=index, data=data)
