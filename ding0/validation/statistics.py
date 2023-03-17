@@ -250,8 +250,8 @@ class GridStats:
 
             _ = grid_obj.get_feeder_stats()
             self.n_feeders = _.shape[0]
-            self.l_feeders = _["length_to_grid_station"].to_list()
-            self.max_feeder_length = _["length_to_grid_station"].max()
+            self.l_feeders = _["length"].to_list()
+            self.max_feeder_length = _["length"].max()
 
             if isinstance(grid_obj, MVGrid):
                 self.grid_type = "MV_Grid"
