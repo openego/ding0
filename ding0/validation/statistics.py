@@ -46,8 +46,9 @@ class GridStats:
         self.n_buses = kwargs.get("n_buses", None)
 
         self.n_lines = kwargs.get("n_lines", None)
-        self.l_lines = kwargs.get("l_lines", None)
         self.n_types_lines = kwargs.get("n_types_lines", None)
+        self.l_lines = kwargs.get("l_lines", None)
+        self.l_types_lines = kwargs.get("l_types_lines", None)
 
         self.n_transformers = kwargs.get("n_transformers", None)
         self.n_types_transformers = kwargs.get("n_types_transformers", None)
@@ -269,8 +270,14 @@ class GridStats:
         # Topology
         self.n_buses = buses_df.shape[0]
         self.n_lines = lines_df.shape[0]
-        self.l_lines = lines_df["length"].sum()
         self.n_types_lines = lines_df.groupby(["type_info"]).size().to_dict()
+        self.l_lines = lines_df["length"].sum()
+        self.l_types_lines = (
+            lines_df[["type_info", "length"]]
+            .groupby(["type_info"])
+            .sum()["length"]
+            .to_dict()
+        )
 
         self.n_transformers = transformers_df.shape[0]
         self.n_types_transformers = (
