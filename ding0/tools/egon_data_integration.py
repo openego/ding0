@@ -806,9 +806,6 @@ def get_conv_generators(orm, session, mv_grid_district):
     subst_id = str(mv_grid_district.id_db)
     geo_area = mv_grid_district.geo_data
 
-    logger.warning("Database query of conventional is generators not integrated.")
-    conventional_generators_df = pd.DataFrame()
-
     # Generators combustion
     query = session.query(
         orm["generators_combustion"].bus_id,
@@ -830,7 +827,8 @@ def get_conv_generators(orm, session, mv_grid_district):
     generators_combustion_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
     )
-    generators_combustion_df["generation_type"] = "combustion"
+    generators_combustion_df["generation_type"] = "conventional"
+    generators_combustion_df["generation_subtype"] = "combustion"
 
     # Generators gsgk (Grubengas, Klaerschlamm)
     query = session.query(
@@ -853,7 +851,8 @@ def get_conv_generators(orm, session, mv_grid_district):
     generators_gsgk_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
     )
-    generators_gsgk_df["generation_type"] = "gsgk"
+    generators_gsgk_df["generation_type"] = "conventional"
+    generators_combustion_df["generation_subtype"] = "gsgk"
 
     conventional_generators_df = pd.concat(
         [
