@@ -380,7 +380,6 @@ def build_branches_on_osm_ways(lvgd):
     nodelists = list(nx.weakly_connected_components(g))
 
     feederID = 0  # starting with feederId=0 for station. All leaving feeders will get an incremented feederId
-    new_lvgd_peak_load_considering_simultaneity = 0
     feeder_graph_list = []  # append each feeder here
 
     # create subtrees from tree graph based on number of with station incident edges
