@@ -1279,6 +1279,7 @@ class NetworkDing0:
                         v_level=int(row['voltage_level']),
                         weather_cell_id=int(row['w_id']),
                         building_id=building_id,
+                        gens_id=str(row['gens_id']),
                         geo_data=wkt_loads(row['geom'])
                     )
                 else:
@@ -1290,6 +1291,7 @@ class NetworkDing0:
                         subtype=row['generation_subtype'],
                         v_level=int(row['voltage_level']),
                         building_id=building_id,
+                        gens_id=str(row['gens_id']),
                         geo_data=wkt_loads(row['geom'])
                     )
 
@@ -1307,7 +1309,7 @@ class NetworkDing0:
             """
             Imports conventional (conv) generators
             """
-            generators = db_io.get_conv_generators(self.orm, session, list(mv_grid_districts_dict)[0])
+            generators = db_io.get_conv_generators(self.orm, session, list(mv_grid_districts_dict.values())[0])
 
             for id_db, row in generators.iterrows():
 
@@ -1317,13 +1319,13 @@ class NetworkDing0:
 
                 # create generator object
                 generator = GeneratorDing0(id_db=id_db,
-                                           name=row['name'],
-                                           geo_data=wkt_loads(row['geom']),
                                            mv_grid=mv_grid,
-                                           capacity=row['capacity'],
-                                           type=row['fuel'],
-                                           subtype='unknown',
-                                           v_level=int(row['voltage_level']))
+                                           capacity=float(row['electrical_capacity']),
+                                           type=row['generation_type'],
+                                           subtype=row['generation_subtype'],
+                                           v_level=int(row['voltage_level']),
+                                           gens_id=str(row['gens_id']),
+                                           geo_data=wkt_loads(row['geom']))
 
                 # add generators to graph
                 if generator.v_level in [4, 5]:

@@ -1052,11 +1052,18 @@ def append_generators_df(generators_df, node, name_bus = None):
         weather_cell_id = np.NaN
     if name_bus is None:
         name_bus = node.pypsa_bus_id
-    generator = pd.Series({'name':repr(node),
-                           'bus': name_bus, 'control':'PQ',
-                           'p_nom':(node.capacity * node.capacity_factor)/1e3,
-                           'type':node.type, 'subtype':node.subtype,
-                           'weather_cell_id':weather_cell_id})
+    generator = pd.Series(
+        {
+            'name': repr(node),
+            'bus': name_bus,
+            'control': 'PQ',
+            'p_nom': (node.capacity * node.capacity_factor)/1e3,
+            'type': node.type,
+            'subtype': node.subtype,
+            'weather_cell_id': weather_cell_id,
+            "gens_id": node.gens_id
+        }
+    )
     generators_df = generators_df.append(generator, ignore_index=True)
     return generators_df
 
