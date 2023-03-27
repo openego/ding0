@@ -757,21 +757,35 @@ class NetworkDing0:
                 graph = build_graph_from_ways(ways_sql_df)
                 # Get nodes to remove from graph (per buffer polygon).
                 # "outlier_nodes_list" is a list of lists
-                outlier_nodes_list = graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list)
+                outlier_nodes_list = graph_nodes_outside_buffer_polys(
+                    graph, ways_sql_df, buffer_poly_list
+                )
 
-            # If no osm ways data could be found create synthetic graph.
+                inner_node_list = list(set(graph.nodes()) - set(outlier_nodes_list[0]))
+                build_synthetic_graph = False
+                if len(inner_node_list) < 1:
+                    logger.warning(
+                        f"No graph found in origin polygon of MV {mv_grid_district}, "
+                        f"LA {id_db}. Build synthetic graph"
+                    )
+                    build_synthetic_graph = True
             else:
+                build_synthetic_graph = True
+            # If no osm ways data could be found create synthetic graph.
+            # or no inner_nodes_are_found
+            if build_synthetic_graph:
                 # Create synthetic graph with one street node instead.
                 graph, node_id = create_simple_synthetic_graph(geo_load_area)
                 # No outlier nodes in synthetic graph, nested list must be empty.
                 outlier_nodes_list = [[]]
-                logger.warning(f'ways_sql_df.empty. No ways found in '
-                               f'MV {mv_grid_district}, LA {id_db} '
-                               f'Build synthetic graph instead.')
+                logger.warning(
+                    f"ways_sql_df.empty. No ways found in "
+                    f"MV {mv_grid_district}, LA {id_db} "
+                    f"Build synthetic graph instead."
+                )
 
             # Inner_node_list define nodes without buffer.
             inner_node_list = list(set(graph.nodes()) - set(outlier_nodes_list[0]))
-
             if len(inner_node_list) < 1:
                 logger.warning(f'No graph found in origin polygon of MV {mv_grid_district}, LA {id_db}.')
                 continue

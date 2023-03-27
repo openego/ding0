@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 logger = logging.getLogger()
 
 package_path = ding0.__path__[0]
+cfg_ding0.load_config('config_files.cfg')
 cfg_ding0.load_config('config_db_tables.cfg')
 cfg_ding0.load_config('config_db_credentials.cfg')
 
