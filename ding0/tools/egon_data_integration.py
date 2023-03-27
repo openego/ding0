@@ -71,9 +71,18 @@ def get_lv_load_areas(orm, session, mv_grid_id):
         orm["orm_lv_load_areas"].sector_peakload_industrial.label(
             "peak_load_industrial"
         ),
-        (orm["orm_lv_load_areas"].sector_peakload_residential/orm["orm_lv_load_areas"].sector_peakload_residential_2035).label("peak_load_residential_scaling_factor"),
-        (orm["orm_lv_load_areas"].sector_peakload_cts/orm["orm_lv_load_areas"].sector_peakload_cts_2035).label("peak_load_cts_scaling_factor"),
-        (orm["orm_lv_load_areas"].sector_peakload_industrial/orm["orm_lv_load_areas"].sector_peakload_industrial_2035).label("peak_load_industrial_scaling_factor"),
+        (
+            orm["orm_lv_load_areas"].sector_peakload_residential
+            / orm["orm_lv_load_areas"].sector_peakload_residential_2035
+        ).label("peak_load_residential_scaling_factor"),
+        (
+            orm["orm_lv_load_areas"].sector_peakload_cts
+            / orm["orm_lv_load_areas"].sector_peakload_cts_2035
+        ).label("peak_load_cts_scaling_factor"),
+        (
+            orm["orm_lv_load_areas"].sector_peakload_industrial
+            / orm["orm_lv_load_areas"].sector_peakload_industrial_2035
+        ).label("peak_load_industrial_scaling_factor"),
     ).filter(
         orm["orm_lv_load_areas"].bus_id == mv_grid_id,
         orm["version_condition_la"],
@@ -792,7 +801,69 @@ def get_res_generators(orm, session, mv_grid_district):
     return renewable_generators_df
 
 
-def get_conv_generators(orm, session, subst_id):
+def get_conv_generators(orm, session, mv_grid_district):
+    srid = 3035  # new to calc distance matrix in step 6
+    subst_id = str(mv_grid_district.id_db)
+    geo_area = mv_grid_district.geo_data
+
     logger.warning("Database query of conventional is generators not integrated.")
     conventional_generators_df = pd.DataFrame()
+
+    # Generators combustion
+    query = session.query(
+        orm["generators_combustion"].bus_id,
+        orm["generators_combustion"].gens_id,
+        (orm["generators_combustion"].capacity * 1000).label("electrical_capacity"),
+        orm["generators_combustion"].voltage_level,
+        func.ST_AsText(
+            func.ST_Transform(orm["generators_combustion"].geom, srid)
+        ).label("geom"),
+    ).filter(
+        # orm["generators_combustion"].bus_id == subst_id,
+        orm["generators_combustion"].status == "InBetrieb",
+        orm["generators_combustion"].voltage_level.in_([4, 5, 6, 7]),
+        func.ST_Intersects(
+            func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
+            func.ST_Transform(orm["generators_combustion"].geom, srid),
+        ),
+    )
+    generators_combustion_df = pd.read_sql(
+        sql=query.statement, con=session.bind, index_col=None
+    )
+    generators_combustion_df["generation_type"] = "combustion"
+
+    # Generators gsgk (Grubengas, Klaerschlamm)
+    query = session.query(
+        orm["generators_gsgk"].bus_id,
+        orm["generators_gsgk"].gens_id,
+        (orm["generators_gsgk"].capacity * 1000).label("electrical_capacity"),
+        orm["generators_gsgk"].voltage_level,
+        func.ST_AsText(func.ST_Transform(orm["generators_gsgk"].geom, srid)).label(
+            "geom"
+        ),
+    ).filter(
+        # orm["generators_water"].bus_id == subst_id,
+        orm["generators_gsgk"].status == "InBetrieb",
+        orm["generators_gsgk"].voltage_level.in_([4, 5, 6, 7]),
+        func.ST_Intersects(
+            func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
+            func.ST_Transform(orm["generators_gsgk"].geom, srid),
+        ),
+    )
+    generators_gsgk_df = pd.read_sql(
+        sql=query.statement, con=session.bind, index_col=None
+    )
+    generators_gsgk_df["generation_type"] = "gsgk"
+
+    conventional_generators_df = pd.concat(
+        [
+            generators_combustion_df,
+            generators_gsgk_df,
+        ],
+        ignore_index=True,
+    )
+    conventional_generators_df.rename(columns={"bus_id": "subst_id"}, inplace=True)
+    # Overwrite subst_id of the data, to correct faulty data
+    conventional_generators_df["subst_id"] = int(subst_id)
+
     return conventional_generators_df
