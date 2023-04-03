@@ -969,6 +969,7 @@ class GeneratorDing0:
         self.v_level = kwargs.get('v_level', None)
 
         self.building_id = kwargs.get('building_id', None)
+        self.gens_id = kwargs.get('gens_id', None)
 
     @property
     def network(self):

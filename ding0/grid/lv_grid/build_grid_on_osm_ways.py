@@ -19,12 +19,14 @@ import nxmetis
 
 import osmnx as ox
 import numpy as np
+from math import tan, acos
 from shapely.geometry import LineString, Point
 
 from ding0.core.network import BranchDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core.network.loads import LVLoadDing0
 from ding0.tools import config as cfg_ding0
+from ding0.tools.pypsa_io import q_sign
 from ding0.grid.lv_grid.routing import identify_street_loads
 from ding0.grid.mv_grid.tools import get_shortest_path_shp_single_target, get_shortest_path_shp_multi_target
 
@@ -141,6 +143,26 @@ def get_shortest_path_tree(graph, station_node, building_nodes, generator_nodes=
 
     return sp_tree
 
+def transform_feeder_to_aggregated_path(feeder, station_id):
+    """ aggregated representation of the feeder as path
+        containing weighted edges ('length') and nodes ('load') """
+
+    # transform to dfs tree
+    tree = nx.dfs_tree(feeder, station_id)
+    nx.set_edge_attributes(tree, {(u, v): feeder.edges[u, v, 0]['length']
+                                  for u, v, d in tree.edges.data()}, 'length')
+    # longest path in feeder
+    lp_in_feeder = nx.dag_longest_path(tree, 'length')
+
+    # aggregate branching load to path nodes
+    tree_h = tree.copy()
+    for node in reversed(lp_in_feeder):
+        branch_nodes = list(nx.dfs_postorder_nodes(tree_h, node))
+        tree.nodes[node]['load'] = sum([feeder.nodes[b]['load'] for b in branch_nodes])
+        tree_h.remove_nodes_from(branch_nodes)
+    feeder_agg = tree.subgraph(lp_in_feeder)
+
+    return feeder_agg, lp_in_feeder
 
 ###############
 
@@ -169,27 +191,108 @@ def allocate_street_load_nodes(lv_loads_grid, shortest_tree_district_graph, stat
 
     return shortest_tree_district_graph, street_loads, household_loads
 
+def reinforce_cable_type(lim_current, lvgd_cfg):
+    """ finds minimum required cable type based on limiting current value"""
 
-def get_cable_type_by_load(lvgd, capacity, cable_lf, cos_phi_load, v_nom):
+    # get static data on lv level
+    lv_cable_lf = lvgd_cfg['lv_cable_lf']
+    lv_cables_df = lvgd_cfg['lv_cables_df']
+
+    # find suitable cable types
+    suitable_cables = lv_cables_df[(lv_cables_df['I_max_th'] * lv_cable_lf) > lim_current]
+    reinforcable = True
+
+    # find minimum required cable
+    if len(suitable_cables):
+        cable_type = suitable_cables.loc[suitable_cables['I_max_th'].idxmin(), :]
+    else: # TODO: what happens if no cable suitable because current limit / voltage drop too high
+        cable_type = lv_cables_df.iloc[-1]
+        reinforcable = False
+
+    return cable_type, reinforcable
+
+
+def cable_type_by_load(capacity, lvgd_cfg):
     """ get cable type for given capacity as param """
-    I_max_load = capacity / (3 ** 0.5 * v_nom) / cos_phi_load
 
-    # determine suitable cable for this current
-    suitable_cables_stub = lvgd.lv_grid.network.static_data['LV_cables'][
-        (lvgd.lv_grid.network.static_data['LV_cables'][
-             'I_max_th'] * cable_lf) > I_max_load]
-    if len(suitable_cables_stub):
-        cable_type_stub = suitable_cables_stub.loc[suitable_cables_stub['I_max_th'].idxmin(), :]
-    else:  # TODO: what to do if no cable is suitable for I_max_load, e.g. many loads connected to feeder?
-        cable_type_stub = lvgd.lv_grid.network.static_data['LV_cables'].iloc[0]  # take strongest cable if no one suits
+    # get static data on lv level
+    v_nom = lvgd_cfg['v_nom']
+    cos_phi_load = lvgd_cfg['cos_phi_load']
 
-    return cable_type_stub
+    current_max_load = capacity / (3 ** 0.5 * v_nom) / cos_phi_load
+    cable_type, _ = reinforce_cable_type(current_max_load, lvgd_cfg)
+
+    return cable_type
 
 
-def get_n_feeder_mandatory(capacity, v_nom, cos_phi_load):
-    I_max_allowed = 275  ##TODO: get value via config from standard cable type # refers to 150 mm2 standard type ref: dena Verteilnetzstudie
-    I_max_load_at_feeder = capacity / (3 ** 0.5 * v_nom) / cos_phi_load
-    return np.ceil(I_max_load_at_feeder / I_max_allowed)
+def check_voltage_drop_in_feeder(feeder_agg, lp_in_feeder, cable_type, lvgd_cfg):
+
+    """ returns boolean if a critical voltage drop has been detected """
+
+    # get static data on lv level
+    v_nom = lvgd_cfg['v_nom']
+    v_diff_max = lvgd_cfg['v_diff_max']
+    cos_phi_load = lvgd_cfg['cos_phi_load']
+    cos_phi_load_mode = lvgd_cfg['cos_phi_load_mode']
+
+    # lv cable parameters to check voltage drop in half ring / feeder path
+    r_per_km = cable_type['R_per_km']
+    x_per_km = cable_type['L_per_km']
+    q_factor = q_sign(cos_phi_load_mode, 'load') * tan(acos(cos_phi_load))
+
+    # set initial values
+    v_level_op = v_lp = v_nom * 1e3  # kV to V
+    r_lp = x_lp = 0
+    crit_v_drop = False
+
+    # calculate voltage deviation
+    for n1, n2 in zip(lp_in_feeder[0:len(lp_in_feeder) - 1], lp_in_feeder[1:len(lp_in_feeder)]):
+        r_lp += feeder_agg.edges[n1, n2]['length'] * r_per_km * 1e-3  # m to km
+        x_lp += feeder_agg.edges[n1, n2]['length'] * x_per_km * 1e-3  # m to km
+        v_lp -= feeder_agg.nodes[n2]['load'] * (r_lp + x_lp * q_factor) / v_level_op
+        if (v_level_op - v_lp) > (v_level_op * v_diff_max):
+            crit_v_drop = True
+            break
+
+    return crit_v_drop
+
+def cable_type_by_voltage(feeder_graph, station_id, cable_type, lvgd_cfg):
+
+    """ get cable type by checking for max allowed voltage deviation """
+
+    # get aggregated feeder representation
+    feeder_agg, lp_in_feeder = transform_feeder_to_aggregated_path(feeder_graph, station_id)
+
+    # check for voltage deviation exceeding allowed limit
+    crit_v_drop = check_voltage_drop_in_feeder(feeder_agg, lp_in_feeder, cable_type, lvgd_cfg)
+
+    # reinforce cable as long as violations are detected
+    while crit_v_drop:
+
+        cable_type_new, reinforcable = reinforce_cable_type(cable_type['I_max_th'], lvgd_cfg)
+
+        if reinforcable:
+            cable_type = cable_type_new
+            crit_v_drop = check_voltage_drop_in_feeder(feeder_agg, lp_in_feeder, cable_type, lvgd_cfg)
+        else:
+            break
+
+    return cable_type
+
+
+def get_n_feeder_mandatory(capacity, lvgd_cfg):
+
+    # get static data on lv level
+    v_nom = lvgd_cfg['v_nom']
+    cos_phi_load = lvgd_cfg['cos_phi_load']
+    lv_cables_df = lvgd_cfg['lv_cables_df']
+    lv_standard_line = cfg_ding0.get('assumptions', 'lv_standard_line') # NAYY 4x1x150, source: dena Verteilnetzstudie
+
+    # divide feeder load by max. cable type load
+    current_max_cable = lv_cables_df.loc[lv_standard_line, 'I_max_th']
+    current_max_feeder = capacity / (3 ** 0.5 * v_nom) / cos_phi_load
+
+    return np.ceil(current_max_feeder / current_max_cable)
 
 
 def build_branches_on_osm_ways(lvgd):
@@ -201,11 +304,15 @@ def build_branches_on_osm_ways(lvgd):
     lvgd : LVGridDistrictDing0
         Low-voltage grid district object
     """
-    cable_lf = cfg_ding0.get('assumptions',
-                             'load_factor_lv_cable_lc_normal')
-    cos_phi_load = cfg_ding0.get('assumptions',
-                                 'cos_phi_load')
-    v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
+
+    # get required static config data on lv level as dict
+    lvgd_cfg = {}
+    lvgd_cfg['v_nom'] = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3
+    lvgd_cfg['v_diff_max'] = float(cfg_ding0.get('assumptions', 'lv_max_v_level_lc_diff_normal'))
+    lvgd_cfg['cos_phi_load'] = cfg_ding0.get('assumptions', 'cos_phi_load')
+    lvgd_cfg['cos_phi_load_mode'] = cfg_ding0.get('assumptions', 'cos_phi_load_mode')
+    lvgd_cfg['lv_cable_lf'] = cfg_ding0.get('assumptions', 'load_factor_lv_cable_lc_normal')
+    lvgd_cfg['lv_cables_df'] = lvgd.lv_grid.network.static_data['LV_cables'].sort_values('I_max_th')
 
     # obtain shortest_tree_graph_district from graph_district
     # due to graph_district contains all osm ways in district
@@ -283,7 +390,7 @@ def build_branches_on_osm_ways(lvgd):
 
         cum_subtree_load = sum([subtree_graph.nodes[node]['load'] for node in subtree_graph.nodes]) / 1e3
 
-        n_feeder = get_n_feeder_mandatory(cum_subtree_load, v_nom, cos_phi_load)
+        n_feeder = get_n_feeder_mandatory(cum_subtree_load, lvgd_cfg)
 
         # print(f"load {cum_subtree_load} needs n_feeder {n_feeder}")
 
@@ -322,22 +429,25 @@ def build_branches_on_osm_ways(lvgd):
                 # get feeder graphs separately
                 feeder_graph = subtree_graph.subgraph(cluster).copy()
 
+                if not station_id in feeder_graph.nodes:
+                    line_shp, line_length, line_path = get_shortest_path_shp_multi_target(subtree_graph, station_id,
+                                                                                          cluster)
+                    feeder_graph.add_edge(line_path[0], station_id, 0, geometry=line_shp, length=line_length,
+                                          feederID=feederID)
+                    feeder_graph.add_node(station_id, **station_attr)
+
+                # reinforce feeder's cable type based on current limit and voltage drop
                 cum_feeder_graph_load = sum([feeder_graph.nodes[node]['load'] for node in feeder_graph.nodes]) / 1e3
 
-                cable_type_stub = get_cable_type_by_load(lvgd, cum_feeder_graph_load, cable_lf, cos_phi_load, v_nom)
+                cable_type_stub = cable_type_by_load(cum_feeder_graph_load, lvgd_cfg)
+                cable_type_stub = cable_type_by_voltage(feeder_graph, station_id, cable_type_stub, lvgd_cfg)
+
                 for node in cluster:
                     feeder_graph.nodes[node]['feederID'] = feederID
 
                 for edge in feeder_graph.edges:
                     feeder_graph.edges[edge]['feederID'] = feederID
                     feeder_graph.edges[edge]['cable_type_stub'] = cable_type_stub
-
-                if not station_id in feeder_graph.nodes:
-                    line_shp, line_length, line_path = get_shortest_path_shp_multi_target(subtree_graph, station_id,
-                                                                                          cluster)
-                    feeder_graph.add_edge(line_path[0], station_id, 0, geometry=line_shp, length=line_length,
-                                          feederID=feederID, cable_type_stub=cable_type_stub)
-                    feeder_graph.add_node(station_id, **station_attr)
 
                 feeder_graph_list.append(feeder_graph)
 
@@ -347,7 +457,8 @@ def build_branches_on_osm_ways(lvgd):
 
             feeder_graph = subtree_graph.copy()
 
-            cable_type_stub = get_cable_type_by_load(lvgd, cum_subtree_load, cable_lf, cos_phi_load, v_nom)
+            cable_type_stub = cable_type_by_load(cum_subtree_load, lvgd_cfg)
+            cable_type_stub = cable_type_by_voltage(feeder_graph, station_id, cable_type_stub, lvgd_cfg)
 
             for node in feeder_graph.nodes:
                 feeder_graph.nodes[node]['feederID'] = feederID
@@ -390,7 +501,7 @@ def build_branches_on_osm_ways(lvgd):
                 'feederID': nn_attr['feederID'],
                 }
 
-        cable_type_stub = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
+        cable_type_stub = cable_type_by_load(row.capacity, lvgd_cfg)
         G.add_node(building_node, **attr)
         G.add_edge(building_node, row.nn, 0, geometry=LineString([row.geometry, row.nn_coords]),
                    length=row.nn_dist, feederID=nn_attr['feederID'], cable_type_stub=cable_type_stub)
@@ -422,7 +533,15 @@ def build_branches_on_osm_ways(lvgd):
         # route singular cable
         line_shp, line_length, line_path = get_shortest_path_shp_single_target(full_graph, building_node, station_id,
                                                                                return_path=True, nodes_as_str=False)
-        cable_type_stub = get_cable_type_by_load(lvgd, row.capacity, cable_lf, cos_phi_load, v_nom)
+        # 1) find cable type by current limit
+        cable_type_stub = cable_type_by_load(row.capacity, lvgd_cfg)
+        # 2.1) build feeder graph
+        full_graph.add_edge(station_id, building_node, geometry=line_shp, length=line_shp.length)
+        feeder_graph = full_graph.subgraph([station_id, building_node])
+        nx.set_node_attributes(feeder_graph, {station_id: {'load': 0}, building_node: {"load": row.capacity}})
+        # 2.2) find cable type by voltage drop
+        cable_type_stub = cable_type_by_voltage(feeder_graph, station_id, cable_type_stub, lvgd_cfg)
+        # add singular feeder
         G.add_edge(building_node, station_id, geometry=line_shp,
                    length=line_length, feederID=feederID, cable_type_stub=cable_type_stub)
 
