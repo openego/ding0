@@ -28,7 +28,7 @@ def get_database_type_from_config():
     return database
 
 
-def engine(overwrite_database=None):
+def get_engine(overwrite_database=None):
     """
     Engine for local database.
     """
@@ -49,7 +49,7 @@ def engine(overwrite_database=None):
 
 
 @contextmanager
-def session_scope(overwrite_database=None):
+def session_scope(overwrite_database=None, engine=None):
     """
     Provide a transactional scope around a series of operations.
     """
@@ -57,7 +57,12 @@ def session_scope(overwrite_database=None):
         database = overwrite_database
     else:
         database = get_database_type_from_config()
-    Session = sessionmaker(bind=engine(overwrite_database=database))
+
+    if engine is None:
+        Session = sessionmaker(bind=get_engine(overwrite_database=database))
+    else:
+        Session = sessionmaker(bind=engine)
+
     session = Session()
     logger.info(f"Start session with database: {database}")
     try:

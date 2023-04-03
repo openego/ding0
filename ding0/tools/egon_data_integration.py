@@ -484,6 +484,8 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
     industrial_buildings_df["geometry"] = industrial_buildings_df["geometry"].apply(
         shapely.wkt.loads
     )
+    industrial_buildings_df["footprint"] = industrial_buildings_df["footprint"].apply(shapely.wkt.loads)
+
     industrial_buildings_df["sector"] = "industrial"
     if not round(load_area.peak_load_industrial) == round(
         industrial_buildings_df.capacity.sum()
@@ -844,7 +846,7 @@ def get_conv_generators(orm, session, mv_grid_district):
             "geom"
         ),
     ).filter(
-        # orm["generators_water"].bus_id == subst_id,
+        # orm["generators_gsgk"].bus_id == subst_id,
         orm["generators_gsgk"].status == "InBetrieb",
         orm["generators_gsgk"].voltage_level.in_([4, 5, 6, 7]),
         func.ST_Intersects(
@@ -856,7 +858,7 @@ def get_conv_generators(orm, session, mv_grid_district):
         sql=query.statement, con=session.bind, index_col=None
     )
     generators_gsgk_df["generation_type"] = "conventional"
-    generators_combustion_df["generation_subtype"] = "gsgk"
+    generators_gsgk_df["generation_subtype"] = "gsgk"
 
     conventional_generators_df = pd.concat(
         [

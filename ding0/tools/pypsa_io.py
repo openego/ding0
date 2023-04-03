@@ -1061,7 +1061,7 @@ def append_generators_df(generators_df, node, name_bus = None):
             'type': node.type,
             'subtype': node.subtype,
             'weather_cell_id': weather_cell_id,
-            "gens_id": node.gens_id
+            "source_id": node.gens_id
         }
     )
     generators_df = generators_df.append(generator, ignore_index=True)

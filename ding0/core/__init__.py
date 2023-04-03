@@ -1252,47 +1252,61 @@ class NetworkDing0:
             :meth:`~.core.NetworkDing0.connect_generators`
         """
 
-        def import_res_generators():
+        def import_generators():
             """
             Imports renewable (res) generators
             """
-            generators = db_io.get_res_generators(self.orm, session, list(mv_grid_districts_dict.values())[0])
-            logger.debug(f"Import {generators.shape[0]} renewable generators.")
-            for id_db, row in generators.iterrows():
+            ren_generators = db_io.get_res_generators(self.orm, session, list(
+                mv_grid_districts_dict.values())[0])
+            conv_generators = db_io.get_conv_generators(self.orm, session, list(
+                mv_grid_districts_dict.values())[0])
+            generators = pd.concat([ren_generators, conv_generators]).reset_index(
+                drop=True).to_dict(orient="index")
+
+            logger.debug(f"Import {len(generators)} renewable generators.")
+            for id_db, row in generators.items():
+
                 # look up MV grid
                 mv_grid_district_id = row['subst_id']
                 mv_grid = mv_grid_districts_dict[mv_grid_district_id].mv_grid
 
-                if pd.notna(row["building_id"]):
-                    building_id = int(row["building_id"])
-                else:
-                    building_id = None
+                for key, value in row.items():
+                    if pd.isna(value):
+                        row[key] = None
+                    elif key in ['voltage_level', 'w_id', 'building_id']:
+                        row[key] = int(value)
+                    elif key in ['electrical_capacity']:
+                        row[key] = float(value)
+                    elif key in ["gens_id"]:
+                        row[key] = str(value)
+                    elif key in ["geom"]:
+                        row[key] = wkt_loads(value)
 
                 # create generator object
                 if row['generation_type'] in ['solar', 'wind']:
                     generator = GeneratorFluctuatingDing0(
                         id_db=id_db,
                         mv_grid=mv_grid,
-                        capacity=float(row['electrical_capacity']),
+                        capacity=row['electrical_capacity'],
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
-                        v_level=int(row['voltage_level']),
-                        weather_cell_id=int(row['w_id']),
-                        building_id=building_id,
-                        gens_id=str(row['gens_id']),
-                        geo_data=wkt_loads(row['geom'])
+                        v_level=row['voltage_level'],
+                        weather_cell_id=row['w_id'],
+                        building_id=row['building_id'],
+                        gens_id=row['gens_id'],
+                        geo_data=row['geom']
                     )
                 else:
                     generator = GeneratorDing0(
                         id_db=id_db,
                         mv_grid=mv_grid,
-                        capacity=float(row['electrical_capacity']),
+                        capacity=row['electrical_capacity'],
                         type=row['generation_type'],
                         subtype=row['generation_subtype'],
-                        v_level=int(row['voltage_level']),
-                        building_id=building_id,
-                        gens_id=str(row['gens_id']),
-                        geo_data=wkt_loads(row['geom'])
+                        v_level=row['voltage_level'],
+                        building_id=row['building_id'],
+                        gens_id=row['gens_id'],
+                        geo_data=row['geom'],
                     )
 
                 # MV generators
@@ -1305,35 +1319,6 @@ class NetworkDing0:
                 else:
                     ValueError("False voltage level")
 
-        def import_conv_generators():
-            """
-            Imports conventional (conv) generators
-            """
-            generators = db_io.get_conv_generators(self.orm, session, list(mv_grid_districts_dict.values())[0])
-
-            for id_db, row in generators.iterrows():
-
-                # look up MV grid
-                mv_grid_district_id = row['subst_id']
-                mv_grid = mv_grid_districts_dict[mv_grid_district_id].mv_grid
-
-                # create generator object
-                generator = GeneratorDing0(id_db=id_db,
-                                           mv_grid=mv_grid,
-                                           capacity=float(row['electrical_capacity']),
-                                           type=row['generation_type'],
-                                           subtype=row['generation_subtype'],
-                                           v_level=int(row['voltage_level']),
-                                           gens_id=str(row['gens_id']),
-                                           geo_data=wkt_loads(row['geom']))
-
-                # add generators to graph
-                if generator.v_level in [4, 5]:
-                    mv_grid.add_generator(generator)
-                # there's only one conv. geno with v_level=6 -> connect to MV grid
-                elif generator.v_level in [6]:
-                    generator.v_level = 5
-                    mv_grid.add_generator(generator)
 
         # get ding0s' standard CRS (SRID)
         srid = str(int(cfg_ding0.get('geo', 'srid')))
@@ -1348,11 +1333,7 @@ class NetworkDing0:
         lv_grid_districts_dict, \
         lv_stations_dict = self.get_mvgd_lvla_lvgd_obj_from_id()
 
-        # import renewable generators
-        import_res_generators()
-
-        # import conventional generators
-        import_conv_generators()
+        import_generators()
 
         logger.info('=====> Generators imported')
 
@@ -1521,7 +1502,7 @@ class NetworkDing0:
 
         orm = {}
         data_source = self.config['input_data_source']['input_data']
-        engine = database.engine()
+        engine = database.get_engine()
 
         def write_table_in_dict(orm, engine, name, table_str):
             table_list = table_str.split(".")

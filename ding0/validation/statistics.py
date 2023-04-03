@@ -75,17 +75,19 @@ class GridStats:
         self.p_loads_total = kwargs.get("p_loads_total", None)
 
         self.n_gens_pv_openspace = kwargs.get("n_gens_pv_openspace", None)
-        self.n_gens_pv_rooftop = kwargs.get("n_gens_pv_rooftop", None)
-        self.n_gens_wind = kwargs.get("n_gens_wind", None)
-        self.n_gens_biomass = kwargs.get("n_gens_biomass", None)
-        self.n_gens_water = kwargs.get("n_gens_water", None)
-        self.n_gens_conventional = kwargs.get("n_gens_conventional", None)
         self.p_gens_pv_openspace = kwargs.get("p_gens_pv_openspace", None)
+        self.n_gens_pv_rooftop = kwargs.get("n_gens_pv_rooftop", None)
         self.p_gens_pv_rooftop = kwargs.get("p_gens_pv_rooftop", None)
+        self.n_gens_wind = kwargs.get("n_gens_wind", None)
         self.p_gens_wind = kwargs.get("p_gens_wind", None)
+        self.n_gens_biomass = kwargs.get("n_gens_biomass", None)
         self.p_gens_biomass = kwargs.get("p_gens_biomass", None)
+        self.n_gens_water = kwargs.get("n_gens_water", None)
         self.p_gens_water = kwargs.get("p_gens_water", None)
-        self.p_gens_conventional = kwargs.get("p_gens_conventional", None)
+        self.n_gens_combustion = kwargs.get("n_gens_combustion", None)
+        self.p_gens_combustion = kwargs.get("p_gens_combustion", None)
+        self.n_gens_gsgk = kwargs.get("n_gens_gsgk", None)
+        self.p_gens_gsgk = kwargs.get("p_gens_gsgk", None)
 
         self.n_gens_renewable_total = kwargs.get("n_gens_renewable_total", None)
         self.p_gens_renewable_total = kwargs.get("p_gens_renewable_total", None)
@@ -161,7 +163,6 @@ class GridStats:
         _ = res_generators.loc[
             res_generators["generation_subtype"] == "open_space", "electrical_capacity"
         ]
-
         self.n_gens_pv_rooftop = _.count()
         self.p_gens_pv_rooftop = _.sum()
 
@@ -182,6 +183,18 @@ class GridStats:
         ]
         self.n_gens_water = _.count()
         self.p_gens_water = _.sum()
+
+        _ = conv_generators.loc[
+            conv_generators["generation_subtype"] == "combustion", "electrical_capacity"
+        ]
+        self.n_gens_combustion = _.count()
+        self.p_gens_combustion = _.sum()
+
+        _ = conv_generators.loc[
+            conv_generators["generation_subtype"] == "gsgk", "electrical_capacity"
+        ]
+        self.n_gens_gsgk = _.count()
+        self.p_gens_gsgk = _.sum()
 
         _ = res_generators["electrical_capacity"]
         self.n_gens_renewable_total = _.count()
@@ -208,6 +221,8 @@ class GridStats:
             "p_gens_water",
             "p_gens_wind",
             "p_gens_biomass",
+            "p_gens_combustion",
+            "p_gens_gsgk",
             "p_gens_renewable_total",
             "p_gens_conventional_total",
             "p_gens_total",
@@ -325,6 +340,14 @@ class GridStats:
         _ = generators_df.loc[generators_df["type"] == "water", "p_nom"]
         self.n_gens_water = _.count()
         self.p_gens_water = _.sum()
+
+        _ = generators_df.loc[generators_df["subtype"] == "combustion", "p_nom"]
+        self.n_gens_combustion = _.count()
+        self.p_gens_combustion = _.sum()
+
+        _ = generators_df.loc[generators_df["subtype"] == "gsgk", "p_nom"]
+        self.n_gens_gsgk = _.count()
+        self.p_gens_gsgk = _.sum()
 
         _ = generators_df.loc[
             generators_df["type"].isin(["solar", "wind", "biomass", "water"]), "p_nom"
