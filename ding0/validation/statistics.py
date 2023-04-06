@@ -395,9 +395,6 @@ def get_stats_from_edisgo_dir(dir_name=None, file_name=None):
     grid_obj_list = list(edisgo_obj.topology.mv_grid.lv_grids)
     grid_obj_list = grid_obj_list + [edisgo_obj, edisgo_obj.topology.mv_grid]
 
-    grid_obj_list[-2].topology.buses_df.iloc[0, 0] = 1
-    grid_obj_list[-1].buses_df.iloc[0, 1] = 1
-
     for grid_obj in grid_obj_list:
         stats_obj = GridStats(grid_id=edisgo_obj.topology.id)
         stats_obj.update_from_edisgo_obj(grid_obj)
