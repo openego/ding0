@@ -30,7 +30,7 @@ def get_config_osm(key):
         'EARTH_RADIUS_M' : 6_371_009,  # deprecated!? not mandatory anymore?!
         'lv_threshold_capacity' : 100,      # < 100kW connected to grid
         'mv_lv_threshold_capacity' : 200,   # 100 to < 200kW connected to station directly
-        'hv_mv_threshold_capacity' : 5500,  # 200 to < 5.5MW own station with trafos
+        'hv_mv_threshold_capacity' : 17500,  # 200 to < 17.5MW own station with trafos
         'additional_trafo_capacity' : 1.0,
         'avg_trafo_size' : 500,
         'avg_square_meters' : 100,
