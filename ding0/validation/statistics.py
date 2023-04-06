@@ -123,7 +123,18 @@ class GridStats:
         self.p_loadareas_total = lv_load_areas["peak_load"].sum()
 
         # Load Data
-        egon_buildings = pd.DataFrame()
+        egon_buildings = pd.DataFrame(
+            columns=[
+                "building_id",
+                "residential_capacity",
+                "number_households",
+                "capacity",
+                "industrial_capacity",
+                "cts_capacity",
+                "geometry",
+                "footprint",
+            ]
+        )
         for id_db, row in lv_load_areas.iterrows():
             egon_buildings = pd.concat(
                 [egon_buildings, db_io.get_egon_buildings(orm, session, grid_id, row)]
