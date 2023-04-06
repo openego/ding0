@@ -406,9 +406,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
     mw2kw = 10**3
     query = (
         session.query(
-            (orm["egon_sites_ind_load_curves_individual"].peak_load * mw2kw).label(
-                "capacity"
-            ),
+            orm["egon_sites_ind_load_curves_individual"].peak_load.label("capacity"),
             func.ST_AsText(
                 func.ST_Transform(orm["egon_industrial_sites"].geom, 3035)
             ).label("geometry"),
@@ -484,7 +482,9 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
     industrial_buildings_df["geometry"] = industrial_buildings_df["geometry"].apply(
         shapely.wkt.loads
     )
-    industrial_buildings_df["footprint"] = industrial_buildings_df["footprint"].apply(shapely.wkt.loads)
+    industrial_buildings_df["footprint"] = industrial_buildings_df["footprint"].apply(
+        shapely.wkt.loads
+    )
 
     industrial_buildings_df["sector"] = "industrial"
     if not round(load_area.peak_load_industrial) == round(
