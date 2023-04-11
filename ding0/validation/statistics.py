@@ -166,13 +166,13 @@ class GridStats:
         conv_generators = db_io.get_conv_generators(orm, session, mv_grid_district)
 
         _ = res_generators.loc[
-            res_generators["generation_subtype"] == "pv_rooftop", "electrical_capacity"
+            res_generators["generation_subtype"] == "open_space", "electrical_capacity"
         ]
         self.n_gens_pv_openspace = _.count()
         self.p_gens_pv_openspace = _.sum()
 
         _ = res_generators.loc[
-            res_generators["generation_subtype"] == "open_space", "electrical_capacity"
+            res_generators["generation_subtype"] == "pv_rooftop", "electrical_capacity"
         ]
         self.n_gens_pv_rooftop = _.count()
         self.p_gens_pv_rooftop = _.sum()
@@ -332,11 +332,11 @@ class GridStats:
         self.p_loads_total = loads_df["p_set"].sum()
 
         # Generator Data
-        _ = generators_df.loc[generators_df["subtype"] == "pv_rooftop", "p_nom"]
+        _ = generators_df.loc[generators_df["subtype"] == "open_space", "p_nom"]
         self.n_gens_pv_openspace = _.count()
         self.p_gens_pv_openspace = _.sum()
 
-        _ = generators_df.loc[generators_df["subtype"] == "open_space", "p_nom"]
+        _ = generators_df.loc[generators_df["subtype"] == "pv_rooftop", "p_nom"]
         self.n_gens_pv_rooftop = _.count()
         self.p_gens_pv_rooftop = _.sum()
 
