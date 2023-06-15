@@ -36,9 +36,11 @@ def get_config_osm(key):
         'avg_square_meters' : 100,
         'quadrat_width' : 1000,
         'dist_edge_segments' : 50,
+        'cluster_increment_counter_threshold' : 20,
         'ons_dist_threshold' : 1500,
         'buffer_distance' : [5, 25, 50, 100],
         'unconn_nodes_ratio' : 0.02,
+        'major_ccs_ratio_threshold' : .30,
         'get_fully_conn_graph_number_max_it' : 4,
         'diversity_factor_not_residential' : 0.6,
     }

@@ -1,8 +1,10 @@
 <img align="right" width="300" height="300" src="https://raw.githubusercontent.com/openego/ding0/dev/doc/images/DING0_Logo_300px.png">
 
+
+[![Coverage Status](https://coveralls.io/repos/github/openego/ding0/badge.svg?branch=dev)](https://coveralls.io/github/openego/ding0?branch=dev)
+[![Tests & coverage](https://github.com/openego/ding0/actions/workflows/tests-coverage.yml/badge.svg)](https://github.com/openego/ding0/actions/workflows/tests-coverage.yml)
 [![Documentation Status](https://readthedocs.org/projects/ding0/badge/?version=dev)](http://dingo.readthedocs.io/en/dev)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.834751.svg)](https://doi.org/10.5281/zenodo.834751)
-[![Build Status](https://travis-ci.org/openego/ding0.svg?branch=dev)](https://travis-ci.org/openego/ding0)
 
 DING0
 =====
@@ -27,18 +29,6 @@ is provided to show how to use Ding0.
 
 An overview on versions of data already generated
 [can be found in the wiki](https://github.com/openego/ding0/wiki/Ding0-datasets).
-
-
-For windows you may try:
-conda config --prepend channels conda-forge
-conda create -n ding0 --strict-channel-priority osmnx pandas=1.2.4 pyproj=3.0.1
-conda install pytables
-pip install git+https://github.com/openego/ego.io
-pip install git+https://github.com/openego/ding0
-conda install Cython
-pip install git+https://github.com/networkx/networkx-metis.git
-
-
 
 LICENSE
 -------

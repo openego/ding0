@@ -27,7 +27,7 @@ from ding0.core.network.cable_distributors import MVCableDistributorDing0
 import logging
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def ding0_graph_to_routing_specs(graph):
@@ -57,20 +57,28 @@ def ding0_graph_to_routing_specs(graph):
     nodes_pos = {}
     nodes_agg = {}
 
+    load_area_center_agg = []
+
     # check if there are only load areas of type aggregated and satellite
-    # -> treat satellites as normal load areas (allow for routing)
+    # if only satellites and aggregated load area no routing will be done
+    # and satellite will be connected via stubs
+    # in case there is no aggregated load area available
+    # treat satellites as normal load areas (allow for routing)
     satellites_only = True
+    has_aggregated = False
     for node in graph.nodes():
         if isinstance(node, LVLoadAreaCentreDing0):
             if not node.lv_load_area.is_satellite and not node.lv_load_area.is_aggregated:
                 satellites_only = False
+            if node.lv_load_area.is_aggregated:
+                has_aggregated = True
 
     for node in graph.nodes():
         # station is LV station
         if isinstance(node, LVLoadAreaCentreDing0):
             # only major stations are connected via MV ring
             # (satellites in case of there're only satellites in grid district)
-            if not node.lv_load_area.is_satellite or satellites_only:
+            if not node.lv_load_area.is_satellite or (satellites_only and not has_aggregated):
                 # get demand and position of node
                 # convert node's demand to int for performance purposes and to avoid that node
                 # allocation with subsequent deallocation results in demand<0 due to rounding errors.
@@ -79,6 +87,8 @@ def ding0_graph_to_routing_specs(graph):
                 # get aggregation flag
                 if node.lv_load_area.is_aggregated:
                     nodes_agg[str(node)] = True
+                    # collect load area center of aggregated load area(s)
+                    load_area_center_agg.append(node)
                 else:
                     nodes_agg[str(node)] = False
 
@@ -95,6 +105,11 @@ def ding0_graph_to_routing_specs(graph):
     specs['DEMAND'] = nodes_demands
     specs['MATRIX'] = calc_geo_dist_matrix(nodes_pos)
     specs['IS_AGGREGATED'] = nodes_agg
+
+    # remove aggregated load area center(s) from graph
+    for lac in load_area_center_agg:
+        if graph.has_node(lac):
+            graph.remove_node(lac)
 
     return specs
 

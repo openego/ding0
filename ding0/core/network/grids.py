@@ -37,7 +37,7 @@ from pyproj import Transformer
 if not 'READTHEDOCS' in os.environ:
     from shapely.ops import transform
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 class MVGridDing0(GridDing0):
@@ -69,6 +69,8 @@ class MVGridDing0(GridDing0):
         self.default_branch_type_settle = kwargs.get('default_branch_type_settle', None)
         self.default_branch_kind_aggregated = kwargs.get('default_branch_kind_aggregated', None)
         self.default_branch_type_aggregated = kwargs.get('default_branch_type_aggregated', None)
+
+        self.lv_generators_to_connect = []
 
         self.add_station(kwargs.get('station', None))
 
@@ -214,7 +216,8 @@ class MVGridDing0(GridDing0):
         for ring in nx.cycle_basis(self.graph, root=self._station):
             
             if not include_root_node:
-                ring.remove(self._station)
+                if self._station in ring:
+                    ring.remove(self._station)
 
             # make sure rings are always returned in same order, starting with
             # node of which representative is smaller
@@ -224,7 +227,6 @@ class MVGridDing0(GridDing0):
                 ring.reverse()
 
             if include_satellites:
-                ring_nodes = ring
                 satellites = []
                 for ring_node in ring:
                     # determine all branches diverging from each ring node
@@ -368,7 +370,7 @@ class MVGridDing0(GridDing0):
                                                        debug=debug)
         logger.info('==> MV Sat1 for {} done'.format(repr(self)))
 
-        # connect satellites to closest line/station on a MV ring that have not been connected in step 1
+        # connect satellites to the closest line/station to an MV ring that has not been connected in step 1
         self._graph = mv_connect.mv_connect_satellites(mv_grid=self,
                                                        graph=self.graph,
                                                        mode='isolated',
@@ -412,6 +414,17 @@ class MVGridDing0(GridDing0):
         """
 
         self._graph = mv_connect.mv_connect_generators(self.grid_district, self.graph, debug)
+
+    def connect_lv_generators(self, debug=False):
+        """ Connects LV generators (graph nodes) to grid (graph)
+
+        Args
+        ----
+        debug: bool, defaults to False
+             If True, information is printed during process
+        """
+
+        lv_connect.lv_connect_generators(self, debug)
 
     def parametrize_grid(self, debug=False):
         """ Performs Parametrization of grid equipment:
@@ -741,7 +754,7 @@ class MVGridDing0(GridDing0):
                                                   start_time=start_time)
         elif method == 'onthefly':
             buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
-            components, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+            components, _, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
                                                                             lines_df, loads_df, transformer_df,
                                                                             only_export_mv=only_calc_mv,
                                                                             return_time_varying_data=True)
@@ -785,7 +798,7 @@ class MVGridDing0(GridDing0):
 
         elif method == 'onthefly':
             buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
-            components, _,  components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
+            components, _, _, components_data = fill_mvgd_component_dataframes(self.grid_district, buses_df, generators_df,
                                                                          lines_df, loads_df, transformer_df,  only_export_mv=only_calc_mv,
                                                                          return_time_varying_data=True)
             pypsa_io.run_powerflow_onthefly(components,
@@ -974,16 +987,6 @@ class LVGridDing0(GridDing0):
 
         #self.graph_draw(mode='LV')
 
-    def connect_generators(self, debug=False):
-        """ Connects LV generators (graph nodes) to grid (graph)
-
-        Args
-        ----
-        debug: bool, defaults to False
-             If True, information is printed during process
-        """
-
-        self._graph = lv_connect.lv_connect_generators(self.grid_district, self.graph, debug)
 
     def reinforce_grid(self):
         """ Performs grid reinforcement measures for current LV grid.

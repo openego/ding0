@@ -24,7 +24,7 @@ if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
     from shapely.ops import transform
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def calc_geo_branches_in_polygon(mv_grid, polygon, mode, proj, srid=3035):
@@ -182,8 +182,7 @@ def calc_geo_dist(node_source, node_target, srid=3035):
     # line is 0. See issue #76
     if branch_length == 0:
         branch_length = 1
-        logger.warning('Geo distance is zero, check objects\' positions. '
-                       'Distance is set to 1m')
+        logger.warning('Geo distance is zero, check objects positions. Distance is set to 1m')
     # ===================================================================
 
     return branch_length
@@ -317,8 +316,7 @@ def calc_edge_geometry(node_source, node_target, srid=3035):
     # line is 0. See issue #76
     if branch_length == 0:
         branch_length = 1
-        logger.warning('Geo distance is zero, check objects\' positions. '
-                       'Distance is set to 1m')
+        logger.warning('Geo distance is zero, check objects positions. Distance is set to 1m')
     # ===================================================================
 
     return branch_geometry, branch_length

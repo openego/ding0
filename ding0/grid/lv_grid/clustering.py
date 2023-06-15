@@ -2,14 +2,14 @@ from sklearn.cluster import AgglomerativeClustering
 import numpy as np
 import networkx as nx
 
-from config.config_lv_grids_osm import get_config_osm 
+from ding0.config.config_lv_grids_osm import get_config_osm
 from ding0.grid.lv_grid.routing import get_mvlv_subst_loc_list, get_cluster_graph_and_nodes
 
 import logging
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
-def get_cluster_numbers(la_peak_loads):
+def get_cluster_numbers(la_peak_loads, simp_graph):
     """
     caculate the number of clusters for load areal based on peak load / avg
     peak loads < 200 kW are accumulated
@@ -23,6 +23,9 @@ def get_cluster_numbers(la_peak_loads):
     # TODO: check if load area should be removed -> cfg_ding0.get('mv_routing', 'load_area_threshold')
     if n_cluster == 0:
         n_cluster = 1
+
+    elif n_cluster > len(simp_graph):
+        n_cluster = len(simp_graph)
 
     return n_cluster
 
@@ -73,6 +76,7 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
     clustering_successfully = False  # init False
     cluster_increment_counter = 0  # init 0
     check_distance_criterion = True
+    cluster_increment_counter_threshold = get_config_osm('cluster_increment_counter_threshold')
 
     for i in range(len(simp_graph.nodes)):
 
@@ -81,18 +85,17 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
 
         cluster_graph, nodes_w_labels = get_cluster_graph_and_nodes(simp_graph, labels)
 
-        if cluster_increment_counter > 10:
+        if cluster_increment_counter > cluster_increment_counter_threshold:
             check_distance_criterion = False
 
-            logger.warning('cluster_increment_counter > 10. \
-            break increment n_cluster. 1500 m distance is not ensured. \
-            check export: no_1500m_distance_ensured.txt')
+            message = f"cluster_increment_counter > {cluster_increment_counter_threshold} -> " \
+                      f"{get_config_osm('ons_dist_threshold')}m distance is not ensured. " \
+                      f"Check export: MV {mv_grid_district}, LA {id_db} does not ensure " \
+                      f"max dist of {get_config_osm('ons_dist_threshold')}m between station and loads."
 
-            # write mv and la id to file
-            f = open("no_1500m_distance_ensured.txt", "a")
-            f.write(f"MV {mv_grid_district}, LA {id_db}\n does not ensure"
-                    " max dist of 1500m between station and loads \n")
-            f.close()
+            mv_grid_district.network.message.append(message)
+            logger.warning(message)
+
             clustering_successfully = True
 
         # locate stations for districts
@@ -102,19 +105,18 @@ def distance_restricted_clustering(simp_graph, n_cluster, street_loads_df, mv_gr
 
         if valid_cluster_distance:
 
-            logger.warning('all clusters are in range')
+            logger.debug('All clusters are in range.')
 
             clustering_successfully = True
             break
 
         else:
 
-            if cluster_increment_counter <= 10:  # todo: write 10 to config
+            if cluster_increment_counter <= cluster_increment_counter_threshold:
 
                 cluster_increment_counter += 1
                 n_cluster += 1
-                logger.warning('at least one node trespasses dist to substation. \
-                               cluster again with n_clusters+=1')
-                logger.warning(f'after increment; n_cluster {n_cluster}')
+                logger.debug(f'At least one node trespasses dist to substation, for n_clusters = {n_cluster}. '
+                             f'Cluster again with n_clusters+=1')
 
     return clustering_successfully, cluster_graph, mvlv_subst_list, nodes_w_labels

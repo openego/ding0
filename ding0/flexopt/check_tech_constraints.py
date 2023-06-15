@@ -26,7 +26,7 @@ import networkx as nx
 import math
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 
 def check_load(grid, mode):
@@ -427,12 +427,15 @@ def get_critical_voltage_at_nodes(grid):
     # fill two above lists
     for node in list(nx.descendants(tree, grid._station)):
         successors = list(tree.successors(node))
-        if successors and all(isinstance(successor, LVCableDistributorDing0)
-               for successor in successors):
+        if (
+                successors
+                and all(isinstance(successor, LVCableDistributorDing0) for successor in successors)
+        ):
             main_branch.append(node)
-        elif (isinstance(node, LVCableDistributorDing0) and
-            all(isinstance(successor, (GeneratorDing0, LVLoadDing0))
-               for successor in successors)):
+        elif (
+                isinstance(node, LVCableDistributorDing0)
+                and all(isinstance(successor, (GeneratorDing0, LVLoadDing0)) for successor in successors)
+        ):
             grid_conn_points.append(node)
 
     v_delta_load_case_bus_bar, v_delta_gen_case_bus_bar  = get_voltage_at_bus_bar(grid, tree)
@@ -446,8 +449,7 @@ def get_critical_voltage_at_nodes(grid):
 
 
     # voltage at main route nodes
-    for first_node in [b for b in tree.successors(grid._station)
-                   if b in main_branch]:
+    for first_node in [b for b in tree.successors(grid._station) if b in main_branch]:
 
         # initiate loop over feeder
         successor = first_node
@@ -464,30 +466,46 @@ def get_critical_voltage_at_nodes(grid):
             v_delta_gen_cum += voltage_delta_gen
 
             # roughly estimate transverse voltage drop
-            stub_node = [_ for _ in tree.successors(successor) if
-                         _ not in main_branch][0]
-            v_delta_load_stub, v_delta_gen_stub  = get_delta_voltage_preceding_line(grid, tree, stub_node)
+            stub_nodes = [_ for _ in tree.successors(successor) if _ not in main_branch]
+            if stub_nodes:
+                stub_node = stub_nodes[0]
+                v_delta_load_stub, v_delta_gen_stub = get_delta_voltage_preceding_line(grid, tree, stub_node)
 
             # check if voltage drop at node exceeds tolerable voltage drop
-            if (abs(v_delta_gen_cum) > (v_delta_tolerable_fc)
-                or abs(v_delta_load_cum) > (
-                            v_delta_tolerable_lc)):
+            if (
+                    abs(v_delta_gen_cum) > (v_delta_tolerable_fc)
+                    or abs(v_delta_load_cum) > (v_delta_tolerable_lc)
+            ):
                 # add node and successing stub node to critical nodes
-                crit_nodes.append({'node': successor,
-                                   'v_diff': [v_delta_load_cum,
-                                              v_delta_gen_cum]})
-                crit_nodes.append({'node': stub_node,
-                                   'v_diff': [
-                                       v_delta_load_cum + v_delta_load_stub,
-                                       v_delta_gen_cum + v_delta_gen_stub]})
+                crit_nodes.append({
+                    'node': successor,
+                    'v_diff': [
+                        v_delta_load_cum,
+                        v_delta_gen_cum
+                    ]
+                })
+                if stub_nodes:
+                    crit_nodes.append({
+                        'node': stub_node,
+                        'v_diff': [
+                            v_delta_load_cum + v_delta_load_stub,
+                            v_delta_gen_cum + v_delta_gen_stub
+                        ]
+                    })
             # check if voltage drop at stub node exceeds tolerable voltage drop
-            elif ((abs(v_delta_gen_cum + v_delta_gen_stub) > v_delta_tolerable_fc)
-                or (abs(v_delta_load_cum + v_delta_load_stub) > v_delta_tolerable_lc)):
-                # add stub node to critical nodes
-                crit_nodes.append({'node': stub_node,
-                                   'v_diff': [
-                                       v_delta_load_cum + v_delta_load_stub,
-                                       v_delta_gen_cum + v_delta_gen_stub]})
+            elif stub_nodes:
+                if (
+                        (abs(v_delta_gen_cum + v_delta_gen_stub) > v_delta_tolerable_fc)
+                        or (abs(v_delta_load_cum + v_delta_load_stub) > v_delta_tolerable_lc)
+                ):
+                    # add stub node to critical nodes
+                    crit_nodes.append({
+                        'node': stub_node,
+                        'v_diff': [
+                            v_delta_load_cum + v_delta_load_stub,
+                            v_delta_gen_cum + v_delta_gen_stub
+                        ]
+                    })
 
 
             successor = [_ for _ in tree.successors(successor)

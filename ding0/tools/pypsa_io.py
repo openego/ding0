@@ -18,15 +18,13 @@ import ding0
 from ding0.tools import config as cfg_ding0
 from ding0.tools.tools import merge_two_dicts
 from ding0.core.network.stations import LVStationDing0, MVStationDing0
+from ding0.core.network.loads import LVLoadDing0, MVLoadDing0
 from ding0.core.network import LoadDing0, CircuitBreakerDing0, \
-    GeneratorDing0, GeneratorFluctuatingDing0, TransformerDing0
-from ding0.core import MVCableDistributorDing0
+    GeneratorDing0, GeneratorFluctuatingDing0, TransformerDing0, CableDistributorDing0
 from ding0.core.structure.regions import LVLoadAreaCentreDing0, \
     LVGridDistrictDing0, LVLoadAreaDing0
-from ding0.core.network.loads import LVLoadDing0, MVLoadDing0 # PAUL new
-
 from ding0.core.powerflow import q_sign
-from ding0.core.network.cable_distributors import LVCableDistributorDing0
+from ding0.core.network.cable_distributors import LVCableDistributorDing0, MVCableDistributorDing0
 from ding0.core import network as ding0_nw
 from ding0.tools.tools import merge_two_dicts_of_dataframes
 from ding0.grid.lv_grid.build_grid import select_transformers
@@ -50,8 +48,12 @@ from networkx import connected_components
 if not 'READTHEDOCS' in os.environ:
     from shapely.geometry import LineString
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
+# parameter to enable sector-specific consumption data
+# for egon data buildings set to False, because
+# dataset do not contain consumptional data
+consider_consumption = False
 
 def export_to_dir(network, export_dir):
     """
@@ -85,28 +87,25 @@ def initialize_component_dataframes():
         lv_grid_id, in_building
     lines_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of lines with entries name, bus0, bus1, length, x, r, s_nom,
-        num_parallel, type
-        NEW DUE TO LV LINES GEOMETRY IS TO KEEP DUE TO VISUALISATION, ADDING: 
-        geometry
+        num_parallel, type, geometry (LineString)
     transformer_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of trafos with entries name, bus0, bus1, x, r, s_nom, type
     generators_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of generators with entries name, bus, control, p_nom, type,
         weather_cell_id, subtype
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
-        Dataframe of loads with entries name, bus, peak_load,
+        Dataframe of loads with entries name, bus, p_set,
         annual_consumption, sector
     """
     cols = {'buses_columns': ['name', 'x', 'y', 'mv_grid_id',
                               'lv_grid_id', 'v_nom', 'in_building'],
             'lines_columns': ['name', 'bus0', 'bus1', 'length', 'r', 'x',
-                              's_nom', 'num_parallel', 'kind', 'type_info',
-                              'geometry'],  #  NEW FOR VISUALIZATION
+                              's_nom', 'num_parallel', 'kind', 'type_info', 'geometry'],
             'transformer_columns': ['name', 'bus0', 'bus1', 's_nom', 'r',
                                     'x', 'type', 'type_info'],
             'generators_columns': ['name', 'bus', 'control', 'p_nom', 'type',
                                    'weather_cell_id', 'subtype'],
-            'loads_columns': ['name', 'bus', 'peak_load',
+            'loads_columns': ['name', 'bus', 'p_set', 'building_id',
                               'annual_consumption', 'sector']}
     # initialize dataframes
     buses_df = pd.DataFrame(columns=cols['buses_columns'])
@@ -117,10 +116,16 @@ def initialize_component_dataframes():
     return buses_df, generators_df, lines_df, loads_df, transformer_df
 
 
-def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
-                                   lines_df, loads_df, transformer_df,
-                                   only_export_mv=False,
-                                   return_time_varying_data=False):
+def fill_mvgd_component_dataframes(
+        mv_grid_district,
+        buses_df,
+        generators_df,
+        lines_df,
+        loads_df,
+        transformer_df,
+        only_export_mv=False,
+        return_time_varying_data=False
+):
     """
     Returns component and if necessary time varying data for power flow
     or csv export of inserted mv grid district
@@ -140,7 +145,7 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
         Dataframe of generators with entries name, bus, control, p_nom, type,
         weather_cell_id, subtype
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
-        Dataframe of loads with entries name, bus, peak_load,
+        Dataframe of loads with entries name, bus, p_set, building_id,
         annual_consumption, sector
     only_export_mv: :obj:`bool`
         Bool that determines export modes for grid district,
@@ -163,57 +168,92 @@ def fill_mvgd_component_dataframes(mv_grid_district, buses_df, generators_df,
         Dictionary of component Dataframes 'Bus', 'Generator', 'Load',
         needed for power flow calculations
     """
-    #srid = str(int(cfg_ding0.get('geo', 'srid')))
-    srid = str(3035)
+    srid = str(int(cfg_ding0.get('geo', 'srid')))
     # fill dataframes
+
+    # fill grids_df with population and geoms of grids
+    grids_df = pd.DataFrame(
+        columns=["name", "grid_district_population", "srid", "area", "grid_district_geom"]
+    ).set_index("name")
+    grids_df.loc[f"mvgd_{mv_grid_district.id_db}"] = (0, srid, mv_grid_district.geo_data.area, mv_grid_district.geo_data)
+    mvgd_population = 0
+    for lv_load_area in mv_grid_district.lv_load_areas():
+        if pd.isna(lv_load_area.population):
+            lv_load_area_population = 0
+            logger.warning(f"Population of {lv_load_area} is NaN")
+        else:
+            lv_load_area_population = lv_load_area.population
+        grids_df.loc[f"lvgd_{lv_load_area.id_db}"] = (lv_load_area.population, srid, lv_load_area.geo_area.area, lv_load_area.geo_area)
+        mvgd_population += lv_load_area_population
+    grids_df.loc[f"mvgd_{mv_grid_district.id_db}", "grid_district_population"] = mvgd_population
+
+
     network_df = pd.DataFrame(
         {'name': [mv_grid_district.id_db], 'srid': [srid],
          'mv_grid_district_geom': [mv_grid_district.geo_data],
-         'mv_grid_district_population': [0]}).set_index('name')
+         'mv_grid_district_population': [int(mvgd_population)]}).set_index('name')
+
     # add mv grid components
     mv_grid = mv_grid_district.mv_grid
-    mv_components, mv_component_data = \
-        fill_component_dataframes(mv_grid, buses_df, lines_df, transformer_df,
-                                  generators_df, loads_df, only_export_mv,
-                                  return_time_varying_data)
+    mv_components, mv_component_data = fill_component_dataframes(
+        mv_grid,
+        buses_df,
+        lines_df,
+        transformer_df,
+        generators_df,
+        loads_df,
+        only_export_mv,
+        return_time_varying_data
+    )
     # move hvmv transformer to own entry to handle differently and ignore in 
     # power flow
     hvmv_transformers = mv_components['Transformer'].loc[
-        ~mv_components['Transformer'].bus0.isin(mv_components['Bus'].index)]
+        ~mv_components['Transformer'].bus0.isin(mv_components['Bus'].index)
+    ]
     mv_components['HVMV_Transformer'] = hvmv_transformers
     mv_components['Transformer'].drop(hvmv_transformers.index, inplace=True)
     logger.info('MV grid {} exported to pypsa format.'.format(
-        str(mv_grid_district.id_db)))
+        str(mv_grid_district.id_db))
+    )
     if not only_export_mv:
         # add lv grid components
-        logger.warning('STARTING TO EXPORT LV')
         for lv_load_area in mv_grid_district.lv_load_areas():
-            logger.warning(f'STARTING TO EXPORT LVLA {lv_load_area}')
-            if lv_load_area.is_aggregated:
-                logger.warning(f'LVLA {lv_load_area} is aggregated. Skip it: continue.')
-                continue
             for lv_grid_district in lv_load_area.lv_grid_districts():
-                logger.warning(f'STARTING TO EXPORT LVGD {lv_grid_district}. Going to fill_component_dataframes.')
                 lv_grid = lv_grid_district.lv_grid
-                lv_components_tmp, lv_component_data = \
-                    fill_component_dataframes(lv_grid, buses_df, lines_df,
-                                              transformer_df, generators_df,
-                                              loads_df, only_export_mv,
-                                              return_time_varying_data)
-                mv_components = \
-                    merge_two_dicts_of_dataframes(mv_components,
-                                                  lv_components_tmp)
-                mv_component_data = \
-                    merge_two_dicts_of_dataframes(mv_component_data,
-                                                  lv_component_data)
+                lv_components_tmp, lv_component_data = fill_component_dataframes(
+                    lv_grid,
+                    buses_df,
+                    lines_df,
+                    transformer_df,
+                    generators_df,
+                    loads_df,
+                    only_export_mv,
+                    return_time_varying_data
+                )
+                mv_components = merge_two_dicts_of_dataframes(
+                    mv_components,
+                    lv_components_tmp
+                )
+                mv_component_data = merge_two_dicts_of_dataframes(
+                    mv_component_data,
+                    lv_component_data
+                )
                 logger.info('LV grid {} exported to pypsa format.'.format(
-                    str(lv_grid.id_db)))
-    return mv_components, network_df, mv_component_data
+                    str(lv_grid.id_db))
+                )
+    return mv_components, network_df, grids_df, mv_component_data
 
 
-def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
-                              generators_df, loads_df, only_export_mv=False,
-                              return_time_varying_data=False):
+def fill_component_dataframes(
+        grid,
+        buses_df,
+        lines_df,
+        transformer_df,
+        generators_df,
+        loads_df,
+        only_export_mv=False,
+        return_time_varying_data=False
+):
     """
     Returns component and if necessary time varying data for power flow
     or csv export of inserted mv or lv grid
@@ -234,7 +274,7 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
         Dataframe of generators with entries name, bus, control, p_nom, type,
         weather_cell_id, subtype
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
-        Dataframe of loads with entries name, bus, peak_load,
+        Dataframe of loads with entries name, bus, p_set,
         annual_consumption, sector
     only_export_mv: :obj:`bool`
     return_time_varying_data: :obj:`bool`
@@ -260,40 +300,49 @@ def fill_component_dataframes(grid, buses_df, lines_df, transformer_df,
                 open_circuit_breakers.append(repr(circuit_breaker))
                 circuit_breaker.close()
     # get all grid nodes
-    logger.warning('GET NODES')
     nodes = grid.graph.nodes()
     # get all grid edges
-    logger.warning('GET EDGES')
-    edges = [edge for edge in list(grid.graph_edges())
-             if (edge['adj_nodes'][0] in nodes and not isinstance(
-            edge['adj_nodes'][0], LVLoadAreaCentreDing0))
-             and (edge['adj_nodes'][1] in nodes and not isinstance(
-            edge['adj_nodes'][1], LVLoadAreaCentreDing0))]
+    edges = [
+        edge for edge in list(grid.graph_edges())
+        if (
+                   edge['adj_nodes'][0] in nodes
+                   and not isinstance(edge['adj_nodes'][0], LVLoadAreaCentreDing0)
+           )
+           and
+           (
+                   edge['adj_nodes'][1] in nodes
+                   and not isinstance(edge['adj_nodes'][1], LVLoadAreaCentreDing0)
+           )
+    ]
     # add station transformers to respective dataframe
-    logger.warning('GET TRAFOS')
     for trafo in grid.station()._transformers:
         if trafo.x_pu == None:
             type = '{} MVA 110/{} kV'.format(int(trafo.s_max_a/1e3), grid.v_level)
-            transformer_df = append_transformers_df(transformer_df,
-                                                    trafo, type)
+            transformer_df = append_transformers_df(
+                transformer_df,trafo, type
+            )
         else:
             transformer_df = append_transformers_df(transformer_df, trafo)
     # handle all nodes and append to respective dataframes
-    logger.warning('GOING TO nodes_to_dict_of_dataframes')
-    node_components, component_data = \
-        nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df,
-                                    loads_df, transformer_df, only_export_mv,
-                                    return_time_varying_data)
+    node_components, component_data = nodes_to_dict_of_dataframes(
+        grid,
+        nodes,
+        buses_df,
+        generators_df,
+        loads_df,
+        transformer_df,
+        only_export_mv,
+        return_time_varying_data
+    )
     # handle all edges and append to respective dataframe
-    logger.warning('GOING TO edges_to_dict_of_dataframes')
-    branch_components = edges_to_dict_of_dataframes(edges, lines_df,
-                                                    node_components['Bus'])
+    branch_components = edges_to_dict_of_dataframes(
+        edges, lines_df, node_components['Bus']
+    )
     # merge node and edges
-    logger.warning('GOING TO merge_two_dicts')
     components = merge_two_dicts(node_components, branch_components)
-    components, component_data = \
-        circuit_breakers_to_df(grid, components, component_data,
-                               open_circuit_breakers, return_time_varying_data)
+    components, component_data = circuit_breakers_to_df(
+        grid, components, component_data, open_circuit_breakers, return_time_varying_data
+    )
     return components, component_data
 
 
@@ -315,8 +364,8 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
         Dataframe of generators with entries name, bus, control, p_nom, type,
         weather_cell_id, subtype
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
-        Dataframe of loads with entries name,bus,peak_load, annual_consumption,
-        sector
+        Dataframe of loads with entries name,bus,p_set, building_id,
+        annual_consumption,sector
     transformer_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of trafos with entries name, bus0, bus1, x, r, s_nom, type
     only_export_mv: :obj:`bool`
@@ -337,18 +386,40 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
         return_time_varying_data is True empty dict otherwise.
     """
 
-    #srid = int(cfg_ding0.get('geo', 'srid'))
-    srid = str(3035)
+    def next_branch_is_helper_component(node):
+        import networkx as nx
+        if isinstance(node, LVLoadDing0):
+            graph = node.grid.graph
+        elif isinstance(node, MVLoadDing0):
+            graph = node.grid.mv_grid.graph
+        elif isinstance(node, GeneratorDing0):
+            if node.lv_grid is not None:
+                graph = node.lv_grid.graph
+            else:
+                graph = node.mv_grid.graph
+        else:
+            TypeError("No ding0 load!")
+        adjacent_edges = list(nx.edges(graph, node))
+        if len(adjacent_edges) == 1:
+            branch = graph.get_edge_data(
+                adjacent_edges[0][0], adjacent_edges[0][1]
+            )["branch"]
+            if branch.helper_component:
+                return list(graph.neighbors(node))[0]
+            else:
+                return False
+        else:
+            ValueError("More than one adjacent branch!")
+
+    srid = int(cfg_ding0.get('geo', 'srid'))
     # check if there are islanded nodes which do not belong to aggregated
     # load area
     for isl_node in grid.graph_isolated_nodes():
         if isinstance(isl_node, CircuitBreakerDing0):
             continue
-        elif isl_node.lv_load_area.is_aggregated:
+        elif isl_node.lv_load_area.is_aggregated: #TODO consider aggregated
             continue
-        elif isinstance(isl_node, LVStationDing0) \
-                and isl_node.peak_load == 0 \
-                and isl_node.peak_generation == 0:
+        elif isinstance(isl_node, LVStationDing0):
             # Todo: This is only a workaround for empty grids (see
             #  build_grid.py line 800). Aim should be to solve the issue
             #  there and remove this exception here afterwards
@@ -393,37 +464,38 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
     for node in nodes:
         if node not in grid.graph_isolated_nodes():
             # buses only
-            if isinstance(node, MVCableDistributorDing0) or \
-                    isinstance(node, LVCableDistributorDing0):
+            if isinstance(node, CableDistributorDing0):
                 buses_df = append_buses_df(buses_df, grid, node)
                 # add time varying elements
                 if return_time_varying_data:
-                    bus_v_mag_set_df = \
-                        append_bus_v_mag_set_df(bus_v_mag_set_df, node)
+                    bus_v_mag_set_df = append_bus_v_mag_set_df(bus_v_mag_set_df, node)
       
             # slack generator
             elif isinstance(node, MVStationDing0):
                 # add dummy generator
-                slack = pd.Series({'name':('_'.join(['MV', str(grid.id_db),
-                                                     'slack'])),
-                                   'bus':node.pypsa_bus_id, 'control':'Slack',
-                                   'p_nom':0, 'type': 'station',
-                                   'subtype':'mv_station'})
+                slack = pd.Series({'name': ('_'.join(['MV', str(grid.id_db), 'slack'])),
+                                   'bus': node.pypsa_bus_id,
+                                   'control': 'Slack',
+                                   'p_nom': 0,
+                                   'type': 'station',
+                                   'subtype': 'mv_station'})
                 generators_df = generators_df.append(slack, ignore_index=True)
                 # add MV side bus
                 buses_df = append_buses_df(buses_df, grid, node)
                 # add time varying elements
                 if return_time_varying_data:
-                    slack_v_mag = pd.Series({'name':node.pypsa_bus0_id,
-                                             'temp_id':1,
-                                             'v_mag_pu_set':
-                                                 [voltage_set_slack,
-                                                  voltage_set_slack]})
-                    bus_v_mag_set_df = \
-                        bus_v_mag_set_df.append(slack_v_mag, ignore_index=True)
+                    slack_v_mag = pd.Series({
+                        'name':node.pypsa_bus0_id,
+                        'temp_id':1,
+                        'v_mag_pu_set': [voltage_set_slack,  voltage_set_slack]
+                    })
+                    bus_v_mag_set_df = bus_v_mag_set_df.append(
+                        slack_v_mag, ignore_index=True
+                    )
                     slack_v_mag['name'] = node.pypsa_bus_id
-                    bus_v_mag_set_df = \
-                        bus_v_mag_set_df.append(slack_v_mag, ignore_index=True)
+                    bus_v_mag_set_df = bus_v_mag_set_df.append(
+                        slack_v_mag, ignore_index=True
+                    )
 
             # other generators
             elif isinstance(node, GeneratorDing0):
@@ -432,105 +504,80 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                 else:
                     branches = node.mv_grid.graph_branches_from_node(node)
                 # check if generator is in building generator
-                if len(branches) == 1 and hasattr(branches[0][0],
-                                                  'in_building') \
-                        and branches[0][0].in_building \
-                        and branches[0][1]['branch'].length == 1:
-                    # append generator to preceding bus
-                    generators_df = append_generators_df(
-                        generators_df, node,
-                        name_bus=branches[0][0].pypsa_bus_id)
-                    if return_time_varying_data:
-                        generator_pq_set_df = \
-                            append_generator_pq_set_df(
-                                conf, generator_pq_set_df, node)
+                neighbor = next_branch_is_helper_component(node)
+                if neighbor:
+                    bus_name = neighbor.pypsa_bus_id
                 else:
-                    # append generator and new bus
-                    generators_df = append_generators_df(generators_df, node)
+                    bus_name = node.pypsa_bus_id
                     buses_df = append_buses_df(buses_df, grid, node)
-                    # add time varying elements
                     if return_time_varying_data:
-                        bus_v_mag_set_df = \
-                            append_bus_v_mag_set_df(bus_v_mag_set_df, node)
-                        generator_pq_set_df = \
-                            append_generator_pq_set_df(conf,
-                                                       generator_pq_set_df,
-                                                       node)
+                        bus_v_mag_set_df = append_bus_v_mag_set_df(
+                            bus_v_mag_set_df, node, node_name=bus_name
+                        )
+                generators_df = append_generators_df(
+                    generators_df,
+                    node,
+                    name_bus=bus_name
+                )
+                # add time varying elements
+                if return_time_varying_data:
+                    generator_pq_set_df = append_generator_pq_set_df(
+                        conf, generator_pq_set_df, node
+                    )
 
-            elif isinstance(node, LVLoadDing0):
-                # choose sector with highest consumption and assign sector
-                # accordingly
-                # Todo: replace when loads are seperated in a cleaner way
-                #  (retail, industrial)
-                #sorted_consumption = [(value, key) for key, value in
-                                      #node.consumption.items()]
-                sector = 'ALL' #max(sorted_consumption)[1]
-                # check whether load is in building
-                branches = node.grid.graph_branches_from_node(node)
-                if len(branches) == 1 and hasattr(branches[0][0],
-                                                  'in_building') \
-                        and branches[0][0].in_building \
-                        and branches[0][1]['branch'].length == 1:
-                    # connect load to preceding bus if is in building
-                    bus_name = branches[0][0].pypsa_bus_id
+            elif isinstance(node, LoadDing0):
+                # egon data buildings do not contain consumptional data
+                # consumption is not considered (at the moment)
+                if consider_consumption:
+                    # choose sector with highest consumption and assign sector
+                    # accordingly
+                    # Todo: replace when loads are seperated in a cleaner way
+                    #  (retail, industrial)
+                    sorted_consumption = [
+                        (value, key) for key, value in node.consumption.items()
+                    ]
+                    sector = max(sorted_consumption)[1]
+                    annual_consumption = node.consumption[sector]/1e3
                 else:
-                    # add new bus to connect load to
+                    sector, annual_consumption = None, None
+                # check whether load is in building
+
+                neighbor = next_branch_is_helper_component(node)
+                if neighbor:
+                    bus_name = neighbor.pypsa_bus_id
+                else:
                     bus_name = node.pypsa_bus_id
                     buses_df = append_buses_df(buses_df, grid, node)
                     if return_time_varying_data:
-                        bus_v_mag_set_df = \
-                            append_bus_v_mag_set_df(bus_v_mag_set_df, node)
+                        bus_v_mag_set_df = append_bus_v_mag_set_df(
+                            bus_v_mag_set_df, node, node_name=bus_name
+                        )
+
                 # add load
-                load = pd.Series({'name': repr(node), 'bus': bus_name,
-                                  'peak_load': node.peak_load/1e3,
-                                  'annual_consumption': 0,
-                                  'sector': sector})
-                loads_df = loads_df.append(load, ignore_index=True)
-                buses_df = append_buses_df(buses_df, grid, node)
-                # add time varying elements
-                if return_time_varying_data:
-                    bus_v_mag_set_df = \
-                        append_bus_v_mag_set_df(bus_v_mag_set_df, node)
-                    load_pq_set_df = \
-                        append_load_pq_set_df(conf, load_pq_set_df, node)
-            
-            elif isinstance(node, MVLoadDing0):
-                # choose sector with highest consumption and assign sector
-                # accordingly
-                # Todo: replace when loads are seperated in a cleaner way
-                #  (retail, industrial)
-                #sorted_consumption = [(value, key) for key, value in
-                                      #node.consumption.items()]
-                sector = 'ALL' #max(sorted_consumption)[1]
-                # check whether load is in building
-                #branches = node.grid.graph_branches_from_node(node)
-                #if len(branches) == 1 and hasattr(branches[0][0],
-                #                                  'in_building') \
-                #        and branches[0][0].in_building \
-                # and branches[0][1]['branch'].length == 1:
-                if False:
-                    # connect load to preceding bus if is in building
-                    bus_name = branches[0][0].pypsa_bus_id
-                else:
-                    # add new bus to connect load to
-                    bus_name = node.pypsa_bus_id
-                    #buses_df = append_buses_df(buses_df, grid, node)
-                    #if return_time_varying_data:
-                    #    bus_v_mag_set_df = \
-                    #        append_bus_v_mag_set_df(bus_v_mag_set_df, node)
-                # add load
-                load = pd.Series({'name': repr(node), 'bus': bus_name,
-                                  'peak_load': node.peak_load/1e3,
-                                  'annual_consumption': 0,
-                                  'sector': sector})
-                loads_df = loads_df.append(load, ignore_index=True)
-                buses_df = append_buses_df(buses_df, grid, node)
-                # add time varying elements
-                if return_time_varying_data:
-                    bus_v_mag_set_df = \
-                        append_bus_v_mag_set_df(bus_v_mag_set_df, node)
-                    load_pq_set_df = \
-                        append_load_pq_set_df(conf, load_pq_set_df, node)
+                for sector in ["residential", "cts", "industrial"]:
+                    if sector == "residential":
+                        number_households = node.number_households
+                    else:
+                        number_households = 0
+                    sector_peak_load = getattr(node, f"peak_load_{sector}")
+                    if sector_peak_load:
+                        load = pd.Series({'name': f"{repr(node)}_{sector}",
+                                          'bus': bus_name,
+                                          'p_set': sector_peak_load/1e3,
+                                          'number_households': int(number_households),
+                                          'building_id': node.building_id,
+                                          'annual_consumption': annual_consumption,
+                                          'sector': sector,
+                                          'type': node.type})
+                        loads_df = loads_df.append(load, ignore_index=True)
+                        # add time varying elements
+                        if return_time_varying_data:
+                            load_pq_set_df = append_load_pq_set_df(
+                                conf,
+                                load_pq_set_df,
+                                node,
+                                node_name=f"{repr(node)}_{sector}"
+                            )
 
             # aggregated load at hv/mv substation
             elif isinstance(node, LVLoadAreaCentreDing0):
@@ -549,16 +596,14 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                                            transformer_df)
                     if return_time_varying_data:
                         loads_df, generators_df, load_pq_set_df, \
-                        generator_pq_set_df = \
-                            append_load_areas_to_df(loads_df, generators_df,
-                                                    node,
-                                                    return_time_varying_data,
-                                                    conf=conf,
-                                                    load_pq_set_df=
-                                                    load_pq_set_df,
-                                                    generator_pq_set_df=
-                                                    generator_pq_set_df,
-                                                    node_name=node_name)
+                        generator_pq_set_df = append_load_areas_to_df(
+                                loads_df, generators_df,
+                                node,
+                                return_time_varying_data,
+                                conf=conf,
+                                load_pq_set_df=load_pq_set_df,
+                                generator_pq_set_df=generator_pq_set_df,
+                        )
                     else:
                         loads_df, generators_df = \
                             append_load_areas_to_df(loads_df, generators_df,
@@ -721,7 +766,7 @@ def append_load_pq_set_df(conf, load_pq_set_df, node, node_name = None,
     node: obj:node object of generator
     node_name: :obj:`str`
         Optional parameter for name of load
-    peak_load: :obj:`float`
+    p_set: :obj:`float`
         Optional parameter for peak_load
 
     Returns
@@ -764,11 +809,14 @@ def append_bus_v_mag_set_df(bus_v_mag_set_df, node, node_name = None):
     """
     if node_name is None:
         node_name = node.pypsa_bus_id
-    bus_v_mag_set_df = bus_v_mag_set_df.append(pd.Series({'name': node_name,
-                                                          'temp_id': 1,
-                                                          'v_mag_pu_set':
+
+    # due to lv loads may have same connection bus, just append once
+    if node_name not in bus_v_mag_set_df['name'].tolist():
+        bus_v_mag_set_df = bus_v_mag_set_df.append(pd.Series({'name': node_name,
+                                                              'temp_id': 1,
+                                                              'v_mag_pu_set':
                                                               [1, 1]}),
-                                               ignore_index=True)
+                                                   ignore_index=True)
     return bus_v_mag_set_df
 
 
@@ -787,7 +835,7 @@ def append_load_areas_to_df(loads_df, generators_df, node,
     Parameters
     ----------
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
-        Dataframe of loads with entries name, bus, peak_load,
+        Dataframe of loads with entries name, bus, p_set,
         annual_consumption, sector
     generators_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of generators with entries name, bus, control, p_nom, type,
@@ -803,7 +851,7 @@ def append_load_areas_to_df(loads_df, generators_df, node,
     Returns
     -------
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
-        Dataframe of loads with entries name, bus, peak_load,
+        Dataframe of loads with entries name, bus, p_set,
         annual_consumption, sector
     generators_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of generators with entries name, bus, control, p_nom, type,
@@ -852,9 +900,29 @@ def append_load_areas_to_df(loads_df, generators_df, node,
 
 
     # Handling of loads
-    sectors = ['agricultural', 'industrial', 'residential', 'retail']
+    # egon data buildings do not contain consumptional data
+    # sector specific consumption is not considered (at the moment)
+    if consider_consumption:
+        sectors = ['agricultural', 'industrial', 'residential', 'retail']
+    else:
+        sectors = [None]
+
     for sector in sectors:
-        if (getattr(load_area, '_'.join(['peak_load', sector]))!= 0):
+        if sector:
+            if (getattr(load_area, '_'.join(['peak_load', sector]))!= 0):
+                if return_time_varying_data:
+                    loads_df, load_pq_set_df = \
+                        append_load_area_to_load_df(sector, load_area, loads_df,
+                                                    name_bus, name_load,
+                                                    return_time_varying_data,
+                                                    conf=conf,
+                                                    load_pq_set_df=load_pq_set_df)
+                else:
+                    loads_df = \
+                        append_load_area_to_load_df(sector, load_area,
+                                                    loads_df, name_bus, name_load)
+        # return data without sector specific resolution (egon data buildings)
+        else:
             if return_time_varying_data:
                 loads_df, load_pq_set_df = \
                     append_load_area_to_load_df(sector, load_area, loads_df,
@@ -883,11 +951,11 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
     ----------
     sector: str
         load sector: 'agricultural', 'industrial', 'residential' or 'retail'
-    load_are: :obj: ding0 region
+    load_area: :obj: ding0 region
         LVGridDistrictDing0 or LVLoadAreaDing0, load area of which load is to
         be aggregated and added
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
-        Dataframe of loads with entries name, bus, peak_load,
+        Dataframe of loads with entries name, bus, p_set,
         annual_consumption and sector
     name_bus: :obj:`str`
         name of bus to which load is connected
@@ -902,15 +970,35 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
     Returns
     -------
     loads_df: :pandas:`pandas.DataFrame<dataframe>`
-        Dataframe of loads with entries name, bus, peak_load,
+        Dataframe of loads with entries name, bus, p_set,
         annual_consumption and sector
     load_pq_set_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of loads with entries name, temp_id, p_set and q_set,
         only exported if return_time_varying_data is True
     """
-    # get annual consumption
-    consumption = 0
-    if False:  # Robert there is no consumption known. TODO. set comsumption.
+    # if egon data buildings used, no sector-specific consumptional data are available
+    # consumption is set to None
+    if not sector:
+
+        consumption = None
+        peak_load = load_area.peak_load
+        load = pd.Series(
+            {'name': name_load, 'bus': name_bus,
+             'p_set': peak_load / 1e3,
+             'annual_consumption': consumption, 'sector': sector})
+        loads_df = loads_df.append(load, ignore_index=True)
+        # handle time varying data
+        if return_time_varying_data:
+            conf = kwargs.get('conf', None)
+            load_pq_set_df = kwargs.get('load_pq_set_df', None)
+            load_pq_set_df = append_load_pq_set_df(conf, load_pq_set_df,
+                                                   None, name_load, peak_load)
+            return loads_df, load_pq_set_df
+        else:
+            return loads_df
+
+    else:
+        # get annual consumption
         if isinstance(load_area, LVGridDistrictDing0):
             consumption = getattr(load_area, '_'.join(['sector_consumption',
                                                        sector]))
@@ -919,31 +1007,23 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
             for lv_grid_district in load_area.lv_grid_districts():
                 consumption += getattr(lv_grid_district,
                                        '_'.join(['sector_consumption', sector]))
-    # create and append load to df
-    name_load = '_'.join([name_load, sector])
-    peak_load = getattr(load_area, '_'.join(['peak_load', sector]))
-    # new, it may be, that peak_load or consumption is None
-    # then set 0
-    if not peak_load:
-        peak_load = 0
-        logger.info(f'name_load: {name_load} has peak_load=None')
-    if not consumption:
-        consumption = 0
-        logger.info(f'name_load: {name_load} has peak_load=None')
-    load = pd.Series(
-        {'name': name_load, 'bus': name_bus,
-         'peak_load': peak_load/1e3,
-         'annual_consumption': consumption/1e3, 'sector': sector})
-    loads_df = loads_df.append(load, ignore_index=True)
-    # handle time varying data
-    if return_time_varying_data:
-        conf = kwargs.get('conf', None)
-        load_pq_set_df = kwargs.get('load_pq_set_df', None)
-        load_pq_set_df = append_load_pq_set_df(conf, load_pq_set_df,
-                                               None, name_load, peak_load)
-        return loads_df,load_pq_set_df
-    else:
-        return loads_df
+        # create and append load to df
+        name_load = '_'.join([name_load, sector])
+        peak_load = getattr(load_area, '_'.join(['peak_load', sector])) # TODO change sctor specific load allocation
+        load = pd.Series(
+            {'name': name_load, 'bus': name_bus,
+             'p_set': peak_load/1e3,
+             'annual_consumption': consumption/1e3, 'sector': sector})
+        loads_df = loads_df.append(load, ignore_index=True)
+        # handle time varying data
+        if return_time_varying_data:
+            conf = kwargs.get('conf', None)
+            load_pq_set_df = kwargs.get('load_pq_set_df', None)
+            load_pq_set_df = append_load_pq_set_df(conf, load_pq_set_df,
+                                                   None, name_load, peak_load)
+            return loads_df, load_pq_set_df
+        else:
+            return loads_df
 
 
 def append_generators_df(generators_df, node, name_bus = None):
@@ -972,11 +1052,18 @@ def append_generators_df(generators_df, node, name_bus = None):
         weather_cell_id = np.NaN
     if name_bus is None:
         name_bus = node.pypsa_bus_id
-    generator = pd.Series({'name':repr(node),
-                           'bus': name_bus, 'control':'PQ',
-                           'p_nom':(node.capacity * node.capacity_factor)/1e3,
-                           'type':node.type, 'subtype':node.subtype,
-                           'weather_cell_id':weather_cell_id})
+    generator = pd.Series(
+        {
+            'name': repr(node),
+            'bus': name_bus,
+            'control': 'PQ',
+            'p_nom': (node.capacity * node.capacity_factor)/1e3,
+            'type': node.type,
+            'subtype': node.subtype,
+            'weather_cell_id': weather_cell_id,
+            "source_id": node.gens_id
+        }
+    )
     generators_df = generators_df.append(generator, ignore_index=True)
     return generators_df
 
@@ -1094,7 +1181,8 @@ def append_transformers_df(transformers_df, trafo, type = np.NaN,
                            'bus0': bus0,
                            'bus1': bus1,
                            'x': trafo.x_pu, 'r': trafo.r_pu,
-                           's_nom': trafo.s_max_a/1e3, 'type': type,
+                           's_nom': trafo.s_max_a/1e3,
+                           'type': type,
                            'type_info': type_info})
     transformers_df = transformers_df.append(trafo_tmp, ignore_index=True)
     return transformers_df
@@ -1122,7 +1210,7 @@ def edges_to_dict_of_dataframes(edges, lines_df, buses_df):
 
     # iterate over edges and add them one by one
     for edge in edges:
-        if not edge['branch'].connects_aggregated:
+        if not edge['branch'].connects_aggregated: #TODO
             lines_df = append_lines_df(edge, lines_df, buses_df)
 
     return {'Line': lines_df.set_index('name')}
@@ -1138,7 +1226,7 @@ def append_lines_df(edge, lines_df, buses_df):
         Edge of Ding0.Network graph
     lines_df: :pandas:`pandas.DataFrame<dataframe>`
             Dataframe of lines with entries name, bus0, bus1, length, x, r,
-            s_nom, num_parallel, type, geometry  # geometry is new for visu
+            s_nom, num_parallel, type, geometry
     buses_df: :pandas:`pandas.DataFrame<dataframe>`
         Dataframe of buses with entries name, v_nom, geom, mv_grid_id,
         lv_grid_id, in_building
@@ -1149,6 +1237,9 @@ def append_lines_df(edge, lines_df, buses_df):
             Dataframe of lines with entries name, bus0, bus1, length, x, r,
             s_nom, num_parallel, type
     """
+    if edge["branch"].helper_component:
+        return lines_df
+
     freq = cfg_ding0.get('assumptions', 'frequency')
     omega = 2 * pi * freq
     # set grid_ids
@@ -1165,7 +1256,6 @@ def append_lines_df(edge, lines_df, buses_df):
     if (isinstance(edge['branch'].type['L_per_km'], Series)):
         x_per_km = omega * edge['branch'].type['L_per_km'].values[0] * 1e-3
     else:
-
         x_per_km = omega * edge['branch'].type['L_per_km'] * 1e-3
     if isinstance(edge['branch'].type['R_per_km'], Series):
         r_per_km = edge['branch'].type['R_per_km'].values[0]
@@ -1180,6 +1270,9 @@ def append_lines_df(edge, lines_df, buses_df):
                 edge['branch'].type['U_n']/unitconversion
     # get lengths of line
     length = edge['branch'].length / 1e3
+    # Add minimal length of 1m
+    if length < 0.001:
+        length = 0.001
     #Todo: change into same format
     if 'name' in edge['branch'].type:
         type = edge['branch'].type['name']
@@ -1196,21 +1289,17 @@ def append_lines_df(edge, lines_df, buses_df):
     else:
         name_bus1 = edge['adj_nodes'][1].pypsa_bus_id
 
-    # check if line is to be added to lines_df
-    add_line = _check_branch_for_in_building_buses(buses_df, edge,
-                                                   name_bus0, name_bus1)
+    line = pd.Series({'name': repr(edge['branch']),
+                      'bus0': name_bus0,
+                      'bus1': name_bus1,
+                      'x': x_per_km * length, 'r':r_per_km * length,
+                      's_nom': s_nom, 'length': length,
+                      'num_parallel': edge['branch'].num_parallel,
+                      'kind': edge['branch'].kind,
+                      'type_info': type,
+                      'geometry': edge['branch'].geometry})
+    lines_df = lines_df.append(line, ignore_index=True)
 
-    # create new line
-    if add_line:
-        line = pd.Series({'name': repr(edge['branch']),
-                          'bus0': name_bus0,
-                          'bus1': name_bus1,
-                          'x': x_per_km * length, 'r':r_per_km * length,
-                          's_nom': s_nom, 'length': length,
-                          'num_parallel': 1, 'kind': edge['branch'].kind,
-                          'type_info': type,
-                          'geometry': edge['branch'].geometry})
-        lines_df = lines_df.append(line, ignore_index=True)
     return lines_df
 
 
@@ -1460,20 +1549,28 @@ def data_integrity(components, components_data):
 
     data_check = {}
 
-    for comp in ['Bus', 'Load']:  # list(components_data.keys()):
+    for comp in ['Bus', 'Load', 'Generator']:  # list(components_data.keys()):
         data_check[comp] = {}
-        data_check[comp]['length_diff'] = len(components[comp]) - len(
-            components_data[comp])
+        if comp == "Bus":
+            # HV Bus is not in components but in components_data
+            offset = 1
+        elif comp == "Generator":
+            # Slack Generator is in components but not in components_data
+            offset = -1
+        else:
+            offset = 0
+        data_check[comp]['length_diff'] = (
+                len(components[comp]) - len(components_data[comp]) + offset
+        )
 
     # print short report to user and exit program if not integer
     for comp in list(data_check.keys()):
         if data_check[comp]['length_diff'] != 0:
-            logger.exception("{comp} data is invalid. You supplied {no_comp} "
+            logger.error("{comp} data is invalid. You supplied {no_comp} "
                 "{comp} objects and {no_data} datasets. Check you grid data "
                 "and try again".format(comp=comp,
                                      no_comp=len(components[comp]),
                                      no_data=len(components_data[comp])))
-            sys.exit(1)
 
 
 def _check_integrity_of_pypsa(pypsa_network):

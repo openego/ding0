@@ -19,12 +19,12 @@ from shapely.geometry import LineString, Point #, MultiLineString, Polygon # PAU
 #from shapely.ops import linemerge
 #from shapely.wkt import dumps as wkt_dumps
 
-from config.config_lv_grids_osm import get_config_osm 
+from ding0.config.config_lv_grids_osm import get_config_osm
 
 #from ding0.grid.lv_grid.db_conn_load_osm_data import get_osm_ways
 
-#import logging
-#logger = logging.getLogger('ding0')
+import logging
+logger = logging.getLogger(__name__)
 
 
 
@@ -54,8 +54,8 @@ def assign_nearest_nodes_to_buildings(graph_subdiv, buildings_w_loads_df):
     assign nearest nodes of graph to buildings by euclidean distance.
     """
 
-    X = buildings_w_loads_df['x'].tolist()
-    Y = buildings_w_loads_df['y'].tolist()
+    X = buildings_w_loads_df["geometry"].apply(lambda point: point.x)
+    Y = buildings_w_loads_df["geometry"].apply(lambda point: point.y)
 
     buildings_w_loads_df['nn'], buildings_w_loads_df['nn_dist'] = ox.nearest_nodes(
         graph_subdiv, X, Y, return_dist=True)
@@ -69,24 +69,24 @@ def identify_street_loads(buildings_w_loads_df, graph, get_number_households=Fal
     """
     identify street_loads
     street_loads are grouped for lv level only.
-    capacity of loads of mv level are not included. 
+    capacity of loads of mv level are not included.
     """
-    
+
     mv_lv_level_threshold = get_config_osm('mv_lv_threshold_capacity')
-    
+
     # keep only street_load_nodes and endpoints
     loads = buildings_w_loads_df.copy()
 
     loads.loc[loads.capacity > mv_lv_level_threshold, 'capacity'] = 0
     street_loads = loads.groupby(['nn']).capacity.sum().reset_index().set_index('nn')
-    
+
     if get_number_households:
         household_loads = loads.groupby(['nn']).number_households.sum().reset_index().set_index('nn')
         return street_loads, household_loads
-    
+
     else:
-    
-        return street_loads
+
+        return street_loads, pd.DataFrame(columns=["number_households"])
 
 
 
@@ -169,15 +169,16 @@ def connect_mv_loads_to_graph(cluster_graph, osm_id_building, row):
     For mv loads, add edge from building to graph instead
     keeping trafo at nearest node of building in graph.
     """
+    # row geometry is the coordinate of the building
     # set values for mv
     name = osm_id_building
-    x = row.raccordement_building.x
-    y = row.raccordement_building.y
+    x = row.geometry.x
+    y = row.geometry.y
 
     # add node to graph
     cluster_graph.add_node(name,x=x,y=y, node_type='non_synthetic', cluster=None)
     # add edge to graph
-    line = LineString([row.raccordement_building, row.nn_coords])
+    line = LineString([row.geometry, row.nn_coords])
     cluster_graph.add_edge(name, row.nn,
                            geometry=line,length=line.length,highway='trafo_graph_connect')
     cluster_graph.add_edge(row.nn, name,
@@ -201,10 +202,6 @@ def get_lvgd_id(la_id_db, cluster_id, max_n_digits=10):
     need_to_fill_n_digits = max_n_digits - len(la_id)
 
     return int(la_id + lvgd_id.zfill(need_to_fill_n_digits))
-
-import logging
-logger = logging.getLogger('ding0')
-
 
 
 '''

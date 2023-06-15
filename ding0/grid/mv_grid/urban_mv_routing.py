@@ -37,7 +37,7 @@ from shapely.geometry import LineString
 #from ding0.tools.plots import plot_mv_topology
 from ding0.grid.mv_grid.urban_mv_connect import mv_urban_connect
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 def osm_graph_to_routing_specs_urban(agg_load_area, core_graph, depot_node, nodes_pos, nodes_demands):
     
@@ -256,12 +256,6 @@ def solve(mv_grid, debug=False, anim=None):
             nodes_demands = {node: int(node.peak_load /
                                        cfg_ding0.get('assumptions', 'cos_phi_load')) for node in supply_nodes}
 
-            # workaround: if peak_load is zero, remove station / load from nodes demands and graph
-            nodes_unloaded = {node: pl for node, pl in nodes_demands.items() if pl == 0}  # TODO: do this in STEP 1
-            for node in nodes_unloaded:
-                nodes_demands.pop(node, None)
-                mv_grid.graph.remove_node(node)
-
             ##### prepare osm graph for routing and stub connections
 
             # relabel street_graph
@@ -269,7 +263,7 @@ def solve(mv_grid, debug=False, anim=None):
             street_graph, ding0_nodes_map = relabel_graph_nodes(la, cable_dists=None)
 
             # add mv_station to street_graph
-            # reduce street_graph to least necessary size (supply_nodes, mv_station are kept in graph)
+            # reduce street_graph to the least necessary size (supply_nodes, mv_station are kept in graph)
             street_graph = conn_ding0_obj_to_osm_graph(street_graph, mv_station)
             street_graph = reduce_graph_for_dist_matrix_calc(street_graph,
                                                              list(ding0_nodes_map.values()) + [str(mv_station)])
@@ -309,18 +303,10 @@ def solve(mv_grid, debug=False, anim=None):
             solution = savings_solver.solve(RoutingGraph, timeout)
             # 12.4 transfer solution to ding0 graph
             mv_grid, osmid_branch_dict = routing_solution_to_ding0_graph(mv_grid, core_graph, solution)
-            # 12.5 for plotting #TODO delete
-            #plot_mv_topology(mv_grid, subtitle='Routing completed', filename='berlin_route')
-
             ##### urban mv connect
             mv_grid = mv_urban_connect(mv_grid, street_graph, core_graph, stub_graph, stub_dict, osmid_branch_dict)
-            #plot_mv_topology(mv_grid, subtitle='Routing completed', filename='berlin_stub')
+            # remove load area centre (has been shifted to mv_routing)
 
-            # remove load area centre
-            if mv_grid.graph.has_node(la_centre):
-                mv_grid.graph.remove_node(la_centre)
-
-    
     return mv_grid.graph
 
 

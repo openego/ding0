@@ -3,9 +3,9 @@ Graph processing.
 """
 from geoalchemy2.shape import to_shape
 
-from config.config_lv_grids_osm import get_config_osm 
+from ding0.config.config_lv_grids_osm import get_config_osm
 import logging
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 import pandas as pd
 from itertools import combinations
@@ -16,6 +16,9 @@ import osmnx as ox
 import geopandas as gpd
 from shapely.geometry import LineString, Point, MultiLineString, Polygon
 from shapely.ops import linemerge
+
+from scipy.spatial.distance import cdist
+import numpy as np
 
 # src: https://stackoverflow.com/questions/28246425/python-convert-a-list-of-nested-tuples-into-a-dict
 flatten = lambda *n: (e for a in n for e in (flatten(*a) if isinstance(a, (tuple, list)) else (a,)))
@@ -32,7 +35,7 @@ def update_ways_geo_to_shape(ways_sql_df):
     return ways_sql_df
 
 
-def build_graph_from_ways(ways):
+def build_graph_from_ways(ways_df):
 
     """ 
     Build graph based on osm ways
@@ -40,23 +43,24 @@ def build_graph_from_ways(ways):
     """
     # init a graph and set srid.
     graph = nx.MultiGraph()
-    graph.graph["crs"] = 'epsg:'+str(get_config_osm('srid'))
+    graph.graph["crs"] = 'epsg:' + str(get_config_osm('srid'))
     graph.graph["source"] = 'osm'
 
-    for w in ways:
+    for index, osm_id, nodes, geometry, highway, length_segments in ways_df.itertuples():
         # add edges
         ix = 0
-        for node in w.nodes[:-1]:
-            # add_edge(u,v,geometry=line,length=leng,highway=highway,osmid=osmid)
-            graph.add_edge(w.nodes[ix], w.nodes[ix+1], length=w.length_segments[ix], 
-                                  osmid=w.osm_id, highway=w.highway)
+        for node in nodes[:-1]:
+            graph.add_edge(nodes[ix],
+                           nodes[ix + 1],
+                           length=length_segments[ix],
+                           osmid=osm_id,
+                           highway=highway)
             ix += 1
 
         # add coords
         ix = 0
-        coords_list = list(to_shape(w.geometry).coords)
-        
-        for node in w.nodes:
+        coords_list = list(geometry)
+        for node in nodes:
             graph.nodes[node]['x'] = coords_list[ix][0]
             graph.nodes[node]['y'] = coords_list[ix][1]
             graph.nodes[node]['node_type'] = 'non_synthetic'
@@ -64,8 +68,8 @@ def build_graph_from_ways(ways):
             ix += 1
 
     # convert undirected graph to digraph due to truncate_graph_polygon
-    graph = graph.to_directed()  
-    
+    graph = graph.to_directed()
+
     return graph
 
 
@@ -153,7 +157,7 @@ def compose_graph(outer_graph, graph_subdiv):
     composed_graph = nx.compose(outer_graph, graph_subdiv)
 
     if not nx.is_weakly_connected(composed_graph):
-        logger.warning('composed_graph not connected')
+        logger.warning('Composed_graph not connected.')
         composed_graph = ox.utils_graph.get_largest_component(composed_graph)
 
     return composed_graph
@@ -168,6 +172,69 @@ def nodes_connected_component(G, inner_node_list):
     G = nx.MultiDiGraph(G.subgraph(largest_cc))
     return G
 
+def connect_graph_components(graph, synthetic_edges, method='all_ccs'):
+
+    # get all connected components in a nested list and sort for reproducible results
+    conn_comps = [list(c) for c in nx.weakly_connected_components(graph)]
+    conn_comps = sorted(conn_comps, key=lambda x: x[0])
+
+    # get largest connected component
+    largest_cc = max(conn_comps, key=len)
+
+    # if just major (larger) connected components should be connected
+    if method == 'major_ccs':
+        conn_comps = [list(cc) for cc in conn_comps \
+                      if len(cc) / len(largest_cc) > get_config_osm('major_ccs_ratio_threshold')]
+
+    # delete largest connect component from components list
+    conn_comps.remove(largest_cc)
+
+    while len(conn_comps):
+
+        # flatten components_list to get unconnected node-ids
+        nodes_unconn = list(flatten(conn_comps))
+
+        # get coordinates of largest and unconnected component(s)
+        coords_largest_cc = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in largest_cc]
+        coords_unconn_ccs = [(graph.nodes[node]['x'], graph.nodes[node]['y']) for node in nodes_unconn]
+
+        # find nearest unconnected component
+        distance_array = cdist(coords_largest_cc, coords_unconn_ccs)
+        index = np.where(distance_array == distance_array.min())
+
+        # get node ids to connect synthetic edge
+        conn_node_largest_cc = largest_cc[int(index[0])]
+        conn_node_unconn_ccs = nodes_unconn[int(index[1])]
+
+        # connect both components using a synthetic edge
+        graph.add_edge(
+            conn_node_largest_cc,
+            conn_node_unconn_ccs,
+            highway="synthetic",
+            length=distance_array.min(),
+            osmid=0  # random.randint(100000000, 200000000)
+        )
+        graph.add_edge(
+            conn_node_unconn_ccs,
+            conn_node_largest_cc,
+            highway="synthetic",
+            length=distance_array.min(),
+            osmid=0  # random.randint(100000000, 200000000)
+        )
+
+        # save synthetic edges as set
+        synthetic_edges.add((conn_node_largest_cc, conn_node_unconn_ccs))
+        synthetic_edges.add((conn_node_unconn_ccs, conn_node_largest_cc))
+
+        # get nodes of synthetically connected component
+        synth_conn_cc = \
+            [cc for cc in conn_comps if conn_node_unconn_ccs in cc][0]
+
+        # update lists containing components nodes
+        largest_cc = largest_cc + synth_conn_cc
+        conn_comps.remove(synth_conn_cc)
+
+    return graph, synthetic_edges
 
 def get_fully_conn_graph(G, nlist): #nested_node_list
     """
@@ -175,12 +242,14 @@ def get_fully_conn_graph(G, nlist): #nested_node_list
     Iterating over all buffered polygon graphs
     """
 
-    poly_idx = 0 
-    G_min = truncate_graph_nodes(G, nlist, poly_idx)
+    poly_idx = 0
     max_it = len(nlist) - 1
+    synthetic_edges = set()
+    G_min = truncate_graph_nodes(G, nlist, poly_idx)
 
     if nx.number_weakly_connected_components(G_min) > 1:
 
+        G, synthetic_edges = connect_graph_components(G, synthetic_edges, method='major_ccs')
         G_c_max = nodes_connected_component(G, G_min.nodes())
         nodes_to_connect = set(G_c_max.nodes) & set(G_min.nodes)
         G_c = nodes_connected_component(G_min, G_min.nodes())
@@ -195,34 +264,34 @@ def get_fully_conn_graph(G, nlist): #nested_node_list
 
             if len(unconn_nodes) == 0:
 
-                logger.warning(f'Finding connected graph, iteration {poly_idx} of max. {max_it}.')
+                logger.debug(f'Finding connected graph, iteration {poly_idx} of max. {max_it}.')
                 break
 
             if poly_idx >= max_it:
 
-                logger.warning(f'Finding connected graph, max. iterations {max_it} trespassed. Break.')
+                G_c, synthetic_edges = connect_graph_components(G, synthetic_edges, method='all_ccs')
+                logger.debug(f'Created connected graph using synthetic edges, max. iterations {max_it} trespassed.')
                 break
 
         else:
-            logger.warning(f'Found connected graph, iteration {poly_idx} of max. {max_it}.')
-            return G_c
+            logger.debug(f'Found connected graph, iteration {poly_idx} of max. {max_it}.')
+            return G_c, synthetic_edges
 
     else:
 
-        logger.warning(f'Graph already fully connected.')
+        logger.debug(f'Graph already fully connected.')
         G_c = G_min
 
-    return G_c
+    return G_c, synthetic_edges
 
-###
-
-def split_conn_graph(conn_graph, inner_node_list):
+def split_conn_graph(conn_graph, inner_node_list, synthetic_edges):
     """
     Divide graoh in inner and outer components.
     based on plygon borders.
     """
     
     inner_graph = conn_graph.subgraph(inner_node_list).copy()
+    inner_graph.remove_edges_from(synthetic_edges)
     inner_edges = inner_graph.edges()
 
     outer_graph = conn_graph
@@ -328,7 +397,7 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
         #raise Exception("This graph has already been simplified, cannot simplify it again.")
 
     #utils.log("Begin topologically simplifying the graph...")
-    logger.info("Begin topologically simplifying the graph...")
+    logger.debug("Begin topologically simplifying the graph...")
 
     # define edge segment attributes to sum upon edge simplification
     attrs_to_sum = {"length", "travel_time"}
@@ -440,7 +509,7 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
         f"Simplified graph: {initial_node_count} to {len(G)} nodes, "
         f"{initial_edge_count} to {len(G.edges)} edges"
     )
-    logger.warning(msg)
+    logger.debug(msg)
     return G
 
 def flatten_graph_components_to_lines(G, inner_node_list):

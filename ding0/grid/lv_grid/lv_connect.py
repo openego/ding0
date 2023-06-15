@@ -12,19 +12,25 @@ __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
+import pandas as pd
 
 from ding0.core.network import BranchDing0
+from ding0.core.network.cable_distributors import LVCableDistributorDing0
+from ding0.core.network.loads import LVLoadDing0
 
 from ding0.tools import config as cfg_ding0
-from ding0.tools.geo import calc_geo_dist
+from ding0.tools.geo import calc_geo_dist, calc_edge_geometry
 from ding0.grid.tools import cable_type
 import logging
 import random
 
-logger = logging.getLogger('ding0')
+from scipy.spatial.distance import cdist
+import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
-def lv_connect_generators(lv_grid_district, graph, debug=False):
+def lv_connect_generators(mv_grid, graph, debug=False):
 
     """ Connect LV generators to LV grid
     
@@ -51,101 +57,92 @@ def lv_connect_generators(lv_grid_district, graph, debug=False):
     seed = int(cfg_ding0.get('random', 'seed'))
     random.seed(a=seed)
 
-    # generate random list (without replacement => unique elements)
-    # of loads (residential) to connect genos (P <= 30kW) to.
-    lv_loads_res = sorted(lv_grid_district.lv_grid.loads_sector(sector='res'),
-                          key=lambda _: repr(_))
-    if len(lv_loads_res) > 0:
-        lv_loads_res_rnd = (random.sample(lv_loads_res,
-                                             len(lv_loads_res)))
-    else:
-        lv_loads_res_rnd = None
+    # Get positions of all LV nodes
+    lv_nodes_df = pd.DataFrame(columns=["node", "type", "building_id", "x", "y"])
+    for mv_grid_district in mv_grid.network.mv_grid_districts():
+        for load_area in mv_grid_district.lv_load_areas():
+            for lv_grid_district in load_area.lv_grid_districts():
+                for node in lv_grid_district.lv_grid.graph.nodes():
+                    lv_nodes_df.loc[str(node)] = [
+                        node,
+                        type(node).__name__,
+                        node.building_id if isinstance(node, LVLoadDing0) else None,
+                        node.geo_data.x,
+                        node.geo_data.y
+                    ]
+    lv_stations_df = lv_nodes_df[lv_nodes_df["type"] == "LVStationDing0"]
+    lv_loads_df = lv_nodes_df[lv_nodes_df["type"] == "LVLoadDing0"]
 
-    # generate random list (without replacement => unique elements)
-    # of loads (retail, industrial, agricultural) to connect genos
-    # (30kW <= P <= 100kW) to.
-    lv_loads_ria = sorted(lv_grid_district.lv_grid.loads_sector(sector='ria'),
-                          key=lambda _: repr(_))
-    if len(lv_loads_ria) > 0:
-        lv_loads_ria_rnd = (random.sample(lv_loads_ria,
-                                             len(lv_loads_ria)))
-    else:
-        lv_loads_ria_rnd = None
+    def add_generator_to_station(generator, station):
+        grid = station.grid
+        graph = grid.graph
 
-    for generator in sorted(lv_grid_district.lv_grid.generators(), key=lambda x: repr(x)):
+        branch_shp, branch_length = calc_edge_geometry(generator, station)
+        # Calculate length with detour factor
+        branch_length = calc_geo_dist(generator, station)
+        branch_type = cable_type(
+            generator.capacity / (cable_lf * cos_phi_gen),
+            v_nom,
+            lv_grid_district.lv_grid.network.static_data['LV_cables'])
 
-        # generator is of v_level 6 -> connect to LV station
+        branch = BranchDing0(length=branch_length,
+                             kind='cable',
+                             grid=grid,
+                             type=branch_type,
+                             geometry=branch_shp)
+
+        generator.lv_grid = grid
+        generator.lv_load_area = grid.grid_district.lv_load_area
+
+        graph.add_edge(generator, station, branch=branch)
+        grid.add_generator(generator)
+
+    def add_generator_to_node(generator, node_to_connect):
+        grid = node_to_connect.grid
+        graph = grid.graph
+
+        # Add helper cable
+        branch = BranchDing0(
+            grid=grid,
+            id_db=f"helper_{generator}",
+            helper_component=True,
+        )
+
+        if isinstance(node_to_connect, LVLoadDing0):
+            cable_distributor = list(graph.neighbors(node_to_connect))[0]
+        elif isinstance(node_to_connect, LVCableDistributorDing0):
+            cable_distributor = node_to_connect
+        else:
+            raise ValueError("False node as connection target!")
+
+        generator.lv_grid = grid
+        generator.lv_load_area = grid.grid_district.lv_load_area
+        generator.geo_data = cable_distributor.geo_data
+
+        grid.add_generator(generator)
+        graph.add_edge(cable_distributor, generator, branch=branch)
+
+    def get_nearest_nodes_of_generator(nearest_node, generator):
+        distance = cdist(
+            nearest_node.loc[:, ["x", "y"]],
+            [(generator.geo_data.x, generator.geo_data.y)],
+            'euclidean'
+        )
+        nearest_node = nearest_node.iloc[np.where(distance == distance.min())[0][0]]["node"]
+        return nearest_node
+
+    for generator in sorted(mv_grid.lv_generators_to_connect, key=lambda x: repr(x)):
         if generator.v_level == 6:
-            lv_station = lv_grid_district.lv_grid.station()
-
-            branch_length = calc_geo_dist(generator, lv_station)
-            branch_type = cable_type(
-                generator.capacity / (cable_lf * cos_phi_gen),
-                v_nom,
-                lv_grid_district.lv_grid.network.static_data['LV_cables'])
-
-            branch = BranchDing0(length=branch_length,
-                                 kind='cable',
-                                 grid = lv_grid_district.lv_grid,
-                                 type=branch_type)
-
-            graph.add_edge(generator, lv_station, branch=branch)
-
-        # generator is of v_level 7 -> assign geno to load
+            nearest_station = get_nearest_nodes_of_generator(lv_stations_df, generator)
+            add_generator_to_station(generator, nearest_station)
         elif generator.v_level == 7:
-
-            # connect genos with P <= 30kW to residential loads, if available
-            if (generator.capacity <= 30) and (lv_loads_res_rnd is not None):
-                if len(lv_loads_res_rnd) > 0:
-                    lv_load = lv_loads_res_rnd.pop()
-                # if random load list is empty, create new one
-                else:
-                    lv_loads_res_rnd = (random.sample(lv_loads_res,
-                                                     len(lv_loads_res))
-                                       )
-                    lv_load = lv_loads_res_rnd.pop()
-
-                # get cable distributor of building
-                lv_conn_target = list(graph.neighbors(lv_load))[0]
-
-            # connect genos with 30kW <= P <= 100kW to residential loads
-            # to retail, industrial, agricultural loads, if available
-            elif (generator.capacity > 30) and (lv_loads_ria_rnd is not None):
-                if len(lv_loads_ria_rnd) > 0:
-                    lv_load = lv_loads_ria_rnd.pop()
-                # if random load list is empty, create new one
-                else:
-                    lv_loads_ria_rnd = (random.sample(lv_loads_ria,
-                                                         len(lv_loads_ria))
-                                           )
-                    lv_load = lv_loads_ria_rnd.pop()
-
-                # get cable distributor of building
-                lv_conn_target = list(graph.neighbors(lv_load))[0]
-
-            # fallback: connect to station
+            if (
+                    generator.building_id
+                    and not lv_loads_df[lv_loads_df["building_id"] == generator.building_id].empty
+            ):
+                node_to_connect = lv_loads_df[lv_loads_df["building_id"] == generator.building_id]["node"].values[0]
             else:
-                lv_conn_target = lv_grid_district.lv_grid.station()
-
-                logger.warning(
-                    'No valid conn. target found for {}.'
-                    'Connected to {}.'.format(
-                        repr(generator),
-                        repr(lv_conn_target)
-                    ))
-
-            # determine appropriate type of cable
-            branch_type = cable_type(
-                generator.capacity / (cable_lf * cos_phi_gen),
-                v_nom,
-                lv_grid_district.lv_grid.network.static_data['LV_cables'])
-
-            # connect to cable dist. of building
-            branch = BranchDing0(length=1,
-                                 kind='cable',
-                                 grid=lv_grid_district.lv_grid,
-                                 type=branch_type)
-
-            graph.add_edge(generator, lv_conn_target, branch=branch)
-
-    return graph
+                node_to_connect = get_nearest_nodes_of_generator(lv_loads_df, generator)
+            add_generator_to_node(generator, node_to_connect)
+        else:
+            raise ValueError("False Voltage Level!")

@@ -30,7 +30,7 @@ import osmnx as ox
 from shapely.geometry import LineString, Point
 
 
-logger = logging.getLogger('ding0')
+logger = logging.getLogger(__name__)
 
 def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, osmid_branch_dict):
 

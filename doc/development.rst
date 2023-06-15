@@ -113,3 +113,20 @@ This suite will run three tests:
 
 * Compare the results of two fresh runs of ding0 in district [3545].
 
+Database integration
+====================
+
+Different databases can be used. All communication between ding0 and the used database happens in
+`ding0/tools/egon_data_integration.py`. The function to start a session is in `ding0/tools/database.py`.
+Start the session with a with statement:
+
+.. code-block:: python
+
+    from ding0.tools import database
+    from ding0.core import NetworkDing0
+    with database.session_scope() as session:
+        nd = NetworkDing0(name="network", session=session)
+
+The Object-relational mapping is done in `core.NetworkDing0.import_orm`. The ORM uses sqlalchemy and saio. The mapping
+is configured in `ding0/config/config_db_tables.cfg`. You can select there the database type
+(model_draft/versioned/local) and submit your local database credentials.

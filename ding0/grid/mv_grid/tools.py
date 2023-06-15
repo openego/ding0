@@ -89,13 +89,12 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             # of neighboring nodes
             diff2 = abs(sum(node_peak_data[0:position+1]) -
                         sum(node_peak_data[position+1:len(node_peak_data)]))
-            if diff2 < diff_min:
+            if diff2 < diff_min or position == 0:
                 node2 = ring[position+1]
             else:
                 node2 = ring[position-1]
         else:
             node2 = ring[position-1]
-
         circ_breaker.branch = mv_grid.graph.adj[node_cb][node2]['branch']
         circ_breaker.branch_nodes = (node_cb, node2)
         circ_breaker.switch_node = node_cb
@@ -131,8 +130,6 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             # node is LV station -> get peak load and peak generation
             elif isinstance(node, MVLoadDing0):
                 nodes_peak_load.append(node.peak_load / cos_phi_load)
-                #nodes_peak_generation.append(
-                #    node.peak_generation / cos_phi_feedin) # TODO include feedin for mv loads
 
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
             elif isinstance(node, CableDistributorDing0):
@@ -141,18 +138,18 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
                 nodes_subtree_peak_generation = 0
 
                 for node_subtree in nodes_subtree:
-
+                    # node is MVLoad -> get peak load
+                    if isinstance(node, MVLoadDing0):
+                        nodes_subtree_peak_load += node_subtree.peak_load / cos_phi_load
                     # node is LV station -> get peak load and peak generation
-                    if isinstance(node_subtree, LVStationDing0):
-                        nodes_subtree_peak_load += node_subtree.peak_load / \
-                                                   cos_phi_load
-                        nodes_subtree_peak_generation += node_subtree.peak_generation / \
-                                                         cos_phi_feedin
-
+                    elif isinstance(node_subtree, LVStationDing0):
+                        nodes_subtree_peak_load += node_subtree.peak_load / cos_phi_load
+                        nodes_subtree_peak_generation += node_subtree.peak_generation / cos_phi_feedin
                     # node is LV station -> get peak load and peak generation
-                    if isinstance(node_subtree, GeneratorDing0):
-                        nodes_subtree_peak_generation += node_subtree.capacity / \
-                                                         cos_phi_feedin
+                    elif isinstance(node_subtree, GeneratorDing0):
+                        nodes_subtree_peak_generation += node_subtree.capacity / cos_phi_feedin
+                    else:
+                        TypeError("False node type!")
 
                 nodes_peak_load.append(nodes_subtree_peak_load)
                 nodes_peak_generation.append(nodes_subtree_peak_generation)
@@ -179,14 +176,13 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         diff_min = 10e9
 
         # if none of the nodes is of the type LVStation, a switch
-        # disconnecter will be installed anyways.
+        # disconnecter will be installed anyway.
         if any([isinstance(n, LVStationDing0) for n in ring]):
             has_lv_station = True
         else:
             has_lv_station = False
-            logging.debug("Ring {} does not have a LV station. "
-                          "Switch disconnecter is installed at arbitrary "
-                          "node.".format(ring))
+            logging.debug(f"Ring {ring} does not have a LV station. "
+                          f"Switch disconnecter is installed at arbitrary node.")
 
         # check where difference of demand/generation in two half-rings is minimal
         for ctr in range(len(node_peak_data)):
@@ -209,13 +205,11 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
         relocate_circuit_breaker()
 
         if debug:
-            logger.debug('Ring: {}'.format(ring))
-            logger.debug('Circuit breaker {0} was relocated to edge {1} '
-                  '(position on route={2})'.format(
-                    circ_breaker, repr(circ_breaker.branch), position)
-                )
-            logger.debug('Peak load sum: {}'.format(sum(nodes_peak_load)))
-            logger.debug('Peak loads: {}'.format(nodes_peak_load))
+            logger.debug(f'Ring: {ring}')
+            logger.debug(f'Circuit breaker {circ_breaker} was relocated to edge '
+                         f'{repr(circ_breaker.branch)} (position on route={position})')
+            logger.debug(f'Peak load sum: {sum(nodes_peak_load)}')
+            logger.debug(f'Peak loads: {nodes_peak_load}')
 
 from shapely.ops import linemerge
 from shapely.geometry import Point, LineString
@@ -237,21 +231,22 @@ def get_edge_tuples_from_path(G, path_list):
     return edge_path
 
 
-def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=False):
-    
-    sp = nx.shortest_path(osm_graph, str(node1), str(node2), weight='length')
+def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=False, nodes_as_str=True):
+    if nodes_as_str:
+        node1, node2 = str(node1), str(node2)
+
+    sp = nx.shortest_path(osm_graph, node1, node2, weight='length')
     edge_path = get_edge_tuples_from_path(osm_graph, sp)
     line_shp = linemerge([osm_graph.edges[edge]['geometry'] for edge in edge_path])
-    
-    if line_shp.is_empty: # in case of route_length == 1
-        line_shp = osm_graph.edges[str(node1), str(node2), 0]['geometry']
-    
+
+    if line_shp.is_empty:  # in case of route_length == 1
+        line_shp = osm_graph.edges[node1, node2, next(iter(osm_graph.get_edge_data(node1, node2).keys()))]['geometry']  # TODO make universal
+
     line_length = line_shp.length
-    
+
     if line_length == 0:
         line_length = 1
-        logger.warning('Geo distance is zero, check objects\' positions. '
-                       'Distance is set to 1m')
+        logger.warning('Geo distance is zero, check objects positions. Distance is set to 1m')
 
     if return_path:
         return line_shp, line_length, sp
@@ -269,8 +264,7 @@ def get_shortest_path_shp_multi_target(G, source, targets):
     # make sure length is greater 1m
     if line_length == 0:
         line_length = 1
-        logger.warning('Geo distance is zero, check objects\' positions. '
-                       'Distance is set to 1m')
+        logger.warning('Geo distance is zero, check objects positions. Distance is set to 1m')
 
     return line_shp, line_length, line_path
 
@@ -486,7 +480,13 @@ def check_stub_criterion(stub_dict, stub_graph):
                     load_nodes = list(tree)[1:]
 
                     for n in load_nodes:
-                        cum_load = sum([stub_data['load'][n] for n in load_nodes])
+                        cum_load = 0
+                        for inner_n in load_nodes:
+                            try:
+                                cum_load += stub_data['load'][inner_n]
+                            except KeyError:
+                                # ToDo: Find origin of problem that in load_nodes is not only loads
+                                logger.error(f"{inner_n} not in stub_data['load']")
                         if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                             comp = [root] + load_nodes
                             mod_stubs_list.append(comp)
@@ -668,18 +668,18 @@ def relabel_graph_nodes(load_area, cable_dists):
 
     # update
     street_graph = load_area.load_area_graph
-    osmids_to_str_map = {osmid: str(osmid) for osmid in street_graph.nodes}
+    osmids_to_str_map = {osmid: str(int(osmid)) for osmid in street_graph.nodes}
     street_graph = nx.relabel_nodes(street_graph, {**osmids_to_str_map, **ding0_nodes_map})
 
     return street_graph, ding0_nodes_map
 
-from shapely.geometry import MultiPoint, LinearRing
+from shapely.geometry import MultiPoint, LinearRing, GeometryCollection
 from shapely.ops import nearest_points
 import numpy as np
 from ding0.core.network.stations import MVStationDing0
 
 def update_branch_shps_settle(load_area, branches, street_graph):
-    # update branches routinh in settlement areas
+    # update branches routing in settlement areas
     # if both endpoints in la update whole shape
     # if one endpoint in la update part of shape
     # if no endpoints in la, do nothing (maybe check if part of linestring crosses same/other la
@@ -730,10 +730,24 @@ def update_branch_shps_settle(load_area, branches, street_graph):
 
             # retrieve intersection point(s) with load area polygon
             ring_shp = LinearRing(load_area.geo_area.exterior.coords)
-            intersect_shp = line_shp.intersection(ring_shp)
+            try:
+                intersect_shp = line_shp.intersection(ring_shp)
+            except:
+                from shapely.validation import explain_validity
+                print(explain_validity(line_shp))
+                from shapely.validation import make_valid
+                line_shp = make_valid(line_shp)
+                intersect_shp = line_shp.intersection(ring_shp)
+
+            # if no intersection shape found use representative point of line (rare case)
+            if intersect_shp.is_empty:
+                intersect_shp = line_shp.representative_point()
 
             # in case of more than one intersection, find first intersection point
             if not isinstance(intersect_shp, Point):
+                # in case shape is GeoCollection and has geometries apart from Points
+                if isinstance(intersect_shp, GeometryCollection):
+                    intersect_shp = MultiPoint([shp.representative_point() for shp in intersect_shp])
                 mp = MultiPoint(intersect_shp)
                 intersect_shp = nearest_points(mp, node_out.geo_data)[0]
 
