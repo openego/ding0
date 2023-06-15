@@ -13,7 +13,8 @@ __url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__ = "nesnoj, gplssm"
 
 import networkx as nx
-import nxmetis
+import pymetis
+# todo: maybe following pdf targeting networkx-metis but not sure?
 # G. Karypis, V. Kumar: A fast and high quality multilevel scheme for partitioning irregular graphs
 # https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/metis.pdf
 
@@ -37,6 +38,83 @@ from ding0.grid.lv_grid.graph_processing import simplify_graph_adv
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+
+def partition_network(network, n_parts=2, node_weight='load', edge_weight='length', contiguous=True):
+
+    args, index = convert_graph_c(network, nparts=n_parts, node_weight=node_weight, edge_weight=edge_weight)
+    args["contiguous"] = contiguous
+    args["nparts"] = n_parts
+
+    # Create partition. Always ensure edges are int!
+    edge_cut, partition = pymetis.part_graph(**args)
+
+    parts = [np.argwhere(np.array(partition) == label).ravel() for
+             label in set(partition)]
+
+    # swap index due to need: keys=id from convert_graph_c new index, values=osmid form orig graph
+    index = {v: k for k, v in index.items()}
+    parts = [[index[n] for n in part] for part in parts]  # reaplce new id from parts by old osm ids from graph
+
+    # Output partition.
+    # print(f"{n_parts}-Partition created. Parts are: {parts}.")
+
+    return edge_cut, parts
+
+
+def convert_graph_c(graph, nparts=2, node_weight=None, edge_weight=None):
+    """Partition a graph using multilevel recursive bisection or multilevel
+    multiway partitioning.
+
+    Parameters
+    ----------
+    graph : NetworkX graph
+        An undirected graph.
+
+    nparts : int
+        Number of parts to partition the graph. It should be at least 2.
+
+    node_weight : object, optional
+        The data key used to determine the weight of each node. If None, each
+        node has unit weight. Default value: 'load'.
+
+    edge_weight : object, optional
+        The data key used to determine the weight of each edge. If None, each
+        edge has unit weight. Default value: 'load'.
+
+    Returns
+    -------
+
+    TODO: Add Return
+
+    """
+
+    assert node_weight, "You need to specify a node weight"
+    assert edge_weight, "You need to specify a edge weight"
+
+    if nparts == 1:
+        return 0, [list(graph)]
+
+    if len(graph) == 0:
+        return 0, [[] for _ in range(nparts)]
+
+    index = dict(zip(graph, list(range(len(graph)))))
+    xadj = [0]
+    adjncy = []
+    for u in graph:
+        adjncy.extend(index[v] for v in graph[u])
+        xadj.append(len(adjncy))
+
+    vwgt = [graph.nodes[u].get(node_weight, 1) for u in graph]
+    if all(w == vwgt[0] for w in vwgt):
+        vwgt = None
+
+    ewgt = [graph[u][v].get(edge_weight, 1) for u in graph for v in graph[u]]
+    if all(w == 1 for w in ewgt):
+        ewgt = None
+
+    return {"xadj": xadj, "adjncy": adjncy, "vweights": vwgt, "eweights": ewgt}, index
 
 
 def get_routed_graph(
@@ -406,9 +484,7 @@ def build_branches_on_osm_ways(lvgd):
                 for edge in G.edges:
                     G.edges[edge]['length'] = int(np.ceil(G.edges[edge]['length']))
 
-                (_, parts) = nxmetis.partition(G, int(n_feeder),
-                                                 node_weight='load', edge_weight='length',
-                                                 options=nxmetis.MetisOptions(contig=True))
+                _, parts = pymetis_parts.partition_network(G, int(n_feeder), node_weight='load', edge_weight='length')
 
             else:
                 parts = [list(nodelist)]
