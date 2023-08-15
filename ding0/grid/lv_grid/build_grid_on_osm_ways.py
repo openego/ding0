@@ -115,9 +115,14 @@ def convert_graph_c(graph, nparts=2, node_weight=None, edge_weight=None):
 
     Returns
     -------
+    dict
+        A dictionary containing the graph representation suitable for the C
+        partitioning algorithm. It includes the adjacency information and
+        weights.
 
-    TODO: Add Return
-
+    index : dict
+        A dictionary mapping node IDs in the original graph to their
+        corresponding indices in the C representation.
     """
 
     assert node_weight, "You need to specify a node weight"
