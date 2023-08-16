@@ -15,9 +15,6 @@ __author__ = "nesnoj, gplssm"
 import networkx as nx
 import pymetis
 
-# G. Karypis, V. Kumar: A fast and high quality multilevel scheme for partitioning irregular graphs
-# https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/metis.pdf
-
 import osmnx as ox
 import numpy as np
 from math import tan, acos
@@ -42,7 +39,11 @@ logger = logging.getLogger(__name__)
 
 
 def partition_network(network, n_parts=2, node_weight='load', edge_weight='length', contiguous=True):
-    """Partition a network graph into multiple parts using the Metis graph partitioning algorithm.
+    """
+        Partition a network graph into multiple parts using the METIS graph partitioning software with
+        python wrapper PyMetis (k-way graph partitioning is applied, see
+        G. Karypis, V. Kumar: A fast and high quality multilevel scheme for partitioning irregular graphs
+        https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/metis.pdf)
 
        Parameters
        ----------
@@ -519,7 +520,7 @@ def build_branches_on_osm_ways(lvgd):
                 for edge in G.edges:
                     G.edges[edge]['length'] = int(np.ceil(G.edges[edge]['length']))
 
-                _, parts = pymetis_parts.partition_network(G, int(n_feeder), node_weight='load', edge_weight='length')
+                _, parts = partition_network(G, int(n_feeder), node_weight='load', edge_weight='length')
 
             else:
                 parts = [list(nodelist)]
