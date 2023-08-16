@@ -4,3 +4,4 @@ pytest-parallel
 sphinx
 sphinx_rtd_theme
 Cython
+pymetis
