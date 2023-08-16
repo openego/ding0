@@ -120,7 +120,25 @@ def loads_in_ons_dist_threshold(dm_cluster, cluster_nodes, osmid):
         return True
 
 
-def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_cluster, check_distance_criterion=True):
+def _get_landuse_in_area(landuse_gdf, area_geo):
+    landuse_gdf.loc[:, "intersecting_cluster"] = landuse_gdf.intersects(area_geo)
+    landuse_gdf = landuse_gdf.loc[landuse_gdf.intersecting_cluster]
+    landuse_intersecting_dict = {}
+    for landuse, grp in landuse_gdf.groupby("landuse"):
+        areasin = grp.intersection(area_geo.buffer(0))
+        areasqm = 0
+        if len(areasin) > 1:
+            for ain in areasin:
+                areasqm += ain.area
+        else:
+            areasqm = areasin.area.item()
+        landuse_intersecting_dict[landuse] = areasqm
+
+    return landuse_intersecting_dict
+
+
+
+def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_cluster, check_distance_criterion=True, landuse_gdf=None):
     """
     identify position of station at street load center
     get list of location of mvlv substations for load areal
@@ -154,9 +172,27 @@ def get_mvlv_subst_loc_list(cluster_graph, nodes, street_loads_df, labels, n_clu
                 # due to distance threshold to ons is trespassed
                 valid_cluster_distance = False
                 return mvlv_subst_list, valid_cluster_distance
+        
+        area_geo = df_cluster.geometry.to_list()  # looks like duple somewhere in further coding, maybe just keep from here instead same processing later
+        if len(area_geo) == 1:
+            area_geo = area_geo[0]
+            area_geo_area = 100
+        elif len(area_geo) == 2:
+            area_geo = LineString(area_geo)
+            area_geo_area = area_geo.length
+        else:
+            area_geo = Polygon(area_geo)
+            area_geo_area = area_geo.area
+
+        if landuse_gdf is not None:
+            landuse_gdf.loc[:, "intersecting_cluster"] = False  # init False and set True where intersecting
+            landuse_dict = _get_landuse_in_area(landuse_gdf, area_geo)
+        else:
+            landuse_dict = {}
 
         mvlv_subst_loc = cluster_graph.nodes[osmid]
         mvlv_subst_loc['osmid'] = osmid
+        mvlv_subst_loc['landuse'] = landuse_dict  # todo: reagarding this dict: how to choose if village, rural, city or whatever ?
         mvlv_subst_loc['graph_district'] = cluster_subgraph
         mvlv_subst_list.append(mvlv_subst_loc)
 
