@@ -66,7 +66,7 @@ from ding0.config.config_lv_grids_osm import get_config_osm
 from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
     build_graph_from_ways, create_buffer_polygons, graph_nodes_outside_buffer_polys, \
     compose_graph, get_fully_conn_graph, split_conn_graph, get_outer_conn_graph, \
-    remove_detours, add_edge_geometry_entry, remove_unloaded_deadends, \
+    handle_detour_edges, add_edge_geometry_entry, remove_unloaded_deadends, \
     flatten_graph_components_to_lines, subdivide_graph_edges, simplify_graph_adv, \
     create_simple_synthetic_graph
 
@@ -804,7 +804,7 @@ class NetworkDing0:
             outer_graph = get_outer_conn_graph(outer_graph, inner_node_list)
             outer_graph = add_edge_geometry_entry(outer_graph)
             outer_graph = flatten_graph_components_to_lines(outer_graph, inner_node_list)
-            outer_graph = remove_detours(outer_graph)
+            outer_graph = handle_detour_edges(outer_graph, level="mv", mode='remove')
 
             # Compose graph
             composed_graph = compose_graph(outer_graph, graph_subdiv)

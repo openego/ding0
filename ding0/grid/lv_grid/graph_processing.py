@@ -24,6 +24,14 @@ import numpy as np
 flatten = lambda *n: (e for a in n for e in (flatten(*a) if isinstance(a, (tuple, list)) else (a,)))
 
 
+def line_shp_from_node_pair(graph, u, v):
+
+    line_shp = LineString([(graph.nodes[u]['x'], graph.nodes[u]['y']),
+                           (graph.nodes[v]['x'], graph.nodes[v]['y'])])
+
+    return line_shp
+
+
 def update_ways_geo_to_shape(ways_sql_df):
     """
     update_ways_geo_to_shape
@@ -174,11 +182,11 @@ def nodes_connected_component(G, inner_node_list):
 
 def connect_graph_components(graph, synthetic_edges, method='all_ccs'):
 
-    # get all connected components in a nested list and sort for reproducible results
-    conn_comps = [list(c) for c in nx.weakly_connected_components(graph)]
-    conn_comps = sorted(conn_comps, key=lambda x: x[0])
+    # get all connected components in a nested list
+    conn_comps = [list(cc) for cc in nx.weakly_connected_components(graph)]
 
-    # get largest connected component
+    # sort for reproducible results and get largest connected component
+    conn_comps = sorted(conn_comps, key=lambda x: x[0])
     largest_cc = max(conn_comps, key=len)
 
     # if just major (larger) connected components should be connected
@@ -207,24 +215,29 @@ def connect_graph_components(graph, synthetic_edges, method='all_ccs'):
         conn_node_unconn_ccs = nodes_unconn[int(index[1])]
 
         # connect both components using a synthetic edge
+        line_shp = line_shp_from_node_pair(graph, conn_node_largest_cc, conn_node_unconn_ccs)
         graph.add_edge(
             conn_node_largest_cc,
             conn_node_unconn_ccs,
             highway="synthetic",
             length=distance_array.min(),
+            geometry=line_shp,
             osmid=0  # random.randint(100000000, 200000000)
         )
+        line_shp = line_shp_from_node_pair(graph, conn_node_unconn_ccs, conn_node_largest_cc)
         graph.add_edge(
             conn_node_unconn_ccs,
             conn_node_largest_cc,
             highway="synthetic",
             length=distance_array.min(),
+            geometry=line_shp,
             osmid=0  # random.randint(100000000, 200000000)
         )
 
-        # save synthetic edges as set
-        synthetic_edges.add((conn_node_largest_cc, conn_node_unconn_ccs))
-        synthetic_edges.add((conn_node_unconn_ccs, conn_node_largest_cc))
+        # append synthetic edges to set
+        if isinstance(synthetic_edges, set):
+            synthetic_edges.add((conn_node_largest_cc, conn_node_unconn_ccs))
+            synthetic_edges.add((conn_node_unconn_ccs, conn_node_largest_cc))
 
         # get nodes of synthetically connected component
         synth_conn_cc = \
@@ -315,22 +328,17 @@ def get_outer_conn_graph(G, inner_node_list):
     return G
 
 
-def add_edge_geometry_entry(G):
-    """
-    todo: check if to remove if not then write doc.
-    looks like deprecated?
-    """
-    edges_wo_geometry = [(u,v,k,d) for u,v,k,d in G.edges(keys=True, data=True) if 'geometry' not in d]
-    for u,v,k,d in edges_wo_geometry:
-        G.edges[u,v,k]['geometry'] = LineString([Point((G.nodes[node]["x"], G.nodes[node]["y"])) for node in [u,v]])
+def add_edge_geometry_entry(graph):
+
+    # identify edges without geometry
+    edges = [(u, v, k, data) for u, v, k, data in graph.edges(keys=True, data=True)
+             if 'geometry' not in data]
+    # add straight linestring as edge geometry
+    for u, v, k, data in edges:
+        graph.edges[u, v, k]['geometry'] = line_shp_from_node_pair(graph, u, v)
         
-    return G
+    return graph
 
-
-#### modified osmnx functions
-
-# modified osmnx function (extended by nodes_to_keep)
-# feststellen welche knoten behalten und welche weg. build paths.
 def _get_paths_to_simplify(G, nodes_to_keep, strict=True):
     """
     # modified osmnx function (extended by nodes_to_keep)
@@ -556,16 +564,45 @@ def flatten_graph_components_to_lines(G, inner_node_list):
 
     return G
 
-def remove_detours(G):
+def handle_detour_edges(graph, level="mv", mode='remove'):
     """
     Identify edges with length > 1500m and
     Remove em if path dist > 3 * euclid distance
+    or replace detour geometry with straight line
     """
-    edges = [(u,v,k,d['length'], LineString(d['geometry'].boundary).length) for u,v,k,d in G.edges(keys=True, data=True) if d['length'] >= get_config_osm('ons_dist_threshold')]
-    for u,v,k,path_dist,euc_dist in edges:
-        if path_dist > 3 * euc_dist:
-            G.remove_edge(u,v,k)
-    return G
+
+    if level == "mv":
+        max_edge_length = get_config_osm('ons_dist_threshold')
+    elif level == "lv":
+        max_edge_length = get_config_osm('min_detour_length')
+
+    edges = [(u, v, k, data) for u, v, k, data in graph.edges(keys=True, data=True)
+             if data['length'] >= max_edge_length and u != v]
+
+    for u, v, k, data in edges:
+
+        path_distance = data['length']
+        eucl_distance = LineString(data['geometry'].boundary).length
+
+        if path_distance > get_config_osm('max_detour_factor') * eucl_distance:
+
+            if mode == 'remove':
+                graph.remove_edge(u, v, k)
+
+            elif mode == 'shortcut':
+                graph.remove_edge(u, v, k)
+                conn_comps = [list(cc) for cc in nx.weakly_connected_components(graph)]
+
+                # removed edge is a bridge -> new edge with min. distance between comps
+                if len(conn_comps) > 1:
+                    graph, _ = connect_graph_components(graph, None)
+                # removed edge does not split graphs into comps -> new straight line shp
+                else:
+                    graph.add_edge(u, v, k, **data)
+                    graph.edges[u, v, k]['length'] = eucl_distance
+                    graph.edges[u, v, k]['geometry'] = LineString(data['geometry'].boundary)
+
+    return graph
 
 
 def remove_unloaded_deadends(G, nodes_of_interest):
@@ -665,8 +702,7 @@ def subdivide_graph_edges(inner_graph): #(inner_graph, inner_node_list):
             pass
         else:
 
-            linestring = LineString([(inner_graph.nodes[u]['x'],inner_graph.nodes[u]['y']), 
-                                     (inner_graph.nodes[v]['x'],inner_graph.nodes[v]['y'])])
+            linestring = line_shp_from_node_pair(inner_graph, u, v)
             vertices_gen = ox.utils_geo.interpolate_points(linestring, get_config_osm('dist_edge_segments')) #### config
             vertices = list(vertices_gen) 
             highway = inner_graph.edges[u,v,0]['highway']

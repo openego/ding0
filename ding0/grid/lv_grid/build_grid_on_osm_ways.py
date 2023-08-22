@@ -30,7 +30,7 @@ from ding0.grid.mv_grid.tools import get_shortest_path_shp_single_target, get_sh
 
 from ding0.config.config_lv_grids_osm import get_config_osm, get_load_profile_categories
 from ding0.grid.lv_grid.parameterization import get_peak_load_for_residential
-from ding0.grid.lv_grid.graph_processing import simplify_graph_adv
+from ding0.grid.lv_grid.graph_processing import simplify_graph_adv, handle_detour_edges
 
 import logging
 
@@ -263,7 +263,7 @@ def transform_feeder_to_aggregated_path(feeder, station_id):
 
     # transform to dfs tree
     tree = nx.dfs_tree(feeder, station_id)
-    nx.set_edge_attributes(tree, {(u, v): feeder.edges[u, v, 0]['length']
+    nx.set_edge_attributes(tree, {(u, v): feeder.edges[u, v, next(iter(feeder.get_edge_data(u, v)))]['length']
                                   for u, v, d in tree.edges.data()}, 'length')
     # longest path in feeder
     lp_in_feeder = nx.dag_longest_path(tree, 'length')
@@ -458,6 +458,8 @@ def build_branches_on_osm_ways(lvgd):
     # full graph for routing 100 - 200 kW to station
     full_graph = lvgd.graph_district.copy()  # .to_undirected()
     full_graph_simple = nx.Graph(full_graph)
+
+    full_graph = handle_detour_edges(full_graph, level="lv", mode='shortcut')
 
     # if possible change allocation of buildings to station and find another street node nearby
     lv_loads_grid = relocate_buildings_with_station_as_nn(full_graph, station_id, lv_loads_grid)

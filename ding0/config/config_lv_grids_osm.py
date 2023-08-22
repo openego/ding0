@@ -38,6 +38,8 @@ def get_config_osm(key):
         'dist_edge_segments' : 50,
         'cluster_increment_counter_threshold' : 20,
         'ons_dist_threshold' : 1500,
+        'min_detour_length': 100,
+        'max_detour_factor': 3,
         'buffer_distance' : [5, 25, 50, 100],
         'unconn_nodes_ratio' : 0.02,
         'major_ccs_ratio_threshold' : .30,
