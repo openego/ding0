@@ -310,6 +310,10 @@ def reduce_graph_for_dist_matrix_calc(graph, nodes_to_keep):
         graph = remove_parallels_and_loops(graph)
         graph = remove_unloaded_deadends(graph, nodes_to_keep)
         post_graph_no = len(graph)
+
+    # ensure graph bidirectionality
+    bidir_edges = [(v, u, data) for u, v, data in graph.edges(data=True) if (v, u) not in graph.edges]
+    graph.add_edges_from(bidir_edges)
     
     return graph
 
