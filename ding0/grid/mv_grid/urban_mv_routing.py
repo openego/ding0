@@ -297,6 +297,5 @@ def solve(mv_grid, debug=False, anim=None):
             mv_grid, osmid_branch_dict = routing_solution_to_ding0_graph(mv_grid, core_graph, solution)
             ##### urban mv connect
             mv_grid = mv_urban_connect(mv_grid, street_graph, core_graph, stub_graph, stub_dict, osmid_branch_dict)
-            # remove load area centre (has been shifted to mv_routing)
 
     return mv_grid.graph

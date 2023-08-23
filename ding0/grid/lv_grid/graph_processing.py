@@ -641,28 +641,27 @@ def remove_parallels(G):
     G.remove_edges_from(to_remove)
     return G
 
-def remove_parallels_and_loops(G):
+def remove_parallels_and_loops(graph):
     """
     remove the parallel edge with greater "weight" attribute value
     remove selfloop_edges
-    src: https://github.com/gboeing/osmnx/blob/main/osmnx/utils_graph.py#L341
     """
-    # from https://github.com/gboeing/osmnx/blob/main/osmnx/utils_graph.py#L341
-    #G = G.copy()
+
     to_remove = []
 
     # identify all the parallel edges in the MultiDiGraph
-    parallels = [(u, v) for u, v, k in G.edges(keys=True) if k > 0]
+    parallels = [(u, v) for u, v, k in graph.edges(keys=True) if k > 0 and
+                 graph.number_of_edges(u, v) > 1]
 
     # remove the parallel edge with greater "weight" attribute value
     for u, v in set(parallels):
-        k, _ = max(G.get_edge_data(u, v).items(), key=lambda x: x[1]['length'])
+        k, _ = max(graph.get_edge_data(u, v).items(), key=lambda x: x[1]['length'])
         to_remove.append((u, v, k))
 
-    G.remove_edges_from(to_remove)
-    G.remove_edges_from(nx.selfloop_edges(G))
+    graph.remove_edges_from(to_remove)
+    graph.remove_edges_from(nx.selfloop_edges(graph))
     
-    return G
+    return graph
 
 
 def remove_unloaded_loops(G, nodes_of_interest):
