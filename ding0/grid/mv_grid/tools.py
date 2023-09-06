@@ -240,7 +240,8 @@ def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=Fal
     line_shp = linemerge([osm_graph.edges[edge]['geometry'] for edge in edge_path])
 
     if line_shp.is_empty:  # in case of route_length == 1
-        line_shp = osm_graph.edges[node1, node2, next(iter(osm_graph.get_edge_data(node1, node2).keys()))]['geometry']  # TODO make universal
+        edge_key = next(iter(osm_graph.get_edge_data(node1, node2).keys()))
+        line_shp = osm_graph.edges[node1, node2, edge_key]['geometry']
 
     line_length = line_shp.length
 
@@ -312,7 +313,7 @@ def reduce_graph_for_dist_matrix_calc(graph, nodes_to_keep):
         post_graph_no = len(graph)
 
     # ensure graph bidirectionality
-    bidir_edges = [(v, u, data) for u, v, data in graph.edges(data=True) if (v, u) not in graph.edges]
+    bidir_edges = [(v, u, k, data) for u, v, k, data in graph.edges(keys=True, data=True) if (v, u, k) not in graph.edges]
     graph.add_edges_from(bidir_edges)
     
     return graph
@@ -519,8 +520,13 @@ def check_stub_criterion(stub_dict, stub_graph):
                                 load_nodes = [load_nodes[1:] for n in load_nodes if n not in stub_data['load']][0]
 
                             for n in load_nodes:
-
-                                cum_load = sum([stub_data['load'][n] for n in load_nodes])
+                                cum_load = 0
+                                for inner_n in load_nodes:
+                                    try:
+                                        cum_load += stub_data['load'][inner_n]
+                                    except KeyError:
+                                        # ToDo: Find origin of problem that in load_nodes is not only loads
+                                        logger.error(f"{inner_n} not in stub_data['load']")
                                 if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                                     comp = [root] + load_nodes
                                     mod_stubs_list.append(comp)
@@ -554,8 +560,14 @@ def update_stub_dict(stub_dict, mod_stubs_list, node_list):
         i = max(stub_dict.keys()) + 1 
 
         stub_dict[i] = {}
-        stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
-                                for node in load_node_set} #{node: demand}
+        try:
+            stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
+                                    for node in load_node_set} #{node: demand}
+        except KeyError:
+            stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
+                                    for node in load_node_set if node in node_list.keys()}
+            # ToDo: Find origin of problem that in node_list is not only ding0_ids, see check_stub_criterion ToDo
+            logger.error(f"Key not in node_list, should not be an osm_id.")
         stub_dict[i]['root'] = root
         stub_dict[i]['comp'] = set(comp)
         stub_dict[i]['dist'] = set()

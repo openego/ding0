@@ -48,6 +48,7 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
         cabledist_node_set = stub_data['dist']
         root_node = stub_data['root']
         comp = load_node_set.union({root_node}, cabledist_node_set)
+        # comp = set(nx.dfs_preorder_nodes(stub_graph, source=root_node))
 
         # stub root node does not intersect with routed branches
         if not root_node in osmid_branch_dict:
@@ -57,33 +58,33 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
             # root node has branching, old root node will be cable dist, new root node intersect with routed branches
             if root_deg > 1 and len(comp) > 2:
                 # in case root node has deg > 1, build new edge between old and new root
-                node = root_node 
+                node = root_node
                 if not node in node_list.keys():
                     cabledist_node_set.add(node)
 
                 line_shp, line_length, path = get_shortest_path_shp_multi_target(osm_graph_red,
                                                                                  node, routed_graph_node_set)
 
-                root_node = path[0]
-                stub_graph.add_node(root_node, x=osm_graph_red.nodes[root_node]['x'], y=osm_graph_red.nodes[root_node]['y'])
-                stub_graph.add_edge(root_node, node, geometry=line_shp)
-                comp.add(root_node)
-
             else:
                 # in case deg = 1, delete old root and compute new edge from root neignbor to graph
-                # compute new edge geometry to ding0 graph 
-                root_nb = list({n for n in stub_graph.neighbors(root_node)} & set(comp))[0]
+                # compute new edge geometry to ding0 graph
+                if len(comp) == 2:
+                    root_nb = next(iter(load_node_set))
+                else:
+                    root_nb = list({n for n in stub_graph.neighbors(root_node)} & set(comp))[0]
+
                 line_shp, line_length, path = get_shortest_path_shp_multi_target(osm_graph_red,
                                                                                  root_nb, routed_graph_node_set)
-                #remove old root node from graph and component
-                stub_graph.remove_edge(root_node, root_nb)
+                #remove old root node from component
                 comp.discard(root_node)
-                # introduce new root node and update edge
-                root_node = path[0]
-                stub_graph.add_node(root_node, x=osm_graph_red.nodes[root_node]['x'], y=osm_graph_red.nodes[root_node]['y'])
-                stub_graph.add_edge(root_node, root_nb, geometry=line_shp)
-                #print(root_node, root_nb)
-                comp.add(root_node)
+                node = root_nb
+
+            # introduce new root node and update edge
+            root_node = path[0]
+            comp.add(root_node)
+            stub_graph.add_node(root_node, x=osm_graph_red.nodes[root_node]['x'], y=osm_graph_red.nodes[root_node]['y'])
+            stub_graph.add_edge(root_node, node, geometry=line_shp)
+            stub_graph.add_edge(node, root_node, geometry=line_shp)
 
     #### SPLIT MAIN ROUTE EDGE INTO 2 SEGMENTS
 
@@ -195,10 +196,9 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
          # for simple stubs, there is just one load (one edge)
         if len(comp) == 2: 
 
-            load_node = list(load_node_set)[0] #next(iter(
-            #edge_key = next(iter(stub_graph.get_edge_data(root_node, load_node).keys())) #TODO uncomment
-            #print(root_node, load_node)
-            branch_shp = stub_graph.edges[root_node, load_node, 0]['geometry']
+            load_node = list(load_node_set)[0]
+            edge_key = next(iter(stub_graph.get_edge_data(root_node, load_node).keys()))
+            branch_shp = stub_graph.edges[root_node, load_node, edge_key]['geometry']
             branch_length = branch_shp.length
 
             mv_grid.graph.add_edge(root_node_ding0, node_list[load_node], branch=BranchDing0(geometry=branch_shp,
@@ -215,11 +215,6 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
 
                 dist_mapping = {} #for converting osm names to ding0 names in comp_graph
                 dist_mapping[root_node] = str(root_node_ding0)
-
-                # add cable distributor for root, if is not station or load
-                # add cable distributor for branchings if necessary
-                #if not root_node in node_list.keys():
-                #    cabledist_node_set.add(root_node)
 
                 if len(cabledist_node_set):
 
