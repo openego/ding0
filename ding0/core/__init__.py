@@ -839,11 +839,17 @@ class NetworkDing0:
 
             # Get n_clusters based on capacity of the load area.
             n_cluster = get_cluster_numbers(buildings_w_loads_df, simp_graph)
+            
+            # fetch landuse like oam ways
+            # todo: check if wokring. landuse has to be stored in DB before !
+            landuse_sql_df = db_io.get_osm_landuse(self.orm, session, buffer_poly_list[-1].wkt)
+            landuse_gdf['geometry'] = landuse_gdf.geometry.apply(to_shape)
+            landuse_gdf = gpd.GeoDataFrame(landuse_gdf, geometry="geometry", crs=3035)
 
             # Cluster graph and locate lv stations based on load center per cluster.
             clustering_successfully, cluster_graph, mvlv_subst_list, nodes_w_labels = \
                 distance_restricted_clustering(
-                    simp_graph, n_cluster, street_loads_df, mv_grid_district, id_db
+                    simp_graph, n_cluster, street_loads_df, mv_grid_district, id_db, landuse_sql_df
                 )
             if not clustering_successfully:
                 return f"Clustering not successful for " \
@@ -920,6 +926,7 @@ class NetworkDing0:
 
                     # Get convex hull for ding0 objects.
                     points = get_points_in_load_area(cluster_geo_list)
+                    
                     if create_lvgd_geo_method == 'convex_hull':
                         polygon = get_convex_hull_from_points(points)
                     elif create_lvgd_geo_method == 'bounding_box':
