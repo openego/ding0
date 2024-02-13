@@ -1,4 +1,4 @@
-import unittest2 as unittest
+import unittest
 
 from egoio.tools import db
 from ding0.core import NetworkDing0
