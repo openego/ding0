@@ -41,6 +41,20 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
     routed_graph_node_set = routed_graph_node_set - forbidden_object_set
     root_nodes_to_remove = []
 
+    # ==============================================
+    # Detect problem with multiple subgraphs, see https://github.com/openego/ding0/issues/402
+    from collections import Counter
+    stub_root_nodes = [s["root"] for s in stub_dict.values()]
+    if len(stub_root_nodes) > len(set(stub_root_nodes)):
+        duplicated_root_nodes = {r: c for r, c in Counter(stub_root_nodes).items() if c > 1}
+        for r, c in duplicated_root_nodes.items():
+            stubs = [s["comp"] for s in stub_dict.values() if s["root"] == r]
+            logger.error(
+                f"Multiple stubs share the same root node, this is likely to result in multiple graphs "
+                f"(cf. issue #402): Root: {r}, Count: {c}, Stubs: {stubs}"
+            )
+    # ==============================================
+
     for key, stub_data in stub_dict.items():
 
         # get root_node, loads (mv_station or mv_load) and cable distributor nodes in osm stub graph
