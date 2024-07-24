@@ -45,6 +45,7 @@ from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 import subprocess
 import json
+from pyvis.network import Network as pynet
 
 if not 'READTHEDOCS' in os.environ:
     from shapely.wkt import loads as wkt_loads
@@ -67,7 +68,7 @@ from ding0.grid.lv_grid.graph_processing import update_ways_geo_to_shape, \
     build_graph_from_ways, create_buffer_polygons, graph_nodes_outside_buffer_polys, \
     compose_graph, get_fully_conn_graph, split_conn_graph, get_outer_conn_graph, \
     handle_detour_edges, add_edge_geometry_entry, remove_unloaded_deadends, \
-    flatten_graph_components_to_lines, subdivide_graph_edges, simplify_graph_adv, \
+    consolidate_edges, subdivide_graph_edges, simplify_graph_adv, \
     create_simple_synthetic_graph
 
 from ding0.grid.lv_grid.clustering import get_cluster_numbers, distance_restricted_clustering
@@ -388,6 +389,52 @@ class NetworkDing0:
 
         logger.info("STEP 9: Open all switch disconnectors in MV grid")
         self.control_circuit_breakers(mode='open')
+
+        # ==============================================
+        # Quickfix for https://github.com/openego/ding0/issues/402
+        # Removes all nodes belonging to subgraphs
+        for grid_district in self.mv_grid_districts():
+            subgraphs = [s for s in nx.connected_components(grid_district.mv_grid.graph) if len(s) > 1]
+            subgraph_max_len = 0
+            for s in subgraphs:
+                if len(s) > subgraph_max_len:
+                    subgraph_max_len = len(s)
+
+            # Do we have subgraphs?
+            if len(subgraphs) > 1:
+                # Log
+                errstr = ", ".join([f"Grid {_ + 1} ({len(s)} nodes)" for _, s in enumerate(subgraphs)])
+                logger.error(
+                    f"Grid in {str(grid_district)} has {len(subgraphs)} subgrids (cf. issue #402): {errstr}. "
+                    f"Only the largest graph will be retained."
+                )
+
+                # Plot with pyvis for debugging
+                net = pynet(
+                    directed=False,
+                    select_menu=True,
+                    filter_menu=True,
+                )
+                net.show_buttons()
+                graph_relabeled = grid_district.mv_grid.graph.copy()
+                graph_relabeled = nx.relabel_nodes(
+                    graph_relabeled,
+                    dict(zip(
+                        graph_relabeled.nodes(),
+                        [str(n) for n in graph_relabeled.nodes()]
+                    ))
+                )
+                for n1, n2, d in graph_relabeled.edges(data=True):
+                    d.pop("branch", None)
+                net.from_nx(graph_relabeled)
+                net.write_html(f"{str(grid_district)}_graph_debug.html", notebook=False)
+
+                # Remove all nodes belonging to isolated subgraphs
+                for component in subgraphs:
+                    if len(component) < subgraph_max_len:
+                        for node in component:
+                            grid_district.mv_grid.graph.remove_node(node)
+        # ==============================================
 
         logger.info("STEP 10: Do power flow analysis of MV grid")
         self.run_powerflow(session, method='onthefly', export_pypsa=False, debug=debug)
@@ -803,7 +850,7 @@ class NetworkDing0:
             # Process outer graph
             outer_graph = get_outer_conn_graph(outer_graph, inner_node_list)
             outer_graph = add_edge_geometry_entry(outer_graph)
-            outer_graph = flatten_graph_components_to_lines(outer_graph, inner_node_list)
+            outer_graph = consolidate_edges(outer_graph, inner_node_list)
             outer_graph = handle_detour_edges(outer_graph, level="mv", mode='remove')
 
             # Compose graph

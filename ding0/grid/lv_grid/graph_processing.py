@@ -520,24 +520,25 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
     logger.debug(msg)
     return G
 
-def flatten_graph_components_to_lines(G, inner_node_list):
+def consolidate_edges(graph, inner_node_list):
     """
     Build single edges based on outter graph component to connect
     isolated components/ nodes in inner graph/ not buffered area.
     """
     # TODO: add edge tags 'highway' and 'osmid' to shortest path edge
 
-    components = list(nx.weakly_connected_components(G))
-    sp_path = lambda p1, p2: nx.shortest_path(G, p1, p2, weight='length') if nx.has_path(G, p1, p2) else None
+    conn_comps = list(nx.weakly_connected_components(graph))
+    sp_path = lambda p1, p2: nx.shortest_path(graph, p1, p2, weight='length') \
+        if nx.has_path(graph, p1, p2) else None
 
     nodes_to_remove = []
     edges_to_add = []
-    common_nodes = set(G.nodes()) & set(inner_node_list)
+    common_nodes = set(graph.nodes()) & set(inner_node_list)
 
-    for comp in components:
-        conn_nodes = list(comp & common_nodes)
-        if len(comp) > 2 and len(conn_nodes) == 1:
-            G.remove_nodes_from(comp) # removes unwanted islands / loops
+    for cc in conn_comps:
+        conn_nodes = list(cc & common_nodes)
+        if len(cc) > 2 and len(conn_nodes) == 1:
+            graph.remove_nodes_from(cc) # removes unwanted islands / loops
 
         else: 
             endpoints = combinations(conn_nodes, 2)
@@ -545,24 +546,21 @@ def flatten_graph_components_to_lines(G, inner_node_list):
             for path in paths:
                 geoms = []
                 for u, v in zip(path[:-1], path[1:]):
-                    geom = G.edges[u,v,0]['geometry']
-                    # deprecated due to add_edge_geometry_entry(G)
-                    # try: geom = G.edges[u,v,0]['geometry']
-                    # except: geom = LineString([Point((G.nodes[node]["x"], G.nodes[node]["y"])) for node in [u,v]])
+                    geom = graph.edges[u,v,0]['geometry']
                     geoms.append(geom)
 
                 merged_line = linemerge(MultiLineString(geoms))
                 edges_to_add.append([path[0], path[-1], merged_line])
-                nodes_to_remove.append(list(set(comp) - set(conn_nodes)))
+                nodes_to_remove.append(list(set(cc) - set(conn_nodes)))
 
     for nodes in nodes_to_remove:
-        G.remove_nodes_from(nodes)
+        graph.remove_nodes_from(nodes)
 
     for edge in edges_to_add:
-        G.add_edge(edge[0], edge[1], 0, geometry=edge[2], length=edge[2].length)
-        G.add_edge(edge[1], edge[0], 0, geometry=edge[2], length=edge[2].length)
+        graph.add_edge(edge[0], edge[1], 0, geometry=edge[2], length=edge[2].length)
+        graph.add_edge(edge[1], edge[0], 0, geometry=edge[2], length=edge[2].length)
 
-    return G
+    return graph
 
 def handle_detour_edges(graph, level="mv", mode='remove'):
     """
