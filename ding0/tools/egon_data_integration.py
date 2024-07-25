@@ -656,7 +656,7 @@ def get_res_generators(orm, session, mv_grid_district):
             orm["generators_pv"].site_type == "Freifläche",
             orm["generators_pv"].status == "InBetrieb",
             orm["generators_pv"].voltage_level.in_([4, 5, 6, 7]),
-            orm["generators_pv"].capacity <= 20,
+            orm["generators_pv"].capacity <= 13.5,  # (according to SNB)
             func.ST_Intersects(
                 func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
                 func.ST_Transform(orm["generators_pv"].geom, srid),
@@ -699,7 +699,7 @@ def get_res_generators(orm, session, mv_grid_district):
             # orm["generators_pv_rooftop"].bus_id == subst_id,
             orm["generators_pv_rooftop"].scenario == "status_quo",
             orm["generators_pv_rooftop"].voltage_level.in_([4, 5, 6, 7]),
-            orm["generators_pv_rooftop"].capacity <= 20,
+            orm["generators_pv_rooftop"].capacity <= 13.5,  # (according to SNB)
             func.ST_Intersects(
                 func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
                 func.ST_GeomFromText(building_geoms.c.geom, get_config_osm("srid")),
@@ -733,7 +733,7 @@ def get_res_generators(orm, session, mv_grid_district):
             orm["generators_wind"].site_type == "Windkraft an Land",
             orm["generators_wind"].status == "InBetrieb",
             orm["generators_wind"].voltage_level.in_([4, 5, 6, 7]),
-            orm["generators_wind"].capacity <= 20,
+            orm["generators_wind"].capacity <= 13.5,  # (according to SNB)
             func.ST_Intersects(
                 func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
                 func.ST_Transform(orm["generators_wind"].geom, srid),
@@ -758,7 +758,7 @@ def get_res_generators(orm, session, mv_grid_district):
         # orm["generators_biomass"].bus_id == subst_id,
         orm["generators_biomass"].status == "InBetrieb",
         orm["generators_biomass"].voltage_level.in_([4, 5, 6, 7]),
-        orm["generators_biomass"].capacity <= 20,
+        orm["generators_biomass"].capacity <= 13.5,  # (according to SNB)
         func.ST_Intersects(
             func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
             func.ST_Transform(orm["generators_biomass"].geom, srid),
@@ -782,7 +782,7 @@ def get_res_generators(orm, session, mv_grid_district):
         # orm["generators_water"].bus_id == subst_id,
         orm["generators_water"].status == "InBetrieb",
         orm["generators_water"].voltage_level.in_([4, 5, 6, 7]),
-        orm["generators_water"].capacity <= 20,
+        orm["generators_water"].capacity <= 13.5,  # (according to SNB)
         func.ST_Intersects(
             func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
             func.ST_Transform(orm["generators_water"].geom, srid),
@@ -830,7 +830,7 @@ def get_conv_generators(orm, session, mv_grid_district):
         # orm["generators_combustion"].bus_id == subst_id,
         orm["generators_combustion"].status == "InBetrieb",
         orm["generators_combustion"].voltage_level.in_([4, 5, 6, 7]),
-        orm["generators_combustion"].capacity <= 20,
+        orm["generators_combustion"].capacity <= 13.5,  # (according to SNB)
         func.ST_Intersects(
             func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
             func.ST_Transform(orm["generators_combustion"].geom, srid),
@@ -855,7 +855,7 @@ def get_conv_generators(orm, session, mv_grid_district):
         # orm["generators_gsgk"].bus_id == subst_id,
         orm["generators_gsgk"].status == "InBetrieb",
         orm["generators_gsgk"].voltage_level.in_([4, 5, 6, 7]),
-        orm["generators_gsgk"].capacity <= 20,
+        orm["generators_gsgk"].capacity <= 13.5,  # (according to SNB)
         func.ST_Intersects(
             func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
             func.ST_Transform(orm["generators_gsgk"].geom, srid),
