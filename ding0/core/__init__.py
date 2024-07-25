@@ -433,6 +433,11 @@ class NetworkDing0:
                 for component in subgraphs:
                     if len(component) < subgraph_max_len:
                         for node in component:
+                            # Remove LV grid and LV grid district
+                            if isinstance(node, LVStationDing0):
+                                node.grid.graph.clear()
+                                node.lv_load_area._lv_grid_districts.remove(node.grid.grid_district)
+                            # Remove LV station from MV grid
                             grid_district.mv_grid.graph.remove_node(node)
         # ==============================================
 
