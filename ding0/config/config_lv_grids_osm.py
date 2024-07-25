@@ -25,14 +25,13 @@ def get_config_osm(key):
     """
 
     config_osm = {
-        
         'srid' : 3035,
         'EARTH_RADIUS_M' : 6_371_009,  # deprecated!? not mandatory anymore?!
-        'lv_threshold_capacity' : 100,      # < 100kW connected to grid
-        'mv_lv_threshold_capacity' : 200,   # 100 to < 200kW connected to station directly
-        'hv_mv_threshold_capacity' : 17500,  # 200 to < 17.5MW own station with trafos
+        'lv_threshold_capacity' : 173,      # < 173 kW connected to grid (250 A according to SNB)
+        'mv_lv_threshold_capacity' : 346,   # 173 to < 346 kW connected to station directly (500 A according to SNB)
+        'hv_mv_threshold_capacity' : 13500, # 346 kW to < 13.5 MW own station with trafos (according to SNB)
         'additional_trafo_capacity' : 1.0,
-        'avg_trafo_size' : 500,
+        'avg_trafo_size' : 630,             # Standard trafo size (according to SNB)
         'avg_square_meters' : 100,
         'quadrat_width' : 1000,
         'dist_edge_segments' : 50,

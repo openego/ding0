@@ -1,6 +1,5 @@
 S_nom
 #kVA
 # Note that only values used for calculation are saved in this table. Only insert literature values here, calculations in code for better comprehensibility
-25000
+31500
 40000
-63000
