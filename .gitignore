@@ -61,7 +61,7 @@ target/
 # Data
 .pkl
 
-
+ding0/config/.secret_config_db_credentials.cfg
 
 
 

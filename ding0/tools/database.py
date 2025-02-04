@@ -14,7 +14,7 @@ logger = logging.getLogger()
 package_path = ding0.__path__[0]
 cfg_ding0.load_config('config_files.cfg')
 cfg_ding0.load_config('config_db_tables.cfg')
-cfg_ding0.load_config('config_db_credentials.cfg')
+cfg_ding0.load_config('.secret_config_db_credentials.cfg')
 
 
 def get_database_type_from_config():

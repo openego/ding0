@@ -1,0 +1,316 @@
+#!/usr/bin/env python3
+
+"""This file is part of DINGO, the DIstribution Network GeneratOr.
+DINGO is a tool to generate synthetic medium and low voltage power
+distribution grids based on open data.
+
+DINGO lives at github: https://github.com/openego/ding0/
+The documentation is available on RTD: http://ding0.readthedocs.io
+
+Note
+-----
+
+Here’s an optimized version of your docstring with improved clarity, grammar, and formatting:
+
+This script generates ding0 grids from an eGon-data database.
+
+1. Configure database access by creating a file named
+`.secret_config_db_credentials.cfg` in the `ding0/config` directory with the following
+content:
+
+   ```
+   [database_credentials]
+   name = DATABASE_NAME
+   host = DATABASE_IP
+   port = DATABASE_PORT
+   user = DATABASE_USER
+   password = DATABASE_PASSWORD
+   ```
+
+2. If the database is hosted remotely, establish a local port forwarding tunnel
+   using SSH before running this script:
+
+   ```
+   ssh -NL LOCAL_PORT:localhost:REMOTE_PORT USER@REMOTE_IP
+   ```
+"""
+
+__copyright__ = "Reiner Lemoine Institut gGmbH"
+__license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
+__url__ = "https://github.com/openego/ding0/blob/master/LICENSE"
+__author__ = "nesnoj, gplssm, khelfen"
+
+
+import itertools
+import json
+import multiprocessing as mp
+import os
+import time
+from datetime import datetime
+from math import floor
+
+import pandas as pd
+
+from ding0.core import NetworkDing0
+from ding0.tools import results
+from ding0.tools.database import session_scope
+
+BASEPATH = os.path.join(os.path.expanduser("~"), ".ding0")
+
+
+########################################################
+def parallel_run(
+    districts_list,
+    n_of_processes,
+    n_of_districts,
+    run_id,
+    base_path=None,
+    save_as="csv",
+):
+    """Organize parallel runs of ding0.
+
+    The function take all districts in a list and divide them into
+    n_of_processes parallel processes. For each process, the assigned districts
+    are given to the function process_runs() with the argument n_of_districts
+
+    Parameters
+    ----------
+    districts_list: :obj:`list` of int
+        List with all districts to be run.
+    n_of_processes: :obj:`int`
+        Number of processes to run in parallel
+    n_of_districts: :obj:`int`
+        Number of districts to be run in each cluster given as argument to
+        process_stats()
+    run_id: :obj:`str`
+        Identifier for a run of Ding0. For example it is used to create a
+        subdirectory of os.path.join(`base_path`, 'results')
+    base_path : :obj:`str`
+        Base path for ding0 data (input, results and logs).
+        Default is `None` which sets it to :code:`~/.ding0` (may deviate on
+        windows systems).
+        Specify your own but keep in mind that it a required a particular
+        structure of subdirectories.
+
+    See Also
+    --------
+    ding0_runs
+
+    """
+
+    # define base path
+    if base_path is None:
+        base_path = BASEPATH
+
+    if not os.path.exists(os.path.join(base_path, run_id)):
+        os.makedirs(os.path.join(base_path, run_id))
+
+    start = time.time()
+    #######################################################################
+    # Define an output queue
+    output_info = mp.Queue()
+    #######################################################################
+    # Setup a list of processes that we want to run
+    max_dist = len(districts_list)
+    threat_long = floor(max_dist / n_of_processes)
+
+    if threat_long == 0:
+        threat_long = 1
+
+    threats = [
+        districts_list[x : x + threat_long]
+        for x in range(0, len(districts_list), threat_long)
+    ]
+
+    processes = []
+    for th in threats:
+        mv_districts = th
+        processes.append(
+            mp.Process(
+                target=process_runs,
+                args=(
+                    mv_districts,
+                    n_of_districts,
+                    output_info,
+                    run_id,
+                    base_path,
+                    save_as,
+                ),
+            )
+        )
+    #######################################################################
+    # Run processes
+    for p in processes:
+        p.start()
+    # Resque output_info from processes
+    output = [output_info.get() for p in processes]
+    output = list(itertools.chain.from_iterable(output))
+    # Exit the completed processes
+    for p in processes:
+        p.join()
+
+    #######################################################################
+    print(
+        "Elapsed time for",
+        str(max_dist),
+        "MV grid districts (seconds): {}".format(time.time() - start),
+    )
+
+    return output
+
+
+########################################################
+def process_runs(mv_districts, n_of_districts, output_info, run_id, base_path, save_as):
+    """Runs a process organized by parallel_run()
+
+    The function take all districts mv_districts and divide them into clusters
+    of n_of_districts each. For each cluster, ding0 is run and the resulting
+    network is saved as a pickle
+
+    Parameters
+    ----------
+    mv_districts: :obj:`list` of int
+        List with all districts to be run.
+    n_of_districts: :obj:`int`
+        Number of districts in a cluster
+    output_info:
+        Info about how the run went
+    run_id: :obj:`str`
+        Identifier for a run of Ding0. For example it is used to create a
+        subdirectory of os.path.join(`base_path`, 'results')
+    base_path : :obj:`str`
+        Base path for ding0 data (input, results and logs).
+        Default is `None` which sets it to :code:`~/.ding0` (may deviate on
+        windows systems).
+        Specify your own but keep in mind that it a required a particular
+        structure of subdirectories.
+    save_as: str
+        Type of file as which network should be exported, can be 'csv' or 'pkl'
+
+    See Also
+    --------
+    parallel_run
+
+    """
+    #######################################################################
+    # database connection/ session
+    with session_scope() as session:
+        #############################
+        clusters = [
+            mv_districts[x : x + n_of_districts]
+            for x in range(0, len(mv_districts), n_of_districts)
+        ]
+        output_clusters = []
+
+        for cl in clusters:
+            print("\n########################################")
+            print("  Running ding0 for district", cl)
+            print("########################################")
+
+            nw_name = f"ding0_grids_{str(cl[0])}"
+
+            if cl[0] != cl[-1]:
+                nw_name = nw_name + "_to_" + str(cl[-1])
+
+            nw = NetworkDing0(name=nw_name, session=session)
+
+            try:
+                msg = nw.run_ding0(
+                    session=session,
+                    mv_grid_districts_no=cl,
+                    debug=True,
+                    export_mv_figures=True,
+                    ding0_legacy=False,
+                )
+                if msg:
+                    status = "run error"
+                else:
+                    msg = ""
+                    status = "OK"
+                if save_as == "csv":
+                    try:
+                        nw.to_csv(os.path.join(base_path, run_id))
+                    except:
+                        results.save_nd_to_pickle(nw, os.path.join(base_path, run_id))
+                elif save_as == "pkl":
+                    results.save_nd_to_pickle(nw, os.path.join(base_path, run_id))
+                else:
+                    msg = "save_as not correct, network not saved."
+
+                output_clusters.append((nw_name, status, msg, nw.metadata))
+            except Exception as e:
+                output_clusters.append((nw_name, "corrupt dist", e, nw.metadata))
+                continue
+
+    output_info.put(output_clusters)
+
+    #######################################################################
+
+
+def process_metadata(meta):
+    """
+    Merge metadata of run on multiple grid districts
+
+    Parameters
+    ----------
+    meta: :obj:`list` of dict
+        Metadata of run of each MV grid district
+
+    Returns
+    -------
+    dict
+        Single metadata dict including merge metadata
+    """
+    mvgds = []
+
+    metadata = meta[0]
+
+    for mvgd in meta:
+        if isinstance(mvgd["mv_grid_districts"], list):
+            mvgds.extend(mvgd["mv_grid_districts"])
+        else:
+            mvgds.append(mvgd["mv_grid_districts"])
+
+    metadata["mv_grid_districts"] = mvgds
+
+    return metadata
+
+
+if __name__ == "__main__":
+    # define individual base path
+    base_path = BASEPATH
+
+    # set run_id to current timestamp
+    run_id = datetime.now().strftime("run_%Y-%m-%d-%H-%M-%S")
+
+    # run in parallel
+    mv_grid_districts = [32904, 34192, 35725]
+    n_of_processes = mp.cpu_count() - 1  # number of parallel threaths
+    n_of_districts = 1  # n° of districts in each serial cluster
+
+    out = parallel_run(
+        mv_grid_districts,
+        n_of_processes,
+        n_of_districts,
+        run_id,
+        base_path=base_path,
+        save_as="csv",
+    )
+
+    # report on unsuccessful runs
+    corrupt_out = [_[:3] for _ in out if _[1] != "OK"]
+
+    corrupt_grid_districts = pd.DataFrame(
+        corrupt_out, columns=["grid", "status", "message"]
+    )
+    corrupt_grid_districts.to_csv(
+        os.path.join(base_path, run_id, "corrupt_mv_grid_districts.txt"),
+        index=False,
+        float_format="%.0f",
+    )
+
+    # save metadata
+    meta_dict_list = [_[3] for _ in out]
+    metadata = process_metadata(meta_dict_list)
+    with open(os.path.join(base_path, run_id, f"Ding0_{run_id}.meta"), "w") as f:
+        json.dump(metadata, f)
