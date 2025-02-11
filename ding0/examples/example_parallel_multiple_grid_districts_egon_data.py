@@ -46,6 +46,7 @@ import json
 import multiprocessing as mp
 import os
 import time
+import warnings
 from datetime import datetime
 from math import floor
 
@@ -54,6 +55,10 @@ import pandas as pd
 from ding0.core import NetworkDing0
 from ding0.tools import results
 from ding0.tools.database import session_scope
+
+# TODO: Warnings are only disabled for presentation reasons. This is usually not
+#  recommended!
+warnings.filterwarnings("ignore")
 
 BASEPATH = os.path.join(os.path.expanduser("~"), ".ding0")
 
