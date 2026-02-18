@@ -71,18 +71,6 @@ def get_lv_load_areas(orm, session, mv_grid_id):
         orm["orm_lv_load_areas"].sector_peakload_industrial.label(
             "peak_load_industrial"
         ),
-        (
-            orm["orm_lv_load_areas"].sector_peakload_residential
-            / orm["orm_lv_load_areas"].sector_peakload_residential_2035
-        ).label("peak_load_residential_scaling_factor"),
-        (
-            orm["orm_lv_load_areas"].sector_peakload_cts
-            / orm["orm_lv_load_areas"].sector_peakload_cts_2035
-        ).label("peak_load_cts_scaling_factor"),
-        (
-            orm["orm_lv_load_areas"].sector_peakload_industrial
-            / orm["orm_lv_load_areas"].sector_peakload_industrial_2035
-        ).label("peak_load_industrial_scaling_factor"),
     ).filter(
         orm["orm_lv_load_areas"].bus_id == mv_grid_id,
         orm["version_condition_la"],
@@ -243,10 +231,6 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         right_on="building_id",
         how="left",
     )
-    residential_buildings_df["capacity"] = (
-        residential_buildings_df["capacity"]
-        * load_area.peak_load_residential_scaling_factor
-    )
     if not round(load_area.peak_load_residential) == round(
         residential_buildings_df.capacity.sum()
     ):
@@ -383,9 +367,6 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
         left_on="building_id",
         right_on="building_id",
         how="left",
-    )
-    cts_buildings_df["capacity"] = (
-        cts_buildings_df["capacity"] * load_area.peak_load_cts_scaling_factor
     )
     if not round(load_area.peak_load_cts) == round(cts_buildings_df.capacity.sum()):
         logger.error(
