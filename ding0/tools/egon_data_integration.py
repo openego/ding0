@@ -406,9 +406,8 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area, scenario=No
     mw2kw = 10**3
     query = (
         session.query(
-            (orm["egon_sites_ind_load_curves_individual"].peak_load * mw2kw).label(
-                "capacity"
-            ),
+            # MW, converted to kW for both industrial sources below
+            orm["egon_sites_ind_load_curves_individual"].peak_load.label("capacity"),
             func.ST_AsText(
                 func.ST_Transform(orm["egon_industrial_sites"].geom, 3035)
             ).label("geometry"),
