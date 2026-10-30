@@ -156,3 +156,25 @@ def test_csv_export_has_pypsa_version(components_run, tmp_path):
     network.to_csv(str(tmp_path))
     network_csv = pd.read_csv(tmp_path / "2" / "network.csv")
     assert network_csv.pypsa_version.iloc[0] == pypsa.__version__
+
+
+def test_mv_point_loads_are_routed_in_rings(components_run):
+    network, _, _ = components_run
+    (mv_grid_district,) = list(network.mv_grid_districts())
+    mv_grid = mv_grid_district.mv_grid
+    ring_nodes = {node for ring in mv_grid.rings_nodes(include_root_node=False)
+                  for node in ring}
+    routed = {component.use_case for component in mv_grid.components()
+              if component in ring_nodes}
+    assert routed == {"urban_fast", "bus_depot", "rail_transit_dc"}
+
+
+def test_point_loads_in_mv_grid_district_peak_load(components_run):
+    network, _, _ = components_run
+    (mv_grid_district,) = list(network.mv_grid_districts())
+    load_areas = sum(la.peak_load for la in mv_grid_district.lv_load_areas())
+    mv_loads = sum(load.peak_load for load in mv_grid_district.mv_grid.loads())
+    # all point loads of district 2, incl. the home charging point without a
+    # building nearby (factor 1.0)
+    point_loads = 300.0 + 2_000.0 + 22.0 + 150.0 + 800.0 + 1_200.0 + 11.0
+    assert mv_grid_district.peak_load == pytest.approx(load_areas + mv_loads + point_loads)

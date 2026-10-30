@@ -551,7 +551,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                     if return_time_varying_data:
                         load_pq_set_df = append_load_pq_set_df(
                             conf, load_pq_set_df, node, node_name=repr(node),
-                            peak_load=node.p_nom)
+                            peak_load=node.peak_load)
 
             elif isinstance(node, LoadDing0):
                 # egon data buildings do not contain consumptional data
@@ -956,7 +956,7 @@ def append_load_areas_to_df(loads_df, generators_df, node,
             if return_time_varying_data:
                 load_pq_set_df = append_load_pq_set_df(
                     conf, load_pq_set_df, component, node_name=repr(component),
-                    peak_load=component.p_nom)
+                    peak_load=component.peak_load)
 
 
     # Handling of loads

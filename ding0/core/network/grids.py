@@ -438,8 +438,16 @@ class MVGridDing0(GridDing0):
         ----
         debug: bool, defaults to False
         """
+        # loads of voltage level 5 are connected by the MV routing; those it
+        # left unconnected are connected like generators
+        unrouted = [component for component in self.components()
+                    if self.graph.degree(component) == 0]
+        for component in unrouted:
+            self._components.remove(component)
+            self.graph.remove_node(component)
         self._graph = mv_connect.mv_connect_components(
-            self.grid_district, self.graph, self.mv_components_to_connect, debug)
+            self.grid_district, self.graph,
+            self.mv_components_to_connect + unrouted, debug)
         lv_connect.lv_connect_components(self, self.lv_components_to_connect, debug)
 
     def parametrize_grid(self, debug=False):

@@ -107,6 +107,13 @@ class PointLoadDing0(GridComponentDing0):
         self.sector = kwargs.get('sector', None)
         self.use_case = kwargs.get('use_case', None)
 
+    @property
+    def peak_load(self):
+        """Peak load in kW used for grid dimensioning: `p_nom` times
+        `[components] point_load_dimensioning_factor`."""
+        from ding0.tools import config as cfg_ding0
+        return self.p_nom * cfg_ding0.get('components', 'point_load_dimensioning_factor')
+
 
 class StorageUnitDing0(GridComponentDing0):
     """Battery storage unit at a location of its own.

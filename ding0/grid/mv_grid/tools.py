@@ -17,6 +17,7 @@ from ding0.core.network.stations import LVStationDing0
 from ding0.core.network.loads import MVLoadDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.network import CableDistributorDing0, GeneratorDing0, LoadDing0
+from ding0.core.network.components import PointLoadDing0
 from ding0.tools.geo import calc_geo_centre_point
 from ding0.tools import config as cfg_ding0
 import logging
@@ -131,6 +132,11 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             elif isinstance(node, MVLoadDing0):
                 nodes_peak_load.append(node.peak_load / cos_phi_load)
 
+            # node is load at a location of its own -> get peak load
+            elif isinstance(node, PointLoadDing0):
+                nodes_peak_load.append(node.peak_load / cos_phi_load)
+                nodes_peak_generation.append(0)
+
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
             elif isinstance(node, CableDistributorDing0):
                 nodes_subtree = mv_grid.graph_nodes_from_subtree(node)
@@ -148,6 +154,9 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
                     # node is LV station -> get peak load and peak generation
                     elif isinstance(node_subtree, GeneratorDing0):
                         nodes_subtree_peak_generation += node_subtree.capacity / cos_phi_feedin
+                    # node is load at a location of its own -> get peak load
+                    elif isinstance(node_subtree, PointLoadDing0):
+                        nodes_subtree_peak_load += node_subtree.peak_load / cos_phi_load
                     else:
                         TypeError("False node type!")
 

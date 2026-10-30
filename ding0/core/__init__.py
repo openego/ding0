@@ -1432,9 +1432,13 @@ class NetworkDing0:
         points, bus depots, rail substations, battery storage) of every MV grid
         district, see :func:`~.ding0.tools.egon_data_integration.get_point_components`.
 
-        Components of voltage levels 4 and 5 are connected to the MV grid, of
-        levels 6 and 7 to LV grids, in
-        :meth:`~.core.NetworkDing0.connect_generators`.
+        Loads of voltage level 5 are nodes of the MV routing (see
+        :meth:`~.core.NetworkDing0.mv_routing`), so the rings are dimensioned
+        for them. Storage units and components of voltage level 4 are
+        connected to the MV grid, of levels 6 and 7 to LV grids, in
+        :meth:`~.core.NetworkDing0.connect_generators`. The peak load of all
+        loads (see `PointLoadDing0.peak_load`) is added to the MV grid
+        district's peak load.
 
         Parameters
         ----------
@@ -1463,7 +1467,12 @@ class NetworkDing0:
                     source_id=row.source_id,
                     max_hours=row.max_hours,
                 )
-                if component.v_level in [4, 5]:
+                if isinstance(component, PointLoadDing0):
+                    mv_grid_district.peak_load += component.peak_load
+                if isinstance(component, PointLoadDing0) and component.v_level == 5:
+                    # node of the MV routing
+                    mv_grid.add_component(component)
+                elif component.v_level in [4, 5]:
                     mv_grid.mv_components_to_connect.append(component)
                 else:
                     mv_grid.lv_components_to_connect.append(component)
