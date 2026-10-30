@@ -30,8 +30,6 @@ __author__     = "nesnoj, gplssm"
 import sys
 import os
 import shlex
-from unittest.mock import MagicMock
-#from mock import Mock as MagicMock
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -52,7 +50,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
-    'sphinx.ext.imgmath',
+    'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
 #    'sphinxcontrib.napoleon',#enable Napoleon interpreter of docstrings Sphinx v<=1.2
     'sphinx.ext.napoleon', #enable Napoleon Sphinx v>1.3
@@ -75,27 +73,27 @@ napoleon_use_keyword = False
 extlinks = {
     'pandas': (
         'http://pandas.pydata.org/pandas-docs/version/0.20/api.html#%s',
-        'pandas.'
+        '%s'
     ),
     'networkx': (
         'https://networkx.github.io/documentation/networkx-1.9.1/_modules/networkx/classes/graph.html%s',
-        'NetworkX Graph Obj'
+        '%s'
     ),
     'sqlalchemy': (
         'https://docs.sqlalchemy.org/en/rel_1_2/%s',
-        'SQLAlchemy object'
+        '%s'
     ),
     'shapely': (
         'http://toblerity.org/shapely/manual.html#%s',
-        'Shapely object'
+        '%s'
     ),
     'pypsa': (
         'https://pypsa.org/doc/components.html#%s',
-        'pypsa.'
+        '%s'
     ),
     'pyproj': (
         'https://jswhit.github.io/pyproj/pyproj.Proj-class.html%s',
-        'pyproj.'
+        '%s'
     ),
 }
 
@@ -133,7 +131,7 @@ version = '0.2.1'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -173,17 +171,13 @@ pygments_style = 'sphinx'
 todo_include_todos = True
 
 
-# Fix import error of modules which depend on C modules (mock out the imports for these modules)
-# see http://read-the-docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
-if 'READTHEDOCS' in os.environ:
-    class Mock(MagicMock):
-        @classmethod
-        def __getattr__(cls, name):
-                return MagicMock()
-
-    #MOCK_MODULES = ['libgeos', 'geos', 'libgeos_c', 'geos_c']
-    MOCK_MODULES = ['shapely', 'shapely.wkt', 'shapely.wkb', 'shapely.geometry', 'shapely.ops']
-    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+# Mock the third-party dependencies so that the docs build without installing them
+autodoc_mock_imports = [
+    'edisgo', 'egoio', 'geoalchemy2', 'geopandas', 'geopy', 'matplotlib',
+    'networkx', 'numpy', 'oedialect', 'osmnx', 'pandas', 'psycopg2',
+    'pymetis', 'pyproj', 'pypsa', 'requests', 'saio', 'scipy', 'seaborn',
+    'shapely', 'sklearn', 'sqlalchemy', 'unittest2',
+]
 
 
 # -- Options for HTML output ----------------------------------------------
@@ -192,8 +186,6 @@ if 'READTHEDOCS' in os.environ:
 # a list of builtin themes.
 # html_theme = 'alabaster'
 
-import sphinx_rtd_theme
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -371,7 +363,7 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # Numbered figures
 numfig = True
