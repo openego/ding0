@@ -28,7 +28,7 @@ from ding0.tools.animation import AnimationDing0
 from ding0.tools.plots import plot_mv_topology, plot_lv_topology
 from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
-from ding0.tools.tools import merge_two_dicts_of_dataframes
+from ding0.tools.tools import merge_two_dicts_of_dataframes, append_to_dataframe
 from ding0.core.network.loads import MVLoadDing0
 from ding0.grid.lv_grid.parameterization import get_peak_load_diversity
 
@@ -912,7 +912,7 @@ class NetworkDing0:
             # Calculation peak load for load area with buildings < 200 kW.
             loads_lv_df = buildings_w_loads_df.loc[
                 buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')
-            ]
+            ].copy()
 
             # Set cluster ID for buildings.
             loads_lv_df['cluster'] = loads_lv_df.nn.map(nodes_w_labels.cluster)
@@ -1977,7 +1977,7 @@ class NetworkDing0:
                 else:
                     v_res0 = v_res1 = 0
 
-                nodes_df = nodes_df.append(pd.Series(
+                nodes_df = append_to_dataframe(nodes_df, pd.Series(
                     {'node_id': node_name,
                      'grid_id': grid_district.mv_grid.id_db,
                      'v_nom': grid_district.mv_grid.v_level,
@@ -2000,7 +2000,7 @@ class NetworkDing0:
                                             str(branch[
                                                     'branch'].id_db)])
 
-                    edges_df = edges_df.append(pd.Series(
+                    edges_df = append_to_dataframe(edges_df, pd.Series(
                         {'branch_id': branch_name,
                          'grid_id': grid_district.mv_grid.id_db,
                          'type_name': branch['branch'].type['name'],
@@ -2157,7 +2157,7 @@ class NetworkDing0:
                 networks = network_df
             else:
                 components = merge_two_dicts_of_dataframes(components, gd_components)
-                networks = networks.append(network_df)
+                networks = append_to_dataframe(networks, network_df)
 
         components['Network'] = network_df
         return components

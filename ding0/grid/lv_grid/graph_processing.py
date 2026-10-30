@@ -137,7 +137,7 @@ def graph_nodes_outside_buffer_polys(graph, ways_sql_df, buffer_poly_list):
     polys_df = pd.DataFrame(buffer_poly_list, index=[i for i in range(len(buffer_poly_list))], columns=['geometry'])
     polys_gdf = gpd.GeoDataFrame(polys_df, geometry='geometry', crs=graph.graph["crs"])
 
-    PointsInPolys = gpd.tools.sjoin(nodes_gdf, polys_gdf, op="within", how='left')
+    PointsInPolys = gpd.tools.sjoin(nodes_gdf, polys_gdf, predicate="within", how="left")
     
     nodes_to_remove = [list(set(nodes_list) - set(PointsInPolys.loc[PointsInPolys['index_right'] == poly].index.tolist())) for poly in range(len(buffer_poly_list))]
 
@@ -339,6 +339,95 @@ def add_edge_geometry_entry(graph):
         
     return graph
 
+def _is_endpoint(G, node, strict=True):
+    """
+    Is node a true endpoint of an edge.
+
+    Copied from osmnx 1.1.1 (MIT license, (c) Geoff Boeing), where it is a
+    private function whose signature changed in later releases. An endpoint is
+    a node that 1) self-loops, 2) has no incoming or no outgoing edges,
+    3) does not have exactly two neighbors and a degree of 2 or 4, or
+    4) in non-strict mode, has incident edges with different OSM IDs.
+
+    Parameters
+    ----------
+    G : networkx.MultiDiGraph
+    node : int
+    strict : bool
+
+    Returns
+    -------
+    bool
+    """
+    neighbors = set(list(G.predecessors(node)) + list(G.successors(node)))
+    n = len(neighbors)
+    d = G.degree(node)
+
+    if node in neighbors:
+        return True
+    elif G.out_degree(node) == 0 or G.in_degree(node) == 0:
+        return True
+    elif not (n == 2 and (d == 2 or d == 4)):
+        return True
+    elif not strict:
+        osmids = []
+        for u in G.predecessors(node):
+            for key in G[u][node]:
+                osmids.append(G.edges[u, node, key]["osmid"])
+        for v in G.successors(node):
+            for key in G[node][v]:
+                osmids.append(G.edges[node, v, key]["osmid"])
+        return len(set(osmids)) > 1
+    else:
+        return False
+
+
+def _build_path(G, endpoint, endpoint_successor, endpoints):
+    """
+    Build a path of nodes from one endpoint node to next endpoint node.
+
+    Copied from osmnx 1.1.1 (MIT license, (c) Geoff Boeing), where it is a
+    private function.
+
+    Parameters
+    ----------
+    G : networkx.MultiDiGraph
+    endpoint : int
+        the endpoint node from which to start the path
+    endpoint_successor : int
+        the successor of endpoint through which the path to the next endpoint
+        will be built
+    endpoints : set
+        the set of all nodes in the graph that are endpoints
+
+    Returns
+    -------
+    path : list
+        the first and last items are endpoint nodes, all other items are
+        interstitial nodes that can be removed subsequently
+    """
+    path = [endpoint, endpoint_successor]
+    for successor in G.successors(endpoint_successor):
+        if successor not in path:
+            path.append(successor)
+            while successor not in endpoints:
+                successors = [n for n in G.successors(successor) if n not in path]
+                if len(successors) == 1:
+                    successor = successors[0]
+                    path.append(successor)
+                elif len(successors) == 0:
+                    if endpoint in G.successors(successor):
+                        # end of a self-looping edge: close the path
+                        return path + [endpoint]
+                    else:
+                        logger.warning(f"Unexpected simplify pattern handled near {successor}")
+                        return path
+                else:
+                    raise Exception(f"Unexpected simplify pattern failed near {successor}")
+            return path
+    return path
+
+
 def _get_paths_to_simplify(G, nodes_to_keep, strict=True):
     """
     # modified osmnx function (extended by nodes_to_keep)
@@ -366,7 +455,7 @@ def _get_paths_to_simplify(G, nodes_to_keep, strict=True):
                 # if endpoint node's successor is not an endpoint, build path
                 # from the endpoint node, through the successor, and on to the
                 # next endpoint node
-                yield ox.simplification._build_path(G, endpoint, successor, nodes_to_keep)
+                yield _build_path(G, endpoint, successor, nodes_to_keep)
 
 
 def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
@@ -418,7 +507,7 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
     all_edges_to_add = []
     
     
-    endpoints = [n for n in G.nodes if ox.simplification._is_endpoint(G, n, strict=True)]
+    endpoints = [n for n in G.nodes if _is_endpoint(G, n, strict=True)]
     nodes_to_keep = list(set(endpoints + street_load_nodes))
     
     if len(endpoints) < 1:
@@ -506,7 +595,7 @@ def simplify_graph_adv(G, street_load_nodes, strict=True, remove_rings=True):
         wccs = nx.weakly_connected_components(G)
         nodes_in_rings = set()
         for wcc in wccs:
-            if not any(ox.simplification._is_endpoint(G, n) for n in wcc):
+            if not any(_is_endpoint(G, n) for n in wcc):
                 nodes_in_rings.update(wcc)
         G.remove_nodes_from(nodes_in_rings)
 
@@ -580,7 +669,11 @@ def handle_detour_edges(graph, level="mv", mode='remove'):
     for u, v, k, data in edges:
 
         path_distance = data['length']
-        eucl_distance = LineString(data['geometry'].boundary).length
+        # Straight line between the edge's end points. Shapely 2 returns a
+        # MultiPoint from `.boundary`, which LineString() does not accept.
+        geom = data['geometry']
+        chord = LineString([geom.coords[0], geom.coords[-1]])
+        eucl_distance = chord.length
 
         if path_distance > get_config_osm('max_detour_factor') * eucl_distance:
 
@@ -598,7 +691,7 @@ def handle_detour_edges(graph, level="mv", mode='remove'):
                 else:
                     graph.add_edge(u, v, k, **data)
                     graph.edges[u, v, k]['length'] = eucl_distance
-                    graph.edges[u, v, k]['geometry'] = LineString(data['geometry'].boundary)
+                    graph.edges[u, v, k]['geometry'] = chord
 
     return graph
 

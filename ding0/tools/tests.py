@@ -1,4 +1,4 @@
-import unittest2 as unittest
+import unittest
 
 from egoio.tools import db
 from ding0.core import NetworkDing0
@@ -160,8 +160,8 @@ def dataframe_equal(network_one, network_two):
     cb_one_new_name_list = ['Circuit_breaker_'+str(n+1) for n in range(0,len(cb_one))]
     cb_two_new_name_list = ['Circuit_breaker_'+str(n+1) for n in range(0,len(cb_two))]
 
-    nodes_one_df['node_id'].replace(to_replace=cb_one,value=cb_one_new_name_list,inplace=True)
-    nodes_two_df['node_id'].replace(to_replace=cb_two,value=cb_two_new_name_list,inplace=True)
+    nodes_one_df['node_id'] = nodes_one_df['node_id'].replace(to_replace=cb_one,value=cb_one_new_name_list)
+    nodes_two_df['node_id'] = nodes_two_df['node_id'].replace(to_replace=cb_two,value=cb_two_new_name_list)
     nodes_one_df = nodes_one_df.sort_values('node_id').reset_index(drop=True)
     nodes_two_df = nodes_two_df.sort_values('node_id').reset_index(drop=True)
 
@@ -173,7 +173,7 @@ def dataframe_equal(network_one, network_two):
     edges_one_df['geom'] = edges_one_df['geom'].apply(lambda x: x.desc)
     edges_two_df['geom'] = edges_two_df['geom'].apply(lambda x: x.desc)
     #    then go through the edges and compare crossed coordinates
-    for idx, row in edges_one_geom_xy.iteritems():
+    for idx, row in edges_one_geom_xy.items():
         if (    (edges_one_geom_xy[idx][0][0] == edges_two_geom_xy[idx][0][1])
             and (edges_one_geom_xy[idx][0][1] == edges_two_geom_xy[idx][0][0])
             and (edges_one_geom_xy[idx][1][0] == edges_two_geom_xy[idx][1][1])

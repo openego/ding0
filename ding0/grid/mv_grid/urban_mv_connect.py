@@ -130,14 +130,14 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
 
                 # split branch geometry
                 shp_to_split = branch_to_split.geometry
-                line_shps = split(shp_to_split, root_shp)
+                line_shps = list(split(shp_to_split, root_shp).geoms)
 
                 if len(line_shps) == 2: # general case
                 # find respective geometry for adjacent nodes
-                    if adj_node1.geo_data == line_shps[0].boundary[0]:
+                    if adj_node1.geo_data == line_shps[0].boundary.geoms[0]:
                         line_shp_1 = line_shps[0]
                         line_shp_2 = line_shps[1]
-                    elif adj_node1.geo_data == line_shps[1].boundary[1]:
+                    elif adj_node1.geo_data == line_shps[1].boundary.geoms[1]:
                         line_shp_1 = line_shps[1]
                         line_shp_2 = line_shps[0]
                 else: #workaround in case len(line_shps) == 1

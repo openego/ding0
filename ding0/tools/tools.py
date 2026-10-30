@@ -14,7 +14,34 @@ __author__     = "nesnoj, gplssm"
 
 
 from geopy import distance
+import pandas as pd
 from shapely.geometry import Point, LineString, LinearRing, Polygon
+
+
+def append_to_dataframe(df, other, ignore_index=False):
+    '''Append rows to a DataFrame like `DataFrame.append` did before pandas 2.
+
+    Parameters
+    ----------
+    df: :pandas:`pandas.DataFrame<DataFrame>`
+    other: :pandas:`pandas.Series<Series>` or :pandas:`pandas.DataFrame<DataFrame>`
+        A Series is appended as one row; its index becomes the columns and,
+        unless `ignore_index` is set, its name becomes the row label.
+    ignore_index: bool
+
+    Returns
+    -------
+    :pandas:`pandas.DataFrame<DataFrame>`
+    '''
+    if isinstance(other, pd.Series):
+        other = pd.DataFrame([other])
+    if df.empty:
+        # Concatenating with an empty frame would let its (object) dtypes
+        # decide the result; the rows appended define the dtypes instead.
+        columns = df.columns.append(other.columns.difference(df.columns, sort=False))
+        result = other.reindex(columns=columns)
+        return result.reset_index(drop=True) if ignore_index else result
+    return pd.concat([df, other], ignore_index=ignore_index)
 
 
 def merge_two_dicts(x, y):
@@ -56,7 +83,7 @@ def merge_two_dicts_of_dataframes(dict1, dict2):
     merged_dict={}
     for key in dict1:
         if key in dict2:
-            merged_dict[key] = dict1[key].append(dict2[key])
+            merged_dict[key] = append_to_dataframe(dict1[key], dict2[key])
         else:
             merged_dict[key] = dict1[key]
     for key in dict2:
