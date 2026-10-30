@@ -29,9 +29,9 @@ Throughout the tool, a nesting has been implemented that is shown in
 
 The first step in the ding0 workflow involves the import of essential input data from two primary sources:
 
-1.1 **Open Energy Platform (OEP)**
-    OEP serves as a comprehensive data repository, supplying critical grid-related
-    information. For each distribution network, the following data types are imported:
+1.1 **eGon-data**
+    The input data is read from a database created by `eGon-data <https://github.com/openego/eGon-data>`_,
+    supplying critical grid-related information. For each distribution network, the following data types are imported:
 
     ======================== =====
     Data Type                    Definition
@@ -39,12 +39,13 @@ The first step in the ding0 workflow involves the import of essential input data
     Load Areas                  Geographical clusters designed for electrical loads
     Building Loads              Electrical loads assigned to specific buildings
     MVGD                        Polygon defining the geographical area of the Medium Voltage Grid District (MVGD)
-    HV/MV station               Location of the grid connection point between high -and medium voltage level
+    HV/MV station               Location of the grid connection point between high and medium voltage level
     Generators                  Renewable and conventional power generation sources located in the regarded MVGD
     ======================== =====
 
-1.2 **Open Street Maps [OSM]_ **
+1.2 **OpenStreetMap (OSM)** [OSM]_
     OSM provides the street network data, forming the geographical basis of the distribution network.
+    The street network is also read from the eGon-data database.
 
 2. Data Processing
 ===================
@@ -58,13 +59,12 @@ The first step in the ding0 workflow involves the import of essential input data
     ================== ================== =========================
     Voltage level       Nominal capacity    Allocation target
     ================== ================== =========================
-    HV-MV (20kV)           5.5 - 20 MW         HV/MV substation
-    HV-MV (10kV)           3 - 11 MW           HV/MV substation
-    MV    (20kV)           0.2 - 5.5 MW        MV grid
-    MV    (10kV)           0.2 - 3 MW          MV grid
-    MV-LV (0.4kV)          0.1 - 0.2 MW        MV/LV substation
-    LV    (0.4kV)          ≤ 0.1               LV grid
+    MV                  0.2 - 5.5 MW        MV grid
+    MV-LV               0.1 - 0.2 MW        MV/LV substation
+    LV                  < 0.1 MW            LV grid
     ================== ================== =========================
+
+    Loads with a capacity of 5.5 MW or more are currently not considered.
 
     **Generators**. Depending on their nominal capacity, power generation sources are tagged with different allocation targets.
     Ding0 does not contemplate generators when building the initial grid topology. They are connected through stub
@@ -98,16 +98,17 @@ The first step in the ding0 workflow involves the import of essential input data
 2.3 **Parametrization and Validation**
 
     **Parametrization**. In the parameterization phase, technical specifications for the MVGD are determined, including voltage levels
-    based on load density and distance between LA centers and the HV/MV substations. Load density exceeding 1 MVA/km² or distances
-    below 15 km results in an operating voltage of Vₙ = 10 kV; otherwise, Vₙ = 20 kV. This defines the use of underground cables (10 kV)
-    or overhead lines (20 kV) in the network. **Aggregated LAs** are identified when
+    based on the distance between LA centers and the HV/MV substation: if the maximum distance is 15 km or more, the grid is operated
+    at Vₙ = 20 kV, otherwise at Vₙ = 10 kV. Alternatively, the voltage level can be chosen by load density (1 MVA/km² or more results
+    in 10 kV). This defines the use of underground cables (10 kV) or overhead lines (20 kV) in the network. **Aggregated LAs** are identified when
 
     .. math::
-        PLA \geq \frac{Imax_{th}}{3\sqrt{V_n}}
+        P_{LA} > \sqrt{3} \cdot V_n \cdot I_{max,th}
 
 
-    classifying them as urban regions. PLA refers to the peak load of the regarded LA. Transformer types are chosen based on peak loads,
-    with HS/MS transformers operating at up to 60% load and MS/NS transformers at up to 100% load, ensuring redundancy and (n-1) security
+    classifying them as urban regions. :math:`P_{LA}` refers to the peak load of the regarded LA and :math:`I_{max,th}` to
+    the thermal current limit of the largest available line or cable type. Transformer types are chosen based on peak loads,
+    with HV/MV transformers operating at up to 60% load and MV/LV transformers at up to 100% load, ensuring redundancy and (n-1) security
     for the substation.
 
 3. Low Voltage (LV) Grid Construction
@@ -152,7 +153,7 @@ The first step in the ding0 workflow involves the import of essential input data
      Assumption                               Value
     ========================================  ==================================================================================================
      Type of topology                         Open ring topology
-     Voltage Level (MV)                       20 kV (if load density > 1 MVA/km² or distance between LA centers < 15 km), 10 kV (otherwise)
+     Voltage Level (MV)                       20 kV (if the distance to an LA center is 15 km or more), 10 kV (otherwise)                    
      Preferred Cable Type (10 kV)             Earth Cables
      Preferred Cable Type (20 kV)             Overhead Lines
      Maximum Line Loading normal              Up to 60%
@@ -160,22 +161,22 @@ The first step in the ding0 workflow involves the import of essential input data
      Maximum Voltage Drop normal              5 %
      Maximum Voltage Drop failure             10 %
      Detour Factor                            1.3
-     Reactive Power requirements loads        cos(φ)=0.9
+     Reactive Power requirements loads        cos(φ)=0.97
      Reactive Power requirements generators   cos(φ)=1
     ========================================  ==================================================================================================
 
-    **Rounting.** The routing for the initial grid topology in the context of the ding0 tool is
+    **Routing.** The routing for the initial grid topology in the context of the ding0 tool is
     based on the Capacitated Vehicle Routing Problem (CVRP) formulation which is solved by a two-stage
     metaheuristic approach. The classic CVRP optimization problem is adapted for designing the MV grid,
     with the objective of determining the most efficient routes for supplying electricity to different
-    MV gird connection points (MV/LV substations and MV loads).
+    MV grid connection points (MV/LV substations and MV loads).
     First, the initial routes are constructed using a parallel savings heuristic of
     Clarke and Wright. This heuristic identifies potential savings by combining routes and iteratively
     improves the solution. Only centers of LAs are regarded as potential points for the algorithm.
     Second, local search heuristics are used to refine the routes further.
 
     ========================================  =============================== ====================================================================
-    CVRP notation                             Appliance to grid planning        Explanation
+    CVRP notation                             Application to grid planning      Explanation
     ========================================  =============================== ====================================================================
     customers                                 Centers of LAs                    Location that needs to be visited
     depot                                     HV/MV substation                  Central point from which the MV grid routes originate and return
@@ -185,7 +186,7 @@ The first step in the ding0 workflow involves the import of essential input data
     voltage stability, load factor, line loading, and operational modes (normal and faulty). These constraints ensure that the designed grid
     remains technically feasible and reliable.
 
-    **Grid extension.** The initial MV grid topology is extended by those MV grid connection points that are adversed above
+    **Grid extension.** The initial MV grid topology is extended by those MV grid connection points that were left out above
     due to proximity reasons or technical constraints. Three sequential steps are executed to connect satellite LAs, MV/LV substations,
     and generation units to the existing grid are proceeded by applying the order of connection respectively.
 
@@ -211,7 +212,7 @@ The first step in the ding0 workflow involves the import of essential input data
 
 **4.2 MV Grid in urban areas (aggregated LAs)**
 
-Aggregated Local Areas (LAs) are characterized by a high cumulative power demand, classifying them as urban regions.
+Aggregated Load Areas (LAs) are characterized by a high cumulative power demand, classifying them as urban regions.
 In these LAs, each is connected to the HV/MV substation through at least one direct connection, which depends on the cumulative load.
 To design the MV grid within aggregated LAs, actual road network distances (OSM) are considered. The graph representing this network
 is preprocessed and divided into two components: G_core, which contains potential MV-ring topology customers, and G_stub, which
@@ -224,16 +225,16 @@ for the initial MV ring topology. The routing procedure aligns with that used in
 network distances being considered instead of air distances. The Dijkstra Algorithm plays a crucial role in determining the precise
 road geometries of ring circuits and their lengths.
 
-    ========================================  =============================== ====================================================================
-    Criterion                                   Rural area                      Urban area
-    ========================================  =============================== ====================================================================
-    Distance calculation                         Street network                    Air distances * detour factor
-    Customers for initial ring topology          LA centers                        Final G_core components (MV/LV stations + MV loads)
-    Customers for stub connection                missing LA centers,               Final G_stub components (MV/LV stations + MV loads)
-                                                 generators, MV/LV stations
-    Voltage level                                10kV and 20kV                     mostly 10kV
-    Connection type                              Cables and overhead lines         mostly cables (underground)
-    ========================================  =============================== ====================================================================
+    ====================================  ==============================  ===================================================
+    Criterion                             Rural area                      Urban area
+    ====================================  ==============================  ===================================================
+    Distance calculation                  Air distances * detour factor   Street network
+    Customers for initial ring topology   LA centers                      Final G_core components (MV/LV stations + MV loads)
+    Customers for stub connection         Missing LA centers,             Final G_stub components (MV/LV stations + MV loads)
+                                          generators, MV/LV stations
+    Voltage level                         10 kV and 20 kV                 Mostly 10 kV
+    Connection type                       Cables and overhead lines       Mostly cables (underground)
+    ====================================  ==============================  ===================================================
 
 Details on MV grid design in urban areas are presented in [Dubielzig]_.
 
@@ -244,7 +245,7 @@ Details on MV grid design in urban areas are presented in [Dubielzig]_.
 **5.1 Relocating Switch Disconnectors and Power Flow Analysis**
 
 Switch disconnectors are used to realize redundancy within the grid in case of an outage of a component.
-MV-rings can be operated as isolated half-rings.The grid thus does
+MV-rings can be operated as isolated half-rings. The grid thus does
 meet minimum technical requirements. A ring’s switch disconnector was initially located on the line where power
 flow is minimal in closed condition. Due to the extension of the grid, additional loads are
 connected to the rings. Therefore, the switch disconnectors are subsequently relocated to fulfill
@@ -264,9 +265,9 @@ The following steps are applied:
         **(3)** Run a power flow analysis to check for voltage issues.
 
         **(4)** Select larger cable types for the critical branches to address voltage issues.
-        For each node where voltage exceeds 3 % of nominal voltage in feed-in case or 5 %
+        For each node where voltage exceeds 2 % of nominal voltage in feed-in case or 5 %
         of nominal voltage in load case, branch segments connecting the node with the substation
-        are reinforce until no further issues remain.
+        are reinforced until no further issues remain.
 
 Once grid reinforcement is complete, switch disconnectors are closed, finalizing the network configuration.
 
@@ -283,8 +284,8 @@ References
     resolution*. International Journal of Sustainable Energy Planning and Management
     Vol. 13 2017 79–92, `doi:10.5278/ijsepm.2017.13.6 <https://doi.org/10.5278/ijsepm.2017.13.6>`_
 .. [Dubielzig] P. Dubielzig: Modellierung synthetischer Verteilnetztopologien
-    in urbanen Gebieten, Dissertation, TU Berlin, 2022
+    in urbanen Gebieten, Master's thesis, TU Berlin, 2022
 .. [John] R. John: Planning of Synthetic Low Voltage Networks
-    with Geographical Constraints, Dissertation, Offenburg University, 2021
+    with Geographical Constraints, Master's thesis, Offenburg University, 2021
 .. [OSM] OpenStreetMap contributors:
     `Open street map <https://www.openstreetmap.org>`_, 2017
