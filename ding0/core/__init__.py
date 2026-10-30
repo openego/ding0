@@ -157,7 +157,7 @@ class NetworkDing0:
 
     """
 
-    def __init__(self, session, **kwargs):
+    def __init__(self, session=None, **kwargs):
         self.name = kwargs.get('name', None)
         self._run_id = kwargs.get('run_id', None)
         self._mv_grid_districts = []
@@ -165,7 +165,9 @@ class NetworkDing0:
         self._config = self.import_config()
         self._pf_config = self.import_pf_config()
         self._static_data = self.import_static_data()
-        self._orm = self.import_orm(session)
+        # ORM classes are reflected from the database on first access, so a
+        # network can be built and tested without a database connection.
+        self._orm = None
         self.message = []
 
     def mv_grid_districts(self):
@@ -234,6 +236,8 @@ class NetworkDing0:
         -------
         :obj: `dict`
         """
+        if getattr(self, '_orm', None) is None:
+            self._orm = self.import_orm()
         return self._orm
 
     def run_ding0(
@@ -1533,7 +1537,7 @@ class NetworkDing0:
 
         return static_data
 
-    def import_orm(self, session):
+    def import_orm(self, session=None):
         """
         Import ORM classes names for  the correct connection to
         open energy platform and access tables depending on input in config in
