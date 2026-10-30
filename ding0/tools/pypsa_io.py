@@ -26,6 +26,7 @@ from ding0.core.structure.regions import LVLoadAreaCentreDing0, \
 from ding0.core.powerflow import q_sign
 from ding0.core.network.cable_distributors import LVCableDistributorDing0, MVCableDistributorDing0
 from ding0.core import network as ding0_nw
+from ding0.core.network.components import GridComponentDing0, StorageUnitDing0
 from ding0.tools.tools import merge_two_dicts_of_dataframes, append_to_dataframe
 from ding0.grid.lv_grid.build_grid import select_transformers
 
@@ -392,7 +393,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             graph = node.grid.graph
         elif isinstance(node, MVLoadDing0):
             graph = node.grid.mv_grid.graph
-        elif isinstance(node, GeneratorDing0):
+        elif isinstance(node, (GeneratorDing0, GridComponentDing0)):
             if node.lv_grid is not None:
                 graph = node.lv_grid.graph
             else:
@@ -412,6 +413,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             ValueError("More than one adjacent branch!")
 
     srid = int(cfg_ding0.get('geo', 'srid'))
+    storage_units_df = pd.DataFrame(columns=STORAGE_UNITS_COLUMNS)
     # check if there are islanded nodes which do not belong to aggregated
     # load area
     for isl_node in grid.graph_isolated_nodes():
@@ -525,6 +527,32 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                         conf, generator_pq_set_df, node
                     )
 
+            # loads and storage units at locations of their own
+            elif isinstance(node, GridComponentDing0):
+                neighbor = next_branch_is_helper_component(node)
+                if neighbor:
+                    bus_name = neighbor.pypsa_bus_id
+                else:
+                    bus_name = node.pypsa_bus_id
+                    buses_df = append_buses_df(buses_df, grid, node)
+                    if return_time_varying_data:
+                        bus_v_mag_set_df = append_bus_v_mag_set_df(
+                            bus_v_mag_set_df, node, node_name=bus_name
+                        )
+                if isinstance(node, StorageUnitDing0):
+                    storage_units_df = append_storage_units_df(
+                        storage_units_df, repr(node), bus_name, node.p_nom,
+                        node.max_hours, node.type, source_id=node.source_id)
+                else:
+                    loads_df = append_component_load_df(
+                        loads_df, repr(node), bus_name, node.p_nom, node.type,
+                        node.sector, use_case=node.use_case,
+                        source_id=node.source_id)
+                    if return_time_varying_data:
+                        load_pq_set_df = append_load_pq_set_df(
+                            conf, load_pq_set_df, node, node_name=repr(node),
+                            peak_load=node.p_nom)
+
             elif isinstance(node, LoadDing0):
                 # egon data buildings do not contain consumptional data
                 # consumption is not considered (at the moment)
@@ -578,6 +606,24 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                 node,
                                 node_name=f"{repr(node)}_{sector}"
                             )
+
+                # add components in the building, as in eDisGo
+                for name, load_type, sector, p_set, factor in \
+                        building_component_loads(node):
+                    loads_df = append_component_load_df(
+                        loads_df, name, bus_name, p_set, load_type, sector,
+                        building_id=node.building_id)
+                    if return_time_varying_data:
+                        load_pq_set_df = append_load_pq_set_df(
+                            conf, load_pq_set_df, node, node_name=name,
+                            peak_load=factor * p_set)
+                if node.home_storage_p_nom:
+                    storage_units_df = append_storage_units_df(
+                        storage_units_df,
+                        f"{repr(node).replace('Load_', 'Storage_', 1)}_home_storage",
+                        bus_name, node.home_storage_p_nom,
+                        node.home_storage_capacity / node.home_storage_p_nom,
+                        'home_storage', building_id=node.building_id)
 
             # aggregated load at hv/mv substation
             elif isinstance(node, LVLoadAreaCentreDing0):
@@ -663,6 +709,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
     nodal_components = {'Bus': buses_df.set_index('name'),
                         'Generator': generators_df.set_index('name'),
                         'Load': loads_df.set_index('name'),
+                        'StorageUnit': storage_units_df.set_index('name'),
                         'Transformer': transformer_df.set_index('name')}
 
     if return_time_varying_data:
@@ -897,6 +944,19 @@ def append_load_areas_to_df(loads_df, generators_df, node,
             if return_time_varying_data:
                 generator_pq_set_df = \
                     append_generator_pq_set_df(conf, generator_pq_set_df, gen)
+        # loads at locations of their own; components in buildings are part
+        # of the grid district's peak load
+        for component in lvgd.lv_grid.components():
+            if isinstance(component, StorageUnitDing0):
+                continue
+            loads_df = append_component_load_df(
+                loads_df, repr(component), name_bus, component.p_nom,
+                component.type, component.sector, use_case=component.use_case,
+                source_id=component.source_id)
+            if return_time_varying_data:
+                load_pq_set_df = append_load_pq_set_df(
+                    conf, load_pq_set_df, component, node_name=repr(component),
+                    peak_load=component.p_nom)
 
 
     # Handling of loads
@@ -1066,6 +1126,94 @@ def append_generators_df(generators_df, node, name_bus = None):
     )
     generators_df = append_to_dataframe(generators_df, generator, ignore_index=True)
     return generators_df
+
+
+STORAGE_UNITS_COLUMNS = ['name', 'bus', 'control', 'p_nom', 'max_hours',
+                         'type', 'building_id']
+
+
+def building_component_loads(node):
+    """
+    Heat pump and home charging point of a building as loads, named and typed
+    as in eDisGo.
+
+    Parameters
+    ----------
+    node : :class:`~.ding0.core.network.LoadDing0`
+
+    Returns
+    -------
+    :obj:`list` of :obj:`tuple`
+        (name, type, sector, p_set in kW, share for power flows in ding0, see
+        `[components] *_dimensioning_factor`)
+    """
+    loads = []
+    for load_type, sector, p_set, factor in [
+        ('heat_pump', 'individual_heating', node.heat_pump_p_set,
+         cfg_ding0.get('components', 'heat_pump_dimensioning_factor')),
+        ('charging_point', 'home', node.charging_point_p_set,
+         cfg_ding0.get('components', 'charging_point_home_dimensioning_factor')),
+    ]:
+        if p_set:
+            loads.append((f"{repr(node)}_{load_type}", load_type, sector,
+                          p_set, factor))
+    return loads
+
+
+def append_component_load_df(loads_df, name, bus, p_set, load_type, sector,
+                             building_id=None, use_case=None, source_id=None):
+    """
+    Appends a heat pump, charging point or other load besides the sectoral
+    building loads to the dataframe of loads, as in eDisGo.
+
+    Parameters
+    ----------
+    p_set : :obj:`float`
+        Grid connection power in kW
+
+    Returns
+    -------
+    :pandas:`pandas.DataFrame<dataframe>`
+    """
+    load = pd.Series({'name': name,
+                      'bus': bus,
+                      'p_set': p_set / 1e3,
+                      'number_households': 0,
+                      'building_id': building_id,
+                      'annual_consumption': None,
+                      'sector': sector,
+                      'type': load_type,
+                      'use_case': use_case,
+                      'source_id': source_id})
+    return append_to_dataframe(loads_df, load, ignore_index=True)
+
+
+def append_storage_units_df(storage_units_df, name, bus, p_nom, max_hours,
+                            storage_type, building_id=None, source_id=None):
+    """
+    Appends a battery storage unit to the dataframe of storage units, as in
+    eDisGo.
+
+    Parameters
+    ----------
+    p_nom : :obj:`float`
+        Power in kW
+    max_hours : :obj:`float`
+        Energy capacity / power
+
+    Returns
+    -------
+    :pandas:`pandas.DataFrame<dataframe>`
+    """
+    storage = pd.Series({'name': name,
+                         'bus': bus,
+                         'control': 'PQ',
+                         'p_nom': p_nom / 1e3,
+                         'max_hours': max_hours,
+                         'type': storage_type,
+                         'building_id': building_id,
+                         'source_id': source_id})
+    return append_to_dataframe(storage_units_df, storage, ignore_index=True)
 
 
 def append_buses_df(buses_df, grid, node, node_name =''):

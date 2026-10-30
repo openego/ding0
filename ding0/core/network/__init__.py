@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from ding0.core.structure.regions import LVLoadAreaDing0, LVLoadAreaCentreDing0
+from ding0.core.network.components import GridComponentDing0
 import ding0.tools as tl
 
 
@@ -72,6 +73,9 @@ class GridDing0:
         self._cable_distributors = []
         self._loads = []
         self._generators = []
+        # loads and storage units at locations of their own, see
+        # :class:`~.ding0.core.network.components.GridComponentDing0`
+        self._components = []
         self.v_level = kwargs.get('v_level', None)
 
         self._graph = nx.Graph()
@@ -162,6 +166,34 @@ class GridDing0:
             self._generators.append(generator)
             self.graph_add_node(generator)
 
+    def components(self):
+        """
+        Returns a generator for iterating over grid's loads and storage units
+        at locations of their own
+
+        Returns
+        -------
+        :obj:`list` generator
+            List of :class:`~.ding0.core.network.components.GridComponentDing0`
+            objects
+        """
+        for component in self._components:
+            yield component
+
+    def add_component(self, component):
+        """
+        Adds a load or storage unit at a location of its own to
+        :attr:`~.ding0.core.network.GridDing0._components` and the grid graph
+        if not already existing
+
+        Parameters
+        ----------
+        component : :class:`~.ding0.core.network.components.GridComponentDing0`
+        """
+        if component not in self._components:
+            self._components.append(component)
+            self.graph_add_node(component)
+
     @property
     def graph(self):
         """Provide access to the graph"""
@@ -194,7 +226,8 @@ class GridDing0:
                                       LVLoadAreaCentreDing0,
                                       CircuitBreakerDing0,
                                       GeneratorDing0,
-                                      LoadDing0)))):
+                                      LoadDing0,
+                                      GridComponentDing0)))):
             self.graph.add_node(node_object)
 
     def graph_draw(self, mode):
@@ -1130,6 +1163,12 @@ class LoadDing0:
         self.building_id = kwargs.get('building_id', None)
         self.sector = kwargs.get('sector', None)
         self.type = kwargs.get('type', None)
+        # components in the building, exported as loads and storage units of
+        # their own at the building's bus (kW, storage capacity in kWh)
+        self.heat_pump_p_set = kwargs.get('heat_pump_p_set', 0)
+        self.charging_point_p_set = kwargs.get('charging_point_p_set', 0)
+        self.home_storage_p_nom = kwargs.get('home_storage_p_nom', 0)
+        self.home_storage_capacity = kwargs.get('home_storage_capacity', 0)
 
     @property
     def network(self):

@@ -53,6 +53,53 @@ def lv_connect_generators(mv_grid, graph, debug=False):
                              'load_factor_lv_cable_fc_normal')
     cos_phi_gen = cfg_ding0.get('assumptions',
                                 'cos_phi_gen')
+    connect_lv_nodes_by_voltage_level(
+        mv_grid, mv_grid.lv_generators_to_connect, cable_lf, cos_phi_gen,
+        add_to_grid=lambda grid, generator: grid.add_generator(generator))
+
+
+def lv_connect_components(mv_grid, components, debug=False):
+    """ Connect loads and storage units at locations of their own to LV grids,
+    like generators of the same voltage level (see
+    :func:`lv_connect_generators`)
+
+    Args
+    ----
+    mv_grid: MVGridDing0
+    components: :obj:`list`
+        :class:`~.ding0.core.network.components.GridComponentDing0` objects
+        of voltage levels 6 and 7
+    debug: bool, defaults to False
+    """
+    cable_lf = cfg_ding0.get('assumptions',
+                             'load_factor_lv_cable_lc_normal')
+    cos_phi_load = cfg_ding0.get('assumptions',
+                                 'cos_phi_load')
+    connect_lv_nodes_by_voltage_level(
+        mv_grid, components, cable_lf, cos_phi_load,
+        add_to_grid=lambda grid, component: grid.add_component(component))
+
+
+def connect_lv_nodes_by_voltage_level(mv_grid, nodes_to_connect, cable_lf,
+                                      cos_phi, add_to_grid):
+    """ Connect generators or components to LV grids by their voltage level:
+    level 6 to the nearest LV station by a cable of its own, level 7 to the
+    load with the same building id or else to the nearest LV load.
+
+    Args
+    ----
+    mv_grid: MVGridDing0
+    nodes_to_connect: :obj:`list`
+        Objects with attributes v_level, geo_data, capacity (kW) and
+        building_id
+    cable_lf: :obj:`float`
+        Load factor of cables of voltage level 6
+    cos_phi: :obj:`float`
+        Power factor to size cables of voltage level 6
+    add_to_grid: function
+        Adds a node to the LV grid it is connected to, called with the grid
+        and the node
+    """
     v_nom = cfg_ding0.get('assumptions', 'lv_nominal_voltage') / 1e3  # v_nom in kV
     seed = int(cfg_ding0.get('random', 'seed'))
     random.seed(a=seed)
@@ -73,17 +120,17 @@ def lv_connect_generators(mv_grid, graph, debug=False):
     lv_stations_df = lv_nodes_df[lv_nodes_df["type"] == "LVStationDing0"]
     lv_loads_df = lv_nodes_df[lv_nodes_df["type"] == "LVLoadDing0"]
 
-    def add_generator_to_station(generator, station):
+    def add_node_to_station(node, station):
         grid = station.grid
         graph = grid.graph
 
-        branch_shp, branch_length = calc_edge_geometry(generator, station)
+        branch_shp, branch_length = calc_edge_geometry(node, station)
         # Calculate length with detour factor
-        branch_length = calc_geo_dist(generator, station)
+        branch_length = calc_geo_dist(node, station)
         branch_type = cable_type(
-            generator.capacity / (cable_lf * cos_phi_gen),
+            node.capacity / (cable_lf * cos_phi),
             v_nom,
-            lv_grid_district.lv_grid.network.static_data['LV_cables'])
+            grid.network.static_data['LV_cables'])
 
         branch = BranchDing0(length=branch_length,
                              kind='cable',
@@ -91,20 +138,20 @@ def lv_connect_generators(mv_grid, graph, debug=False):
                              type=branch_type,
                              geometry=branch_shp)
 
-        generator.lv_grid = grid
-        generator.lv_load_area = grid.grid_district.lv_load_area
+        node.lv_grid = grid
+        node.lv_load_area = grid.grid_district.lv_load_area
 
-        graph.add_edge(generator, station, branch=branch)
-        grid.add_generator(generator)
+        graph.add_edge(node, station, branch=branch)
+        add_to_grid(grid, node)
 
-    def add_generator_to_node(generator, node_to_connect):
+    def add_node_to_node(node, node_to_connect):
         grid = node_to_connect.grid
         graph = grid.graph
 
         # Add helper cable
         branch = BranchDing0(
             grid=grid,
-            id_db=f"helper_{generator}",
+            id_db=f"helper_{node}",
             helper_component=True,
         )
 
@@ -115,34 +162,34 @@ def lv_connect_generators(mv_grid, graph, debug=False):
         else:
             raise ValueError("False node as connection target!")
 
-        generator.lv_grid = grid
-        generator.lv_load_area = grid.grid_district.lv_load_area
-        generator.geo_data = cable_distributor.geo_data
+        node.lv_grid = grid
+        node.lv_load_area = grid.grid_district.lv_load_area
+        node.geo_data = cable_distributor.geo_data
 
-        grid.add_generator(generator)
-        graph.add_edge(cable_distributor, generator, branch=branch)
+        add_to_grid(grid, node)
+        graph.add_edge(cable_distributor, node, branch=branch)
 
-    def get_nearest_nodes_of_generator(nearest_node, generator):
+    def get_nearest_nodes_of_node(nearest_node, node):
         distance = cdist(
             nearest_node.loc[:, ["x", "y"]],
-            [(generator.geo_data.x, generator.geo_data.y)],
+            [(node.geo_data.x, node.geo_data.y)],
             'euclidean'
         )
         nearest_node = nearest_node.iloc[np.where(distance == distance.min())[0][0]]["node"]
         return nearest_node
 
-    for generator in sorted(mv_grid.lv_generators_to_connect, key=lambda x: repr(x)):
-        if generator.v_level == 6:
-            nearest_station = get_nearest_nodes_of_generator(lv_stations_df, generator)
-            add_generator_to_station(generator, nearest_station)
-        elif generator.v_level == 7:
+    for node in sorted(nodes_to_connect, key=lambda x: repr(x)):
+        if node.v_level == 6:
+            nearest_station = get_nearest_nodes_of_node(lv_stations_df, node)
+            add_node_to_station(node, nearest_station)
+        elif node.v_level == 7:
             if (
-                    generator.building_id
-                    and not lv_loads_df[lv_loads_df["building_id"] == generator.building_id].empty
+                    node.building_id
+                    and not lv_loads_df[lv_loads_df["building_id"] == node.building_id].empty
             ):
-                node_to_connect = lv_loads_df[lv_loads_df["building_id"] == generator.building_id]["node"].values[0]
+                node_to_connect = lv_loads_df[lv_loads_df["building_id"] == node.building_id]["node"].values[0]
             else:
-                node_to_connect = get_nearest_nodes_of_generator(lv_loads_df, generator)
-            add_generator_to_node(generator, node_to_connect)
+                node_to_connect = get_nearest_nodes_of_node(lv_loads_df, node)
+            add_node_to_node(node, node_to_connect)
         else:
             raise ValueError("False Voltage Level!")

@@ -304,8 +304,88 @@ def conv_generators(mvgd_id=MV_GRID_ID):
     ]), mvgd_id)
 
 
-def patch_database(monkeypatch):
-    """Replace all database getters used by `NetworkDing0.run_ding0`."""
+# Components of newer egon-data versions, in grid district 2 only. They are
+# used if `patch_database` is called with `components=True`.
+
+# heat pumps (kW) by building; the one in load area 201 turns a household
+# into a load with a feeder of its own (100-200 kW)
+HEAT_PUMPS = {202000: 9.0, 202001: 9.0, 202002: 12.0, 201004: 120.0}
+# home batteries (kW, kWh) by building; 202003 has rooftop PV
+HOME_BATTERIES = {202003: (8.0, 10.0), 201010: (5.0, 6.0)}
+
+
+def home_charging_locations():
+    """Home charging locations (use case home_detached, voltage level 7): two
+    next to buildings of load area 202, one too far from any building."""
+    rows = []
+    for location_id, building_index in [(1, 5), (2, 9)]:
+        building = buildings(202).iloc[building_index]
+        rows.append({"location_id": location_id, "p_set": 11.0,
+                     "geometry": Point(building.geometry.x + 8.0, building.geometry.y)})
+    x, y = _node_xy(203, 1, 1)
+    rows.append({"location_id": 3, "p_set": 11.0, "geometry": Point(x, y + 400.0)})
+    return pd.DataFrame(rows)
+
+
+def point_components(mvgd_id, exclude_charging_locations=()):
+    """Rows as returned by `get_point_components`."""
+    columns = ["component", "type", "sector", "use_case", "p_nom", "v_level",
+               "geometry", "source_id", "max_hours"]
+    if mvgd_id != 2:
+        return pd.DataFrame(columns=columns)
+    rows = []
+    for location in home_charging_locations().itertuples():
+        if location.location_id not in set(exclude_charging_locations):
+            rows.append(["load", "charging_point", "home", "home_detached",
+                         location.p_set, 7, location.geometry,
+                         f"charging_location_{location.location_id}", None])
+    x, y = _node_xy(201, 9, 4)
+    rows.append(["load", "charging_point", "hpc", "urban_fast", 300.0, 5,
+                 Point(x + 30.0, y), "charging_location_10", None])
+    rows.append(["load", "charging_point", "hpc", "highway_fast", 2_000.0, 4,
+                 Point(*_rel(2, 3_000.0, 2_800.0)), "charging_location_11", None])
+    x, y = _node_xy(202, 2, 2)
+    rows.append(["load", "charging_point", "public", "street", 22.0, 7,
+                 Point(x + 10.0, y + 20.0), "charging_location_12", None])
+    x, y = _node_xy(202, 4, 3)
+    rows.append(["load", "charging_point", "work", "work", 150.0, 6,
+                 Point(x + 20.0, y + 20.0), "charging_location_13", None])
+    rows.append(["load", "charging_point", "hpc", "bus_depot", 800.0, 5,
+                 Point(*_rel(2, 1_500.0, 600.0)), "bus_depot_1", None])
+    x, y = _node_xy(201, 3, 0)
+    rows.append(["load", "conventional_load", "rail", "rail_transit_dc", 1_200.0, 5,
+                 Point(x, y - 60.0), "rail_1", None])
+    rows.append(["storage_unit", "large_storage", None, "BESS", 500.0, 5,
+                 Point(*_rel(2, 2_200.0, 1_000.0)), "storage_1", 1.0])
+    return pd.DataFrame(rows, columns=columns)
+
+
+def building_components(buildings_df):
+    """Components of buildings as returned by `get_building_components`."""
+    import ding0.tools.egon_data_integration as db_io
+
+    components = pd.DataFrame(0.0, index=buildings_df.index,
+                              columns=db_io.BUILDING_COMPONENT_COLUMNS)
+    for building_id, p_set in HEAT_PUMPS.items():
+        if building_id in components.index:
+            components.loc[building_id, "heat_pump_p_set"] = p_set
+    for building_id, (p_nom, capacity) in HOME_BATTERIES.items():
+        if building_id in components.index:
+            components.loc[building_id, "home_storage_p_nom"] = p_nom
+            components.loc[building_id, "home_storage_capacity"] = capacity
+    assigned = db_io.assign_to_nearest_buildings(
+        home_charging_locations(), buildings_df, max_distance=50.0)
+    charging = assigned.groupby("building_id").p_set.sum()
+    components.loc[charging.index, "charging_point_p_set"] = charging
+    return components, assigned.location_id.tolist()
+
+
+def patch_database(monkeypatch, components=False):
+    """Replace all database getters used by `NetworkDing0.run_ding0`.
+
+    With `components`, grid district 2 has heat pumps, charging points, bus
+    depots, a rail substation and battery storage units.
+    """
     import ding0.tools.egon_data_integration as db_io
 
     def get_mv_data(orm, session, mv_grid_districts_no):
@@ -335,3 +415,13 @@ def patch_database(monkeypatch):
     monkeypatch.setattr(db_io, "get_egon_buildings", get_egon_buildings)
     monkeypatch.setattr(db_io, "get_res_generators", get_res_generators)
     monkeypatch.setattr(db_io, "get_conv_generators", get_conv_generators)
+    if components:
+        monkeypatch.setattr(
+            db_io, "get_building_components",
+            lambda orm, session, buildings_df, load_area, scenario=None:
+            building_components(buildings_df))
+        monkeypatch.setattr(
+            db_io, "get_point_components",
+            lambda orm, session, mv_grid_district, scenario=None,
+            exclude_charging_locations=(): point_components(
+                mv_grid_district.id_db, exclude_charging_locations))

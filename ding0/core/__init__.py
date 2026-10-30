@@ -30,6 +30,7 @@ from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
 from ding0.tools.tools import merge_two_dicts_of_dataframes, append_to_dataframe
 from ding0.core.network.loads import MVLoadDing0
+from ding0.core.network.components import PointLoadDing0, StorageUnitDing0
 from ding0.grid.lv_grid.parameterization import get_peak_load_diversity
 
 
@@ -170,8 +171,8 @@ class NetworkDing0:
         self._session = session
 
         self._config = self.import_config()
-        self._pf_config = self.import_pf_config()
         self.scenario = db_io.get_scenario(kwargs.get('scenario', None))
+        self._pf_config = self.import_pf_config()
         self._static_data = self.import_static_data()
         # ORM classes are reflected from the database on first access, so a
         # network can be built and tested without a database connection.
@@ -374,6 +375,7 @@ class NetworkDing0:
 
         logger.info("STEP 2: Import generators")
         self.import_generators(session, debug=debug)
+        self.import_components(session)
 
         logger.info("STEP 3: Parametrize MV grid")
         self.mv_parametrize_grid(debug=debug)
@@ -803,6 +805,8 @@ class NetworkDing0:
         """
 
         lv_load_areas = db_io.get_lv_load_areas(self.orm, session, mv_grid_district.mv_grid._station.id_db)
+        # charging locations assigned to buildings, see get_building_components
+        mv_grid_district.assigned_charging_locations = set()
         if load_area_to_debug:
             lv_load_areas = lv_load_areas.loc[[load_area_to_debug], :]
         # create load_area objects from rows and add them to graph
@@ -884,6 +888,15 @@ class NetworkDing0:
             if buildings_w_loads_df.empty:
                 logger.error(f"Load area {id_db=} has no buildings!")
                 continue
+            # Heat pumps, home batteries and home charging points of buildings.
+            # Their share for grid dimensioning is added to `capacity`.
+            building_components_df, charging_location_ids = db_io.get_building_components(
+                self.orm, session, buildings_w_loads_df, row, scenario=self.scenario
+            )
+            buildings_w_loads_df = db_io.add_building_components(
+                buildings_w_loads_df, building_components_df
+            )
+            mv_grid_district.assigned_charging_locations.update(charging_location_ids)
             # threshold: load areas with a lower peak load are disregarded
             if buildings_w_loads_df.capacity.sum() <= cfg_ding0.get(
                     'mv_routing', 'load_area_threshold'):
@@ -970,7 +983,8 @@ class NetworkDing0:
                                       osmid_nn=row.nn,
                                       nn_coords=row.nn_coords,
                                       lv_load_area=lv_load_area,
-                                      type="conventional_load")
+                                      type="conventional_load",
+                                      **row[db_io.BUILDING_COMPONENT_COLUMNS].to_dict())
 
                 # Add mv_load to mv_grid_district and lv_load_area
                 mv_grid_district.mv_grid.add_load(mv_load)
@@ -1410,6 +1424,52 @@ class NetworkDing0:
 
         logger.info('=====> Generators imported')
 
+    def import_components(self, session):
+        """
+        Imports loads and storage units at locations of their own (charging
+        points, bus depots, rail substations, battery storage) of every MV grid
+        district, see :func:`~.ding0.tools.egon_data_integration.get_point_components`.
+
+        Components of voltage levels 4 and 5 are connected to the MV grid, of
+        levels 6 and 7 to LV grids, in
+        :meth:`~.core.NetworkDing0.connect_generators`.
+
+        Parameters
+        ----------
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Database session
+        """
+        for mv_grid_district in self.mv_grid_districts():
+            mv_grid = mv_grid_district.mv_grid
+            components_df = db_io.get_point_components(
+                self.orm, session, mv_grid_district, scenario=self.scenario,
+                exclude_charging_locations=getattr(
+                    mv_grid_district, 'assigned_charging_locations', set()),
+            )
+            for id_db, row in components_df.iterrows():
+                component_class = (StorageUnitDing0 if row.component == 'storage_unit'
+                                   else PointLoadDing0)
+                component = component_class(
+                    id_db=id_db + 1,
+                    geo_data=row.geometry,
+                    mv_grid=mv_grid,
+                    v_level=row.v_level,
+                    p_nom=row.p_nom,
+                    type=row.type,
+                    sector=row.sector,
+                    use_case=row.use_case,
+                    source_id=row.source_id,
+                    max_hours=row.max_hours,
+                )
+                if component.v_level in [4, 5]:
+                    mv_grid.mv_components_to_connect.append(component)
+                else:
+                    mv_grid.lv_components_to_connect.append(component)
+            if not components_df.empty:
+                logger.info(
+                    f"{mv_grid_district}: imported components (count, kW) "
+                    f"{components_df.groupby('type').p_nom.agg(['count', 'sum']).round(1).to_dict('index')}")
+
     def import_config(self):
         """
         Loads parameters from config files
@@ -1589,7 +1649,16 @@ class NetworkDing0:
             return orm
 
         for name, table_str in self.config[data_source].items():
-            if name not in ("version", "scenario"):
+            if name in ("version", "scenario"):
+                continue
+            if name in db_io.COMPONENT_TABLES:
+                # older egon-data versions do not have these tables
+                try:
+                    orm = write_table_in_dict(orm, engine, name, table_str)
+                except Exception:
+                    logger.warning(
+                        f"Table {table_str} not found, components from it are skipped.")
+            else:
                 orm = write_table_in_dict(orm, engine, name, table_str)
 
         if data_source == 'model_draft':
@@ -2131,6 +2200,9 @@ class NetworkDing0:
             gd_components['Generator'].to_csv(
                 os.path.join(path, 'generators.csv')
             )
+            gd_components['StorageUnit'].to_csv(
+                os.path.join(path, 'storage_units.csv')
+            )
             gd_components['Switch'].to_csv(
                 os.path.join(path, 'switches.csv')
             )
@@ -2274,6 +2346,7 @@ class NetworkDing0:
         for mv_grid_district in self.mv_grid_districts():
             mv_grid_district.mv_grid.connect_generators(debug=debug)
             mv_grid_district.mv_grid.connect_lv_generators(debug=debug)
+            mv_grid_district.mv_grid.connect_components(debug=debug)
 
         logger.info('=====> Generators connected')
 
