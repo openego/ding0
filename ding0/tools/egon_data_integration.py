@@ -1146,6 +1146,14 @@ def get_point_components(
         df["component"] = "load"
         df["type"] = "charging_point"
         df["sector"] = df.use_case.map(CHARGING_POINT_SECTORS)
+        unknown = df.sector.isna()
+        if unknown.any():
+            # eDisGo only accepts its four sectors
+            logger.warning(
+                f"Charging points of unknown use cases "
+                f"{sorted(df.loc[unknown, 'use_case'].unique())} get sector 'public'."
+            )
+            df.loc[unknown, "sector"] = "public"
         df["source_id"] = "charging_location_" + df.location_id.astype(str)
         frames.append(df.drop(columns="location_id"))
 
