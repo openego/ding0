@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 # import oedialect
 import pandas as pd
 import os
-from tests.core.network.test_grids import TestMVGridDing0
+from tests.core.network.test_grids import TestMVGridDing0 as MVTestGrids
 from ding0.core import NetworkDing0
 import shutil
 
@@ -33,7 +33,7 @@ class TestNetworkDing0(object):
     @pytest.fixture
     def minimal_grid(self):
         nd, mv_grid, lv_stations = \
-            TestMVGridDing0().minimal_unrouted_testgrid()
+            MVTestGrids().minimal_unrouted_testgrid()
         nd.mv_routing()
         nd.connect_generators()
         return nd
