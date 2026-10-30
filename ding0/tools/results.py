@@ -23,7 +23,11 @@ import re
 from matplotlib import pyplot as plt
 import seaborn as sns
 
-from egoio.tools import db
+try:
+    # only needed for the legacy data source on the OpenEnergy DataBase
+    from egoio.tools import db
+except ImportError:
+    db = None
 from ding0.core import NetworkDing0
 from ding0.core import GeneratorDing0
 from ding0.core import LVCableDistributorDing0, MVCableDistributorDing0
@@ -2180,7 +2184,11 @@ def export_data_tocsv(path, run_id, lv_grid, lv_gen, lv_cd, lv_stations, mvlv_tr
 ########################################################
 
 from sqlalchemy import create_engine
-from egoio.db_tables import model_draft as md
+try:
+    # only needed for the legacy export to the OpenEnergy DataBase
+    from egoio.db_tables import model_draft as md
+except ImportError:
+    md = None
 
 
 def export_network_to_oedb(session, table, tabletype, srid):

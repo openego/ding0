@@ -1,6 +1,10 @@
 import unittest
 
-from egoio.tools import db
+try:
+    # only needed for the legacy data source on the OpenEnergy DataBase
+    from egoio.tools import db
+except ImportError:
+    db = None
 from ding0.core import NetworkDing0
 from ding0.tools.logger import setup_logger
 from ding0.tools.results import save_nd_to_pickle

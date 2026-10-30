@@ -1,6 +1,10 @@
 import pytest
 
-from egoio.tools import db
+try:
+    # only needed for tests on the legacy OpenEnergy DataBase
+    from egoio.tools import db
+except ImportError:
+    db = None
 from sqlalchemy.orm import sessionmaker
 # import oedialect
 import pandas as pd
@@ -24,6 +28,8 @@ class TestNetworkDing0(object):
         """
         Returns an ego.io oedb session and closes it on finishing the test
         """
+        if db is None:
+            pytest.skip("egoio is not installed")
         engine = db.connection(readonly=True)
         session = sessionmaker(bind=engine)()
         yield session
@@ -43,10 +49,11 @@ class TestNetworkDing0(object):
         empty_list = []
         assert mv_grid_districts == empty_list
 
-    def test_import_mv_grid_districts(self, oedb_session):
+    def test_import_mv_grid_districts(self, emptyNetworkDing0):
+        # ids have to be integers; checked before the database is queried
         with pytest.raises(TypeError):
-            NetworkDing0.import_mv_grid_districts(
-                oedb_session,
+            emptyNetworkDing0.import_mv_grid_districts(
+                None,
                 mv_grid_districts_no=['5']
             )
 

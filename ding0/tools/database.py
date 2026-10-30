@@ -5,7 +5,11 @@ from contextlib import contextmanager
 
 import ding0
 from ding0.tools import config as cfg_ding0
-from egoio.tools import db
+try:
+    # only needed for the legacy data source on the OpenEnergy DataBase
+    from egoio.tools import db
+except ImportError:
+    db = None
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -37,6 +41,11 @@ def get_engine(overwrite_database=None):
     else:
         database = get_database_type_from_config()
     if database == "oedb":
+        if db is None:
+            raise ImportError(
+                "The OpenEnergy DataBase needs the package egoio, which is not "
+                "installed (it is not compatible with SQLAlchemy 2)."
+            )
         conn = db.connection(readonly=True)
     elif database == "local":
         conn = create_engine(

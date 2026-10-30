@@ -19,7 +19,11 @@ import pandas as pd
 import time
 import numpy as np
 
-from egoio.tools import db
+try:
+    # only needed for the legacy data source on the OpenEnergy DataBase
+    from egoio.tools import db
+except ImportError:
+    db = None
 from sqlalchemy.orm import sessionmaker
 from ding0.tools.results import load_nd_from_pickle
 from ding0.core import GeneratorDing0, LVLoadDing0, LVLoadAreaCentreDing0
