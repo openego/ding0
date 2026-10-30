@@ -131,8 +131,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         "Get residential buildings by 'subst_id' and 'load_area' from database."
     )
 
-    # TODO: which scenario should be taken?
-    scenario = "eGon2035"
+    scenario = cfg_ding0.get("input_data_source", "scenario")
     sector = "residential"
 
     query = (
@@ -273,7 +272,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
 def get_egon_cts_buildings(orm, session, subst_id, load_area):
     logger.debug("Get cts buildings by 'subst_id' and 'load_area' from database.")
 
-    scenario = "eGon2035"
+    scenario = cfg_ding0.get("input_data_source", "scenario")
     sector = "cts"
 
     query = (
@@ -383,7 +382,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
     # Industrial loads 1
     # demand.egon_sites_ind_load_curves_individual, geom from demand.egon_industrial_sites
     # Filter: voltage level, scenario, subst_id
-    scn_name = "eGon2021"
+    scn_name = cfg_ding0.get("input_data_source", "scenario")
     mw2kw = 10**3
     query = (
         session.query(
@@ -677,7 +676,8 @@ def get_res_generators(orm, session, mv_grid_district):
         )
         .filter(
             # orm["generators_pv_rooftop"].bus_id == subst_id,
-            orm["generators_pv_rooftop"].scenario == "status_quo",
+            orm["generators_pv_rooftop"].scenario
+            == cfg_ding0.get("input_data_source", "scenario"),
             orm["generators_pv_rooftop"].voltage_level.in_([4, 5, 6, 7]),
             func.ST_Intersects(
                 func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),
