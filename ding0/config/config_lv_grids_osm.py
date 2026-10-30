@@ -22,32 +22,34 @@ def get_config_osm(key):
     diversity_factor_not_residential: 0.6
     src.: https://assets.new.siemens.com/siemens/assets/api/uuid:d683c81df25afb360b79c5d48441eeda8b23477b/planung-der-elektrischen-energieverteilung-technische-grundlagen.pdf, page 18. 23.12.2021.
 
+    The planning parameters (lv_threshold_capacity, mv_lv_threshold_capacity,
+    hv_mv_threshold_capacity, additional_trafo_capacity, avg_trafo_size,
+    ons_dist_threshold, diversity_factor_not_residential) are taken from the
+    active planning profile, see :mod:`ding0.tools.planning_profiles`.
+
     """
 
     config_osm = {
-        
+
         'srid' : 3035,
         'EARTH_RADIUS_M' : 6_371_009,  # deprecated!? not mandatory anymore?!
-        'lv_threshold_capacity' : 100,      # < 100kW connected to grid
-        'mv_lv_threshold_capacity' : 200,   # 100 to < 200kW connected to station directly
-        'hv_mv_threshold_capacity' : 5500,  # 200 to < 5.5MW own station with trafos
-        'additional_trafo_capacity' : 1.0,
-        'avg_trafo_size' : 500,
         'avg_square_meters' : 100,
         'quadrat_width' : 1000,
         'dist_edge_segments' : 50,
         'cluster_increment_counter_threshold' : 20,
-        'ons_dist_threshold' : 1500,
         'min_detour_length': 100,
         'max_detour_factor': 3,
         'buffer_distance' : [5, 25, 50, 100],
         'unconn_nodes_ratio' : 0.02,
         'major_ccs_ratio_threshold' : .30,
         'get_fully_conn_graph_number_max_it' : 4,
-        'diversity_factor_not_residential' : 0.6,
     }
-        
-    return config_osm[key]
+
+    if key in config_osm:
+        return config_osm[key]
+
+    from ding0.tools.planning_profiles import get_osm_parameter
+    return get_osm_parameter(key)
 
 
 
