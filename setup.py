@@ -44,6 +44,8 @@ setup(name='ding0',
           'ding0': [
               os.path.join('config',
                            '*.cfg'),
+              os.path.join('config',
+                           '*.csv'),
               os.path.join('data',
                            '*.csv'),
               os.path.join('grid',

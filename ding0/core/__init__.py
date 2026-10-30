@@ -80,6 +80,7 @@ from ding0.grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from
     get_bounding_box_from_points, get_load_center_node, get_load_center_coords
 
 import ding0.tools.egon_data_integration as db_io
+from ding0.tools import planning_profiles
 
 ############ NEW END
 
@@ -106,6 +107,12 @@ class NetworkDing0:
         A unique identification number to identify different runs of
         Ding0. This is usually the date and the time in some compressed
         format. e.g. 201901010900.
+
+    planning_profile : :obj:`str`
+        Name of the planning profile with the planning principles
+        (thresholds, load factors, voltage limits, equipment) used to build
+        the grids, see :mod:`ding0.tools.planning_profiles`. Defaults to
+        'default' (general planning principles in Germany).
 
 
     Attributes
@@ -160,6 +167,8 @@ class NetworkDing0:
     def __init__(self, session, **kwargs):
         self.name = kwargs.get('name', None)
         self._run_id = kwargs.get('run_id', None)
+        self._planning_profile = kwargs.get(
+            'planning_profile', planning_profiles.DEFAULT_PROFILE)
         self._mv_grid_districts = []
 
         self._config = self.import_config()
@@ -202,6 +211,17 @@ class NetworkDing0:
          :obj:`dict`
          """
         return self._config
+
+    @property
+    def planning_profile(self):
+        """
+        Getter for the name of the planning profile.
+
+        Returns
+        -------
+        :obj:`str`
+        """
+        return self._planning_profile
 
     @property
     def pf_config(self):
@@ -906,6 +926,17 @@ class NetworkDing0:
                 (get_config_osm('mv_lv_threshold_capacity') <= buildings_w_loads_df.capacity) &
                 (buildings_w_loads_df.capacity < get_config_osm('hv_mv_threshold_capacity'))]
 
+            # Loads above the MV level are not considered.
+            loads_hv_df = buildings_w_loads_df.loc[
+                buildings_w_loads_df.capacity >= get_config_osm('hv_mv_threshold_capacity')]
+            if not loads_hv_df.empty:
+                logger.warning(
+                    f"MV grid district {mv_grid_district.id_db}, load area {id_db}: "
+                    f"{len(loads_hv_df)} load(s) with {loads_hv_df.capacity.sum() / 1e3:.1f} MW "
+                    f"in total not considered (capacity >= hv_mv_threshold_capacity of "
+                    f"{get_config_osm('hv_mv_threshold_capacity')} kW)."
+                )
+
             for osm_id_building, loads_mv_df_row in loads_mv_df.iterrows():
                 connect_mv_loads_to_graph(cluster_graph, osm_id_building, loads_mv_df_row)
 
@@ -1406,6 +1437,9 @@ class NetworkDing0:
         cfg_ding0.load_config('config_files.cfg')
         cfg_ding0.load_config('config_misc.cfg')
 
+        # load planning parameters
+        planning_profiles.apply_profile(self._planning_profile)
+
         cfg_dict = cfg_ding0.cfg._sections
 
         return cfg_dict
@@ -1530,6 +1564,9 @@ class NetworkDing0:
                                                                      converters=dict(
                                                                          {'apartment_count': lambda x: int(x)},
                                                                          **converters_ids))
+
+        # keep only the equipment of the planning profile
+        static_data = planning_profiles.select_equipment(static_data, self._planning_profile)
 
         return static_data
 
@@ -2420,6 +2457,12 @@ class NetworkDing0:
         assumptions.update(self.config['mv_connect'])
         assumptions.update(self.config['mv_routing'])
         assumptions.update(self.config['mv_routing_tech_constraints'])
+        assumptions.update({
+            key: value
+            for (section, key), value in planning_profiles.get_parameters(
+                self._planning_profile).items()
+            if section == planning_profiles.OSM_SECTION
+        })
 
         # Determine run_id if not set
         if not run_id:
@@ -2436,6 +2479,7 @@ class NetworkDing0:
             database_tables=database_tables,
             data_version=data_version,
             assumptions=assumptions,
+            planning_profile=self._planning_profile,
             run_id=self._run_id
         )
 

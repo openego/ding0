@@ -78,6 +78,12 @@ def load_config(filename):
     except:
         logger.exception("configfile not found.")
 
+    # The planning parameters are not in config_calc.cfg but in the planning
+    # profiles, apply the active profile whenever config_calc.cfg is loaded
+    if filename == "config_calc.cfg":
+        from ding0.tools import planning_profiles
+        planning_profiles.apply_profile(planning_profiles.get_active_profile())
+
 
 def get(section, key):
     """Returns the value of a given key of a given section of the main

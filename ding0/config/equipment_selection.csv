@@ -1,0 +1,36 @@
+# Equipment per planning profile, see the documentation (planning profiles).
+# type: key in NetworkDing0.static_data; name: cable/line name or transformer S_nom in kVA
+# true = may be used; an empty cell inherits 'default'.
+type,name,default,snb
+MV_trafos,25000,true,false
+MV_trafos,31500,false,true
+MV_trafos,40000,true,
+MV_trafos,63000,true,false
+MV_cables,NA2XS2Y 3x1x185 RM/25,true,
+MV_cables,NA2XS2Y 3x1x240 RM/25,true,
+MV_cables,NA2XS2Y 3x1x300 RM/25,true,
+MV_cables,NA2XS2Y 3x1x400 RM/35,true,
+MV_cables,NA2XS2Y 3x1x500 RM/35,true,
+MV_cables,NA2XS2Y 3x1x150 RE/25,true,
+MV_cables,NA2XS2Y 3x1x240,true,
+MV_cables,NA2XS(FL)2Y 3x1x300 RM/25,true,
+MV_cables,NA2XS(FL)2Y 3x1x400 RM/35,true,
+MV_cables,NA2XS(FL)2Y 3x1x500 RM/35,true,
+MV_overhead_lines,48-AL1/8-ST1A,true,
+MV_overhead_lines,94-AL1/15-ST1A,true,
+MV_overhead_lines,122-AL1/20-ST1A,true,
+LV_trafos,100,true,false
+LV_trafos,160,true,false
+LV_trafos,250,true,false
+LV_trafos,400,true,
+LV_trafos,630,true,
+LV_trafos,800,true,
+LV_trafos,1000,true,false
+LV_cables,NAYY 4x1x300,true,false
+LV_cables,NAYY 4x1x240,true,false
+LV_cables,NAYY 4x1x185,true,false
+LV_cables,NAYY 4x1x150,true,
+LV_cables,NAYY 4x1x120,true,
+LV_cables,NAYY 4x1x95,true,
+LV_cables,NAYY 4x1x50,true,
+LV_cables,NAYY 4x1x35,true,
