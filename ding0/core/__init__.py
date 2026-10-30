@@ -2403,6 +2403,13 @@ class NetworkDing0:
 
         Parameters
         ----------
+                # stations and loads have to be connected now (generators,
+                # storage and loads of voltage level 4 follow)
+                unconnected = [
+                    node for node in grid_district.mv_grid.graph_isolated_nodes()
+                    if isinstance(node, (LVStationDing0, MVLoadDing0, PointLoadDing0))]
+                if unconnected:
+                    logger.error(f"{grid_district}: not connected by MV routing: {unconnected}")
         debug: :obj:bool, defaults to False
             If True, information is printed during process.
 

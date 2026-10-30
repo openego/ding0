@@ -21,7 +21,7 @@ from pyproj import Transformer
 from ding0.core.network.stations import *
 from ding0.core.network.loads import MVLoadDing0
 from ding0.core.network import BranchDing0, GeneratorDing0
-from ding0.core.network.components import GridComponentDing0
+from ding0.core.network.components import GridComponentDing0, PointLoadDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.structure.groups import LoadAreaGroupDing0
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
@@ -528,14 +528,16 @@ def connect_node(node, node_shp, mv_grid, target_obj, proj, graph, conn_dist_rin
         #   LVLoadAreaCentreDing0: Connect to LVLoadAreaCentreDing0 only
         #   LVStationDing0: Connect to LVLoadAreaCentreDing0, LVStationDing0 or MVCableDistributorDing0
         #   GeneratorDing0: Connect to LVLoadAreaCentreDing0, LVStationDing0, MVCableDistributorDing0 or GeneratorDing0
+        #   Loads at locations of their own routed in rings (PointLoadDing0) are valid targets like LV stations
         if isinstance(node, LVLoadAreaCentreDing0):
-            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0)
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, PointLoadDing0)
         elif isinstance(node, LVStationDing0):
-            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0)
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, PointLoadDing0)
         elif isinstance(node, MVLoadDing0):
-            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0)
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, PointLoadDing0)
         elif isinstance(node, (GeneratorDing0, GridComponentDing0)):
-            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, GeneratorDing0)
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, GeneratorDing0,
+                                  PointLoadDing0)
         else:
             raise ValueError('Oops, the node you are trying to connect is not a valid connection object')
 
@@ -1470,15 +1472,17 @@ def connect_node_settle(node, node_shp, mv_grid, target_obj, proj, street_graph,
         #   LVLoadAreaCentreDing0: Connect to LVLoadAreaCentreDing0 only
         #   LVStationDing0: Connect to LVLoadAreaCentreDing0, LVStationDing0 or MVCableDistributorDing0
         #   GeneratorDing0: Connect to LVLoadAreaCentreDing0, LVStationDing0, MVCableDistributorDing0 or GeneratorDing0
+        #   Loads at locations of their own routed in rings (PointLoadDing0) are valid targets like LV stations
         if isinstance(node, LVLoadAreaCentreDing0):
             valid_conn_objects = LVLoadAreaCentreDing0
         elif isinstance(node, LVStationDing0):
-            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0)
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, PointLoadDing0)
         elif isinstance(node, MVLoadDing0):
-            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0)
+            valid_conn_objects = (LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, PointLoadDing0)
         elif isinstance(node, GeneratorDing0):
             valid_conn_objects = (
-            LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, GeneratorDing0)
+            LVLoadAreaCentreDing0, LVStationDing0, MVLoadDing0, MVCableDistributorDing0, GeneratorDing0,
+            PointLoadDing0)
         else:
             raise ValueError('Oops, the node you are trying to connect is not a valid connection object')
 
