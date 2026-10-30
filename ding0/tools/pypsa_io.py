@@ -944,19 +944,6 @@ def append_load_areas_to_df(loads_df, generators_df, node,
             if return_time_varying_data:
                 generator_pq_set_df = \
                     append_generator_pq_set_df(conf, generator_pq_set_df, gen)
-        # loads at locations of their own; components in buildings are part
-        # of the grid district's peak load
-        for component in lvgd.lv_grid.components():
-            if isinstance(component, StorageUnitDing0):
-                continue
-            loads_df = append_component_load_df(
-                loads_df, repr(component), name_bus, component.p_nom,
-                component.type, component.sector, use_case=component.use_case,
-                source_id=component.source_id)
-            if return_time_varying_data:
-                load_pq_set_df = append_load_pq_set_df(
-                    conf, load_pq_set_df, component, node_name=repr(component),
-                    peak_load=component.peak_load)
 
 
     # Handling of loads

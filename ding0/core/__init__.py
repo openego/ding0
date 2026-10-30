@@ -1476,10 +1476,85 @@ class NetworkDing0:
                     mv_grid.mv_components_to_connect.append(component)
                 else:
                     mv_grid.lv_components_to_connect.append(component)
+            self.assign_lv_point_loads(mv_grid_district)
             if not components_df.empty:
                 logger.info(
                     f"{mv_grid_district}: imported components (count, kW) "
                     f"{components_df.groupby('type').p_nom.agg(['count', 'sum']).round(1).to_dict('index')}")
+
+    def assign_lv_point_loads(self, mv_grid_district):
+        """
+        Assigns loads of voltage levels 6 and 7 at locations of their own to
+        the LV grid district they will be connected to, so that the LV grids
+        are dimensioned for them: a load of level 6 to the nearest LV station
+        (peak load of the grid district, i.e. transformers), a load of level 7
+        to the nearest building (its capacity, i.e. cables, and the peak load
+        of the grid district). Their peak load is added to the load area's
+        peak load as well (MV routing).
+
+        A load of level 7 that would raise its building to the MV threshold
+        (`mv_lv_threshold_capacity`) or is farther from it than
+        `[components] lv_point_load_max_distance` is connected to the nearest
+        LV station like a load of level 6. A load of level 6 farther than that
+        from the nearest LV station is connected to the MV grid like a load of
+        level 5 (routed in rings).
+
+        Parameters
+        ----------
+        mv_grid_district : :class:`~.ding0.core.structure.regions.MVGridDistrictDing0`
+        """
+        from scipy.spatial import cKDTree
+
+        loads = sorted(
+            [component for component in mv_grid_district.mv_grid.lv_components_to_connect
+             if isinstance(component, PointLoadDing0)], key=repr)
+        lv_grid_districts = [lvgd for load_area in mv_grid_district.lv_load_areas()
+                             for lvgd in load_area.lv_grid_districts()]
+        if not loads or not lv_grid_districts:
+            return
+
+        stations = cKDTree([(lvgd.lv_grid.station().geo_data.x,
+                             lvgd.lv_grid.station().geo_data.y)
+                            for lvgd in lv_grid_districts])
+        buildings = []
+        for lvgd in lv_grid_districts:
+            # buildings are a slice of the load area's buildings
+            lvgd.buildings = lvgd.buildings.copy()
+            buildings += [(lvgd, building_id, geometry.x, geometry.y)
+                          for building_id, geometry in lvgd.buildings.geometry.items()]
+        building_tree = cKDTree([(x, y) for _, _, x, y in buildings]) if buildings else None
+        mv_lv_threshold = get_config_osm('mv_lv_threshold_capacity')
+        max_distance = cfg_ding0.get('components', 'lv_point_load_max_distance')
+        mv_grid = mv_grid_district.mv_grid
+
+        def add_peak_load(lvgd, load):
+            lvgd.peak_load += load.peak_load
+            lvgd.lv_load_area.peak_load += load.peak_load
+
+        for load in loads:
+            position = (load.geo_data.x, load.geo_data.y)
+            if load.v_level == 7 and building_tree is not None:
+                distance, index = building_tree.query(position)
+                lvgd, building_id, _, _ = buildings[index]
+                capacity = lvgd.buildings.at[building_id, 'capacity'] + load.peak_load
+                if capacity < mv_lv_threshold and distance <= max_distance:
+                    lvgd.buildings.at[building_id, 'capacity'] = capacity
+                    load.building_id = building_id
+                    add_peak_load(lvgd, load)
+                    continue
+                logger.info(f"{load} is too large for or too far from building "
+                            f"{building_id} and is connected to the nearest LV station.")
+                load.v_level = 6
+            distance, index = stations.query(position)
+            if distance <= max_distance:
+                add_peak_load(lv_grid_districts[index], load)
+            else:
+                logger.info(f"{load} is {distance:.0f} m from the nearest LV station "
+                            f"and is connected to the MV grid.")
+                load.v_level = 5
+                mv_grid.lv_components_to_connect.remove(load)
+                # node of the MV routing
+                mv_grid.add_component(load)
 
     def import_config(self):
         """
@@ -2343,6 +2418,13 @@ class NetworkDing0:
                     logger.info('=====> Urban MV Routing (Routing, Connection of Stations) performed')
                 # 2) rural routing between remaining load areas
                 grid_district.mv_grid.routing(debug=debug, anim=anim)
+                # stations and loads have to be connected now (generators,
+                # storage and loads of voltage level 4 follow)
+                unconnected = [
+                    node for node in grid_district.mv_grid.graph_isolated_nodes()
+                    if isinstance(node, (LVStationDing0, MVLoadDing0, PointLoadDing0))]
+                if unconnected:
+                    logger.error(f"{grid_district}: not connected by MV routing: {unconnected}")
 
             logger.info('=====> MV Routing (Routing, Connection of Satellites & '
                         'Stations) performed')
@@ -2403,13 +2485,6 @@ class NetworkDing0:
 
         Parameters
         ----------
-                # stations and loads have to be connected now (generators,
-                # storage and loads of voltage level 4 follow)
-                unconnected = [
-                    node for node in grid_district.mv_grid.graph_isolated_nodes()
-                    if isinstance(node, (LVStationDing0, MVLoadDing0, PointLoadDing0))]
-                if unconnected:
-                    logger.error(f"{grid_district}: not connected by MV routing: {unconnected}")
         debug: :obj:bool, defaults to False
             If True, information is printed during process.
 

@@ -51,7 +51,8 @@ def test_loads_by_type_and_sector(components_run):
     assert p_set[("charging_point", "home")] == 0.033
     # street (LV) and retail (MV)
     assert p_set[("charging_point", "public")] == 0.422
-    assert p_set[("charging_point", "work")] == 0.15
+    # work (level 6) and depot (level 6, connected to the MV grid)
+    assert p_set[("charging_point", "work")] == 0.25
     # urban fast, highway fast and bus depot
     assert p_set[("charging_point", "hpc")] == 3.1
     assert p_set[("conventional_load", "rail")] == 1.2
@@ -92,7 +93,7 @@ def test_point_components_by_voltage_level(components_run):
     assert use_case_v_nom.to_dict() == {
         "home_detached": 0.4, "urban_fast": 10.0, "highway_fast": 10.0,
         "street": 0.4, "work": 0.4, "bus_depot": 10.0, "rail_transit_dc": 10.0,
-        "retail": 10.0}
+        "retail": 10.0, "depot": 10.0}
     # voltage level 4 has a line of its own to the HV/MV station (other
     # components may connect to it like to a generator's line)
     import networkx as nx
@@ -116,8 +117,10 @@ def test_building_components_in_grid_dimensioning(components_run):
     load_area = next(la for la in mv_grid_district.lv_load_areas() if la.id_db == 202)
     buildings = synthetic_district.buildings(202)
     lv_buildings = buildings.loc[buildings.capacity < 200]
-    # heat pumps and home charging points in load area 202 (factors 1.0)
-    assert load_area.peak_load == pytest.approx(lv_buildings.capacity.sum() + 30.0 + 22.0)
+    # heat pumps and home charging points in load area 202 (factors 1.0), and
+    # the street (level 7) and work (level 6) charging points connected there
+    assert load_area.peak_load == pytest.approx(
+        lv_buildings.capacity.sum() + 30.0 + 22.0 + 22.0 + 150.0)
 
 
 def test_csv_export_imports_into_pypsa(components_run, tmp_path):
@@ -174,18 +177,33 @@ def test_mv_point_loads_are_routed_in_rings(components_run):
                   for node in ring}
     routed = {component.use_case for component in mv_grid.components()
               if component in ring_nodes}
-    assert routed == {"urban_fast", "bus_depot", "rail_transit_dc", "retail"}
+    assert routed == {"urban_fast", "bus_depot", "rail_transit_dc", "retail", "depot"}
 
 
 def test_point_loads_in_mv_grid_district_peak_load(components_run):
     network, _, _ = components_run
     (mv_grid_district,) = list(network.mv_grid_districts())
+    # load areas include the point loads of voltage levels 6 and 7
     load_areas = sum(la.peak_load for la in mv_grid_district.lv_load_areas())
     mv_loads = sum(load.peak_load for load in mv_grid_district.mv_grid.loads())
-    # all point loads of district 2, incl. the home charging point without a
-    # building nearby (factor 1.0)
-    point_loads = 300.0 + 2_000.0 + 22.0 + 150.0 + 400.0 + 800.0 + 1_200.0 + 11.0
-    assert mv_grid_district.peak_load == pytest.approx(load_areas + mv_loads + point_loads)
+    # point loads connected to the MV grid (factor 1.0)
+    mv_point_loads = 300.0 + 2_000.0 + 400.0 + 800.0 + 1_200.0 + 100.0
+    assert mv_grid_district.peak_load == pytest.approx(
+        load_areas + mv_loads + mv_point_loads)
+
+
+def test_lv_point_loads_dimensioned_where_connected(components_run):
+    network, _, _ = components_run
+    (mv_grid_district,) = list(network.mv_grid_districts())
+    for component in mv_grid_district.mv_grid.lv_components_to_connect:
+        if component.v_level == 7:
+            # connected to the building it was assigned to before the LV grid
+            # was built
+            neighbor = next(iter(component.lv_grid.graph.neighbors(component)))
+            building = [node for node in component.lv_grid.graph.neighbors(neighbor)
+                        if getattr(node, "building_id", None) == component.building_id
+                        and node is not component]
+            assert building, component
 
 
 def test_ring_branch_of_point_load_along_load_area_streets():

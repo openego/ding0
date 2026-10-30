@@ -354,6 +354,9 @@ def point_components(mvgd_id, exclude_charging_locations=()):
     x, y = _node_xy(202, 1, 2)
     rows.append(["load", "charging_point", "public", "retail", 400.0, 5,
                  Point(x + 15.0, y + 10.0), "charging_location_14", None])
+    # voltage level 6, but far from any LV station: connected to the MV grid
+    rows.append(["load", "charging_point", "work", "depot", 100.0, 6,
+                 Point(*_rel(2, -800.0, -800.0)), "charging_location_15", None])
     rows.append(["load", "charging_point", "hpc", "bus_depot", 800.0, 5,
                  Point(*_rel(2, 1_500.0, 600.0)), "bus_depot_1", None])
     x, y = _node_xy(201, 3, 0)
