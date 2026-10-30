@@ -320,10 +320,10 @@ def patch_database(monkeypatch):
         frames = [ways(la_id) for la_id in LOAD_AREAS if area.intersects(_area_polygon(la_id))]
         return pd.concat(frames, ignore_index=True)
 
-    def get_egon_buildings(orm, session, subst_id, load_area):
+    def get_egon_buildings(orm, session, subst_id, load_area, scenario=None):
         return buildings(load_area.name)
 
-    def get_res_generators(orm, session, mv_grid_district):
+    def get_res_generators(orm, session, mv_grid_district, scenario=None):
         return res_generators(mv_grid_district.id_db)
 
     def get_conv_generators(orm, session, mv_grid_district):

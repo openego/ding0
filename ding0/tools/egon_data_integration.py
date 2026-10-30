@@ -10,6 +10,29 @@ from geoalchemy2.shape import to_shape
 from sqlalchemy import Integer, cast, func
 
 
+def get_scenario(scenario=None):
+    """Scenario of the egon-data tables to read; defaults to the config value
+    `[input_data_source] scenario`."""
+    if scenario is None:
+        scenario = cfg_ding0.get("input_data_source", "scenario")
+    return scenario
+
+
+def check_load_area_peak_load(load_area_peak_load, buildings_peak_load, label):
+    """Log if the peak load of the buildings differs from the load area's.
+
+    egon-data does not always provide load area peak loads (they are NULL in
+    some versions), so missing or zero values are not compared.
+    """
+    if pd.isna(load_area_peak_load) or load_area_peak_load == 0:
+        return
+    if not round(load_area_peak_load, -1) == round(buildings_peak_load, -1):
+        logger.warning(
+            f"Peak load {label} of load area ({load_area_peak_load:.1f} kW) differs "
+            f"from the sum of its buildings ({buildings_peak_load:.1f} kW)."
+        )
+
+
 def get_mv_data(orm, session, mv_grid_districts_no):
     # build SQL query
     grid_districts = (
@@ -37,9 +60,9 @@ def get_mv_data(orm, session, mv_grid_districts_no):
 
 
 def get_lv_load_areas(orm, session, mv_grid_id):
-    # threshold: load area peak load, if peak load < threshold => disregard
-    # load area
-    lv_loads_threshold = cfg_ding0.get("mv_routing", "load_area_threshold")
+    # Load areas are not filtered by their peak load here, as egon-data does
+    # not always provide it; the threshold `load_area_threshold` is applied to
+    # the peak load of the buildings instead.
     mw2kw = 10**3  # load in database is in MW -> scale to kW
     lv_nominal_voltage = cfg_ding0.get("assumptions", "lv_nominal_voltage")
 
@@ -71,18 +94,6 @@ def get_lv_load_areas(orm, session, mv_grid_id):
         orm["orm_lv_load_areas"].sector_peakload_industrial.label(
             "peak_load_industrial"
         ),
-        (
-            orm["orm_lv_load_areas"].sector_peakload_residential
-            / orm["orm_lv_load_areas"].sector_peakload_residential_2035
-        ).label("peak_load_residential_scaling_factor"),
-        (
-            orm["orm_lv_load_areas"].sector_peakload_cts
-            / orm["orm_lv_load_areas"].sector_peakload_cts_2035
-        ).label("peak_load_cts_scaling_factor"),
-        (
-            orm["orm_lv_load_areas"].sector_peakload_industrial
-            / orm["orm_lv_load_areas"].sector_peakload_industrial_2035
-        ).label("peak_load_industrial_scaling_factor"),
     ).filter(
         orm["orm_lv_load_areas"].bus_id == mv_grid_id,
         orm["version_condition_la"],
@@ -102,7 +113,6 @@ def get_lv_load_areas(orm, session, mv_grid_id):
     )
     lv_load_areas[peak_load_columns] = lv_load_areas[peak_load_columns] * mw2kw
     lv_load_areas["peak_load"] = lv_load_areas[peak_load_columns].sum(axis="columns")
-    lv_load_areas = lv_load_areas[lv_load_areas["peak_load"] > lv_loads_threshold]
     return lv_load_areas
 
 
@@ -126,7 +136,7 @@ def get_egon_ways(orm, session, geo_area):
     return df
 
 
-def get_egon_residential_buildings(orm, session, subst_id, load_area):
+def get_egon_residential_buildings(orm, session, subst_id, load_area, scenario=None):
     """
     Get the residential bildings from egon-data. Buildings of orm["egon_map_zensus_mvgd_buildings"],
     filtered by:
@@ -143,8 +153,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         "Get residential buildings by 'subst_id' and 'load_area' from database."
     )
 
-    # TODO: which scenario should be taken?
-    scenario = "eGon2035"
+    scenario = get_scenario(scenario)
     sector = "residential"
 
     query = (
@@ -243,16 +252,11 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
         right_on="building_id",
         how="left",
     )
-    residential_buildings_df["capacity"] = (
-        residential_buildings_df["capacity"]
-        * load_area.peak_load_residential_scaling_factor
+    check_load_area_peak_load(
+        load_area.peak_load_residential,
+        residential_buildings_df.capacity.sum(),
+        "residential",
     )
-    if not round(load_area.peak_load_residential) == round(
-        residential_buildings_df.capacity.sum()
-    ):
-        logger.error(
-            f"{load_area.peak_load_residential=} != {residential_buildings_df.capacity.sum()=}"
-        )
 
     query = (
         session.query(
@@ -286,10 +290,10 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area):
     return residential_buildings_df
 
 
-def get_egon_cts_buildings(orm, session, subst_id, load_area):
+def get_egon_cts_buildings(orm, session, subst_id, load_area, scenario=None):
     logger.debug("Get cts buildings by 'subst_id' and 'load_area' from database.")
 
-    scenario = "eGon2035"
+    scenario = get_scenario(scenario)
     sector = "cts"
 
     query = (
@@ -384,25 +388,21 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area):
         right_on="building_id",
         how="left",
     )
-    cts_buildings_df["capacity"] = (
-        cts_buildings_df["capacity"] * load_area.peak_load_cts_scaling_factor
+    check_load_area_peak_load(
+        load_area.peak_load_cts, cts_buildings_df.capacity.sum(), "cts"
     )
-    if not round(load_area.peak_load_cts) == round(cts_buildings_df.capacity.sum()):
-        logger.error(
-            f"{load_area.peak_load_cts=} != {cts_buildings_df.capacity.sum()=}"
-        )
 
     return cts_buildings_df
 
 
-def get_egon_industrial_buildings(orm, session, subst_id, load_area):
+def get_egon_industrial_buildings(orm, session, subst_id, load_area, scenario=None):
     logger.debug(
         "Get industrial buildings by 'subst_id' and 'load_area' from database."
     )
     # Industrial loads 1
     # demand.egon_sites_ind_load_curves_individual, geom from demand.egon_industrial_sites
     # Filter: voltage level, scenario, subst_id
-    scn_name = "eGon2021"
+    scn_name = get_scenario(scenario)
     mw2kw = 10**3
     query = (
         session.query(
@@ -487,25 +487,26 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area):
     industrial_buildings_df["footprint"] = industrial_buildings_df["footprint"].apply(shapely.wkt.loads)
 
     industrial_buildings_df["sector"] = "industrial"
-    if not round(load_area.peak_load_industrial) == round(
-        industrial_buildings_df.capacity.sum()
-    ):
-        logger.error(
-            f"{load_area.peak_load_industrial=} != {industrial_buildings_df.capacity.sum()=}"
-        )
+    check_load_area_peak_load(
+        load_area.peak_load_industrial,
+        industrial_buildings_df.capacity.sum(),
+        "industrial",
+    )
 
     return industrial_buildings_df
 
 
-def get_egon_buildings(orm, session, subst_id, load_area):
+def get_egon_buildings(orm, session, subst_id, load_area, scenario=None):
     logger.info("Get buildings by 'subst_id' and 'load_area' from database.")
 
     residential_buildings_df = get_egon_residential_buildings(
-        orm, session, subst_id, load_area
+        orm, session, subst_id, load_area, scenario=scenario
     )
-    cts_buildings_df = get_egon_cts_buildings(orm, session, subst_id, load_area)
+    cts_buildings_df = get_egon_cts_buildings(
+        orm, session, subst_id, load_area, scenario=scenario
+    )
     industrial_buildings_df = get_egon_industrial_buildings(
-        orm, session, subst_id, load_area
+        orm, session, subst_id, load_area, scenario=scenario
     )
 
     residential_buildings_df.drop(columns="sector", inplace=True)
@@ -597,8 +598,7 @@ def get_egon_buildings(orm, session, subst_id, load_area):
     )
     buildings_df.drop(columns=footprint_columns, inplace=True)
 
-    if not round(load_area.peak_load, -1) == round(buildings_df.capacity.sum(), -1):
-        logger.error(f"{load_area.peak_load=} != {buildings_df.capacity.sum()=}")
+    check_load_area_peak_load(load_area.peak_load, buildings_df.capacity.sum(), "total")
     buildings_df.set_index("building_id", inplace=True)
 
     return buildings_df
@@ -630,7 +630,7 @@ def func_intersect(geom_a, geom_b, srid=3035):
     )
 
 
-def get_res_generators(orm, session, mv_grid_district):
+def get_res_generators(orm, session, mv_grid_district, scenario=None):
     srid = 3035  # new to calc distance matrix in step 6
     subst_id = str(mv_grid_district.id_db)
     geo_area = mv_grid_district.geo_data
@@ -696,7 +696,7 @@ def get_res_generators(orm, session, mv_grid_district):
         )
         .filter(
             # orm["generators_pv_rooftop"].bus_id == subst_id,
-            orm["generators_pv_rooftop"].scenario == "status_quo",
+            orm["generators_pv_rooftop"].scenario == get_scenario(scenario),
             orm["generators_pv_rooftop"].voltage_level.in_([4, 5, 6, 7]),
             func.ST_Intersects(
                 func.ST_GeomFromText(geo_area.wkt, get_config_osm("srid")),

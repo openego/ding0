@@ -155,15 +155,23 @@ class NetworkDing0:
         The connection parameters to the OpenEnergy Platform and
         the tables and datasets required for the functioning of ding0
 
+    scenario : :obj:`str`
+        egon-data scenario of building loads, industrial loads and rooftop PV,
+        e.g. 'status2024'. Defaults to `[input_data_source] scenario` in
+        `config_db_tables.cfg`.
+
     """
 
     def __init__(self, session=None, **kwargs):
         self.name = kwargs.get('name', None)
         self._run_id = kwargs.get('run_id', None)
         self._mv_grid_districts = []
+        # database session the ORM classes are reflected with
+        self._session = session
 
         self._config = self.import_config()
         self._pf_config = self.import_pf_config()
+        self.scenario = db_io.get_scenario(kwargs.get('scenario', None))
         self._static_data = self.import_static_data()
         # ORM classes are reflected from the database on first access, so a
         # network can be built and tested without a database connection.
@@ -237,7 +245,7 @@ class NetworkDing0:
         :obj: `dict`
         """
         if getattr(self, '_orm', None) is None:
-            self._orm = self.import_orm()
+            self._orm = self.import_orm(self._session)
         return self._orm
 
     def run_ding0(
@@ -351,6 +359,9 @@ class NetworkDing0:
         # TODO run ding0 needs to consider new features
         if debug:
             start = time.time()
+
+        if session is not None:
+            self._session = session
 
         logger.info("STEP 1: Import MV Grid Districts and subjacent objects")
         self.import_mv_grid_districts(
@@ -867,10 +878,16 @@ class NetworkDing0:
 
             # Get buildings with loads from database.
             buildings_w_loads_df = db_io.get_egon_buildings(
-                self.orm, session, mv_grid_district.id_db, row
+                self.orm, session, mv_grid_district.id_db, row,
+                scenario=self.scenario,
             )
             if buildings_w_loads_df.empty:
                 logger.error(f"Load area {id_db=} has no buildings!")
+                continue
+            # threshold: load areas with a lower peak load are disregarded
+            if buildings_w_loads_df.capacity.sum() <= cfg_ding0.get(
+                    'mv_routing', 'load_area_threshold'):
+                logger.info(f"Load area {id_db=} is below the load threshold, skipped.")
                 continue
 
             # If composed graph of type synthetic (no osm ways have been found), then
@@ -1313,7 +1330,7 @@ class NetworkDing0:
             Imports renewable (res) generators
             """
             ren_generators = db_io.get_res_generators(self.orm, session, list(
-                mv_grid_districts_dict.values())[0])
+                mv_grid_districts_dict.values())[0], scenario=self.scenario)
             conv_generators = db_io.get_conv_generators(self.orm, session, list(
                 mv_grid_districts_dict.values())[0])
             generators = pd.concat([ren_generators, conv_generators]).reset_index(
@@ -1558,7 +1575,10 @@ class NetworkDing0:
 
         orm = {}
         data_source = self.config['input_data_source']['input_data']
-        engine = database.get_engine()
+        if session is not None and session.bind is not None:
+            engine = session.bind
+        else:
+            engine = database.get_engine()
 
         def write_table_in_dict(orm, engine, name, table_str):
             table_list = table_str.split(".")
@@ -1569,7 +1589,7 @@ class NetworkDing0:
             return orm
 
         for name, table_str in self.config[data_source].items():
-            if not name == "version":
+            if name not in ("version", "scenario"):
                 orm = write_table_in_dict(orm, engine, name, table_str)
 
         if data_source == 'model_draft':
