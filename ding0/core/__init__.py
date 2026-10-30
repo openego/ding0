@@ -23,7 +23,8 @@ from ding0.core.network.grids import *
 from ding0.core.network.stations import *
 from ding0.core.structure.regions import *
 from ding0.core.powerflow import *
-from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
+from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes, \
+    transform_geodata_to_wgs84, components_to_pypsa_network
 from ding0.tools.animation import AnimationDing0
 from ding0.tools.plots import plot_mv_topology, plot_lv_topology
 from ding0.flexopt.reinforce_grid import *
@@ -46,6 +47,7 @@ from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 import subprocess
 import json
+import pypsa
 from pyvis.network import Network as pynet
 
 if not 'READTHEDOCS' in os.environ:
@@ -2124,33 +2126,6 @@ class NetworkDing0:
         only_export_mv: bool
             When True only mv topology is exported with aggregated lv grid districts
         '''
-        def transform_all_geodata(gd_components, network_df, grids_df):
-            from pyproj import Transformer
-            from shapely.ops import transform
-            import time
-
-            logger.info("Transform all geodata from 'EPSG:3035' to 'EPSG:4326'.")
-            t_start = time.perf_counter()
-
-            # initialize the Coordinate-Reference-System-Transformer
-            crs_transformer = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True).transform
-
-            # Transform geodata
-            network_df["mv_grid_district_geom"] = [transform(crs_transformer, geom) for geom in
-                                                   network_df["mv_grid_district_geom"].to_list()]
-            grids_df["grid_district_geom"] = [transform(crs_transformer, geom) for geom in
-                                              grids_df["grid_district_geom"].to_list()]
-            for key, item in gd_components.items():
-                if key == 'Bus':
-                    gd_components[key]['x'], gd_components[key]['y'] = crs_transformer(gd_components[key]['x'],
-                                                                                       gd_components[key]['y'])
-                elif key == 'Line':
-                    gd_components[key]["geometry"] = [transform(crs_transformer, geom) for geom in
-                                                      gd_components[key]["geometry"].to_list()]
-
-            logger.debug(f"Transformed all geodata in {time.perf_counter() - t_start}s.")
-            return gd_components, network_df, grids_df
-
         buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
         if (dir == ''):
             dir = get_default_home_dir()  # eventuell ändern
@@ -2168,9 +2143,11 @@ class NetworkDing0:
                 only_export_mv
             )
             # Transform all geodata from 'EPSG:3035' to 'EPSG:4326' for eDisGo
-            gd_components, network_df, grids_df = transform_all_geodata(
+            gd_components, network_df, grids_df = transform_geodata_to_wgs84(
                 gd_components, network_df, grids_df
             )
+            # PyPSA reads the format version of a CSV folder from network.csv
+            network_df['pypsa_version'] = pypsa.__version__
             # Make directories for the grid data and save to csv
             path = os.path.join(dir, str(grid_district.id_db))
             if not os.path.exists(path):
@@ -2257,6 +2234,67 @@ class NetworkDing0:
 
         components['Network'] = network_df
         return components
+
+    def to_pypsa(self, only_export_mv=False):
+        """
+        Exports every MV grid district (with its LV grids) as a PyPSA network
+        in EPSG:4326, see
+        :func:`~.ding0.tools.pypsa_io.components_to_pypsa_network`.
+
+        The networks can be saved in PyPSA's formats, e.g. with
+        `network.export_to_netcdf()`, and a power flow can be run on them
+        directly.
+
+        Parameters
+        ----------
+        only_export_mv: bool
+            When True only mv topology is exported with aggregated lv grid districts
+
+        Returns
+        -------
+        :obj:`dict`
+            :pypsa:`pypsa.Network<network>` by MV grid district id
+        """
+        buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+        # open all switch connectors
+        self.control_circuit_breakers(mode='open')
+        networks = {}
+        for grid_district in self.mv_grid_districts():
+            gd_components, network_df, grids_df, _ = fill_mvgd_component_dataframes(
+                grid_district,
+                buses_df,
+                generators_df,
+                lines_df,
+                loads_df,
+                transformer_df,
+                only_export_mv
+            )
+            gd_components, network_df, grids_df = transform_geodata_to_wgs84(
+                gd_components, network_df, grids_df
+            )
+            networks[grid_district.id_db] = components_to_pypsa_network(
+                gd_components, network_df, grids_df, metadata=self.metadata
+            )
+        return networks
+
+    def to_netcdf(self, dir='', only_export_mv=False):
+        """
+        Saves every MV grid district (with its LV grids) as a PyPSA network in
+        netCDF format, `<dir>/<mv grid district id>.nc`, see
+        :meth:`~.core.NetworkDing0.to_pypsa`.
+
+        Parameters
+        ----------
+        dir: :obj:`str`
+            Directory to which the networks are saved.
+        only_export_mv: bool
+            When True only mv topology is exported with aggregated lv grid districts
+        """
+        if dir == '':
+            dir = get_default_home_dir()
+        os.makedirs(dir, exist_ok=True)
+        for mv_grid_district_id, network in self.to_pypsa(only_export_mv).items():
+            network.export_to_netcdf(os.path.join(dir, f'{mv_grid_district_id}.nc'))
 
     def mv_routing(self, debug=False, animation=False):
         """
@@ -2507,6 +2545,9 @@ class NetworkDing0:
         elif self.config['input_data_source']['input_data'] == 'model_draft':
             data_version = 'model_draft'
             database_tables = self.config['model_draft']
+        elif self.config['input_data_source']['input_data'] == 'local':
+            data_version = f'egon-data, scenario {self.scenario}'
+            database_tables = dict(self.config['local'])
         else:
             data_version = 'unknown'
             database_tables = 'unknown'
@@ -2517,6 +2558,7 @@ class NetworkDing0:
         assumptions.update(self.config['mv_connect'])
         assumptions.update(self.config['mv_routing'])
         assumptions.update(self.config['mv_routing_tech_constraints'])
+        assumptions.update(self.config['components'])
 
         # Determine run_id if not set
         if not run_id:
@@ -2532,6 +2574,7 @@ class NetworkDing0:
             mv_grid_districts=[int(_.id_db) for _ in self._mv_grid_districts],
             database_tables=database_tables,
             data_version=data_version,
+            scenario=self.scenario,
             assumptions=assumptions,
             run_id=self._run_id
         )

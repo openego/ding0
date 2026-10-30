@@ -2019,3 +2019,115 @@ def create_powerflow_problem(timerange, components):
                                                  component)
 
     return network, snapshots
+
+
+def transform_geodata_to_wgs84(components, network_df, grids_df):
+    """
+    Transforms coordinates of buses, line geometries and grid district
+    polygons from EPSG:3035 to EPSG:4326, as eDisGo expects them.
+
+    Parameters
+    ----------
+    components : :obj:`dict` of :pandas:`pandas.DataFrame<dataframe>`
+    network_df : :pandas:`pandas.DataFrame<dataframe>`
+    grids_df : :pandas:`pandas.DataFrame<dataframe>`
+
+    Returns
+    -------
+    components, network_df, grids_df
+    """
+    from pyproj import Transformer
+    from shapely.ops import transform
+    import time
+    logger.info("Transform all geodata from 'EPSG:3035' to 'EPSG:4326'.")
+    t_start = time.perf_counter()
+    # initialize the Coordinate-Reference-System-Transformer
+    crs_transformer = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True).transform
+    # Transform geodata
+    network_df["mv_grid_district_geom"] = [transform(crs_transformer, geom) for geom in
+                                           network_df["mv_grid_district_geom"].to_list()]
+    grids_df["grid_district_geom"] = [transform(crs_transformer, geom) for geom in
+                                      grids_df["grid_district_geom"].to_list()]
+    for key, item in components.items():
+        if key == 'Bus':
+            components[key]['x'], components[key]['y'] = crs_transformer(components[key]['x'],
+                                                                         components[key]['y'])
+        elif key == 'Line':
+            components[key]["geometry"] = [transform(crs_transformer, geom) for geom in
+                                           components[key]["geometry"].to_list()]
+    logger.debug(f"Transformed all geodata in {time.perf_counter() - t_start}s.")
+    return components, network_df, grids_df
+
+
+def _json_records(df):
+    """Rows of a dataframe as JSON-compatible dicts keyed by index (geometries
+    as WKT), for network metadata."""
+    import json
+    df = df.apply(lambda column: column.apply(
+        lambda value: value.wkt if hasattr(value, 'wkt') else value))
+    return json.loads(df.to_json(orient='index'))
+
+
+def components_to_pypsa_network(components, network_df, grids_df, metadata=None):
+    """
+    Builds a PyPSA network of an MV grid district from its exported components
+    (see :func:`fill_mvgd_component_dataframes`) with coordinates in
+    EPSG:4326 (see :func:`transform_geodata_to_wgs84`).
+
+    The network can be saved in PyPSA's formats (netCDF, HDF5, CSV) and a
+    power flow can be run on it directly. As in eDisGo, the MV busbar of the
+    HV/MV station is the slack. Components and their extra columns are as in
+    the CSV export.
+
+    Data that are no PyPSA components are stored in `network.meta`:
+
+    * `transformers_hvmv`: HV/MV transformers (ding0 has no impedances for
+      them)
+    * `switches`: switch disconnectors; they are open, the line of an open
+      switch ends at its bus `bus_open`
+    * `mv_grid_district_geom`, `mv_grid_district_population`, `grids`
+      (population and area of the grid districts) and `ding0` (metadata of
+      the run)
+
+    Parameters
+    ----------
+    components : :obj:`dict` of :pandas:`pandas.DataFrame<dataframe>`
+    network_df : :pandas:`pandas.DataFrame<dataframe>`
+    grids_df : :pandas:`pandas.DataFrame<dataframe>`
+    metadata : :obj:`dict`
+        Metadata of the ding0 run
+
+    Returns
+    -------
+    :pypsa:`pypsa.Network<network>`
+    """
+    mv_grid_district_id = int(network_df.index[0])
+    network = Network()
+    network.name = f"ding0_mvgd_{mv_grid_district_id}"
+    network.srid = int(network_df['srid'].iloc[0])
+
+    lines = components['Line'].copy()
+    lines['geometry'] = [geom.wkt if hasattr(geom, 'wkt') else geom
+                         for geom in lines['geometry']]
+    # `type` of ding0 transformers is free text, which PyPSA would take
+    # for a standard type
+    transformers = components['Transformer'].drop(columns='type', errors='ignore')
+    for name, df in [('Bus', components['Bus']), ('Line', lines),
+                     ('Transformer', transformers),
+                     ('Generator', components['Generator']),
+                     ('Load', components['Load']),
+                     ('StorageUnit', components.get('StorageUnit', pd.DataFrame()))]:
+        if not df.empty:
+            network.import_components_from_dataframe(df, name)
+
+    network.meta = {
+        'mv_grid_district_id': mv_grid_district_id,
+        'mv_grid_district_geom': network_df['mv_grid_district_geom'].iloc[0].wkt,
+        'mv_grid_district_population': int(
+            network_df['mv_grid_district_population'].iloc[0]),
+        'transformers_hvmv': _json_records(components['HVMV_Transformer']),
+        'switches': _json_records(components['Switch']),
+        'grids': _json_records(grids_df.drop(columns='grid_district_geom')),
+        'ding0': metadata or {},
+    }
+    return network

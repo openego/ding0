@@ -131,3 +131,28 @@ def test_assign_to_nearest_buildings():
                              index=pd.Index([10, 20], name="building_id"))
     assigned = db_io.assign_to_nearest_buildings(locations, buildings, 50.0)
     assert assigned.set_index("location_id").building_id.to_dict() == {1: 10, 3: 20}
+
+
+def test_pypsa_network_runs_power_flow(components_run, tmp_path):
+    network, _, components = components_run
+    network.to_netcdf(str(tmp_path))
+    grid = pypsa.Network(str(tmp_path / "2.nc"))
+    assert len(grid.loads) == len(components["Load"])
+    assert len(grid.storage_units) == 3
+    assert grid.meta["mv_grid_district_id"] == 2
+    assert grid.meta["ding0"]["scenario"] == "status2024"
+    assert len(grid.meta["transformers_hvmv"]) == 2
+    # slack at the MV busbar of the HV/MV station, as in eDisGo
+    assert grid.generators.loc[grid.generators.control == "Slack", "bus"].tolist() == [
+        "Busbar_mvgd_2_MV"]
+    grid.determine_network_topology()
+    assert len(grid.sub_networks) == 1
+    result = grid.pf()
+    assert result["converged"].all().all()
+
+
+def test_csv_export_has_pypsa_version(components_run, tmp_path):
+    network, _, _ = components_run
+    network.to_csv(str(tmp_path))
+    network_csv = pd.read_csv(tmp_path / "2" / "network.csv")
+    assert network_csv.pypsa_version.iloc[0] == pypsa.__version__
