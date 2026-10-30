@@ -1,12 +1,21 @@
-"""End-to-end run of ding0 on a synthetic grid district without a database.
+"""End-to-end runs of ding0 on synthetic grid districts without a database.
 
-The expected grid in `test_data/synthetic_district_expected.json` was produced
-by upstream ding0 (4d113a0) on its original stack (Python 3.8, pandas 1.2,
-networkx 2.5, shapely 1.8, pypsa 0.17). The comparison ignores component
-names, which depend on iteration order, and compares the grid by geometry:
-buses by coordinates, lines by end points, length, type and parallel count.
+Three runs are compared with reference grids: grid district 1 alone, grid
+district 2 alone (urban MV routing with stubs, satellite, industrial loads,
+generators of voltage levels 4 to 7) and both together in one run, which is
+how ding0 is used for more than one grid district. See
+`tests/synthetic_district.py` for the data.
 
-Set DING0_UPDATE_EXPECTED=1 to rewrite the expected file from the current run.
+The reference grids in `test_data/` were produced by upstream ding0
+(4d113a0) on its original stack (Python 3.8, pandas 1.2, networkx 2.5,
+shapely 1.8, pypsa 0.17), so they record upstream behaviour, including its
+bugs: in the run of both districts, only district 1's generators are
+imported. The comparison ignores component names, which depend on iteration
+order, and compares the grid by geometry: buses by coordinates, lines by end
+points, length, type and parallel count.
+
+Set DING0_UPDATE_EXPECTED=1 to rewrite the expected files from the current
+runs.
 """
 
 import json
@@ -17,8 +26,25 @@ import pytest
 from ding0.core import NetworkDing0
 from tests import synthetic_district
 
-EXPECTED = os.path.join(os.path.dirname(__file__), "test_data",
-                        "synthetic_district_expected.json")
+TEST_DATA = os.path.join(os.path.dirname(__file__), "test_data")
+
+# run name: MV grid districts of the run
+RUNS = {
+    "district_1": [1],
+    "district_2": [2],
+    "districts_1_2": [1, 2],
+}
+
+# per MV grid district: aggregated and satellite load areas and the number
+# of LV grid districts per load area
+STRUCTURE = {
+    1: {"aggregated": [], "satellite": [], "lv_grids": {101: 3, 102: 1, 103: 1}},
+    2: {"aggregated": [201], "satellite": [203], "lv_grids": {201: 14, 202: 1, 203: 1}},
+}
+
+
+def expected_file(run):
+    return os.path.join(TEST_DATA, f"synthetic_{run}_expected.json")
 
 
 def canonical_grid(components):
@@ -48,8 +74,8 @@ def canonical_grid(components):
     }
 
 
-@pytest.fixture(scope="module")
-def synthetic_run():
+@pytest.fixture(scope="module", params=list(RUNS))
+def synthetic_run(request):
     monkeypatch = pytest.MonkeyPatch()
     synthetic_district.patch_database(monkeypatch)
     try:
@@ -58,33 +84,39 @@ def synthetic_run():
         # from reflecting the database tables.
         network._orm = {}
         messages = network.run_ding0(session=None,
-                                     mv_grid_districts_no=[synthetic_district.MV_GRID_ID])
+                                     mv_grid_districts_no=RUNS[request.param])
         components = network.to_dataframe()
     finally:
         monkeypatch.undo()
-    return network, messages, components
+    return request.param, network, messages, components
 
 
 def test_run_completes_without_invalid_districts(synthetic_run):
-    _, messages, _ = synthetic_run
+    _, _, messages, _ = synthetic_run
     assert messages == [[]]
 
 
-def test_lv_grids_per_load_area(synthetic_run):
-    network, _, _ = synthetic_run
-    (mv_grid_district,) = list(network.mv_grid_districts())
-    lv_grids = {la.id_db: len(list(la.lv_grid_districts()))
-                for la in mv_grid_district.lv_load_areas()}
-    assert lv_grids == {101: 3, 102: 1, 103: 1}
+def test_load_area_structure(synthetic_run):
+    _, network, _, _ = synthetic_run
+    structure = {
+        mvgd.id_db: {
+            "aggregated": sorted(la.id_db for la in mvgd.lv_load_areas() if la.is_aggregated),
+            "satellite": sorted(la.id_db for la in mvgd.lv_load_areas() if la.is_satellite),
+            "lv_grids": {la.id_db: len(list(la.lv_grid_districts()))
+                         for la in mvgd.lv_load_areas()},
+        }
+        for mvgd in network.mv_grid_districts()
+    }
+    assert structure == {mvgd_id: STRUCTURE[mvgd_id] for mvgd_id in structure}
 
 
 def test_grid_matches_upstream_reference(synthetic_run):
-    _, _, components = synthetic_run
+    run, _, _, components = synthetic_run
     grid = canonical_grid(components)
     if os.environ.get("DING0_UPDATE_EXPECTED"):
-        with open(EXPECTED, "w") as f:
+        with open(expected_file(run), "w") as f:
             json.dump(grid, f, indent=1)
-    with open(EXPECTED) as f:
+    with open(expected_file(run)) as f:
         expected = json.load(f)
     for key in expected:
         assert grid[key] == expected[key], key
