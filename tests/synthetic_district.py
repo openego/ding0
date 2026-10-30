@@ -350,6 +350,10 @@ def point_components(mvgd_id, exclude_charging_locations=()):
     x, y = _node_xy(202, 4, 3)
     rows.append(["load", "charging_point", "work", "work", 150.0, 6,
                  Point(x + 20.0, y + 20.0), "charging_location_13", None])
+    # within load area 202, so the ring branch to it runs along its streets
+    x, y = _node_xy(202, 1, 2)
+    rows.append(["load", "charging_point", "public", "retail", 400.0, 5,
+                 Point(x + 15.0, y + 10.0), "charging_location_14", None])
     rows.append(["load", "charging_point", "hpc", "bus_depot", 800.0, 5,
                  Point(*_rel(2, 1_500.0, 600.0)), "bus_depot_1", None])
     x, y = _node_xy(201, 3, 0)

@@ -49,7 +49,8 @@ def test_loads_by_type_and_sector(components_run):
     assert p_set[("heat_pump", "individual_heating")] == 0.15
     # two home charging points in buildings, one at a location of its own
     assert p_set[("charging_point", "home")] == 0.033
-    assert p_set[("charging_point", "public")] == 0.022
+    # street (LV) and retail (MV)
+    assert p_set[("charging_point", "public")] == 0.422
     assert p_set[("charging_point", "work")] == 0.15
     # urban fast, highway fast and bus depot
     assert p_set[("charging_point", "hpc")] == 3.1
@@ -83,20 +84,27 @@ def test_building_components_at_building_bus(components_run):
 
 
 def test_point_components_by_voltage_level(components_run):
-    _, _, components = components_run
+    network, _, components = components_run
     v_nom = components["Bus"].v_nom
     loads = components["Load"]
     use_case_v_nom = loads.dropna(subset=["use_case"]).set_index("use_case").bus.map(v_nom)
     # voltage levels 4 and 5 in the MV grid, 6 and 7 in LV grids
     assert use_case_v_nom.to_dict() == {
         "home_detached": 0.4, "urban_fast": 10.0, "highway_fast": 10.0,
-        "street": 0.4, "work": 0.4, "bus_depot": 10.0, "rail_transit_dc": 10.0}
-    # voltage level 4 has a line of its own to the HV/MV station
-    highway = loads.loc[loads.use_case == "highway_fast", "bus"].iloc[0]
-    lines = components["Line"]
-    to_station = lines.loc[(lines.bus0 == highway) | (lines.bus1 == highway)]
-    assert len(to_station) == 1
-    assert {to_station.bus0.iloc[0], to_station.bus1.iloc[0]} == {highway, "Busbar_mvgd_2_MV"}
+        "street": 0.4, "work": 0.4, "bus_depot": 10.0, "rail_transit_dc": 10.0,
+        "retail": 10.0}
+    # voltage level 4 has a line of its own to the HV/MV station (other
+    # components may connect to it like to a generator's line)
+    import networkx as nx
+    from ding0.core.network.cable_distributors import MVCableDistributorDing0
+    from ding0.core.network.stations import MVStationDing0
+    (mv_grid_district,) = list(network.mv_grid_districts())
+    graph = mv_grid_district.mv_grid.graph
+    highway = next(c for c in mv_grid_district.mv_grid.components()
+                   if getattr(c, "use_case", None) == "highway_fast")
+    path = nx.shortest_path(graph, highway, mv_grid_district.mv_grid.station())
+    assert all(isinstance(node, (MVCableDistributorDing0, MVStationDing0))
+               for node in path[1:])
     storage = components["StorageUnit"]
     large = storage.loc[storage.type == "large_storage"].iloc[0]
     assert (v_nom[large.bus], large.p_nom, large.max_hours, large.control) == (10.0, 0.5, 1.0, "PQ")
@@ -166,7 +174,7 @@ def test_mv_point_loads_are_routed_in_rings(components_run):
                   for node in ring}
     routed = {component.use_case for component in mv_grid.components()
               if component in ring_nodes}
-    assert routed == {"urban_fast", "bus_depot", "rail_transit_dc"}
+    assert routed == {"urban_fast", "bus_depot", "rail_transit_dc", "retail"}
 
 
 def test_point_loads_in_mv_grid_district_peak_load(components_run):
@@ -176,5 +184,46 @@ def test_point_loads_in_mv_grid_district_peak_load(components_run):
     mv_loads = sum(load.peak_load for load in mv_grid_district.mv_grid.loads())
     # all point loads of district 2, incl. the home charging point without a
     # building nearby (factor 1.0)
-    point_loads = 300.0 + 2_000.0 + 22.0 + 150.0 + 800.0 + 1_200.0 + 11.0
+    point_loads = 300.0 + 2_000.0 + 22.0 + 150.0 + 400.0 + 800.0 + 1_200.0 + 11.0
     assert mv_grid_district.peak_load == pytest.approx(load_areas + mv_loads + point_loads)
+
+
+def test_ring_branch_of_point_load_along_load_area_streets():
+    """A ring branch between a load area centre and a point load within the
+    load area is laid along the load area's streets; the point load is no
+    node of the street graph and has to be connected first."""
+    import types
+    import networkx as nx
+    from shapely.geometry import LineString, box
+    from ding0.core.network.components import PointLoadDing0
+    from ding0.grid.mv_grid.tools import update_branch_shps_settle
+
+    NetworkDing0()  # loads the config
+    # street from (0, 0) to (200, 0) to (200, 100)
+    street_graph = nx.MultiDiGraph(crs="epsg:3035")
+    for node, (x, y) in {1: (0, 0), 2: (200, 0), 3: (200, 100)}.items():
+        street_graph.add_node(node, x=x, y=y)
+    for u, v in [(1, 2), (2, 3)]:
+        line = LineString([(street_graph.nodes[u]["x"], street_graph.nodes[u]["y"]),
+                           (street_graph.nodes[v]["x"], street_graph.nodes[v]["y"])])
+        street_graph.add_edge(u, v, geometry=line, length=line.length)
+        street_graph.add_edge(v, u, geometry=LineString(line.coords[::-1]), length=line.length)
+    # the load area centre is a node of the street graph
+    class Centre:
+        geo_data = Point(0, 0)
+
+        def __repr__(self):
+            return "centre"
+
+    centre = Centre()
+    street_graph = nx.relabel_nodes(street_graph, {1: str(centre)})
+    load = PointLoadDing0(id_db=1, geo_data=Point(205, 95), p_nom=400.0,
+                          type="charging_point", v_level=5,
+                          mv_grid=types.SimpleNamespace(id_db=1))
+    branch = types.SimpleNamespace(geometry=LineString([(0, 0), (205, 95)]),
+                                   length=226.0, circuit_breaker=None)
+    load_area = types.SimpleNamespace(geo_area=box(-50, -50, 300, 300))
+    update_branch_shps_settle(
+        load_area, [{"adj_nodes": [centre, load], "branch": branch}], street_graph)
+    # along the streets plus the connection of the load to the nearest node
+    assert branch.length == pytest.approx(200 + 100 + Point(200, 100).distance(Point(205, 95)))

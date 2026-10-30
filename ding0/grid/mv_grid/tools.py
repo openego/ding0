@@ -697,13 +697,19 @@ def update_branch_shps_settle(load_area, branches, street_graph):
 
     for branch in branches:
 
-        mv_station = [node for node in branch['adj_nodes'] if isinstance(node, MVStationDing0)]
+        # MV station and loads at locations of their own within the load area
+        # (routed in rings) are no nodes of the street graph; loads outside
+        # are connected where the branch enters the load area, see below
+        foreign_nodes = [node for node in branch['adj_nodes']
+                         if isinstance(node, MVStationDing0)
+                         or (isinstance(node, PointLoadDing0)
+                             and load_area.geo_area.intersects(node.geo_data))]
         G = street_graph
 
         # add node to street graph, if not element of it
-        if mv_station:
-            if not G.has_node(str(mv_station[0])):
-                G = conn_ding0_obj_to_osm_graph(G, mv_station[0])
+        for node in foreign_nodes:
+            if not G.has_node(str(node)):
+                G = conn_ding0_obj_to_osm_graph(G, node)
 
         endpoints = [load_area.geo_area.intersects(node.geo_data) for node in branch['adj_nodes']]
 
