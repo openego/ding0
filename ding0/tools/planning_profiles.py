@@ -16,9 +16,12 @@ The column `default` holds general planning principles in Germany as used for
 the eGon grids. Other profiles only contain the values that differ from
 `default`; an empty cell inherits the `default` value.
 
-Applying a profile writes its parameters into ding0's config (sections as in
-`config_calc.cfg`, read with :func:`ding0.tools.config.get`) and into the
-parameters returned by :func:`ding0.config.config_lv_grids_osm.get_config_osm`.
+The table contains all calculation parameters (planning principles and
+technical settings) that were formerly set in `config_calc.cfg`, plus the
+planning parameters of the OSM-based LV grid generation. Applying a profile
+writes its parameters into ding0's config (read with
+:func:`ding0.tools.config.get`) and into the parameters returned by
+:func:`ding0.config.config_lv_grids_osm.get_config_osm`.
 """
 
 __copyright__  = "Reiner Lemoine Institut gGmbH"
@@ -200,8 +203,7 @@ def apply_profile(profile=DEFAULT_PROFILE):
 
     The parameters are written into the config sections read with
     :func:`ding0.tools.config.get` and into the parameters returned by
-    :func:`ding0.config.config_lv_grids_osm.get_config_osm`. The profile is
-    applied again whenever `config_calc.cfg` is (re)loaded.
+    :func:`ding0.config.config_lv_grids_osm.get_config_osm`.
 
     Parameters
     ----------

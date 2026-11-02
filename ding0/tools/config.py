@@ -60,6 +60,18 @@ def load_config(filename):
     """
     package_path = ding0.__path__[0]
 
+    # config_calc.cfg was replaced by the planning profiles, apply the active
+    # profile instead (kept for scripts that still load config_calc.cfg)
+    if filename == "config_calc.cfg":
+        logger.warning(
+            "config_calc.cfg does not exist anymore, its parameters are set by "
+            "the planning profiles (ding0.tools.planning_profiles). Applying "
+            "the active planning profile instead."
+        )
+        from ding0.tools import planning_profiles
+        planning_profiles.apply_profile(planning_profiles.get_active_profile())
+        return
+
     if filename == "config_db_credentials.cfg":
         file = os.path.join(
             os.path.expanduser("~"), cfg.get("config", "config_dir"), "config", filename
@@ -77,12 +89,6 @@ def load_config(filename):
         _loaded = True
     except:
         logger.exception("configfile not found.")
-
-    # The planning parameters are not in config_calc.cfg but in the planning
-    # profiles, apply the active profile whenever config_calc.cfg is loaded
-    if filename == "config_calc.cfg":
-        from ding0.tools import planning_profiles
-        planning_profiles.apply_profile(planning_profiles.get_active_profile())
 
 
 def get(section, key):

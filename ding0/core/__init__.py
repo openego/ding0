@@ -1433,11 +1433,10 @@ class NetworkDing0:
         # load parameters from configs
         cfg_ding0.load_config('config_db_tables.cfg')
         cfg_ding0.load_config('config_db_credentials.cfg')
-        cfg_ding0.load_config('config_calc.cfg')
         cfg_ding0.load_config('config_files.cfg')
         cfg_ding0.load_config('config_misc.cfg')
 
-        # load planning parameters
+        # load calculation parameters
         planning_profiles.apply_profile(self._planning_profile)
 
         cfg_dict = cfg_ding0.cfg._sections

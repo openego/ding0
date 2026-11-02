@@ -151,7 +151,7 @@ def calc_geo_branches_in_buffer(node, mv_grid, radius, radius_inc, proj, srid=30
 
 def calc_geo_dist(node_source, node_target, srid=3035):
     """ Calculates the geodesic distance between `node_source` and `node_target`
-    incorporating the detour factor specified in :file:`ding0/ding0/config/config_calc.cfg`.
+    incorporating the detour factor `branch_detour_factor` of the planning profile.
 
     Parameters
     ----------
@@ -189,7 +189,7 @@ def calc_geo_dist(node_source, node_target, srid=3035):
 
 
 def calc_geo_dist_matrix(nodes_pos, srid=3035):
-    """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor in config_calc.cfg.
+    """ Calculates the geodesic distance between all nodes in `nodes_pos` incorporating the detour factor `branch_detour_factor` of the planning profile.
         
     For every two points/coord it uses geopy's geodesic function. As default ellipsoidal model of the earth WGS-84 is used.
     For more options see
@@ -254,7 +254,7 @@ def calc_geo_dist_matrix(nodes_pos, srid=3035):
 
 def calc_geo_centre_point(node_source, node_target, srid=3035):
     """ Calculates the geodesic distance between `node_source` and `node_target`
-    incorporating the detour factor specified in config_calc.cfg.
+    incorporating the detour factor `branch_detour_factor` of the planning profile.
     
     Parameters
     ----------

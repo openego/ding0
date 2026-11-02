@@ -14,8 +14,7 @@ from ding0.tools.egon_data_integration import filter_generators_by_capacity
 @pytest.fixture(autouse=True)
 def default_profile():
     """Loads the config and resets the global profile state after each test."""
-    for filename in ["config_db_tables.cfg", "config_calc.cfg", "config_files.cfg",
-                     "config_misc.cfg"]:
+    for filename in ["config_db_tables.cfg", "config_files.cfg", "config_misc.cfg"]:
         cfg_ding0.load_config(filename)
     planning_profiles.apply_profile(planning_profiles.DEFAULT_PROFILE)
     yield
@@ -41,9 +40,12 @@ class TestPlanningProfiles:
         assert get_config_osm("hv_mv_threshold_capacity") == 5500
         assert isinstance(get_config_osm("hv_mv_threshold_capacity"), int)
         assert get_config_osm("additional_trafo_capacity") == 1.0
-        # technical parameters are not part of the profile
-        assert get_config_osm("srid") == 3035
+        # technical parameters, formerly in config_calc.cfg
         assert cfg_ding0.get("assumptions", "frequency") == 50
+        assert cfg_ding0.get("mv_routing", "operator_diff_round_digits") == 3
+        assert cfg_ding0.get("mv_connect", "generator_buffer_radius") == 2000
+        # technical OSM parameters are not part of the profile
+        assert get_config_osm("srid") == 3035
 
     def test_all_parameters_applied(self):
         for profile in planning_profiles.available_profiles():
@@ -71,9 +73,10 @@ class TestPlanningProfiles:
         assert cfg_ding0.get("mv_routing", "max_half_ring_length") == 28
         assert get_config_osm("hv_mv_threshold_capacity") == 5500
 
-    def test_reloading_config_keeps_active_profile(self):
+    def test_loading_removed_config_calc_applies_active_profile(self):
         planning_profiles.apply_profile("snb")
         cfg_ding0.load_config("config_calc.cfg")
+        assert planning_profiles.get_active_profile() == "snb"
         assert cfg_ding0.get("mv_routing", "max_half_ring_length") == 9
 
     def test_unknown_profile(self):

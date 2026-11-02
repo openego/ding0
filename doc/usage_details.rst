@@ -52,6 +52,8 @@ The grids are built according to planning principles: thresholds that assign loa
 the max. loading of lines and transformers, voltage limits, power factors, limits for MV rings and the
 equipment that may be used. These parameters are grouped in planning profiles, so that the planning
 principles of e.g. a distribution system operator (DSO) can be used without changing ding0's defaults.
+The profiles also contain ding0's technical calculation settings (e.g. search radii and tolerances of
+the MV routing), so all calculation parameters are in one place.
 
 ========  ========================================================================
 Profile   Planning principles
@@ -95,17 +97,17 @@ Both files have one column per profile. The column `default` must be complete. O
 contain the values that differ from `default`, an empty cell inherits the `default` value.
 
 * `ding0/config/planning_parameters.csv`: one row per parameter with `section`, `key`, `unit` and
-  `description`. The sections correspond to the sections of `config_calc.cfg`, read with
-  :func:`ding0.tools.config.get`; the section `lv_grids_osm` contains the parameters returned by
+  `description`. The parameters of the sections `mv_routing`, `mv_connect`, `assumptions` and
+  `mv_routing_tech_constraints` are read with :func:`ding0.tools.config.get` (they replace the former
+  `config_calc.cfg`); the section `lv_grids_osm` contains the parameters returned by
   :func:`~ding0.config.config_lv_grids_osm.get_config_osm`. `none` means no limit.
 * `ding0/config/equipment_selection.csv`: one row per equipment type in the equipment files
   `ding0/data/equipment-parameters_*.csv` (cables and lines by name, transformers by their rated power
   in kVA), `true` if the type may be used. The electrical parameters stay in the equipment files, which
   are the same for all profiles. Every type in the equipment files must be listed.
 
-Technical and algorithmic settings that do not depend on planning principles (e.g. the CRS, buffer
-distances and iteration limits) are not part of the profiles; they stay in `config_calc.cfg` and
-`config_lv_grids_osm.py`.
+The technical settings of the OSM-based LV grid generation (e.g. the CRS, buffer distances and
+iteration limits) are not part of the profiles; they stay in `config_lv_grids_osm.py`.
 
 Add a profile
 -------------
