@@ -83,6 +83,32 @@ ding0's config is global within a Python process, i.e. creating a :class:`~.core
 profile for all following calculations. Do not use networks with different profiles in the same process
 at the same time.
 
+Inspect profiles
+----------------
+
+The functions in :mod:`ding0.tools.planning_profiles` return the profiles and their values; values that
+are not set in a profile are taken from `default`:
+
+.. code-block:: python
+
+    from ding0.tools import planning_profiles
+
+    planning_profiles.available_profiles()
+    # ['default', 'snb']
+
+    planning_profiles.get_parameters('snb')[('assumptions', 'cos_phi_load')]
+    # '0.95'
+
+    planning_profiles.get_equipment_selection('snb')['LV_trafos']
+    # {'400', '630', '800'}
+
+    planning_profiles.get_active_profile()
+    # 'default', or the profile of the last created NetworkDing0
+
+During a calculation the parameters are read with :func:`ding0.tools.config.get` (e.g.
+``cfg_ding0.get('assumptions', 'cos_phi_load')``) and, for the section `lv_grids_osm`, with
+:func:`~ding0.config.config_lv_grids_osm.get_config_osm` (e.g. ``get_config_osm('avg_trafo_size')``).
+
 Loads and generators that are not considered
 --------------------------------------------
 
@@ -97,11 +123,7 @@ Both files have one column per profile. The column `default` must be complete. O
 contain the values that differ from `default`, an empty cell inherits the `default` value.
 
 * `ding0/config/planning_parameters.csv`: one row per parameter with `section`, `key`, `unit` and
-  `description`. The parameters of the sections `mv_routing`, `mv_connect`, `assumptions` and
-  `mv_routing_tech_constraints` are read with :func:`ding0.tools.config.get` (they replace the former
-  `config_calc.cfg`); the section `lv_grids_osm` contains the parameters of the OSM-based LV grid
-  generation returned by :func:`~ding0.config.config_lv_grids_osm.get_config_osm`. `none` means no
-  limit, lists are written in brackets, e.g. `[5, 25, 50, 100]`.
+  `description`. `none` means no limit, lists are written in brackets, e.g. `[5, 25, 50, 100]`.
 * `ding0/config/equipment_selection.csv`: one row per equipment type in the equipment files
   `ding0/data/equipment-parameters_*.csv` (cables and lines by name, transformers by their rated power
   in kVA), `true` if the type may be used. The electrical parameters stay in the equipment files, which
@@ -111,6 +133,56 @@ Not part of the profiles are the input data settings (database tables and scenar
 `config_db_tables.cfg`, file names in `config_files.cfg`), the power flow, export CRS and random seed
 settings in `config_misc.cfg`, and the specific peak loads of building and amenity categories in
 `config_lv_grids_osm.py`.
+
+Parameters
+----------
+
+The parameters are grouped in sections:
+
+=============================  ==========================================================================
+Section                        Content
+=============================  ==========================================================================
+mv_routing                     Routing of the MV rings: ring limits, min. peak load of load areas,
+                               tolerances of the routing algorithms
+mv_connect                     Connection of satellites, MV/LV stations and generators to the MV grid:
+                               limits of stubs, search radii
+assumptions                    Load factors, power factors, LV voltage limits, standard LV cable, max.
+                               generator capacity, grid frequency, LV nominal voltage, parameters of the
+                               legacy LV method
+mv_routing_tech_constraints    MV voltage limits, max. number of MV half-rings
+lv_grids_osm                   OSM-based LV grid generation: allocation of loads to voltage levels, LV
+                               clustering, processing of the street graphs
+=============================  ==========================================================================
+
+All parameters with their values per profile (an empty cell means the `default` value):
+
+.. csv-table:: Planning parameters (`ding0/config/planning_parameters.csv`)
+    :file: _generated/planning_parameters.csv
+    :header-rows: 1
+    :widths: 14 20 6 40 10 10
+
+Equipment
+---------
+
+Equipment per profile, `true` if it may be used (an empty cell means the `default` value):
+
+.. csv-table:: Equipment selection (`ding0/config/equipment_selection.csv`)
+    :file: _generated/equipment_selection.csv
+    :header-rows: 1
+    :widths: 25 45 15 15
+
+Former config files
+-------------------
+
+The planning profiles replace
+
+* `ding0/config/config_calc.cfg`, which was removed. Its parameters are in the sections `mv_routing`,
+  `mv_connect`, `assumptions` and `mv_routing_tech_constraints`, with the same section and key names, so
+  ``cfg_ding0.get(section, key)`` works as before. Scripts that still call
+  ``cfg_ding0.load_config('config_calc.cfg')`` get a warning and the active profile is applied instead.
+* the parameters in :func:`~ding0.config.config_lv_grids_osm.get_config_osm`, now in the section
+  `lv_grids_osm`. The unused parameters `EARTH_RADIUS_M`, `quadrat_width`, `unconn_nodes_ratio` and
+  `get_fully_conn_graph_number_max_it` were removed.
 
 Add a profile
 -------------
