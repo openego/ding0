@@ -37,6 +37,17 @@ import shlex
 #sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../'))
 
+# Copies of the planning profile tables without comment lines, rendered with
+# the csv-table directive in usage_details.rst (which cannot skip comments)
+_doc_dir = os.path.dirname(os.path.abspath(__file__))
+_generated_dir = os.path.join(_doc_dir, '_generated')
+os.makedirs(_generated_dir, exist_ok=True)
+for _filename in ['planning_parameters.csv', 'equipment_selection.csv']:
+    with open(os.path.join(_doc_dir, '..', 'ding0', 'config', _filename)) as _f:
+        _lines = [line for line in _f if not line.lstrip().startswith('#')]
+    with open(os.path.join(_generated_dir, _filename), 'w') as _f:
+        _f.writelines(_lines)
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
