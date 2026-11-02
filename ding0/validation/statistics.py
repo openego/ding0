@@ -123,7 +123,18 @@ class GridStats:
         self.p_loadareas_total = lv_load_areas["peak_load"].sum()
 
         # Load Data
-        egon_buildings = pd.DataFrame()
+        egon_buildings = pd.DataFrame(
+            columns=[
+                "building_id",
+                "residential_capacity",
+                "number_households",
+                "capacity",
+                "industrial_capacity",
+                "cts_capacity",
+                "geometry",
+                "footprint",
+            ]
+        )
         for id_db, row in lv_load_areas.iterrows():
             egon_buildings = pd.concat(
                 [egon_buildings, db_io.get_egon_buildings(orm, session, grid_id, row)]
@@ -155,13 +166,13 @@ class GridStats:
         conv_generators = db_io.get_conv_generators(orm, session, mv_grid_district)
 
         _ = res_generators.loc[
-            res_generators["generation_subtype"] == "pv_rooftop", "electrical_capacity"
+            res_generators["generation_subtype"] == "open_space", "electrical_capacity"
         ]
         self.n_gens_pv_openspace = _.count()
         self.p_gens_pv_openspace = _.sum()
 
         _ = res_generators.loc[
-            res_generators["generation_subtype"] == "open_space", "electrical_capacity"
+            res_generators["generation_subtype"] == "pv_rooftop", "electrical_capacity"
         ]
         self.n_gens_pv_rooftop = _.count()
         self.p_gens_pv_rooftop = _.sum()
@@ -321,11 +332,11 @@ class GridStats:
         self.p_loads_total = loads_df["p_set"].sum()
 
         # Generator Data
-        _ = generators_df.loc[generators_df["subtype"] == "pv_rooftop", "p_nom"]
+        _ = generators_df.loc[generators_df["subtype"] == "open_space", "p_nom"]
         self.n_gens_pv_openspace = _.count()
         self.p_gens_pv_openspace = _.sum()
 
-        _ = generators_df.loc[generators_df["subtype"] == "open_space", "p_nom"]
+        _ = generators_df.loc[generators_df["subtype"] == "pv_rooftop", "p_nom"]
         self.n_gens_pv_rooftop = _.count()
         self.p_gens_pv_rooftop = _.sum()
 
@@ -394,9 +405,6 @@ def get_stats_from_edisgo_dir(dir_name=None, file_name=None):
 
     grid_obj_list = list(edisgo_obj.topology.mv_grid.lv_grids)
     grid_obj_list = grid_obj_list + [edisgo_obj, edisgo_obj.topology.mv_grid]
-
-    grid_obj_list[-2].topology.buses_df.iloc[0, 0] = 1
-    grid_obj_list[-1].buses_df.iloc[0, 1] = 1
 
     for grid_obj in grid_obj_list:
         stats_obj = GridStats(grid_id=edisgo_obj.topology.id)

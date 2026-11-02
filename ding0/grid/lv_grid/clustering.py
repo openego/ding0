@@ -11,10 +11,7 @@ logger = logging.getLogger(__name__)
 
 def get_cluster_numbers(la_peak_loads, simp_graph):
     """
-    caculate the number of clusters for load areal based on peak load / avg
-    peak loads < 200 kW are accumulated
-    add additional_trafo_capacity to ensure a trafos is loaded to 80% max.
-    trafo_loading = 500 / 630
+    calculate the number of clusters for load areal based on peak load / avg
     """
     cum_peak_load = la_peak_loads.loc[la_peak_loads.capacity < get_config_osm('mv_lv_threshold_capacity')].capacity.sum()
 

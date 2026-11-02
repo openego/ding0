@@ -29,6 +29,7 @@ try:
 except ImportError:
     db = None
 from ding0.core import NetworkDing0
+from ding0.tools import planning_profiles
 from ding0.core import GeneratorDing0
 from ding0.core import LVCableDistributorDing0, MVCableDistributorDing0
 from ding0.core import MVStationDing0, LVStationDing0
@@ -58,9 +59,9 @@ if not 'READTHEDOCS' in os.environ:
 #############################################
 plt.close('all')
 cfg_ding0.load_config('config_db_tables.cfg')
-cfg_ding0.load_config('config_calc.cfg')
 cfg_ding0.load_config('config_files.cfg')
 cfg_ding0.load_config('config_misc.cfg')
+planning_profiles.apply_profile(planning_profiles.get_active_profile())
 
 
 def lv_grid_generators_bus_bar(nd):

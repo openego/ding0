@@ -23,6 +23,7 @@ var/
 .installed.cfg
 *.egg
 doc/_html/
+doc/_generated/
 .idea/
 
 # PyInstaller

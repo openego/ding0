@@ -43,7 +43,7 @@ def plot_mv_topology(grid, subtitle='', filename=None, testcase='load',
         If provided, the figure will be saved and not displayed (default path: ~/.ding0/).
         A prefix is added to the file name.
     testcase : :obj:`str`
-        Defines which case is to be used. Refer to config_calc.cfg to see further
+        Defines which case is to be used. Refer to the planning profile to see further
         assumptions for the cases. Possible options are:
         
         * 'load' (default)

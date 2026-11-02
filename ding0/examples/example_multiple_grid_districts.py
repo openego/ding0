@@ -29,7 +29,6 @@ from datetime import datetime
 
 plt.close('all')
 cfg_ding0.load_config('config_db_tables.cfg')
-cfg_ding0.load_config('config_calc.cfg')
 cfg_ding0.load_config('config_files.cfg')
 cfg_ding0.load_config('config_misc.cfg')
 
