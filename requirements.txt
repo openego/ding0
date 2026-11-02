@@ -20,3 +20,5 @@ pymetis
 pyvis
 requests
 psycopg2-binary
+# SSH tunnels to egon-data databases, see database.get_egon_data_engine
+sshtunnel >= 0.4
