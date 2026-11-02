@@ -44,8 +44,10 @@ class TestPlanningProfiles:
         assert cfg_ding0.get("assumptions", "frequency") == 50
         assert cfg_ding0.get("mv_routing", "operator_diff_round_digits") == 3
         assert cfg_ding0.get("mv_connect", "generator_buffer_radius") == 2000
-        # technical OSM parameters are not part of the profile
+        # technical OSM parameters, formerly in config_lv_grids_osm.py
         assert get_config_osm("srid") == 3035
+        assert get_config_osm("buffer_distance") == [5, 25, 50, 100]
+        assert get_config_osm("major_ccs_ratio_threshold") == 0.3
 
     def test_all_parameters_applied(self):
         for profile in planning_profiles.available_profiles():

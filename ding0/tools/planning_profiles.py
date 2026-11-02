@@ -17,8 +17,8 @@ the eGon grids. Other profiles only contain the values that differ from
 `default`; an empty cell inherits the `default` value.
 
 The table contains all calculation parameters (planning principles and
-technical settings) that were formerly set in `config_calc.cfg`, plus the
-planning parameters of the OSM-based LV grid generation. Applying a profile
+technical settings) that were formerly set in `config_calc.cfg` and
+`config_lv_grids_osm.py`. Applying a profile
 writes its parameters into ding0's config (read with
 :func:`ding0.tools.config.get`) and into the parameters returned by
 :func:`ding0.config.config_lv_grids_osm.get_config_osm`.
@@ -29,6 +29,7 @@ __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj"
 
+import ast
 import csv
 import logging
 import os
@@ -109,9 +110,11 @@ def _check_profile(profile, profiles, filename):
 
 
 def _parse_value(value):
-    """Converts a value string into int, float, None (`NO_LIMIT`) or str."""
+    """Converts a value string into int, float, list, None (`NO_LIMIT`) or str."""
     if value.lower() == NO_LIMIT:
         return None
+    if value.startswith("["):
+        return ast.literal_eval(value)
     for type_ in (int, float):
         try:
             return type_(value)
@@ -260,7 +263,7 @@ def get_osm_parameter(key):
 
     Returns
     -------
-    :obj:`int`, :obj:`float`, :obj:`str` or None
+    :obj:`int`, :obj:`float`, :obj:`list`, :obj:`str` or None
         Parameter value
     """
     if not _osm_parameters:

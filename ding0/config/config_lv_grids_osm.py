@@ -5,45 +5,22 @@ parameterized by load profiles.
 """
 
 def get_config_osm(key):
-    
     """
-    return config for osm processing.
-    ...
-    ...
-    mv_lv_threshold_capacity: loads with capacity < 200 kW are connected in grid
-                              loads wi. capacity >= 200 kW are separately
-    
-    avg_cluster_capacity    : n_cluster = sum(peak_load) / avg_cluster_capacity
-                              Clusters are NOT homogenous
-                              
-    additional_trafo_capacity: e.g. 1.5; so, transformers have max load factor of 70%.
-                               capacity_to_cover = capacity_of_area * 1.5
-                               
-    diversity_factor_not_residential: 0.6
-    src.: https://assets.new.siemens.com/siemens/assets/api/uuid:d683c81df25afb360b79c5d48441eeda8b23477b/planung-der-elektrischen-energieverteilung-technische-grundlagen.pdf, page 18. 23.12.2021.
+    Returns a parameter of the OSM-based LV grid generation.
 
-    The planning parameters (lv_threshold_capacity, mv_lv_threshold_capacity,
-    hv_mv_threshold_capacity, additional_trafo_capacity, avg_trafo_size,
-    ons_dist_threshold, diversity_factor_not_residential) are taken from the
-    active planning profile, see :mod:`ding0.tools.planning_profiles`.
+    The parameters are taken from the section `lv_grids_osm` of the active
+    planning profile, see :mod:`ding0.tools.planning_profiles`.
 
+    Parameters
+    ----------
+    key : :obj:`str`
+        Parameter name
+
+    Returns
+    -------
+    :obj:`int`, :obj:`float`, :obj:`list` or :obj:`str`
+        Parameter value
     """
-
-    config_osm = {
-
-        'srid' : 3035,
-        'avg_square_meters' : 100,
-        'dist_edge_segments' : 50,
-        'cluster_increment_counter_threshold' : 20,
-        'min_detour_length': 100,
-        'max_detour_factor': 3,
-        'buffer_distance' : [5, 25, 50, 100],
-        'major_ccs_ratio_threshold' : .30,
-    }
-
-    if key in config_osm:
-        return config_osm[key]
-
     from ding0.tools.planning_profiles import get_osm_parameter
     return get_osm_parameter(key)
 

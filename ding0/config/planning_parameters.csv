@@ -56,10 +56,18 @@ mv_routing_tech_constraints,mv_station_v_level_operation,-,Operating voltage at 
 mv_routing_tech_constraints,mv_max_v_level_lc_diff_normal,-,"Max. voltage deviation in MV grids, load case, normal operation",0.05,0.04
 mv_routing_tech_constraints,mv_max_v_level_fc_diff_normal,-,"Max. voltage deviation in MV grids, feed-in case, normal operation",0.02,
 mv_routing_tech_constraints,mv_max_v_level_lc_diff_malfunc,-,"Max. voltage deviation in MV grids, load case, (n-1) operation",0.10,
-lv_grids_osm,lv_threshold_capacity,kW,Loads with a lower capacity are connected to the LV street grid,100,173
-lv_grids_osm,mv_lv_threshold_capacity,kW,Loads with a lower capacity (and at least lv_threshold_capacity) are connected directly to the MV/LV station; larger loads are MV loads,200,346
-lv_grids_osm,hv_mv_threshold_capacity,kW,Loads with this or a higher capacity are not considered,5500,13500
-lv_grids_osm,additional_trafo_capacity,-,Factor on the capacity to be covered by MV/LV transformers,1.0,
-lv_grids_osm,avg_trafo_size,kVA,"Average MV/LV transformer size, used to determine the number of LV grid districts",500,630
-lv_grids_osm,ons_dist_threshold,m,Max. distance between a load and its MV/LV station (clustering criterion),1500,
-lv_grids_osm,diversity_factor_not_residential,-,Diversity factor of non-residential loads,0.6,
+lv_grids_osm,srid,-,CRS (EPSG code) of the OSM-based LV grid generation,3035,
+lv_grids_osm,avg_square_meters,m2,"Average floor area of an amenity, converts the specific peak loads of amenity categories (per m2) into peak loads",100,
+lv_grids_osm,dist_edge_segments,m,Length of the segments street graph edges are subdivided into,50,
+lv_grids_osm,cluster_increment_counter_threshold,-,Max. number of times the number of LV clusters is increased before the clustering is aborted,20,
+lv_grids_osm,min_detour_length,m,LV street edges with at least this length are checked for detours,100,
+lv_grids_osm,max_detour_factor,-,Street edges longer than this factor times the air-line distance are detours,3,
+lv_grids_osm,buffer_distance,m,"Buffer distances around a load area, tried in turn to obtain a connected street graph","[5, 25, 50, 100]",
+lv_grids_osm,major_ccs_ratio_threshold,-,Connected components of the street graph larger than this share of the largest one are connected to it,0.3,
+lv_grids_osm,lv_threshold_capacity,kW,"Loads with a lower capacity are connected to the LV street grid (default: < 100 kW). snb: 173 kW, corresponds to 250 A at 400 V",100,173
+lv_grids_osm,mv_lv_threshold_capacity,kW,"Loads with a lower capacity (and at least lv_threshold_capacity) are connected directly to the MV/LV station (default: 100 to < 200 kW); loads with this or a higher capacity are connected separately as MV loads. snb: 346 kW, corresponds to 500 A at 400 V",200,346
+lv_grids_osm,hv_mv_threshold_capacity,kW,"Loads from mv_lv_threshold_capacity up to below this capacity get their own MV/LV station with transformers (MV loads, default: 200 kW to < 5.5 MW); loads with this or a higher capacity are not considered",5500,13500
+lv_grids_osm,additional_trafo_capacity,-,"Factor on the capacity to be covered by MV/LV transformers (capacity_to_cover = capacity_of_area * factor), increases the number of LV grid districts; e.g. 1.5 means transformers are loaded to max. 1/1.5 = 67 %",1.0,
+lv_grids_osm,avg_trafo_size,kVA,"Average MV/LV transformer size, determines the number of LV grid districts (clusters) of a load area: n_cluster = ceil(sum of peak loads below mv_lv_threshold_capacity / avg_trafo_size) * additional_trafo_capacity. The clusters are not homogeneous",500,630
+lv_grids_osm,ons_dist_threshold,m,Max. distance between a load and its MV/LV station (clustering criterion); MV street edges with at least this length are checked for detours,1500,
+lv_grids_osm,diversity_factor_not_residential,-,"Diversity factor of non-residential loads. Source: Siemens, Planung der elektrischen Energieverteilung, technische Grundlagen, page 18, https://assets.new.siemens.com/siemens/assets/api/uuid:d683c81df25afb360b79c5d48441eeda8b23477b/planung-der-elektrischen-energieverteilung-technische-grundlagen.pdf (accessed 2021-12-23)",0.6,
