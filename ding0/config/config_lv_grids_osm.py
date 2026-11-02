@@ -32,17 +32,13 @@ def get_config_osm(key):
     config_osm = {
 
         'srid' : 3035,
-        'EARTH_RADIUS_M' : 6_371_009,  # deprecated!? not mandatory anymore?!
         'avg_square_meters' : 100,
-        'quadrat_width' : 1000,
         'dist_edge_segments' : 50,
         'cluster_increment_counter_threshold' : 20,
         'min_detour_length': 100,
         'max_detour_factor': 3,
         'buffer_distance' : [5, 25, 50, 100],
-        'unconn_nodes_ratio' : 0.02,
         'major_ccs_ratio_threshold' : .30,
-        'get_fully_conn_graph_number_max_it' : 4,
     }
 
     if key in config_osm:
