@@ -44,6 +44,14 @@ ding0.tools.logger module
     :undoc-members:
     :show-inheritance:
 
+ding0.tools.planning\_profiles module
+-------------------------------------
+
+.. automodule:: ding0.tools.planning_profiles
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 ding0.tools.plots module
 ------------------------
 

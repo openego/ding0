@@ -1,0 +1,73 @@
+# Parameters per planning profile, see the documentation (planning profiles).
+# 'default': general planning principles in Germany as used for the eGon grids, and ding0's technical settings.
+# Other columns: only values that differ from 'default'; an empty cell inherits 'default'.
+section,key,unit,description,default,snb
+mv_routing,operator_diff_round_digits,-,Rounding digits when comparing costs of local search operators in the MV routing,3,
+mv_routing,conn_diff_tolerance,-,Tolerance to decide whether two objects are at the same position when connecting nodes,0.0001,
+mv_routing,load_area_threshold,kW,Load areas with a lower peak load are not considered,1,
+mv_routing,load_area_count_per_ring,-,Max. number of load areas per MV ring,20,15
+mv_routing,max_half_ring_length,km,Max. length of an MV half-ring,28,9
+mv_connect,load_area_sat_conn_dist_weight,-,"Weight of the distance to MV stations vs. lines when connecting satellites, valid range 0..1",1,
+mv_connect,load_area_sat_conn_dist_ring_mod,m,Satellites closer to a ring are connected by re-routing the ring main route,100,
+mv_connect,load_area_stat_conn_dist_ring_mod,m,MV/LV stations closer to a ring are connected by re-routing the ring main route,300,
+mv_connect,load_area_sat_buffer_radius,m,Initial search radius when connecting satellites,2000,
+mv_connect,load_area_sat_buffer_radius_inc,m,Increment of the search radius when connecting satellites,1000,
+mv_connect,generator_buffer_radius,m,Initial search radius when connecting MV generators,2000,
+mv_connect,generator_buffer_radius_inc,m,Increment of the search radius when connecting MV generators,1000,
+mv_connect,load_area_sat_load_threshold,kW,"Load areas with a lower peak load are satellites (connected by stubs, not in rings)",100,
+mv_connect,load_area_sat_string_load_threshold,kW,Max. cumulative load of a stub (satellite string),1000,3000
+mv_connect,load_area_sat_string_length_threshold,m,Max. length of a stub (satellite string),2000,
+assumptions,frequency,Hz,Grid frequency,50,
+assumptions,lv_nominal_voltage,V,Nominal voltage of LV grids,400,
+assumptions,apartment_house_branch_ratio,-,"Ratio of apartments to house branches (LV model grids, legacy method)",1.5,
+assumptions,population_per_apartment,-,"Inhabitants per apartment (LV model grids, legacy method)",2.3,
+assumptions,branch_line_length_retail_industrial,m,Branch line length in retail/industrial LV grids (legacy method),400,
+assumptions,branch_line_length_agricultural,m,Branch line length in agricultural LV grids (legacy method),800,
+assumptions,max_lv_branch_line,kVA,"Max. load of an LV branch line, capacity of a NAYY 4x1x300 cable (legacy method)",290,
+assumptions,lv_ria_branch_connection_distance,m,Distance from load to branch in retail/industrial/agricultural LV grids (legacy method),30,
+assumptions,load_density_threshold,MVA/km2,MV grids with a higher load density are operated at 10 kV (voltage level mode 'load_density'),1,
+assumptions,voltage_per_km_threshold,km,"MV grids with a load area farther away from the HV/MV station are operated at 20 kV (voltage level mode 'distance', default)",15,
+assumptions,load_factor_mv_trans_lc_normal,-,"Max. loading of HV/MV transformers, load case, normal operation",0.6,
+assumptions,load_factor_mv_line_lc_normal,-,"Max. loading of MV overhead lines, load case, normal operation",0.6,0.5
+assumptions,load_factor_mv_cable_lc_normal,-,"Max. loading of MV cables, load case, normal operation",0.6,0.5
+assumptions,load_factor_mv_trans_lc_malfunc,-,"Max. loading of HV/MV transformers, load case, (n-1) operation",1.0,1.2
+assumptions,load_factor_mv_line_lc_malfunc,-,"Max. loading of MV overhead lines, load case, (n-1) operation",1.0,
+assumptions,load_factor_mv_cable_lc_malfunc,-,"Max. loading of MV cables, load case, (n-1) operation",1.0,
+assumptions,load_factor_mv_trans_fc_normal,-,"Max. loading of HV/MV transformers, feed-in case, normal operation",1.0,0.6
+assumptions,load_factor_mv_line_fc_normal,-,"Max. loading of MV overhead lines, feed-in case, normal operation",1.0,0.5
+assumptions,load_factor_mv_cable_fc_normal,-,"Max. loading of MV cables, feed-in case, normal operation",1.0,0.5
+assumptions,load_factor_lv_trans_lc_normal,-,"Max. loading of MV/LV transformers, load case, normal operation",1.0,
+assumptions,load_factor_lv_cable_lc_normal,-,"Max. loading of LV cables, load case, normal operation",1.0,
+assumptions,load_factor_lv_trans_fc_normal,-,"Max. loading of MV/LV transformers, feed-in case, normal operation",1.0,
+assumptions,load_factor_lv_cable_fc_normal,-,"Max. loading of LV cables, feed-in case, normal operation",1.0,
+assumptions,cos_phi_load,-,Power factor of loads (MV and LV),0.97,0.95
+assumptions,cos_phi_load_mode,-,Reactive power behaviour of loads (inductive or capacitive),inductive,
+assumptions,cos_phi_gen,-,Power factor of generators (MV and LV),1,0.95
+assumptions,cos_phi_gen_mode,-,Reactive power behaviour of generators (inductive or capacitive),capacitive,
+assumptions,lv_standard_line,-,"Standard LV cable type, must be selected in equipment_selection.csv",NAYY 4x1x150,
+assumptions,branch_detour_factor,-,Ratio of line length to air-line distance,1.3,
+assumptions,load_in_generation_case,-,Share of the peak load considered in the feed-in case,0,0.3
+assumptions,generation_in_load_case,-,Share of the generation capacity considered in the load case,0,
+assumptions,lv_max_v_level_lc_diff_normal,-,"Max. voltage deviation in LV grids, load case",0.05,0.08
+assumptions,lv_max_v_level_fc_diff_normal,-,"Max. voltage deviation in LV grids, feed-in case",0.03,
+assumptions,max_generator_capacity,kW,Generators with a higher capacity are not considered ('none' = no limit),none,13500
+mv_routing_tech_constraints,mv_half_ring_count_max,-,Max. number of MV half-rings per HV/MV station,8,48
+mv_routing_tech_constraints,mv_station_v_level_operation,-,Operating voltage at the HV/MV station,1.0,
+mv_routing_tech_constraints,mv_max_v_level_lc_diff_normal,-,"Max. voltage deviation in MV grids, load case, normal operation",0.05,0.04
+mv_routing_tech_constraints,mv_max_v_level_fc_diff_normal,-,"Max. voltage deviation in MV grids, feed-in case, normal operation",0.02,
+mv_routing_tech_constraints,mv_max_v_level_lc_diff_malfunc,-,"Max. voltage deviation in MV grids, load case, (n-1) operation",0.10,
+lv_grids_osm,srid,-,CRS (EPSG code) of the OSM-based LV grid generation,3035,
+lv_grids_osm,avg_square_meters,m2,"Average floor area of an amenity, converts the specific peak loads of amenity categories (per m2) into peak loads",100,
+lv_grids_osm,dist_edge_segments,m,Length of the segments street graph edges are subdivided into,50,
+lv_grids_osm,cluster_increment_counter_threshold,-,Max. number of times the number of LV clusters is increased before the clustering is aborted,20,
+lv_grids_osm,min_detour_length,m,LV street edges with at least this length are checked for detours,100,
+lv_grids_osm,max_detour_factor,-,Street edges longer than this factor times the air-line distance are detours,3,
+lv_grids_osm,buffer_distance,m,"Buffer distances around a load area, tried in turn to obtain a connected street graph","[5, 25, 50, 100]",
+lv_grids_osm,major_ccs_ratio_threshold,-,Connected components of the street graph larger than this share of the largest one are connected to it,0.3,
+lv_grids_osm,lv_threshold_capacity,kW,"Loads with a lower capacity are connected to the LV street grid (default: < 100 kW). snb: 173 kW, corresponds to 250 A at 400 V",100,173
+lv_grids_osm,mv_lv_threshold_capacity,kW,"Loads with a lower capacity (and at least lv_threshold_capacity) are connected directly to the MV/LV station (default: 100 to < 200 kW); loads with this or a higher capacity are connected separately as MV loads. snb: 346 kW, corresponds to 500 A at 400 V",200,346
+lv_grids_osm,hv_mv_threshold_capacity,kW,"Loads from mv_lv_threshold_capacity up to below this capacity get their own MV/LV station with transformers (MV loads, default: 200 kW to < 5.5 MW); loads with this or a higher capacity are not considered",5500,13500
+lv_grids_osm,additional_trafo_capacity,-,"Factor on the capacity to be covered by MV/LV transformers (capacity_to_cover = capacity_of_area * factor), increases the number of LV grid districts; e.g. 1.5 means transformers are loaded to max. 1/1.5 = 67 %",1.0,
+lv_grids_osm,avg_trafo_size,kVA,"Average MV/LV transformer size, determines the number of LV grid districts (clusters) of a load area: n_cluster = ceil(sum of peak loads below mv_lv_threshold_capacity / avg_trafo_size) * additional_trafo_capacity. The clusters are not homogeneous",500,630
+lv_grids_osm,ons_dist_threshold,m,Max. distance between a load and its MV/LV station (clustering criterion); MV street edges with at least this length are checked for detours,1500,
+lv_grids_osm,diversity_factor_not_residential,-,"Diversity factor of non-residential loads. Source: Siemens, Planung der elektrischen Energieverteilung, technische Grundlagen, page 18, https://assets.new.siemens.com/siemens/assets/api/uuid:d683c81df25afb360b79c5d48441eeda8b23477b/planung-der-elektrischen-energieverteilung-technische-grundlagen.pdf (accessed 2021-12-23)",0.6,

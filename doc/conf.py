@@ -175,7 +175,7 @@ todo_include_todos = True
 autodoc_mock_imports = [
     'edisgo', 'egoio', 'geoalchemy2', 'geopandas', 'geopy', 'matplotlib',
     'networkx', 'numpy', 'oedialect', 'osmnx', 'pandas', 'psycopg2',
-    'pymetis', 'pyproj', 'pypsa', 'requests', 'saio', 'scipy', 'seaborn',
+    'pymetis', 'pyproj', 'pypsa', 'pyvis', 'requests', 'saio', 'scipy', 'seaborn',
     'shapely', 'sklearn', 'sqlalchemy', 'unittest2',
 ]
 

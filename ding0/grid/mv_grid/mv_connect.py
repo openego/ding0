@@ -341,7 +341,7 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
     if not node_connected and debug:
         logger.debug(
             'Node {} could not be connected, try to increase the parameter '
-            '`load_area_sat_buffer_radius` in config file `config_calc.cfg` '
+            '`load_area_sat_buffer_radius` of the planning profile '
             'to gain more possible connection points.'.format(node))
 
 
@@ -1133,7 +1133,7 @@ def mv_connect_generators(mv_grid_district, graph, debug=False):
                 logger.debug(
                     'Generator {0} could not be connected, try to '
                     'increase the parameter `generator_buffer_radius` in '
-                    'config file `config_calc.cfg` to gain more possible '
+                    'the planning profile to gain more possible '
                     'connection points.'.format(generator))
 
     return graph

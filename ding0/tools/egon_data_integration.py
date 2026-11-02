@@ -6,6 +6,7 @@ import pandas as pd
 import shapely.wkb
 from ding0.config.config_lv_grids_osm import get_config_osm
 from ding0.tools import config as cfg_ding0
+from ding0.tools.planning_profiles import get_limit
 from geoalchemy2.shape import to_shape
 from sqlalchemy import Integer, cast, func
 
@@ -785,7 +786,7 @@ def get_res_generators(orm, session, mv_grid_district):
     # Overwrite subst_id of the data, to correct faulty data
     renewable_generators_df["subst_id"] = int(subst_id)
 
-    return renewable_generators_df
+    return filter_generators_by_capacity(renewable_generators_df, subst_id)
 
 
 def get_conv_generators(orm, session, mv_grid_district):
@@ -852,4 +853,36 @@ def get_conv_generators(orm, session, mv_grid_district):
     # Overwrite subst_id of the data, to correct faulty data
     conventional_generators_df["subst_id"] = int(subst_id)
 
-    return conventional_generators_df
+    return filter_generators_by_capacity(conventional_generators_df, subst_id)
+
+
+def filter_generators_by_capacity(generators_df, subst_id):
+    """
+    Removes generators above the max. generator capacity of the planning
+    profile (parameter `max_generator_capacity`).
+
+    Parameters
+    ----------
+    generators_df : :pandas:`pandas.DataFrame<dataframe>`
+        Generators with column 'electrical_capacity' in kW
+    subst_id : :obj:`str`
+        ID of the MV grid district, used for logging
+
+    Returns
+    -------
+    :pandas:`pandas.DataFrame<dataframe>`
+        Generators with a capacity up to the max. generator capacity
+    """
+    max_capacity = get_limit("assumptions", "max_generator_capacity")
+    if max_capacity is None:
+        return generators_df
+
+    too_large = generators_df["electrical_capacity"] > max_capacity
+    if too_large.any():
+        logger.warning(
+            f"MV grid district {subst_id}: {too_large.sum()} generator(s) with "
+            f"{generators_df.loc[too_large, 'electrical_capacity'].sum() / 1e3:.1f} MW "
+            f"in total not considered (capacity > max_generator_capacity of "
+            f"{max_capacity} kW)."
+        )
+    return generators_df.loc[~too_large].reset_index(drop=True)

@@ -11,6 +11,10 @@ The fundamental data basis is described in [Huelk2017]_ and its extension is
 detailed by [Amme2017]_. Further refinements are contributed by [Dubielzig]_ and [John]_.
 :ref:`Ding0 flowchart` indicates the methodology of ding0 which is described more in detail within this section.
 
+The planning parameters given in this section (thresholds, load factors, voltage limits, power factors and the
+available equipment) are those of the planning profile `default`, i.e. general planning principles in Germany.
+Other planning principles can be used by selecting another planning profile, see :ref:`planning_profiles`.
+
     .. _Ding0 flowchart:
     .. figure:: images/flowchart_mv_grids.png
 
@@ -64,7 +68,7 @@ The first step in the ding0 workflow involves the import of essential input data
     LV                  < 0.1 MW            LV grid
     ================== ================== =========================
 
-    Loads with a capacity of 5.5 MW or more are currently not considered.
+    Loads with a capacity of 5.5 MW or more are currently not considered; they are reported in the log.
 
     **Generators**. Depending on their nominal capacity, power generation sources are tagged with different allocation targets.
     Ding0 does not contemplate generators when building the initial grid topology. They are connected through stub
@@ -78,6 +82,10 @@ The first step in the ding0 workflow involves the import of essential input data
     level 6 (MV-LV)     0.1 - 0.3 MW        MV/LV substation
     level 7 (LV)        ≤ 0.1               LV grid
     ================== ================== =========================
+
+    The voltage level of the generators is taken from the input data. Generators with a capacity above
+    `max_generator_capacity` of the planning profile are not considered and reported in the log (no limit in
+    the profile `default`).
 
 2.2 **Clustering, Partitioning and Positioning**
 

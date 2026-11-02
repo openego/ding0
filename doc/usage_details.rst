@@ -43,6 +43,85 @@ To generate data for a larger area consider to parallelize execution of Ding0
 as done in the :download:`parallelization example <../ding0/examples/example_parallel_multiple_grid_districts.py>`.
 
 
+.. _planning_profiles:
+
+Planning profiles
+=================
+
+The grids are built according to planning principles: thresholds that assign loads to voltage levels,
+the max. loading of lines and transformers, voltage limits, power factors, limits for MV rings and the
+equipment that may be used. These parameters are grouped in planning profiles, so that the planning
+principles of e.g. a distribution system operator (DSO) can be used without changing ding0's defaults.
+The profiles also contain ding0's technical calculation settings (e.g. search radii and tolerances of
+the MV routing, buffer distances of the street graphs), so all calculation parameters are in one place.
+
+========  ========================================================================
+Profile   Planning principles
+========  ========================================================================
+default   General planning principles in Germany, as used for the eGon grids
+snb       Planning principles of the DSO SNB
+========  ========================================================================
+
+Select a profile
+----------------
+
+The profile is chosen when the network is created, the default is `default`:
+
+.. code-block:: python
+
+    from ding0.core import NetworkDing0
+    from ding0.tools import database
+
+    with database.session_scope() as session:
+        nd = NetworkDing0(name='network', session=session, planning_profile='snb')
+        nd.run_ding0(session=session, mv_grid_districts_no=[31000])
+
+The name of the profile and its parameter values are written to the metadata of the exported grids
+(`planning_profile` and `assumptions`).
+
+ding0's config is global within a Python process, i.e. creating a :class:`~.core.NetworkDing0` applies its
+profile for all following calculations. Do not use networks with different profiles in the same process
+at the same time.
+
+Loads and generators that are not considered
+--------------------------------------------
+
+Loads with a capacity of `hv_mv_threshold_capacity` or more and generators with a capacity above
+`max_generator_capacity` are not added to the grids. They are reported in the log as a warning, with
+their number and total capacity per MV grid district.
+
+Parameter files
+---------------
+
+Both files have one column per profile. The column `default` must be complete. Other profiles only
+contain the values that differ from `default`, an empty cell inherits the `default` value.
+
+* `ding0/config/planning_parameters.csv`: one row per parameter with `section`, `key`, `unit` and
+  `description`. The parameters of the sections `mv_routing`, `mv_connect`, `assumptions` and
+  `mv_routing_tech_constraints` are read with :func:`ding0.tools.config.get` (they replace the former
+  `config_calc.cfg`); the section `lv_grids_osm` contains the parameters of the OSM-based LV grid
+  generation returned by :func:`~ding0.config.config_lv_grids_osm.get_config_osm`. `none` means no
+  limit, lists are written in brackets, e.g. `[5, 25, 50, 100]`.
+* `ding0/config/equipment_selection.csv`: one row per equipment type in the equipment files
+  `ding0/data/equipment-parameters_*.csv` (cables and lines by name, transformers by their rated power
+  in kVA), `true` if the type may be used. The electrical parameters stay in the equipment files, which
+  are the same for all profiles. Every type in the equipment files must be listed.
+
+Not part of the profiles are the input data settings (database tables and scenario in
+`config_db_tables.cfg`, file names in `config_files.cfg`), the power flow, export CRS and random seed
+settings in `config_misc.cfg`, and the specific peak loads of building and amenity categories in
+`config_lv_grids_osm.py`.
+
+Add a profile
+-------------
+
+1. Add a column with the name of the profile to both files and enter the values that differ from
+   `default`. If the profile needs equipment that is not in the equipment files yet, add it there and
+   list it in `equipment_selection.csv` with `false` for the other profiles.
+2. Check the resulting values with :func:`ding0.tools.planning_profiles.get_parameters` and
+   :func:`ding0.tools.planning_profiles.get_equipment_selection`.
+3. Run the tests in `tests/tools/test_planning_profiles.py`.
+
 Analysis of grid data
 =====================
 
