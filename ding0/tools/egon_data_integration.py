@@ -790,13 +790,18 @@ def get_res_generators(orm, session, mv_grid_district, scenario=None):
     )
     generators_water_df["generation_type"] = "water"
 
+    # the database returns the rows in no particular order; sorted, the
+    # generators get the same ids in every run and the grids are reproducible
     renewable_generators_df = pd.concat(
         [
-            generators_pv_open_space_df,
-            generators_pv_rooftop_df,
-            generators_wind_df,
-            generators_biomass_df,
-            generators_water_df,
+            df.sort_values("gens_id", kind="stable")
+            for df in [
+                generators_pv_open_space_df,
+                generators_pv_rooftop_df,
+                generators_wind_df,
+                generators_biomass_df,
+                generators_water_df,
+            ]
         ],
         ignore_index=True,
     )
@@ -862,10 +867,11 @@ def get_conv_generators(orm, session, mv_grid_district):
     generators_gsgk_df["generation_type"] = "conventional"
     generators_gsgk_df["generation_subtype"] = "gsgk"
 
+    # sorted for reproducible grids, see get_res_generators()
     conventional_generators_df = pd.concat(
         [
-            generators_combustion_df,
-            generators_gsgk_df,
+            df.sort_values("gens_id", kind="stable")
+            for df in [generators_combustion_df, generators_gsgk_df]
         ],
         ignore_index=True,
     )
@@ -1278,7 +1284,12 @@ def get_point_components(
         df["source_id"] = "storage_" + df.id.astype(str)
         frames.append(df.drop(columns="id"))
 
-    frames = [frame for frame in frames if not frame.empty]
+    # sorted for reproducible grids, see get_res_generators()
+    frames = [
+        frame.sort_values("source_id", kind="stable")
+        for frame in frames
+        if not frame.empty
+    ]
     if not frames:
         return pd.DataFrame(columns=POINT_COMPONENT_COLUMNS)
     components_df = pd.concat(frames, ignore_index=True).reindex(
