@@ -3,7 +3,10 @@
 # Tests marked `db` need an egon-data database and are skipped here.
 name: "Tests & coverage"
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [dev]
+  pull_request:
 
 jobs:
   build:
