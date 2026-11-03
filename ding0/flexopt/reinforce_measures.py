@@ -70,6 +70,8 @@ def reinforce_branches_current(grid, crit_branches):
                 ].idxmin(), :
             ]
             branch.type = type
+            # only cables are installed (see Note), so an overhead line becomes a cable
+            branch.kind = 'cable'
             branch_ctr += 1
         except:
             logger.warning('Branch {} could not be reinforced (current '
@@ -123,6 +125,8 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
                 ].idxmin(), :
             ]
             branch.type = type
+            # only cables are installed (see Note), so an overhead line becomes a cable
+            branch.kind = 'cable'
             branch_ctr += 1
         except:
             logger.warning('Branch {} could not be reinforced (voltage '
