@@ -11,7 +11,10 @@ from ding0.flexopt.reinforce_measures import (
 
 
 class Branch(BranchDing0):
-    """Branch without a grid; the real repr needs the grid's graph."""
+    """Branch without a grid.
+
+    reinforce_* log the branch, and the real repr needs the grid's graph.
+    """
 
     def __repr__(self):
         return "Branch"
@@ -19,7 +22,7 @@ class Branch(BranchDing0):
 
 @pytest.fixture
 def grid():
-    """MV grid stub with the 20 kV cable types of ding0's equipment data."""
+    """MV grid stub with a subset of the 20 kV cable types of ding0's equipment data."""
     cables = pd.DataFrame(
         {
             "U_n": [20, 20, 20],

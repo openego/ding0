@@ -70,7 +70,7 @@ def reinforce_branches_current(grid, crit_branches):
                 ].idxmin(), :
             ]
             branch.type = type
-            # the new type is a cable, also if the branch was an overhead line
+            # only cables are installed (see Note), so an overhead line becomes a cable
             branch.kind = 'cable'
             branch_ctr += 1
         except:
@@ -125,7 +125,7 @@ def reinforce_branches_voltage(grid, crit_branches, grid_level='MV'):
                 ].idxmin(), :
             ]
             branch.type = type
-            # the new type is a cable, also if the branch was an overhead line
+            # only cables are installed (see Note), so an overhead line becomes a cable
             branch.kind = 'cable'
             branch_ctr += 1
         except:
