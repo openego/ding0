@@ -557,7 +557,7 @@ def get_egon_buildings(orm, session, subst_id, load_area):
         # Check if all coordinates are the same
         coordinates = x[x.notna()]
         for i in range(1, coordinates.size):
-            if not coordinates.iat[i - 1].almost_equals(coordinates.iat[i]):
+            if not coordinates.iat[i - 1].equals_exact(coordinates.iat[i], 0.5 * 10**-6):
                 logger.error("Coordinates of buildings with the same id are not equal!")
 
         return coordinates.iat[0]
@@ -782,7 +782,7 @@ def get_res_generators(orm, session, mv_grid_district):
     )
     renewable_generators_df.rename(columns={"bus_id": "subst_id"}, inplace=True)
     # define generators with unknown subtype as 'unknown'
-    renewable_generators_df["generation_subtype"].fillna(value="unknown", inplace=True)
+    renewable_generators_df["generation_subtype"] = renewable_generators_df["generation_subtype"].fillna(value="unknown")
     # Overwrite subst_id of the data, to correct faulty data
     renewable_generators_df["subst_id"] = int(subst_id)
 

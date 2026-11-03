@@ -1,8 +1,12 @@
 # Tests with pytest the package and monitors the covarage and sends it to coveralls.io
 # Coverage is only send to coveralls.io when no pytest tests fail
+# Tests marked `db` need an egon-data database and are skipped here.
 name: "Tests & coverage"
 
-on: [push]
+on:
+  push:
+    branches: [dev]
+  pull_request:
 
 jobs:
   build:
@@ -10,23 +14,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ '3.6', '3.7', '3.8' ]
+        python-version: [ '3.10', '3.11', '3.12' ]
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: |
+          requirements.txt
+          dev_requirements.txt
     - name: Install dependencies
       run: |
-        pip3 install --upgrade pip
-        pip3 install -e $GITHUB_WORKSPACE[dev]
-        pip3 install coveralls
+        python -m pip install --upgrade pip
+        pip install -e "$GITHUB_WORKSPACE[dev]"
+        pip install coveralls
     - name: Run tests and coverage
       run: |
-        coverage run --source=ding0 -m pytest -vv
+        coverage run --source=ding0 -m pytest -vv -m "not db"
     - name: Run coveralls
+      continue-on-error: true
       run: |
         coveralls
       env:

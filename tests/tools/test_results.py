@@ -1,5 +1,5 @@
 import pytest
-from tests.core.network.test_grids import TestMVGridDing0
+from tests.core.network.test_grids import TestMVGridDing0 as MVTestGrids
 from ding0.tools.results import calculate_mvgd_stats
 import pandas as pd
 from pandas.testing import assert_frame_equal
@@ -13,7 +13,7 @@ class TestCalculateStats(object):
 
     @pytest.fixture
     def connect_generators(self):
-        network, _, _ = TestMVGridDing0().minimal_unrouted_testgrid()
+        network, _, _ = MVTestGrids().minimal_unrouted_testgrid()
         network.mv_routing()
         network.connect_generators()
         return network
@@ -106,7 +106,7 @@ class TestCalculateStats(object):
 
 def create_test_expected_files(savepath=None):
     nd, mv_grid, lv_stations = \
-        TestMVGridDing0().minimal_unrouted_testgrid()
+        MVTestGrids().minimal_unrouted_testgrid()
     nd.mv_routing()
     nd.connect_generators()
     mvgd_stats = calculate_mvgd_stats(nd)
