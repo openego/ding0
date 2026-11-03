@@ -11,6 +11,8 @@ egoio >= 0.4.8
 oedialect >= 0.0.10
 shapely >= 2.0, < 3
 pypsa >= 0.26, < 0.27
+# pypsa 0.26 imports six (pypsa/opt.py) without declaring it
+six
 geopandas >= 0.14, < 1
 osmnx >= 1.6, < 2
 pyyaml >= 6.0
