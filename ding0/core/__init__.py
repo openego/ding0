@@ -2321,13 +2321,28 @@ class NetworkDing0:
 
     def to_dataframe(self, only_export_mv=False):
         '''
-        Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
-        Respectively saves files for network, buses, lines, transformers, loads and generators.
+        Component dataframes of all MV grid districts in PyPSA format, in
+        memory and without transforming the coordinates.
+
+        The coordinates (bus x and y, line geometries, grid district geometry)
+        stay in the coordinate reference system ding0 builds the grids in,
+        EPSG:3035 for grids from egon-data. The column `srid` of 'Network'
+        nevertheless says 4326 (`[geo] srid` in `config_misc.cfg`), which is
+        the reference system of the files written by :meth:`to_csv` and
+        :meth:`to_netcdf`; these transform the coordinates to EPSG:4326.
 
         Parameters
         ----------
         only_export_mv: bool
             When True only mv topology is exported with aggregated lv grid districts
+
+        Returns
+        -------
+        :obj:`dict`
+            Dataframes 'Bus', 'Generator', 'Load', 'StorageUnit', 'Line',
+            'Transformer', 'HVMV_Transformer' and 'Switch' of all MV grid
+            districts, and 'Network' with the metadata (name, srid, geometry
+            and population) of the last MV grid district
         '''
         buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
         components = {}

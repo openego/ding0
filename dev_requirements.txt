@@ -3,3 +3,4 @@ pytest-dependency
 sphinx
 sphinx_rtd_theme
 contextily
+hypothesis

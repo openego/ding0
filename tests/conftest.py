@@ -25,6 +25,7 @@ def oedb_session():
 NEEDS_DATABASE = [
     "tests/tools/test_database.py",
     "tests/tools/test_egon_data_integration.py",
+    "tests/tools/test_egon_data_properties.py",
     "tests/core/network/test_grids.py::TestMVGridDing0::test_routing",
     "tests/core/network/test_network.py::TestGridDing0::test_grid_stats",
 ]
