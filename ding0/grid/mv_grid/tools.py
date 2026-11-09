@@ -17,6 +17,7 @@ from ding0.core.network.stations import LVStationDing0
 from ding0.core.network.loads import MVLoadDing0
 from ding0.core import MVCableDistributorDing0
 from ding0.core.network import CableDistributorDing0, GeneratorDing0, LoadDing0
+from ding0.core.network.components import PointLoadDing0
 from ding0.tools.geo import calc_geo_centre_point
 from ding0.tools import config as cfg_ding0
 import logging
@@ -131,6 +132,11 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
             elif isinstance(node, MVLoadDing0):
                 nodes_peak_load.append(node.peak_load / cos_phi_load)
 
+            # node is load at a location of its own -> get peak load
+            elif isinstance(node, PointLoadDing0):
+                nodes_peak_load.append(node.peak_load / cos_phi_load)
+                nodes_peak_generation.append(0)
+
             # node is cable distributor -> get all connected nodes of subtree using graph_nodes_from_subtree()
             elif isinstance(node, CableDistributorDing0):
                 nodes_subtree = mv_grid.graph_nodes_from_subtree(node)
@@ -148,6 +154,9 @@ def set_circuit_breakers(mv_grid, mode='load', debug=False):
                     # node is LV station -> get peak load and peak generation
                     elif isinstance(node_subtree, GeneratorDing0):
                         nodes_subtree_peak_generation += node_subtree.capacity / cos_phi_feedin
+                    # node is load at a location of its own -> get peak load
+                    elif isinstance(node_subtree, PointLoadDing0):
+                        nodes_subtree_peak_load += node_subtree.peak_load / cos_phi_load
                     else:
                         TypeError("False node type!")
 
@@ -428,26 +437,50 @@ def update_graphs(core_graph, stub_graph, nodes_to_switch):
 # root...root_node, load...nodes with demand, dist...nodes have function as cable_dist
 
 def create_stub_dict(stub_graph, root_nodes, node_list):
-    
+    """
+    Stubs of the stub graph, {i: {'comp', 'root', 'load', 'dist'}}.
+
+    A component of the stub graph may touch the core graph, which the rings
+    are routed in, at several nodes (`root_nodes`), e.g. at an LV station
+    and at a street node. It is split there: the nodes hanging off one of
+    these nodes form the stub with it as root, nodes between several of them
+    go to the one nearest to their loads. So the loads of a stub are reached
+    from its root without passing other nodes of the core graph.
+    """
     node_set = set(node_list.keys())
-    
+    graph = nx.Graph(stub_graph)
+
     stub_dict = {}
 
-    if nx.number_weakly_connected_components(stub_graph):
+    for comp in nx.weakly_connected_components(stub_graph):
 
-        for i, comp in enumerate(nx.weakly_connected_components(stub_graph)):
+        comp_roots = comp & root_nodes
 
-            root_node_set = comp & root_nodes
-            load_node_set = comp & node_set - root_node_set
-            cable_dist_set = comp - root_node_set - load_node_set
+        if len(comp_roots) > 1:
+            stubs = {}
+            for part in nx.connected_components(graph.subgraph(comp - comp_roots)):
+                part_roots = {n for node in part for n in graph.neighbors(node)} & comp_roots
+                part_loads = (part & node_set) or part
+                distances = nx.multi_source_dijkstra_path_length(
+                    graph.subgraph(part | part_roots), part_loads, weight='length')
+                root = min(part_roots, key=lambda n: (distances[n], str(n)))
+                stubs.setdefault(root, {root}).update(part)
+            # only nodes of the routed graph: one stub without loads, as before
+            if not stubs:
+                stubs = {min(comp_roots, key=str): comp}
+        else:
+            stubs = {list(comp_roots)[0]: comp}
 
+        for root, nodes in sorted(stubs.items(), key=lambda item: str(item[0])):
+            load_node_set = nodes & node_set - comp_roots
+            i = len(stub_dict)
             stub_dict[i] = {}
-            stub_dict[i]['comp'] = comp
-            stub_dict[i]['root'] = list(root_node_set)[0] #next(iter())
+            stub_dict[i]['comp'] = nodes
+            stub_dict[i]['root'] = root
             stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
                                     for node in load_node_set} #{node: demand}
-            stub_dict[i]['dist'] = cable_dist_set
-            
+            stub_dict[i]['dist'] = nodes - comp_roots - load_node_set
+
     return stub_dict
 
 
@@ -557,7 +590,7 @@ def update_stub_dict(stub_dict, mod_stubs_list, node_list):
         root = comp[0]
         load_node_set = comp[1:]
 
-        i = max(stub_dict.keys()) + 1 
+        i = max(stub_dict.keys(), default=-1) + 1
 
         stub_dict[i] = {}
         try:
@@ -704,13 +737,19 @@ def update_branch_shps_settle(load_area, branches, street_graph):
 
     for branch in branches:
 
-        mv_station = [node for node in branch['adj_nodes'] if isinstance(node, MVStationDing0)]
+        # MV station and loads at locations of their own within the load area
+        # (routed in rings) are no nodes of the street graph; loads outside
+        # are connected where the branch enters the load area, see below
+        foreign_nodes = [node for node in branch['adj_nodes']
+                         if isinstance(node, MVStationDing0)
+                         or (isinstance(node, PointLoadDing0)
+                             and load_area.geo_area.intersects(node.geo_data))]
         G = street_graph
 
         # add node to street graph, if not element of it
-        if mv_station:
-            if not G.has_node(str(mv_station[0])):
-                G = conn_ding0_obj_to_osm_graph(G, mv_station[0])
+        for node in foreign_nodes:
+            if not G.has_node(str(node)):
+                G = conn_ding0_obj_to_osm_graph(G, node)
 
         endpoints = [load_area.geo_area.intersects(node.geo_data) for node in branch['adj_nodes']]
 

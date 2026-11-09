@@ -24,6 +24,7 @@ from ding0.core.network import BranchDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core.network.loads import LVLoadDing0
 from ding0.tools import config as cfg_ding0
+from ding0.tools.egon_data_integration import BUILDING_COMPONENT_COLUMNS
 from ding0.tools.pypsa_io import q_sign
 from ding0.grid.lv_grid.routing import identify_street_loads
 from ding0.grid.mv_grid.tools import get_shortest_path_shp_single_target, get_shortest_path_shp_multi_target
@@ -613,6 +614,7 @@ def build_branches_on_osm_ways(lvgd):
                 'cts_capacity': row.cts_capacity,
                 'industrial_capacity': row.industrial_capacity,
                 'feederID': nn_attr['feederID'],
+                **{column: row.get(column, 0) for column in BUILDING_COMPONENT_COLUMNS},
                 }
 
         cable_type_stub = cable_type_by_load(row.capacity, lvgd_cfg)
@@ -638,6 +640,7 @@ def build_branches_on_osm_ways(lvgd):
                 'cts_capacity': row.cts_capacity,
                 'industrial_capacity': row.industrial_capacity,
                 'feederID': feederID,
+                **{column: row.get(column, 0) for column in BUILDING_COMPONENT_COLUMNS},
                 }
         G.add_node(building_node, **attr)
         # add new edge to street graph
@@ -713,7 +716,9 @@ def build_branches_on_osm_ways(lvgd):
                     peak_load_industrial=node_data["industrial_capacity"],
                     geo_data=node_coordinates,
                     building_id=node_name,
-                    type="conventional_load"
+                    type="conventional_load",
+                    **{column: node_data.get(column, 0)
+                       for column in BUILDING_COMPONENT_COLUMNS},
                 )
                 grid.add_cable_dist(cable_distributor)
                 grid.graph.add_edge(

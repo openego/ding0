@@ -23,13 +23,15 @@ from ding0.core.network.grids import *
 from ding0.core.network.stations import *
 from ding0.core.structure.regions import *
 from ding0.core.powerflow import *
-from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes
+from ding0.tools.pypsa_io import initialize_component_dataframes, fill_mvgd_component_dataframes, \
+    transform_geodata_to_wgs84, components_to_pypsa_network
 from ding0.tools.animation import AnimationDing0
 from ding0.tools.plots import plot_mv_topology, plot_lv_topology
 from ding0.flexopt.reinforce_grid import *
 from ding0.tools.logger import get_default_home_dir
-from ding0.tools.tools import merge_two_dicts_of_dataframes
+from ding0.tools.tools import merge_two_dicts_of_dataframes, append_to_dataframe
 from ding0.core.network.loads import MVLoadDing0
+from ding0.core.network.components import PointLoadDing0, StorageUnitDing0
 from ding0.grid.lv_grid.parameterization import get_peak_load_diversity
 
 
@@ -45,6 +47,7 @@ from sqlalchemy import func
 from geoalchemy2.shape import from_shape
 import subprocess
 import json
+import pypsa
 from pyvis.network import Network as pynet
 
 if not 'READTHEDOCS' in os.environ:
@@ -162,19 +165,29 @@ class NetworkDing0:
         The connection parameters to the OpenEnergy Platform and
         the tables and datasets required for the functioning of ding0
 
+    scenario : :obj:`str`
+        egon-data scenario of building loads, industrial loads and rooftop PV,
+        e.g. 'status2024'. Defaults to `[input_data_source] scenario` in
+        `config_db_tables.cfg`.
+
     """
 
-    def __init__(self, session, **kwargs):
+    def __init__(self, session=None, **kwargs):
         self.name = kwargs.get('name', None)
         self._run_id = kwargs.get('run_id', None)
         self._planning_profile = kwargs.get(
             'planning_profile', planning_profiles.DEFAULT_PROFILE)
         self._mv_grid_districts = []
+        # database session the ORM classes are reflected with
+        self._session = session
 
         self._config = self.import_config()
+        self.scenario = db_io.get_scenario(kwargs.get('scenario', None))
         self._pf_config = self.import_pf_config()
         self._static_data = self.import_static_data()
-        self._orm = self.import_orm(session)
+        # ORM classes are reflected from the database on first access, so a
+        # network can be built and tested without a database connection.
+        self._orm = None
         self.message = []
 
     def mv_grid_districts(self):
@@ -254,6 +267,8 @@ class NetworkDing0:
         -------
         :obj: `dict`
         """
+        if getattr(self, '_orm', None) is None:
+            self._orm = self.import_orm(self._session)
         return self._orm
 
     def run_ding0(
@@ -368,6 +383,9 @@ class NetworkDing0:
         if debug:
             start = time.time()
 
+        if session is not None:
+            self._session = session
+
         logger.info("STEP 1: Import MV Grid Districts and subjacent objects")
         self.import_mv_grid_districts(
             session,
@@ -379,6 +397,7 @@ class NetworkDing0:
 
         logger.info("STEP 2: Import generators")
         self.import_generators(session, debug=debug)
+        self.import_components(session)
 
         logger.info("STEP 3: Parametrize MV grid")
         self.mv_parametrize_grid(debug=debug)
@@ -808,6 +827,8 @@ class NetworkDing0:
         """
 
         lv_load_areas = db_io.get_lv_load_areas(self.orm, session, mv_grid_district.mv_grid._station.id_db)
+        # charging locations assigned to buildings, see get_building_components
+        mv_grid_district.assigned_charging_locations = set()
         if load_area_to_debug:
             lv_load_areas = lv_load_areas.loc[[load_area_to_debug], :]
         # create load_area objects from rows and add them to graph
@@ -883,10 +904,25 @@ class NetworkDing0:
 
             # Get buildings with loads from database.
             buildings_w_loads_df = db_io.get_egon_buildings(
-                self.orm, session, mv_grid_district.id_db, row
+                self.orm, session, mv_grid_district.id_db, row,
+                scenario=self.scenario,
             )
             if buildings_w_loads_df.empty:
                 logger.error(f"Load area {id_db=} has no buildings!")
+                continue
+            # Heat pumps, home batteries and home charging points of buildings.
+            # Their share for grid dimensioning is added to `capacity`.
+            building_components_df, charging_location_ids = db_io.get_building_components(
+                self.orm, session, buildings_w_loads_df, row, scenario=self.scenario
+            )
+            buildings_w_loads_df = db_io.add_building_components(
+                buildings_w_loads_df, building_components_df
+            )
+            mv_grid_district.assigned_charging_locations.update(charging_location_ids)
+            # threshold: load areas with a lower peak load are disregarded
+            if buildings_w_loads_df.capacity.sum() <= cfg_ding0.get(
+                    'mv_routing', 'load_area_threshold'):
+                logger.info(f"Load area {id_db=} is below the load threshold, skipped.")
                 continue
 
             # If composed graph of type synthetic (no osm ways have been found), then
@@ -943,7 +979,7 @@ class NetworkDing0:
             # Calculation peak load for load area with buildings < 200 kW.
             loads_lv_df = buildings_w_loads_df.loc[
                 buildings_w_loads_df.capacity < get_config_osm('mv_lv_threshold_capacity')
-            ]
+            ].copy()
 
             # Set cluster ID for buildings.
             loads_lv_df['cluster'] = loads_lv_df.nn.map(nodes_w_labels.cluster)
@@ -980,7 +1016,8 @@ class NetworkDing0:
                                       osmid_nn=row.nn,
                                       nn_coords=row.nn_coords,
                                       lv_load_area=lv_load_area,
-                                      type="conventional_load")
+                                      type="conventional_load",
+                                      **row[db_io.BUILDING_COMPONENT_COLUMNS].to_dict())
 
                 # Add mv_load to mv_grid_district and lv_load_area
                 mv_grid_district.mv_grid.add_load(mv_load)
@@ -1340,7 +1377,7 @@ class NetworkDing0:
             Imports renewable (res) generators
             """
             ren_generators = db_io.get_res_generators(self.orm, session, list(
-                mv_grid_districts_dict.values())[0])
+                mv_grid_districts_dict.values())[0], scenario=self.scenario)
             conv_generators = db_io.get_conv_generators(self.orm, session, list(
                 mv_grid_districts_dict.values())[0])
             generators = pd.concat([ren_generators, conv_generators]).reset_index(
@@ -1419,6 +1456,136 @@ class NetworkDing0:
         import_generators()
 
         logger.info('=====> Generators imported')
+
+    def import_components(self, session):
+        """
+        Imports loads and storage units at locations of their own (charging
+        points, bus depots, rail substations, battery storage) of every MV grid
+        district, see :func:`~.ding0.tools.egon_data_integration.get_point_components`.
+
+        Loads of voltage level 5 are nodes of the MV routing (see
+        :meth:`~.core.NetworkDing0.mv_routing`), so the rings are dimensioned
+        for them. Storage units and components of voltage level 4 are
+        connected to the MV grid, of levels 6 and 7 to LV grids, in
+        :meth:`~.core.NetworkDing0.connect_generators`. The peak load of all
+        loads (see `PointLoadDing0.peak_load`) is added to the MV grid
+        district's peak load.
+
+        Parameters
+        ----------
+        session : :sqlalchemy:`SQLAlchemy session object<orm/session_basics.html>`
+            Database session
+        """
+        for mv_grid_district in self.mv_grid_districts():
+            mv_grid = mv_grid_district.mv_grid
+            components_df = db_io.get_point_components(
+                self.orm, session, mv_grid_district, scenario=self.scenario,
+                exclude_charging_locations=getattr(
+                    mv_grid_district, 'assigned_charging_locations', set()),
+            )
+            for id_db, row in components_df.iterrows():
+                component_class = (StorageUnitDing0 if row.component == 'storage_unit'
+                                   else PointLoadDing0)
+                component = component_class(
+                    id_db=id_db + 1,
+                    geo_data=row.geometry,
+                    mv_grid=mv_grid,
+                    v_level=row.v_level,
+                    p_nom=row.p_nom,
+                    type=row.type,
+                    sector=row.sector,
+                    use_case=row.use_case,
+                    source_id=row.source_id,
+                    max_hours=row.max_hours,
+                )
+                if isinstance(component, PointLoadDing0):
+                    mv_grid_district.peak_load += component.peak_load
+                if isinstance(component, PointLoadDing0) and component.v_level == 5:
+                    # node of the MV routing
+                    mv_grid.add_component(component)
+                elif component.v_level in [4, 5]:
+                    mv_grid.mv_components_to_connect.append(component)
+                else:
+                    mv_grid.lv_components_to_connect.append(component)
+            self.assign_lv_point_loads(mv_grid_district)
+            if not components_df.empty:
+                logger.info(
+                    f"{mv_grid_district}: imported components (count, kW) "
+                    f"{components_df.groupby('type').p_nom.agg(['count', 'sum']).round(1).to_dict('index')}")
+
+    def assign_lv_point_loads(self, mv_grid_district):
+        """
+        Assigns loads of voltage levels 6 and 7 at locations of their own to
+        the LV grid district they will be connected to, so that the LV grids
+        are dimensioned for them: a load of level 6 to the nearest LV station
+        (peak load of the grid district, i.e. transformers), a load of level 7
+        to the nearest building (its capacity, i.e. cables, and the peak load
+        of the grid district). Their peak load is added to the load area's
+        peak load as well (MV routing).
+
+        A load of level 7 that would raise its building to the MV threshold
+        (`mv_lv_threshold_capacity`) or is farther from it than
+        `[components] lv_point_load_max_distance` is connected to the nearest
+        LV station like a load of level 6. A load of level 6 farther than that
+        from the nearest LV station is connected to the MV grid like a load of
+        level 5 (routed in rings).
+
+        Parameters
+        ----------
+        mv_grid_district : :class:`~.ding0.core.structure.regions.MVGridDistrictDing0`
+        """
+        from scipy.spatial import cKDTree
+
+        loads = sorted(
+            [component for component in mv_grid_district.mv_grid.lv_components_to_connect
+             if isinstance(component, PointLoadDing0)], key=repr)
+        lv_grid_districts = [lvgd for load_area in mv_grid_district.lv_load_areas()
+                             for lvgd in load_area.lv_grid_districts()]
+        if not loads or not lv_grid_districts:
+            return
+
+        stations = cKDTree([(lvgd.lv_grid.station().geo_data.x,
+                             lvgd.lv_grid.station().geo_data.y)
+                            for lvgd in lv_grid_districts])
+        buildings = []
+        for lvgd in lv_grid_districts:
+            # buildings are a slice of the load area's buildings
+            lvgd.buildings = lvgd.buildings.copy()
+            buildings += [(lvgd, building_id, geometry.x, geometry.y)
+                          for building_id, geometry in lvgd.buildings.geometry.items()]
+        building_tree = cKDTree([(x, y) for _, _, x, y in buildings]) if buildings else None
+        mv_lv_threshold = get_config_osm('mv_lv_threshold_capacity')
+        max_distance = cfg_ding0.get('components', 'lv_point_load_max_distance')
+        mv_grid = mv_grid_district.mv_grid
+
+        def add_peak_load(lvgd, load):
+            lvgd.peak_load += load.peak_load
+            lvgd.lv_load_area.peak_load += load.peak_load
+
+        for load in loads:
+            position = (load.geo_data.x, load.geo_data.y)
+            if load.v_level == 7 and building_tree is not None:
+                distance, index = building_tree.query(position)
+                lvgd, building_id, _, _ = buildings[index]
+                capacity = lvgd.buildings.at[building_id, 'capacity'] + load.peak_load
+                if capacity < mv_lv_threshold and distance <= max_distance:
+                    lvgd.buildings.at[building_id, 'capacity'] = capacity
+                    load.building_id = building_id
+                    add_peak_load(lvgd, load)
+                    continue
+                logger.info(f"{load} is too large for or too far from building "
+                            f"{building_id} and is connected to the nearest LV station.")
+                load.v_level = 6
+            distance, index = stations.query(position)
+            if distance <= max_distance:
+                add_peak_load(lv_grid_districts[index], load)
+            else:
+                logger.info(f"{load} is {distance:.0f} m from the nearest LV station "
+                            f"and is connected to the MV grid.")
+                load.v_level = 5
+                mv_grid.lv_components_to_connect.remove(load)
+                # node of the MV routing
+                mv_grid.add_component(load)
 
     def import_config(self):
         """
@@ -1569,7 +1736,7 @@ class NetworkDing0:
 
         return static_data
 
-    def import_orm(self, session):
+    def import_orm(self, session=None):
         """
         Import ORM classes names for  the correct connection to
         open energy platform and access tables depending on input in config in
@@ -1590,7 +1757,10 @@ class NetworkDing0:
 
         orm = {}
         data_source = self.config['input_data_source']['input_data']
-        engine = database.get_engine()
+        if session is not None and session.bind is not None:
+            engine = session.bind
+        else:
+            engine = database.get_engine()
 
         def write_table_in_dict(orm, engine, name, table_str):
             table_list = table_str.split(".")
@@ -1601,7 +1771,16 @@ class NetworkDing0:
             return orm
 
         for name, table_str in self.config[data_source].items():
-            if not name == "version":
+            if name in ("version", "scenario"):
+                continue
+            if name in db_io.COMPONENT_TABLES:
+                # older egon-data versions do not have these tables
+                try:
+                    orm = write_table_in_dict(orm, engine, name, table_str)
+                except Exception:
+                    logger.warning(
+                        f"Table {table_str} not found, components from it are skipped.")
+            else:
                 orm = write_table_in_dict(orm, engine, name, table_str)
 
         if data_source == 'model_draft':
@@ -2013,7 +2192,7 @@ class NetworkDing0:
                 else:
                     v_res0 = v_res1 = 0
 
-                nodes_df = nodes_df.append(pd.Series(
+                nodes_df = append_to_dataframe(nodes_df, pd.Series(
                     {'node_id': node_name,
                      'grid_id': grid_district.mv_grid.id_db,
                      'v_nom': grid_district.mv_grid.v_level,
@@ -2036,7 +2215,7 @@ class NetworkDing0:
                                             str(branch[
                                                     'branch'].id_db)])
 
-                    edges_df = edges_df.append(pd.Series(
+                    edges_df = append_to_dataframe(edges_df, pd.Series(
                         {'branch_id': branch_name,
                          'grid_id': grid_district.mv_grid.id_db,
                          'type_name': branch['branch'].type['name'],
@@ -2067,33 +2246,6 @@ class NetworkDing0:
         only_export_mv: bool
             When True only mv topology is exported with aggregated lv grid districts
         '''
-        def transform_all_geodata(gd_components, network_df, grids_df):
-            from pyproj import Transformer
-            from shapely.ops import transform
-            import time
-
-            logger.info("Transform all geodata from 'EPSG:3035' to 'EPSG:4326'.")
-            t_start = time.perf_counter()
-
-            # initialize the Coordinate-Reference-System-Transformer
-            crs_transformer = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True).transform
-
-            # Transform geodata
-            network_df["mv_grid_district_geom"] = [transform(crs_transformer, geom) for geom in
-                                                   network_df["mv_grid_district_geom"].to_list()]
-            grids_df["grid_district_geom"] = [transform(crs_transformer, geom) for geom in
-                                              grids_df["grid_district_geom"].to_list()]
-            for key, item in gd_components.items():
-                if key == 'Bus':
-                    gd_components[key]['x'], gd_components[key]['y'] = crs_transformer(gd_components[key]['x'],
-                                                                                       gd_components[key]['y'])
-                elif key == 'Line':
-                    gd_components[key]["geometry"] = [transform(crs_transformer, geom) for geom in
-                                                      gd_components[key]["geometry"].to_list()]
-
-            logger.debug(f"Transformed all geodata in {time.perf_counter() - t_start}s.")
-            return gd_components, network_df, grids_df
-
         buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
         if (dir == ''):
             dir = get_default_home_dir()  # eventuell ändern
@@ -2111,9 +2263,11 @@ class NetworkDing0:
                 only_export_mv
             )
             # Transform all geodata from 'EPSG:3035' to 'EPSG:4326' for eDisGo
-            gd_components, network_df, grids_df = transform_all_geodata(
+            gd_components, network_df, grids_df = transform_geodata_to_wgs84(
                 gd_components, network_df, grids_df
             )
+            # PyPSA reads the format version of a CSV folder from network.csv
+            network_df['pypsa_version'] = pypsa.__version__
             # Make directories for the grid data and save to csv
             path = os.path.join(dir, str(grid_district.id_db))
             if not os.path.exists(path):
@@ -2143,6 +2297,9 @@ class NetworkDing0:
             gd_components['Generator'].to_csv(
                 os.path.join(path, 'generators.csv')
             )
+            gd_components['StorageUnit'].to_csv(
+                os.path.join(path, 'storage_units.csv')
+            )
             gd_components['Switch'].to_csv(
                 os.path.join(path, 'switches.csv')
             )
@@ -2164,13 +2321,28 @@ class NetworkDing0:
 
     def to_dataframe(self, only_export_mv=False):
         '''
-        Function to export network to csv. Converts network in dataframes which are adapted to pypsa format.
-        Respectively saves files for network, buses, lines, transformers, loads and generators.
+        Component dataframes of all MV grid districts in PyPSA format, in
+        memory and without transforming the coordinates.
+
+        The coordinates (bus x and y, line geometries, grid district geometry)
+        stay in the coordinate reference system ding0 builds the grids in,
+        EPSG:3035 for grids from egon-data. The column `srid` of 'Network'
+        nevertheless says 4326 (`[geo] srid` in `config_misc.cfg`), which is
+        the reference system of the files written by :meth:`to_csv` and
+        :meth:`to_netcdf`; these transform the coordinates to EPSG:4326.
 
         Parameters
         ----------
         only_export_mv: bool
             When True only mv topology is exported with aggregated lv grid districts
+
+        Returns
+        -------
+        :obj:`dict`
+            Dataframes 'Bus', 'Generator', 'Load', 'StorageUnit', 'Line',
+            'Transformer', 'HVMV_Transformer' and 'Switch' of all MV grid
+            districts, and 'Network' with the metadata (name, srid, geometry
+            and population) of the last MV grid district
         '''
         buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
         components = {}
@@ -2193,10 +2365,71 @@ class NetworkDing0:
                 networks = network_df
             else:
                 components = merge_two_dicts_of_dataframes(components, gd_components)
-                networks = networks.append(network_df)
+                networks = append_to_dataframe(networks, network_df)
 
         components['Network'] = network_df
         return components
+
+    def to_pypsa(self, only_export_mv=False):
+        """
+        Exports every MV grid district (with its LV grids) as a PyPSA network
+        in EPSG:4326, see
+        :func:`~.ding0.tools.pypsa_io.components_to_pypsa_network`.
+
+        The networks can be saved in PyPSA's formats, e.g. with
+        `network.export_to_netcdf()`, and a power flow can be run on them
+        directly.
+
+        Parameters
+        ----------
+        only_export_mv: bool
+            When True only mv topology is exported with aggregated lv grid districts
+
+        Returns
+        -------
+        :obj:`dict`
+            :pypsa:`pypsa.Network<network>` by MV grid district id
+        """
+        buses_df, generators_df, lines_df, loads_df, transformer_df = initialize_component_dataframes()
+        # open all switch connectors
+        self.control_circuit_breakers(mode='open')
+        networks = {}
+        for grid_district in self.mv_grid_districts():
+            gd_components, network_df, grids_df, _ = fill_mvgd_component_dataframes(
+                grid_district,
+                buses_df,
+                generators_df,
+                lines_df,
+                loads_df,
+                transformer_df,
+                only_export_mv
+            )
+            gd_components, network_df, grids_df = transform_geodata_to_wgs84(
+                gd_components, network_df, grids_df
+            )
+            networks[grid_district.id_db] = components_to_pypsa_network(
+                gd_components, network_df, grids_df, metadata=self.metadata
+            )
+        return networks
+
+    def to_netcdf(self, dir='', only_export_mv=False):
+        """
+        Saves every MV grid district (with its LV grids) as a PyPSA network in
+        netCDF format, `<dir>/<mv grid district id>.nc`, see
+        :meth:`~.core.NetworkDing0.to_pypsa`.
+
+        Parameters
+        ----------
+        dir: :obj:`str`
+            Directory to which the networks are saved.
+        only_export_mv: bool
+            When True only mv topology is exported with aggregated lv grid districts
+        """
+        if dir == '':
+            dir = get_default_home_dir()
+        os.makedirs(dir, exist_ok=True)
+        for mv_grid_district_id, network in self.to_pypsa(only_export_mv).items():
+            network.export_to_netcdf(os.path.join(dir, f'{mv_grid_district_id}.nc'))
 
     def mv_routing(self, debug=False, animation=False):
         """
@@ -2236,6 +2469,13 @@ class NetworkDing0:
                     logger.info('=====> Urban MV Routing (Routing, Connection of Stations) performed')
                 # 2) rural routing between remaining load areas
                 grid_district.mv_grid.routing(debug=debug, anim=anim)
+                # stations and loads have to be connected now (generators,
+                # storage and loads of voltage level 4 follow)
+                unconnected = [
+                    node for node in grid_district.mv_grid.graph_isolated_nodes()
+                    if isinstance(node, (LVStationDing0, MVLoadDing0, PointLoadDing0))]
+                if unconnected:
+                    logger.error(f"{grid_district}: not connected by MV routing: {unconnected}")
 
             logger.info('=====> MV Routing (Routing, Connection of Satellites & '
                         'Stations) performed')
@@ -2286,6 +2526,7 @@ class NetworkDing0:
         for mv_grid_district in self.mv_grid_districts():
             mv_grid_district.mv_grid.connect_generators(debug=debug)
             mv_grid_district.mv_grid.connect_lv_generators(debug=debug)
+            mv_grid_district.mv_grid.connect_components(debug=debug)
 
         logger.info('=====> Generators connected')
 
@@ -2446,6 +2687,9 @@ class NetworkDing0:
         elif self.config['input_data_source']['input_data'] == 'model_draft':
             data_version = 'model_draft'
             database_tables = self.config['model_draft']
+        elif self.config['input_data_source']['input_data'] == 'local':
+            data_version = f'egon-data, scenario {self.scenario}'
+            database_tables = dict(self.config['local'])
         else:
             data_version = 'unknown'
             database_tables = 'unknown'
@@ -2456,6 +2700,7 @@ class NetworkDing0:
         assumptions.update(self.config['mv_connect'])
         assumptions.update(self.config['mv_routing'])
         assumptions.update(self.config['mv_routing_tech_constraints'])
+        assumptions.update(self.config['components'])
         assumptions.update({
             key: value
             for (section, key), value in planning_profiles.get_parameters(
@@ -2477,6 +2722,7 @@ class NetworkDing0:
             mv_grid_districts=[int(_.id_db) for _ in self._mv_grid_districts],
             database_tables=database_tables,
             data_version=data_version,
+            scenario=self.scenario,
             assumptions=assumptions,
             planning_profile=self._planning_profile,
             run_id=self._run_id

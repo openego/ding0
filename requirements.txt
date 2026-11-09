@@ -1,26 +1,26 @@
-networkx == 2.5.1
-geopy == 2.1.0
-pandas <= 1.2.4
-pyproj == 3.0.1
-sqlalchemy <= 1.3.24
-geoalchemy2 == 0.6.3
-matplotlib >= 1.5.3, <= 3.4.2
-egoio == 0.4.8
-shapely >= 1.8, < 2.0.0
-pypsa >= 0.11.0, <= 0.17.1
-seaborn == 0.11.1
-unittest2 == 1.1.0
-oedialect == 0.0.10
-geopandas >= 0.9.0
-descartes == 1.1.0
-osmnx~=1.1.1
-ding0~=0.2.1
-numpy~=1.21.2
-pyyaml~=6.0
-saio~=0.2.1
-scipy~=1.7.1
-scikit-learn~=0.24.2
-# requests~=2.26.0
-contextily~=1.2.0
-argparse~=1.4.0
-setuptools~=57.4.0
+networkx >= 3.0, < 4
+geopy >= 2.1
+pandas >= 2.0, < 3
+numpy >= 1.24, < 2
+pyproj >= 3.4
+sqlalchemy >= 2.0, < 3
+geoalchemy2 >= 0.14
+matplotlib >= 3.5
+seaborn >= 0.12
+shapely >= 2.0, < 3
+pypsa >= 0.26, < 0.27
+# pypsa 0.26 imports six (pypsa/opt.py) without declaring it
+six
+geopandas >= 0.14, < 1
+osmnx >= 1.6, < 2
+pyyaml >= 6.0
+# saio 0.2.1 on PyPI does not support SQLAlchemy 2
+saio @ git+https://github.com/joda9/saio.git@sqlalchemy-2
+scipy >= 1.10
+scikit-learn >= 1.2
+pymetis
+pyvis
+requests
+psycopg2-binary
+# SSH tunnels to egon-data databases, see database.get_egon_data_engine
+sshtunnel >= 0.4

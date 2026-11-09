@@ -57,7 +57,7 @@ class PFConfigDing0:
     def __init__(self, **kwargs):
         self._scenarios = kwargs.get('scenarios', None)
         self._timeranges = kwargs.get('timeranges', None)
-        self._resolution = kwargs.get('resolution', 'H')
+        self._resolution = kwargs.get('resolution', 'h')
         self._srid = kwargs.get('srid', 4326)
 
         timesteps_count = kwargs.get('timesteps_count', None)

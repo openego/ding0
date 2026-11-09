@@ -25,7 +25,11 @@ from math import isnan
 
 from ding0.core import NetworkDing0
 
-from egoio.tools import db
+try:
+    # only needed for tests on the legacy OpenEnergy DataBase
+    from egoio.tools import db
+except ImportError:
+    db = None
 from sqlalchemy.orm import sessionmaker
 
 
@@ -386,6 +390,8 @@ class TestMVGridDing0(object):
         """
         Returns an ego.io oedb session and closes it on finishing the test
         """
+        if db is None:
+            pytest.skip("egoio is not installed")
         engine = db.connection(readonly=True)
         session = sessionmaker(bind=engine)()
         yield session
