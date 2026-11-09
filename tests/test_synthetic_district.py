@@ -119,4 +119,12 @@ def test_grid_matches_upstream_reference(synthetic_run):
     with open(expected_file(run)) as f:
         expected = json.load(f)
     for key in expected:
-        assert grid[key] == expected[key], key
+        if key == "lines":
+            # line lengths differ by fractions of a millimetre between PROJ
+            # versions (pyproj 3.8 needs Python >= 3.11)
+            assert [line[0:1] + line[2:] for line in grid[key]] == \
+                [line[0:1] + line[2:] for line in expected[key]], key
+            assert [line[1] for line in grid[key]] == pytest.approx(
+                [line[1] for line in expected[key]], abs=1e-5), key
+        else:
+            assert grid[key] == expected[key], key
