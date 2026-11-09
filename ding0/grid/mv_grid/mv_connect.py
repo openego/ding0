@@ -148,6 +148,9 @@ def get_lv_load_area_group_from_node_pair(node1, node2):
 
     lv_load_area_group = None
 
+    # loads at locations of their own (PointLoadDing0) lie in rings like MV
+    # stations and cable distributors, in no satellite string
+
     # both nodes are LV stations -> get group from 1 or 2
     if (isinstance(node1, LVLoadAreaCentreDing0) and
        isinstance(node2, LVLoadAreaCentreDing0)):
@@ -158,17 +161,17 @@ def get_lv_load_area_group_from_node_pair(node1, node2):
 
     # node 1 is LV station and node 2 not -> get group from node 1
     elif (isinstance(node1, LVLoadAreaCentreDing0) and
-          isinstance(node2, (MVStationDing0, MVCableDistributorDing0))):
+          isinstance(node2, (MVStationDing0, MVCableDistributorDing0, PointLoadDing0))):
         lv_load_area_group = node1.lv_load_area.lv_load_area_group
 
     # node 2 is LV station and node 1 not -> get group from node 2
-    elif (isinstance(node1, (MVStationDing0, MVCableDistributorDing0)) and
+    elif (isinstance(node1, (MVStationDing0, MVCableDistributorDing0, PointLoadDing0)) and
           isinstance(node2, LVLoadAreaCentreDing0)):
         lv_load_area_group = node2.lv_load_area.lv_load_area_group
 
     # both nodes are not a LV station -> no group
-    elif (isinstance(node1, (MVStationDing0, MVCableDistributorDing0)) and
-          isinstance(node2, (MVStationDing0, MVCableDistributorDing0))):
+    elif (isinstance(node1, (MVStationDing0, MVCableDistributorDing0, PointLoadDing0)) and
+          isinstance(node2, (MVStationDing0, MVCableDistributorDing0, PointLoadDing0))):
         lv_load_area_group = None
 
     return lv_load_area_group
@@ -229,6 +232,9 @@ def find_connection_point(node, node_shp, graph, proj, conn_objects_min_stack, c
         else:
             if isinstance(dist_min_obj['obj'], MVCableDistributorDing0):
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area_group
+            elif isinstance(dist_min_obj['obj'], PointLoadDing0):
+                # loads at locations of their own lie in rings, in no satellite string
+                lv_load_area_group = None
             else:
                 lv_load_area_group = dist_min_obj['obj'].lv_load_area.lv_load_area_group
 
@@ -1222,6 +1228,11 @@ def find_nearest_conn_objects_settle(supply_node, branches, lv_load_area_supply_
     for branch in branches:
 
         end_node1, end_node2 = branch['adj_nodes']
+        # a branch crossing the load area may end at nodes outside it that are
+        # no nodes of its street graph (e.g. loads at locations of their own)
+        for end_node in (end_node1, end_node2):
+            if not G.has_node(str(end_node)):
+                G = conn_ding0_obj_to_osm_graph(G, end_node)
         end_node1_shp, end_node2_shp = end_node1.geo_data, end_node2.geo_data
         line_shp = branch['branch'].geometry
         try:
