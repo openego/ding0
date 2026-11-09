@@ -437,26 +437,50 @@ def update_graphs(core_graph, stub_graph, nodes_to_switch):
 # root...root_node, load...nodes with demand, dist...nodes have function as cable_dist
 
 def create_stub_dict(stub_graph, root_nodes, node_list):
-    
+    """
+    Stubs of the stub graph, {i: {'comp', 'root', 'load', 'dist'}}.
+
+    A component of the stub graph may touch the core graph, which the rings
+    are routed in, at several nodes (`root_nodes`), e.g. at an LV station
+    and at a street node. It is split there: the nodes hanging off one of
+    these nodes form the stub with it as root, nodes between several of them
+    go to the one nearest to their loads. So the loads of a stub are reached
+    from its root without passing other nodes of the core graph.
+    """
     node_set = set(node_list.keys())
-    
+    graph = nx.Graph(stub_graph)
+
     stub_dict = {}
 
-    if nx.number_weakly_connected_components(stub_graph):
+    for comp in nx.weakly_connected_components(stub_graph):
 
-        for i, comp in enumerate(nx.weakly_connected_components(stub_graph)):
+        comp_roots = comp & root_nodes
 
-            root_node_set = comp & root_nodes
-            load_node_set = comp & node_set - root_node_set
-            cable_dist_set = comp - root_node_set - load_node_set
+        if len(comp_roots) > 1:
+            stubs = {}
+            for part in nx.connected_components(graph.subgraph(comp - comp_roots)):
+                part_roots = {n for node in part for n in graph.neighbors(node)} & comp_roots
+                part_loads = (part & node_set) or part
+                distances = nx.multi_source_dijkstra_path_length(
+                    graph.subgraph(part | part_roots), part_loads, weight='length')
+                root = min(part_roots, key=lambda n: (distances[n], str(n)))
+                stubs.setdefault(root, {root}).update(part)
+            # only nodes of the routed graph: one stub without loads, as before
+            if not stubs:
+                stubs = {min(comp_roots, key=str): comp}
+        else:
+            stubs = {list(comp_roots)[0]: comp}
 
+        for root, nodes in sorted(stubs.items(), key=lambda item: str(item[0])):
+            load_node_set = nodes & node_set - comp_roots
+            i = len(stub_dict)
             stub_dict[i] = {}
-            stub_dict[i]['comp'] = comp
-            stub_dict[i]['root'] = list(root_node_set)[0] #next(iter())
+            stub_dict[i]['comp'] = nodes
+            stub_dict[i]['root'] = root
             stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
                                     for node in load_node_set} #{node: demand}
-            stub_dict[i]['dist'] = cable_dist_set
-            
+            stub_dict[i]['dist'] = nodes - comp_roots - load_node_set
+
     return stub_dict
 
 
@@ -566,7 +590,7 @@ def update_stub_dict(stub_dict, mod_stubs_list, node_list):
         root = comp[0]
         load_node_set = comp[1:]
 
-        i = max(stub_dict.keys()) + 1 
+        i = max(stub_dict.keys(), default=-1) + 1
 
         stub_dict[i] = {}
         try:
