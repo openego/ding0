@@ -518,13 +518,8 @@ def check_stub_criterion(stub_dict, stub_graph):
                     load_nodes = list(tree)[1:]
 
                     for n in load_nodes:
-                        cum_load = 0
-                        for inner_n in load_nodes:
-                            try:
-                                cum_load += stub_data['load'][inner_n]
-                            except KeyError:
-                                # ToDo: Find origin of problem that in load_nodes is not only loads
-                                logger.error(f"{inner_n} not in stub_data['load']")
+                        # street nodes between the loads carry no load
+                        cum_load = sum(stub_data['load'].get(inner_n, 0) for inner_n in load_nodes)
                         if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                             comp = [root] + load_nodes
                             mod_stubs_list.append(comp)
@@ -553,13 +548,8 @@ def check_stub_criterion(stub_dict, stub_graph):
                                 load_nodes = [load_nodes[1:] for n in load_nodes if n not in stub_data['load']][0]
 
                             for n in load_nodes:
-                                cum_load = 0
-                                for inner_n in load_nodes:
-                                    try:
-                                        cum_load += stub_data['load'][inner_n]
-                                    except KeyError:
-                                        # ToDo: Find origin of problem that in load_nodes is not only loads
-                                        logger.error(f"{inner_n} not in stub_data['load']")
+                                # street nodes between the loads carry no load
+                                cum_load = sum(stub_data['load'].get(inner_n, 0) for inner_n in load_nodes)
                                 if cum_load <= cfg_ding0.get('mv_connect', 'load_area_sat_string_load_threshold'):
                                     comp = [root] + load_nodes
                                     mod_stubs_list.append(comp)
@@ -585,28 +575,25 @@ def check_stub_criterion(stub_dict, stub_graph):
 
 def update_stub_dict(stub_dict, mod_stubs_list, node_list):
 
+    """
+    Adds the stubs split by `check_stub_criterion`, each a list of its root
+    and its further nodes. Further nodes that are no loads but street nodes
+    between them become cable distributors.
+    """
     for comp in mod_stubs_list:
 
         root = comp[0]
-        load_node_set = comp[1:]
+        load_node_set = {node for node in comp[1:] if node in node_list}
 
         i = max(stub_dict.keys(), default=-1) + 1
 
         stub_dict[i] = {}
-        try:
-            stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
-                                    for node in load_node_set} #{node: demand}
-        except KeyError:
-            stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
-                                    for node in load_node_set if node in node_list.keys()}
-            # ToDo: Find origin of problem that in node_list is not only ding0_ids, see check_stub_criterion ToDo
-            logger.error(f"Key not in node_list, should not be an osm_id.")
+        stub_dict[i]['load'] = {node: int(node_list[node].peak_load / cfg_ding0.get('assumptions', 'cos_phi_load'))
+                                for node in load_node_set} #{node: demand}
         stub_dict[i]['root'] = root
         stub_dict[i]['comp'] = set(comp)
-        stub_dict[i]['dist'] = set()
+        stub_dict[i]['dist'] = set(comp[1:]) - load_node_set
 
-        i+=1 
-    
     return stub_dict
 
 

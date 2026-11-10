@@ -6,7 +6,7 @@ leads to loads. It is connected to the rings at its root.
 from types import SimpleNamespace
 
 import networkx as nx
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from ding0.core import NetworkDing0
@@ -85,3 +85,60 @@ def test_split_stubs_are_added_when_all_stubs_were_removed():
                                  node_list)
 
     assert sorted(stub["root"] for stub in stub_dict.values()) == ["1", "2"]
+
+
+def stubs_after_check(stub_graph, roots, node_list):
+    """Stubs as mv_urban_connect gets them: split by check_stub_criterion."""
+    from ding0.grid.mv_grid.tools import check_stub_criterion, update_stub_dict
+
+    stub_dict = create_stub_dict(stub_graph, roots, node_list)
+    mod_stubs_list, _ = check_stub_criterion(stub_dict, stub_graph)
+    return list(update_stub_dict(stub_dict, mod_stubs_list, node_list).values())
+
+
+def assert_stubs_reach_their_loads(stubs, stub_graph):
+    """mv_urban_connect lays a branch along each edge between the root, the
+    loads and the cable distributors of a stub."""
+    for stub in stubs:
+        nodes = set(stub["load"]) | {stub["root"]} | stub["dist"]
+        assert nx.is_connected(nx.Graph(stub_graph.subgraph(nodes))), stub
+
+
+def test_split_stub_keeps_the_street_node_between_its_loads():
+    """A stub over the load threshold is split; a street node between two
+    loads stays in the new stub as cable distributor (districts 36218,
+    36644, 36864)."""
+    stub_graph = street_graph([("R", "LVStation_1"), ("LVStation_1", "X"),
+                               ("X", "LVStation_2")])
+    node_list = {"LVStation_1": SimpleNamespace(peak_load=600),
+                 "LVStation_2": SimpleNamespace(peak_load=600)}
+
+    stubs = stubs_after_check(stub_graph, {"R"}, node_list)
+
+    assert [stub["load"].keys() for stub in stubs] == [{"LVStation_2"}]
+    assert_stubs_reach_their_loads(stubs, stub_graph)
+
+
+@settings(max_examples=400, deadline=None)
+@given(st.data())
+def test_stubs_reach_their_loads_after_the_split(data):
+    """However check_stub_criterion splits stubs over the load threshold,
+    every remaining stub is connected from its root to its loads."""
+    n_nodes = data.draw(st.integers(2, 9), label="nodes")
+    # a tree, often a chain: each node hangs off the one before or any earlier
+    parents = [data.draw(st.one_of(st.just(i - 1), st.integers(0, i - 1)),
+                         label=f"parent of {i}")
+               for i in range(1, n_nodes)]
+    names = [f"n{i}" for i in range(n_nodes)]
+    stub_graph = street_graph(
+        [(names[parent], names[i]) for i, parent in enumerate(parents, start=1)])
+    # the first node lies on the rings; the others are street nodes or loads
+    # of which a few exceed the load threshold of a stub
+    node_list = {name: SimpleNamespace(peak_load=data.draw(st.integers(300, 900),
+                                                           label=f"load of {name}"))
+                 for name in names[1:]
+                 if data.draw(st.booleans(), label=f"{name} is a load")}
+
+    stubs = stubs_after_check(stub_graph, {"n0"}, node_list)
+
+    assert_stubs_reach_their_loads(stubs, stub_graph)
