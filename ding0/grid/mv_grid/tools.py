@@ -704,7 +704,10 @@ def relabel_graph_nodes(load_area, cable_dists):
 
     # update
     street_graph = load_area.load_area_graph
-    osmids_to_str_map = {osmid: str(int(osmid)) for osmid in street_graph.nodes}
+    # ding0 nodes may already be named after themselves, e.g. cable
+    # distributors without a free street node (relocate_cable_dists_settle)
+    osmids_to_str_map = {osmid: str(int(osmid)) for osmid in street_graph.nodes
+                         if osmid not in ding0_nodes_map}
     street_graph = nx.relabel_nodes(street_graph, {**osmids_to_str_map, **ding0_nodes_map})
 
     return street_graph, ding0_nodes_map

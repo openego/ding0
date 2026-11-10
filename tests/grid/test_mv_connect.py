@@ -202,3 +202,26 @@ def test_station_finds_branch_whose_ends_are_no_street_nodes():
 
     assert stack
     assert street_graph.has_node(str(load)) and street_graph.has_node(str(cable_distributor))
+
+
+def test_cable_distributor_added_to_a_full_street_graph_keeps_its_name():
+    """If all street nodes of a load area are taken by stations and loads, a
+    cable distributor gets a node of its own named after it (district
+    37479); relabeling the street graph keeps it."""
+    from types import SimpleNamespace
+
+    from ding0.grid.mv_grid.tools import relabel_graph_nodes
+
+    class CableDistributor(SimpleNamespace):
+        def __str__(self):
+            return "MVCableDist_mvgd_1_11"
+
+    cable_dist = CableDistributor(osm_id_node="MVCableDist_mvgd_1_11")
+    street_graph = nx.MultiDiGraph()
+    street_graph.add_edge(250961441, "MVCableDist_mvgd_1_11", length=10)
+    load_area = SimpleNamespace(_lv_grid_districts=[], _mv_loads=[],
+                                load_area_graph=street_graph)
+
+    relabeled, _ = relabel_graph_nodes(load_area, [cable_dist])
+
+    assert set(relabeled.nodes) == {"250961441", "MVCableDist_mvgd_1_11"}
