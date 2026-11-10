@@ -185,23 +185,19 @@ def connect_mv_loads_to_graph(cluster_graph, osm_id_building, row):
                            geometry=line,length=line.length,highway='trafo_graph_connect')
 
 
-# logic for filling zeros
-def get_lvgd_id(la_id_db, cluster_id, max_n_digits=10):
+def get_lvgd_id(la_id_db, cluster_id, cluster_digits=4):
     """
-    param: la_id_db, cluster_id, max_n_digits
-           max_n_digits defines number of digits a la or lvgd should have
-    due to la ids and lvgd ids should have a length of 10 fill zeros
-    new id looks like la_id (what is id_db) + filling zeros + cluster id of lvgd
-    return new id
+    Id of the LV grid district of a cluster of a load area: the load area id
+    followed by the cluster id with `cluster_digits` digits, e.g. 920003 for
+    cluster 3 of load area 92.
+
+    The cluster id has a fixed number of digits, so load areas whose ids
+    differ only in trailing zeros (92 and 920) get different ids.
     """
-    # getting la_id and its length given by ding0
-    la_id = str(la_id_db)
-
-    # getting cluster id and its length computed in new approach
-    lvgd_id = str(cluster_id)
-    need_to_fill_n_digits = max_n_digits - len(la_id)
-
-    return int(la_id + lvgd_id.zfill(need_to_fill_n_digits))
+    if not 0 <= cluster_id < 10 ** cluster_digits:
+        raise ValueError(f"Cluster id {cluster_id} of load area {la_id_db} "
+                         f"has more than {cluster_digits} digits.")
+    return int(la_id_db) * 10 ** cluster_digits + int(cluster_id)
 
 
 '''
