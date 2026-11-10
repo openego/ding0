@@ -195,7 +195,8 @@ def get_routed_graph(
 ##############
 
 def relocate_buildings_with_station_as_nn(full_graph, station_id, lv_loads_grid):
-    station_nbs = [n for n in full_graph.neighbors(station_id)]
+    # street graphs may hold a loop from the station to itself
+    station_nbs = [n for n in full_graph.neighbors(station_id) if n != station_id]
 
     if station_nbs:
 
@@ -230,8 +231,12 @@ def get_shortest_path_tree(graph, station_node, building_nodes, generator_nodes=
     '''
 
     G = graph.copy()
+    # a street from the station back to itself would become a cable from the
+    # station to itself (issue #406)
+    G.remove_edges_from(list(nx.selfloop_edges(G)))
 
-    if (len(building_nodes) == 1 and building_nodes[0] == station_node) or (len(building_nodes) == 0):
+    # all buildings at the station: no street to route along
+    if set(building_nodes) <= {station_node}:
 
         sp_tree = G.subgraph([station_node])
 
