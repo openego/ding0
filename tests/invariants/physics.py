@@ -163,7 +163,8 @@ def export_graph(components):
 
 def check_radial(components):
     """With the switch disconnectors open (normal operation) the grid is a
-    single tree: connected, without meshes and without parallel edges."""
+    single tree: connected, without meshes and without parallel lines
+    (several transformers in one station are allowed)."""
     graph = export_graph(components)
     violations = []
     parts = list(nx.connected_components(graph))
@@ -174,9 +175,11 @@ def check_radial(components):
     cycles = nx.cycle_basis(nx.Graph(graph))
     if cycles:
         violations.append(f"{len(cycles)} meshes, e.g. {cycles[0][:6]}")
-    for u, v, k in graph.edges(keys=True):
-        if graph.number_of_edges(u, v) > 1:
-            violations.append(f"parallel edges between {u} and {v}")
+    lines = set(components["Line"].index)
+    for u, v in {tuple(sorted(e)) for e in graph.edges()}:
+        parallel = [k for k in graph[u][v] if k in lines]
+        if len(parallel) > 1 or (parallel and len(graph[u][v]) > 1):
+            violations.append(f"parallel lines between {u} and {v}: {list(graph[u][v])}")
             break
     return violations
 
@@ -221,7 +224,8 @@ def check_kirchhoff(network, tolerance=KCL_TOLERANCE):
 
 def check_losses(network, max_share=0.1):
     """Line and transformer losses are not negative and below `max_share` of
-    the power drawn at the slack."""
+    the power transported, the larger of total load and total generation
+    (the slack alone can be small when load and generation balance)."""
     violations = []
     for snapshot in network.snapshots:
         branch_losses = pd.concat([
@@ -229,16 +233,19 @@ def check_losses(network, max_share=0.1):
             network.transformers_t.p0.loc[snapshot] + network.transformers_t.p1.loc[snapshot]])
         for name, loss in branch_losses[branch_losses < -1e-9].items():
             violations.append(f"snapshot {snapshot}, {name}: negative losses {loss:.3g} MW")
-        slack = network.generators.index[network.generators.control == "Slack"]
-        throughput = abs(network.generators_t.p.loc[snapshot, slack].sum())
+        slack = network.generators.control == "Slack"
+        load = network.loads_t.p.loc[snapshot].sum() if not network.loads.empty else 0.0
+        generation = network.generators_t.p.loc[snapshot, ~slack].sum()
+        throughput = max(load, generation)
         if throughput > 1e-6 and branch_losses.sum() > max_share * throughput:
             violations.append(f"snapshot {snapshot}: losses {branch_losses.sum():.3f} MW are more "
-                              f"than {max_share:.0%} of {throughput:.3f} MW at the slack")
+                              f"than {max_share:.0%} of {throughput:.3f} MW transported")
     return violations
 
 
-def check_energy_balance(network, tolerance=1e-6):
-    """Slack power = loads - generation + losses (active power)."""
+def check_energy_balance(network, tolerance=1e-5):
+    """Slack power = loads - generation + losses (active power), within the
+    accuracy of the Newton-Raphson power flow."""
     violations = []
     for snapshot in network.snapshots:
         p = network.generators_t.p.loc[snapshot]
@@ -253,16 +260,25 @@ def check_energy_balance(network, tolerance=1e-6):
 
 
 def _lv_busbars(network):
-    """LV busbar of each LV grid (bus1 of its station transformers)."""
+    """LV busbar of each LV grid (bus1 of its station transformers; the
+    slack bus for an LV grid solved on its own)."""
     buses = network.buses
-    return {buses.at[t.bus1, "lv_grid_id"]: t.bus1 for _, t in network.transformers.iterrows()}
+    busbars = {buses.at[t.bus1, "lv_grid_id"]: t.bus1 for _, t in network.transformers.iterrows()}
+    slack_bus = network.generators.loc[network.generators.control == "Slack", "bus"].iloc[0]
+    if buses.at[slack_bus, "v_nom"] < 1:
+        busbars[buses.at[slack_bus, "lv_grid_id"]] = slack_bus
+    return busbars
 
 
-def check_voltage_band(network, levels=("MV", "LV")):
-    """Voltage deviations within the planning limits: MV buses against the
-    HV/MV station (load case `mv_max_v_level_lc_diff_normal`, feed-in case
-    `mv_max_v_level_fc_diff_normal`), LV buses against their station's LV
-    busbar (drop `lv_max_v_level_lc_diff_normal`, rise
+CASES = ["load case", "feed-in case"]
+
+
+def voltage_deviations(network, levels=("MV", "LV")):
+    """Voltage deviation and its planning limit for every bus and snapshot,
+    as {(snapshot, bus): (deviation, limit, LV grid id or None)}: MV buses
+    against the HV/MV station (load case `mv_max_v_level_lc_diff_normal`,
+    feed-in case `mv_max_v_level_fc_diff_normal`), LV buses against their
+    station's LV busbar (drop `lv_max_v_level_lc_diff_normal`, rise
     `lv_max_v_level_fc_diff_normal`)."""
     limits = {
         "MV": [_get("mv_routing_tech_constraints", "mv_max_v_level_lc_diff_normal"),
@@ -273,35 +289,51 @@ def check_voltage_band(network, levels=("MV", "LV")):
     buses = network.buses
     slack_bus = network.generators.loc[network.generators.control == "Slack", "bus"].iloc[0]
     busbars = _lv_busbars(network)
-    violations = []
-    for snapshot, case in zip(network.snapshots, ["load case", "feed-in case"]):
+    deviations = {}
+    for snapshot in network.snapshots:
         v = network.buses_t.v_mag_pu.loc[snapshot]
         if "MV" in levels:
             mv = buses.index[buses.lv_grid_id.isna()]
-            dv = (v[mv] - v[slack_bus]).abs()
-            limit = limits["MV"][snapshot]
-            for bus, d in dv[dv > limit + 1e-9].items():
-                violations.append(f"{case}, MV bus {bus}: deviation {d:.2%} > {limit:.0%}")
+            for bus, d in (v[mv] - v[slack_bus]).abs().items():
+                deviations[snapshot, bus] = (d, limits["MV"][snapshot], None)
         if "LV" in levels:
-            limit = limits["LV"][snapshot]
             for lv_grid_id, group in buses.loc[buses.lv_grid_id.notna()].groupby("lv_grid_id"):
-                ref = v[busbars[lv_grid_id]] if lv_grid_id in busbars else None
-                if ref is None:
+                if lv_grid_id not in busbars:
                     continue
+                ref = v[busbars[lv_grid_id]]
                 dv = (ref - v[group.index]) if snapshot == powerflow.LOAD_CASE \
                     else (v[group.index] - ref)
-                worst = dv.idxmax()
-                if dv[worst] > limit + 1e-9:
-                    violations.append(f"{case}, LV grid {int(lv_grid_id)}: deviation "
-                                      f"{dv[worst]:.2%} > {limit:.0%} at {worst}")
+                for bus, d in dv.items():
+                    deviations[snapshot, bus] = (d, limits["LV"][snapshot], int(lv_grid_id))
+    return deviations
+
+
+def check_voltage_band(network, levels=("MV", "LV"), snapshots=None):
+    """Voltage deviations within the planning limits (see
+    `voltage_deviations`), in all or the given snapshots; for LV grids the
+    worst bus is reported."""
+    violations, worst = [], {}
+    for (snapshot, bus), (d, limit, lv_grid_id) in voltage_deviations(network, levels).items():
+        if d <= limit + 1e-9 or (snapshots is not None and snapshot not in snapshots):
+            continue
+        if lv_grid_id is None:
+            violations.append(f"{CASES[snapshot]}, MV bus {bus}: deviation {d:.2%} > {limit:.0%}")
+        elif d > worst.get((snapshot, lv_grid_id), (0,))[0]:
+            worst[snapshot, lv_grid_id] = (d, limit, bus)
+    for (snapshot, lv_grid_id), (d, limit, bus) in sorted(worst.items()):
+        violations.append(f"{CASES[snapshot]}, LV grid {lv_grid_id}: deviation "
+                          f"{d:.2%} > {limit:.0%} at {bus}")
     return violations
 
 
-def check_thermal_limits(network, tolerance=0.05):
-    """Apparent power of every line and MV/LV transformer below its rating
-    times the load factor of the planning profile (per kind, voltage and
-    case). `tolerance` allows for the higher current at voltages below
-    nominal within the permitted band."""
+def loadings(network):
+    """Current of every line and MV/LV transformer in per unit of its rated
+    current and the load factor of the planning profile (per kind, voltage
+    level and case), as {(snapshot, name): (loading, load factor)}.
+
+    The current I = S / (sqrt(3) |V|) is taken at both ends, so voltages
+    below nominal raise it; the rated current is s_nom / (sqrt(3) U_n).
+    Transformers count for the level of their LV side."""
     get = _get
     buses = network.buses
     factor = {
@@ -314,30 +346,76 @@ def check_thermal_limits(network, tolerance=0.05):
         ("LV", "trafo"): [get("assumptions", "load_factor_lv_trans_lc_normal"),
                           get("assumptions", "load_factor_lv_trans_fc_normal")],
     }
-    violations = []
-    for snapshot, case in zip(network.snapshots, ["load case", "feed-in case"]):
+    result = {}
+    for snapshot in network.snapshots:
+        v = network.buses_t.v_mag_pu.loc[snapshot]
         for key, df, df_t in [("Line", network.lines, network.lines_t),
                               ("Transformer", network.transformers, network.transformers_t)]:
-            s = np.maximum(np.hypot(df_t.p0.loc[snapshot], df_t.q0.loc[snapshot]),
-                           np.hypot(df_t.p1.loc[snapshot], df_t.q1.loc[snapshot]))
+            if df.empty:
+                continue
+            i0 = np.hypot(df_t.p0.loc[snapshot], df_t.q0.loc[snapshot]) / v[df.bus0].values
+            i1 = np.hypot(df_t.p1.loc[snapshot], df_t.q1.loc[snapshot]) / v[df.bus1].values
+            loading = np.maximum(i0, i1) / df.s_nom
             for name, row in df.iterrows():
-                level = "MV" if buses.at[row.bus0, "v_nom"] > 1 else "LV"
-                kind = "trafo" if key == "Transformer" else row.kind
+                if key == "Transformer":
+                    level = "LV" if buses.at[row.bus1, "v_nom"] < 1 else "MV"
+                    kind = "trafo"
+                else:
+                    level = "MV" if buses.at[row.bus0, "v_nom"] > 1 else "LV"
+                    kind = row.kind
                 lf = factor.get((level, kind))
-                if lf is None:
-                    continue
-                loading = s[name] / row.s_nom
-                if loading > lf[snapshot] * (1 + tolerance):
-                    violations.append(f"{case}, {name}: loading {loading:.0%} > "
-                                      f"{lf[snapshot]:.0%}")
+                result[snapshot, name] = (loading[name], None if lf is None else lf[snapshot])
+    return result
+
+
+def _branch_level(network, name):
+    if name in network.transformers.index:
+        return "LV"  # MV/LV transformers count for their LV side
+    return "MV" if network.buses.at[network.lines.at[name, "bus0"], "v_nom"] > 1 else "LV"
+
+
+def check_thermal_limits(network, tolerance=0.0, levels=("MV", "LV")):
+    """Current of every line and MV/LV transformer below its rated current
+    times the load factor of the planning profile (see `loadings`).
+    `tolerance` is a share of the limit; `levels` selects MV lines or LV
+    lines and MV/LV transformers."""
+    violations = []
+    for (snapshot, name), (loading, lf) in loadings(network).items():
+        if _branch_level(network, name) not in levels:
+            continue
+        if lf is None:
+            violations.append(f"{name}: no load factor")
+        elif loading > lf * (1 + tolerance) + 1e-9:
+            violations.append(f"{CASES[snapshot]}, {name}: current {loading:.1%} of rated "
+                              f"> {lf:.0%}")
     return violations
 
 
-def check_set_points(components, data, rtol=1e-6):
+def limit_usage(network, levels=("MV", "LV")):
+    """Every voltage deviation and current in per unit of its planning limit,
+    {(snapshot, bus or branch): usage}; above 1 violates the limit."""
+    usage = {key: d / limit for key, (d, limit, _) in voltage_deviations(network, levels).items()}
+    for (snapshot, name), (loading, lf) in loadings(network).items():
+        if lf is not None and _branch_level(network, name) in levels:
+            usage[snapshot, name] = loading / lf
+    return usage
+
+
+def check_set_points(components, data, rtol=1e-6, only_single_load_buildings=False):
     """ding0's own power flow set points equal the ones derived from the
-    exported nominal values (every load and generator once, same p and q)."""
+    exported nominal values (every load and generator once, same p and q).
+    `only_single_load_buildings` leaves out loads that share their bus with
+    other loads (buildings with several sectoral loads, or with a heat pump
+    or charging point)."""
     expected = powerflow.set_points(components)
     actual = powerflow.ding0_set_points(data)
+    if only_single_load_buildings:
+        loads = components["Load"]
+        per_bus = loads.bus.value_counts()
+        shared = loads.index[loads.bus.isin(per_bus.index[per_bus > 1])]
+        for key in ["p_load", "q_load"]:
+            expected[key] = expected[key].drop(columns=shared, errors="ignore")
+            actual[key] = actual[key].drop(columns=shared, errors="ignore")
     violations = []
     for key in ["p_load", "q_load", "p_gen", "q_gen"]:
         exp, act = expected[key], actual[key]

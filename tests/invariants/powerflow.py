@@ -83,8 +83,27 @@ def export_mv_grid_district(mv_grid_district, only_export_mv=False):
     return components, network_df, grids_df, data
 
 
-def solve(mv_grid_district, only_export_mv=False):
-    """Runs a power flow on the exported grid.
+def close_switches(network, components):
+    """Closes the open switch disconnectors of an exported network: each
+    switch's line is moved from its own bus (`bus_open`) to `bus_closed`,
+    which closes the MV rings."""
+    for _, switch in components["Switch"].iterrows():
+        for end in ["bus0", "bus1"]:
+            if network.lines.at[switch.branch, end] == switch.bus_open:
+                network.lines.at[switch.branch, end] = switch.bus_closed
+        network.remove("Bus", switch.bus_open)
+
+
+def run_pf(network):
+    """Power flow on all snapshots; whether it converged, per snapshot."""
+    info = network.pf()
+    converged = info["converged"]
+    return converged.iloc[:, 0] if isinstance(converged, pd.DataFrame) else converged
+
+
+def solve(mv_grid_district, only_export_mv=False, closed_rings=False):
+    """Runs a power flow on the exported grid, in normal operation or with
+    the switch disconnectors closed (`closed_rings`).
 
     Returns
     -------
@@ -98,6 +117,8 @@ def solve(mv_grid_district, only_export_mv=False):
     export = export_mv_grid_district(mv_grid_district, only_export_mv)
     components, network_df, grids_df, data = export
     network = components_to_pypsa_network(components, network_df, grids_df)
+    if closed_rings:
+        close_switches(network, components)
     network.set_snapshots([LOAD_CASE, FEEDIN_CASE])
 
     points = set_points(components)
@@ -110,10 +131,7 @@ def solve(mv_grid_district, only_export_mv=False):
     network.buses_t.v_mag_pu_set = pd.DataFrame(
         v_slack, index=network.snapshots, columns=list(slack_bus))
 
-    info = network.pf()
-    converged = info["converged"].iloc[:, 0] if isinstance(
-        info["converged"], pd.DataFrame) else info["converged"]
-    return network, converged, export
+    return network, run_pf(network), export
 
 
 def complex_voltages(network, snapshot):
@@ -170,3 +188,32 @@ def nodal_injections(network, snapshot):
                 if name in network.generators_t.q_set else 0.0
         injection[gen.bus] += complex(p, q)
     return injection
+
+
+def lv_subnetwork(network, lv_grid_id):
+    """One LV grid of a solved network on its own: its buses, lines, loads
+    and generators, fed by a slack at its LV busbar that keeps the busbar
+    voltage of the solved network in each snapshot."""
+    import pypsa
+
+    buses = network.buses.index[network.buses.lv_grid_id == lv_grid_id]
+    trafo = network.transformers.loc[network.transformers.bus1.isin(buses)]
+    busbar = trafo.bus1.iloc[0]
+    sub = pypsa.Network()
+    sub.set_snapshots(network.snapshots)
+    sub.import_components_from_dataframe(network.buses.loc[buses], "Bus")
+    lines = network.lines.loc[network.lines.bus0.isin(buses) & network.lines.bus1.isin(buses)]
+    sub.import_components_from_dataframe(lines, "Line")
+    loads = network.loads.loc[network.loads.bus.isin(buses)]
+    sub.import_components_from_dataframe(loads, "Load")
+    generators = network.generators.loc[network.generators.bus.isin(buses)
+                                        & (network.generators.control != "Slack")]
+    sub.import_components_from_dataframe(generators, "Generator")
+    sub.add("Generator", "slack", bus=busbar, control="Slack")
+    sub.loads_t.p_set = network.loads_t.p_set[loads.index]
+    sub.loads_t.q_set = network.loads_t.q_set[loads.index]
+    sub.generators_t.p_set = network.generators_t.p_set[generators.index]
+    sub.generators_t.q_set = network.generators_t.q_set[generators.index]
+    sub.buses_t.v_mag_pu_set = network.buses_t.v_mag_pu[[busbar]]
+    run_pf(sub)
+    return sub

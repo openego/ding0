@@ -128,10 +128,18 @@ def check_generators(network, generators):
         for gens_id, objects in found.items():
             if len(objects) > 1:
                 violations.append(f"{mvgd}: generator {gens_id} {len(objects)} times")
-            if gens_id in expected.index and not np.isclose(
-                    objects[0].capacity, expected.at[gens_id, "electrical_capacity"]):
-                violations.append(f"generator {gens_id}: {objects[0].capacity} kW, "
-                                  f"expected {expected.at[gens_id, 'electrical_capacity']} kW")
+            if gens_id not in expected.index:
+                continue
+            row, generator = expected.loc[gens_id], objects[0]
+            if not np.isclose(generator.capacity, row.electrical_capacity):
+                violations.append(f"generator {gens_id}: {generator.capacity} kW, "
+                                  f"expected {row.electrical_capacity} kW")
+            if generator.v_level != row.voltage_level:
+                violations.append(f"generator {gens_id}: voltage level {generator.v_level}, "
+                                  f"expected {row.voltage_level}")
+            if generator.type != row.generation_type:
+                violations.append(f"generator {gens_id}: type {generator.type}, "
+                                  f"expected {row.generation_type}")
     return violations
 
 
@@ -148,7 +156,8 @@ def grid_components(mv_grid_district):
 
 
 def check_point_components(network, components):
-    """Every point load and storage unit is in the grid exactly once."""
+    """Every point load and storage unit is in the grid exactly once, with
+    its rated power, and there are no others."""
     violations = []
     for mvgd in network.mv_grid_districts():
         expected = components.loc[components.mvgd == mvgd.id_db].set_index("source_id")
@@ -158,6 +167,9 @@ def check_point_components(network, components):
         missing = sorted(set(expected.index) - set(found))
         if missing:
             violations.append(f"{mvgd}: components missing: {missing}")
+        unexpected = sorted(set(found) - set(expected.index), key=str)
+        if unexpected:
+            violations.append(f"{mvgd}: unexpected components: {unexpected}")
         for source_id, objects in found.items():
             if len(objects) > 1:
                 violations.append(f"{mvgd}: component {source_id} {len(objects)} times")

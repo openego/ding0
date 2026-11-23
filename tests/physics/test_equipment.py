@@ -159,28 +159,42 @@ def test_lv_transformers_carry_the_power(static_data, s_max, case):
 
 # Loads and voltage levels ####################################################
 
+def _vdew(n):
+    """VDEW peak load per household (kW) for n fully electrified households
+    of 30 kW: g(n) = g_inf + (1 - g_inf) / n^(3/4), g_inf = 0.06."""
+    return 30 * (0.06 + 0.94 / n ** 0.75)
+
+
 def test_residential_peak_load_vdew():
-    """VDEW: 30 kW for one household, falling towards 0.06 * 30 = 1.8 kW."""
+    """VDEW formula: 30 kW for one household, 6.815 kW for ten, towards
+    0.06 * 30 = 1.8 kW."""
     assert get_peak_load_for_residential(1) == pytest.approx(30.0)
+    assert get_peak_load_for_residential(10) == pytest.approx(6.815, abs=1e-3)
+    assert get_peak_load_for_residential(10_000) == pytest.approx(1.8, abs=0.03)
     values = [get_peak_load_for_residential(n) for n in range(1, 500)]
     assert all(a > b for a, b in zip(values, values[1:]))
-    assert values[-1] > 1.8
 
 
 @settings(max_examples=100, deadline=None)
 @given(households=st.lists(st.integers(1, 20), min_size=1, max_size=30),
-       cts=st.floats(0, 500))
-def test_diversity_peak_load_not_above_the_sum(households, cts):
-    """The peak load with simultaneity is at most the sum of the buildings'
-    peak loads, as given by the VDEW formula per household."""
+       cts=st.floats(0, 500), industrial=st.floats(0, 500))
+def test_diversity_peak_load(households, cts, industrial):
+    """Peak load of a group of buildings: VDEW for all its households
+    together plus the non-residential loads times
+    `diversity_factor_not_residential`; at most the sum of the buildings'
+    peak loads."""
     buildings = pd.DataFrame({
         "number_households": households,
-        "residential_capacity": [30.0 * n for n in households],
+        "residential_capacity": [_vdew(n) * n for n in households],
         "cts_capacity": [cts] + [0.0] * (len(households) - 1),
-        "industrial_capacity": 0.0,
+        "industrial_capacity": [industrial] + [0.0] * (len(households) - 1),
     })
+    n = sum(households)
+    expected = _vdew(n) * n + (cts + industrial) * get_config_osm("diversity_factor_not_residential")
     diversity = get_peak_load_diversity(buildings)
-    assert diversity <= buildings[["residential_capacity", "cts_capacity"]].sum().sum() + 1e-9
+    assert diversity == pytest.approx(expected)
+    assert diversity <= buildings[["residential_capacity", "cts_capacity",
+                                   "industrial_capacity"]].sum().sum() + 1e-9
 
 
 def test_voltage_level_from_power_limits():
