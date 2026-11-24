@@ -432,3 +432,39 @@ def patch_database(monkeypatch, components=False):
             lambda orm, session, mv_grid_district, scenario=None,
             exclude_charging_locations=(): point_components(
                 mv_grid_district.id_db, exclude_charging_locations))
+
+
+# Expected data for the completeness checks (tests/invariants/completeness.py)
+
+def expected_buildings(components=False):
+    """All buildings with their MV grid district and load area; `capacity`
+    includes the dimensioning share of heat pumps and home charging points
+    if `components`."""
+    import ding0.tools.egon_data_integration as db_io
+
+    frames = []
+    for la_id, spec in LOAD_AREAS.items():
+        frame = buildings(la_id)
+        if components and spec["mvgd"] == 2:
+            frame = db_io.add_building_components(frame, building_components(frame)[0])
+        frames.append(frame.assign(mvgd=spec["mvgd"], la_id=la_id))
+    return pd.concat(frames)
+
+
+def expected_generators(mvgd_ids=(1, 2)):
+    """All generators with their MV grid district."""
+    frames = [pd.concat([res_generators(m), conv_generators(m)]).assign(mvgd=m)
+              for m in mvgd_ids]
+    return pd.concat(frames, ignore_index=True)
+
+
+def expected_point_components(mvgd_ids=(1, 2)):
+    """Loads and storage units at locations of their own, without home
+    charging locations assigned to buildings."""
+    assigned = []
+    for la_id, spec in LOAD_AREAS.items():
+        if spec["mvgd"] == 2:
+            assigned += building_components(buildings(la_id))[1]
+    frames = [point_components(m, exclude_charging_locations=assigned).assign(mvgd=m)
+              for m in mvgd_ids]
+    return pd.concat(frames, ignore_index=True)
