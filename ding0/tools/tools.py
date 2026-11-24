@@ -34,7 +34,8 @@ def append_to_dataframe(df, other, ignore_index=False):
     :pandas:`pandas.DataFrame<DataFrame>`
     '''
     if isinstance(other, pd.Series):
-        other = pd.DataFrame([other])
+        # keep the index name, which pd.DataFrame([series]) drops
+        other = pd.DataFrame([other]).rename_axis(df.index.name)
     if df.empty:
         # Concatenating with an empty frame would let its (object) dtypes
         # decide the result; the rows appended define the dtypes instead.
