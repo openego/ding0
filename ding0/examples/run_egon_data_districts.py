@@ -6,7 +6,12 @@ them as CSV files.
 The districts are worked off one after another from a queue by a fixed number
 of parallel processes, each district in its own process. A district only
 starts when enough RAM is free; if the free RAM falls below a critical level,
-the most recently started district is stopped and queued again.
+the most recently started district is stopped and queued again; a district
+stopped repeatedly is recorded as failed and can be built in a second run
+with fewer processes. A district running longer than --timeout hours is
+stopped and recorded as failed. A district that loses its database
+connection is queued again, and no district starts for five minutes, so that
+an outage of the database does not fail the queue.
 
 Each finished district is recorded in status.csv in the output directory
 (status, duration, peak RAM, error). Districts recorded as ok are skipped
@@ -39,6 +44,10 @@ GB = 1024 ** 3
 STATUS_COLUMNS = ["district", "status", "seconds", "peak_ram_gb", "error"]
 # a district stopped for lack of RAM is queued again this often
 MAX_RAM_RETRIES = 2
+# a district that lost its database connection is queued again this often;
+# no district starts for DB_PAUSE seconds after such a failure
+MAX_DB_RETRIES = 3
+DB_PAUSE = 300
 
 
 # Building one district (runs in its own process) ##############################
@@ -128,6 +137,11 @@ def write_status(status_file, row):
         writer.writerow(row)
 
 
+def lost_database(error):
+    """Whether a district failed because the database connection broke."""
+    return "OperationalError" in error or "SSHTunnelForwarderError" in error
+
+
 def ram_of(process):
     """RAM (RSS) of a process and its children in bytes."""
     try:
@@ -170,6 +184,9 @@ class District:
         self.popen.wait()
         self.log.close()
 
+    def running_hours(self):
+        return (time.time() - self.start) / 3600
+
     def error(self):
         if os.path.isfile(self.error_file):
             with open(self.error_file) as f:
@@ -189,6 +206,8 @@ def schedule(districts, args, worker_args):
     status_file = os.path.join(args.output, "status.csv")
     queue = deque(districts)
     ram_retries = {}
+    db_retries = {}
+    no_start_until = 0
     running = []
     counts = {"ok": 0, "failed": 0}
     last_report = 0
@@ -201,6 +220,14 @@ def schedule(districts, args, worker_args):
             running.remove(district)
             status = "ok" if district.popen.returncode == 0 else "failed"
             error = district.error() if status == "failed" else ""
+            if lost_database(error) and db_retries.get(district.id, 0) < MAX_DB_RETRIES:
+                db_retries[district.id] = db_retries.get(district.id, 0) + 1
+                district.log.close()
+                queue.appendleft(district.id)
+                no_start_until = time.time() + DB_PAUSE
+                logger.warning(f"district {district.id} lost the database, "
+                               f"queued again; no start for {DB_PAUSE} s")
+                continue
             row = district.result(status, error)
             write_status(status_file, row)
             counts[status] += 1
@@ -210,6 +237,15 @@ def schedule(districts, args, worker_args):
 
         for district in running:
             district.sample_ram()
+
+        # districts running too long, e.g. in an endless loop
+        for district in [d for d in running if d.running_hours() > args.timeout]:
+            running.remove(district)
+            district.stop()
+            write_status(status_file, district.result(
+                "failed", f"timed out after {args.timeout:g} h"))
+            counts["failed"] += 1
+            logger.warning(f"district {district.id} timed out after {args.timeout} h")
 
         # too little RAM: stop the most recently started district
         if available < args.critical_free_ram * GB and len(running) > 1:
@@ -230,7 +266,8 @@ def schedule(districts, args, worker_args):
 
         # start districts while processes and RAM are free
         if (queue and len(running) < args.processes
-                and available >= args.min_free_ram * GB):
+                and available >= args.min_free_ram * GB
+                and time.time() >= no_start_until):
             district = District(queue.popleft(), args, worker_args)
             running.append(district)
             # give the district time to allocate memory before the next starts
@@ -277,6 +314,8 @@ def main():
                         help="GB of free RAM needed to start a district")
     parser.add_argument("--critical-free-ram", type=float, default=15,
                         help="GB of free RAM below which a district is stopped")
+    parser.add_argument("--timeout", type=float, default=6,
+                        help="hours after which a district is stopped as failed")
     parser.add_argument("--start-interval", type=float, default=20,
                         help="seconds between starting two districts")
     parser.add_argument("--scenario", default=None,
