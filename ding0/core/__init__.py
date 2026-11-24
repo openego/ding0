@@ -88,6 +88,27 @@ from ding0.tools import planning_profiles
 ############ NEW END
 
 
+def git_version(path):
+    """`git describe` of the ding0 code in `path`, None if it is not a checkout.
+
+    A copy of the code inside another git repository (e.g. a run folder)
+    gives None instead of the commit of that repository. Uncommitted changes
+    are marked by the suffix `-dirty`.
+    """
+    def git(*command):
+        return subprocess.check_output(
+            ["git", *command], cwd=path, stderr=subprocess.DEVNULL
+        ).decode("utf8").strip()
+
+    try:
+        top_level = git("rev-parse", "--show-toplevel")
+        if os.path.realpath(top_level) != os.path.realpath(os.path.dirname(path)):
+            return None
+        return git("describe", "--tags", "--always", "--dirty")
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
 class NetworkDing0:
     """
     Defines the DING0 Network - not a real grid but a container for the
@@ -2672,13 +2693,12 @@ class NetworkDing0:
             Metadata
         """
 
-        # Get latest version and/or git commit hash
-        try:
-            version = subprocess.check_output(
-                ["git", "describe", "--tags", "--always"], cwd=package_path
-            ).decode('utf8')
-        except:
-            version = None
+        version = git_version(package_path)
+
+        # name of the database, for egon-data the reGon or eGon run
+        database = None
+        if self._session is not None and self._session.bind is not None:
+            database = self._session.bind.url.database
 
         # Collect names of database table used to run Ding0 and data version
         if self.config['input_data_source']['input_data'] == 'versioned':
@@ -2720,6 +2740,7 @@ class NetworkDing0:
         metadata = dict(
             version=version,
             mv_grid_districts=[int(_.id_db) for _ in self._mv_grid_districts],
+            database=database,
             database_tables=database_tables,
             data_version=data_version,
             scenario=self.scenario,
