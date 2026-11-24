@@ -177,7 +177,7 @@ Former config files
 The planning profiles replace
 
 * `ding0/config/config_calc.cfg`, which was removed. Its parameters are in the sections `mv_routing`,
-  `mv_connect`, `assumptions` and `mv_routing_tech_constraints`, with the same section and key names, so
+  `mv_connect`, `assumptions`, `mv_routing_tech_constraints` and `components`, with the same section and key names, so
   ``cfg_ding0.get(section, key)`` works as before. Scripts that still call
   ``cfg_ding0.load_config('config_calc.cfg')`` get a warning and the active profile is applied instead.
 * the parameters in :func:`~ding0.config.config_lv_grids_osm.get_config_osm`, now in the section

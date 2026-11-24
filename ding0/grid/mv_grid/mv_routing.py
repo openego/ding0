@@ -24,6 +24,7 @@ from ding0.core.network.stations import *
 from ding0.core.structure.regions import LVLoadAreaCentreDing0
 from ding0.core.network import RingDing0, BranchDing0, CircuitBreakerDing0
 from ding0.core.network.cable_distributors import MVCableDistributorDing0
+from ding0.core.network.components import PointLoadDing0
 import logging
 
 
@@ -91,6 +92,12 @@ def ding0_graph_to_routing_specs(graph):
                     load_area_center_agg.append(node)
                 else:
                     nodes_agg[str(node)] = False
+
+        # load of voltage level 5 at a location of its own
+        elif isinstance(node, PointLoadDing0):
+            nodes_demands[str(node)] = int(node.peak_load / cos_phi_load)
+            nodes_pos[str(node)] = (node.geo_data.x, node.geo_data.y)
+            nodes_agg[str(node)] = False
 
         # station is MV station
         elif isinstance(node, MVStationDing0):

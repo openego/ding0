@@ -67,3 +67,7 @@ target/
 
 
 
+.venv/
+
+# Hypothesis example database
+.hypothesis/

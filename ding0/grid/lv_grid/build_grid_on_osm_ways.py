@@ -24,6 +24,7 @@ from ding0.core.network import BranchDing0
 from ding0.core.network.cable_distributors import LVCableDistributorDing0
 from ding0.core.network.loads import LVLoadDing0
 from ding0.tools import config as cfg_ding0
+from ding0.tools.egon_data_integration import BUILDING_COMPONENT_COLUMNS
 from ding0.tools.pypsa_io import q_sign
 from ding0.grid.lv_grid.routing import identify_street_loads
 from ding0.grid.mv_grid.tools import get_shortest_path_shp_single_target, get_shortest_path_shp_multi_target
@@ -194,7 +195,8 @@ def get_routed_graph(
 ##############
 
 def relocate_buildings_with_station_as_nn(full_graph, station_id, lv_loads_grid):
-    station_nbs = [n for n in full_graph.neighbors(station_id)]
+    # street graphs may hold a loop from the station to itself
+    station_nbs = [n for n in full_graph.neighbors(station_id) if n != station_id]
 
     if station_nbs:
 
@@ -229,8 +231,12 @@ def get_shortest_path_tree(graph, station_node, building_nodes, generator_nodes=
     '''
 
     G = graph.copy()
+    # a street from the station back to itself would become a cable from the
+    # station to itself (issue #406)
+    G.remove_edges_from(list(nx.selfloop_edges(G)))
 
-    if (len(building_nodes) == 1 and building_nodes[0] == station_node) or (len(building_nodes) == 0):
+    # all buildings at the station: no street to route along
+    if set(building_nodes) <= {station_node}:
 
         sp_tree = G.subgraph([station_node])
 
@@ -613,6 +619,7 @@ def build_branches_on_osm_ways(lvgd):
                 'cts_capacity': row.cts_capacity,
                 'industrial_capacity': row.industrial_capacity,
                 'feederID': nn_attr['feederID'],
+                **{column: row.get(column, 0) for column in BUILDING_COMPONENT_COLUMNS},
                 }
 
         cable_type_stub = cable_type_by_load(row.capacity, lvgd_cfg)
@@ -638,6 +645,7 @@ def build_branches_on_osm_ways(lvgd):
                 'cts_capacity': row.cts_capacity,
                 'industrial_capacity': row.industrial_capacity,
                 'feederID': feederID,
+                **{column: row.get(column, 0) for column in BUILDING_COMPONENT_COLUMNS},
                 }
         G.add_node(building_node, **attr)
         # add new edge to street graph
@@ -713,7 +721,9 @@ def build_branches_on_osm_ways(lvgd):
                     peak_load_industrial=node_data["industrial_capacity"],
                     geo_data=node_coordinates,
                     building_id=node_name,
-                    type="conventional_load"
+                    type="conventional_load",
+                    **{column: node_data.get(column, 0)
+                       for column in BUILDING_COMPONENT_COLUMNS},
                 )
                 grid.add_cable_dist(cable_distributor)
                 grid.graph.add_edge(

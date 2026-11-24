@@ -175,7 +175,7 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
     existing_loads=True
     if buildings_w_a_existing:
         # preprocess concatted buildings_wo_a_sql_df and buildings_w_a_sql_df
-        buildings_w_a['n_apartments'].replace(0,1, inplace=True)
+        buildings_w_a['n_apartments'] = buildings_w_a['n_apartments'].replace(0,1)
         buildings_w_a['x'] = buildings_w_a['geo_center']
         buildings_w_a['y'] = 'p.y'
         buildings_w_a = buildings_w_a.rename({'building': 'category', 'n_apartments': 'number_households', 
@@ -258,7 +258,7 @@ def parameterize_by_load_profiles(amenities_ni_Buildings_sql_df, buildings_w_a_s
             lambda amenity: amenity.raccordement_building.y, axis=1)
         
         # replace yes to residentials
-        buildings_w_loads_df['category'].replace('yes','residential', inplace=True)
+        buildings_w_loads_df['category'] = buildings_w_loads_df['category'].replace('yes','residential')
     
         return buildings_w_loads_df
     

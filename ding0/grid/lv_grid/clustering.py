@@ -51,7 +51,7 @@ def apply_AgglomerativeClustering(G, k, round_decimals=True):
 
         if round_decimals:
 
-            X = np.round_(X, decimals=4, out=None)
+            X = np.round(X, decimals=4)
 
         clustering = AgglomerativeClustering(n_clusters=k, linkage='ward', connectivity=adj_mat_sparse).fit(X)
 

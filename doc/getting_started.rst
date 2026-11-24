@@ -136,6 +136,40 @@ Or install it from the pypi repository with the command:
 
     pip install ding0
 
+Database connection
+-------------------
+
+Ding0 reads its input data from an egon-data database. Set the connection
+in `~/.ding0/config/config_db_credentials.cfg`, which is created on the first
+run. Either set the path of an egon-data configuration file (the YAML file
+egon-data writes, as used by eDisGo):
+
+.. code-block:: ini
+
+    [database_credentials]
+    egon_data_config = ~/egon-data.configuration.yaml
+
+If the file has a section `ssh-tunnel`, ding0 opens an SSH tunnel to the
+database server itself, optionally via a jump host:
+
+.. code-block:: yaml
+
+    egon-data:
+      --database-name: egon-data
+      --database-password: ...
+      --database-port: '59734'
+      --database-user: egon
+    ssh-tunnel:
+      ssh-host: "10.0.0.2"
+      ssh-user: "egon"
+      ssh-pkey: "~/.ssh/id_ed25519"
+      ssh-jump-host: "10.0.0.1"  # optional
+      ssh-jump-user: "student"   # optional, key: ssh-jump-pkey or ssh-pkey
+      pgres-host: "localhost"
+
+Or set the parameters `name`, `host`, `port`, `user` and `password` of a
+database ding0 can reach directly.
+
 Use Ding0
 =========
 

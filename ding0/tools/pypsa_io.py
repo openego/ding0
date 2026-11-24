@@ -26,7 +26,8 @@ from ding0.core.structure.regions import LVLoadAreaCentreDing0, \
 from ding0.core.powerflow import q_sign
 from ding0.core.network.cable_distributors import LVCableDistributorDing0, MVCableDistributorDing0
 from ding0.core import network as ding0_nw
-from ding0.tools.tools import merge_two_dicts_of_dataframes
+from ding0.core.network.components import GridComponentDing0, StorageUnitDing0
+from ding0.tools.tools import merge_two_dicts_of_dataframes, append_to_dataframe
 from ding0.grid.lv_grid.build_grid import select_transformers
 
 from geoalchemy2.shape import from_shape
@@ -392,7 +393,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             graph = node.grid.graph
         elif isinstance(node, MVLoadDing0):
             graph = node.grid.mv_grid.graph
-        elif isinstance(node, GeneratorDing0):
+        elif isinstance(node, (GeneratorDing0, GridComponentDing0)):
             if node.lv_grid is not None:
                 graph = node.lv_grid.graph
             else:
@@ -412,6 +413,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
             ValueError("More than one adjacent branch!")
 
     srid = int(cfg_ding0.get('geo', 'srid'))
+    storage_units_df = pd.DataFrame(columns=STORAGE_UNITS_COLUMNS)
     # check if there are islanded nodes which do not belong to aggregated
     # load area
     for isl_node in grid.graph_isolated_nodes():
@@ -479,7 +481,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                    'p_nom': 0,
                                    'type': 'station',
                                    'subtype': 'mv_station'})
-                generators_df = generators_df.append(slack, ignore_index=True)
+                generators_df = append_to_dataframe(generators_df, slack, ignore_index=True)
                 # add MV side bus
                 buses_df = append_buses_df(buses_df, grid, node)
                 # add time varying elements
@@ -489,11 +491,11 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                         'temp_id':1,
                         'v_mag_pu_set': [voltage_set_slack,  voltage_set_slack]
                     })
-                    bus_v_mag_set_df = bus_v_mag_set_df.append(
+                    bus_v_mag_set_df = append_to_dataframe(bus_v_mag_set_df,
                         slack_v_mag, ignore_index=True
                     )
                     slack_v_mag['name'] = node.pypsa_bus_id
-                    bus_v_mag_set_df = bus_v_mag_set_df.append(
+                    bus_v_mag_set_df = append_to_dataframe(bus_v_mag_set_df,
                         slack_v_mag, ignore_index=True
                     )
 
@@ -524,6 +526,32 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                     generator_pq_set_df = append_generator_pq_set_df(
                         conf, generator_pq_set_df, node
                     )
+
+            # loads and storage units at locations of their own
+            elif isinstance(node, GridComponentDing0):
+                neighbor = next_branch_is_helper_component(node)
+                if neighbor:
+                    bus_name = neighbor.pypsa_bus_id
+                else:
+                    bus_name = node.pypsa_bus_id
+                    buses_df = append_buses_df(buses_df, grid, node)
+                    if return_time_varying_data:
+                        bus_v_mag_set_df = append_bus_v_mag_set_df(
+                            bus_v_mag_set_df, node, node_name=bus_name
+                        )
+                if isinstance(node, StorageUnitDing0):
+                    storage_units_df = append_storage_units_df(
+                        storage_units_df, repr(node), bus_name, node.p_nom,
+                        node.max_hours, node.type, source_id=node.source_id)
+                else:
+                    loads_df = append_component_load_df(
+                        loads_df, repr(node), bus_name, node.p_nom, node.type,
+                        node.sector, use_case=node.use_case,
+                        source_id=node.source_id)
+                    if return_time_varying_data:
+                        load_pq_set_df = append_load_pq_set_df(
+                            conf, load_pq_set_df, node, node_name=repr(node),
+                            peak_load=node.peak_load)
 
             elif isinstance(node, LoadDing0):
                 # egon data buildings do not contain consumptional data
@@ -569,7 +597,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                           'annual_consumption': annual_consumption,
                                           'sector': sector,
                                           'type': node.type})
-                        loads_df = loads_df.append(load, ignore_index=True)
+                        loads_df = append_to_dataframe(loads_df, load, ignore_index=True)
                         # add time varying elements
                         if return_time_varying_data:
                             load_pq_set_df = append_load_pq_set_df(
@@ -578,6 +606,24 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                 node,
                                 node_name=f"{repr(node)}_{sector}"
                             )
+
+                # add components in the building, as in eDisGo
+                for name, load_type, sector, p_set, factor in \
+                        building_component_loads(node):
+                    loads_df = append_component_load_df(
+                        loads_df, name, bus_name, p_set, load_type, sector,
+                        building_id=node.building_id)
+                    if return_time_varying_data:
+                        load_pq_set_df = append_load_pq_set_df(
+                            conf, load_pq_set_df, node, node_name=name,
+                            peak_load=factor * p_set)
+                if node.home_storage_p_nom:
+                    storage_units_df = append_storage_units_df(
+                        storage_units_df,
+                        f"{repr(node).replace('Load_', 'Storage_', 1)}_home_storage",
+                        bus_name, node.home_storage_p_nom,
+                        node.home_storage_capacity / node.home_storage_p_nom,
+                        'home_storage', building_id=node.building_id)
 
             # aggregated load at hv/mv substation
             elif isinstance(node, LVLoadAreaCentreDing0):
@@ -663,6 +709,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
     nodal_components = {'Bus': buses_df.set_index('name'),
                         'Generator': generators_df.set_index('name'),
                         'Load': loads_df.set_index('name'),
+                        'StorageUnit': storage_units_df.set_index('name'),
                         'Transformer': transformer_df.set_index('name')}
 
     if return_time_varying_data:
@@ -746,7 +793,7 @@ def append_generator_pq_set_df(conf, generator_pq_set_df, node):
              conf['Q_factor_generation'] * conf['generation_in_load_case'],
              node.capacity * node.capacity_factor * conf['kw2mw'] *
              conf['Q_factor_generation']]
-    generator_pq_set_df = generator_pq_set_df.append(
+    generator_pq_set_df = append_to_dataframe(generator_pq_set_df,
         pd.Series({'name': repr(node), 'temp_id': 1, 'p_set': p_set,
                    'q_set': q_set}), ignore_index=True)
     return generator_pq_set_df
@@ -784,7 +831,7 @@ def append_load_pq_set_df(conf, load_pq_set_df, node, node_name = None,
     q_set = [peak_load * conf['kw2mw'] * conf['Q_factor_load'],
              peak_load * conf['kw2mw'] * conf['Q_factor_load'] *
              conf['load_in_generation_case']]
-    load_pq_set_df = load_pq_set_df.append(
+    load_pq_set_df = append_to_dataframe(load_pq_set_df,
         pd.Series({'name': node_name, 'temp_id': 1,
                    'p_set': p_set, 'q_set': q_set}), ignore_index=True)
     return load_pq_set_df
@@ -812,7 +859,7 @@ def append_bus_v_mag_set_df(bus_v_mag_set_df, node, node_name = None):
 
     # due to lv loads may have same connection bus, just append once
     if node_name not in bus_v_mag_set_df['name'].tolist():
-        bus_v_mag_set_df = bus_v_mag_set_df.append(pd.Series({'name': node_name,
+        bus_v_mag_set_df = append_to_dataframe(bus_v_mag_set_df, pd.Series({'name': node_name,
                                                               'temp_id': 1,
                                                               'v_mag_pu_set':
                                                               [1, 1]}),
@@ -986,7 +1033,7 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
             {'name': name_load, 'bus': name_bus,
              'p_set': peak_load / 1e3,
              'annual_consumption': consumption, 'sector': sector})
-        loads_df = loads_df.append(load, ignore_index=True)
+        loads_df = append_to_dataframe(loads_df, load, ignore_index=True)
         # handle time varying data
         if return_time_varying_data:
             conf = kwargs.get('conf', None)
@@ -1014,7 +1061,7 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
             {'name': name_load, 'bus': name_bus,
              'p_set': peak_load/1e3,
              'annual_consumption': consumption/1e3, 'sector': sector})
-        loads_df = loads_df.append(load, ignore_index=True)
+        loads_df = append_to_dataframe(loads_df, load, ignore_index=True)
         # handle time varying data
         if return_time_varying_data:
             conf = kwargs.get('conf', None)
@@ -1064,8 +1111,96 @@ def append_generators_df(generators_df, node, name_bus = None):
             "source_id": node.gens_id
         }
     )
-    generators_df = generators_df.append(generator, ignore_index=True)
+    generators_df = append_to_dataframe(generators_df, generator, ignore_index=True)
     return generators_df
+
+
+STORAGE_UNITS_COLUMNS = ['name', 'bus', 'control', 'p_nom', 'max_hours',
+                         'type', 'building_id']
+
+
+def building_component_loads(node):
+    """
+    Heat pump and home charging point of a building as loads, named and typed
+    as in eDisGo.
+
+    Parameters
+    ----------
+    node : :class:`~.ding0.core.network.LoadDing0`
+
+    Returns
+    -------
+    :obj:`list` of :obj:`tuple`
+        (name, type, sector, p_set in kW, share for power flows in ding0, see
+        `[components] *_dimensioning_factor`)
+    """
+    loads = []
+    for load_type, sector, p_set, factor in [
+        ('heat_pump', 'individual_heating', node.heat_pump_p_set,
+         cfg_ding0.get('components', 'heat_pump_dimensioning_factor')),
+        ('charging_point', 'home', node.charging_point_p_set,
+         cfg_ding0.get('components', 'charging_point_home_dimensioning_factor')),
+    ]:
+        if p_set:
+            loads.append((f"{repr(node)}_{load_type}", load_type, sector,
+                          p_set, factor))
+    return loads
+
+
+def append_component_load_df(loads_df, name, bus, p_set, load_type, sector,
+                             building_id=None, use_case=None, source_id=None):
+    """
+    Appends a heat pump, charging point or other load besides the sectoral
+    building loads to the dataframe of loads, as in eDisGo.
+
+    Parameters
+    ----------
+    p_set : :obj:`float`
+        Grid connection power in kW
+
+    Returns
+    -------
+    :pandas:`pandas.DataFrame<dataframe>`
+    """
+    load = pd.Series({'name': name,
+                      'bus': bus,
+                      'p_set': p_set / 1e3,
+                      'number_households': 0,
+                      'building_id': building_id,
+                      'annual_consumption': None,
+                      'sector': sector,
+                      'type': load_type,
+                      'use_case': use_case,
+                      'source_id': source_id})
+    return append_to_dataframe(loads_df, load, ignore_index=True)
+
+
+def append_storage_units_df(storage_units_df, name, bus, p_nom, max_hours,
+                            storage_type, building_id=None, source_id=None):
+    """
+    Appends a battery storage unit to the dataframe of storage units, as in
+    eDisGo.
+
+    Parameters
+    ----------
+    p_nom : :obj:`float`
+        Power in kW
+    max_hours : :obj:`float`
+        Energy capacity / power
+
+    Returns
+    -------
+    :pandas:`pandas.DataFrame<dataframe>`
+    """
+    storage = pd.Series({'name': name,
+                         'bus': bus,
+                         'control': 'PQ',
+                         'p_nom': p_nom / 1e3,
+                         'max_hours': max_hours,
+                         'type': storage_type,
+                         'building_id': building_id,
+                         'source_id': source_id})
+    return append_to_dataframe(storage_units_df, storage, ignore_index=True)
 
 
 def append_buses_df(buses_df, grid, node, node_name =''):
@@ -1128,7 +1263,7 @@ def append_buses_df(buses_df, grid, node, node_name =''):
     bus = pd.Series({'name': node_name,'v_nom':v_nom, 'x':x, 'y':y,
                      'mv_grid_id':mv_grid_id,'lv_grid_id':lv_grid_id,
                      'in_building': in_building})
-    buses_df = buses_df.append(bus, ignore_index=True)
+    buses_df = append_to_dataframe(buses_df, bus, ignore_index=True)
     return buses_df
 
 
@@ -1184,7 +1319,7 @@ def append_transformers_df(transformers_df, trafo, type = np.NaN,
                            's_nom': trafo.s_max_a/1e3,
                            'type': type,
                            'type_info': type_info})
-    transformers_df = transformers_df.append(trafo_tmp, ignore_index=True)
+    transformers_df = append_to_dataframe(transformers_df, trafo_tmp, ignore_index=True)
     return transformers_df
 
 
@@ -1298,7 +1433,7 @@ def append_lines_df(edge, lines_df, buses_df):
                       'kind': edge['branch'].kind,
                       'type_info': type,
                       'geometry': edge['branch'].geometry})
-    lines_df = lines_df.append(line, ignore_index=True)
+    lines_df = append_to_dataframe(lines_df, line, ignore_index=True)
 
     return lines_df
 
@@ -1417,17 +1552,17 @@ def circuit_breakers_to_df(grid, components, component_data,
                 
                 bus_open = components['Bus'].T[name_bus_closed]
                 bus_open.name = name_bus_open
-                components['Bus'] = components['Bus'].append(bus_open)
+                components['Bus'] = append_to_dataframe(components['Bus'], bus_open)
                 if return_time_varying_data:
                     component_data['Bus'] = \
-                        component_data['Bus'].append(
+                        append_to_dataframe(component_data['Bus'],
                             pd.DataFrame({'name': [name_bus_open], 
                                           'temp_id': [1],
                                           'v_mag_pu_set': [[1, 1]]}).
                             set_index('name'))
             # append circuit breaker to dataframe
             circuit_breakers_df = \
-                circuit_breakers_df.append(
+                append_to_dataframe(circuit_breakers_df,
                     pd.Series({'name': repr(circuit_breaker), 
                                'bus_closed': name_bus_closed,
                                'bus_open': name_bus_open,
@@ -1466,7 +1601,7 @@ def run_powerflow_onthefly(components, components_data, grid,
     # choose temp_id
     timesteps = 2
     start_time = datetime(1970, 1, 1, 00, 00, 0)
-    resolution = 'H'
+    resolution = 'h'
 
     # inspect grid data for integrity
     if debug:
@@ -1871,3 +2006,115 @@ def create_powerflow_problem(timerange, components):
                                                  component)
 
     return network, snapshots
+
+
+def transform_geodata_to_wgs84(components, network_df, grids_df):
+    """
+    Transforms coordinates of buses, line geometries and grid district
+    polygons from EPSG:3035 to EPSG:4326, as eDisGo expects them.
+
+    Parameters
+    ----------
+    components : :obj:`dict` of :pandas:`pandas.DataFrame<dataframe>`
+    network_df : :pandas:`pandas.DataFrame<dataframe>`
+    grids_df : :pandas:`pandas.DataFrame<dataframe>`
+
+    Returns
+    -------
+    components, network_df, grids_df
+    """
+    from pyproj import Transformer
+    from shapely.ops import transform
+    import time
+    logger.info("Transform all geodata from 'EPSG:3035' to 'EPSG:4326'.")
+    t_start = time.perf_counter()
+    # initialize the Coordinate-Reference-System-Transformer
+    crs_transformer = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True).transform
+    # Transform geodata
+    network_df["mv_grid_district_geom"] = [transform(crs_transformer, geom) for geom in
+                                           network_df["mv_grid_district_geom"].to_list()]
+    grids_df["grid_district_geom"] = [transform(crs_transformer, geom) for geom in
+                                      grids_df["grid_district_geom"].to_list()]
+    for key, item in components.items():
+        if key == 'Bus':
+            components[key]['x'], components[key]['y'] = crs_transformer(components[key]['x'],
+                                                                         components[key]['y'])
+        elif key == 'Line':
+            components[key]["geometry"] = [transform(crs_transformer, geom) for geom in
+                                           components[key]["geometry"].to_list()]
+    logger.debug(f"Transformed all geodata in {time.perf_counter() - t_start}s.")
+    return components, network_df, grids_df
+
+
+def _json_records(df):
+    """Rows of a dataframe as JSON-compatible dicts keyed by index (geometries
+    as WKT), for network metadata."""
+    import json
+    df = df.apply(lambda column: column.apply(
+        lambda value: value.wkt if hasattr(value, 'wkt') else value))
+    return json.loads(df.to_json(orient='index'))
+
+
+def components_to_pypsa_network(components, network_df, grids_df, metadata=None):
+    """
+    Builds a PyPSA network of an MV grid district from its exported components
+    (see :func:`fill_mvgd_component_dataframes`) with coordinates in
+    EPSG:4326 (see :func:`transform_geodata_to_wgs84`).
+
+    The network can be saved in PyPSA's formats (netCDF, HDF5, CSV) and a
+    power flow can be run on it directly. As in eDisGo, the MV busbar of the
+    HV/MV station is the slack. Components and their extra columns are as in
+    the CSV export.
+
+    Data that are no PyPSA components are stored in `network.meta`:
+
+    * `transformers_hvmv`: HV/MV transformers (ding0 has no impedances for
+      them)
+    * `switches`: switch disconnectors; they are open, the line of an open
+      switch ends at its bus `bus_open`
+    * `mv_grid_district_geom`, `mv_grid_district_population`, `grids`
+      (population and area of the grid districts) and `ding0` (metadata of
+      the run)
+
+    Parameters
+    ----------
+    components : :obj:`dict` of :pandas:`pandas.DataFrame<dataframe>`
+    network_df : :pandas:`pandas.DataFrame<dataframe>`
+    grids_df : :pandas:`pandas.DataFrame<dataframe>`
+    metadata : :obj:`dict`
+        Metadata of the ding0 run
+
+    Returns
+    -------
+    :pypsa:`pypsa.Network<network>`
+    """
+    mv_grid_district_id = int(network_df.index[0])
+    network = Network()
+    network.name = f"ding0_mvgd_{mv_grid_district_id}"
+    network.srid = int(network_df['srid'].iloc[0])
+
+    lines = components['Line'].copy()
+    lines['geometry'] = [geom.wkt if hasattr(geom, 'wkt') else geom
+                         for geom in lines['geometry']]
+    # `type` of ding0 transformers is free text, which PyPSA would take
+    # for a standard type
+    transformers = components['Transformer'].drop(columns='type', errors='ignore')
+    for name, df in [('Bus', components['Bus']), ('Line', lines),
+                     ('Transformer', transformers),
+                     ('Generator', components['Generator']),
+                     ('Load', components['Load']),
+                     ('StorageUnit', components.get('StorageUnit', pd.DataFrame()))]:
+        if not df.empty:
+            network.import_components_from_dataframe(df, name)
+
+    network.meta = {
+        'mv_grid_district_id': mv_grid_district_id,
+        'mv_grid_district_geom': network_df['mv_grid_district_geom'].iloc[0].wkt,
+        'mv_grid_district_population': int(
+            network_df['mv_grid_district_population'].iloc[0]),
+        'transformers_hvmv': _json_records(components['HVMV_Transformer']),
+        'switches': _json_records(components['Switch']),
+        'grids': _json_records(grids_df.drop(columns='grid_district_geom')),
+        'ding0': metadata or {},
+    }
+    return network

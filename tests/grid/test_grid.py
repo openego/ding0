@@ -1,4 +1,4 @@
-from tests.core.network.test_grids import TestMVGridDing0
+from tests.core.network.test_grids import TestMVGridDing0 as MVTestGrids
 from ding0.grid.mv_grid import mv_connect
 from networkx.readwrite.graphml import read_graphml
 import networkx as nx
@@ -16,7 +16,7 @@ def test_mv_connect_generators():
 
     # Ding0's first steps
     nd, mv_grid, lv_stations = \
-        TestMVGridDing0().minimal_unrouted_testgrid()
+        MVTestGrids().minimal_unrouted_testgrid()
     nd.mv_routing()
     graph = mv_connect.mv_connect_generators(
         nd._mv_grid_districts[0],
