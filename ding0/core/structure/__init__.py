@@ -12,8 +12,10 @@ __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
+from ding0.tools.creation_order import CreationOrderHash
 
-class RegionDing0():
+
+class RegionDing0(CreationOrderHash):
     """
     Defines a region in DING0
 

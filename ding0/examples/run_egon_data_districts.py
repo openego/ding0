@@ -162,9 +162,12 @@ class District:
         if os.path.isfile(self.error_file):
             os.remove(self.error_file)
         self.log = open(os.path.join(args.output, "logs", f"{district_id}.log"), "w")
-        # one thread per process, so that a process uses one core
+        # one thread per process, so that a process uses one core; a fixed
+        # string hash, so that sets of strings iterate in the same order in
+        # every run, in case ding0 still iterates such a set somewhere
         env = dict(os.environ, OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
-                   MKL_NUM_THREADS="1", NUMEXPR_NUM_THREADS="1")
+                   MKL_NUM_THREADS="1", NUMEXPR_NUM_THREADS="1",
+                   PYTHONHASHSEED="0")
         self.popen = subprocess.Popen(
             [sys.executable, os.path.abspath(__file__), "--worker", str(district_id)]
             + worker_args,

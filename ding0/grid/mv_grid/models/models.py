@@ -20,6 +20,7 @@ __author__     = "nesnoj, gplssm"
 
 
 from ding0.tools import config as cfg_ding0
+from ding0.tools.creation_order import CreationOrderHash
 from ding0.tools.pypsa_io import q_sign
 
 from math import pi, tan, acos
@@ -30,7 +31,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Route(object):
+class Route(CreationOrderHash):
     # TODO: check docstring
     """CVRP route, consists of consecutive nodes
     
@@ -482,7 +483,7 @@ class Route(object):
         return str(self._nodes)
 
 
-class Node(object):
+class Node(CreationOrderHash):
     # TODO: check docstring
     """CVRP node (MV transformer/customer)
     
@@ -571,11 +572,8 @@ class Node(object):
 
         return self._name - other
 
-    def __hash__(self):
-        return self._name.__hash__()
 
-
-class Graph(object):
+class Graph(CreationOrderHash):
     # TODO: check docstring
     """Class for modelling a CVRP problem data
     

@@ -19,9 +19,10 @@ import networkx as nx
 from ding0.core.structure.regions import LVLoadAreaDing0, LVLoadAreaCentreDing0
 from ding0.core.network.components import GridComponentDing0
 import ding0.tools as tl
+from ding0.tools.creation_order import CreationOrderHash
 
 
-class GridDing0:
+class GridDing0(CreationOrderHash):
     """
     The fundamental abstract class used to encapsulate
     the networkx graph and the relevant attributes of a
@@ -586,7 +587,7 @@ class GridDing0:
             generator.capacity_factor = capacity_factor
 
 
-class StationDing0:
+class StationDing0(CreationOrderHash):
     """
     The abstract definition of a substation irrespective
     of voltage level. This object encapsulates the attributes
@@ -691,7 +692,7 @@ class StationDing0:
         return self.grid.grid_district.peak_load
 
 
-class RingDing0:
+class RingDing0(CreationOrderHash):
     """
     Represents a medium voltage Ring.
 
@@ -766,7 +767,7 @@ class RingDing0:
         return 'mv_ring_' + str(self._id_db)
 
 
-class BranchDing0:
+class BranchDing0(CreationOrderHash):
     """
     When a network has a set of connections that don't form into rings but remain
     as open stubs, these are designated as branches. Typically Branches at the
@@ -848,7 +849,7 @@ class BranchDing0:
         return '_'.join(['Branch', repr(nodes[0]), repr(nodes[1])])
 
 
-class TransformerDing0:
+class TransformerDing0(CreationOrderHash):
     """
     Transformers are essentially voltage converters, which
     enable to change between voltage levels based on the usage.
@@ -916,7 +917,7 @@ class TransformerDing0:
         return '_'.join(['Transformer', repr(self.grid), str(self.id_db)])
 
 
-class GeneratorDing0:
+class GeneratorDing0(CreationOrderHash):
     """ Generators (power plants of any kind)
         
     Attributes
@@ -1093,7 +1094,7 @@ class GeneratorFluctuatingDing0(GeneratorDing0):
         self._weather_cell_id = weather_cell
 
 
-class CableDistributorDing0:
+class CableDistributorDing0(CreationOrderHash):
     """ Cable distributor (connection point) 
      
     Attributes
@@ -1129,7 +1130,7 @@ class CableDistributorDing0:
         return self.grid.network
 
 
-class LoadDing0:
+class LoadDing0(CreationOrderHash):
     """ Class for modelling a load 
         
     Attributes
@@ -1198,7 +1199,7 @@ class LoadDing0:
                 id_db), 'lvgd', str(self.grid.id_db), 'loa', str(self.id_db)])'''
 
 
-class CircuitBreakerDing0:
+class CircuitBreakerDing0(CreationOrderHash):
     """ Class for modelling a circuit breaker
 
     Attributes

@@ -16,6 +16,7 @@ __author__     = "nesnoj, gplssm"
 import os
 from . import RegionDing0
 from ding0.tools import config as cfg_ding0
+from ding0.tools.creation_order import CreationOrderHash
 # from ding0.core.network.loads import MVLoadDing0
 
 if not 'READTHEDOCS' in os.environ:
@@ -304,7 +305,7 @@ class LVLoadAreaDing0(RegionDing0):
         return 'lv_load_area_' + str(self.id_db)
 
 
-class LVLoadAreaCentreDing0:
+class LVLoadAreaCentreDing0(CreationOrderHash):
     # TODO: check docstring
     """
     Defines a region centre in Ding0.
