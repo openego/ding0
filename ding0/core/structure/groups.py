@@ -15,9 +15,10 @@ __author__     = "nesnoj, gplssm"
 
 from ding0.core import MVCableDistributorDing0
 from ding0.tools import config as cfg_ding0
+from ding0.tools.creation_order import CreationOrderHash
 
 
-class LoadAreaGroupDing0:
+class LoadAreaGroupDing0(CreationOrderHash):
         # TODO: check docstring
     """ Container for small load_areas / load areas (satellites).
     

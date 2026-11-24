@@ -12,8 +12,10 @@ __license__    = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __url__        = "https://github.com/openego/ding0/blob/master/LICENSE"
 __author__     = "nesnoj, gplssm"
 
+from ding0.tools.creation_order import CreationOrderHash
 
-class GridComponentDing0:
+
+class GridComponentDing0(CreationOrderHash):
     """Load or storage unit at a location of its own, connected to the grid
     by its voltage level like a generator.
 

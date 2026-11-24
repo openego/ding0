@@ -84,6 +84,7 @@ from ding0.grid.lv_grid.geo import get_points_in_load_area, get_convex_hull_from
 
 import ding0.tools.egon_data_integration as db_io
 from ding0.tools import planning_profiles
+from ding0.tools.creation_order import restart_creation_order
 
 ############ NEW END
 
@@ -194,6 +195,9 @@ class NetworkDing0:
     """
 
     def __init__(self, session=None, **kwargs):
+        # hashes of the objects of this network count from 0, see
+        # ding0.tools.creation_order
+        restart_creation_order()
         self.name = kwargs.get('name', None)
         self._run_id = kwargs.get('run_id', None)
         self._planning_profile = kwargs.get(
