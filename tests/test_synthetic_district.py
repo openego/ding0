@@ -96,6 +96,13 @@ def test_run_completes_without_invalid_districts(synthetic_run):
     assert messages == [[]]
 
 
+def test_component_frames_keep_their_index_name(synthetic_run):
+    _, _, _, components = synthetic_run
+    # the CSV export writes the index name as header of the first column
+    assert {name: frame.index.name for name, frame in components.items()} == {
+        name: "name" for name in components}
+
+
 def test_load_area_structure(synthetic_run):
     _, network, _, _ = synthetic_run
     structure = {
