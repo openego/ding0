@@ -22,6 +22,7 @@ from sqlalchemy.orm import sessionmaker
 
 from ding0.core import NetworkDing0
 from ding0.tools import config as cfg_ding0, results
+from ding0.tools.tools import append_to_dataframe
 from egoio.tools import db
 import json
 from datetime import datetime
@@ -135,7 +136,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                                    ding0_legacy=False, local_db=False, egon_db=True)
                 # if not successful, put grid district to report
                 if msg:
-                    corrupt_grid_districts = corrupt_grid_districts.append(
+                    corrupt_grid_districts = append_to_dataframe(corrupt_grid_districts,
                         pd.Series({'id': mvgd,
                                    'message': msg[0]}),
                         ignore_index=True)
@@ -150,7 +151,7 @@ def run_multiple_grid_districts(mv_grid_districts, run_id, failsafe=False,
                     else:
                         msg.append("save_as not correct, network not saved.")
             except Exception as e:
-                corrupt_grid_districts = corrupt_grid_districts.append(
+                corrupt_grid_districts = append_to_dataframe(corrupt_grid_districts,
                     pd.Series({'id': mvgd,
                                'message': e}),
                     ignore_index=True)

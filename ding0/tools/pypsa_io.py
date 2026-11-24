@@ -26,7 +26,7 @@ from ding0.core.structure.regions import LVLoadAreaCentreDing0, \
 from ding0.core.powerflow import q_sign
 from ding0.core.network.cable_distributors import LVCableDistributorDing0, MVCableDistributorDing0
 from ding0.core import network as ding0_nw
-from ding0.tools.tools import merge_two_dicts_of_dataframes
+from ding0.tools.tools import merge_two_dicts_of_dataframes, append_to_dataframe
 from ding0.grid.lv_grid.build_grid import select_transformers
 
 from geoalchemy2.shape import from_shape
@@ -479,7 +479,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                    'p_nom': 0,
                                    'type': 'station',
                                    'subtype': 'mv_station'})
-                generators_df = generators_df.append(slack, ignore_index=True)
+                generators_df = append_to_dataframe(generators_df, slack, ignore_index=True)
                 # add MV side bus
                 buses_df = append_buses_df(buses_df, grid, node)
                 # add time varying elements
@@ -489,11 +489,11 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                         'temp_id':1,
                         'v_mag_pu_set': [voltage_set_slack,  voltage_set_slack]
                     })
-                    bus_v_mag_set_df = bus_v_mag_set_df.append(
+                    bus_v_mag_set_df = append_to_dataframe(bus_v_mag_set_df,
                         slack_v_mag, ignore_index=True
                     )
                     slack_v_mag['name'] = node.pypsa_bus_id
-                    bus_v_mag_set_df = bus_v_mag_set_df.append(
+                    bus_v_mag_set_df = append_to_dataframe(bus_v_mag_set_df,
                         slack_v_mag, ignore_index=True
                     )
 
@@ -569,7 +569,7 @@ def nodes_to_dict_of_dataframes(grid, nodes, buses_df, generators_df, loads_df,
                                           'annual_consumption': annual_consumption,
                                           'sector': sector,
                                           'type': node.type})
-                        loads_df = loads_df.append(load, ignore_index=True)
+                        loads_df = append_to_dataframe(loads_df, load, ignore_index=True)
                         # add time varying elements
                         if return_time_varying_data:
                             load_pq_set_df = append_load_pq_set_df(
@@ -746,7 +746,7 @@ def append_generator_pq_set_df(conf, generator_pq_set_df, node):
              conf['Q_factor_generation'] * conf['generation_in_load_case'],
              node.capacity * node.capacity_factor * conf['kw2mw'] *
              conf['Q_factor_generation']]
-    generator_pq_set_df = generator_pq_set_df.append(
+    generator_pq_set_df = append_to_dataframe(generator_pq_set_df,
         pd.Series({'name': repr(node), 'temp_id': 1, 'p_set': p_set,
                    'q_set': q_set}), ignore_index=True)
     return generator_pq_set_df
@@ -784,7 +784,7 @@ def append_load_pq_set_df(conf, load_pq_set_df, node, node_name = None,
     q_set = [peak_load * conf['kw2mw'] * conf['Q_factor_load'],
              peak_load * conf['kw2mw'] * conf['Q_factor_load'] *
              conf['load_in_generation_case']]
-    load_pq_set_df = load_pq_set_df.append(
+    load_pq_set_df = append_to_dataframe(load_pq_set_df,
         pd.Series({'name': node_name, 'temp_id': 1,
                    'p_set': p_set, 'q_set': q_set}), ignore_index=True)
     return load_pq_set_df
@@ -812,7 +812,7 @@ def append_bus_v_mag_set_df(bus_v_mag_set_df, node, node_name = None):
 
     # due to lv loads may have same connection bus, just append once
     if node_name not in bus_v_mag_set_df['name'].tolist():
-        bus_v_mag_set_df = bus_v_mag_set_df.append(pd.Series({'name': node_name,
+        bus_v_mag_set_df = append_to_dataframe(bus_v_mag_set_df, pd.Series({'name': node_name,
                                                               'temp_id': 1,
                                                               'v_mag_pu_set':
                                                               [1, 1]}),
@@ -986,7 +986,7 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
             {'name': name_load, 'bus': name_bus,
              'p_set': peak_load / 1e3,
              'annual_consumption': consumption, 'sector': sector})
-        loads_df = loads_df.append(load, ignore_index=True)
+        loads_df = append_to_dataframe(loads_df, load, ignore_index=True)
         # handle time varying data
         if return_time_varying_data:
             conf = kwargs.get('conf', None)
@@ -1014,7 +1014,7 @@ def append_load_area_to_load_df(sector, load_area, loads_df, name_bus,
             {'name': name_load, 'bus': name_bus,
              'p_set': peak_load/1e3,
              'annual_consumption': consumption/1e3, 'sector': sector})
-        loads_df = loads_df.append(load, ignore_index=True)
+        loads_df = append_to_dataframe(loads_df, load, ignore_index=True)
         # handle time varying data
         if return_time_varying_data:
             conf = kwargs.get('conf', None)
@@ -1064,7 +1064,7 @@ def append_generators_df(generators_df, node, name_bus = None):
             "source_id": node.gens_id
         }
     )
-    generators_df = generators_df.append(generator, ignore_index=True)
+    generators_df = append_to_dataframe(generators_df, generator, ignore_index=True)
     return generators_df
 
 
@@ -1128,7 +1128,7 @@ def append_buses_df(buses_df, grid, node, node_name =''):
     bus = pd.Series({'name': node_name,'v_nom':v_nom, 'x':x, 'y':y,
                      'mv_grid_id':mv_grid_id,'lv_grid_id':lv_grid_id,
                      'in_building': in_building})
-    buses_df = buses_df.append(bus, ignore_index=True)
+    buses_df = append_to_dataframe(buses_df, bus, ignore_index=True)
     return buses_df
 
 
@@ -1184,7 +1184,7 @@ def append_transformers_df(transformers_df, trafo, type = np.NaN,
                            's_nom': trafo.s_max_a/1e3,
                            'type': type,
                            'type_info': type_info})
-    transformers_df = transformers_df.append(trafo_tmp, ignore_index=True)
+    transformers_df = append_to_dataframe(transformers_df, trafo_tmp, ignore_index=True)
     return transformers_df
 
 
@@ -1298,7 +1298,7 @@ def append_lines_df(edge, lines_df, buses_df):
                       'kind': edge['branch'].kind,
                       'type_info': type,
                       'geometry': edge['branch'].geometry})
-    lines_df = lines_df.append(line, ignore_index=True)
+    lines_df = append_to_dataframe(lines_df, line, ignore_index=True)
 
     return lines_df
 
@@ -1417,17 +1417,17 @@ def circuit_breakers_to_df(grid, components, component_data,
                 
                 bus_open = components['Bus'].T[name_bus_closed]
                 bus_open.name = name_bus_open
-                components['Bus'] = components['Bus'].append(bus_open)
+                components['Bus'] = append_to_dataframe(components['Bus'], bus_open)
                 if return_time_varying_data:
                     component_data['Bus'] = \
-                        component_data['Bus'].append(
+                        append_to_dataframe(component_data['Bus'],
                             pd.DataFrame({'name': [name_bus_open], 
                                           'temp_id': [1],
                                           'v_mag_pu_set': [[1, 1]]}).
                             set_index('name'))
             # append circuit breaker to dataframe
             circuit_breakers_df = \
-                circuit_breakers_df.append(
+                append_to_dataframe(circuit_breakers_df,
                     pd.Series({'name': repr(circuit_breaker), 
                                'bus_closed': name_bus_closed,
                                'bus_open': name_bus_open,
@@ -1466,7 +1466,7 @@ def run_powerflow_onthefly(components, components_data, grid,
     # choose temp_id
     timesteps = 2
     start_time = datetime(1970, 1, 1, 00, 00, 0)
-    resolution = 'H'
+    resolution = 'h'
 
     # inspect grid data for integrity
     if debug:

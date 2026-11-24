@@ -17,6 +17,7 @@ import os
 import ding0
 import os.path as path
 import networkx as nx
+import pickle
 import traceback
 
 from functools import wraps
@@ -65,7 +66,8 @@ def compare_graphs(graph1, mode, graph2=None):
 
     if mode == 'write':
         try:
-            nx.write_gpickle(graph1, file)
+            with open(file, 'wb') as f:
+                pickle.dump(graph1, f, pickle.HIGHEST_PROTOCOL)
             print('=====> DEBUG: Graph written to', file)
         except:
             raise FileNotFoundError('Could not write to file', file)
@@ -73,7 +75,8 @@ def compare_graphs(graph1, mode, graph2=None):
     elif mode == 'compare':
         if graph2 is None:
             try:
-                graph2 = nx.read_gpickle(file)
+                with open(file, 'rb') as f:
+                    graph2 = pickle.load(f)
                 print('=====> DEBUG: Graph read from', file)
             except:
                 raise FileNotFoundError('File not found:', file)

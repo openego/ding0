@@ -46,12 +46,15 @@ need additional packages listed in `dev_requirements.txt`. To install, use
 
     pip install -r /path/to/ding0/dev_requirements.txt
 
-To run tests with e.g. 4 workers (you may omit this argument), use
+To run the tests that need no database, use
 
 .. code-block:: bash
 
     cd /path/to/ding0/
-    pytest --workers 4 -vv
+    pytest -m "not db"
+
+Tests marked `db` read from an egon-data database and need a configured
+database connection; run them with `pytest -m db`.
 
 Test ding0 runs
 ===============
