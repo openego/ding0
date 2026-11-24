@@ -10,6 +10,11 @@ from ding0.tools.planning_profiles import get_limit
 from geoalchemy2.shape import to_shape
 from sqlalchemy import Integer, cast, func
 
+# Every query is ordered by a unique key: PostgreSQL returns rows in no
+# particular order (e.g. parallel or synchronized sequential scans), and ding0
+# creates the grid objects in the order of the rows, so the grid would depend
+# on it. Generators and point components are sorted after reading instead.
+
 
 def get_scenario(scenario=None):
     """Scenario of the egon-data tables to read; defaults to the config value
@@ -50,6 +55,7 @@ def get_mv_data(orm, session, mv_grid_districts_no):
         .filter(orm["version_condition_mvgd"])
         .filter(orm["version_condition_mv_stations"])
         .distinct()
+        .order_by(orm["orm_mv_grid_districts"].bus_id)
     )
 
     # read MV data from db
@@ -98,7 +104,7 @@ def get_lv_load_areas(orm, session, mv_grid_id):
     ).filter(
         orm["orm_lv_load_areas"].bus_id == mv_grid_id,
         orm["version_condition_la"],
-    )
+    ).order_by(orm["orm_lv_load_areas"].id)
 
     # read data from db
     lv_load_areas = pd.read_sql_query(
@@ -132,7 +138,7 @@ def get_egon_ways(orm, session, geo_area):
             func.ST_GeomFromText(geo_area, get_config_osm("srid")),
             orm["osm_ways_with_segments"].geom,
         )
-    )
+    ).order_by(orm["osm_ways_with_segments"].osm_id)
     df = pd.read_sql(sql=query.statement, con=session.bind, index_col=None)
     return df
 
@@ -181,6 +187,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area, scenario=N
                 orm["osm_buildings_filtered"].geom_point,
             ),
         )
+        .order_by(orm["egon_map_zensus_mvgd_buildings"].building_id)
     )
     residential_buildings_osm_df = pd.read_sql(
         sql=query.statement, con=query.session.bind, index_col=None
@@ -210,6 +217,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area, scenario=N
                 orm["osm_buildings_synthetic"].geom_point,
             ),
         )
+        .order_by(orm["egon_map_zensus_mvgd_buildings"].building_id)
     )
     residential_buildings_synthetic_df = pd.read_sql(
         sql=query.statement, con=query.session.bind, index_col=None
@@ -240,7 +248,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area, scenario=N
         orm["building_peak_loads"].building_id.in_(
             residential_buildings_df["building_id"].values
         ),
-    )
+    ).order_by(orm["building_peak_loads"].building_id)
 
     capacity_per_building_df = pd.read_sql(
         sql=query.statement, con=query.session.bind, index_col=None
@@ -274,6 +282,7 @@ def get_egon_residential_buildings(orm, session, subst_id, load_area, scenario=N
         .group_by(
             orm["household_electricity_profile"].building_id,
         )
+        .order_by(orm["household_electricity_profile"].building_id)
     )
 
     apartments_per_building_df = pd.read_sql(
@@ -321,6 +330,7 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area, scenario=None):
                 orm["osm_buildings_filtered"].geom_point,
             ),
         )
+        .order_by(orm["egon_map_zensus_mvgd_buildings"].building_id)
     )
     cts_buildings_osm_df = pd.read_sql(
         sql=query.statement, con=query.session.bind, index_col=None
@@ -350,6 +360,7 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area, scenario=None):
                 orm["osm_buildings_synthetic"].geom_point,
             ),
         )
+        .order_by(orm["egon_map_zensus_mvgd_buildings"].building_id)
     )
     cts_buildings_synthetic_df = pd.read_sql(
         sql=query.statement, con=query.session.bind, index_col=None
@@ -377,7 +388,7 @@ def get_egon_cts_buildings(orm, session, subst_id, load_area, scenario=None):
         orm["building_peak_loads"].building_id.in_(
             cts_buildings_df["building_id"].values
         ),
-    )
+    ).order_by(orm["building_peak_loads"].building_id)
     capacity_per_building_df = pd.read_sql(
         sql=cells_query.statement, con=cells_query.session.bind, index_col=None
     )
@@ -433,6 +444,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area, scenario=No
                 func.ST_Transform(orm["egon_industrial_sites"].geom, 3035),
             ),
         )
+        .order_by(orm["egon_sites_ind_load_curves_individual"].site_id)
     )
     industrial_loads_1_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
@@ -464,6 +476,7 @@ def get_egon_industrial_buildings(orm, session, subst_id, load_area, scenario=No
                 orm["osm_landuse"].geom,
             ),
         )
+        .order_by(orm["egon_osm_ind_load_curves_individual"].osm_id)
     )
     industrial_loads_2_df = pd.read_sql(
         sql=query.statement, con=session.bind, index_col=None
@@ -1019,7 +1032,9 @@ def get_building_components(orm, session, buildings_df, load_area, scenario=None
         table = orm["heat_pumps"]
         query = session.query(
             table.building_id, (table.hp_capacity * mw2kw).label("p_set")
-        ).filter(table.scenario == scenario, table.building_id.in_(building_ids))
+        ).filter(
+            table.scenario == scenario, table.building_id.in_(building_ids)
+        ).order_by(table.building_id)
         heat_pumps_df = pd.read_sql(sql=query.statement, con=session.bind)
         heat_pumps = heat_pumps_df.groupby("building_id").p_set.sum()
         components_df.loc[heat_pumps.index, "heat_pump_p_set"] = heat_pumps
@@ -1030,7 +1045,9 @@ def get_building_components(orm, session, buildings_df, load_area, scenario=None
             table.building_id,
             (table.p_nom * mw2kw).label("p_nom"),
             (table.capacity * mw2kw).label("capacity"),
-        ).filter(table.scenario == scenario, table.building_id.in_(building_ids))
+        ).filter(
+            table.scenario == scenario, table.building_id.in_(building_ids)
+        ).order_by(table.index)
         batteries_df = pd.read_sql(sql=query.statement, con=session.bind)
         batteries = batteries_df.groupby("building_id")[["p_nom", "capacity"]].sum()
         components_df.loc[batteries.index, "home_storage_p_nom"] = batteries.p_nom
@@ -1050,7 +1067,7 @@ def get_building_components(orm, session, buildings_df, load_area, scenario=None
                 table.geom,
                 func.ST_GeomFromText(load_area.geo_area, get_config_osm("srid")),
             ),
-        )
+        ).order_by(table.location_id)
         charging_df = pd.read_sql(sql=query.statement, con=session.bind)
         charging_df["geometry"] = charging_df.geometry.apply(shapely.wkt.loads)
         assigned = assign_to_nearest_buildings(
