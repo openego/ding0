@@ -266,7 +266,8 @@ def get_shortest_path_shp_single_target(osm_graph, node1, node2, return_path=Fal
 
 def get_shortest_path_shp_multi_target(G, source, targets):
 
-    _, line_path = nx.multi_source_dijkstra(G, targets, source, weight='length')
+    # sorted, so that a tie between targets does not depend on the string hash
+    _, line_path = nx.multi_source_dijkstra(G, sorted(targets, key=str), source, weight='length')
     edge_path = get_edge_tuples_from_path(G, line_path)
     line_shp = linemerge([G.edges[edge]['geometry'] for edge in edge_path])
     line_length = line_shp.length

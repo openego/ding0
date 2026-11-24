@@ -85,7 +85,9 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
                 if len(comp) == 2:
                     root_nb = next(iter(load_node_set))
                 else:
-                    root_nb = list({n for n in stub_graph.neighbors(root_node)} & set(comp))[0]
+                    # the smallest name, so that the choice does not depend
+                    # on the string hash
+                    root_nb = min({n for n in stub_graph.neighbors(root_node)} & set(comp), key=str)
 
                 line_shp, line_length, path = get_shortest_path_shp_multi_target(osm_graph_red,
                                                                                  root_nb, routed_graph_node_set)
@@ -232,7 +234,9 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
 
                 if len(cabledist_node_set):
 
-                    for node in cabledist_node_set:
+                    # sorted, so that the cable distributors are numbered
+                    # in the same order in every run
+                    for node in sorted(cabledist_node_set, key=str):
 
                         cable_dist_shp = Point(stub_graph.nodes[node]['x'], stub_graph.nodes[node]['y'])
                         cable_dist = MVCableDistributorDing0(geo_data=cable_dist_shp, grid=mv_grid)
@@ -264,7 +268,9 @@ def mv_urban_connect(mv_grid, osm_graph_red, core_graph, stub_graph, stub_dict, 
                                                                            ring=branch_ring))
 
                 #add demand to ring
-                comp_demand = sum([node_list[n].peak_load for n in load_node_set]) / cfg_ding0.get('assumptions', 'cos_phi_load')
+                # summed in sorted order, so that rounding does not depend on
+                # the string hash
+                comp_demand = sum(node_list[n].peak_load for n in sorted(load_node_set)) / cfg_ding0.get('assumptions', 'cos_phi_load')
                 branch_ring._demand += int(comp_demand)
         
     return mv_grid
